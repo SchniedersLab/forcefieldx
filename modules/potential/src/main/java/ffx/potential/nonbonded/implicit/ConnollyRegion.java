@@ -63,6 +63,7 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.EnergyException;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,25 +91,43 @@ import java.util.logging.Logger;
  */
 public class ConnollyRegion extends ParallelRegion {
 
-  /** Default size of a vector to randomly perturb coordinates. */
+  /**
+   * Default size of a vector to randomly perturb coordinates.
+   */
   public static final double DEFAULT_WIGGLE = 1.0e-8;
 
   private static final Logger logger = Logger.getLogger(ConnollyRegion.class.getName());
-  /** 3D grid for finding atom neighbors. */
+  /**
+   * 3D grid for finding atom neighbors.
+   */
   private static final int MAXCUBE = 40;
-  /** maximum number of cycle convex edges. */
+  /**
+   * maximum number of cycle convex edges.
+   */
   private static final int MAXCYEP = 30;
-  /** maximum number of convex face cycles. */
+  /**
+   * maximum number of convex face cycles.
+   */
   private static final int MAXFPCY = 10;
-  /** Number of atoms in the system. */
+  /**
+   * Number of atoms in the system.
+   */
   private final int nAtoms;
-  /** Base atomic radii without the "exclude" buffer. */
+  /**
+   * Base atomic radii without the "exclude" buffer.
+   */
   private final double[] baseRadius;
-  /** Atomic radii including the "exclude" buffer. */
+  /**
+   * Atomic radii including the "exclude" buffer.
+   */
   private final double[] radius;
-  /** If true, atom is not used. */
+  /**
+   * If true, atom is not used.
+   */
   private final boolean[] skip;
-  /** Array to store volume gradient */
+  /**
+   * Array to store volume gradient
+   */
   private final double[][] volumeGradient;
 
   private final int[] itab;
@@ -116,167 +135,317 @@ public class ConnollyRegion extends ParallelRegion {
   private final VolumeLoop[] volumeLoop;
   private final SharedDouble sharedVolume;
   private final SharedDouble sharedArea;
-  /** Maximum number of saddle faces. */
+  /**
+   * Maximum number of saddle faces.
+   */
   private final int maxSaddleFace;
-  /** maximum number of convex edges. */
+  /**
+   * maximum number of convex edges.
+   */
   private final int maxConvexEdges;
-  /** maximum number of neighboring atom pairs. */
+  /**
+   * maximum number of neighboring atom pairs.
+   */
   private final int maxAtomPairs;
-  /** maximum number of circles. */
+  /**
+   * maximum number of circles.
+   */
   private final int maxCircles;
-  /** maximum number of total tori. */
+  /**
+   * maximum number of total tori.
+   */
   private final int maxTori;
-  /** maximum number of temporary tori. */
+  /**
+   * maximum number of temporary tori.
+   */
   private final int maxTempTori;
-  /** maximum number of concave edges. */
+  /**
+   * maximum number of concave edges.
+   */
   private final int maxConcaveEdges;
-  /** maximum number of vertices. */
+  /**
+   * maximum number of vertices.
+   */
   private final int maxVertices;
-  /** maximum number of probe positions. */
+  /**
+   * maximum number of probe positions.
+   */
   private final int maxProbePositions;
-  /** maximum number of concave faces. */
+  /**
+   * maximum number of concave faces.
+   */
   private final int maxConcaveFaces;
-  /** maximum number of convex faces. */
+  /**
+   * maximum number of convex faces.
+   */
   private final int maxConvexFaces;
-  /** maximum number of cycles. */
+  /**
+   * maximum number of cycles.
+   */
   private final int maxCycles;
-  /** Copy of the atomic coordinates. [X,Y,Z][Atom Number] */
+  /**
+   * Copy of the atomic coordinates. [X,Y,Z][Atom Number]
+   */
   private final double[][] atomCoords;
 
   private final double[] x, y, z;
-  /** If true, atom has no free surface. */
+  /**
+   * If true, atom has no free surface.
+   */
   private final boolean[] noFreeSurface;
-  /** Atom free of neighbors. */
+  /**
+   * Atom free of neighbors.
+   */
   private final boolean[] atomFreeOfNeighbors;
-  /** Atom buried. */
+  /**
+   * Atom buried.
+   */
   private final boolean[] atomBuried;
-  /** Begin and end pointers for atoms neighbors. */
+  /**
+   * Begin and end pointers for atoms neighbors.
+   */
   private final int[][] atomNeighborPointers;
-  /** Atom numbers of neighbors. */
+  /**
+   * Atom numbers of neighbors.
+   */
   private final int[] neighborAtomNumbers;
-  /** Pointer from neighbor to torus. */
+  /**
+   * Pointer from neighbor to torus.
+   */
   private final int[] neighborToTorus;
-  /** Temporary torus atom numbers. */
+  /**
+   * Temporary torus atom numbers.
+   */
   private final int[][] tempToriAtomNumbers;
-  /** First edge of each temporary torus. */
+  /**
+   * First edge of each temporary torus.
+   */
   private final int[] tempToriFirstEdge;
-  /** Last edge of each temporary torus. */
+  /**
+   * Last edge of each temporary torus.
+   */
   private final int[] tempToriLastEdge;
-  /** Pointer to next edge of temporary torus. */
+  /**
+   * Pointer to next edge of temporary torus.
+   */
   private final int[] tempToriNextEdge;
-  /** Temporary torus buried. */
+  /**
+   * Temporary torus buried.
+   */
   private final boolean[] tempToriBuried;
-  /** Temporary torus free. */
+  /**
+   * Temporary torus free.
+   */
   private final boolean[] tempToriFree;
-  /** Torus center. */
+  /**
+   * Torus center.
+   */
   private final double[][] torusCenter;
-  /** Torus radius. */
+  /**
+   * Torus radius.
+   */
   private final double[] torusRadius;
-  /** Torus axis. */
+  /**
+   * Torus axis.
+   */
   private final double[][] torusAxis;
-  /** Torus atom number. */
+  /**
+   * Torus atom number.
+   */
   private final int[][] torusAtomNumber;
-  /** Torus first edge. */
+  /**
+   * Torus first edge.
+   */
   private final int[] torusFirstEdge;
-  /** Torus free edge of neighbor. */
+  /**
+   * Torus free edge of neighbor.
+   */
   private final boolean[] torusNeighborFreeEdge;
-  /** Probe position coordinates. */
+  /**
+   * Probe position coordinates.
+   */
   private final double[][] probeCoords;
-  /** Probe position atom numbers. */
+  /**
+   * Probe position atom numbers.
+   */
   private final int[][] probeAtomNumbers;
-  /** Vertex coordinates. */
+  /**
+   * Vertex coordinates.
+   */
   private final double[][] vertexCoords;
-  /** Vertex atom number. */
+  /**
+   * Vertex atom number.
+   */
   private final int[] vertexAtomNumbers;
-  /** Vertex probe number. */
+  /**
+   * Vertex probe number.
+   */
   private final int[] vertexProbeNumber;
-  /** Vertex numbers for each concave edge. */
+  /**
+   * Vertex numbers for each concave edge.
+   */
   private final int[][] concaveEdgeVertexNumbers;
-  /** Concave face concave edge numbers. */
+  /**
+   * Concave face concave edge numbers.
+   */
   private final int[][] concaveFaceEdgeNumbers;
-  /** Circle center. */
+  /**
+   * Circle center.
+   */
   private final double[][] circleCenter;
-  /** Circle radius. */
+  /**
+   * Circle radius.
+   */
   private final double[] circleRadius;
-  /** Circle atom number. */
+  /**
+   * Circle atom number.
+   */
   private final int[] circleAtomNumber;
-  /** Circle torus number. */
+  /**
+   * Circle torus number.
+   */
   private final int[] circleTorusNumber;
-  /** Convex edge circle number. */
+  /**
+   * Convex edge circle number.
+   */
   private final int[] convexEdgeCircleNumber;
-  /** Convex edge vertex number. */
+  /**
+   * Convex edge vertex number.
+   */
   private final int[][] convexEdgeVertexNumber;
-  /** First convex edge of each atom. */
+  /**
+   * First convex edge of each atom.
+   */
   private final int[] convexEdgeFirst;
-  /** Last convex edge of each atom. */
+  /**
+   * Last convex edge of each atom.
+   */
   private final int[] convexEdgeLast;
-  /** Pointer to next convex edge of atom. */
+  /**
+   * Pointer to next convex edge of atom.
+   */
   private final int[] convexEdgeNext;
-  /** Saddle face concave edge numbers. */
+  /**
+   * Saddle face concave edge numbers.
+   */
   private final int[][] saddleConcaveEdgeNumbers;
-  /** Saddle face convex edge numbers. */
+  /**
+   * Saddle face convex edge numbers.
+   */
   private final int[][] saddleConvexEdgeNumbers;
-  /** Number of convex edges in cycle. */
+  /**
+   * Number of convex edges in cycle.
+   */
   private final int[] convexEdgeCycleNum;
-  /** Cycle convex edge numbers. */
+  /**
+   * Cycle convex edge numbers.
+   */
   private final int[][] convexEdgeCycleNumbers;
-  /** Atom number of convex face. */
+  /**
+   * Atom number of convex face.
+   */
   private final int[] convexFaceAtomNumber;
-  /** Convex face cycle numbers */
+  /**
+   * Convex face cycle numbers
+   */
   private final int[][] convexFaceCycleNumbers;
-  /** Number of cycles bounding convex face. */
+  /**
+   * Number of cycles bounding convex face.
+   */
   private final int[] convexFaceNumCycles;
-  /** True if cube contains active atoms. */
+  /**
+   * True if cube contains active atoms.
+   */
   private final boolean[] activeCube;
-  /** True if cube or adjacent cubes have active atoms. */
+  /**
+   * True if cube or adjacent cubes have active atoms.
+   */
   private final boolean[] activeAdjacentCube;
-  /** Pointer to first atom in list for cube. */
+  /**
+   * Pointer to first atom in list for cube.
+   */
   private final int[] firstAtomPointer;
-  /** Integer cube coordinates. */
+  /**
+   * Integer cube coordinates.
+   */
   private final int[][] cubeCoordinates;
-  /** Pointer to next atom in cube. */
+  /**
+   * Pointer to next atom in cube.
+   */
   private final int[] nextAtomPointer;
-  /** Array of atoms. */
+  /**
+   * Array of atoms.
+   */
   private Atom[] atoms;
-  /** If true, compute the gradient */
+  /**
+   * If true, compute the gradient
+   */
   private boolean gradient = false;
-  /** Probe is used for molecular (contact/reentrant) volume and surface area. */
+  /**
+   * Probe is used for molecular (contact/reentrant) volume and surface area.
+   */
   private double probe = 0.0;
-  /** Exclude is used for excluded volume and accessible surface area. */
+  /**
+   * Exclude is used for excluded volume and accessible surface area.
+   */
   private double exclude = 1.4;
-  /** Size of a vector to randomly perturb coordinates. */
+  /**
+   * Size of a vector to randomly perturb coordinates.
+   */
   private double wiggle = DEFAULT_WIGGLE;
-  /** Number of temporary tori. */
+  /**
+   * Number of temporary tori.
+   */
   private int nTempTori;
-  /** Number of tori. */
+  /**
+   * Number of tori.
+   */
   private int nTori;
-  /** Number of probe positions. */
+  /**
+   * Number of probe positions.
+   */
   private int nProbePositions;
-  /** Number of concave faces. */
+  /**
+   * Number of concave faces.
+   */
   private int nConcaveFaces;
-  /** Number of vertices. */
+  /**
+   * Number of vertices.
+   */
   private int nConcaveVerts;
-  /** Number of concave edges. */
+  /**
+   * Number of concave edges.
+   */
   private int nConcaveEdges;
 
   // These are from the "nearby" method.
-  /** Number of circles. */
+  /**
+   * Number of circles.
+   */
   private int nCircles;
-  /** Number of convex edges. */
+  /**
+   * Number of convex edges.
+   */
   private int nConvexEdges;
-  /** Number of saddle faces. */
+  /**
+   * Number of saddle faces.
+   */
   private int nSaddleFaces;
-  /** Number of cycles. */
+  /**
+   * Number of cycles.
+   */
   private int nCycles;
-  /** Number of convex faces. */
+  /**
+   * Number of convex faces.
+   */
   private int nConvexFaces;
 
   /**
-   * VolumeRegion constructor.
+   * ConnollyRegion constructor.
    *
-   * @param atoms Array of atom instances.
+   * @param atoms      Array of atom instances.
    * @param baseRadius Base radius for each atom (no added probe).
-   * @param nThreads Number of threads.
+   * @param nThreads   Number of threads.
    */
   public ConnollyRegion(Atom[] atoms, double[] baseRadius, int nThreads) {
     this.atoms = atoms;
@@ -416,7 +585,7 @@ public class ConnollyRegion extends ParallelRegion {
    *
    * <p>Currently the number of atoms cannot change.
    *
-   * @param atoms Array of atoms.
+   * @param atoms    Array of atoms.
    * @param gradient Compute the atomic coordinate gradient.
    */
   public void init(Atom[] atoms, boolean gradient) {
@@ -435,7 +604,9 @@ public class ConnollyRegion extends ParallelRegion {
     }
   }
 
-  /** Execute the VolumeRegion with a private, single threaded ParallelTeam. */
+  /**
+   * Execute the VolumeRegion with a private, single threaded ParallelTeam.
+   */
   public void runVolume() {
     try {
       parallelTeam.execute(this);
@@ -500,11 +671,17 @@ public class ConnollyRegion extends ParallelRegion {
    * @since 1.0
    */
   private class VolumeLoop extends IntegerForLoop {
-    /** 3D grid for numeric volume derivatives. */
+    /**
+     * 3D grid for numeric volume derivatives.
+     */
     private static final int MXCUBE = 30;
-    /** Maximum arcs for volume derivatives. */
+    /**
+     * Maximum arcs for volume derivatives.
+     */
     private static final int MAXARC = 1000;
-    /** Used by the place method to find probe sites. */
+    /**
+     * Used by the place method to find probe sites.
+     */
     private static final int MAXMNB = 500;
 
     private double localVolume;
@@ -552,7 +729,9 @@ public class ConnollyRegion extends ParallelRegion {
       }
     }
 
-    /** Find the analytical volume and surface area. */
+    /**
+     * Find the analytical volume and surface area.
+     */
     private void computeVolumeAndArea() {
       nearby();
       torus();
@@ -567,12 +746,12 @@ public class ConnollyRegion extends ParallelRegion {
      * The getTorus method tests for a possible torus position at the interface between two atoms,
      * and finds the torus radius, center and axis.
      *
-     * @param ia First atom.
-     * @param ja Second atom.
+     * @param ia          First atom.
+     * @param ja          Second atom.
      * @param torusCenter Torus center.
      * @param torusRadius Torus radius.
-     * @param torusAxis Torus axis.
-     * @return
+     * @param torusAxis   Torus axis.
+     * @return True if a torus is found.
      */
     private boolean getTorus(
         int ia, int ja, double[] torusCenter, double[] torusRadius, double[] torusAxis) {
@@ -597,8 +776,8 @@ public class ConnollyRegion extends ParallelRegion {
       double temp =
           1.0
               + ((radius[ia] + probe) * (radius[ia] + probe)
-                      - (radius[ja] + probe) * (radius[ja] + probe))
-                  / (dij * dij);
+              - (radius[ja] + probe) * (radius[ja] + probe))
+              / (dij * dij);
       double[] bij = new double[3];
       for (int k = 0; k < 3; k++) {
         bij[k] = atomCoords[k][ia] + 0.5 * vij[k] * temp;
@@ -1064,7 +1243,7 @@ public class ConnollyRegion extends ParallelRegion {
         }
         // We have all the mutual neighbors of ia and ja if no mutual neighbors, skip to end of
         // loop.
-        if (nmnb <= -1) {
+        if (nmnb == -1) {
           tempToriBuried[itt] = false;
           continue;
         }
@@ -1083,7 +1262,7 @@ public class ConnollyRegion extends ParallelRegion {
         // center.
         int lkf = 0;
         for (int z = 0; z < 1; z++) {
-          if (nmnb <= 0) {
+          if (nmnb == 0) {
             continue;
           }
           // Put remaining neighbors in linked list at proper position.
@@ -1107,11 +1286,10 @@ public class ConnollyRegion extends ParallelRegion {
             // Add to list.
             if (l1 == -1) {
               lkf = l;
-              lkcls[l] = l2;
             } else {
               lkcls[l1] = l;
-              lkcls[l] = l2;
             }
+            lkcls[l] = l2;
           }
         }
         // Loop through mutual neighbors.
@@ -1281,23 +1459,23 @@ public class ConnollyRegion extends ParallelRegion {
             // Calculate determinant of vectors defining triangle.
             double det =
                 vertexCoords[0][nConcaveVerts + 1]
-                        * vertexCoords[1][nConcaveVerts + 2]
-                        * vertexCoords[2][nConcaveVerts + 3]
+                    * vertexCoords[1][nConcaveVerts + 2]
+                    * vertexCoords[2][nConcaveVerts + 3]
                     + vertexCoords[0][nConcaveVerts + 2]
-                        * vertexCoords[1][nConcaveVerts + 3]
-                        * vertexCoords[2][nConcaveVerts + 1]
+                    * vertexCoords[1][nConcaveVerts + 3]
+                    * vertexCoords[2][nConcaveVerts + 1]
                     + vertexCoords[0][nConcaveVerts + 3]
-                        * vertexCoords[1][nConcaveVerts + 1]
-                        * vertexCoords[2][nConcaveVerts + 2]
+                    * vertexCoords[1][nConcaveVerts + 1]
+                    * vertexCoords[2][nConcaveVerts + 2]
                     - vertexCoords[0][nConcaveVerts + 3]
-                        * vertexCoords[1][nConcaveVerts + 2]
-                        * vertexCoords[2][nConcaveVerts + 1]
+                    * vertexCoords[1][nConcaveVerts + 2]
+                    * vertexCoords[2][nConcaveVerts + 1]
                     - vertexCoords[0][nConcaveVerts + 2]
-                        * vertexCoords[1][nConcaveVerts + 1]
-                        * vertexCoords[2][nConcaveVerts + 3]
+                    * vertexCoords[1][nConcaveVerts + 1]
+                    * vertexCoords[2][nConcaveVerts + 3]
                     - vertexCoords[0][nConcaveVerts + 1]
-                        * vertexCoords[1][nConcaveVerts + 3]
-                        * vertexCoords[2][nConcaveVerts + 2];
+                    * vertexCoords[1][nConcaveVerts + 3]
+                    * vertexCoords[2][nConcaveVerts + 2];
             // Now add probe coordinates to vertices.
             for (int k = 0; k < 3; k++) {
               vertexCoords[k][nConcaveVerts + 1] =
@@ -1376,7 +1554,7 @@ public class ConnollyRegion extends ParallelRegion {
     /**
      * The insertEdge method inserts a concave edge into the linked list for its temporary torus.
      *
-     * @param edgeNumber The concave edge number.
+     * @param edgeNumber  The concave edge number.
      * @param torusNumber The temporary torus.
      */
     private void insertEdge(int edgeNumber, int torusNumber) {
@@ -1390,13 +1568,11 @@ public class ConnollyRegion extends ParallelRegion {
       // Set beginning of list or add to end.
       if (tempToriFirstEdge[torusNumber] == -1) {
         tempToriFirstEdge[torusNumber] = edgeNumber;
-        tempToriNextEdge[edgeNumber] = -1;
-        tempToriLastEdge[torusNumber] = edgeNumber;
       } else {
         tempToriNextEdge[tempToriLastEdge[torusNumber]] = edgeNumber;
-        tempToriNextEdge[edgeNumber] = -1;
-        tempToriLastEdge[torusNumber] = edgeNumber;
       }
+      tempToriNextEdge[edgeNumber] = -1;
+      tempToriLastEdge[torusNumber] = edgeNumber;
     }
 
     /**
@@ -1461,7 +1637,9 @@ public class ConnollyRegion extends ParallelRegion {
       }
     }
 
-    /** The saddles method constructs circles, convex edges, and saddle faces. */
+    /**
+     * The saddles method constructs circles, convex edges, and saddle faces.
+     */
     private void saddles() {
       final int maxent = 500;
       int[] ten = new int[maxent];
@@ -1611,7 +1789,7 @@ public class ConnollyRegion extends ParallelRegion {
             ien = tempToriNextEdge[ien];
           }
 
-          if (nent <= -1) {
+          if (nent == -1) {
             logger.severe(" No Edges for Non-free Torus");
           }
 
@@ -1634,7 +1812,7 @@ public class ConnollyRegion extends ParallelRegion {
               l2 = nxtang[l2];
             }
             // We are at end of linked list or between l1 and l2; insert edge.
-            if (l1 <= -1) {
+            if (l1 == -1) {
               throw new EnergyException(" Logic Error in SADDLES", true);
             }
             nxtang[l1] = ient;
@@ -1761,7 +1939,9 @@ public class ConnollyRegion extends ParallelRegion {
       logger.fine(format(" Number of saddle faces %d", nSaddleFaces + 1));
     }
 
-    /** The contact method constructs the contact surface, cycles and convex faces. */
+    /**
+     * The contact method constructs the contact surface, cycles and convex faces.
+     */
     private void contact() {
       final int maxepa = 300;
       final int maxcypa = 100;
@@ -1848,7 +2028,7 @@ public class ConnollyRegion extends ParallelRegion {
             // Pointer to next edge.
             iep = convexEdgeNext[iep];
           }
-          if (nepa <= -1) {
+          if (nepa == -1) {
             throw new EnergyException(" No Edges for Non-buried, Non-free Atom");
           }
           // Form cycles; initialize all the convex edges as not used in cycle.
@@ -2749,21 +2929,19 @@ public class ConnollyRegion extends ParallelRegion {
       // Set beginning of list or add to end.
       if (convexEdgeFirst[atomNumber] == -1) {
         convexEdgeFirst[atomNumber] = edgeNumber;
-        convexEdgeNext[edgeNumber] = -1;
-        convexEdgeLast[atomNumber] = edgeNumber;
       } else {
         convexEdgeNext[convexEdgeLast[atomNumber]] = edgeNumber;
-        convexEdgeNext[edgeNumber] = -1;
-        convexEdgeLast[atomNumber] = edgeNumber;
       }
+      convexEdgeNext[edgeNumber] = -1;
+      convexEdgeLast[atomNumber] = edgeNumber;
     }
 
     /**
      * Check for eaten by neighbor.
      *
-     * @param northPole North pole vector.
+     * @param northPole  North pole vector.
      * @param unitVector Unit vector.
-     * @param icy Cycle index.
+     * @param icy        Cycle index.
      * @return True if the angle sum is greater than 0.
      */
     private boolean ptincy(double[] northPole, double[] unitVector, int icy) {
@@ -2808,10 +2986,10 @@ public class ConnollyRegion extends ParallelRegion {
     /**
      * Projected vertex for each convex edge.
      *
-     * @param northPole North pole vector.
-     * @param unitVector Unit vector.
-     * @param icy Cycle number.
-     * @param ia Atom number.
+     * @param northPole                    North pole vector.
+     * @param unitVector                   Unit vector.
+     * @param icy                          Cycle number.
+     * @param ia                           Atom number.
      * @param projectedVertsForConvexEdges Projected vertex for each convex edge.
      * @return Returns true if the projection terminates before completion.
      */
@@ -2853,8 +3031,8 @@ public class ConnollyRegion extends ParallelRegion {
      * Sum of angles at vertices of cycle.
      *
      * @param unitVectorsAlongEdges Input vertices.
-     * @param nEdges Number of edges.
-     * @param unitVector Input vector.
+     * @param nEdges                Number of edges.
+     * @param unitVector            Input vector.
      * @return Sum of angles at vertices of cycle
      */
     private double sumOfAnglesAtVerticesForCycle(
@@ -2893,8 +3071,8 @@ public class ConnollyRegion extends ParallelRegion {
      * Calculate unit vectors along edges.
      *
      * @param projectedVertsForConvexEdges Projected verts for convex edges.
-     * @param nEdges Number of edges.
-     * @param unitVectorsAlongEdges Unit vectors along edges.
+     * @param nEdges                       Number of edges.
+     * @param unitVectorsAlongEdges        Unit vectors along edges.
      */
     private void unitVectorsAlongEdges(
         double[][] projectedVertsForConvexEdges, int nEdges, double[][] unitVectorsAlongEdges) {
@@ -2977,7 +3155,7 @@ public class ConnollyRegion extends ParallelRegion {
      * Compute the area and volume of a convex face.
      *
      * @param iConvexFace The convex face index.
-     * @param areaVolume The measured area and volume.
+     * @param areaVolume  The measured area and volume.
      */
     private void measureConvexFace(int iConvexFace, double[] areaVolume) {
       double angle;
@@ -3085,11 +3263,11 @@ public class ConnollyRegion extends ParallelRegion {
      * Compute the area and volume of a saddle face.
      *
      * @param iSaddleFace The saddle face index.
-     * @param areaVolume The measured area and volume.
+     * @param areaVolume  The measured area and volume.
      */
     private void measureSaddleFace(int iSaddleFace, double[] areaVolume) {
-      double areas = 0.0;
-      double vols = 0.0;
+      double areas;
+      double vols;
       double areasp = 0.0;
       double volsp = 0.0;
       int iep = saddleConvexEdgeNumbers[0][iSaddleFace];
@@ -3195,7 +3373,7 @@ public class ConnollyRegion extends ParallelRegion {
      * Compute the area and volume of a concave face.
      *
      * @param iConcaveFace The concave face index.
-     * @param areaVolume The measured area and volume.
+     * @param areaVolume   The measured area and volume.
      */
     private void measureConcaveFace(int iConcaveFace, double[] areaVolume) {
       double[] ai = new double[3];
@@ -3265,8 +3443,8 @@ public class ConnollyRegion extends ParallelRegion {
      * The gendot method finds the coordinates of a specified number of surface points for a sphere
      * with the input radius.
      *
-     * @param ndots Number of dots to generate.
-     * @param dots Coordinates of generaged dots.
+     * @param ndots  Number of dots to generate.
+     * @param dots   Coordinates of generaged dots.
      * @param radius Sphere radius.
      */
     private int genDots(int ndots, double[][] dots, double radius) {
@@ -3358,8 +3536,8 @@ public class ConnollyRegion extends ParallelRegion {
      * The vecang method finds the angle between two vectors handed with respect to a coordinate
      * axis.
      *
-     * @param v1 First vector.
-     * @param v2 Second vector.
+     * @param v1   First vector.
+     * @param v2   Second vector.
      * @param axis Axis.
      * @param hand Hand.
      * @return An angle in the range [0, 2*PI].
@@ -3384,7 +3562,7 @@ public class ConnollyRegion extends ParallelRegion {
     /**
      * Compute the probe depth.
      *
-     * @param ip The probe number.
+     * @param ip  The probe number.
      * @param alt The depth vector.
      * @return The dot product.
      */

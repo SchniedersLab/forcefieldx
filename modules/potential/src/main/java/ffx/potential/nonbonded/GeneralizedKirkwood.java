@@ -777,6 +777,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
           index++;
         }
         ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, threadCount);
+        // connollyRegion.setProbe(probe);
+        // connollyRegion.setExclude(0.0);
         double wiggle = forceField.getDouble("WIGGLE", ConnollyRegion.DEFAULT_WIGGLE);
         connollyRegion.setWiggle(wiggle);
         chandlerCavitation = new ChandlerCavitation(atoms, connollyRegion, forceField);
