@@ -9,8 +9,8 @@ profile:
   name: qodana.starter
 
 #Enable inspections
-#include:
-#  - name: <SomeEnabledInspectionId>
+include:
+  - name: CheckDependencyLicenses
 
 #Disable inspections
 #exclude:
@@ -29,3 +29,4 @@ projectJDK: 21 #(Applied in CI/CD pipeline)
 
 #Specify Qodana linter for analysis (Applied in CI/CD pipeline)
 linter: jetbrains/qodana-jvm:latest
+

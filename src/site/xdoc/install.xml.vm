@@ -8,15 +8,16 @@
   <body>
     <section name="Install">
       <p>
-        Instructions for installing Force Field X on Linux, Mac OS X and Microsoft Windows are given below.
+        After <a href="download.html">downloading</a> Force Field X, please follow the instructions below to complete
+        installation on Linux, Apple MacOS or Microsoft Windows.
         For all operating systems, the Java Runtime Environment must be present.
       </p>
       <subsection name="Prerequisite: Install Java">
         <p>Please install version ${targetVersion} of the Java Development Kit (JDK) from
-          <a href="https://adoptopenjdk.net" target="_blank">AdoptOpenJDK</a>.
-          Detailed Java installation instructions for
+          <a href="https://www.oracle.com/java/technologies/downloads/" target="_blank">Oracle</a>.
+          Detailed installation instructions for are available for
           <a href="https://docs.oracle.com/en/java/javase/${targetVersion}/install/overview-jdk-installation.html">
-            Linux, Mac OS, and Microsoft Windows are available.
+            Linux, Mac OS, and Microsoft Windows. Both x64 and Arm64 architectures are supported on Linux and MacOS.
           </a>
         </p>
       </subsection>
@@ -24,8 +25,8 @@
         <table>
           <tr>
             <td bgcolor="white">
-              <p align="left">
-                <img src="images/tux.jpg" alt="LINUX"/>
+              <p align="center">
+                <img src="images/linux.jpg" alt="Linux" width="400px"/>
               </p>
             </td>
             <td>
@@ -79,12 +80,12 @@
           </tr>
         </table>
       </subsection>
-      <subsection name="MacOS">
+      <subsection name="Apple MacOS">
         <table>
           <tr>
             <td bgcolor="white">
-              <p align="left">
-                <img src="images/mac.png" alt="MacOS"/>
+              <p align="center">
+                <img src="images/mac.jpg" alt="Apple MacOS" width="400px"/>
               </p>
             </td>
             <td>
@@ -138,19 +139,37 @@
           <tr>
             <td bgcolor="white">
               <p align="center">
-                <img src="images/windows.jpg" alt="MS WINDOWS"/>
+                <img src="images/windows.jpg" alt="Microsoft Windows" width="400px"/>
               </p>
             </td>
             <td>
+              <p>On Microsoft Windows, we recommend using
+                <a href="https://gitforwindows.org">Git Bash</a>
+              </p>
               <ol>
                 <li>
                   <p>Type "
                     <code>echo %JAVA_HOME%</code>" at a Shell prompt.
                   </p>
-                  <p>If
-                    <code>JAVA_HOME</code>
-                    is not set or the version is less than ${targetVersion},
+                  <p>If<code>JAVA_HOME</code>is not set or the version is less than ${targetVersion},
                     then please follow the Java installation instructions above.
+                  </p>
+                </li>
+                <li>
+                  <p>Git Bash offers the tar command to unpack a distribution:</p>
+                  <source>tar -xzf ffx-${project.version}-bin.tar.gz</source>
+                  <source>tar -xjf ffx-${project.version}-bin.tar.bz2</source>
+                </li>
+                <li>
+                  <p>Add the directory <code>ffx/bin</code> to your path.
+                    For example, if ffx is unpacked into <code>/Users/shared/ffx</code>, then within your Git Bash
+                    shell:
+                  </p>
+                  <source>export PATH="/Users/shared/ffx/bin:$PATH"</source>
+                  <p>To check please execute:
+                    <source>echo $PATH</source>
+                    and
+                    <source>which ffxc</source>
                   </p>
                 </li>
               </ol>

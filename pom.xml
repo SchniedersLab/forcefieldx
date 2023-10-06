@@ -1120,7 +1120,6 @@
         <configuration>
           <failOnError>false</failOnError>
           <quiet>true</quiet>
-
           <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
         </configuration>
         <inherited>true</inherited>
