@@ -11,6 +11,31 @@ profile:
 #Enable inspections
 include:
   - name: CheckDependencyLicenses
+  - name: FieldCanBeLocal
+  - name: ThrowablePrintedToSystemOut
+  - name: ThrowablePrintStackTrace
+  - name: CommentedOutCode
+  - name: ExtractMethodRecommender
+  - name: SizeReplaceableByIsEmpty
+  - name: CStyleArrayDeclaration
+  - name: FieldMayBeFinal
+  - name: RedundantLabeledSwitchRuleCodeBlock
+  - name: UnnecessaryToStringCall
+  - name: UnnecessaryModifier
+  - name: TrivialIf
+  - name: GroovyTrivialIf
+  - name: TrivialIfJS
+  - name: DefaultAnnotationParam
+  - name: UNUSED_IMPORT
+  - name: DanglingJavadoc
+  - name: JavadocDeclaration
+  - name: StringEqualsEmptyString
+  - name: StringBufferReplaceableByString
+  - name: TrivialStringConcatenation
+  - name: DuplicateBranchesInSwitch
+  - name: DuplicateExpressions
+  - name: RedundantCast
+  - name: UnnecessaryReturn
 
 #Disable inspections
 #exclude:
@@ -30,3 +55,10 @@ projectJDK: 21 #(Applied in CI/CD pipeline)
 #Specify Qodana linter for analysis (Applied in CI/CD pipeline)
 linter: jetbrains/qodana-jvm:latest
 
+dependencyIgnores:
+  - name: "junit"
+  - name: "cdk-*" # Ignore all cdk dependencies because they're LGPL.
+  - name: "javax.annotation-api" # Ignore because its GPL 2.0 with Classpath Exception.
+  - name: "jaxb-api" # Ignore because its GPL 2.0 with Classpath Exception.
+  - name: "vecmath" # Ignore because its GPL 2.0 with Classpath Exception.
+  - name: "j3dcore" # Ignore because its GPL 2.0 with Classpath Exception.

@@ -885,6 +885,9 @@
   </issueManagement>
   <licenses>
     <license>
+      <distribution>manual</distribution>
+      <name>GPL version 3 with Classpath Exception</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
       <comments>
         Force Field X is free software; you can redistribute it and/or modify it
         under the terms of the GNU General Public License version 3 as published by
@@ -909,9 +912,6 @@
         you are not obligated to do so. If you do not wish to do so, delete this
         exception statement from your version.
       </comments>
-      <distribution>manual</distribution>
-      <name>GPL version 3 with Linking Exception</name>
-      <url>https://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
     </license>
   </licenses>
   <modelVersion>4.0.0</modelVersion>
