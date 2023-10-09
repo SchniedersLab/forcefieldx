@@ -770,20 +770,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     return super.energy(x, verbose);
   }
 
-  /** {@inheritDoc} */
-  @SuppressWarnings("deprecation")
-  @Override
-  protected void finalize() throws Throwable {
-    // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
-    logger.info(" ForceFieldEnergyOpenMM instance is being finalized.");
-    super.finalize();
-    if (destroyed) {
-      logger.info(format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this));
-    } else {
-      destroy();
-    }
-  }
-
   /**
    * Returns the Context instance.
    *

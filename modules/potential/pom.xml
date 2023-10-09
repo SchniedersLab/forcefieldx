@@ -19,7 +19,7 @@
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
                 <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
-                         listfiles="false" verbose="true" targetBytecode="${targetVersion}" stacktrace="true"
+                         listfiles="false" verbose="false" targetBytecode="${targetVersion}" stacktrace="true"
                          parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
@@ -96,23 +96,25 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <compilerArg>-Xlint:all</compilerArg>
-            <compilerArg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</compilerArg>
-          </compilerArgs>
-          <debug>true</debug>
-          <source>${compileVersion}</source>
-          <target>${targetVersion}</target>
-          <useIncrementalCompilation>true</useIncrementalCompilation>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>${project.groupId}</groupId>
-              <artifactId>ffx-utilities</artifactId>
-              <version>${project.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+                <arg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</arg>
+                <arg>-proc:full</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>ffx-utilities</artifactId>
+                  <version>${project.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
         <version>${compiler.version}</version>
       </plugin>
     </plugins>

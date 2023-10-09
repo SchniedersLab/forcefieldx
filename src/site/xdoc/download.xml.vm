@@ -10,12 +10,11 @@
   <body>
     <section name="Download">
       <subsection name="Force Field X Distributions">
-        <p>A single Force Field X download supports Linux, Mac OS X and Microsoft Windows operating
-          systems.
+        <p>A single Force Field X download supports Linux, Apple MacOS and Microsoft Windows operating systems.
         </p>
         <p>The distribution includes:</p>
         <ul>
-          <li>A launcher for the command line interface.</li>
+          <li>A launcher for the command line and graphical user interface.</li>
           <li>Examples structures and their property files.</li>
           <li>A large variety of scripts that are easily modified.</li>
         </ul>
@@ -55,29 +54,8 @@
             </tr>
           </tbody>
         </table>
+        <p>After downloading a distribution, please proceed to the <a href="install.html">installation instructions</a>.</p>
       </subsection>
-      <!-- subsection name="Force Field X Jar File">
-        <p>Instead of the entire Force Field X distribution, a stand-alone jar file is available.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Version</th>
-              <th>Build Date</th>
-              <th>Download Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Force Field X ${project.version} (Jar)</td>
-              <td>${timestamp}</td>
-              <td>
-                <a href="ffx-all-${project.version}.jar">ffx-all-${project.version}.jar</a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </subsection -->
     </section>
   </body>
 </document>

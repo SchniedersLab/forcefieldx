@@ -1,4 +1,3 @@
-
 @REM #############################################################################
 @REM Title: Force Field X.
 @REM 
@@ -39,8 +38,6 @@
 
 @echo off
 
-set VERSION=1.0.0-beta
-
 set ERROR_CODE=0
 
 :init
@@ -66,7 +63,7 @@ goto WinNTGetScriptDir
 
 :Win9xArg
 @REM Slurp the command line arguments.  This loop allows for an unlimited number
-@REM of agruments (up to the command line limit, anyway).
+@REM of arguments (up to the command line limit, anyway).
 set CMD_LINE_ARGS=
 :Win9xApp
 if %1a==a goto Win9xGetScriptDir
@@ -93,10 +90,9 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%
 
-@REM set CLASSPATH="%BASEDIR%"\bin\forcefieldx-"%VERSION%".jar
 set CLASSPATH="%BASEDIR%"\lib\*
 
-set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M 
+set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M --add-opens=java.desktop/sun.awt=ALL-UNNAMED
 
 goto endInit
 

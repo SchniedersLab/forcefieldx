@@ -537,7 +537,7 @@ public class CIFFilter implements DiffractionFileFilter {
     sb.append(format(" HKL NOT read in (not in internal list?): %d\n", nIgnore));
     sb.append(format(" HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
     sb.append(
-        format(" HKL in internal list:                    %d\n", reflectionList.hkllist.size()));
+        format(" HKL in internal list:                    %d\n", reflectionList.hklList.size()));
 
     if (logger.isLoggable(Level.INFO)) {
       logger.info(sb.toString());

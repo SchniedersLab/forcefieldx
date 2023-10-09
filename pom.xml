@@ -38,20 +38,13 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <compilerArgs>
-              <arg>-Xlint:all,-serial,-processing</arg>
-              <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
+              <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+              <arg>-proc:none</arg>
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
             <target>${targetVersion}</target>
             <useIncrementalCompilation>true</useIncrementalCompilation>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli-codegen</artifactId>
-                <version>${picocli.version}</version>
-              </path>
-            </annotationProcessorPaths>
           </configuration>
           <version>${compiler.version}</version>
         </plugin>
@@ -892,6 +885,9 @@
   </issueManagement>
   <licenses>
     <license>
+      <distribution>manual</distribution>
+      <name>GPL version 3 with Classpath Exception</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
       <comments>
         Force Field X is free software; you can redistribute it and/or modify it
         under the terms of the GNU General Public License version 3 as published by
@@ -916,9 +912,6 @@
         you are not obligated to do so. If you do not wish to do so, delete this
         exception statement from your version.
       </comments>
-      <distribution>manual</distribution>
-      <name>GPL version 3 with Linking Exception</name>
-      <url>https://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
     </license>
   </licenses>
   <modelVersion>4.0.0</modelVersion>
@@ -1194,7 +1187,7 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>17</targetJdk>
+          <targetJdk>${targetVersion}</targetJdk>
           <typeResolution>true</typeResolution>
           <aggregate>true</aggregate>
         </configuration>

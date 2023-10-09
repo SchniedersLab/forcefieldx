@@ -199,7 +199,7 @@ public class SplineEnergy implements OptimizationInterface {
       fill(g, 0.0);
     }
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       if (isNaN(fc[i][0]) || isNaN(fo[i][0]) || fo[i][1] <= 0.0) {
         continue;

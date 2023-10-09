@@ -62,10 +62,10 @@ import java.util.logging.Logger;
  */
 @FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter,
     description = """
-        [integers and 4 reals] 
-        Provides values for a single implicit solvation parameter.        
+        [integers and 4 reals]
+        Provides values for a single implicit solvation parameter.
         The integer modifier gives the atom type number for which solvation atom size parameters are to be defined.
-        The first three real number modifiers give the values of the atomic diameter in Angstroms, 
+        The first three real number modifiers give the values of the atomic diameter in Angstroms,
         for use in Poisson-Boltzmann (APBS), ddCOSMO and Generalized Kirkwood (GK) calculations, respectively.
         The final real number is the Sneck scaling factor for implicit solvent interstitial space corrections.
         """)

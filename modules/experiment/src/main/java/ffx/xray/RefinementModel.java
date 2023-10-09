@@ -67,7 +67,7 @@ public class RefinementModel {
   /** An atom array. */
   private final Atom[] activeAtomArray;
   /** Map between atom in different molecular assemblies. */
-  private final List<Integer>[] xIndex;
+  private final List<List<Integer>> xIndex;
 
   private final List<List<Residue>> altResidues;
   private final List<List<Molecule>> altMolecules;
@@ -75,26 +75,26 @@ public class RefinementModel {
   /**
    * Constructor for RefinementModel.
    *
-   * @param assembly an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
    */
-  public RefinementModel(MolecularAssembly[] assembly) {
-    this(assembly, false);
+  public RefinementModel(MolecularAssembly[] molecularAssemblies) {
+    this(molecularAssemblies, false);
   }
 
   /**
    * Constructor for RefinementModel.
    *
-   * @param assembly an array of {@link ffx.potential.MolecularAssembly} objects.
-   * @param refinemolocc a boolean.
+   * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param refineMolOcc a boolean.
    */
   @SuppressWarnings("unchecked")
-  public RefinementModel(MolecularAssembly[] assembly, boolean refinemolocc) {
+  public RefinementModel(MolecularAssembly[] molecularAssemblies, boolean refineMolOcc) {
     List<Atom> atomList;
 
     // Build alternate conformer list for occupancy refinement (if necessary).
     altResidues = new ArrayList<>();
     altMolecules = new ArrayList<>();
-    List<MSNode> nodeList0 = assembly[0].getNodeList();
+    List<MSNode> nodeList0 = molecularAssemblies[0].getNodeList();
     List<Residue> tempResidues = null;
     List<Molecule> tempMolecules = null;
     boolean alternateConformer;
@@ -123,7 +123,7 @@ public class RefinementModel {
             alternateConformer = true;
             break;
           } else if (iNode instanceof Molecule) {
-            if (refinemolocc) {
+            if (refineMolOcc) {
               tempMolecules = new ArrayList<>();
               tempMolecules.add((Molecule) iNode);
               altMolecules.add(tempMolecules);
@@ -134,8 +134,8 @@ public class RefinementModel {
         }
       }
       if (alternateConformer) {
-        for (int j = 1; j < assembly.length; j++) {
-          List<MSNode> nlist = assembly[j].getNodeList();
+        for (int j = 1; j < molecularAssemblies.length; j++) {
+          List<MSNode> nlist = molecularAssemblies[j].getNodeList();
           MSNode node = nlist.get(i);
           for (Atom a : node.getAtomList()) {
             if (!a.getUse()) {
@@ -160,9 +160,11 @@ public class RefinementModel {
     }
 
     // For mapping between atoms between different molecular assemblies.
-    xIndex = new ArrayList[assembly.length];
-    for (int i = 0; i < assembly.length; i++) {
-      xIndex[i] = new ArrayList<>();
+    // xIndex = new List[molecularAssemblies.length];
+    xIndex = new ArrayList<>(molecularAssemblies.length);
+    for (int i = 0; i < molecularAssemblies.length; i++) {
+      // xIndex[i] = new ArrayList<>();
+      xIndex.set(i, new ArrayList<>());
     }
 
     // Create the atomList to be used for SF calculations.
@@ -172,7 +174,7 @@ public class RefinementModel {
     activeAtomList = new ArrayList<>();
 
     // Root list.
-    atomList = assembly[0].getAtomList();
+    atomList = molecularAssemblies[0].getAtomList();
     int index = 0;
     for (Atom a : atomList) {
       if (!a.getUse()) {
@@ -185,24 +187,26 @@ public class RefinementModel {
       if (a.isActive()) {
         activeAtomList.add(a);
         a.setFormFactorIndex(index);
-        xIndex[0].add(index);
+        // xIndex[0].add(index);
+        xIndex.get(0).add(index);
         index++;
       }
     }
 
     // Now add cross-references to root and any alternate atoms not in root
-    for (int i = 1; i < assembly.length; i++) {
-      atomList = assembly[i].getAtomList();
+    for (int i = 1; i < molecularAssemblies.length; i++) {
+      atomList = molecularAssemblies[i].getAtomList();
       for (Atom a : atomList) {
         if (!a.getUse()) {
           continue;
         }
-        Atom root = assembly[0].findAtom(a);
+        Atom root = molecularAssemblies[0].findAtom(a);
         if (root != null && root.getAltLoc().equals(a.getAltLoc())) {
 //          xIndex[i].add(root.getFormFactorIndex());
 //          a.setFormFactorIndex(root.getFormFactorIndex());
           if (a.isActive()) {
-            xIndex[i].add(root.getFormFactorIndex());
+            // xIndex[i].add(root.getFormFactorIndex());
+            xIndex.get(i).add(root.getFormFactorIndex());
             a.setFormFactorIndex(root.getFormFactorIndex());
           }
         } else {
@@ -211,7 +215,8 @@ public class RefinementModel {
           totalAtomList.add(a);
           if (a.isActive()) {
             activeAtomList.add(a);
-            xIndex[i].add(index);
+            // xIndex[i].add(index);
+            xIndex.get(i).add(index);
             index++;
           }
         }
@@ -237,14 +242,12 @@ public class RefinementModel {
       }
       if (list.size() == 1) {
         Residue r = list.get(0);
-        logger.log(
-            Level.INFO,
+        logger.log(Level.INFO,
             "  Residue {0} is a single conformer with non-unity occupancy.\n  Occupancy will be refined independently.\n",
             r.getChainID() + " " + r);
       } else if (tocc < 1.0 || tocc > 1.0) {
         Residue r = list.get(0);
-        logger.log(
-            Level.INFO,
+        logger.log(Level.INFO,
             "  Residue {0} occupancy does not sum to 1.0.\n  This should be fixed or checked due to possible instability in refinement.\n",
             r.getChainID() + " " + r);
       }
@@ -301,7 +304,7 @@ public class RefinementModel {
    *
    * @return the xIndex
    */
-  List<Integer>[] getxIndex() {
+  List<List<Integer>> getxIndex() {
     return xIndex;
   }
 

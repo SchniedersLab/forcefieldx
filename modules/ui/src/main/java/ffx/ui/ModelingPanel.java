@@ -111,6 +111,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael J. Schnieders
  */
+@SuppressWarnings("unchecked")
 public class ModelingPanel extends JPanel implements ActionListener, MouseListener {
 
   @Serial
@@ -193,6 +194,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("unchecked")
   @Override
   public void actionPerformed(ActionEvent evt) {
     synchronized (this) {
@@ -200,7 +202,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       // A change to the selected TINKER Command
       switch (actionCommand) {
         case "FFXCommand" -> {
-          JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
+          JComboBox<String> jcb = (JComboBox<String>) toolBar.getComponentAtIndex(2);
           String com = jcb.getSelectedItem().toString();
           if (!com.equals(activeCommand)) {
             activeCommand = com.toLowerCase();
@@ -559,7 +561,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
             optionString.append(" ");
             optionString.append(jtfield.getText());
           } else if (value instanceof JComboBox) {
-            JComboBox jcb = (JComboBox) value;
+            JComboBox<String> jcb = (JComboBox<String>) value;
             Object object = jcb.getSelectedItem();
             if (object instanceof FFXSystem) {
               FFXSystem system = (FFXSystem) object;
@@ -701,7 +703,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     return nucleicPanel;
   }
 
-  private void initCommandComboBox(JComboBox commands) {
+  private void initCommandComboBox(JComboBox<String> commands) {
     commands.setActionCommand("FFXCommand");
     commands.setMaximumSize(xyzCommands.getPreferredSize());
     commands.setEditable(false);

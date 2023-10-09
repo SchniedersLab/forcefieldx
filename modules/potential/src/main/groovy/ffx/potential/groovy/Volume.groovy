@@ -47,6 +47,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static ffx.utilities.Constants.NS2SEC
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.pow
 
@@ -186,7 +187,7 @@ class Volume extends PotentialScript {
         index++
       }
 
-      ForceField forceField = activeAssembly.getForceField();
+      ForceField forceField = activeAssembly.getForceField()
       if (includeHydrogen) {
         forceField.addProperty("GAUSSVOL_HYDROGEN", "true")
       }
@@ -197,20 +198,26 @@ class Volume extends PotentialScript {
         forceField.addProperty("GAUSSVOL_RADII_OFFSET", Double.toString(offset))
       }
 
+      if (!forceField.hasProperty("GAUSSVOL_RADII_SCALE")) {
+        forceField.addProperty("GAUSSVOL_RADII_SCALE", Double.toString(1.0))
+      }
+
+
       // Run Volume calculation to get vdw volume of molecule
       ParallelTeam parallelTeam = new ParallelTeam()
       GaussVol gaussVol = new GaussVol(atoms, activeAssembly.getForceField(), parallelTeam)
+      long time = -System.nanoTime()
       gaussVol.computeVolumeAndSA(positions)
+      time += System.nanoTime()
 
       if (verbose) {
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
-        logger.info(
-            format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
+        logger.info(format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
 
-        double[] radii = gaussVol.getRadii();
+        double[] radii = gaussVol.getRadii()
         index = 0
         for (Atom atom : atoms) {
-          logger.info(" Radius for atom " + atom.name + ": " + radii[index])
+          logger.info(format(" %5d %4s: %6.4f", index, atom.getName(), radii[index]))
           index++
         }
       }
@@ -225,6 +232,8 @@ class Volume extends PotentialScript {
       logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
       logger.info(format("  Volume:            %10.4f (Ang^3)", gaussVol.getVolume()))
       logger.info(format("  Surface Area:      %10.4f (Ang^2)", gaussVol.getSurfaceArea()))
+      logger.info(format("  Time:              %10.4f (sec)", time * NS2SEC))
+
       // Set JUnit testing variables based on output volume and surface area
       totalVolume = gaussVol.getVolume()
       totalSurfaceArea = gaussVol.getSurfaceArea()
@@ -257,17 +266,18 @@ class Volume extends PotentialScript {
       }
 
       // Note that the VolumeRegion code is currently limited to a single thread.
-      ParallelTeam parallelTeam = new ParallelTeam(1)
-      ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii,
-          parallelTeam.getThreadCount())
+      int nThreads = 1
+      ConnollyRegion connollyRegion = new ConnollyRegion(atoms, radii, nThreads)
       // For solvent excluded volume.
       connollyRegion.setExclude(exclude)
       // For molecular surface.
       connollyRegion.setProbe(probe)
+      long time = -System.nanoTime()
       connollyRegion.runVolume()
+      time += System.nanoTime()
 
       double zero = 0.0
-      if (vdW || (probe == zero && exclude == new Double(zero))) {
+      if (vdW || (probe == zero && exclude == zero)) {
         logger.info("\n Connolly van der Waals Surface Area and Volume\n")
       } else if (!molecular) {
         logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")
@@ -284,6 +294,7 @@ class Volume extends PotentialScript {
       logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
       logger.info(format("  Volume:            %10.4f (Ang^3)", connollyRegion.getVolume()))
       logger.info(format("  Surface Area:      %10.4f (Ang^2)", connollyRegion.getSurfaceArea()))
+      logger.info(format("  Time:              %10.4f (sec)", time * NS2SEC))
 
       // Set JUnit testing variables based on output volume and surface area
       totalVolume = connollyRegion.getVolume()

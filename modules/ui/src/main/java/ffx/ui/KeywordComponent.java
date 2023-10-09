@@ -38,6 +38,7 @@
 package ffx.ui;
 
 import ffx.utilities.Keyword;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -72,6 +73,7 @@ import javax.swing.event.DocumentListener;
  *
  * @author Michael J. Schnieders
  */
+@SuppressWarnings("unchecked")
 public final class KeywordComponent
     implements MouseListener, ActionListener, ChangeListener, DocumentListener {
 
@@ -93,15 +95,23 @@ public final class KeywordComponent
   }
 
   private final FlowLayout flowLayout;
-  /** TINKER Keyword String. */
+  /**
+   * TINKER Keyword String.
+   */
   private final String keyword;
-  /** TINKER Keyword Group. */
+  /**
+   * TINKER Keyword Group.
+   */
   private final String keywordGroup;
-  /** An ArrayList of Components used to represent this Keyword */
+  /**
+   * An ArrayList of Components used to represent this Keyword
+   */
   private final ArrayList<Component> keywordValues;
 
   private JPanel keywordGUI = null;
-  /** The type of Swing Conponent used in representing this Keyword */
+  /**
+   * The type of Swing Conponent used in representing this Keyword
+   */
   private final SwingRepresentation swingRepresentation;
 
   private String[] options;
@@ -109,15 +119,16 @@ public final class KeywordComponent
   private final JTextArea output;
   private boolean active;
   private boolean init = false;
+
   /**
    * The Default Constructor k - Keyword String kg - Keyword Group t - Type of GUI Components used
    * to represent Keyword modifiers d - Keyword description
    *
-   * @param keyword a {@link java.lang.String} object.
-   * @param keywordGroup a {@link java.lang.String} object.
+   * @param keyword             a {@link java.lang.String} object.
+   * @param keywordGroup        a {@link java.lang.String} object.
    * @param swingRepresentation a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
-   * @param keywordDescription a {@link java.lang.String} object.
-   * @param jTextArea a {@link javax.swing.JTextArea} object.
+   * @param keywordDescription  a {@link java.lang.String} object.
+   * @param jTextArea           a {@link javax.swing.JTextArea} object.
    */
   KeywordComponent(
       String keyword,
@@ -140,12 +151,12 @@ public final class KeywordComponent
   /**
    * Constructor for KeywordComponent.
    *
-   * @param keyword a {@link java.lang.String} object.
-   * @param keywordGroup a {@link java.lang.String} object.
+   * @param keyword             a {@link java.lang.String} object.
+   * @param keywordGroup        a {@link java.lang.String} object.
    * @param swingRepresentation a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
-   * @param keywordDescription a {@link java.lang.String} object.
-   * @param jTextArea a {@link javax.swing.JTextArea} object.
-   * @param options an array of {@link java.lang.String} objects.
+   * @param keywordDescription  a {@link java.lang.String} object.
+   * @param jTextArea           a {@link javax.swing.JTextArea} object.
+   * @param options             an array of {@link java.lang.String} objects.
    */
   KeywordComponent(
       String keyword,
@@ -161,8 +172,8 @@ public final class KeywordComponent
   /**
    * fillPanel
    *
-   * @param jPanel a {@link javax.swing.JPanel} object.
-   * @param gridBagLayout a {@link java.awt.GridBagLayout} object.
+   * @param jPanel             a {@link javax.swing.JPanel} object.
+   * @param gridBagLayout      a {@link java.awt.GridBagLayout} object.
    * @param gridBagConstraints a {@link java.awt.GridBagConstraints} object.
    */
   static void fillPanel(
@@ -195,7 +206,9 @@ public final class KeywordComponent
     isModified = b;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public void actionPerformed(ActionEvent evt) {
@@ -233,7 +246,9 @@ public final class KeywordComponent
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void changedUpdate(DocumentEvent evt) {
     isModified = true;
@@ -265,13 +280,17 @@ public final class KeywordComponent
     return keyword;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(keyword.hashCode());
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void insertUpdate(DocumentEvent evt) {
     isModified = true;
@@ -286,7 +305,9 @@ public final class KeywordComponent
     return active;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void mouseClicked(MouseEvent evt) {
     synchronized (this) {
@@ -297,33 +318,47 @@ public final class KeywordComponent
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void mouseEntered(MouseEvent evt) {
     mouseClicked(evt);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void mouseExited(MouseEvent evt) {
     mouseClicked(evt);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void mousePressed(MouseEvent evt) {}
+  public void mousePressed(MouseEvent evt) {
+  }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void mouseReleased(MouseEvent evt) {}
+  public void mouseReleased(MouseEvent evt) {
+  }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void removeUpdate(DocumentEvent evt) {
     isModified = true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void stateChanged(ChangeEvent evt) {
     isModified = true;
@@ -382,7 +417,7 @@ public final class KeywordComponent
           }
           break;
         } else if (c instanceof JComboBox) {
-          JComboBox cb = (JComboBox) c;
+          JComboBox<String> cb = (JComboBox<String>) c;
           if (swingRepresentation == SwingRepresentation.EDITCOMBOBOX) {
             int count = cb.getItemCount();
             if (count == 0) {
@@ -390,7 +425,7 @@ public final class KeywordComponent
             }
             String[] entries = new String[count];
             for (int i = 0; i < count; i++) {
-              entries[i] = (String) cb.getItemAt(i);
+              entries[i] = cb.getItemAt(i);
             }
             java.util.Arrays.sort(entries);
             StringBuilder sb = new StringBuilder();
@@ -443,7 +478,9 @@ public final class KeywordComponent
     keywordValues.add(cb);
   }
 
-  /** clearKeywordComponent */
+  /**
+   * clearKeywordComponent
+   */
   void clearKeywordComponent() {
     synchronized (this) {
       active = false;
@@ -457,7 +494,7 @@ public final class KeywordComponent
           ((JCheckBox) keywordValue).setSelected(false);
         }
       } else if (swingRepresentation == SwingRepresentation.COMBOBOX) {
-        JComboBox jcb = (JComboBox) keywordValues.get(1);
+        JComboBox<String> jcb = (JComboBox<String>) keywordValues.get(1);
         jcb.setSelectedItem("DEFAULT");
       } else if (swingRepresentation == SwingRepresentation.EDITCOMBOBOX) {
         ((JComboBox) keywordValues.get(1)).removeAllItems();
@@ -496,7 +533,7 @@ public final class KeywordComponent
     jl.addMouseListener(this);
     jl.setPreferredSize(labelDimension);
     jl.setMaximumSize(labelDimension);
-    JComboBox cb = new JComboBox();
+    JComboBox<String> cb = new JComboBox<>();
     cb.setEditable(false);
     cb.addActionListener(this);
     cb.setPreferredSize(entryDimension);
@@ -532,7 +569,7 @@ public final class KeywordComponent
           }
           break;
         } else if (c instanceof JComboBox) {
-          JComboBox cb = (JComboBox) c;
+          JComboBox<String> cb = (JComboBox<String>) c;
           if (swingRepresentation == SwingRepresentation.COMBOBOX) {
             String s = (String) cb.getSelectedItem();
             if ("DEFAULT".equals(s)) {
@@ -543,7 +580,7 @@ public final class KeywordComponent
           } else {
             int num = cb.getItemCount();
             for (int i = 0; i < num; i++) {
-              String s = (String) cb.getItemAt(i);
+              String s = cb.getItemAt(i);
               keywordData.append(s);
             }
           }

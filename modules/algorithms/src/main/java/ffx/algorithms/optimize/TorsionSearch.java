@@ -50,6 +50,7 @@ import ffx.potential.bonded.Molecule;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.util.FastMath;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -507,7 +508,7 @@ public class TorsionSearch {
    * @param atoms   a list of {@link ffx.potential.bonded.Atom} objects to rotate.
    * @param notAtom Avoid this atom (wrong side of bond).
    */
-  private static void searchTorsions(Atom seed, List<Atom> atoms, Atom notAtom) {
+  private static void searchTorsions(@Nullable Atom seed, List<Atom> atoms, Atom notAtom) {
     if (seed == null) {
       return;
     }
@@ -537,7 +538,7 @@ public class TorsionSearch {
         // Add change required to go from oldState to newState to change array
         int change = (int) (newState[i] - oldState[i]);
         // Apply change at this index to atoms
-        int turnDegrees = (int) (change * (360 / nTorsions));
+        int turnDegrees = (change * (360 / nTorsions));
         // Get vector from atom to atom of bond i
         double[] u = new double[3];
         double[] translation = new double[3];

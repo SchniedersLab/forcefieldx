@@ -1,104 +1,104 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>edu.uiowa.eng.ffx</groupId>
-        <artifactId>forcefieldx</artifactId>
-        <version>1.0.0-beta</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
-    <artifactId>ffx-crystal</artifactId>
-    <packaging>jar</packaging>
-    <name>Crystal</name>
-    <description>The Crystal module includes support for periodic boundary conditions,
-        the minimum image convention, symmetry operators, all 230 space groups,
-        and transformations between Cartesian and fractional coordinates.
-    </description>
-    <developers>
-        <developer>
-            <id>fenn</id>
-            <name>Timothy D. Fenn</name>
-            <email>tim.fenn@gmail.com</email>
-            <organization>Scientist at Merck</organization>
-            <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
-            <roles>
-                <role>Chief Crystallographer</role>
-            </roles>
-            <timezone>-7</timezone>
-        </developer>
-        <developer>
-            <id>michael.schnieders</id>
-            <name>Michael J. Schnieders</name>
-            <email>michael-schnieders@uiowa.edu</email>
-            <url>http://ffx.biochem.uiowa.edu</url>
-            <organization>Assistant Professor, The U. of Iowa</organization>
-            <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
-            <roles>
-                <role>Director of Force Field X</role>
-            </roles>
-            <timezone>-7</timezone>
-        </developer>
-    </developers>
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgs>
-                        <compilerArg>-Xlint:all</compilerArg>
-                        <compilerArg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</compilerArg>
-                    </compilerArgs>
-                    <debug>true</debug>
-                    <source>${compileVersion}</source>
-                    <target>${targetVersion}</target>
-                    <useIncrementalCompilation>true</useIncrementalCompilation>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>ffx-utilities</artifactId>
-                            <version>${project.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <version>${compiler.version}</version>
-            </plugin>
-        </plugins>
-    </build>
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ffx-numerics</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ffx-utilities</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <version>${commons-configuration2.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>${commons-math3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <artifactId>forcefieldx</artifactId>
+    <version>1.0.0-beta</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <artifactId>ffx-crystal</artifactId>
+  <packaging>jar</packaging>
+  <name>Crystal</name>
+  <description>The Crystal module includes support for periodic boundary conditions,
+    the minimum image convention, symmetry operators, all 230 space groups,
+    and transformations between Cartesian and fractional coordinates.
+  </description>
+  <developers>
+    <developer>
+      <id>fenn</id>
+      <name>Timothy D. Fenn</name>
+      <email>tim.fenn@gmail.com</email>
+      <organization>Scientist at Merck</organization>
+      <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
+      <roles>
+        <role>Chief Crystallographer</role>
+      </roles>
+      <timezone>-7</timezone>
+    </developer>
+    <developer>
+      <id>michael.schnieders</id>
+      <name>Michael J. Schnieders</name>
+      <email>michael-schnieders@uiowa.edu</email>
+      <url>http://ffx.biochem.uiowa.edu</url>
+      <organization>Assistant Professor, The U. of Iowa</organization>
+      <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
+      <roles>
+        <role>Director of Force Field X</role>
+      </roles>
+      <timezone>-7</timezone>
+    </developer>
+  </developers>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+                <arg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</arg>
+                <arg>-proc:full</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>ffx-utilities</artifactId>
+                  <version>${project.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-numerics</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-utilities</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-configuration2</artifactId>
+      <version>${commons-configuration2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>${commons-math3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>

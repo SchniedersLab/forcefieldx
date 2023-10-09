@@ -381,7 +381,7 @@ public class SigmaAEnergy implements OptimizationInterface {
       }
 
       try {
-        execute(0, reflectionList.hkllist.size() - 1, sigmaALoop[ti]);
+        execute(0, reflectionList.hklList.size() - 1, sigmaALoop[ti]);
       } catch (Exception e) {
         logger.info(e.toString());
       }
@@ -467,7 +467,7 @@ public class SigmaAEnergy implements OptimizationInterface {
       @Override
       public void run(int lb, int ub) {
         for (int j = lb; j <= ub; j++) {
-          HKL ih = reflectionList.hkllist.get(j);
+          HKL ih = reflectionList.hklList.get(j);
           int i = ih.getIndex();
           // Constants
           ihc[0] = ih.getH();

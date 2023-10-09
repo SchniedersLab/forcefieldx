@@ -89,7 +89,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
   /** An array of active atoms. */
   private final Atom[] activeAtomArray;
   /** An array of XYZIndex values. */
-  private final List<Integer>[] xIndex;
+  private final List<List<Integer>> xIndex;
   /** The refinement mode being used. */
   private final RefinementMode refinementMode;
   /** Atomic coordinates for computing the chemical energy. */
@@ -966,7 +966,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     assert (x != null && xChem != null);
     for (int j = 0; j < xChem.length; j += 3) {
       int index = j / 3;
-      int aindex = xIndex[i].get(index) * 3;
+      //int aindex = xIndex[i].get(index) * 3;
+      int aindex = xIndex.get(i).get(index) * 3;
       xChem[j] = x[aindex];
       xChem[j + 1] = x[aindex + 1];
       xChem[j + 2] = x[aindex + 2];
@@ -985,7 +986,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     assert (x != null && xChem != null);
     for (int j = 0; j < xChem.length; j += 3) {
       int index = j / 3;
-      int aindex = xIndex[i].get(index) * 3;
+      // int aindex = xIndex[i].get(index) * 3;
+      int aindex = xIndex.get(i).get(index) * 3;
       x[aindex] += xChem[j];
       x[aindex + 1] += xChem[j + 1];
       x[aindex + 2] += xChem[j + 2];

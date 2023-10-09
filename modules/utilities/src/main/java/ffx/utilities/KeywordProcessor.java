@@ -86,7 +86,7 @@ public class KeywordProcessor extends AbstractProcessor {
    */
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    if (annotations.size() == 0) {
+    if (annotations.isEmpty()) {
       return true;
     }
 

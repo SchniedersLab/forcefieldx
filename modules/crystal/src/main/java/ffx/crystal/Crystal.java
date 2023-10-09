@@ -1293,7 +1293,7 @@ public class Crystal {
   }
 
   /** Update all Crystal variables that are a function of unit cell parameters. */
-  public void updateCrystal() {
+  public final void updateCrystal() {
 
     double cos_alpha;
     double sin_beta;
