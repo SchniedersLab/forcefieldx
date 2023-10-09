@@ -74,7 +74,7 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @see <a href="https://doi.org/10.1002/jcc.24745" target="_blank">
- * Zhang, B., Kilburg, D., Eastman, P., Pande, V. S., & Gallicchio, E. (2017).
+ * Zhang, B., Kilburg, D., Eastman, P., Pande, V. S., and Gallicchio, E. (2017).
  * Efficient gaussian density formulation of volume and surface areas of macromolecules on graphical processing units.
  * Journal of Computational Chemistry, 38(10), 740-752.</a>
  * @since 1.0
