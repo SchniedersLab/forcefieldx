@@ -1932,12 +1932,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                   gzredi += dedz * rediv;
 
                   // Apply the transpose of the transformation operator.
-                  final double dedxk =
-                      dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
-                  final double dedyk =
-                      dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
-                  final double dedzk =
-                      dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+                  final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                  final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                  final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
                   grad.sub(threadID, k, red * dedxk, red * dedyk, red * dedzk);
                   grad.sub(threadID, redk, redkv * dedxk, redkv * dedyk, redkv * dedzk);
 
