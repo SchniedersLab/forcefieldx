@@ -65,8 +65,13 @@ import java.util.logging.Logger;
 /**
  * Parallel pre-conditioned conjugate gradient solver for the self-consistent field.
  * <p>
- * This solves the linear system A x = b using an iterative approach where A: is an N x N symmetric,
- * positive definite matrix B: is a known vector of length N. x: is the unknown vector of length N.
+ * This solves the linear system A x = b using an iterative approach where
+ * <p>
+ * A: is an N x N symmetric, positive definite matrix
+ * <p>
+ * B: is a known vector of length N.
+ * <p>
+ * x: is the unknown vector of length N.
  * <p>
  * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_multipoles
  * <br>
