@@ -23,7 +23,7 @@ StringBuilder sb = new StringBuilder(header)
 
 // Collect the classpath entries from the lib directory.
 def dir = new File("lib")
-dir.eachFileRecurse (FileType.FILES) { file ->
+dir.listFiles().sort{ it.name }.each { file ->
   sb.append("    \"" + file.getName() + "\",\n")
 }
 last = sb.lastIndexOf(",")
