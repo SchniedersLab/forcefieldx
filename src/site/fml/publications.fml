@@ -2,18 +2,17 @@
 <faqs xmlns="http://maven.apache.org/FML/1.0.1"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
-      title="Publications"
+      title="Publications Using Force Field X"
       toplink="false">
     <part id="2023">
         <title>2023</title>
         <faq id="28">
             <question>
-                Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
-                J.,
+                Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M. J.,
                 A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.
                 <i>Journal of Chemical Physics</i>
                 <b>2023</b>, 159, 054102.
-                <a href="http://doi.org/10.1063/5.0158914">
+                <a href="https://doi.org/10.1063/5.0158914">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -48,7 +47,7 @@
                 Deafness Proteome.
                 <i>Human Genetics</i>
                 <b>2023</b>, 142, 819–834.
-                <a href="http://doi.org/10.1007/s00439-023-02559-9">
+                <a href="https://doi.org/10.1007/s00439-023-02559-9">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -80,11 +79,10 @@
         <faq id="26">
             <question>
                 Nessler, A. J., Okada, O., Hermon, M. J., Nagata, H., and Schnieders, M. J.,
-                Progressive alignment of crystals: reproducible and efficient assessment of crystal structure
-                similarity.
+                Progressive Alignment of Crystals: Reproducible and Efficient Assessment of Crystal Structure Similarity.
                 <i>Journal of Applied Crystallography</i>
                 <b>2022</b>, 55, 1528-1537.
-                <a href="http://dx.doi.org/10.1107/S1600576722009670">
+                <a href="https://dx.doi.org/10.1107/S1600576722009670">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -130,7 +128,7 @@
                 with Molecular Simulation,
                 <i>Crystal Growth and Design</i>
                 <b>2022</b>, 23, 142-167.
-                <a href="http://dx.doi.org/10.1021/acs.cgd.2c00832">
+                <a href="https://dx.doi.org/10.1021/acs.cgd.2c00832">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -175,7 +173,7 @@
                 Implicit Solvents for the Polarizable Atomic Multipole AMOEBA Force Field.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2021</b>, 17 (4), 2323-2341.
-                <a href="http://dx.doi.org/10.1021/acs.jctc.0c01286">
+                <a href="https://dx.doi.org/10.1021/acs.jctc.0c01286">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -213,13 +211,13 @@
                 Structural Insights into Hearing Loss Genetics from Polarizable Protein Repacking.
                 <i>Biophysical Journal</i>
                 <b>2019</b>, 117 (3), 602-612.
-                <a href="http://dx.doi.org/10.1016/j.bpj.2019.06.030">
+                <a href="https://dx.doi.org/10.1016/j.bpj.2019.06.030">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
             <answer>
                 <p>
-                    Hearing loss is associated with ?8100 mutations in 152 genes, and within the coding regions of
+                    Hearing loss is associated with 8100 mutations in 152 genes, and within the coding regions of
                     these genes are over 60,000 missense variants. The majority of these variants are classified as
                     <i>variants of uncertain significance</i>
                     to reflect our inability to ascribe a phenotypic effect to the observed amino acid change.
@@ -247,7 +245,7 @@
                 Scalable Indirect Free Energy Method Applied to Divalent Cation-Metalloprotein Binding.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2019</b>, 15 (8), 4602-4614.
-                <a href="http://dx.doi.org/10.1021/acs.jctc.9b00147">
+                <a href="https://dx.doi.org/10.1021/acs.jctc.9b00147">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -293,10 +291,10 @@
         <faq id="21">
             <question>
                 Nessler, I. J., Litman, J. M., and M. J. Schnieders,
-                Toward polarizable AMOEBA thermodynamics at fixed charge efficiency using a dual force field approach.
+                Toward Polarizable AMOEBA Thermodynamics at Fixed Charge Efficiency Using a Dual Force Field Approach.
                 <i>Physical Chemistry Chemical Physics</i>
                 <b>2016</b>, 18 (44), 30313-30322.
-                <a href="http://dx.doi.org/10.1039/C6CP02595A">
+                <a href="https://dx.doi.org/10.1039/C6CP02595A">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -329,7 +327,7 @@
                 Calculating binding free energies of host-guest systems using AMOEBA polarizable force field.
                 <i>Physical Chemistry Chemical Physics</i>
                 <b>2016</b>, 18 (44), 30261-30269.
-                <a href="http://dx.doi.org/10.1039/C6CP02509A">
+                <a href="https://dx.doi.org/10.1039/C6CP02509A">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -360,7 +358,7 @@
                 Dead-End Elimination with a Polarizable Force Field Repacks PCNA Models.
                 <i>Biophysical Journal</i>
                 <b>2015</b>, 109 (4), 816-826.
-                <a href="http://dx.doi.org/10.1016/j.bpj.2015.06.062">
+                <a href="https://dx.doi.org/10.1016/j.bpj.2015.06.062">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -392,7 +390,7 @@
                 <i>Reviews in Computational Chemistry</i>
                 <b>2015</b>
                 Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
-                <a href="http://dx.doi.org/10.1002/9781118889886.ch2">
+                <a href="https://dx.doi.org/10.1002/9781118889886.ch2">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -421,7 +419,7 @@
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2015</b>
                 11 (2), 623-634.
-                <a href="http://dx.doi.org/10.1021/ct500998q">
+                <a href="https://dx.doi.org/10.1021/ct500998q">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -454,7 +452,7 @@
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2014</b>
                 10, (7), 2781-2791.
-                <a href="http://dx.doi.org/10.1021/ct500180m">
+                <a href="https://dx.doi.org/10.1021/ct500180m">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -517,7 +515,7 @@
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2014</b>
                 10 (4), 1638-1651.
-                <a href="http://dx.doi.org/10.1021/ct401096t">
+                <a href="https://dx.doi.org/10.1021/ct401096t">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -557,7 +555,7 @@
                 <i>Quarterly Reviews of Biophysics</i>
                 <b>2012</b>
                 45, (4), 427-91.
-                <a href="http://dx.doi.org/10.1017/S003358351200011X">
+                <a href="https://dx.doi.org/10.1017/S003358351200011X">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -591,7 +589,7 @@
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2012</b>
                 8, (5), 1721–36.
-                <a href="http://dx.doi.org/10.1021/ct300035u">
+                <a href="https://dx.doi.org/10.1021/ct300035u">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -638,7 +636,7 @@
                 <i>Current Pharmaceutical Design</i>
                 <b>2012</b>
                 18, (9), 1173-85.
-                <a href="http://dx.doi.org/10.2174/138920012799362873">
+                <a href="https://dx.doi.org/10.2174/138920012799362873">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -672,7 +670,7 @@
                 <i>Acta Crystallographica Section D</i>
                 <b>2011</b>
                 67, (11), 957-65.
-                <a href="http://dx.doi.org/10.1107/S0907444911039060">
+                <a href="https://dx.doi.org/10.1107/S0907444911039060">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -710,7 +708,7 @@
                 <i>Structure</i>
                 <b>2011</b>
                 19, (4), 523-33.
-                <a href="http://dx.doi.org/10.1016/j.str.2011.01.015">
+                <a href="https://dx.doi.org/10.1016/j.str.2011.01.015">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -741,7 +739,7 @@
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2011</b>
                 7, (4), 1141-56.
-                <a href="http://dx.doi.org/10.1021/ct100506d">
+                <a href="https://dx.doi.org/10.1021/ct100506d">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -796,7 +794,7 @@
                 A smooth and differentiable bulk-solvent model for macromolecular diffraction.
                 <i>Acta Crystallographica Section D</i>
                 <b>2010</b>, 66, (9), 1024-31.
-                <a target="_blank" href="http://dx.doi.org/10.1107/S0907444910031045">
+                <a target="_blank" href="https://dx.doi.org/10.1107/S0907444910031045">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -830,7 +828,7 @@
                 Hydration geometry and application to macromolecules.
                 <i>Biophysical Journal</i>
                 <b>2010</b>, 98, (12), 2984-92 (*joint first authors).
-                <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
+                <a target="_blank" href="https://dx.doi.org/10.1016/j.bpj.2010.02.057">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -864,7 +862,7 @@
                 Current Status of the AMOEBA Polarizable Force Field.
                 <i>The Journal of Physical Chemistry B</i>
                 <b>2010</b>, 114, 2549-64.
-                <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">
+                <a target="_blank" href="https://dx.doi.org/10.1021/jp910674d">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -900,7 +898,7 @@
                 Application to peptide crystals.
                 <i>Acta Crystallographica Section D</i>
                 <b>2009</b>, 65, (9), 952-65.
-                <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+                <a href="https://dx.doi.org/10.1107/S0907444909022707" target="_blank">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -936,7 +934,7 @@
                     Annual International Conference of the IEEE
                 </i>
                 <b>2009</b>, 2328-31.
-                <a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
+                <a href="https://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -959,7 +957,7 @@
                 simulations with polarizable potential.
                 <i>Journal of Computational Chemistry</i>
                 <b>2009</b>, 30, (11), 1701-11.
-                <a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank">
+                <a href="https://dx.doi.org/10.1002/jcc.21268" target="_blank">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -995,7 +993,7 @@
                 Polarizable atomic multipole solutes in a generalized Kirkwood continuum.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2007</b>, 3, (6), 2083-97.
-                <a target="_blank" href="http://dx.doi.org/10.1021/ct7001336">
+                <a target="_blank" href="https://dx.doi.org/10.1021/ct7001336">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
@@ -1029,7 +1027,7 @@
                 Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum.
                 <i>Journal of Chemical Physics</i>
                 <b>2007</b>, 126, (12), 124114.
-                <a target="_blank" href="http://dx.doi.org/10.1063/1.2714528">
+                <a target="_blank" href="https://dx.doi.org/10.1063/1.2714528">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
             </question>
