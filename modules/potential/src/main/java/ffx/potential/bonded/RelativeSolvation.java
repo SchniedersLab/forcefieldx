@@ -238,7 +238,6 @@ public class RelativeSolvation {
       case TRP -> -16.2;
       case TYR -> -18.8;
       case UNK -> nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
-      case GLY, PRO -> 0;
       default -> 0;
     };
   }
@@ -272,7 +271,6 @@ public class RelativeSolvation {
       case TRP -> -15.1;
       case TYR -> -18.2;
       case UNK -> nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
-      case GLY, PRO -> 0;
       default -> 0;
     };
   }

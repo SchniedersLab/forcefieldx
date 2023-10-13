@@ -129,10 +129,6 @@ public class ScfPredictor {
       return;
     }
     switch (lambdaMode) {
-      case OFF:
-      case CONDENSED:
-        mode = 0;
-        break;
       case CONDENSED_NO_LIGAND:
         mode = 1;
         break;

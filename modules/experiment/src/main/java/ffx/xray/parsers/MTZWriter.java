@@ -126,9 +126,6 @@ public class MTZWriter {
       case MTZType.FCONLY:
         this.nCol = 7;
         break;
-      case MTZType.ALL:
-        this.nCol = 18;
-        break;
       default:
         this.nCol = 18;
         break;

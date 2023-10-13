@@ -304,12 +304,6 @@ public class SturmMethod {
             xyz_a[2] = r_a[i - stt_res][2];
             backBoneAtom.moveTo(xyz_a);
             break;
-          case "HA":
-            newResidue.deleteAtom(backBoneAtom);
-            break;
-          case "H":
-            newResidue.deleteAtom(backBoneAtom);
-            break;
           case "O":
             OAtoms.add(backBoneAtom);
             break;

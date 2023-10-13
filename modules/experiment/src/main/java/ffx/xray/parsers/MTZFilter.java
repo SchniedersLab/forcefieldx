@@ -767,8 +767,6 @@ public class MTZFilter implements DiffractionFileFilter {
         nReflections = parseInt(strArray[2]);
         int nBatches = parseInt(strArray[3]);
         break;
-      case SORT:
-        break;
       case SYMINF:
         String[] tmp = str.split("\'+");
         spaceGroupNum = parseInt(strArray[4]);
@@ -776,15 +774,11 @@ public class MTZFilter implements DiffractionFileFilter {
           spaceGroupName = tmp[1];
         }
         break;
-      case SYMM:
-        break;
       case RESO:
         double r1 = sqrt(1.0 / parseFloat(strArray[1]));
         double r2 = sqrt(1.0 / parseFloat(strArray[2]));
         resLow = max(r1, r2);
         resHigh = min(r1, r2);
-        break;
-      case VALM:
         break;
       case NDIF:
         int ndif = parseInt(strArray[1]);
@@ -815,8 +809,6 @@ public class MTZFilter implements DiffractionFileFilter {
           dataSets.add(dataSet);
         }
         dataSet.project = strArray[2];
-        break;
-      case CRYSTAL:
         break;
       case DATASET:
         nDataSet = parseInt(strArray[1]);
@@ -861,8 +853,6 @@ public class MTZFilter implements DiffractionFileFilter {
           dataSets.add(dataSet);
         }
         dataSet.lambda = parseDouble(strArray[2]);
-        break;
-      case BATCH:
         break;
       case END:
         headerParsed = true;
