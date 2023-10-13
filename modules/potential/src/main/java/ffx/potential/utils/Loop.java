@@ -37,21 +37,18 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.potential.bonded.BondedUtils.determineIntxyz;
-import static java.lang.String.copyValueOf;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-
 import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities;
-import ffx.potential.bonded.*;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 /**
  * Loop class.

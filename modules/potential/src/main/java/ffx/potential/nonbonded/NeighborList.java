@@ -37,15 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.BarrierAction;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -56,6 +47,7 @@ import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +55,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial decomposition. <br>

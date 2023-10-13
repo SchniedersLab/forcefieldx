@@ -37,22 +37,22 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static java.lang.Math.abs;
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.cli.DynamicsOptions;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MDVerbosity;
 import ffx.algorithms.dynamics.MDWriteAction;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.Constants;
+
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static java.lang.Math.abs;
+import static java.lang.String.format;
 
 /**
  * Use MD as a coordinate based MC move.

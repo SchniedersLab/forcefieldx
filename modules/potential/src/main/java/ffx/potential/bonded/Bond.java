@@ -37,6 +37,26 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.math.DoubleMath;
+import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.ForceField;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Geometry;
+import org.jogamp.java3d.LineArray;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.vecmath.AxisAngle4d;
+import org.jogamp.vecmath.Vector3d;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.angle;
 import static ffx.numerics.math.DoubleMath.length;
@@ -46,28 +66,6 @@ import static ffx.numerics.math.DoubleMath.sub;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.math.Double3;
-import ffx.numerics.math.DoubleMath;
-import ffx.potential.bonded.RendererCache.ViewModel;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ForceField;
-
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.Geometry;
-import org.jogamp.java3d.LineArray;
-import org.jogamp.java3d.Shape3D;
-import org.jogamp.java3d.Transform3D;
-import org.jogamp.java3d.TransformGroup;
-import org.jogamp.vecmath.AxisAngle4d;
-import org.jogamp.vecmath.Vector3d;
 
 /**
  * The Bond class represents a covalent bond formed between two atoms.

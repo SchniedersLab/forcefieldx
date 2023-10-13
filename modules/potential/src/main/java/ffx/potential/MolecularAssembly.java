@@ -37,15 +37,8 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory;
-import static ffx.crystal.SymOp.applyCartesianSymOp;
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.String.format;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
-import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -58,21 +51,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
-import java.awt.GraphicsEnvironment;
-import java.io.File;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BoundingSphere;
@@ -96,6 +74,27 @@ import org.jogamp.vecmath.Color3f;
 import org.jogamp.vecmath.Matrix3d;
 import org.jogamp.vecmath.Point3d;
 import org.jogamp.vecmath.Vector3d;
+
+import java.awt.GraphicsEnvironment;
+import java.io.File;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.sub;
+import static java.lang.String.format;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules, Ions and Water

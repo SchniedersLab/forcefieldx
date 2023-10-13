@@ -37,9 +37,6 @@
 // ******************************************************************************
 package ffx.xray.cli;
 
-import static java.lang.String.format;
-
-import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
@@ -48,14 +45,17 @@ import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that utilize X-ray data with a maximum likelihood

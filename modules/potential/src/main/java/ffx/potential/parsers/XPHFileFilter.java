@@ -40,13 +40,7 @@ package ffx.potential.parsers;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.filechooser.FileFilter;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
 
 /**
  * The XPHFileFilter class is used to choose a XPH Coordinate (*.XPH) file.

@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floor;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
-
 import ffx.crystal.Crystal;
 import ffx.numerics.tornado.FFXTornado;
 import ffx.potential.bonded.Atom;
@@ -51,17 +44,24 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floor;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 /**
  * The Van der Waals class computes Van der Waals interaction in parallel using a {@link

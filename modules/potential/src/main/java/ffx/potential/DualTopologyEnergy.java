@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.SymOp.applyCartesianSymOp;
-import static ffx.crystal.SymOp.applyCartesianSymRot;
-import static ffx.crystal.SymOp.invertSymOp;
-import static ffx.potential.utils.Superpose.rmsd;
-import static ffx.utilities.StringUtils.parseAtomRanges;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
@@ -60,11 +49,22 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.crystal.SymOp.applyCartesianSymRot;
+import static ffx.crystal.SymOp.invertSymOp;
+import static ffx.potential.utils.Superpose.rmsd;
+import static ffx.utilities.StringUtils.parseAtomRanges;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology system.

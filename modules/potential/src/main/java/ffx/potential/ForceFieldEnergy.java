@@ -37,22 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
-import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
-import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
-import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parsers.XYZFileFilter.isXYZ;
-import static ffx.utilities.KeywordGroup.NonBondedCutoff;
-import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static java.util.Arrays.sort;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -114,8 +98,8 @@ import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Constants;
 import ffx.utilities.FFXKeyword;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -131,7 +115,21 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
+import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
+import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
+import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static ffx.utilities.KeywordGroup.NonBondedCutoff;
+import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.util.Arrays.sort;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Compute the potential energy and derivatives of a molecular system described by a force field.
