@@ -1882,7 +1882,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (destroyed) {
       // This regularly occurs with Repex OST, as multiple OrthogonalSpaceTempering objects wrap a
       // single FFE.
-      logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+      logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this));
       return true;
     } else {
       try {
@@ -4087,7 +4087,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(
             gz)) {
           StringBuilder sb = new StringBuilder(
-              format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
+              format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a, gx, gy, gz));
           double[] vals = new double[3];
           a.getVelocity(vals);
           sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
@@ -4190,7 +4190,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
         if (logger.isLoggable(Level.FINEST)) {
           logger.info(
-              format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
+              format(" MTRIXn SymOp: %d of %d\n" + symOp, i + 1, MTRX1List.length));
         }
         spaceGroup.symOps.add(symOp);
       }

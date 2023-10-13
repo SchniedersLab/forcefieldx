@@ -145,7 +145,7 @@ public class SimulationMessage implements Serializable {
 
   /** print */
   public void print() {
-    System.out.println(toString());
+    System.out.println(this);
   }
 
   /**

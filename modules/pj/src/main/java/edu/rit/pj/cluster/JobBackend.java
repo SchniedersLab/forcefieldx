@@ -1060,7 +1060,7 @@ public class JobBackend
         // theJobBackend.getClassLoader());
         Method mainmethod = mainclass.getMethod("main", String[].class);
 
-        StringBuilder stringBuilder = new StringBuilder(format(" Preparing to invoke main method:\n %s\n With args: ", mainmethod.toString()));
+        StringBuilder stringBuilder = new StringBuilder(format(" Preparing to invoke main method:\n %s\n With args: ", mainmethod));
 
         for (String arg : theJobBackend.getArgs()) {
             stringBuilder.append(format(" %s", arg));

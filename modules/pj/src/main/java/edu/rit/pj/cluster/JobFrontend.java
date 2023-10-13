@@ -539,8 +539,8 @@ public class JobFrontend
             if (myNextRank != Np) {
                 System.err.println();
             }
-            System.err.println(" Exception executing SSH command:\n" + exc.toString());
-            logger.log(Level.SEVERE, " Exception executing SSH command:\n" + exc.toString());
+            System.err.println(" Exception executing SSH command:\n" + exc);
+            logger.log(Level.SEVERE, " Exception executing SSH command:\n" + exc);
             terminateCancelJob(backendFailed(processinfo, "SSH command failed"));
         }
     }

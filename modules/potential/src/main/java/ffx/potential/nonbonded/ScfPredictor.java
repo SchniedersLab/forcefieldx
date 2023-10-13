@@ -390,7 +390,7 @@ public class ScfPredictor {
                 " LS Optimization parameters:" + "  %s %s\n" + "  %s %s\n" + "  %d %d",
                 function,
                 targetVector.toString(),
-                start.toString(),
+                start,
                 checker.toString(),
                 maxIter,
                 maxEval));

@@ -106,7 +106,7 @@ public class NCSRestraint implements LambdaInterface {
       d2LambdaPow = 0.0;
     }
 
-    logger.info(format("\n NCS Restraint%s", crystal.toString()));
+    logger.info(format("\n NCS Restraint%s", crystal));
   }
 
   /** {@inheritDoc} */

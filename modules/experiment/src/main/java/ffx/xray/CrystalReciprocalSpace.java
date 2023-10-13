@@ -195,7 +195,7 @@ public class CrystalReciprocalSpace {
   private final boolean solvent;
   private boolean useThreeGaussians = true;
   // Not final for purposes of finite differences
-  private double[][][] coordinates;
+  private final double[][][] coordinates;
   private double weight = 1.0;
   private final int aRadGrid;
   /** If the "Native Environment Approximation" is true, the "use" flag is ignored. */

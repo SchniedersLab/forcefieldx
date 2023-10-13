@@ -955,7 +955,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
           nneg++;
           a.setTempFactor(0.01);
           if (nneg < 5) {
-            logger.info(" Isotropic atom: " + a.toString() + " negative B factor");
+            logger.info(" Isotropic atom: " + a + " negative B factor");
           }
         }
       } else {
@@ -979,7 +979,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
           anisou[3] = anisou[4] = anisou[5] = 0.0;
           a.setAnisou(anisou);
           if (nneg < 5) {
-            logger.info(" Anisotropic atom: " + a.toString() + " negative ANISOU");
+            logger.info(" Anisotropic atom: " + a + " negative ANISOU");
           }
         }
       }

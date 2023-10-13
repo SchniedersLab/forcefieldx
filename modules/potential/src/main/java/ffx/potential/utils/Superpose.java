@@ -359,7 +359,7 @@ public class Superpose {
                 sbSO.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr)))
                         .append(asMatrixString(bestBaseSymOp));
                 sbInv.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr))).append(asMatrixString(bestTargetSymOp));
-                logger.info(format(" %s\n %s", sbSO.toString(),sbInv.toString()));
+                logger.info(format(" %s\n %s", sbSO, sbInv));
               }
 
               // Save a PDB snapshot.

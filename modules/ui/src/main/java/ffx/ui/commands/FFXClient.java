@@ -203,7 +203,7 @@ public class FFXClient {
         oout.flush();
       }
     } catch (Exception e) {
-      logger.warning("Exception reading data from FFX\n" + e.toString());
+      logger.warning("Exception reading data from FFX\n" + e);
       release();
     }
   }

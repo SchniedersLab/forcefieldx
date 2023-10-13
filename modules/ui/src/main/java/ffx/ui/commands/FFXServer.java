@@ -355,7 +355,7 @@ public class FFXServer implements Runnable {
       try {
         server.bind(new InetSocketAddress(InetAddress.getByName(null), serverPort));
       } catch (Exception ex) {
-        Logger.getLogger("ffx").severe("SERVER -- Could not start\n" + e.toString());
+        Logger.getLogger("ffx").severe("SERVER -- Could not start\n" + e);
         return;
       }
     }

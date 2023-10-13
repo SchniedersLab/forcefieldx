@@ -694,7 +694,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
       VDWType type = forceField.getVDWType(Integer.toString(atomClass[i]));
       if (type == null) {
         logger.info(" No VdW type for atom class " + atomClass[i]);
-        logger.severe(" No VdW type for atom " + ai.toString());
+        logger.severe(" No VdW type for atom " + ai);
         return;
       }
       ai.setVDWType(type);

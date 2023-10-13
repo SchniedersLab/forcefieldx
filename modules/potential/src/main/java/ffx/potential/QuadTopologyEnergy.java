@@ -572,10 +572,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
       try {
         team.shutdown();
       } catch (Exception e) {
-        logger.severe(
-            format(
-                " Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s",
-                e.toString()));
+        logger.severe(format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e));
       }
     }
     team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);

@@ -2968,9 +2968,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         scale = RendererCache.radius * 0.2d;
         setSphereVisible(true, newShapes);
       }
-      case SHOWHYDROGEN -> {
-        setView(viewModel, newShapes);
-      }
+      case SHOWHYDROGEN -> setView(viewModel, newShapes);
       case HIDEHYDROGEN -> {
         if (atomType.atomicNumber == 1) {
           viewModel = ViewModel.INVISIBLE;
