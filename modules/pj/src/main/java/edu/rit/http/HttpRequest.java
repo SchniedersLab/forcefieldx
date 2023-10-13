@@ -280,7 +280,7 @@ public class HttpRequest {
                     return;
                 }
                 line = scanner.nextLine();
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     break;
                 }
 

@@ -745,7 +745,7 @@ public abstract class SystemFilter {
    * @return an array of {@link ffx.potential.MolecularAssembly} objects.
    */
   public MolecularAssembly[] getMolecularAssemblyArray() {
-    if (systems.size() > 0) {
+    if (!systems.isEmpty()) {
       return systems.toArray(new MolecularAssembly[0]);
     } else {
       return new MolecularAssembly[] {activeMolecularAssembly};

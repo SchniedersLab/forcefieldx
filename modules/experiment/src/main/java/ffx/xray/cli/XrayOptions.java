@@ -153,7 +153,7 @@ public class XrayOptions extends DataRefinementOptions {
       }
     }
 
-    if (diffractionfiles.size() == 0) {
+    if (diffractionfiles.isEmpty()) {
       String filename = systems[0].getFile().getAbsolutePath();
       filename = FilenameUtils.removeExtension(filename);
       filename = FilenameUtils.getBaseName(filename);

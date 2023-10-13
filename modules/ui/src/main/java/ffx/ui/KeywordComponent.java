@@ -397,7 +397,7 @@ public final class KeywordComponent
             }
           } else {
             if (cb.isSelected()) {
-              if (s.length() > 0) {
+              if (!s.isEmpty()) {
                 s.append("\n").append(keyword).append(" ").append(cb.getText());
               } else {
                 s.append(keyword).append(" ").append(cb.getText());
@@ -448,7 +448,7 @@ public final class KeywordComponent
           break;
         }
       }
-      if (s.length() == 0) {
+      if (s.isEmpty()) {
         return null;
       }
       return s.toString();

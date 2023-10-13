@@ -59,6 +59,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -550,10 +551,10 @@ public final class KeywordPanel extends JPanel implements ActionListener {
    * @param newKeyFile a {@link java.io.File} object.
    * @return a boolean.
    */
-  private boolean keyOpen(File newKeyFile) {
+  private boolean keyOpen(@Nullable File newKeyFile) {
     if (newKeyFile != null && newKeyFile.exists() && newKeyFile.canRead()) {
       Hashtable<String, Keyword> newKeys = KeyFilter.open(newKeyFile);
-      if (newKeys != null && newKeys.size() > 0) {
+      if (newKeys != null && !newKeys.isEmpty()) {
         if (currentSystem != null) {
           currentSystem.setKeyFile(currentKeyFile);
           currentSystem.setKeywords(currentKeys);
@@ -668,7 +669,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
    * @return a boolean.
    */
   private boolean loadActive(
-      FFXSystem newSystem, Hashtable<String, Keyword> newKeys, File newKeyFile) {
+      FFXSystem newSystem, @Nullable Hashtable<String, Keyword> newKeys, File newKeyFile) {
 
     synchronized (this) {
       // Store changes made to the current system (if any) first.
@@ -682,7 +683,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       // Clear previous values
       keyClear();
       // No keywords to load
-      if (newKeys == null || newKeys.size() == 0) {
+      if (newKeys == null || newKeys.isEmpty()) {
         return false;
       }
       currentSystem = newSystem;

@@ -231,7 +231,7 @@ public class PolymerUtils {
 
     // Assign ion atom types.
     List<MSNode> ions = molecularAssembly.getIons();
-    if (ions != null && ions.size() > 0) {
+    if (ions != null && !ions.isEmpty()) {
       logger.info(format(" Assigning atom types for %d ions.", ions.size()));
       for (MSNode m : ions) {
         Molecule ion = (Molecule) m;
@@ -262,7 +262,7 @@ public class PolymerUtils {
     }
     // Assign water atom types.
     List<MSNode> water = molecularAssembly.getWater();
-    if (water != null && water.size() > 0) {
+    if (water != null && !water.isEmpty()) {
       logger.info(format(" Assigning atom types for %d water.", water.size()));
       for (MSNode m : water) {
         Molecule wat = (Molecule) m;
@@ -499,7 +499,7 @@ public class PolymerUtils {
       sb.append(format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
       bondList.add(bond);
     }
-    if (ssBondList.size() > 0) {
+    if (!ssBondList.isEmpty()) {
       logger.info(sb.toString());
     }
   }

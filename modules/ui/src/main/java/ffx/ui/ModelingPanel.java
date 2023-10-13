@@ -619,7 +619,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           }
         }
       }
-      if (optionString.length() > 0) {
+      if (!optionString.isEmpty()) {
         commandTextArea.append(optionString.toString());
         commandTextArea.append("\n");
       }

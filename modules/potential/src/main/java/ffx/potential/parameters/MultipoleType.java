@@ -516,7 +516,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     List<Atom> n12 = atom.get12List();
 
     // No bonds.
-    if (n12 == null || n12.size() < 1) {
+    if (n12 == null || n12.isEmpty()) {
       String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
       logger.severe(message);
       return null;
@@ -627,7 +627,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
     // List sorted of 1-2 interactions.
     List<Atom> n12 = atom.get12List();
-    if (n12 == null || n12.size() < 1) {
+    if (n12 == null || n12.isEmpty()) {
       String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
       logger.severe(message);
       return;

@@ -125,7 +125,7 @@ public final class Utilities {
     int ionNum = 0;
     int moleculeNum = 0;
     List<String> segIDs = new ArrayList<>();
-    while (atoms.size() > 0) {
+    while (!atoms.isEmpty()) {
       /*
        Nitrogen is used to "seed" a backbone search because carbon can
        be separated from the backbone by a sulfur (e.g., MET).

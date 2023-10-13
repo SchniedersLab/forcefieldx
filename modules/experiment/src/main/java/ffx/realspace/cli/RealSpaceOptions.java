@@ -105,7 +105,7 @@ public class RealSpaceOptions extends DataRefinementOptions {
       }
     }
 
-    if (mapfiles.size() == 0) {
+    if (mapfiles.isEmpty()) {
       RealSpaceFile realspacefile = new RealSpaceFile(molecularAssembly, wA);
       mapfiles.add(realspacefile);
     }

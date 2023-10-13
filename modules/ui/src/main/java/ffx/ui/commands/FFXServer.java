@@ -110,7 +110,7 @@ public class FFXServer implements Runnable {
    * @return a boolean.
    */
   public boolean needUpdate() {
-    if (clients.size() == 0) {
+    if (clients.isEmpty()) {
       sleepTime = 100;
       return false;
     }
@@ -280,7 +280,7 @@ public class FFXServer implements Runnable {
     if (system == null) {
       return;
     }
-    if (clients.size() == 0) {
+    if (clients.isEmpty()) {
       return;
     }
     ObjectOutputStream oout;

@@ -2196,7 +2196,7 @@ public class ProgressiveAlignmentOfCrystals {
           }
           myDistances[myIndex] = rmsd;
           myIndex++;
-          if (stringBuilder.length() > 0) {
+          if (!stringBuilder.isEmpty()) {
             logger.info(stringBuilder.toString());
           }
         }
@@ -2736,7 +2736,7 @@ public class ProgressiveAlignmentOfCrystals {
     }
     indices.clear();
     determineComparableAtoms(atoms, indices, unique, alphaCarbons, includeHydrogen);
-    return indices.size() < 1;
+    return indices.isEmpty();
   }
 
   /**

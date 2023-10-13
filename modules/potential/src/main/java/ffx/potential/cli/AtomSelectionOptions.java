@@ -143,10 +143,10 @@ public class AtomSelectionOptions {
    * @return True if one of the fields is not empty.
    */
   public boolean isAtomSelectionSet() {
-    if (group.activeAtoms != null && !(group.activeAtoms.length() > 0)) {
+    if (group.activeAtoms != null && group.activeAtoms.isEmpty()) {
       return true;
     }
-    return group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0);
+    return group.inactiveAtoms != null && group.inactiveAtoms.isEmpty();
   }
 
   private void setInactive(MolecularAssembly assembly) {

@@ -121,7 +121,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         targets.remove(i);
       }
     }
-    if (targets.size() < 1) {
+    if (targets.isEmpty()) {
       logger.severe(" Empty target list for CMBC.");
     }
   }

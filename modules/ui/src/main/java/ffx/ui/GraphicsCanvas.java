@@ -297,7 +297,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
       J3DGraphics2D g2D = getGraphics2D();
       synchronized (mainPanel.getHierarchy()) {
         ArrayList<MSNode> nodes = mainPanel.getHierarchy().getActiveNodes();
-        if (nodes != null && nodes.size() > 0) {
+        if (nodes != null && !nodes.isEmpty()) {
           for (MSNode node : nodes) {
             MolecularAssembly sys = node.getMSNode(MolecularAssembly.class);
             if (sys != null) {
