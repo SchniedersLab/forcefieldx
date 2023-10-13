@@ -228,7 +228,7 @@ public class FrontendFileReader {
                 resultexc = exc;
                 try {
                     myInputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);
@@ -286,7 +286,7 @@ public class FrontendFileReader {
                 resultexc = exc;
                 try {
                     myInputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);

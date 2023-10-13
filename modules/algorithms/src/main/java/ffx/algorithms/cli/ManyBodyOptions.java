@@ -828,15 +828,13 @@ public class ManyBodyOptions {
     /**
      * --iB or --initialBox Initial box to optimize.
      */
-    @Option(names = {"--iB",
-        "--initialBox"}, paramLabel = "", defaultValue = "0", description = "Initial box to optimize.")
+    @Option(names = {"--iB", "--initialBox"}, defaultValue = "0", description = "Initial box to optimize.")
     private int initialBox;
 
     /**
      * --bf or --boxFinal Final box to optimize.
      */
-    @Option(names = {"--fB",
-        "--finalBox"}, paramLabel = "", defaultValue = "2147483647", // Integer.MAX_VALUE
+    @Option(names = {"--fB", "--finalBox"}, defaultValue = "2147483647", // Integer.MAX_VALUE
         description = "Final box to optimize.")
     private int finalBox;
 
@@ -920,8 +918,7 @@ public class ManyBodyOptions {
     /**
      * --sR or --start Starting residue to perform the optimization on.
      */
-    @Option(names = {"--sR",
-        "--start"}, paramLabel = "", defaultValue = "-2147483648", // Integer.MIN_VALUE
+    @Option(names = {"--sR", "--start"}, defaultValue = "-2147483648", // Integer.MIN_VALUE
         description = "Starting residue to optimize (default: all residues).")
     private int start;
 

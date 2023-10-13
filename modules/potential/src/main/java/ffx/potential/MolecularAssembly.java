@@ -2221,7 +2221,7 @@ public class MolecularAssembly extends MSGroup {
     try {
       wireframe.setBoundsAutoCompute(false);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning("Unable to set boundsAutoCompute to false.\n" + e);
     }
 
     wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);

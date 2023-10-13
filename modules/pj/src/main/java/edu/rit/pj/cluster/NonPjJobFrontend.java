@@ -156,7 +156,7 @@ public class NonPjJobFrontend
                     public void action(Timer timer) {
                         try {
                             schedulerRenewTimeout();
-                        } catch (Throwable exc) {
+                        } catch (Throwable ignored) {
                         }
                     }
                 });
@@ -165,7 +165,7 @@ public class NonPjJobFrontend
                     public void action(Timer timer) {
                         try {
                             schedulerExpireTimeout();
-                        } catch (Throwable exc) {
+                        } catch (Throwable ignored) {
                         }
                     }
                 });
@@ -176,7 +176,7 @@ public class NonPjJobFrontend
                     public void action(Timer timer) {
                         try {
                             jobTimeout();
-                        } catch (Throwable exc) {
+                        } catch (Throwable ignored) {
                         }
                     }
                 });
@@ -273,7 +273,7 @@ public class NonPjJobFrontend
                 status = null;
                 message = null;
             }
-        } catch (ChannelGroupClosedException exc) {
+        } catch (ChannelGroupClosedException ignored) {
         } catch (Throwable exc) {
             terminateCancelJob(exc);
         }
@@ -718,7 +718,7 @@ public class NonPjJobFrontend
                     if (myJobScheduler != null) {
                         try {
                             myJobScheduler.jobFinished(this);
-                        } catch (IOException exc) {
+                        } catch (IOException ignored) {
                         }
                     }
                     break;
@@ -727,7 +727,7 @@ public class NonPjJobFrontend
                     if (myJobScheduler != null) {
                         try {
                             myJobScheduler.cancelJob(this, myCancelMessage);
-                        } catch (IOException exc) {
+                        } catch (IOException ignored) {
                         }
                     }
                     break;

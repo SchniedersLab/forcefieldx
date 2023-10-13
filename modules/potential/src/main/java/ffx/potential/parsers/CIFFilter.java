@@ -742,7 +742,7 @@ public class CIFFilter extends SystemFilter {
               logger.finer(format(" Molecule (%d) Size: %d", counter, molecule.size()));
             }
             ArrayList<Integer> indices = new ArrayList<>();
-            while (molecule.size() > 0) {
+            while (!molecule.isEmpty()) {
               Atom atom = molecule.remove(0);
               indices.add(atom.getIndex());
               atomPool.remove(atom);
@@ -1070,7 +1070,7 @@ public class CIFFilter extends SystemFilter {
       outputAssembly.setName(activeMolecularAssembly.getName());
       setMolecularSystem(outputAssembly);
 
-      if (outputAssembly.getAtomList().size() < 1) {
+      if (outputAssembly.getAtomList().isEmpty()) {
         logger.info(" Atom types could not be matched. File could not be written.");
       } else if (!writeOutputFile()) {
         logger.info(" Input File could not be written.");
@@ -1149,7 +1149,7 @@ public class CIFFilter extends SystemFilter {
    */
   public static void setAtomTypes(AtomTypeFactory factory, IAtom atom) {
     String atomTypeName = atom.getAtomTypeName();
-    if (atomTypeName == null || atomTypeName.length() == 0) {
+    if (atomTypeName == null || atomTypeName.isEmpty()) {
       IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
       if (types.length > 0) {
         IAtomType atomType = types[0];

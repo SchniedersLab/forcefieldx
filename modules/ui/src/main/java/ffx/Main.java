@@ -51,6 +51,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.PropertyConfigurator;
 
+import javax.annotation.Nullable;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -161,7 +162,7 @@ public final class Main extends JFrame {
    * @param commandLineFile a {@link java.io.File} object.
    * @param argList a {@link java.util.List} object.
    */
-  public Main(File commandLineFile, List<String> argList) {
+  public Main(@Nullable File commandLineFile, List<String> argList) {
     super("Force Field X");
     // Start the clock.
     stopWatch.start();
@@ -170,7 +171,7 @@ public final class Main extends JFrame {
     try {
       SwingUtilities.invokeAndWait(initGUI);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning(" Exception initializing the GUI.\n" + e);
     }
 
     // Run the supplied command or file.
@@ -398,7 +399,7 @@ public final class Main extends JFrame {
           // Set the system property.
           System.setProperty(key, value);
         } else {
-          if (arg.length() > 0) {
+          if (!arg.isEmpty()) {
             System.setProperty(arg, "");
           }
         }
@@ -468,7 +469,8 @@ public final class Main extends JFrame {
         defaultLogger.removeHandler(h);
       }
     } catch (Exception e) {
-      System.err.println(e.toString());
+      String error = e.toString();
+      System.err.println(error);
     }
 
     // Turn off log4j

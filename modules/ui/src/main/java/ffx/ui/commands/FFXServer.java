@@ -179,7 +179,7 @@ public class FFXServer implements Runnable {
           outputs.add(oout);
           oin = new ObjectInputStream(client.getInputStream());
           inputs.add(oin);
-          Logger.getLogger("ffx").info("Client connected\n" + client.toString());
+          Logger.getLogger("ffx").info("Client connected\n" + client);
         }
       } catch (Exception e) {
         if (client != null) {

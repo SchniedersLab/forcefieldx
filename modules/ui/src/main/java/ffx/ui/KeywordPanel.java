@@ -621,7 +621,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       }
       Hashtable<String, Keyword> newKeys = newSystem.getKeywords();
       if (newKeyFile == null && newKeys == null) {
-        logger.info(String.format("Loaded %s with no keywords.", newSystem.toString()));
+        logger.info(String.format("Loaded %s with no keywords.", newSystem));
         return false;
       }
       // logger.info(String.format("Loading %s with %d keywords.", newSystem.toString(),
@@ -844,7 +844,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         splitPane.setDividerLocation(temp);
       }
       if (currentKeyFile != null) {
-        statusLabel.setText("  " + currentKeyFile.toString());
+        statusLabel.setText("  " + currentKeyFile);
       } else {
         statusLabel.setText("  ");
       }

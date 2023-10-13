@@ -705,20 +705,12 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         // gc =
         // GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
       } catch (Exception e) {
-        e.fillInStackTrace();
-        e.printStackTrace();
-        logger.log(
-            Level.SEVERE,
-            " Exception encountered when trying to get the best GraphicsConfiguration",
-            e);
+        logger.log(Level.SEVERE, " Exception encountered when trying to get the best GraphicsConfiguration", e);
       }
       try {
         graphicsCanvas = new GraphicsCanvas(gc, this);
       } catch (Exception e) {
-        e.fillInStackTrace();
-        e.printStackTrace();
-        logger.log(
-            Level.SEVERE, " Exception encountered when trying to create the GraphicsCanvas", e);
+        logger.log(Level.SEVERE, " Exception encountered when trying to create the GraphicsCanvas", e);
       }
       graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
     }

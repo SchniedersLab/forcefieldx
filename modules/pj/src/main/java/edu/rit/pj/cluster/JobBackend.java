@@ -41,19 +41,11 @@ package edu.rit.pj.cluster;
 
 import static java.lang.String.format;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -277,14 +269,14 @@ public class JobBackend
         myFrontendRenewTimer = myLeaseTimerThread.createTimer(timer -> {
                     try {
                         frontendRenewTimeout();
-                    } catch (Throwable exc) {
+                    } catch (Throwable ignored) {
                     }
                 });
         logger.log(Level.INFO, format(" Create frontend expire timer (%d sec)." , Constants.LEASE_EXPIRE_INTERVAL / 1000));
         myFrontendExpireTimer = myLeaseTimerThread.createTimer(timer -> {
                     try {
                         frontendExpireTimeout();
-                    } catch (Throwable exc) {
+                    } catch (Throwable ignored) {
                     }
                 });
 
@@ -706,7 +698,7 @@ public class JobBackend
         while (!commence) {
             try {
                 wait();
-            } catch (InterruptedException exc) {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -807,7 +799,7 @@ public class JobBackend
     public void setComment(String comment) {
         try {
             myJobFrontend.reportComment(this, rank, comment);
-        } catch (IOException exc) {
+        } catch (IOException ignored) {
         }
     }
 
@@ -916,7 +908,7 @@ public class JobBackend
                             // Tell job frontend nothing.
                             break;
                     }
-                } catch (IOException exc) {
+                } catch (IOException ignored) {
                 }
             }
 
@@ -945,7 +937,7 @@ public class JobBackend
             try {
                 runFinished.await();
                 break;
-            } catch (InterruptedException exc) {
+            } catch (InterruptedException ignored) {
             }
         }
     }

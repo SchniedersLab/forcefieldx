@@ -227,7 +227,7 @@ public class JobFrontend
             public void action(Timer timer) {
                 try {
                     schedulerRenewTimeout();
-                } catch (Throwable exc) {
+                } catch (Throwable ignored) {
                 }
             }
         });
@@ -236,7 +236,7 @@ public class JobFrontend
             public void action(Timer timer) {
                 try {
                     schedulerExpireTimeout();
-                } catch (Throwable exc) {
+                } catch (Throwable ignored) {
                 }
             }
         });
@@ -247,7 +247,7 @@ public class JobFrontend
             public void action(Timer timer) {
                 try {
                     jobTimeout();
-                } catch (Throwable exc) {
+                } catch (Throwable ignored) {
                 }
             }
         });
@@ -269,7 +269,7 @@ public class JobFrontend
                         public void action(Timer timer) {
                             try {
                                 backendRenewTimeout(rank);
-                            } catch (Throwable exc) {
+                            } catch (Throwable ignored) {
                             }
                         }
                     }),
@@ -278,7 +278,7 @@ public class JobFrontend
                         public void action(Timer timer) {
                             try {
                                 backendExpireTimeout(rank);
-                            } catch (Throwable exc) {
+                            } catch (Throwable ignored) {
                             }
                         }
                     }),
@@ -371,7 +371,7 @@ public class JobFrontend
                 message = null;
                 backend = null;
             }
-        } catch (ChannelGroupClosedException exc) {
+        } catch (ChannelGroupClosedException ignored) {
         } catch (Throwable exc) {
             terminateCancelJob(exc);
         }
@@ -1000,7 +1000,7 @@ public class JobFrontend
         // Tell the Job Scheduler that the backend process failed.
         try {
             myJobScheduler.backendFailed(this, processinfo.name);
-        } catch (IOException exc) {
+        } catch (IOException ignored) {
         }
 
         // Set up error message.
@@ -1106,14 +1106,14 @@ public class JobFrontend
                         if (processinfo.backend != null) {
                             try {
                                 processinfo.backend.jobFinished(this);
-                            } catch (IOException exc) {
+                            } catch (IOException ignored) {
                             }
                         }
                     }
                     if (myJobScheduler != null) {
                         try {
                             myJobScheduler.jobFinished(this);
-                        } catch (IOException exc) {
+                        } catch (IOException ignored) {
                         }
                     }
                     break;
@@ -1124,14 +1124,14 @@ public class JobFrontend
                                 && processinfo.state != ProcessInfo.State.FAILED) {
                             try {
                                 processinfo.backend.cancelJob(this, myCancelMessage);
-                            } catch (IOException exc) {
+                            } catch (IOException ignored) {
                             }
                         }
                     }
                     if (myJobScheduler != null) {
                         try {
                             myJobScheduler.cancelJob(this, myCancelMessage);
-                        } catch (IOException exc) {
+                        } catch (IOException ignored) {
                         }
                     }
                     break;

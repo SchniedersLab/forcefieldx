@@ -296,7 +296,7 @@ public class ChannelGroup {
                                 exc);
                         try {
                             connection.close();
-                        } catch (IOException exc2) {
+                        } catch (IOException ignored) {
                         }
                     }
                 }
@@ -589,7 +589,7 @@ public class ChannelGroup {
             if (connection != null) {
                 try {
                     connection.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
             }
             throw exc;
@@ -1015,7 +1015,7 @@ public class ChannelGroup {
         if (myServerSocketChannel != null) {
             try {
                 myServerSocketChannel.close();
-            } catch (IOException exc) {
+            } catch (IOException ignored) {
             }
         }
 

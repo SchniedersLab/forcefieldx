@@ -41,6 +41,7 @@ import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOfRange;
 
+import ffx.potential.Utilities;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -788,7 +789,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       }
       commandList = ((Element) commandroot).getElementsByTagName("Command");
     } catch (ParserConfigurationException | SAXException | IOException e) {
-      System.err.println(e);
+      System.err.println(Utilities.stackTraceToString(e));
     } finally {
       if (commandList == null) {
         System.out.println("Force Field X commands.xml could not be parsed.");

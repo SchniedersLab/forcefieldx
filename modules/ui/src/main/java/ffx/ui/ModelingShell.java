@@ -570,12 +570,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
       ImageIcon icon = new ImageIcon(iconURL);
       frame.setIconImage(icon.getImage());
       frame.setSize(600, 600);
-
     } catch (Exception e) {
-      System.out.println(" Exception starting up the FFX console.");
-      System.out.println(e);
-      e.printStackTrace();
-      logger.warning(e.toString());
+      logger.warning(" Exception starting up the FFX console.\n" + e);
     }
   }
 
