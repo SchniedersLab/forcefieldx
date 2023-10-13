@@ -921,7 +921,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         if (type == KeywordComponent.SwingRepresentation.CHECKBOXES
             || type == KeywordComponent.SwingRepresentation.COMBOBOX) {
           values = keyword.getElementsByTagName("Value");
-          String labels[] = new String[values.getLength()];
+          String[] labels = new String[values.getLength()];
           for (int k = 0; k < values.getLength(); k++) {
             value = (Element) values.item(k);
             labels[k] = value.getAttribute("name");

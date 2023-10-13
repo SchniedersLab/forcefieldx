@@ -56,7 +56,7 @@ public class OctreePoint {
   /** Maximum value for random point coordinate Default = 1.0 */
   private double domain = 1.0;
 
-  public OctreePoint(double coords[], double domain) {
+  public OctreePoint(double[] coords, double domain) {
 
     // Set max for random point coordinate generation
     setDomain(domain);
