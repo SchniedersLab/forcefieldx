@@ -1098,8 +1098,8 @@ public final class PDBFilter extends SystemFilter {
 // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
 // 74 – 78         Real(5.2)      Length          Link distance
 // =============================================================================
-                Character a1 = line.charAt(16);
-                Character a2 = line.charAt(46);
+                char a1 = line.charAt(16);
+                char a2 = line.charAt(46);
                 if (a1 != a2) {
                   // logger.info(format(" Ignoring LINK record as alternate locations do not match\n
                   // %s.", line));

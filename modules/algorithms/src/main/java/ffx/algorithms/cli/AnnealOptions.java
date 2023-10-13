@@ -66,7 +66,7 @@ public class AnnealOptions {
    * The ArgGroup keeps the AnnealOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Simulated Annealing Options%n", validate = false)
-  public AnnealOptionGroup group = new AnnealOptionGroup();
+  private final AnnealOptionGroup group = new AnnealOptionGroup();
 
   /**
    * Number of annealing windows.

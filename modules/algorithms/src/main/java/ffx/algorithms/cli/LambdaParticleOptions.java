@@ -54,7 +54,7 @@ public class LambdaParticleOptions {
    * The ArgGroup keeps the LambdaParticleOptions together when printing help.
    */
   @ArgGroup(heading = "%n Lambda Particle Options for MD-OST%n", validate = false)
-  public LambdaParticleOptionGroup group = new LambdaParticleOptionGroup();
+  private final LambdaParticleOptionGroup group = new LambdaParticleOptionGroup();
 
   /**
    * Friction on the lambda particle.

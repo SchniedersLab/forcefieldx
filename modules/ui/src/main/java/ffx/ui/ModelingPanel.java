@@ -386,7 +386,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     } else if ("Edit".equals(button.getText())) {
       String entry = new String(acidTextField.getText());
       // Allow editing - should add more input validation here
-      if (!entry.equals("")) {
+      if (!entry.isEmpty()) {
         String[] s = entry.trim().split(" +");
         String newResidue = s[0].toUpperCase();
         if ("NUCLEIC".equals(arg)) {
@@ -394,7 +394,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           try {
             NucleicAcidUtils.NucleicAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
-            acidComboBox.insertItemAt("" + index + " " + entry, index);
+            acidComboBox.insertItemAt(index + " " + entry, index);
           } catch (Exception e) {
             //
           }
@@ -402,7 +402,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           try {
             AminoAcidUtils.AminoAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
-            acidComboBox.insertItemAt("" + index + " " + entry, index);
+            acidComboBox.insertItemAt(index + " " + entry, index);
           } catch (Exception e) {
             //
           }
@@ -421,14 +421,14 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           c = c.substring(c.indexOf("[") + 1, c.indexOf("]"));
           newResidue = newResidue + " " + c;
         }
-        acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+        acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
         index++;
       } else {
         if (!newResidue.equalsIgnoreCase("MOL")) {
-          acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+          acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
           index++;
         } else if (!selected.equalsIgnoreCase("MOL")) {
-          acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+          acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
           index++;
         }
       }
@@ -451,7 +451,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       String s = acidComboBox.getItemAt(i);
       s = s.substring(s.indexOf(" ")).trim();
       acidComboBox.removeItemAt(i);
-      acidComboBox.insertItemAt("" + (i + 1) + " " + s, i);
+      acidComboBox.insertItemAt((i + 1) + " " + s, i);
     }
     // Set the selected entry and fill in the edit textField.
     if (index < 0) {

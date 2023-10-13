@@ -961,7 +961,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   @Override
   public String toString() {
     if (shortString == null) {
-      shortString = "" + resNumber + "-" + getName();
+      shortString = resNumber + "-" + getName();
     }
     return shortString;
   }

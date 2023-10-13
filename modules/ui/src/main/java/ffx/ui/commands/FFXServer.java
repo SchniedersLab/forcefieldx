@@ -217,8 +217,7 @@ public class FFXServer implements Runnable {
         if (client != null) {
           client.close();
         }
-      } catch (Exception ex) {
-        return;
+      } catch (Exception ignored) {
       }
     }
   }
@@ -242,8 +241,7 @@ public class FFXServer implements Runnable {
         server.close();
         server = null;
       }
-    } catch (Exception e) {
-      return;
+    } catch (Exception ignored) {
     }
   }
 

@@ -63,7 +63,7 @@ public class AtomSelectionOptions {
    * The ArgGroup keeps the Atom Selection Options together when printing help.
    */
   @ArgGroup(heading = "%n Atom Selection Options%n", validate = false)
-  public AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
+  private final AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
 
   public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
       @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description) {

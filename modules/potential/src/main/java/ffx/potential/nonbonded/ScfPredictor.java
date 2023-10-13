@@ -243,7 +243,7 @@ public class ScfPredictor {
         logger.finest(String.format(" LS Iterations:     %10d", optimum.getIterations()));
         logger.finest(String.format(" Jacobian Evals:    %10d", optimum.getEvaluations()));
         logger.finest(String.format(" Root Mean Square:  %10.6f", optimum.getRMS()));
-        logger.finest(String.format(" LS Coefficients"));
+        logger.finest(" LS Coefficients");
         for (int i = 0; i < predictorOrder - 1; i++) {
           logger.finest(String.format(" %2d  %10.6f", i + 1, optimalValues[i]));
         }

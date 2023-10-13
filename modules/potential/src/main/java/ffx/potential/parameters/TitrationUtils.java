@@ -244,7 +244,7 @@ public class TitrationUtils {
     }
   }
 
-  enum LysStates {
+  public enum LysStates {
     LYD, LYS
   }
 
@@ -283,7 +283,7 @@ public class TitrationUtils {
     }
   }
 
-  enum HisStates {
+  public enum HisStates {
     HIS, HID, HIE
   }
 
@@ -344,7 +344,7 @@ public class TitrationUtils {
     }
   }
 
-  enum CysStates {
+  public enum CysStates {
     CYS, CYD
   }
 

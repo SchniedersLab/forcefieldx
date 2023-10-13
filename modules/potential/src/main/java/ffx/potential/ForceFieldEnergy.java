@@ -1662,7 +1662,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       // Remove bonds that are already dealt with via angles.
       for (Angle angle : numericAngles) {
-        numericBonds.removeAll(angle.getBondList());
+        angle.getBondList().forEach(numericBonds::remove);
       }
 
       // Remove already-constrained angles and bonds (e.g. SETTLE-constrained ones).

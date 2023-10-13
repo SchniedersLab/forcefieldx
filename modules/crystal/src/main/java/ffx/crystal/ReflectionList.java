@@ -148,7 +148,7 @@ public class ReflectionList {
               && !hkl.sysAbs()) {
             minResolution = min(res, minResolution);
             maxResolution = max(res, maxResolution);
-            String s = ("" + h + "_" + k + "_" + l).intern();
+            String s = (h + "_" + k + "_" + l).intern();
             hklMap.put(s, new HKL(hkl.getH(), hkl.getK(), hkl.getL(), hkl.getEpsilon(), hkl.allowed));
             n++;
           }
@@ -247,7 +247,7 @@ public class ReflectionList {
    * @return a {@link ffx.crystal.HKL} object.
    */
   public HKL getHKL(int h, int k, int l) {
-    String s = ("" + h + "_" + k + "_" + l);
+    String s = (h + "_" + k + "_" + l);
     return hklMap.get(s);
   }
 
@@ -361,7 +361,7 @@ public class ReflectionList {
    * @return a boolean.
    */
   private boolean hasHKL(int h, int k, int l) {
-    String s = ("" + h + "_" + k + "_" + l);
+    String s = (h + "_" + k + "_" + l);
     return hklMap.containsKey(s);
   }
 

@@ -39,6 +39,7 @@ package ffx;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
+import ffx.potential.Utilities;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.ModelingShell;
@@ -217,7 +218,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
   }
@@ -291,7 +292,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
     return null;

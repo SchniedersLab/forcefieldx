@@ -2209,7 +2209,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         }
       }
     }
-    String s = "" + address.getHostAddress();
+    String s = address.getHostAddress();
     s = JOptionPane.showInputDialog("Enter an IP Address (XXX.XXX.XXX.XXX)", s);
     if (s == null) {
       return;

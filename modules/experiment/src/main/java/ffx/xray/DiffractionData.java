@@ -1049,7 +1049,7 @@ public class DiffractionData implements DataContainer {
       writeData(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeData("" + removeExtension(filename) + "_" + i + ".mtz", i);
+        writeData(removeExtension(filename) + "_" + i + ".mtz", i);
       }
     }
   }
@@ -1081,7 +1081,7 @@ public class DiffractionData implements DataContainer {
       writeMaps(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeMaps("" + removeExtension(filename) + "_" + i + ".map", i);
+        writeMaps(removeExtension(filename) + "_" + i + ".map", i);
       }
     }
   }
@@ -1220,7 +1220,7 @@ public class DiffractionData implements DataContainer {
       writeSolventMask(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeSolventMask("" + removeExtension(filename) + "_" + i + ".map", i);
+        writeSolventMask(removeExtension(filename) + "_" + i + ".map", i);
       }
     }
   }
@@ -1235,7 +1235,7 @@ public class DiffractionData implements DataContainer {
       writeSolventMaskCNS(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeSolventMaskCNS("" + removeExtension(filename) + "_" + i + ".map", i);
+        writeSolventMaskCNS(removeExtension(filename) + "_" + i + ".map", i);
       }
     }
   }

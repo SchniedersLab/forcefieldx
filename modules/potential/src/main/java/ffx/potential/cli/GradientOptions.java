@@ -52,7 +52,7 @@ public class GradientOptions {
    * The ArgGroup keeps the GradientOptions together when printing help.
    */
   @ArgGroup(heading = "%n Gradient Options%n", validate = false)
-  public GradientOptionGroup group = new GradientOptionGroup();
+  private final GradientOptionGroup group = new GradientOptionGroup();
 
   /**
    * -d or --dx Finite-difference step size.

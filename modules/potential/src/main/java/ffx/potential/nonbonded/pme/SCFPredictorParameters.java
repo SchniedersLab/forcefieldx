@@ -64,7 +64,7 @@ public class SCFPredictorParameters {
   /** Dimensions of [mode][predictorOrder][nAtoms][3] */
   public double[][][][] predictorInducedDipoleCR;
 
-  public LeastSquaresPredictor leastSquaresPredictor;
+  private LeastSquaresPredictor leastSquaresPredictor;
   public LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
   public final SCFPredictor scfPredictor;

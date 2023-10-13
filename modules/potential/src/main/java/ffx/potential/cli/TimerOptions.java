@@ -53,7 +53,7 @@ public class TimerOptions {
    * The ArgGroup keeps the TimerOptions together when printing help.
    */
   @ArgGroup(heading = "%n Timing Options%n", validate = false)
-  public TimerOptionGroup group = new TimerOptionGroup();
+  private final TimerOptionGroup group = new TimerOptionGroup();
 
   /**
    * Getter for the field <code>iterations</code>.

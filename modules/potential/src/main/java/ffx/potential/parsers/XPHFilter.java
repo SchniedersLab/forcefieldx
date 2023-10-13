@@ -178,7 +178,7 @@ public class XPHFilter extends SystemFilter {
 
     // Check for a blank line.
     data = data.trim();
-    if (data.equals("")) {
+    if (data.isEmpty()) {
       return false;
     }
 
@@ -267,13 +267,13 @@ public class XPHFilter extends SystemFilter {
         String data = br.readLine();
 
         //Read past blanklines
-        while (data != null && data.trim().equals("")) {
+        while (data != null && data.trim().isEmpty()) {
           data = br.readLine();
         }
 
         // Read Past ESV
         if (data.contains("ESV")) {
-          while (data != null && !data.trim().equals("")) {
+          while (data != null && !data.trim().isEmpty()) {
             data = br.readLine();
           }
         }
@@ -328,7 +328,7 @@ public class XPHFilter extends SystemFilter {
     try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = br.readLine();
       }
       if (data == null) {
@@ -490,7 +490,7 @@ public class XPHFilter extends SystemFilter {
         }
       }
       // Read ESVs
-      while (data != null && data.equals("") && br.ready()) {
+      while (data != null && data.isEmpty() && br.ready()) {
         data = br.readLine().trim();
       }
 
@@ -596,7 +596,7 @@ public class XPHFilter extends SystemFilter {
       data = bufferedReader.readLine();
 
       // Read past blank lines
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = bufferedReader.readLine();
       }
       if (data == null) {
@@ -605,7 +605,7 @@ public class XPHFilter extends SystemFilter {
 
       // Read Past ESV
       if (data.contains("ESV")) {
-        while (data != null && !data.trim().equals("")) {
+        while (data != null && !data.trim().isEmpty()) {
           data = bufferedReader.readLine();
         }
 
@@ -648,7 +648,7 @@ public class XPHFilter extends SystemFilter {
       for (int i = 0; i < nSystem; i++) {
         data = bufferedReader.readLine();
         // Read past blank lines
-        while (data != null && data.trim().equals("")) {
+        while (data != null && data.trim().isEmpty()) {
           data = bufferedReader.readLine();
         }
         tokens = data.trim().split(" +");

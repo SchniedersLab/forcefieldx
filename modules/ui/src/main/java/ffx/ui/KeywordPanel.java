@@ -968,7 +968,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       }
       flatfileTextArea.append("\n");
       String s = commentStringBuffer.toString();
-      if (!s.trim().equals("")) {
+      if (!s.trim().isEmpty()) {
         flatfileTextArea.append(s.trim());
       }
       flatfileTextArea.append("\n");
@@ -1029,7 +1029,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
         bw.newLine();
         String s = comments.toString();
-        if (s != null && !s.trim().equals("")) {
+        if (s != null && !s.trim().isEmpty()) {
           bw.write(s.trim());
         }
         bw.newLine();

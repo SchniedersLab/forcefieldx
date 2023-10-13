@@ -1494,6 +1494,7 @@ public class CrystalReciprocalSpace {
             if (densityGrid[ii] == 1.0) {
               continue;
             }
+            outerLoop:
             for (int iz = k - ifrz; iz <= k + ifrz; iz++) {
               int giz = mod(iz, fftZ);
               for (int iy = j - ifry; iy <= j + ifry; iy++) {
@@ -1503,6 +1504,7 @@ public class CrystalReciprocalSpace {
                   final int jj = iComplex3D(gix, giy, giz, fftX, fftY);
                   if (densityGrid[jj] == 1.0) {
                     solventGrid[ii] = 1.0;
+                    break outerLoop;
                   }
                 }
               }

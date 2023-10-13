@@ -70,7 +70,7 @@ public class DynamicsOptions {
    * The ArgGroup keeps the DynamicsOptions together when printing help.
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
-  public DynamicsOptionGroup group = new DynamicsOptionGroup();
+  private final DynamicsOptionGroup group = new DynamicsOptionGroup();
   private MDEngine engine = null;
 
   /**

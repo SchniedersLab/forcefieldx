@@ -421,7 +421,7 @@ public class CIFFilter extends SystemFilter {
 
     // Determine the space group from CIF.
     Symmetry symmetry = block.getSymmetry();
-    if (sgNum == -1 && sgName == null || sgName.equals("")) {
+    if (sgNum == -1 && sgName == null || sgName.isEmpty()) {
       if (symmetry.getIntTablesNumber().getRowCount() > 0) {
         sgNum = symmetry.getIntTablesNumber().get(0);
         logger.info(format(" CIF International Tables Number: %d", sgNum));

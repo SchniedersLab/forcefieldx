@@ -725,19 +725,17 @@ public class ExtendedSystem implements Potential {
         modelBias =
             oneMinusTitrationLambda * (coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda)
                 + tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda)
-                + oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared
-                + coeffC1 * titrationLambda) +
+                + oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda)
                 //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
-                titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
+                + titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
         dMod_dTitr = -(coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda)
             + tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1)
             + oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1)
             + tautomerLambda * (coeffCSum - coeffBSum);
         dMod_dTaut = oneMinusTitrationLambda * (2.0 * coeffA0 * tautomerLambda + coeffA1)
             + (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda)
-            + -(coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) + titrationLambda * (
-            coeffCSum - coeffBSum);
-
+            - (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda)
+            + titrationLambda * (coeffCSum - coeffBSum);
         break;
       case LYS:
       case LYD:

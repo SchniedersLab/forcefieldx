@@ -80,7 +80,7 @@ public class MultiDynamicsOptions {
    * The ArgGroup keeps the MultiDynamicsOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Multiple Walker Options for MPI Simulations%n", validate = false)
-  public MultiDynamicsOptionGroup group = new MultiDynamicsOptionGroup();
+  private final MultiDynamicsOptionGroup group = new MultiDynamicsOptionGroup();
 
   /**
    * If residues selected for distributing initial configurations, performs many-body optimization

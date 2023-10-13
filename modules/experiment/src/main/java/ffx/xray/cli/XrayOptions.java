@@ -72,27 +72,27 @@ public class XrayOptions extends DataRefinementOptions {
    * The ArgGroup keeps the XrayOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Refinement Options%n", validate = false)
-  public XrayOptionGroup group = new XrayOptionGroup();
+  private final XrayOptionGroup group = new XrayOptionGroup();
   /**
    * The ArgGroup keeps the XrayReflectionsGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Reflection Data Options%n", validate = false)
-  public XrayReflectionsGroup reflectionGroup = new XrayReflectionsGroup();
+  private final XrayReflectionsGroup reflectionGroup = new XrayReflectionsGroup();
   /**
    * The ArgGroup keeps the BFactorGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray B-Factor Options%n", validate = false)
-  public BFactorGroup bfactorGroup = new BFactorGroup();
+  private final BFactorGroup bfactorGroup = new BFactorGroup();
   /**
    * The ArgGroup keeps the BFactorGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Target Options%n", validate = false)
-  public ScatteringGroup targetGroup = new ScatteringGroup();
+  private final ScatteringGroup targetGroup = new ScatteringGroup();
   /**
    * The ArgGroup keeps the XrayOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Bulk Solvent Options%n", validate = false)
-  public BulkSolventGroup solventGroup = new BulkSolventGroup();
+  private final BulkSolventGroup solventGroup = new BulkSolventGroup();
   /** The refinement mode to use. */
   public RefinementMode refinementMode = RefinementMode.COORDINATES;
   /** The SolventModel to use. */

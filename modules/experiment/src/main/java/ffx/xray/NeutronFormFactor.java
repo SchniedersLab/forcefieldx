@@ -252,9 +252,9 @@ public final class NeutronFormFactor implements FormFactor {
       //  logger.info(" Atom:" + atom + " " + atom.isDeuterium());
       //}
       if (atom.isDeuterium()) {
-        key = "" + atom.getAtomicNumber() + "_2";
+        key = atom.getAtomicNumber() + "_2";
       } else {
-        key = "" + atom.getAtomicNumber() + "_1";
+        key = atom.getAtomicNumber() + "_1";
       }
     } else {
       key = "" + atom.getAtomicNumber();

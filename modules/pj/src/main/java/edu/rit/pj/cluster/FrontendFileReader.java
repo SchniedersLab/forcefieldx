@@ -84,7 +84,7 @@ public class FrontendFileReader {
         private InputStream myInputStream;
         private byte[] myBuffer = new byte[0];
 
-        private abstract class Invocation {
+        private abstract static class Invocation {
 
             public abstract boolean invoke()
                     throws IOException;

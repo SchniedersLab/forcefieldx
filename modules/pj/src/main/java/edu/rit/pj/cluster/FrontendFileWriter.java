@@ -88,7 +88,7 @@ public class FrontendFileWriter {
         private byte[] myByteArray = new byte[0];
         private ByteBuf myByteBuf = ByteBuf.buffer(myByteArray);
 
-        private abstract class Invocation {
+        private abstract static class Invocation {
 
             public abstract boolean invoke()
                     throws IOException;

@@ -88,7 +88,7 @@ public class MultiResidue extends Residue {
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    */
   public MultiResidue(Residue residue, ForceField forceField) {
-    super("" + residue.getResidueNumber() + "-" + "MultiResidue", residue.getResidueNumber(),
+    super(residue.getResidueNumber() + "-" + "MultiResidue", residue.getResidueNumber(),
         residue.residueType, residue.getChainID(), residue.getChainID().toString());
     this.forceField = forceField;
     activeResidue = residue;

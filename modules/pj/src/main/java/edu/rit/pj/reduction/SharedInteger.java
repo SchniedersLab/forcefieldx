@@ -241,7 +241,7 @@ public class SharedInteger
      * @return Current value.
      */
     public long longValue() {
-        return (long) get();
+        return get();
     }
 
     /**

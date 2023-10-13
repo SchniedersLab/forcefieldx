@@ -937,10 +937,10 @@ public class RosenbluthChiAllMove implements MCMove {
     boolean doChi0 = false, doChi1 = false;
     boolean doChi2 = true, doChi3 = true;
     double increment = 1.0;
-    for (double chi0 = -180.0; chi0 < +180.0; chi0 += increment) {
-      for (double chi1 = -180.0; chi1 <= +180.0; chi1 += increment) {
-        for (double chi2 = -180.0; chi2 <= +180.0; chi2 += increment) {
-          for (double chi3 = -180.0; chi3 <= +180.0; chi3 += increment) {
+    for (double chi0 = -180.0; chi0 < 180.0; chi0 += increment) {
+      for (double chi1 = -180.0; chi1 <= 180.0; chi1 += increment) {
+        for (double chi2 = -180.0; chi2 <= 180.0; chi2 += increment) {
+          for (double chi3 = -180.0; chi3 <= 180.0; chi3 += increment) {
             sb.append(format(" %3s", target.getName()));
             double[] newChi = new double[4];
             if (doChi0) {
