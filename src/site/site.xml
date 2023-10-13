@@ -100,10 +100,10 @@
     </breadcrumbs>
     <menu name="Overview" inherit="top">
       <item name="Welcome" href="/index.html"/>
-      <item name="Recent Work" href="/recentWork.html"/>
       <item name="Download" href="/download.html"/>
       <item name="Install" href="/install.html"/>
       <item name="Source Code" href="/source.html"/>
+      <item name="Research Goals" href="/researchGoals.html"/>
       <item name="Publications" href="/publications.html"/>
       <item name="Collaborations" href="/scope.html"/>
     </menu>
