@@ -281,11 +281,7 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
         int nAtoms = atoms.length;
         execute(0, nAtoms - 1, inducedRealSpaceFieldLoop[threadIndex]);
       } catch (Exception e) {
-        e.printStackTrace();
-        String message =
-            "Fatal exception computing the induced real space field in thread "
-                + getThreadIndex()
-                + "\n";
+        String message = "Fatal exception computing the induced real space field in thread " + getThreadIndex() + "\n";
         logger.log(Level.SEVERE, message, e);
       }
     }

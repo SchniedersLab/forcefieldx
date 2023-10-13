@@ -220,7 +220,7 @@ public class BARFilter {
         return false;
       }
     } catch (IOException fileNotFoundException) {
-      fileNotFoundException.printStackTrace();
+      logger.warning(format(" Exception reading %s:\n %s", barFile, fileNotFoundException));
     }
     return true;
   }

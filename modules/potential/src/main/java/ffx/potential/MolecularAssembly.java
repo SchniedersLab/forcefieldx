@@ -564,7 +564,7 @@ public class MolecularAssembly extends MSGroup {
     try {
       wireframe.setBoundsAutoCompute(false);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning(" Exception in setting bounds for wireframe:\n" + e);
     }
     wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
     wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);

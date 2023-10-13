@@ -3154,7 +3154,6 @@ public class CrystalReciprocalSpace {
       try {
         execute(0, nAtoms - 1, atomicGradientLoop[getThreadIndex()]);
       } catch (Exception e) {
-        e.printStackTrace();
         logger.severe(e.toString());
       }
     }

@@ -218,7 +218,6 @@ public class ForceFieldFilter {
             forceFieldConfiguration.setHeader("Internal force field (" + name + ").");
             properties.addConfiguration(forceFieldConfiguration);
           } catch (ConfigurationException e) {
-            e.printStackTrace();
             logger.warning(e.toString());
           }
         }

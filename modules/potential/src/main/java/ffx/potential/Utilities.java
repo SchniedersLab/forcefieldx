@@ -263,12 +263,12 @@ public final class Utilities {
    * @return A String of its stack trace.
    */
   public static String stackTraceToString(Throwable ex) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintStream ps = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    try (PrintStream ps = new PrintStream(byteArrayOutputStream, true, StandardCharsets.UTF_8)) {
       ex.printStackTrace(ps);
-      return baos.toString(StandardCharsets.UTF_8);
+      return byteArrayOutputStream.toString(StandardCharsets.UTF_8);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning("Unable to convert stack trace to String");
       return "";
     }
   }

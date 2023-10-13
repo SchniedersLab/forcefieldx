@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -553,7 +554,8 @@ public final class Main extends JFrame {
       // Log the exception to System.err because the logging subsystem has not be initialized yet.
       String message = " Exception starting up the Parallel Java communication layer.";
       System.err.println(message);
-      System.err.println(e);
+      String error = e.toString();
+      System.err.println(error);
     }
   }
 

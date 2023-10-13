@@ -1774,7 +1774,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             return new ForceFieldEnergyOpenMM(assembly, platform, restraints, numThreads);
           } catch (Exception ex) {
             logger.warning(format(" Exception creating ForceFieldEnergyOpenMM: %s", ex));
-            ex.printStackTrace();
 
             ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
             if (ffxEnergy == null) {

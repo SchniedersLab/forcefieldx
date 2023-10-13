@@ -118,7 +118,6 @@ public class DistanceRegion extends ParallelRegion {
       execute(0, nResidues - 1, distanceLoops[threadID]);
     } catch (Exception e) {
       String message = " Exception computing residue-residue distances.";
-      e.printStackTrace();
       logger.log(Level.SEVERE, message, e);
     }
   }

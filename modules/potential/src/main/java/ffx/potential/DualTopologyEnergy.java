@@ -522,7 +522,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       logger.info(format(" RMSD: %12.3f", symOpRMSD));
     } catch (Exception ex) {
       logger.warning(ex.toString());
-      ex.printStackTrace();
       logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symOpString + ")");
     }
   }
