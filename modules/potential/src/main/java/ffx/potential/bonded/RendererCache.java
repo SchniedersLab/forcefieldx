@@ -155,11 +155,9 @@ public class RendererCache {
   /** Constant <code>userColor</code> */
   public static Color3f userColor = WHITE;
 
-  private static List<Transform3D> transform3DPool =
-      Collections.synchronizedList(new ArrayList<>());
-  private static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
-  private static List<BranchGroup> doubleCylinderPool =
-      Collections.synchronizedList(new ArrayList<>());
+  private static final List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<>());
+  private static final List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
+  private static final List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<>());
   private static ShaderProgram shaderProgram = null;
 
   static {

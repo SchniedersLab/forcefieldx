@@ -937,20 +937,4 @@ public class ManyBodyOptions {
 
   }
 
-  //    /**
-  //     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
-  //     * when the many body command is run with the following syntax and flags:
-  //     * ffxc ManyBody --out ... file.pdb &gt;&gt; file.log.
-  //     *
-  //     * @throws java.io.IOException Throws an exception when output is non piped to a log
-  //     *                             file. The --out flag relies on the presence of a log file
-  // where output is
-  //     *                             piped.
-  //     */
-  //    public void saveEliminatedRotamers() throws IOException {
-  //        if (saveOutput) {
-  //            rotamerOptimization.outputEliminated();
-  //        }
-  //    }
-
 }

@@ -495,21 +495,7 @@ public class ConformationScan {
         }
         forceFieldEnergy.getCoordinates(x);
         double e = forceFieldEnergy.energy(x, true);
-        if (e > 1000000){
-            throw new Exception(" Energy too high to minimize.");
-        }
-        // Set up restraintBond
-        BondType restraint = new BondType(new int[]{a.getAtomicNumber(), b.getAtomicNumber()},
-                100.0,
-                this.hBondDist,
-                BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
-                this.flatBottomRadius);
-        RestraintBond restraintBond = new RestraintBond(a, b,
-                null,
-                false,
-                0.0, 0.0,
-                null);
-        restraintBond.setBondType(restraint);
+        RestraintBond restraintBond = getRestraintBond(a, b, e);
         Minimize minEngine = new Minimize(mola, forceFieldEnergy, null);
         try {
             minEngine.minimize(this.eps, this.maxIter);
@@ -531,6 +517,25 @@ public class ConformationScan {
         mola.getBondList().remove(restraintBond);
         mola.update();
         return minEngine.getStatus();
+    }
+
+    private RestraintBond getRestraintBond(Atom a, Atom b, double e) throws Exception {
+        if (e > 1000000){
+            throw new Exception(" Energy too high to minimize.");
+        }
+        // Set up restraintBond
+        BondType restraint = new BondType(new int[]{a.getAtomicNumber(), b.getAtomicNumber()},
+                100.0,
+                this.hBondDist,
+                BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
+                this.flatBottomRadius);
+        RestraintBond restraintBond = new RestraintBond(a, b,
+                null,
+                false,
+                0.0, 0.0,
+                null);
+        restraintBond.setBondType(restraint);
+        return restraintBond;
     }
 
     private void setTargetAtoms(Atom[] atoms){

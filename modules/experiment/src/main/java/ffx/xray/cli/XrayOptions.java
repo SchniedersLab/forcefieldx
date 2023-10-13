@@ -446,7 +446,7 @@ public class XrayOptions extends DataRefinementOptions {
         names = {"--sol", "--solvent"},
         paramLabel = "POLYNOMIAL",
         description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
-    private String solventString = "POLYNOMIAL";
+    String solventString = "POLYNOMIAL";
   }
 
   /**

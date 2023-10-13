@@ -451,28 +451,7 @@ public class CrystalReciprocalSpace {
     }
 
     // Determine number of grid points to sample density on
-    double aRad = -1.0;
-    for (Atom a : atoms) {
-      double vdwr = a.getVDWType().radius * 0.5;
-      if (!solvent) {
-        aRad = Math.max(aRad, a.getFormFactorWidth());
-      } else {
-        switch (solventModel) {
-          case BINARY:
-            aRad = Math.max(aRad, vdwr + solventA + 0.2);
-            break;
-          case GAUSSIAN:
-            aRad = Math.max(aRad, vdwr * solventB + 2.0);
-            break;
-          case POLYNOMIAL:
-            aRad = Math.max(aRad, vdwr + solventB + 0.2);
-            break;
-          case NONE:
-          default:
-            aRad = 0.0;
-        }
-      }
-    }
+    double aRad = getaRad(atoms, solventModel);
     aRadGrid = (int) Math.floor(aRad * nX / crystal.a) + 1;
 
     // local copy of coordinates - note use of bulknsym
@@ -747,6 +726,32 @@ public class CrystalReciprocalSpace {
     solventScaleRegion = new SolventScaleRegion(threadCount);
     atomicScaleRegion = new AtomicScaleRegion(threadCount);
     complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
+  }
+
+  private double getaRad(Atom[] atoms, SolventModel solventModel) {
+    double aRad = -1.0;
+    for (Atom a : atoms) {
+      double vdwr = a.getVDWType().radius * 0.5;
+      if (!solvent) {
+        aRad = Math.max(aRad, a.getFormFactorWidth());
+      } else {
+        switch (solventModel) {
+          case BINARY:
+            aRad = Math.max(aRad, vdwr + solventA + 0.2);
+            break;
+          case GAUSSIAN:
+            aRad = Math.max(aRad, vdwr * solventB + 2.0);
+            break;
+          case POLYNOMIAL:
+            aRad = Math.max(aRad, vdwr + solventB + 0.2);
+            break;
+          case NONE:
+          default:
+            aRad = 0.0;
+        }
+      }
+    }
+    return aRad;
   }
 
   /**
@@ -3692,9 +3697,6 @@ public class CrystalReciprocalSpace {
               final int ii = iComplex3D(h, k, l, fftX, fftY);
               c.re(getDensityGrid()[ii]);
               c.im(getDensityGrid()[ii + 1]);
-              c.phaseShiftIP(shift);
-              fc[0] += c.re();
-              fc[1] += c.im();
             } else {
               h = (fftX - h) % fftX;
               k = (fftY - k) % fftY;
@@ -3702,10 +3704,10 @@ public class CrystalReciprocalSpace {
               final int ii = iComplex3D(h, k, l, fftX, fftY);
               c.re(getDensityGrid()[ii]);
               c.im(-getDensityGrid()[ii + 1]);
-              c.phaseShiftIP(shift);
-              fc[0] += c.re();
-              fc[1] += c.im();
             }
+            c.phaseShiftIP(shift);
+            fc[0] += c.re();
+            fc[1] += c.im();
           }
         }
       }

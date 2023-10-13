@@ -423,11 +423,10 @@ public class MultiResidue extends Residue {
         allRotamers = addAllDefaultRotamers(usual, nRots);
       }
       rotamers = allRotamers;
-      return rotamers;
     } else {
       rotamers = addAllDefaultRotamers(usual, nRots);
-      return rotamers;
     }
+    return rotamers;
   }
 
   /** {@inheritDoc} */

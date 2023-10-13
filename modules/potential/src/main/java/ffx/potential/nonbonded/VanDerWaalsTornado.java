@@ -294,9 +294,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
         double y = dx[1];
         double z = dx[2];
         double r2;
-        if (aperiodic) {
-          r2 = x * x + y * y + z * z;
-        } else {
+        if (!aperiodic) {
           double xf = x * A00 + y * A10 + z * A20;
           double yf = x * A01 + y * A11 + z * A21;
           double zf = x * A02 + y * A12 + z * A22;
@@ -334,8 +332,8 @@ public class VanDerWaalsTornado extends VanDerWaals {
           dx[0] = x;
           dx[1] = y;
           dx[2] = z;
-          r2 = x * x + y * y + z * z;
         }
+        r2 = x * x + y * y + z * z;
         final int classK = atomClass[k];
         final double rk = rMin[classK];
         if (r2 <= vdwCutoff2 && mask[k] > 0 && rk > 0) {
