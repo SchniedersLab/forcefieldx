@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Applications</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Applications and Collaborations">
+      <p>Ongoing applications of Force Field X include the following collaborations:</p>
+      <ul>
+        <li>Understanding missense variants in the context of inherited deafness.</li>
+        <li>Creation of an alchemical pipeline to predict the crystallization of pharmaceuticals.</li>
+        <li>Predicting the binding affinity between cyclodextrin hosts and guest ligands.</li>
+      </ul>
+      <subsection name="Understanding Missense Variants in the Context of Inherited Deafness" id="missense">
+        <table>
+          <tr>
+            <td>
+              The Deafness Variation Database (DVD) provides a comprehensive guide to genetic variation in genes
+              known to be associated with deafness. The DVD v9 includes all known genetic variants present in
+              223 deafness-associated genes that are included on OtoSCOPE®, a comprehensive genetic deafness screening
+              platform. For each of these genes that codes for a protein, Force Field X was used to refine an AlphaFold2
+              structures using the AMOEBA force field and our novel global optimization algorithms. These structures are
+              more consistent with the chemical features of protein structures from X-ray crystallography as assessed by
+              the tool MolProbity.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>
+                <img src="images/DVD.png" alt="DVD"/>
+              </p>
+              <p>The protein models are available in the DVD --
+                <a href="https://deafnessvariationdatabase.org">please check them out here!</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>For more information, please see the following publication from our collaboration with labs of
+                Richard J. H. Smith, Thomas Casavant and Terry Braun:
+              </p>
+              <p>Tollefson, M. R., Gogal, R. A., Weaver, A. M., Schaefer, A. M., Marini, R. J.,
+                Azaiez, H., Kolbe, D. L., Wang, D., Weaver, A. E., Casavant, T. L., Braun, T. A.,
+                Smith, R. J. H., and Schnieders, M. J.,
+                Assessing Variants of Uncertain Significance Implicated in Hearing Loss Using a Comprehensive
+                Deafness Proteome.
+                <a href="https://doi.org/10.1007/s00439-023-02559-9">
+                  <i>Human Genetics</i>
+                  <b>2023</b>, 142, 819–834.
+                </a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Alchemical Polymorph Prediction Pipeline" id="polymorph">
+        <table>
+          <tr>
+            <td>We are collaborating with Mitsubishi Tanabe Pharma and Takeda to create a complete crystal structure
+              prediction pipeline using Force Field X.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <img src="images/Polymorphs.png" alt="Polymorph"/>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>Please see our recent joint publication describing the "Progressive Alignment of Crystals" (PAC)
+                algorithm:
+              </p>
+              <p>
+                Nessler, A. J., Okada, O., Hermon, M. J., Nagata, H., and Schnieders, M. J.,
+                Progressive Alignment of Crystals: Reproducible and Efficient Assessment of Crystal Structure
+                Similarity.
+                <a href="https://dx.doi.org/10.1107/S1600576722009670">
+                  <i>Journal of Applied Crystallography</i>
+                  <b>2022</b>, 55, 1528-1537.
+                </a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Cyclodextrin Host-Guest Binding Affinity">
+        <table>
+          <tr>
+            <td>This is a new collaboration with Pfizer -- more soon on our progress.</td>
+          </tr>
+          <tr>
+            <td>
+              <img src="images/cyclodextrin.png" alt="Cyclodextrin"/>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+    </section>
+  </body>
+</document>

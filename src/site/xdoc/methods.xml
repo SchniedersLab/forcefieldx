@@ -2,12 +2,12 @@
 <document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
-    <title>Research Goals</title>
+    <title>Methods</title>
     <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
   </properties>
   <body>
-    <section name="Research Goals">
-      <p>Research Goals that Leverage Force Field X:</p>
+    <section name="Method Development">
+      <p>Novel methods being developed within Force Field X include:</p>
       <table>
         <tr>
           <td>
