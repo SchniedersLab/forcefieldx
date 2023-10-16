@@ -16,10 +16,10 @@ Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more de
 ## Use Binder to Try Force Field X Online
 
 ### With Java
-[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=binder%2FForceFieldX-Java.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/binder/ForceFieldX-Java.ipynb)
+[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=ipynb-java%2FForceFieldX-Java.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/ipynb-java/ForceFieldX-Java.ipynb)
 
 ### With Kotlin
-[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=binder%2FForceFieldX-Kotlin.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/binder/ForceFieldX-Kotlin.ipynb)
+[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=ipynb-kotlin%2FForceFieldX-Kotlin.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/ipynb-kotlin/ForceFieldX-Kotlin.ipynb)
 
 ---
 
