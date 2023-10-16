@@ -34,10 +34,10 @@
       </subsection>
       <br/>
         <!-- iframe id="java-iframe" width="100%" height="100%"
-              src="https://nbviewer.org/github/SchniedersLab/forcefieldx/blob/master/binder/ForceFieldX-Java.ipynb">
+              src="https://nbviewer.org/github/SchniedersLab/forcefieldx/blob/master/ipynb-java/ForceFieldX-Java.ipynb">
         </iframe -->
       <iframe id="kotlin-iframe" width="100%" height="500"
-              src="https://nbviewer.org/github/SchniedersLab/forcefieldx/blob/master/binder/ForceFieldX-Kotlin.ipynb">
+              src="https://nbviewer.org/github/SchniedersLab/forcefieldx/blob/master/ipynb-kotlin/ForceFieldX-Kotlin.ipynb">
       </iframe>
     </section>
   </body>
