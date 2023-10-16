@@ -287,13 +287,6 @@
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
           <generateSitemap>true</generateSitemap>
-          <!-- asciidoc>
-              <attributes>
-                  <source-highlighter>coderay</source-highlighter>
-                  <coderay-css>style</coderay-css>
-                  <icons>font</icons>
-              </attributes>
-          </asciidoc -->
         </configuration>
         <inherited>true</inherited>
         <version>${site.version}</version>

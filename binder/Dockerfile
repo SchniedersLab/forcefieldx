@@ -84,11 +84,9 @@ RUN mkdir $HOME
 COPY . $HOME
 RUN chown -R $NB_UID $HOME
 
-# Set up the FFX Kotlin library
-RUN mkdir $HOME/.jupyter_kotlin
-RUN mkdir $HOME/.jupyter_kotlin/libraries
-RUN wget https://raw.githubusercontent.com/SchniedersLab/forcefieldx/master/binder/ffx.json
-RUN cp ffx.json $HOME/.jupyter_kotlin/libraries/.
+# Set up the Java and Kotlin Notebook Directories
+RUN cp -R /ffx/ipynb-kotlin $HOME/ipynb-kotlin
+RUN cp -R /ffx/ipynb-java $HOME/ipynb-java
 
 USER $NB_USER
 

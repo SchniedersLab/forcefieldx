@@ -1,4 +1,4 @@
-import groovy.io.FileType
+// Generate the Kotlin ffx.json file for the Jupyter notebook.
 
 // Constant header of the Kotlin ffx.json file.
 header = """{
@@ -36,6 +36,5 @@ footer = """  ]
 sb.append(footer)
 
 // Write the Kotlin ffx.json file.
-File json = new File("binder/ffx.json")
+File json = new File("ipynb-kotlin/ffx.json")
 json.write(sb.toString())
-
