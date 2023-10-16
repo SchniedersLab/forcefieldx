@@ -7,7 +7,7 @@ header = """{
   },
   "link": "https://ffx.biochem.uiowa.edu",
   "repositories": [
-    "file:/ffx/lib"
+    "file:../lib"
   ],
   "imports": [
     "ffx.Main",
