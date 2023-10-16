@@ -9,7 +9,7 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
-[![Build Status](https://app.travis-ci.com/SchniedersLab/forcefieldx.svg?branch=master)](https://app.travis-ci.com/SchniedersLab/forcefieldx/)
+[![Force Field X Build](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml/badge.svg)](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml)
 
 ---
 
