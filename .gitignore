@@ -33,6 +33,7 @@ website/
 .mvn/
 
 velocity.log
+build.log
 
 bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml
