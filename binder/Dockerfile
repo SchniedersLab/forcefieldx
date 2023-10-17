@@ -81,12 +81,12 @@ RUN adduser --disabled-password \
     $NB_USER
 
 RUN mkdir $HOME
-COPY . $HOME
+# COPY . $HOME
 
 # Set up the Java and Kotlin Notebook Directories
-RUN cp -R /ffx/ipynb-kotlin $HOME/ipynb-kotlin
-RUN cp -R /ffx/ipynb-java $HOME/ipynb-java
-RUN cp -R /ffx/lib $HOME/lib
+RUN cp -R /ffx/ipynb-kotlin $HOME/.
+RUN cp -R /ffx/ipynb-java $HOME/.
+RUN cp -R /ffx/lib $HOME/.
 
 RUN chown -R $NB_UID $HOME
 

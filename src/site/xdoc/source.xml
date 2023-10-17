@@ -7,7 +7,7 @@
     <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
   </properties>
   <body>
-    <section name="Source Code">
+    <section name="Build from Source Code">
       <subsection name="Clone the Code from GitHub">
         <p>The Force Field X project is hosted at
           <a target="_blank" href="https://github.com/SchniedersLab/forcefieldx">Github</a>.
@@ -16,15 +16,24 @@
         <source>git clone https://github.com/SchniedersLab/forcefieldx.git ffx</source>
         <p>In the future, your clone of Force Field X can be updated to the latest version using the command:</p>
         <source>git pull origin master</source>
+        <p>
+          The current status of the GitHub code:
+        </p>
+        <p>
+          <a href="https://github.com/SchniedersLab/forcefieldx">
+            <img src="https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml/badge.svg"
+                 alt="Force Field X Build"/>
+          </a>
+        </p>
       </subsection>
-      <hr></hr>
       <subsection name="Build Using Maven">
         <p>A Maven project file (pom.xml) is provided to build Force Field X on any platform. After cloing the Force
           Field X git repository, change directories into the base project directory. Then execute:
         </p>
         <source>mvn</source>
         <p>This requires Maven v. 3.8 or later to be installed with its bin directory included in your $PATH environment
-          variable. The first time this command is executed, Maven will download build dependencies and Force Field X runtime
+          variable. The first time this command is executed, Maven will download build dependencies and Force Field X
+          runtime
           dependencies. Future executions are quicker. Force Field X will self-test its modules and report failures.
           Only code that passes all testing should be pushed to the GitHub repository, so if any test fails it may be
           due to a local configuration issue. To execute the tests:
