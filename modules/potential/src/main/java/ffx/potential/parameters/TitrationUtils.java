@@ -501,17 +501,17 @@ public class TitrationUtils {
     this(forceField);
     this.proteinDielectric = proteinDielectric;
     this.tanhCorrection = tanhCorrection;
-    String fModA = forceField.getProperties().getString("fModA");
-    this.fModA = Double.parseDouble(fModA);
-    logger.info("ASP fMOD = " + fModA);
-    String fModG = forceField.getProperties().getString("fModG");
-    this.fModG = Double.parseDouble(fModG);
-    String fModL = forceField.getProperties().getString("fModL");
-    this.fModL = Double.parseDouble(fModL);
-    String fModHE = forceField.getProperties().getString("fModHE");
-    this.fModHE = Double.parseDouble(fModHE);
-    String fModHD = forceField.getProperties().getString("fModHD");
-    this.fModHD = Double.parseDouble(fModHD);
+    //String fModA = forceField.getProperties().getString("fModA");
+    //this.fModA = Double.parseDouble(fModA);
+    //logger.info("ASP fMOD = " + fModA);
+    //String fModG = forceField.getProperties().getString("fModG");
+    //this.fModG = Double.parseDouble(fModG);
+    //String fModL = forceField.getProperties().getString("fModL");
+    //this.fModL = Double.parseDouble(fModL);
+    //String fModHE = forceField.getProperties().getString("fModHE");
+    //this.fModHE = Double.parseDouble(fModHE);
+    //String fModHD = forceField.getProperties().getString("fModHD");
+    //this.fModHD = Double.parseDouble(fModHD);
   }
 
   public boolean testResidueTypes(Residue residue) {
