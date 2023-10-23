@@ -19,7 +19,7 @@
              <span style="color:black">Force Field X</span>
              <br>
              <h4>
-             <span style="color:green">Sustainable</span><span style="color:black"> Software for Molecular Biophysics</span>
+             <span style="color:green">Polyglot</span><span style="color:black"> Software for Molecular Biophysics</span>
              </h4>
             ]]>
     </name>
@@ -39,7 +39,7 @@
       <leftColumnClass>span2</leftColumnClass>
       <bodyColumnClass>span10</bodyColumnClass>
       <sideBarEnabled>true</sideBarEnabled>
-      <topBarEnabled>true</topBarEnabled>
+      <topBarEnabled>false</topBarEnabled>
       <topBarContainerStyle>width: 90%;</topBarContainerStyle>
       <topBarIcon>
         <name>Force Field X</name>
@@ -87,9 +87,9 @@
             ]]>
     </head>
     <links>
-      <!-- item name="Biochemisty and Molecular Biology" href="http://www.medicine.uiowa.edu/biochemistry"/>
-      <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
-      <item name="CBCB" href="https://genome.uiowa.edu/home"/>
+      <item name="Biomedical Engineering"  href="https://www.engineering.uiowa.edu/bme"/>
+      <item name="Biochemisty and Molecular Biology" href="https://www.medicine.uiowa.edu/biochemistry"/>
+      <!-- item name="CBCB" href="https://genome.uiowa.edu/home"/>
       <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
       <item name="IVR"  href="http://ivr.uiowa.edu"/>
       <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
@@ -98,16 +98,21 @@
       <item name="Sitemap" href="/sitemap.html"/>
       <item name="Home" href="/index.html"/>
     </breadcrumbs>
-    <menu name="Overview" inherit="top">
+    <menu>
       <item name="Welcome" href="/index.html"/>
+    </menu>
+    <menu name="About Force Field X" inherit="top">
       <item name="Download" href="/download.html"/>
       <item name="Install" href="/install.html"/>
-      <item name="Source Code" href="/source.html"/>
-      <item name="Methods" href="/methods.html"/>
+      <item name="User Manual" href="/introduction.html"/>
       <item name="Applications" href="/applications.html"/>
       <item name="Publications" href="/publications.html"/>
+      <item name="Method Development" href="/methods.html"/>
+      <item name="Build from Source" href="/source.html"/>
+      <item name="Developer Guide" href="/modules.html"/>
     </menu>
-    <menu name="Manual" inherit="top">
+    <menu name="User Manual" inherit="top">
+      <item name="Introduction" href="/introduction.html"/>
       <item name="Commands" href="/commands.html" collapse="true">
         <item name="Energy and Structure Analysis" href="/commands-energy.html" collapse="true">
           <item name="Density" href="/commands/Density.html"/>
@@ -221,28 +226,26 @@
         <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html"/>
       </item>
       <item name="Parallelization" href="/parallel.html"/>
-      <item name="License" href="/licenses.html"/>
-      <item name="FFX Team" href="/team.html"/>
-    </menu>
-    <menu name="Integrations" inherit="top">
       <item name="Binder" href="/binder.html"/>
-      <item name="Docker" href="/docker.html"/>
       <item name="Google Colab" href="/colab.html"/>
+      <item name="Docker" href="/docker.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
-      <!-- item name="Matlab" href="/matlab.html"/ -->
     </menu>
-    <menu name="Modules" inherit="top">
-      <item name="Modules" href="/modules.html"/>
-      <item name="Algorithms" href="modules/algorithms/index.html"/>
-      <item name="Crystal" href="modules/crystal/index.html"/>
-      <item name="Experiment" href="modules/experiment/index.html"/>
-      <item name="Numerics" href="modules/numerics/index.html"/>
-      <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
-      <item name="Parallel Java" href="modules/pj/index.html"/>
-      <item name="Potential" href="modules/potential/index.html"/>
-      <item name="User Interfaces" href="modules/ui/index.html"/>
-      <item name="Utilities" href="modules/utilities/index.html"/>
+    <menu name="Developer Guide" inherit="top">
+      <item name="Introduction" href="/modules.html" collapse="true">
+        <item name="Algorithms" href="modules/ffx-algorithms/index.html"/>
+        <item name="Crystal" href="modules/ffx-crystal/index.html"/>
+        <item name="Experiment" href="modules/ffx-experiment/index.html"/>
+        <item name="Numerics" href="modules/ffx-numerics/index.html"/>
+        <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
+        <item name="Parallel Java" href="modules/ffx-pj/index.html"/>
+        <item name="Potential" href="modules/ffx-potential/index.html"/>
+        <item name="User Interfaces" href="modules/ffx-ui/index.html"/>
+        <item name="Utilities" href="modules/ffx-utilities/index.html"/>
+      </item>
+      <item name="License" href="/licenses.html"/>
+      <item name="Development Team" href="/team.html"/>
     </menu>
-    <menu name="Project Info" ref="reports"/>
+    <menu name="Project Documentation" ref="reports"/>
   </body>
 </project>

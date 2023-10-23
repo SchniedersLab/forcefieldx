@@ -49,4 +49,3 @@ main = java.type("ffx.Main")
 # Execute the FFX command and return the results to the Python context.
 # The "args" are passed into Python context by FFX.
 script = main.ffxScript(args) 
-
