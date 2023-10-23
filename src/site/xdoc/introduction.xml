@@ -70,7 +70,8 @@
       </table>
       <subsection name="Polyglot Language Support">
         <p>Our goal is to help everyone easily use their preferred software environment across
-          Linux, MacOS and Windows platforms.</p>
+          Linux, MacOS and Windows platforms.
+        </p>
         <table width="600">
           <tr>
             <td width="150">
@@ -78,7 +79,9 @@
                 <img src="images/groovy.png" alt="Groovy" width="150" height="150" align="middle"/>
               </p>
               <p>
-                <a href="commands.html">Commands</a> are generally written in <a href="http://groovy-lang.org/index.html">Groovy</a>
+                <a href="commands.html">Commands</a>
+                are generally written in
+                <a href="http://groovy-lang.org/index.html">Groovy</a>
                 because the syntax is convenient for refactoring between command scripts and the core Java libraries.
                 The Groovy commands are compiled ahead of time into Java bytecode for syntax checking, better
                 performance and for unit testing.
@@ -104,7 +107,8 @@
               <p>
                 Kotlin is an emerging language from JetBrains that is interoperable with Java. You can use Kotlin to
                 control FFX from within a Jupyter Notebook, including convenient support directly within the IntelliJ
-                IDE. The "Lets-Plot" Kotlin <a href="https://github.com/JetBrains/lets-plot-kotlin">library</a> is especially
+                IDE. The "Lets-Plot" Kotlin <a href="https://github.com/JetBrains/lets-plot-kotlin">library</a> is
+                especially
                 interesting.
               </p>
             </td>
@@ -116,11 +120,22 @@
                 Python is a popular language for scientific computing, which is now supported in by an embedded
                 <a href="https://www.graalvm.org/latest/reference-manual/python/">Python v. 3.10 engine.</a>
                 Example Python scripts can be found in the "python" directory.
-                Just like for Groovy, you can send Python scripts to the "ffx" or "ffxc" start-up commands for execution.
+                Just like for Groovy, you can send Python scripts to the "ffx" or "ffxc" start-up commands for
+                execution.
               </p>
             </td>
           </tr>
         </table>
+      </subsection>
+      <subsection name="Graphical User Interface">
+        <p>
+          Shown below is a screenshot of the Force Field X graphical user interface (GUI) with a
+          crystal structure of yeast "proliferating cell nuclear antigen" (PCNA) from the lab of M. Todd
+          Washington and solved by Schnieders' lab PhD graduate Dr. Jacob Litman (PDB ID: 4YHR). All Force Field X
+          commands can be run with interactive visualization or with a command line interface for use on high
+          performance computing clusters.
+        </p>
+        <img src="images/ffx-gui.png" alt="Force Field X" align="middle"/>
       </subsection>
     </section>
   </body>

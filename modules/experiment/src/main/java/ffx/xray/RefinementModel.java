@@ -164,7 +164,7 @@ public class RefinementModel {
     xIndex = new ArrayList<>(molecularAssemblies.length);
     for (int i = 0; i < molecularAssemblies.length; i++) {
       // xIndex[i] = new ArrayList<>();
-      xIndex.set(i, new ArrayList<>());
+      xIndex.add(new ArrayList<>());
     }
 
     // Create the atomList to be used for SF calculations.

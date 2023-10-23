@@ -12,7 +12,7 @@
       <subsection name="Introduction">
         <table>
           <tr>
-            <td>
+            <td width="600">
               <p>Force Field X is a polyglot open source molecular modeling software that targets open research
                 questions in the areas of:
               </p>
@@ -24,6 +24,20 @@
                 </li>
                 <li>Designing biomolecules in both soluble and crystalline environments.</li>
               </ul>
+              <p>
+                Shown to the right is a screenshot of the Force Field X graphical user interface (GUI) with a
+                crystal structure of yeast "proliferating cell nuclear antigen" (PCNA) from the lab of M. Todd
+                Washington and solved by Schnieders' lab graduate Dr. Jacob Litman (PDB ID: 4YHR). All Force Field X
+                commands can be run with interactive visualization or with a command line interface for use on high
+                performance computing clusters.
+              </p>
+            </td>
+            <td width="600">
+              <p>
+                <a href="introduction.html">
+                  <img src="images/ffx-gui.png" alt="Force Field X" width="600" align="right"/>
+                </a>
+              </p>
             </td>
           </tr>
         </table>
@@ -107,36 +121,36 @@
         <p>
           Development of Force Field X has been supported by the following organizations.
         </p>
-          <table>
-            <tr>
-              <td width="150">
-                <p>
-                  <img src="images/NSF.png" alt="NSF" width="125" align="middle"/>
-                </p>
-                <p>
-                  CHE 1751688
-                </p>
-              </td>
-              <td width="150">
-                <p>
-                  <img src="images/NIH.png" alt="NIH" width="125" align="middle"/>
-                </p>
-                <p>
-                  R01 DC012049
-                </p>
-              </td>
-              <td width="150">
-                <p>
-                  <img src="images/sfari.png" alt="SFARI" width="125" align="middle"/>
-                </p>
-              </td>
-              <!-- td width="150">
-                <p>
-                  <img src="images/MTP.png" alt="MTP" width="125" align="middle"/>
-                </p>
-              </td -->
-            </tr>
-          </table>
+        <table>
+          <tr>
+            <td width="150">
+              <p>
+                <img src="images/NSF.png" alt="NSF" width="125" align="middle"/>
+              </p>
+              <p>
+                CHE 1751688
+              </p>
+            </td>
+            <td width="150">
+              <p>
+                <img src="images/NIH.png" alt="NIH" width="125" align="middle"/>
+              </p>
+              <p>
+                R01 DC012049
+              </p>
+            </td>
+            <td width="150">
+              <p>
+                <img src="images/sfari.png" alt="SFARI" width="125" align="middle"/>
+              </p>
+            </td>
+            <!-- td width="150">
+              <p>
+                <img src="images/MTP.png" alt="MTP" width="125" align="middle"/>
+              </p>
+            </td -->
+          </tr>
+        </table>
       </subsection>
     </section>
   </body>
