@@ -102,7 +102,8 @@ public class TitrationManyBody {
     protonatedAssembly.setFile(structureFile);
 
     TitrationUtils titrationUtils;
-    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(), potentialEnergy.getGK().getSolutePermittivity());
+    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(),
+            potentialEnergy.getGK().getSolutePermittivity(), potentialEnergy.getGK().getTanhCorrection());
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
