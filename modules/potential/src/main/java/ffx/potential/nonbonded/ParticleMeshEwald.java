@@ -1412,26 +1412,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     // Initialize boundary conditions,
     // the n^2 neighbor list and parallel scheduling for ligand vapor electrostatics.
     if (alchemicalParameters.doLigandVaporElec) {
-      double maxr = 10.0;
-      for (int i = 0; i < nAtoms; i++) {
-        Atom ai = atoms[i];
-        if (ai.applyLambda()) {
-
-          // Determine ligand size.
-          for (int j = i + 1; j < nAtoms; j++) {
-            Atom aj = atoms[j];
-            if (aj.applyLambda()) {
-              double dx = ai.getX() - aj.getX();
-              double dy = ai.getY() - aj.getY();
-              double dz = ai.getZ() - aj.getZ();
-              double r = sqrt(dx * dx + dy * dy + dz * dz);
-              maxr = max(r, maxr);
-            }
-          }
-        }
-      }
-
-      double vacuumOff = 2 * maxr;
+      double vacuumOff = getVacuumOff();
       alchemicalParameters.vaporCrystal =
           new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
       alchemicalParameters.vaporCrystal.setAperiodic(true);
@@ -1461,6 +1442,30 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporEwaldSchedule = null;
       alchemicalParameters.vacuumRanges = null;
     }
+  }
+
+  private double getVacuumOff() {
+    double maxr = 10.0;
+    for (int i = 0; i < nAtoms; i++) {
+      Atom ai = atoms[i];
+      if (ai.applyLambda()) {
+
+        // Determine ligand size.
+        for (int j = i + 1; j < nAtoms; j++) {
+          Atom aj = atoms[j];
+          if (aj.applyLambda()) {
+            double dx = ai.getX() - aj.getX();
+            double dy = ai.getY() - aj.getY();
+            double dz = ai.getZ() - aj.getZ();
+            double r = sqrt(dx * dx + dy * dy + dz * dz);
+            maxr = max(r, maxr);
+          }
+        }
+      }
+    }
+
+    double vacuumOff = 2 * maxr;
+    return vacuumOff;
   }
 
   /**

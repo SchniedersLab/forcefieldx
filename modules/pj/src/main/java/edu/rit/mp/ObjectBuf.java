@@ -864,15 +864,9 @@ public abstract class ObjectBuf<T>
             theStatus.length = nmsg;
             mySerializedItems = savedSerializedItems;
         } catch (ClassNotFoundException exc) {
-            IOException exc2
-                    = new IOException("ObjectBuf.postReceive(): Class not found");
-            exc2.initCause(exc);
-            throw exc2;
+          throw new IOException("ObjectBuf.postReceive(): Class not found", exc);
         } catch (ClassCastException exc) {
-            IOException exc2
-                    = new IOException("ObjectBuf.postReceive(): Wrong type");
-            exc2.initCause(exc);
-            throw exc2;
+          throw new IOException("ObjectBuf.postReceive(): Wrong type", exc);
         }
     }
 

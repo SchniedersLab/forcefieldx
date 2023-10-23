@@ -63,7 +63,7 @@ public class AtomSelectionOptions {
    * The ArgGroup keeps the Atom Selection Options together when printing help.
    */
   @ArgGroup(heading = "%n Atom Selection Options%n", validate = false)
-  public AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
+  private final AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
 
   public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
       @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description) {
@@ -143,10 +143,10 @@ public class AtomSelectionOptions {
    * @return True if one of the fields is not empty.
    */
   public boolean isAtomSelectionSet() {
-    if (group.activeAtoms != null && !(group.activeAtoms.length() > 0)) {
+    if (group.activeAtoms != null && group.activeAtoms.isEmpty()) {
       return true;
     }
-    return group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0);
+    return group.inactiveAtoms != null && group.inactiveAtoms.isEmpty();
   }
 
   private void setInactive(MolecularAssembly assembly) {

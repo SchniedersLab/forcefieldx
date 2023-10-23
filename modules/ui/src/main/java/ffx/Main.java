@@ -39,6 +39,7 @@ package ffx;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
+import ffx.potential.Utilities;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.ModelingShell;
@@ -51,6 +52,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.PropertyConfigurator;
 
+import javax.annotation.Nullable;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -68,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -160,7 +163,7 @@ public final class Main extends JFrame {
    * @param commandLineFile a {@link java.io.File} object.
    * @param argList a {@link java.util.List} object.
    */
-  public Main(File commandLineFile, List<String> argList) {
+  public Main(@Nullable File commandLineFile, List<String> argList) {
     super("Force Field X");
     // Start the clock.
     stopWatch.start();
@@ -169,7 +172,7 @@ public final class Main extends JFrame {
     try {
       SwingUtilities.invokeAndWait(initGUI);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning(" Exception initializing the GUI.\n" + e);
     }
 
     // Run the supplied command or file.
@@ -215,7 +218,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
   }
@@ -289,7 +292,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
     return null;
@@ -397,7 +400,7 @@ public final class Main extends JFrame {
           // Set the system property.
           System.setProperty(key, value);
         } else {
-          if (arg.length() > 0) {
+          if (!arg.isEmpty()) {
             System.setProperty(arg, "");
           }
         }
@@ -467,7 +470,8 @@ public final class Main extends JFrame {
         defaultLogger.removeHandler(h);
       }
     } catch (Exception e) {
-      System.err.println(e.toString());
+      String error = e.toString();
+      System.err.println(error);
     }
 
     // Turn off log4j
@@ -553,7 +557,8 @@ public final class Main extends JFrame {
       // Log the exception to System.err because the logging subsystem has not be initialized yet.
       String message = " Exception starting up the Parallel Java communication layer.";
       System.err.println(message);
-      System.err.println(e);
+      String error = e.toString();
+      System.err.println(error);
     }
   }
 

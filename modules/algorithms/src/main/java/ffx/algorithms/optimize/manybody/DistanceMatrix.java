@@ -485,15 +485,7 @@ public class DistanceMatrix {
        for sequence optimization: if > 1 residue optimized, run on only
        one thread.
       */
-      int nThreads;
-      if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
-        nThreads = (nMultiRes > 1) ? 1
-            : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
-      } else {
-        // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
-        nThreads = 16;
-      }
-      ParallelTeam parallelTeam = new ParallelTeam(nThreads);
+      ParallelTeam parallelTeam = getParallelTeam(nMultiRes);
       Crystal crystal = molecularAssembly.getCrystal();
       int nSymm = crystal.spaceGroup.getNumberOfSymOps();
       logger.info("\n Computing Residue Distance Matrix");
@@ -579,6 +571,19 @@ public class DistanceMatrix {
             format(" Exception shutting down parallel team for the distance matrix: %s", ex));
       }
     }
+  }
+
+  private ParallelTeam getParallelTeam(int nMultiRes) {
+    int nThreads;
+    if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
+      nThreads = (nMultiRes > 1) ? 1
+          : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+    } else {
+      // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
+      nThreads = 16;
+    }
+    ParallelTeam parallelTeam = new ParallelTeam(nThreads);
+    return parallelTeam;
   }
 
   /**

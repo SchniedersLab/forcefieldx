@@ -37,9 +37,6 @@
 // ******************************************************************************
 package ffx.xray.cli;
 
-import static java.lang.String.format;
-
-import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
@@ -48,14 +45,17 @@ import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that utilize X-ray data with a maximum likelihood
@@ -72,27 +72,27 @@ public class XrayOptions extends DataRefinementOptions {
    * The ArgGroup keeps the XrayOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Refinement Options%n", validate = false)
-  public XrayOptionGroup group = new XrayOptionGroup();
+  private final XrayOptionGroup group = new XrayOptionGroup();
   /**
    * The ArgGroup keeps the XrayReflectionsGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Reflection Data Options%n", validate = false)
-  public XrayReflectionsGroup reflectionGroup = new XrayReflectionsGroup();
+  private final XrayReflectionsGroup reflectionGroup = new XrayReflectionsGroup();
   /**
    * The ArgGroup keeps the BFactorGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray B-Factor Options%n", validate = false)
-  public BFactorGroup bfactorGroup = new BFactorGroup();
+  private final BFactorGroup bfactorGroup = new BFactorGroup();
   /**
    * The ArgGroup keeps the BFactorGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Target Options%n", validate = false)
-  public ScatteringGroup targetGroup = new ScatteringGroup();
+  private final ScatteringGroup targetGroup = new ScatteringGroup();
   /**
    * The ArgGroup keeps the XrayOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n X-ray Bulk Solvent Options%n", validate = false)
-  public BulkSolventGroup solventGroup = new BulkSolventGroup();
+  private final BulkSolventGroup solventGroup = new BulkSolventGroup();
   /** The refinement mode to use. */
   public RefinementMode refinementMode = RefinementMode.COORDINATES;
   /** The SolventModel to use. */
@@ -153,7 +153,7 @@ public class XrayOptions extends DataRefinementOptions {
       }
     }
 
-    if (diffractionfiles.size() == 0) {
+    if (diffractionfiles.isEmpty()) {
       String filename = systems[0].getFile().getAbsolutePath();
       filename = FilenameUtils.removeExtension(filename);
       filename = FilenameUtils.getBaseName(filename);
@@ -446,7 +446,7 @@ public class XrayOptions extends DataRefinementOptions {
         names = {"--sol", "--solvent"},
         paramLabel = "POLYNOMIAL",
         description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
-    private String solventString = "POLYNOMIAL";
+    String solventString = "POLYNOMIAL";
   }
 
   /**

@@ -38,6 +38,7 @@
 package ffx.ui;
 
 import edu.rit.pj.Comm;
+import ffx.potential.Utilities;
 import ffx.ui.MainPanel.ExitStatus;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
@@ -110,7 +111,7 @@ public class LogHandler extends Handler {
           System.setOut(printStream);
           System.setErr(printStream);
         } catch (Exception e) {
-          System.err.println(e);
+          System.err.println(Utilities.stackTraceToString(e));
         }
       }
     }

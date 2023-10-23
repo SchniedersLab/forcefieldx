@@ -27,47 +27,13 @@ RUN set -eux; \
 ENV JAVA_HOME=/graalvm-jdk-21+35.1
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-# add requirements.txt, written this way to gracefully ignore a missing file
-COPY . .
-
+# Add requirements.txt and install them using pip3
+COPY requirements.txt .
 SHELL ["/usr/bin/bash", "-c"]
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-RUN ([ -f binder/requirements.txt ] \
-    && pip3 install --no-cache-dir -r binder/requirements.txt) \
-        || pip3 install --no-cache-dir -r requirements.txt
-
+# Become root and set up the user environment
 USER root
-
-# Version of FFX to Download
-ENV FFX_VERSION 1.0.0-beta
-
-# Download Force Field X
-ENV FFX_TAR ffx-$FFX_VERSION-bin.tar.gz
-RUN wget https://ffx.biochem.uiowa.edu/$FFX_TAR; \
-    tar xzf $FFX_TAR; \
-    rm $FFX_TAR; \
-    mv ffx-$FFX_VERSION ffx;
-
-# Set FFX_HOME and the CLASSPATH
-ENV FFX_HOME /ffx
-ENV FFX_BIN $FFX_HOME/bin
-ENV FFX_LIB $FFX_HOME/lib
-ENV CLASSPATH $FFX_LIB/
-ENV PATH="${FFX_BIN}:${PATH}"
-
-# Set IJava kernel environment variables.
-ENV IJAVA_CLASSPATH $CLASSPATH
-ENV IJAVA_STARTUP_SCRIPTS_PATH $FFX_BIN/startup.jshell
-
-# Download, Unpack and install the IJava kernel
-RUN set -eux; \
-  wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip; \
-  unzip ijava-1.3.0.zip -d ijava-kernel; \
-  cd ijava-kernel; \
-  CLASSPATH=$(echo /ffx/lib/* | tr ' ' ':'); \
-  python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH;
-
-# Set up the user environment
 ENV NB_USER ffx
 ENV SHELL /usr/bin/bash
 ENV NB_UID 1000
@@ -80,18 +46,50 @@ RUN adduser --disabled-password \
     --shell $SHELL \
     $NB_USER
 
+# Create the User home directory and copy in the FFX distro
 RUN mkdir $HOME
 COPY . $HOME
-RUN chown -R $NB_UID $HOME
+
+# Set FFX_HOME and the CLASSPATH
+ENV FFX_HOME $HOME
+ENV FFX_BIN $FFX_HOME/bin
+ENV FFX_LIB $FFX_HOME/lib
+ENV CLASSPATH $FFX_LIB/
+ENV PATH="${FFX_BIN}:${PATH}"
+
+# Set IJava kernel environment variables.
+ENV IJAVA_CLASSPATH $CLASSPATH
+ENV IJAVA_STARTUP_SCRIPTS_PATH $FFX_BIN/startup.jshell
+
+# Download Maven, unpack and build Force Field X
+RUN set -eux; \
+  cd /home/ffx; \
+  wget https://dlcdn.apache.org/maven/maven-3/3.9.5/binaries/apache-maven-3.9.5-bin.tar.gz; \
+  tar xvzf apache-maven-3.9.5-bin.tar.gz; \
+  apache-maven-3.9.5/bin/mvn; \
+  rm apache-maven-3.9.5-bin.tar.gz; \
+  rm -rf apache-maven-3.9.5;
+
+# Download, Unpack and install the IJava kernel
+RUN set -eux; \
+  wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip; \
+  unzip ijava-1.3.0.zip -d ijava-kernel; \
+  cd ijava-kernel; \
+  CLASSPATH=$(echo /home/ffx/lib/* | tr ' ' ':'); \
+  python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH;
 
 # Set up the FFX Kotlin library
+# The allows the fillowing "magic" in Kotlin notebooks.
+# %use ffx
 RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
-RUN wget https://raw.githubusercontent.com/SchniedersLab/forcefieldx/master/binder/ffx.json
-RUN cp ffx.json $HOME/.jupyter_kotlin/libraries/.
+RUN cp $HOME/ipynb-kotlin/ffx.json $HOME/.jupyter_kotlin/libraries/.
+RUN cp -R $HOME/lib $HOME/.jupyter_kotlin/.
 
+RUN chown -R $NB_UID $HOME
 USER $NB_USER
 
 # Launch the notebook server
 WORKDIR $HOME
 CMD ["jupyter", "notebook", "--ip", "0.0.0.0"]
+

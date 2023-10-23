@@ -17,8 +17,7 @@
           <a href="https://www.oracle.com/java/technologies/downloads/" target="_blank">Oracle</a>.
           Detailed installation instructions for are available for
           <a href="https://docs.oracle.com/en/java/javase/${targetVersion}/install/overview-jdk-installation.html">
-            Linux, Mac OS, and Microsoft Windows. Both x64 and Arm64 architectures are supported on Linux and MacOS.
-          </a>
+            Linux, Mac OS, and Microsoft Windows.</a> Both x64 and Arm64 architectures are supported on Linux and MacOS.
         </p>
       </subsection>
       <subsection name="Linux">
@@ -144,8 +143,9 @@
             </td>
             <td>
               <p>On Microsoft Windows, we recommend using
-                <a href="https://gitforwindows.org">Git Bash</a>
+                <a href="https://gitforwindows.org">Git Bash</a>.
               </p>
+              <p>Both the Powershell and Cygwin environments are also actively tested and compatible.</p>
               <ol>
                 <li>
                   <p>Type "

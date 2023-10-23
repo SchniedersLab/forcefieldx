@@ -219,7 +219,7 @@ public final class KeywordComponent
         if (button.getText().equalsIgnoreCase("Add")) {
           JTextField text = (JTextField) keywordValues.get(3);
           String s = text.getText();
-          if (s != null && !s.trim().equals("")) {
+          if (s != null && !s.trim().isEmpty()) {
             JComboBox<String> jcb = (JComboBox<String>) keywordValues.get(1);
             jcb.addItem(s);
             text.setText("");
@@ -397,7 +397,7 @@ public final class KeywordComponent
             }
           } else {
             if (cb.isSelected()) {
-              if (s.length() > 0) {
+              if (!s.isEmpty()) {
                 s.append("\n").append(keyword).append(" ").append(cb.getText());
               } else {
                 s.append(keyword).append(" ").append(cb.getText());
@@ -406,7 +406,7 @@ public final class KeywordComponent
           }
         } else if (c instanceof JTextField) {
           JTextField tf = (JTextField) c;
-          if (tf.getText().equals("")) {
+          if (tf.getText().isEmpty()) {
             return null;
           }
           String v = tf.getText();
@@ -448,7 +448,7 @@ public final class KeywordComponent
           break;
         }
       }
-      if (s.length() == 0) {
+      if (s.isEmpty()) {
         return null;
       }
       return s.toString();
@@ -564,7 +564,7 @@ public final class KeywordComponent
       for (Component c : keywordValues) {
         if (c instanceof JTextField) {
           JTextField tf = (JTextField) c;
-          if (!tf.getText().equals("")) {
+          if (!tf.getText().isEmpty()) {
             keywordData.append(tf.getText());
           }
           break;

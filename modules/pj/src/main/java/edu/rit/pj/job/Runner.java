@@ -171,7 +171,7 @@ public class Runner {
             Scanner scanner = null;
             try {
                 scanner = new Scanner(new File(args[0]));
-            } catch (IOException exc) {
+            } catch (IOException ignored) {
             }
 
             // Read checkpoint file.

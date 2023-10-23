@@ -82,7 +82,7 @@ public class BarostatOptions {
    * The ArgGroup keeps the BarostatOptions together when printing help.
    */
   @ArgGroup(heading = "%n Monte Carlo Pressure Options%n", validate = false)
-  public BarostatOptionGroup group = new BarostatOptionGroup();
+  private final BarostatOptionGroup group = new BarostatOptionGroup();
 
   /**
    * If pressure has been set &gt; 0, creates a Barostat around a CrystalPotential, else returns the

@@ -35,16 +35,22 @@
       <directory>binder</directory>
     </fileSet>
     <fileSet>
-      <directory>conf</directory>
+      <directory>colab</directory>
     </fileSet>
     <fileSet>
-      <directory>colab</directory>
+      <directory>conf</directory>
     </fileSet>
     <fileSet>
       <directory>examples</directory>
     </fileSet>
     <fileSet>
       <directory>groovy</directory>
+    </fileSet>
+    <fileSet>
+      <directory>ipynb-java</directory>
+    </fileSet>
+    <fileSet>
+      <directory>ipynb-kotlin</directory>
     </fileSet>
     <fileSet>
       <directory>lib</directory>

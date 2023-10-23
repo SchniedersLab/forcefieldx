@@ -1,4 +1,4 @@
-import groovy.io.FileType
+// Generate the Kotlin ffx.json file for the Jupyter notebook.
 
 // Constant header of the Kotlin ffx.json file.
 header = """{
@@ -7,7 +7,7 @@ header = """{
   },
   "link": "https://ffx.biochem.uiowa.edu",
   "repositories": [
-    "file:/ffx/lib"
+    "file:../lib"
   ],
   "imports": [
     "ffx.Main",
@@ -23,7 +23,7 @@ StringBuilder sb = new StringBuilder(header)
 
 // Collect the classpath entries from the lib directory.
 def dir = new File("lib")
-dir.eachFileRecurse (FileType.FILES) { file ->
+dir.listFiles().sort{ it.name }.each { file ->
   sb.append("    \"" + file.getName() + "\",\n")
 }
 last = sb.lastIndexOf(",")
@@ -36,6 +36,5 @@ footer = """  ]
 sb.append(footer)
 
 // Write the Kotlin ffx.json file.
-File json = new File("binder/ffx.json")
+File json = new File("ipynb-kotlin/ffx.json")
 json.write(sb.toString())
-

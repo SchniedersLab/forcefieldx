@@ -53,7 +53,7 @@ public class MinimizeOptions {
    * The ArgGroup keeps the MinimizationOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Minimization Options%n", validate = false)
-  public MinimizeOptionGroup group = new MinimizeOptionGroup();
+  private final MinimizeOptionGroup group = new MinimizeOptionGroup();
 
   /**
    * Convergence criteria.

@@ -74,13 +74,13 @@ public class OSTOptions {
    * The ArgGroup keeps the OSTOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Orthogonal Space Tempering Options%n", validate = false)
-  public OSTOptionGroup group = new OSTOptionGroup();
+  private final OSTOptionGroup group = new OSTOptionGroup();
 
   /**
    * The ArgGroup keeps the OSTOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Monte Carlo Orthogonal Space Tempering Options%n", validate = false)
-  public MCOSTOptionGroup mcGroup = new MCOSTOptionGroup();
+  private final MCOSTOptionGroup mcGroup = new MCOSTOptionGroup();
 
   /**
    * Static method for constructing an orthogonal space tempering object with numerous default

@@ -2196,7 +2196,7 @@ public class ProgressiveAlignmentOfCrystals {
           }
           myDistances[myIndex] = rmsd;
           myIndex++;
-          if (stringBuilder.length() > 0) {
+          if (!stringBuilder.isEmpty()) {
             logger.info(stringBuilder.toString());
           }
         }
@@ -2736,7 +2736,7 @@ public class ProgressiveAlignmentOfCrystals {
     }
     indices.clear();
     determineComparableAtoms(atoms, indices, unique, alphaCarbons, includeHydrogen);
-    return indices.size() < 1;
+    return indices.isEmpty();
   }
 
   /**
@@ -3251,9 +3251,7 @@ public class ProgressiveAlignmentOfCrystals {
         newAtomList.addAll(atomList);
       }
     } catch (Exception exception) {
-      stringBuilder.append("\n Error saving moved coordinates to PDB.\n").append(exception)
-          .append("\n");
-      exception.printStackTrace();
+      stringBuilder.append("\n Error saving moved coordinates to PDB.\n").append(exception).append("\n");
     }
 
     if (logger.isLoggable(Level.FINEST)) {

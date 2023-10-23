@@ -238,40 +238,4 @@
     <relativePath>../../pom.xml</relativePath>
     <version>1.0.0-beta</version>
   </parent>
-  <profiles>
-    <profile>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <configuration>
-                  <arguments>
-                    <argument>-c</argument>
-                    <argument>cd ${project.parent.basedir}/../ffx-ext; mvn -DskipTests=${skipTests}
-                      deploy; cd ${project.basedir};
-                    </argument>
-                  </arguments>
-                  <executable>bash</executable>
-                  <skip>false</skip>
-                </configuration>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <id>Run Maven</id>
-                <phase>deploy</phase>
-              </execution>
-            </executions>
-            <groupId>org.codehaus.mojo</groupId>
-            <version>${exec.version}</version>
-          </plugin>
-        </plugins>
-      </build>
-      <id>build.extensions</id>
-    </profile>
-  </profiles>
 </project>

@@ -287,13 +287,6 @@
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
           <generateSitemap>true</generateSitemap>
-          <!-- asciidoc>
-              <attributes>
-                  <source-highlighter>coderay</source-highlighter>
-                  <coderay-css>style</coderay-css>
-                  <icons>font</icons>
-              </attributes>
-          </asciidoc -->
         </configuration>
         <inherited>true</inherited>
         <version>${site.version}</version>
@@ -983,7 +976,7 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.3.0</checkstyle.version>
-    <ciftools-java.version>5.0.1</ciftools-java.version>
+    <ciftools-java.version>5.0.2</ciftools-java.version>
     <clean.version>3.3.1</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>

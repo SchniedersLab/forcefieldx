@@ -85,7 +85,7 @@ public class SimulationDefinition implements Serializable {
 
   /** print */
   public void print() {
-    System.out.println(this.toString());
+    System.out.println(this);
   }
 
   /**

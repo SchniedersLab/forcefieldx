@@ -159,15 +159,15 @@ public class Instance {
                 Thread.currentThread().getContextClassLoader());
 
         // Get constructor and create instance.
-        Constructor<?> ctor = null;
-        Class<?>[] argtypes = null;
+        Constructor<?> ctor;
+        Class<?>[] argtypes;
 
         // No-argument constructor.
         if (args.length == 0) {
             try {
                 ctor = theClass.getConstructor();
                 return ctor.newInstance();
-            } catch (NoSuchMethodException exc) {
+            } catch (NoSuchMethodException ignored) {
             }
         }
 
@@ -180,7 +180,7 @@ public class Instance {
                 }
                 ctor = theClass.getConstructor(argtypes);
                 return ctor.newInstance((Object[]) intargs);
-            } catch (NoSuchMethodException exc) {
+            } catch (NoSuchMethodException ignored) {
             }
         }
 
@@ -189,7 +189,7 @@ public class Instance {
             try {
                 ctor = theClass.getConstructor(int[].class);
                 return ctor.newInstance((Object) intargs);
-            } catch (NoSuchMethodException exc) {
+            } catch (NoSuchMethodException ignored) {
             }
         }
 
@@ -201,14 +201,14 @@ public class Instance {
             }
             ctor = theClass.getConstructor(argtypes);
             return ctor.newInstance((Object[]) args);
-        } catch (NoSuchMethodException exc) {
+        } catch (NoSuchMethodException ignored) {
         }
 
         // Constructor(String[]).
         try {
             ctor = theClass.getConstructor(String[].class);
             return ctor.newInstance((Object) args);
-        } catch (NoSuchMethodException exc) {
+        } catch (NoSuchMethodException ignored) {
         }
 
         // Could not find suitable constructor.

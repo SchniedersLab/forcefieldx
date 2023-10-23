@@ -170,7 +170,7 @@ public class Clustering {
         remaining.add(j);
       }
       List<CentroidCluster<Conformation>> clusters = new ArrayList<>();
-      while (remaining.size() > 0) {
+      while (!remaining.isEmpty()) {
         int seed = (int) floor(random() * (remaining.size() - 1));
         int index = remaining.get(seed);
         CentroidCluster<Conformation> cluster = new CentroidCluster<>(
@@ -197,7 +197,7 @@ public class Clustering {
         }
         clusters.add(cluster);
       }
-      if (bestClusters.size() == 0 || clusters.size() < bestClusters.size()) {
+      if (bestClusters.isEmpty() || clusters.size() < bestClusters.size()) {
         if (log.isLoggable(Level.FINE)) {
           int numStructs = 0;
           for (CentroidCluster<Conformation> cluster : clusters) {

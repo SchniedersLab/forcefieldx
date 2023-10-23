@@ -59,253 +59,491 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class SymOp {
 
-  /** Constant <code>ZERO = 0.0</code> */
+  /**
+   * Constant <code>ZERO = 0.0</code>
+   */
   private static final double ZERO = 0.0;
-  /** Constant <code>ZERO_ROTATION = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}</code> */
+  /**
+   * Constant <code>ZERO_ROTATION = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}</code>
+   */
   public static final double[][] ZERO_ROTATION = {
       {1.0, ZERO, ZERO},
       {ZERO, 1.0, ZERO},
       {ZERO, ZERO, 1.0}};
-  /** Constant <code>Tr_0_0_0={ZERO, ZERO, ZERO}</code> */
+  /**
+   * Constant <code>Tr_0_0_0={ZERO, ZERO, ZERO}</code>
+   */
   public static final double[] Tr_0_0_0 = {ZERO, ZERO, ZERO};
-  /** Constant <code>f12 = 1.0 / 2.0</code> */
+  /**
+   * Constant <code>f12 = 1.0 / 2.0</code>
+   */
   private static final double f12 = 1.0 / 2.0;
-  /** Constant <code>Tr_12_0_12={f12, ZERO, f12}</code> */
+  /**
+   * Constant <code>Tr_12_0_12={f12, ZERO, f12}</code>
+   */
   static final double[] Tr_12_0_12 = {f12, ZERO, f12};
-  /** Constant <code>Tr_0_12_12={ZERO, f12, f12}</code> */
+  /**
+   * Constant <code>Tr_0_12_12={ZERO, f12, f12}</code>
+   */
   static final double[] Tr_0_12_12 = {ZERO, f12, f12};
-  /** Constant <code>Tr_12_12_0={f12, f12, ZERO}</code> */
+  /**
+   * Constant <code>Tr_12_12_0={f12, f12, ZERO}</code>
+   */
   static final double[] Tr_12_12_0 = {f12, f12, ZERO};
-  /** Constant <code>Tr_12_12_12={f12, f12, f12}</code> */
+  /**
+   * Constant <code>Tr_12_12_12={f12, f12, f12}</code>
+   */
   static final double[] Tr_12_12_12 = {f12, f12, f12};
-  /** Constant <code>Tr_0_12_0={ZERO, f12, ZERO}</code> */
+  /**
+   * Constant <code>Tr_0_12_0={ZERO, f12, ZERO}</code>
+   */
   static final double[] Tr_0_12_0 = {ZERO, f12, ZERO};
-  /** Constant <code>Tr_12_0_0={f12, ZERO, ZERO}</code> */
+  /**
+   * Constant <code>Tr_12_0_0={f12, ZERO, ZERO}</code>
+   */
   static final double[] Tr_12_0_0 = {f12, ZERO, ZERO};
-  /** Constant <code>Tr_0_0_12={ZERO, ZERO, f12}</code> */
+  /**
+   * Constant <code>Tr_0_0_12={ZERO, ZERO, f12}</code>
+   */
   static final double[] Tr_0_0_12 = {ZERO, ZERO, f12};
-  /** Constant <code>f13 = 1.0 / 3.0</code> */
+  /**
+   * Constant <code>f13 = 1.0 / 3.0</code>
+   */
   private static final double f13 = 1.0 / 3.0;
-  /** Constant <code>Tr_0_0_13={ZERO, ZERO, f13}</code> */
+  /**
+   * Constant <code>Tr_0_0_13={ZERO, ZERO, f13}</code>
+   */
   static final double[] Tr_0_0_13 = {ZERO, ZERO, f13};
-  /** Constant <code>f23 = 2.0 / 3.0</code> */
+  /**
+   * Constant <code>f23 = 2.0 / 3.0</code>
+   */
   private static final double f23 = 2.0 / 3.0;
-  /** Constant <code>Tr_23_13_13={f23, f13, f13}</code> */
+  /**
+   * Constant <code>Tr_23_13_13={f23, f13, f13}</code>
+   */
   static final double[] Tr_23_13_13 = {f23, f13, f13};
-  /** Constant <code>Tr_13_23_23={f13, f23, f23}</code> */
+  /**
+   * Constant <code>Tr_13_23_23={f13, f23, f23}</code>
+   */
   static final double[] Tr_13_23_23 = {f13, f23, f23};
-  /** Constant <code>Tr_0_0_23={ZERO, ZERO, f23}</code> */
+  /**
+   * Constant <code>Tr_0_0_23={ZERO, ZERO, f23}</code>
+   */
   static final double[] Tr_0_0_23 = {ZERO, ZERO, f23};
-  /** Constant <code>f14 = 1.0 / 4.0</code> */
+  /**
+   * Constant <code>f14 = 1.0 / 4.0</code>
+   */
   private static final double f14 = 1.0 / 4.0;
-  /** Constant <code>Tr_12_0_14={f12, ZERO, f14}</code> */
+  /**
+   * Constant <code>Tr_12_0_14={f12, ZERO, f14}</code>
+   */
   static final double[] Tr_12_0_14 = {f12, ZERO, f14};
-  /** Constant <code>Tr_0_12_14={ZERO, f12, f14}</code> */
+  /**
+   * Constant <code>Tr_0_12_14={ZERO, f12, f14}</code>
+   */
   static final double[] Tr_0_12_14 = {ZERO, f12, f14};
-  /** Constant <code>Tr_14_14_14={f14, f14, f14}</code> */
+  /**
+   * Constant <code>Tr_14_14_14={f14, f14, f14}</code>
+   */
   static final double[] Tr_14_14_14 = {f14, f14, f14};
-  /** Constant <code>Tr_12_12_14={f12, f12, f14}</code> */
+  /**
+   * Constant <code>Tr_12_12_14={f12, f12, f14}</code>
+   */
   static final double[] Tr_12_12_14 = {f12, f12, f14};
-  /** Constant <code>Tr_0_0_14={ZERO, ZERO, f14}</code> */
+  /**
+   * Constant <code>Tr_0_0_14={ZERO, ZERO, f14}</code>
+   */
   static final double[] Tr_0_0_14 = {ZERO, ZERO, f14};
-  /** Constant <code>f34 = 3.0 / 4.0</code> */
+  /**
+   * Constant <code>f34 = 3.0 / 4.0</code>
+   */
   private static final double f34 = 3.0 / 4.0;
-  /** Constant <code>Tr_0_0_34={ZERO, ZERO, f34}</code> */
+  /**
+   * Constant <code>Tr_0_0_34={ZERO, ZERO, f34}</code>
+   */
   static final double[] Tr_0_0_34 = {ZERO, ZERO, f34};
-  /** Constant <code>Tr_12_0_34={f12, ZERO, f34}</code> */
+  /**
+   * Constant <code>Tr_12_0_34={f12, ZERO, f34}</code>
+   */
   static final double[] Tr_12_0_34 = {f12, ZERO, f34};
-  /** Constant <code>Tr_0_12_34={ZERO, f12, f34}</code> */
+  /**
+   * Constant <code>Tr_0_12_34={ZERO, f12, f34}</code>
+   */
   static final double[] Tr_0_12_34 = {ZERO, f12, f34};
-  /** Constant <code>Tr_34_14_14={f34, f14, f14}</code> */
+  /**
+   * Constant <code>Tr_34_14_14={f34, f14, f14}</code>
+   */
   static final double[] Tr_34_14_14 = {f34, f14, f14};
-  /** Constant <code>Tr_14_14_34={f14, f14, f34}</code> */
+  /**
+   * Constant <code>Tr_14_14_34={f14, f14, f34}</code>
+   */
   static final double[] Tr_14_14_34 = {f14, f14, f34};
-  /** Constant <code>Tr_14_34_14={f14, f34, f14}</code> */
+  /**
+   * Constant <code>Tr_14_34_14={f14, f34, f14}</code>
+   */
   static final double[] Tr_14_34_14 = {f14, f34, f14};
-  /** Constant <code>Tr_12_12_34={f12, f12, f34}</code> */
+  /**
+   * Constant <code>Tr_12_12_34={f12, f12, f34}</code>
+   */
   static final double[] Tr_12_12_34 = {f12, f12, f34};
-  /** Constant <code>Tr_14_34_34={f14, f34, f34}</code> */
+  /**
+   * Constant <code>Tr_14_34_34={f14, f34, f34}</code>
+   */
   static final double[] Tr_14_34_34 = {f14, f34, f34};
-  /** Constant <code>Tr_34_34_14={f34, f34, f14}</code> */
+  /**
+   * Constant <code>Tr_34_34_14={f34, f34, f14}</code>
+   */
   static final double[] Tr_34_34_14 = {f34, f34, f14};
-  /** Constant <code>Tr_34_34_34={f34, f34, f34}</code> */
+  /**
+   * Constant <code>Tr_34_34_34={f34, f34, f34}</code>
+   */
   static final double[] Tr_34_34_34 = {f34, f34, f34};
-  /** Constant <code>Tr_34_14_34={f34, f14, f34}</code> */
+  /**
+   * Constant <code>Tr_34_14_34={f34, f14, f34}</code>
+   */
   static final double[] Tr_34_14_34 = {f34, f14, f34};
-  /** Constant <code>f16 = 1.0 / 6.0</code> */
+  /**
+   * Constant <code>f16 = 1.0 / 6.0</code>
+   */
   private static final double f16 = 1.0 / 6.0;
-  /** Constant <code>Tr_13_23_16={f13, f23, f16}</code> */
+  /**
+   * Constant <code>Tr_13_23_16={f13, f23, f16}</code>
+   */
   static final double[] Tr_13_23_16 = {f13, f23, f16};
-  /** Constant <code>Tr_0_0_16={ZERO, ZERO, f16}</code> */
+  /**
+   * Constant <code>Tr_0_0_16={ZERO, ZERO, f16}</code>
+   */
   static final double[] Tr_0_0_16 = {ZERO, ZERO, f16};
-  /** Constant <code>f56 = 5.0 / 6.0</code> */
+  /**
+   * Constant <code>f56 = 5.0 / 6.0</code>
+   */
   private static final double f56 = 5.0 / 6.0;
-  /** Constant <code>Tr_0_0_56={ZERO, ZERO, f56}</code> */
+  /**
+   * Constant <code>Tr_0_0_56={ZERO, ZERO, f56}</code>
+   */
   static final double[] Tr_0_0_56 = {ZERO, ZERO, f56};
-  /** Constant <code>Tr_23_13_56={f23, f13, f56}</code> */
+  /**
+   * Constant <code>Tr_23_13_56={f23, f13, f56}</code>
+   */
   static final double[] Tr_23_13_56 = {f23, f13, f56};
-  /** Constant <code>X = {1.0, ZERO, ZERO}</code> */
+  /**
+   * Constant <code>X = {1.0, ZERO, ZERO}</code>
+   */
   private static final double[] X = {1.0, ZERO, ZERO};
-  /** Constant <code>Y = {ZERO, 1.0, ZERO}</code> */
+  /**
+   * Constant <code>Y = {ZERO, 1.0, ZERO}</code>
+   */
   private static final double[] Y = {ZERO, 1.0, ZERO};
-  /** Constant <code>Z = {ZERO, ZERO, 1.0}</code> */
+  /**
+   * Constant <code>Z = {ZERO, ZERO, 1.0}</code>
+   */
   private static final double[] Z = {ZERO, ZERO, 1.0};
-  /** Constant <code>Rot_Y_Z_X={Y, Z, X}</code> */
+  /**
+   * Constant <code>Rot_Y_Z_X={Y, Z, X}</code>
+   */
   static final double[][] Rot_Y_Z_X = {Y, Z, X};
-  /** Constant <code>Rot_X_Y_Z={X, Y, Z}</code> */
+  /**
+   * Constant <code>Rot_X_Y_Z={X, Y, Z}</code>
+   */
   static final double[][] Rot_X_Y_Z = {X, Y, Z};
-  /** Constant <code>Rot_Z_X_Y={Z, X, Y}</code> */
+  /**
+   * Constant <code>Rot_Z_X_Y={Z, X, Y}</code>
+   */
   static final double[][] Rot_Z_X_Y = {Z, X, Y};
-  /** Constant <code>Rot_X_Z_Y={X, Z, Y}</code> */
+  /**
+   * Constant <code>Rot_X_Z_Y={X, Z, Y}</code>
+   */
   static final double[][] Rot_X_Z_Y = {X, Z, Y};
-  /** Constant <code>Rot_Z_Y_X={Z, Y, X}</code> */
+  /**
+   * Constant <code>Rot_Z_Y_X={Z, Y, X}</code>
+   */
   static final double[][] Rot_Z_Y_X = {Z, Y, X};
-  /** Constant <code>Rot_Y_X_Z={Y, X, Z}</code> */
+  /**
+   * Constant <code>Rot_Y_X_Z={Y, X, Z}</code>
+   */
   static final double[][] Rot_Y_X_Z = {Y, X, Z};
-  /** Constant <code>mX = {-1.0, ZERO, ZERO}</code> */
+  /**
+   * Constant <code>mX = {-1.0, ZERO, ZERO}</code>
+   */
   private static final double[] mX = {-1.0, ZERO, ZERO};
-  /** Constant <code>Rot_Y_mX_Z={Y, mX, Z}</code> */
+  /**
+   * Constant <code>Rot_Y_mX_Z={Y, mX, Z}</code>
+   */
   static final double[][] Rot_Y_mX_Z = {Y, mX, Z};
-  /** Constant <code>Rot_mX_Z_Y={mX, Z, Y}</code> */
+  /**
+   * Constant <code>Rot_mX_Z_Y={mX, Z, Y}</code>
+   */
   static final double[][] Rot_mX_Z_Y = {mX, Z, Y};
-  /** Constant <code>Rot_Y_Z_mX={Y, Z, mX}</code> */
+  /**
+   * Constant <code>Rot_Y_Z_mX={Y, Z, mX}</code>
+   */
   static final double[][] Rot_Y_Z_mX = {Y, Z, mX};
-  /** Constant <code>Rot_mX_Y_Z={mX, Y, Z}</code> */
+  /**
+   * Constant <code>Rot_mX_Y_Z={mX, Y, Z}</code>
+   */
   static final double[][] Rot_mX_Y_Z = {mX, Y, Z};
-  /** Constant <code>Rot_Z_Y_mX={Z, Y, mX}</code> */
+  /**
+   * Constant <code>Rot_Z_Y_mX={Z, Y, mX}</code>
+   */
   static final double[][] Rot_Z_Y_mX = {Z, Y, mX};
-  /** Constant <code>Rot_Z_mX_Y={Z, mX, Y}</code> */
+  /**
+   * Constant <code>Rot_Z_mX_Y={Z, mX, Y}</code>
+   */
   static final double[][] Rot_Z_mX_Y = {Z, mX, Y};
-  /** Constant <code>mY = {ZERO, -1.0, ZERO}</code> */
+  /**
+   * Constant <code>mY = {ZERO, -1.0, ZERO}</code>
+   */
   private static final double[] mY = {ZERO, -1.0, ZERO};
-  /** Constant <code>Rot_Z_mY_X={Z, mY, X}</code> */
+  /**
+   * Constant <code>Rot_Z_mY_X={Z, mY, X}</code>
+   */
   static final double[][] Rot_Z_mY_X = {Z, mY, X};
-  /** Constant <code>Rot_X_Z_mY={X, Z, mY}</code> */
+  /**
+   * Constant <code>Rot_X_Z_mY={X, Z, mY}</code>
+   */
   static final double[][] Rot_X_Z_mY = {X, Z, mY};
-  /** Constant <code>Rot_mY_X_Z={mY, X, Z}</code> */
+  /**
+   * Constant <code>Rot_mY_X_Z={mY, X, Z}</code>
+   */
   static final double[][] Rot_mY_X_Z = {mY, X, Z};
-  /** Constant <code>Rot_mY_Z_mX={mY, Z, mX}</code> */
+  /**
+   * Constant <code>Rot_mY_Z_mX={mY, Z, mX}</code>
+   */
   static final double[][] Rot_mY_Z_mX = {mY, Z, mX};
-  /** Constant <code>Rot_mY_Z_X={mY, Z, X}</code> */
+  /**
+   * Constant <code>Rot_mY_Z_X={mY, Z, X}</code>
+   */
   static final double[][] Rot_mY_Z_X = {mY, Z, X};
-  /** Constant <code>Rot_Z_X_mY={Z, X, mY}</code> */
+  /**
+   * Constant <code>Rot_Z_X_mY={Z, X, mY}</code>
+   */
   static final double[][] Rot_Z_X_mY = {Z, X, mY};
-  /** Constant <code>Rot_Z_mX_mY={Z, mX, mY}</code> */
+  /**
+   * Constant <code>Rot_Z_mX_mY={Z, mX, mY}</code>
+   */
   static final double[][] Rot_Z_mX_mY = {Z, mX, mY};
-  /** Constant <code>Rot_mX_Z_mY={mX, Z, mY}</code> */
+  /**
+   * Constant <code>Rot_mX_Z_mY={mX, Z, mY}</code>
+   */
   static final double[][] Rot_mX_Z_mY = {mX, Z, mY};
-  /** Constant <code>Rot_X_mY_Z={X, mY, Z}</code> */
+  /**
+   * Constant <code>Rot_X_mY_Z={X, mY, Z}</code>
+   */
   static final double[][] Rot_X_mY_Z = {X, mY, Z};
-  /** Constant <code>Rot_mY_mX_Z={mY, mX, Z}</code> */
+  /**
+   * Constant <code>Rot_mY_mX_Z={mY, mX, Z}</code>
+   */
   static final double[][] Rot_mY_mX_Z = {mY, mX, Z};
-  /** Constant <code>Rot_Z_mY_mX={Z, mY, mX}</code> */
+  /**
+   * Constant <code>Rot_Z_mY_mX={Z, mY, mX}</code>
+   */
   static final double[][] Rot_Z_mY_mX = {Z, mY, mX};
-  /** Constant <code>Rot_mX_mY_Z={mX, mY, Z}</code> */
+  /**
+   * Constant <code>Rot_mX_mY_Z={mX, mY, Z}</code>
+   */
   static final double[][] Rot_mX_mY_Z = {mX, mY, Z};
-  /** Constant <code>mZ = {ZERO, ZERO, -1.0}</code> */
+  /**
+   * Constant <code>mZ = {ZERO, ZERO, -1.0}</code>
+   */
   private static final double[] mZ = {ZERO, ZERO, -1.0};
-  /** Constant <code>Rot_Y_mX_mZ={Y, mX, mZ}</code> */
+  /**
+   * Constant <code>Rot_Y_mX_mZ={Y, mX, mZ}</code>
+   */
   static final double[][] Rot_Y_mX_mZ = {Y, mX, mZ};
-  /** Constant <code>Rot_mX_Y_mZ={mX, Y, mZ}</code> */
+  /**
+   * Constant <code>Rot_mX_Y_mZ={mX, Y, mZ}</code>
+   */
   static final double[][] Rot_mX_Y_mZ = {mX, Y, mZ};
-  /** Constant <code>Rot_X_mZ_Y={X, mZ, Y}</code> */
+  /**
+   * Constant <code>Rot_X_mZ_Y={X, mZ, Y}</code>
+   */
   static final double[][] Rot_X_mZ_Y = {X, mZ, Y};
-  /** Constant <code>Rot_mY_mZ_X={mY, mZ, X}</code> */
+  /**
+   * Constant <code>Rot_mY_mZ_X={mY, mZ, X}</code>
+   */
   static final double[][] Rot_mY_mZ_X = {mY, mZ, X};
-  /** Constant <code>Rot_Y_X_mZ={Y, X, mZ}</code> */
+  /**
+   * Constant <code>Rot_Y_X_mZ={Y, X, mZ}</code>
+   */
   static final double[][] Rot_Y_X_mZ = {Y, X, mZ};
-  /** Constant <code>Rot_Y_mZ_X={Y, mZ, X}</code> */
+  /**
+   * Constant <code>Rot_Y_mZ_X={Y, mZ, X}</code>
+   */
   static final double[][] Rot_Y_mZ_X = {Y, mZ, X};
-  /** Constant <code>Rot_mX_mY_mZ={mX, mY, mZ}</code> */
+  /**
+   * Constant <code>Rot_mX_mY_mZ={mX, mY, mZ}</code>
+   */
   static final double[][] Rot_mX_mY_mZ = {mX, mY, mZ};
-  /** Constant <code>Rot_X_Y_mZ={X, Y, mZ}</code> */
+  /**
+   * Constant <code>Rot_X_Y_mZ={X, Y, mZ}</code>
+   */
   static final double[][] Rot_X_Y_mZ = {X, Y, mZ};
-  /** Constant <code>Rot_mZ_mY_mX={mZ, mY, mX}</code> */
+  /**
+   * Constant <code>Rot_mZ_mY_mX={mZ, mY, mX}</code>
+   */
   static final double[][] Rot_mZ_mY_mX = {mZ, mY, mX};
-  /** Constant <code>Rot_X_mZ_mY={X, mZ, mY}</code> */
+  /**
+   * Constant <code>Rot_X_mZ_mY={X, mZ, mY}</code>
+   */
   static final double[][] Rot_X_mZ_mY = {X, mZ, mY};
-  /** Constant <code>Rot_mY_mX_mZ={mY, mX, mZ}</code> */
+  /**
+   * Constant <code>Rot_mY_mX_mZ={mY, mX, mZ}</code>
+   */
   static final double[][] Rot_mY_mX_mZ = {mY, mX, mZ};
-  /** Constant <code>Rot_mY_X_mZ={mY, X, mZ}</code> */
+  /**
+   * Constant <code>Rot_mY_X_mZ={mY, X, mZ}</code>
+   */
   static final double[][] Rot_mY_X_mZ = {mY, X, mZ};
-  /** Constant <code>Rot_mX_mZ_mY={mX, mZ, mY}</code> */
+  /**
+   * Constant <code>Rot_mX_mZ_mY={mX, mZ, mY}</code>
+   */
   static final double[][] Rot_mX_mZ_mY = {mX, mZ, mY};
-  /** Constant <code>Rot_mZ_mX_mY={mZ, mX, mY}</code> */
+  /**
+   * Constant <code>Rot_mZ_mX_mY={mZ, mX, mY}</code>
+   */
   static final double[][] Rot_mZ_mX_mY = {mZ, mX, mY};
-  /** Constant <code>Rot_mZ_mY_X={mZ, mY, X}</code> */
+  /**
+   * Constant <code>Rot_mZ_mY_X={mZ, mY, X}</code>
+   */
   static final double[][] Rot_mZ_mY_X = {mZ, mY, X};
-  /** Constant <code>Rot_mZ_Y_mX={mZ, Y, mX}</code> */
+  /**
+   * Constant <code>Rot_mZ_Y_mX={mZ, Y, mX}</code>
+   */
   static final double[][] Rot_mZ_Y_mX = {mZ, Y, mX};
-  /** Constant <code>Rot_mZ_mX_Y={mZ, mX, Y}</code> */
+  /**
+   * Constant <code>Rot_mZ_mX_Y={mZ, mX, Y}</code>
+   */
   static final double[][] Rot_mZ_mX_Y = {mZ, mX, Y};
-  /** Constant <code>Rot_mX_mZ_Y={mX, mZ, Y}</code> */
+  /**
+   * Constant <code>Rot_mX_mZ_Y={mX, mZ, Y}</code>
+   */
   static final double[][] Rot_mX_mZ_Y = {mX, mZ, Y};
-  /** Constant <code>Rot_X_mY_mZ={X, mY, mZ}</code> */
+  /**
+   * Constant <code>Rot_X_mY_mZ={X, mY, mZ}</code>
+   */
   static final double[][] Rot_X_mY_mZ = {X, mY, mZ};
-  /** Constant <code>Rot_mZ_X_Y={mZ, X, Y}</code> */
+  /**
+   * Constant <code>Rot_mZ_X_Y={mZ, X, Y}</code>
+   */
   static final double[][] Rot_mZ_X_Y = {mZ, X, Y};
-  /** Constant <code>Rot_Y_mZ_mX={Y, mZ, mX}</code> */
+  /**
+   * Constant <code>Rot_Y_mZ_mX={Y, mZ, mX}</code>
+   */
   static final double[][] Rot_Y_mZ_mX = {Y, mZ, mX};
-  /** Constant <code>Rot_mY_mZ_mX={mY, mZ, mX}</code> */
+  /**
+   * Constant <code>Rot_mY_mZ_mX={mY, mZ, mX}</code>
+   */
   static final double[][] Rot_mY_mZ_mX = {mY, mZ, mX};
-  /** Constant <code>Rot_mZ_Y_X={mZ, Y, X}</code> */
+  /**
+   * Constant <code>Rot_mZ_Y_X={mZ, Y, X}</code>
+   */
   static final double[][] Rot_mZ_Y_X = {mZ, Y, X};
-  /** Constant <code>Rot_mZ_X_mY={mZ, X, mY}</code> */
+  /**
+   * Constant <code>Rot_mZ_X_mY={mZ, X, mY}</code>
+   */
   static final double[][] Rot_mZ_X_mY = {mZ, X, mY};
-  /** Constant <code>XmY = {1.0, -1.0, ZERO}</code> */
+  /**
+   * Constant <code>XmY = {1.0, -1.0, ZERO}</code>
+   */
   private static final double[] XmY = {1.0, -1.0, ZERO};
-  /** Constant <code>Rot_XmY_X_mZ={XmY, X, mZ}</code> */
+  /**
+   * Constant <code>Rot_XmY_X_mZ={XmY, X, mZ}</code>
+   */
   static final double[][] Rot_XmY_X_mZ = {XmY, X, mZ};
-  /** Constant <code>Rot_XmY_X_Z={XmY, X, Z}</code> */
+  /**
+   * Constant <code>Rot_XmY_X_Z={XmY, X, Z}</code>
+   */
   static final double[][] Rot_XmY_X_Z = {XmY, X, Z};
-  /** Constant <code>Rot_XmY_mY_Z={XmY, mY, Z}</code> */
+  /**
+   * Constant <code>Rot_XmY_mY_Z={XmY, mY, Z}</code>
+   */
   static final double[][] Rot_XmY_mY_Z = {XmY, mY, Z};
-  /** Constant <code>Rot_X_XmY_Z={X, XmY, Z}</code> */
+  /**
+   * Constant <code>Rot_X_XmY_Z={X, XmY, Z}</code>
+   */
   static final double[][] Rot_X_XmY_Z = {X, XmY, Z};
-  /** Constant <code>Rot_X_XmY_mZ={X, XmY, mZ}</code> */
+  /**
+   * Constant <code>Rot_X_XmY_mZ={X, XmY, mZ}</code>
+   */
   static final double[][] Rot_X_XmY_mZ = {X, XmY, mZ};
-  /** Constant <code>Rot_mY_XmY_mZ={mY, XmY, mZ}</code> */
+  /**
+   * Constant <code>Rot_mY_XmY_mZ={mY, XmY, mZ}</code>
+   */
   static final double[][] Rot_mY_XmY_mZ = {mY, XmY, mZ};
-  /** Constant <code>Rot_mY_XmY_Z={mY, XmY, Z}</code> */
+  /**
+   * Constant <code>Rot_mY_XmY_Z={mY, XmY, Z}</code>
+   */
   static final double[][] Rot_mY_XmY_Z = {mY, XmY, Z};
-  /** Constant <code>Rot_XmY_mY_mZ={XmY, mY, mZ}</code> */
+  /**
+   * Constant <code>Rot_XmY_mY_mZ={XmY, mY, mZ}</code>
+   */
   static final double[][] Rot_XmY_mY_mZ = {XmY, mY, mZ};
-  /** Constant <code>mXY = {-1.0, 1.0, ZERO}</code> */
+  /**
+   * Constant <code>mXY = {-1.0, 1.0, ZERO}</code>
+   */
   private static final double[] mXY = {-1.0, 1.0, ZERO};
-  /** Constant <code>Rot_Y_mXY_Z={Y, mXY, Z}</code> */
+  /**
+   * Constant <code>Rot_Y_mXY_Z={Y, mXY, Z}</code>
+   */
   static final double[][] Rot_Y_mXY_Z = {Y, mXY, Z};
-  /** Constant <code>Rot_mX_mXY_mZ={mX, mXY, mZ}</code> */
+  /**
+   * Constant <code>Rot_mX_mXY_mZ={mX, mXY, mZ}</code>
+   */
   static final double[][] Rot_mX_mXY_mZ = {mX, mXY, mZ};
-  /** Constant <code>Rot_mXY_Y_Z={mXY, Y, Z}</code> */
+  /**
+   * Constant <code>Rot_mXY_Y_Z={mXY, Y, Z}</code>
+   */
   static final double[][] Rot_mXY_Y_Z = {mXY, Y, Z};
-  /** Constant <code>Rot_mXY_mX_Z={mXY, mX, Z}</code> */
+  /**
+   * Constant <code>Rot_mXY_mX_Z={mXY, mX, Z}</code>
+   */
   static final double[][] Rot_mXY_mX_Z = {mXY, mX, Z};
-  /** Constant <code>Rot_mXY_Y_mZ={mXY, Y, mZ}</code> */
+  /**
+   * Constant <code>Rot_mXY_Y_mZ={mXY, Y, mZ}</code>
+   */
   static final double[][] Rot_mXY_Y_mZ = {mXY, Y, mZ};
-  /** Constant <code>Rot_mXY_mX_mZ={mXY, mX, mZ}</code> */
+  /**
+   * Constant <code>Rot_mXY_mX_mZ={mXY, mX, mZ}</code>
+   */
   static final double[][] Rot_mXY_mX_mZ = {mXY, mX, mZ};
-  /** Constant <code>Rot_mX_mXY_Z={mX, mXY, Z}</code> */
+  /**
+   * Constant <code>Rot_mX_mXY_Z={mX, mXY, Z}</code>
+   */
   static final double[][] Rot_mX_mXY_Z = {mX, mXY, Z};
-  /** Constant <code>Rot_Y_mXY_mZ={Y, mXY, mZ}</code> */
+  /**
+   * Constant <code>Rot_Y_mXY_mZ={Y, mXY, mZ}</code>
+   */
   static final double[][] Rot_Y_mXY_mZ = {Y, mXY, mZ};
-  /** The rotation matrix in fractional coordinates. */
+  /**
+   * The rotation matrix in fractional coordinates.
+   */
   public final double[][] rot;
-  /** The translation vector in fractional coordinates. */
+  /**
+   * The translation vector in fractional coordinates.
+   */
   public final double[] tr;
-  /** A mask equal to 0 for X-coordinates. */
+  /**
+   * A mask equal to 0 for X-coordinates.
+   */
   private static final int XX = 0;
-  /** A mask equal to 1 for Y-coordinates. */
+  /**
+   * A mask equal to 1 for Y-coordinates.
+   */
   private static final int YY = 1;
-  /** A mask equal to 2 for Z-coordinates. */
+  /**
+   * A mask equal to 2 for Z-coordinates.
+   */
   private static final int ZZ = 2;
-  /** Replicates position for the given symmetry operator (LxMxN). */
+  /**
+   * Replicates position for the given symmetry operator (LxMxN).
+   */
   public final int[] replicatesVector;
 
   /**
    * The SymOp constructor using a rotation matrix and translation vector.
    *
    * @param rot The rotation matrix.
-   * @param tr The translation vector.
+   * @param tr  The translation vector.
    */
   public SymOp(double[][] rot, double[] tr) {
     this.rot = rot;
@@ -316,8 +554,8 @@ public class SymOp {
   /**
    * The SymOp constructor using a rotation matrix and translation vector.
    *
-   * @param rot The rotation matrix.
-   * @param tr The translation vector.
+   * @param rot              The rotation matrix.
+   * @param tr               The translation vector.
    * @param replicatesVector Describes symmetry operators location within replicates crystal.
    */
   public SymOp(double[][] rot, double[] tr, int[] replicatesVector) {
@@ -325,7 +563,6 @@ public class SymOp {
     this.tr = tr;
     this.replicatesVector = replicatesVector;
   }
-
 
   /**
    * The SymOp constructor using a 4x4 matrix.
@@ -380,7 +617,7 @@ public class SymOp {
    * @return A 4x4 matrix representation of the SymOp.
    */
   public double[][] asMatrix() {
-    return new double[][] {
+    return new double[][]{
         {rot[0][0], rot[0][1], rot[0][2], tr[0]},
         {rot[1][0], rot[1][1], rot[1][2], tr[1]},
         {rot[2][0], rot[2][1], rot[2][2], tr[2]},
@@ -433,17 +670,17 @@ public class SymOp {
    * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
    * or not of length n, the method returns immediately.
    *
-   * @param n Number of atoms.
-   * @param x Input cartesian x-coordinates.
-   * @param y Input cartesian y-coordinates.
-   * @param z Input cartesian z-coordinates.
+   * @param n     Number of atoms.
+   * @param x     Input cartesian x-coordinates.
+   * @param y     Input cartesian y-coordinates.
+   * @param z     Input cartesian z-coordinates.
    * @param mateX Output cartesian x-coordinates.
    * @param mateY Output cartesian y-coordinates.
    * @param mateZ Output cartesian z-coordinates.
    * @param symOp The cartesian symmetry operator.
    */
   public static void applyCartSymOp(int n, double[] x, double[] y, double[] z,
-      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
+                                    double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
     if (x == null || y == null || z == null) {
       throw new IllegalArgumentException("The input arrays x, y and z must not be null.");
     }
@@ -486,8 +723,8 @@ public class SymOp {
   /**
    * Apply a cartesian symmetry operator to an array of coordinates.
    *
-   * @param xyz Input  cartesian coordinates.
-   * @param mate Symmetry mate  cartesian coordinates.
+   * @param xyz   Input  cartesian coordinates.
+   * @param mate  Symmetry mate  cartesian coordinates.
    * @param symOp The cartesian symmetry operator.
    */
   public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
@@ -497,10 +734,10 @@ public class SymOp {
   /**
    * Apply a cartesian symmetry operator to an array of coordinates.
    *
-   * @param xyz Input  cartesian coordinates.
-   * @param mate Symmetry mate  cartesian coordinates.
+   * @param xyz   Input  cartesian coordinates.
+   * @param mate  Symmetry mate  cartesian coordinates.
    * @param symOp The cartesian symmetry operator.
-   * @param mask Only apply the SymOp if the per atom mask is true.
+   * @param mask  Only apply the SymOp if the per atom mask is true.
    */
   public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
     var rot = symOp.rot;
@@ -558,8 +795,8 @@ public class SymOp {
   /**
    * Apply a fractional symmetry operator to one set of coordinates.
    *
-   * @param xyz Input fractional coordinates.
-   * @param mate Symmetry mate fractional coordinates.
+   * @param xyz   Input fractional coordinates.
+   * @param mate  Symmetry mate fractional coordinates.
    * @param symOp The fractional symmetry operator.
    */
   public static void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
@@ -577,17 +814,16 @@ public class SymOp {
   /**
    * Apply a symmetry operator to one set of coordinates.
    *
-   * @param h Input coordinates.
-   * @param k Input coordinates.
-   * @param l Input coordinates.
-   * @param mate Symmetry mate coordinates.
+   * @param h     Input coordinates.
+   * @param k     Input coordinates.
+   * @param l     Input coordinates.
+   * @param mate  Symmetry mate coordinates.
    * @param symOp The symmetry operator.
-   * @param nx number of unit cell translations
-   * @param ny number of unit cell translations
-   * @param nz number of unit cell translations
+   * @param nx    number of unit cell translations
+   * @param ny    number of unit cell translations
+   * @param nz    number of unit cell translations
    */
-  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
-      int nz) {
+  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny, int nz) {
     var rot = symOp.rot;
     var trans = symOp.tr;
     // Apply Symmetry Operator.
@@ -605,8 +841,8 @@ public class SymOp {
   /**
    * Apply a symmetry operator to one HKL.
    *
-   * @param hkl Input HKL.
-   * @param mate Symmetry mate HKL.
+   * @param hkl   Input HKL.
+   * @param mate  Symmetry mate HKL.
    * @param symOp The symmetry operator.
    */
   public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
@@ -627,8 +863,8 @@ public class SymOp {
    * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
    * be divisible by 3 and mate must have the same length.
    *
-   * @param xyz Input cartesian x, y, z-coordinates.
-   * @param mate Output cartesian x, y, z-coordinates.
+   * @param xyz   Input cartesian x, y, z-coordinates.
+   * @param mate  Output cartesian x, y, z-coordinates.
    * @param symOp The fractional symmetry operator.
    */
   public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
@@ -639,10 +875,10 @@ public class SymOp {
    * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
    * be divisible by 3 and mate must have the same length.
    *
-   * @param xyz Input cartesian x, y, z-coordinates.
-   * @param mate Output cartesian x, y, z-coordinates.
+   * @param xyz   Input cartesian x, y, z-coordinates.
+   * @param mate  Output cartesian x, y, z-coordinates.
    * @param symOp The fractional symmetry operator.
-   * @param mask Only apply the SymOp if the per atom mask is true.
+   * @param mask  Only apply the SymOp if the per atom mask is true.
    */
   public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
     int l = xyz.length;
@@ -696,8 +932,8 @@ public class SymOp {
   /**
    * Apply a transpose rotation symmetry operator to one HKL.
    *
-   * @param hkl Input HKL.
-   * @param mate Symmetry mate HKL.
+   * @param hkl   Input HKL.
+   * @param mate  Symmetry mate HKL.
    * @param symOp The symmetry operator.
    */
   public static void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
@@ -724,13 +960,13 @@ public class SymOp {
   public static String asMatrixString(SymOp symOp) {
     double[][] values = symOp.asMatrix();
     return format("""
-                     %14.8f %14.8f %14.8f \\
-                               %14.8f %14.8f %14.8f \\
-                               %14.8f %14.8f %14.8f \\
-                               %14.8f %14.8f %14.8f \
-                    """, values[0][0],
-            values[0][1], values[0][2], values[1][0], values[1][1], values[1][2], values[2][0],
-            values[2][1], values[2][2], values[0][3], values[1][3], values[2][3]);
+             %14.8f %14.8f %14.8f \\
+                       %14.8f %14.8f %14.8f \\
+                       %14.8f %14.8f %14.8f \\
+                       %14.8f %14.8f %14.8f \
+            """, values[0][0],
+        values[0][1], values[0][2], values[1][0], values[1][1], values[1][2], values[2][0],
+        values[2][1], values[2][2], values[0][3], values[1][3], values[2][3]);
   }
 
   /**
@@ -744,7 +980,7 @@ public class SymOp {
     var rot = symOp.rot;
     var inv = mat3Inverse(rot);
     return new SymOp(inv,
-        new double[] {-dot(inv[0], tr), -dot(inv[1], tr), -dot(inv[2], tr)});
+        new double[]{-dot(inv[0], tr), -dot(inv[1], tr), -dot(inv[2], tr)});
   }
 
   /**
@@ -758,11 +994,11 @@ public class SymOp {
     if (tokens.length < 12) {
       return null;
     }
-    return new SymOp(new double[][] {
+    return new SymOp(new double[][]{
         {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
         {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
         {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
-        new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
+        new double[]{parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
   }
 
   /**
@@ -867,7 +1103,9 @@ public class SymOp {
     return "";
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(" Rotation operator:\n");

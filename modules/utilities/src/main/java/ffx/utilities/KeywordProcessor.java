@@ -137,7 +137,7 @@ public class KeywordProcessor extends AbstractProcessor {
         sb.append(format("  Type:         %s\n", type));
       }
       String defaultValue = ffxKeyword.defaultValue();
-      if (defaultValue != null && !defaultValue.equals("")) {
+      if (defaultValue != null && !defaultValue.isEmpty()) {
         sb.append(format("  Default:      %s\n", ffxKeyword.defaultValue()));
       }
       sb.append(format("  Definition:   %s\n", ffxKeyword.description()));

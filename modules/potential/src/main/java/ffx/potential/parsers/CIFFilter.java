@@ -193,8 +193,7 @@ public class CIFFilter extends SystemFilter {
       try {
         cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
       } catch (Exception ex) {
-        logger.info(" Failed to create CIF file object.\n" + ex);
-        ex.printStackTrace();
+        logger.info(" Failed to create CIF file object.\n " + ex);
       }
       String ext = getExtension(file.getName());
       currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ext);
@@ -226,7 +225,6 @@ public class CIFFilter extends SystemFilter {
         cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
       } catch (Exception ex) {
         logger.info(" Failed to create CIF file object.\n" + ex);
-        ex.printStackTrace();
       }
       currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ".xyz");
     }
@@ -253,7 +251,6 @@ public class CIFFilter extends SystemFilter {
         cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
       } catch (Exception ex) {
         logger.info(" Failed to create CIF file object.\n" + ex);
-        ex.printStackTrace();
       }
       currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ".xyz");
     }
@@ -312,7 +309,6 @@ public class CIFFilter extends SystemFilter {
         bufferedReader.close();
       } catch (IOException ex) {
         logger.warning(format(" Exception in closing CIF filter: %s", ex));
-        ex.printStackTrace();
       }
     }
   }
@@ -387,8 +383,7 @@ public class CIFFilter extends SystemFilter {
       value = name.replaceAll("[()]", "").replaceAll("_", "").replaceAll("-", "")
           .replaceAll(" +", "").split("[0-9]")[0];
     } catch (Exception e) {
-      e.printStackTrace();
-      logger.severe(" Error extracting atom element. Please ensure the CIF is formatted correctly.");
+      logger.severe(" Error extracting atom element. Please ensure the CIF is formatted correctly.\n" + e);
     }
     return value;
   }
@@ -426,7 +421,7 @@ public class CIFFilter extends SystemFilter {
 
     // Determine the space group from CIF.
     Symmetry symmetry = block.getSymmetry();
-    if (sgNum == -1 && sgName == null || sgName.equals("")) {
+    if (sgNum == -1 && sgName == null || sgName.isEmpty()) {
       if (symmetry.getIntTablesNumber().getRowCount() > 0) {
         sgNum = symmetry.getIntTablesNumber().get(0);
         logger.info(format(" CIF International Tables Number: %d", sgNum));
@@ -747,7 +742,7 @@ public class CIFFilter extends SystemFilter {
               logger.finer(format(" Molecule (%d) Size: %d", counter, molecule.size()));
             }
             ArrayList<Integer> indices = new ArrayList<>();
-            while (molecule.size() > 0) {
+            while (!molecule.isEmpty()) {
               Atom atom = molecule.remove(0);
               indices.add(atom.getIndex());
               atomPool.remove(atom);
@@ -1075,7 +1070,7 @@ public class CIFFilter extends SystemFilter {
       outputAssembly.setName(activeMolecularAssembly.getName());
       setMolecularSystem(outputAssembly);
 
-      if (outputAssembly.getAtomList().size() < 1) {
+      if (outputAssembly.getAtomList().isEmpty()) {
         logger.info(" Atom types could not be matched. File could not be written.");
       } else if (!writeOutputFile()) {
         logger.info(" Input File could not be written.");
@@ -1154,7 +1149,7 @@ public class CIFFilter extends SystemFilter {
    */
   public static void setAtomTypes(AtomTypeFactory factory, IAtom atom) {
     String atomTypeName = atom.getAtomTypeName();
-    if (atomTypeName == null || atomTypeName.length() == 0) {
+    if (atomTypeName == null || atomTypeName.isEmpty()) {
       IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
       if (types.length > 0) {
         IAtomType atomType = types[0];
@@ -1305,7 +1300,6 @@ public class CIFFilter extends SystemFilter {
       bw.close();
       logger.info(format("\n Wrote CIF file: %s \n", saveFile.getAbsolutePath()));
     } catch (Exception ex) {
-      ex.printStackTrace();
       logger.info(format("\n Failed to write out CIF file: %s \n" + ex, saveFile.getAbsolutePath()));
       return false;
     }
@@ -1413,7 +1407,6 @@ public class CIFFilter extends SystemFilter {
         bw.close();
       } catch (Exception ex) {
         logger.info("Failed to write files.\n" + ex);
-        ex.printStackTrace();
       }
     } else {
       logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n");

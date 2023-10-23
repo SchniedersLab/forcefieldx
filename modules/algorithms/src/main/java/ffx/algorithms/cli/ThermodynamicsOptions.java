@@ -68,7 +68,7 @@ public class ThermodynamicsOptions {
    * The ArgGroup keeps the ThermodynamicsOptions together when printing help.
    */
   @ArgGroup(heading = "%n Thermodynamics Options%n", validate = false)
-  public ThermodynamicsOptionGroup group = new ThermodynamicsOptionGroup();
+  private final ThermodynamicsOptionGroup group = new ThermodynamicsOptionGroup();
 
   /**
    * Return the selected Thermodynamics algorithm as an enumerated type.

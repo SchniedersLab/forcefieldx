@@ -67,31 +67,31 @@ public class ManyBodyOptions {
    * The ArgGroup keeps the ManyBodyOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Optimization Options%n", validate = false)
-  public ManyBodyOptionGroup group = new ManyBodyOptionGroup();
+  private final  ManyBodyOptionGroup group = new ManyBodyOptionGroup();
 
   /**
    * The ArgGroup keeps the BoxOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
-  public BoxOptionGroup boxGroup = new BoxOptionGroup();
+  private final  BoxOptionGroup boxGroup = new BoxOptionGroup();
 
   /**
    * The ArgGroup keeps the WindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Window Optimization Options%n", validate = false)
-  public WindowOptionGroup windowGroup = new WindowOptionGroup();
+  private final WindowOptionGroup windowGroup = new WindowOptionGroup();
 
   /**
    * The ArgGroup keeps the WindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Energy Expansion and Cut-off Options%n", validate = false)
-  public EnergyOptionGroup energyGroup = new EnergyOptionGroup();
+  private final EnergyOptionGroup energyGroup = new EnergyOptionGroup();
 
   /**
    * The ArgGroup keeps the ResidueOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Residue Selection Options%n", validate = false)
-  public ResidueOptionGroup residueGroup = new ResidueOptionGroup();
+  private final ResidueOptionGroup residueGroup = new ResidueOptionGroup();
 
   private RotamerOptimization rotamerOptimization;
   private RotamerLibrary rotamerLibrary;
@@ -943,15 +943,13 @@ public class ManyBodyOptions {
     /**
      * --iB or --initialBox Initial box to optimize.
      */
-    @Option(names = {"--iB",
-        "--initialBox"}, paramLabel = "", defaultValue = "0", description = "Initial box to optimize.")
+    @Option(names = {"--iB", "--initialBox"}, defaultValue = "0", description = "Initial box to optimize.")
     private int initialBox;
 
     /**
      * --bf or --boxFinal Final box to optimize.
      */
-    @Option(names = {"--fB",
-        "--finalBox"}, paramLabel = "", defaultValue = "2147483647", // Integer.MAX_VALUE
+    @Option(names = {"--fB", "--finalBox"}, defaultValue = "2147483647", // Integer.MAX_VALUE
         description = "Final box to optimize.")
     private int finalBox;
 
@@ -1035,8 +1033,7 @@ public class ManyBodyOptions {
     /**
      * --sR or --start Starting residue to perform the optimization on.
      */
-    @Option(names = {"--sR",
-        "--start"}, paramLabel = "", defaultValue = "-2147483648", // Integer.MIN_VALUE
+    @Option(names = {"--sR", "--start"}, defaultValue = "-2147483648", // Integer.MIN_VALUE
         description = "Starting residue to optimize (default: all residues).")
     private int start;
 
@@ -1074,21 +1071,5 @@ public class ManyBodyOptions {
     private double distanceCutoff = -1;
 
   }
-
-  //    /**
-  //     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
-  //     * when the many body command is run with the following syntax and flags:
-  //     * ffxc ManyBody --out ... file.pdb &gt;&gt; file.log.
-  //     *
-  //     * @throws java.io.IOException Throws an exception when output is non piped to a log
-  //     *                             file. The --out flag relies on the presence of a log file
-  // where output is
-  //     *                             piped.
-  //     */
-  //    public void saveEliminatedRotamers() throws IOException {
-  //        if (saveOutput) {
-  //            rotamerOptimization.outputEliminated();
-  //        }
-  //    }
 
 }

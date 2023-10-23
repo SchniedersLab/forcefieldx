@@ -335,7 +335,7 @@ public class Energy extends PotentialCommand {
 
         for (int i = 0; i < numSnaps - 1; i++) {
           StateContainer savedState = lowestEnergyQueue.removeLast();
-          AssemblyState finalAssembly = savedState.getState();
+          AssemblyState finalAssembly = savedState.state();
           finalAssembly.revertState();
           double finalEnergy = savedState.getEnergy();
           logger.info(
@@ -346,7 +346,7 @@ public class Energy extends PotentialCommand {
         }
 
         StateContainer savedState = lowestEnergyQueue.removeLast();
-        AssemblyState lowestAssembly = savedState.getState();
+        AssemblyState lowestAssembly = savedState.state();
         lowestEnergy = savedState.getEnergy();
 
         assemblyState.revertState();
@@ -398,27 +398,16 @@ public class Energy extends PotentialCommand {
     this.atomSelectionOptions = atomSelectionOptions;
   }
 
-  private class StateContainer implements Comparable<StateContainer> {
-
-    public StateContainer(AssemblyState state, double e) {
-      this.state = state;
-      this.e = e;
-    }
-
-    public AssemblyState getState() {
-      return state;
-    }
+  private record StateContainer(AssemblyState state, double e) implements Comparable<StateContainer> {
 
     public double getEnergy() {
-      return e;
-    }
+        return e;
+      }
 
-    @Override
-    public int compareTo(StateContainer o) {
-      return Double.compare(e, o.getEnergy());
-    }
+      @Override
+      public int compareTo(StateContainer o) {
+        return Double.compare(e, o.getEnergy());
+      }
 
-    private final AssemblyState state;
-    private final double e;
   }
 }

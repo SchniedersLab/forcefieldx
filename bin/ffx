@@ -177,13 +177,13 @@ if $cygwin; then
   echo " Java exec: $JAVACMD"
   echo " Classpath: $CLASSPATH"
   CLASSPATH=$(echo $CLASSPATH | sed 's/ /:/g')
-elif [ "$MSYSTEM" == "MINGW64" ]
+elif [ "$MSYSTEM" = "MINGW64" ]
 then
-  [ -n "$CLASSPATH" ] && CLASSPATH=`cygpath --path --unix "$CLASSPATH"`
-  [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
-  [ -n "$HOME" ] && HOME=`cygpath --path --unix "$HOME"`
-  [ -n "$BASEDIR" ] && BASEDIR=`cygpath --path --unix "$BASEDIR"`
-  [ -n "$REPO" ] && REPO=`cygpath --path --unix "$REPO"`
+  [ -n "$CLASSPATH" ] && CLASSPATH=$(cygpath --path --unix "$CLASSPATH")
+  [ -n "$JAVA_HOME" ] && JAVA_HOME=$(cygpath --path --unix "$JAVA_HOME")
+  [ -n "$HOME" ] && HOME=$(cygpath --path --unix "$HOME")
+  [ -n "$BASEDIR" ] && BASEDIR=$(cygpath --path --unix "$BASEDIR")
+  [ -n "$REPO" ] && REPO=$(cygpath --path --unix "$REPO")
   CLASSPATH=$(echo $CLASSPATH | sed 's/ /:/g')
 fi
 

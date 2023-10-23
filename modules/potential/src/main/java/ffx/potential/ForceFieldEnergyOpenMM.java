@@ -2551,15 +2551,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       AngleType angleType = angles[0].angleType;
-      String energy = format(
-          "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=theta-theta0; "
-              + "theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3); "
-              + "projx = x2-nx*dot; projy = y2-ny*dot; projz = z2-nz*dot; "
-              + "dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3); "
-              + "nx = px/norm; ny = py/norm; nz = pz/norm; " + "norm = sqrt(px*px + py*py + pz*pz); "
-              + "px = (d1y*d2z-d1z*d2y); py = (d1z*d2x-d1x*d2z); pz = (d1x*d2y-d1y*d2x); "
-              + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; " + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
-          angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
+      String energy = format("""
+          k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
+          d=theta-theta0;
+          theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3);
+          projx = x2-nx*dot;
+          projy = y2-ny*dot;
+          projz = z2-nz*dot;
+          dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
+          nx = px/norm;
+          ny = py/norm;
+          nz = pz/norm;
+          norm = sqrt(px*px + py*py + pz*pz);
+          px = (d1y*d2z-d1z*d2y);
+          py = (d1z*d2x-d1x*d2z);
+          pz = (d1x*d2y-d1y*d2x);
+          d1x = x1-x4;
+          d1y = y1-y4;
+          d1z = z1-z4;
+          d2x = x3-x4;
+          d2y = y3-y4;
+          d2z = z3-z4;
+          """, angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
       inPlaneAngleForce = OpenMM_CustomCompoundBondForce_create(4, energy);
       OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "theta0");
       OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "k");

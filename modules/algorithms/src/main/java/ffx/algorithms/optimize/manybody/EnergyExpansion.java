@@ -925,7 +925,7 @@ public class EnergyExpansion {
           rO.logIfRank0(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
               cellIndices[0], cellIndices[1], cellIndices[2]));
           return 0;
-        } else if (linesThisBox.size() == 0) {
+        } else if (linesThisBox.isEmpty()) {
           return 0;
         } else {
           lines = linesThisBox;
@@ -946,11 +946,11 @@ public class EnergyExpansion {
         }
       }
       int loaded = 0;
-      if (tripleLines.size() > 0) {
+      if (!tripleLines.isEmpty()) {
         loaded = 3;
-      } else if (pairLines.size() > 0) {
+      } else if (!pairLines.isEmpty()) {
         loaded = 2;
-      } else if (singleLines.size() > 0) {
+      } else if (!singleLines.isEmpty()) {
         loaded = 1;
       } else {
         logger.warning(
@@ -1006,7 +1006,7 @@ public class EnergyExpansion {
       condenseEnergyMap(selfEnergyMap);
 
       if (loaded >= 2) {
-        if (selfEnergyMap.size() > 0) {
+        if (!selfEnergyMap.isEmpty()) {
           rO.logIfRank0(
               " Double-check that parameters match original run due to missing self-energies.");
         }
@@ -1106,7 +1106,7 @@ public class EnergyExpansion {
       condenseEnergyMap(twoBodyEnergyMap);
 
       if (loaded >= 3) {
-        if (twoBodyEnergyMap.size() > 0) {
+        if (!twoBodyEnergyMap.isEmpty()) {
           if (master) {
             logger.warning(
                 "Double-check that parameters match original run!  Found trimers in restart file, but pairs job queue is non-empty.");

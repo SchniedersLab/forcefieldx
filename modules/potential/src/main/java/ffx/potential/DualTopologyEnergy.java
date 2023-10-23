@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.SymOp.applyCartesianSymOp;
-import static ffx.crystal.SymOp.applyCartesianSymRot;
-import static ffx.crystal.SymOp.invertSymOp;
-import static ffx.potential.utils.Superpose.rmsd;
-import static ffx.utilities.StringUtils.parseAtomRanges;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
@@ -60,11 +49,22 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.crystal.SymOp.applyCartesianSymRot;
+import static ffx.crystal.SymOp.invertSymOp;
+import static ffx.potential.utils.Superpose.rmsd;
+import static ffx.utilities.StringUtils.parseAtomRanges;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology system.
@@ -522,7 +522,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       logger.info(format(" RMSD: %12.3f", symOpRMSD));
     } catch (Exception ex) {
       logger.warning(ex.toString());
-      ex.printStackTrace();
       logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symOpString + ")");
     }
   }
@@ -880,25 +879,23 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             + f2L * restraintd2EdL2_1
             + 2.0 * dF2dL * restraintdEdL_1
             + d2F2dL2 * restraintEnergy1;
+    double e2;
     if (!useFirstSystemBondedEnergy) {
-      double e2 =
-          f2L * d2EdL2_2
-              + 2.0 * dF2dL * dEdL_2
-              + d2F2dL2 * energy2
-              + f1L * restraintd2EdL2_2
-              + 2.0 * dF1dL * restraintdEdL_2
-              + d2F1dL2 * restraintEnergy2;
-      return e1 + e2;
+      e2 = f2L * d2EdL2_2
+          + 2.0 * dF2dL * dEdL_2
+          + d2F2dL2 * energy2
+          + f1L * restraintd2EdL2_2
+          + 2.0 * dF1dL * restraintdEdL_2
+          + d2F1dL2 * restraintEnergy2;
     } else {
-      double e2 =
-          f2L * d2EdL2_2
-              + 2.0 * dF2dL * dEdL_2
-              + d2F2dL2 * energy2
-              - f2L * restraintd2EdL2_2
-              - 2.0 * dF2dL * restraintdEdL_2
-              - d2F2dL2 * restraintEnergy2;
-      return e1 + e2;
+      e2 = f2L * d2EdL2_2
+          + 2.0 * dF2dL * dEdL_2
+          + d2F2dL2 * energy2
+          - f2L * restraintd2EdL2_2
+          - 2.0 * dF2dL * restraintdEdL_2
+          - d2F2dL2 * restraintEnergy2;
     }
+    return e1 + e2;
   }
 
   /** {@inheritDoc} */
@@ -907,13 +904,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // Subtraction is implicit, as dEdL_2 and dF2dL are both multiplied by
     // negative 1 when set.
     double e1 = f1L * dEdL_1 + dF1dL * energy1 + f2L * restraintdEdL_1 + dF2dL * restraintEnergy1;
+    double e2;
     if (!useFirstSystemBondedEnergy) {
-      double e2 = f2L * dEdL_2 + dF2dL * energy2 + f1L * restraintdEdL_2 + dF1dL * restraintEnergy2;
-      return e1 + e2;
+      e2 = f2L * dEdL_2 + dF2dL * energy2 + f1L * restraintdEdL_2 + dF1dL * restraintEnergy2;
     } else {
-      double e2 = f2L * dEdL_2 + dF2dL * energy2 - f2L * restraintdEdL_2 - dF2dL * restraintEnergy2;
-      return e1 + e2;
+      e2 = f2L * dEdL_2 + dF2dL * energy2 - f2L * restraintdEdL_2 - dF2dL * restraintEnergy2;
     }
+    return e1 + e2;
   }
 
   /** {@inheritDoc} */
@@ -1035,10 +1032,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       try {
         parallelTeam.shutdown();
       } catch (Exception e) {
-        logger.severe(
-            format(
-                " Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s",
-                e.toString()));
+        logger.severe(format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e));
       }
     }
     parallelTeam = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
