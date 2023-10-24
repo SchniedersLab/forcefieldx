@@ -2897,20 +2897,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           permanentMultipoleEnergy, nPermanentInteractions));
     }
     if (polarizationTerm) {
-      sb.append(
-          format("REMARK   3   %s %g (%d)\n", "POLARIZATION               : ", polarizationEnergy,
-              nPermanentInteractions));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "POLARIZATION               : ",
+          polarizationEnergy, nPermanentInteractions));
     }
     sb.append(format("REMARK   3   %s %g\n", "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
     if (nsymm > 1) {
-      sb.append(
-          format("REMARK   3   %s %g\n", "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
+      sb.append(format("REMARK   3   %s %g\n", "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
     }
     if (crystal.getUnitCell() != crystal) {
       nsymm = crystal.spaceGroup.getNumberOfSymOps();
-      sb.append(
-          format("REMARK   3   %s %g\n", "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+      if (nsymm > 1) {
+        sb.append(format("REMARK   3   %s %g\n", "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+      }
     }
     sb.append("REMARK   3\n");
 

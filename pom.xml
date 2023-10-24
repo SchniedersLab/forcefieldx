@@ -688,7 +688,7 @@
       <version>${findbugs.version}</version>
     </dependency>
   </dependencies>
-  <description>Software for Molecular Biophysics</description>
+  <description>Polyglot Software for Molecular Biophysics</description>
   <developers>
     <developer>
       <email>michael-schnieders@uiowa.edu</email>
@@ -911,7 +911,7 @@
   <modules>
     <module>modules/algorithms</module>
     <module>modules/crystal</module>
-    <module>modules/experiment</module>
+    <module>modules/refinement</module>
     <module>modules/numerics</module>
     <module>modules/jopenmm</module>
     <module>modules/pj</module>

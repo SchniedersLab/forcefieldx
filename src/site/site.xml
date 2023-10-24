@@ -104,7 +104,7 @@
     <menu name="About Force Field X" inherit="top">
       <item name="Download" href="/download.html"/>
       <item name="Install" href="/install.html"/>
-      <item name="User Manual" href="/introduction.html"/>
+      <item name="User Manual" href="/manual.html"/>
       <item name="Applications" href="/applications.html"/>
       <item name="Publications" href="/publications.html"/>
       <item name="Method Development" href="/methods.html"/>
@@ -112,7 +112,7 @@
       <item name="Developer Guide" href="/modules.html"/>
     </menu>
     <menu name="User Manual" inherit="top">
-      <item name="Introduction" href="/introduction.html"/>
+      <item name="Introduction" href="/manual.html"/>
       <item name="Commands" href="/commands.html" collapse="true">
         <item name="Energy and Structure Analysis" href="/commands-energy.html" collapse="true">
           <item name="Density" href="/commands/Density.html"/>

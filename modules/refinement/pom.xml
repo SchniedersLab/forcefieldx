@@ -9,15 +9,15 @@
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>ffx-experiment</artifactId>
+  <artifactId>ffx-refinement</artifactId>
   <packaging>jar</packaging>
-  <name>Experiment</name>
+  <name>Refinement</name>
   <organization>
     <name>Timothy D. Fenn</name>
     <url>http://ffx.biochem.uiowa.edu</url>
   </organization>
   <description>
-    The Experiment module includes support for refinement of atomic resolution models against X-ray differaction data,
+    The Refinement module includes support for refinement of atomic resolution models against X-ray differaction data,
     neutron diffraction data and/or real space maps such as those from CryoEM.
   </description>
   <developers>

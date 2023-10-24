@@ -20,8 +20,8 @@
         is possible by launching Force Field X with a script file.
       </p>
       <source>ffxc [-D&lt;property=value&gt;] &lt;path/to/script.groovy&gt; [-options] &lt;PDB|XYZ&gt;</source>
-      <p>Example scripts are located in the ffx/scripts directory and are based on the Groovy
-        scripting langauge. Force Field X packages can be imported and used by following the
+      <p>Example scripts are located in the ffx/groovy directory and are based on the Groovy
+        scripting language. Force Field X packages can be imported and used by following the
         <a href="apidocs/index.html">FFX API documentation</a>.
       </p>
       <hr></hr>
