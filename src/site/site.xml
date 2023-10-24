@@ -235,11 +235,11 @@
       <item name="Introduction" href="/modules.html" collapse="true">
         <item name="Algorithms" href="modules/ffx-algorithms/index.html"/>
         <item name="Crystal" href="modules/ffx-crystal/index.html"/>
-        <item name="Experiment" href="modules/ffx-experiment/index.html"/>
         <item name="Numerics" href="modules/ffx-numerics/index.html"/>
         <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
         <item name="Parallel Java" href="modules/ffx-pj/index.html"/>
         <item name="Potential" href="modules/ffx-potential/index.html"/>
+        <item name="Refinement" href="modules/ffx-refinement/index.html"/>
         <item name="User Interfaces" href="modules/ffx-ui/index.html"/>
         <item name="Utilities" href="modules/ffx-utilities/index.html"/>
       </item>
