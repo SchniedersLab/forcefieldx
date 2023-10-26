@@ -63,7 +63,7 @@ class IdentifyRotamers extends AlgorithmsScript {
   ManyBodyOptions mbOpts
 
   /**
-   * The final argument(s) should be one or more filename.
+   * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
       description = 'The atomic coordinate file in PDB or XYZ format.')

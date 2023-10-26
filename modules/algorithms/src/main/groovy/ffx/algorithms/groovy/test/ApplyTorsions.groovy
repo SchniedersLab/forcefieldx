@@ -92,7 +92,7 @@ class ApplyTorsions extends AlgorithmsScript {
       description = 'File to print torsion snapshots to.')
   String vidFileName = null
   /**
-   * One or more filename.
+   * One or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
       description = "XYZ or PDB input files.")

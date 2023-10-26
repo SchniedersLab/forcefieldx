@@ -125,7 +125,7 @@ class PhDynamics extends AlgorithmsScript {
 
 
   /**
-   * One or more filename.
+   * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
       description = "XYZ or PDB input files.")

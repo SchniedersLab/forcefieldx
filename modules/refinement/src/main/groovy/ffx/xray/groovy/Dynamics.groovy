@@ -75,7 +75,7 @@ class Dynamics extends AlgorithmsScript {
   WriteoutOptions writeoutOptions
 
   /**
-   * One or more filename.
+   * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames

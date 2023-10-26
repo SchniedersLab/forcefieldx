@@ -71,7 +71,7 @@ class ManyBodyPhScan extends PotentialScript {
   double nSteps = 2.0
 
   /**
-   * The final argument(s) should be one or more filename.
+   * The final argument(s) should be one or more filenames.
    */
   @Unmatched
   List<String> unmatched = null

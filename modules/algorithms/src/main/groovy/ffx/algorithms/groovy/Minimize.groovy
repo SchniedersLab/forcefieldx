@@ -79,7 +79,7 @@ class Minimize extends AlgorithmsScript {
   TopologyOptions topology
 
   /**
-   * The final argument(s) should be one or more filename.
+   * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
   List<String> filenames = null
