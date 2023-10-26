@@ -415,6 +415,12 @@ class PhGradient extends PotentialScript {
                   format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
         }
       }
+      if(nESVFailures > 0){
+        logger.info(format(" %d ESVs failed the gradient test.\n", nESVFailures))
+      }
+    }
+    if(nESVFailures == 0){
+      logger.info(" All ESVs passed the gradient test.\n")
     }
 
     if(scan){
@@ -514,9 +520,12 @@ class PhGradient extends PotentialScript {
     for(Atom atom : esvSystem.getExtendedAtoms()){
       int atomIndex = atom.getArrayIndex()
       if (esvSystem.isTitratingHeavy(atomIndex)) {
-        double endstatePolar = esvSystem.titrationUtils.getPolarizability(atom, titrLambda, tautLambda, atom.getPolarizeType().polarizability)
-        double sixth = 1.0 / 6.0
-        atom.getPolarizeType().pdamp = pow(endstatePolar, sixth)
+        //If polarization is turned off atom.getPolarizeType() will return null
+        if(atom.getPolarizeType() != null){
+          double endstatePolar = esvSystem.titrationUtils.getPolarizability(atom, titrLambda, tautLambda, atom.getPolarizeType().polarizability)
+          double sixth = 1.0 / 6.0
+          atom.getPolarizeType().pdamp = pow(endstatePolar, sixth)
+        }
       }
     }
 

@@ -50,6 +50,7 @@ import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -140,7 +141,7 @@ class PhEnergy extends PotentialScript {
     double pH = 7.4
 
     @Option(names = ['--aFi', '--arcFile'], paramLabel = "traj",
-            description = 'A file containing the the PDB from which to build the ExtendedSystem. There is currently no default.')
+            description = 'A file containing snapshots to evaluate on when using a PDB as a reference to build from. There is currently no default.')
     private String arcFileName = null
 
     /**
@@ -149,6 +150,10 @@ class PhEnergy extends PotentialScript {
     @Option(names = ['--testEndStateEnergies'], paramLabel = 'false',
             description = 'Test both ESV energy end states as if the polarization damping factor is initialized from the respective protonated or deprotonated state')
     boolean testEndstateEnergies = false
+
+    @Option(names = ['--recomputeAverage'], paramLabel = 'false',
+            description = 'Recompute average position and spit out said structure from trajectory')
+    boolean recomputeAverage = false
 
     /**
      * The final argument is a PDB or XPH coordinate file.
@@ -235,7 +240,7 @@ class PhEnergy extends PotentialScript {
         int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
-
+        double[] averageCoordinates = Arrays.copyOf(x, x.length)
         if (gradient) {
             double[] g = new double[nVars]
             int nAts = (int) (nVars / 3)
@@ -284,6 +289,11 @@ class PhEnergy extends PotentialScript {
                 Crystal crystal = activeAssembly.getCrystal()
                 forceFieldEnergy.setCrystal(crystal)
                 forceFieldEnergy.getCoordinates(x)
+                if(recomputeAverage){
+                    for(int i = 0; i < x.length; i++){
+                        averageCoordinates[i] += x[i]
+                    }
+                }
                 if (verbose) {
                     logger.info(format(" Snapshot %4d", index))
                     if (!crystal.aperiodic()) {
@@ -296,7 +306,48 @@ class PhEnergy extends PotentialScript {
                     logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
                 }
             }
+            if(recomputeAverage){
+                for(int i = 0; i < x.length; i++){
+                    x[i] = averageCoordinates[i] / index
+                }
+                forceFieldEnergy.setCoordinates(x)
+            }
         }
+        if(recomputeAverage){
+            String modelFilename = activeAssembly.getFile().getAbsolutePath()
+            if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+                baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+            }
+            String dirName = baseDir.toString() + File.separator
+            String fileName = FilenameUtils.getName(modelFilename)
+            String ext = FilenameUtils.getExtension(fileName)
+            fileName = FilenameUtils.removeExtension(fileName)
+            File saveFile
+            SystemFilter writeFilter
+            if (ext.toUpperCase().contains("XYZ")) {
+                saveFile = new File(dirName + fileName + ".xyz")
+                writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+                        activeAssembly.getProperties())
+                potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
+            } else if (ext.toUpperCase().contains("ARC")) {
+                saveFile = new File(dirName + fileName + ".arc")
+                saveFile = potentialFunctions.versionFile(saveFile)
+                writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+                        activeAssembly.getProperties())
+                potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
+            } else {
+                saveFile = new File(dirName + fileName + ".pdb")
+                saveFile = potentialFunctions.versionFile(saveFile)
+                writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+                        activeAssembly.getProperties())
+                int numModels = systemFilter.countNumModels()
+                if (numModels > 1) {
+                    writeFilter.setModelNumbering(0)
+                }
+                writeFilter.writeFile(saveFile, true, false, false)
+            }
+        }
+
 
         return this
     }
