@@ -507,7 +507,7 @@ public class ExtendedSystem implements Potential {
                         double resNum = residue.getResidueNumber();
                         tautomerLambdas[atomIndex] = specialResidues.contains(resNum) && specialInitTautomer.size() != 0 &&
                                 Math.abs(specialInitTitration.get(specialResidues.indexOf(resNum)) + 1) > 1e-4
-                        ? specialInitTitration.get(specialResidues.indexOf(resNum)) : initialTautomerLambda;
+                                ? specialInitTitration.get(specialResidues.indexOf(resNum)) : initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
                         tautomerIndexMap[atomIndex] = tautomerIndex;
                         tautomerDirections[atomIndex] = TitrationUtils.getTitratingHydrogenDirection(residue.getAminoAcid3(), atom);
@@ -582,459 +582,47 @@ public class ExtendedSystem implements Potential {
                 updateLambdas();
             }
         }
-      }
     }
-    return esvDeriv;
-  }
 
-  /**
-   * Collect respective pH, model, and discr bias terms and their derivatives for each titrating
-   * residue.
-   */
-  private void getBiasTerms(Residue residue, double[] biasEnergyAndDerivs) {
-    AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-    double titrationLambda = getTitrationLambda(residue);
-    double titrationLambdaSquared = titrationLambda * titrationLambda;
-    double discrBias;
-    double pHBias;
-    double modelBias;
-    double dDiscr_dTitr;
-    double dDiscr_dTaut;
-    double dPh_dTitr;
-    double dPh_dTaut;
-    double dMod_dTitr;
-    double dMod_dTaut;
-    //If bias terms shouldn't be computed, set AA3 to UNK so that default case executes and all terms are set to zero.
-    if (!doBias) {
-      AA3 = AminoAcid3.UNK;
-    }
-    switch (AA3) {
-      case ASD:
-      case ASH:
-      case ASP:
-        // Discr Bias & Derivs
-        double tautomerLambda = getTautomerLambda(residue);
-        discrBias = -4.0 * ASHtitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-        discrBias += -4.0 * ASHtautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-        dDiscr_dTitr = -8.0 * ASHtitrBiasMag * (titrationLambda - 0.5);
-        dDiscr_dTaut = -8.0 * ASHtautBiasMag * (tautomerLambda - 0.5);
-
-        // pH Bias & Derivs
-        double pKa1 = TitrationUtils.Titration.ASHtoASP.pKa;
-        double pKa2 = pKa1;
-        pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            (pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
-
-        // Model Bias & Derivs
-        double quadratic = ASHquadratic;
-        double linear = ASHlinear;
-        modelBias = quadratic * titrationLambdaSquared + linear * titrationLambda;
-        dMod_dTitr = 2 * quadratic * titrationLambda + linear;
-        dMod_dTaut = 0.0;
-        break;
-      case GLD:
-      case GLH:
-      case GLU:
-        // Discr Bias & Derivs
-        tautomerLambda = getTautomerLambda(residue);
-        discrBias = -4.0 * GLHtitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-        discrBias += -4.0 * GLHtautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-        dDiscr_dTitr = -8.0 * GLHtitrBiasMag * (titrationLambda - 0.5);
-        dDiscr_dTaut = -8.0 * GLHtautBiasMag * (tautomerLambda - 0.5);
-
-        // pH Bias & Derivs
-        pKa1 = TitrationUtils.Titration.GLHtoGLU.pKa;
-        pKa2 = pKa1;
-        pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            (pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
-
-        // Model Bias & Derivs
-        quadratic = GLHquadratic;
-        linear = GLHlinear;
-        modelBias = quadratic * titrationLambdaSquared + linear * titrationLambda;
-        dMod_dTitr = 2 * quadratic * titrationLambda + linear;
-        dMod_dTaut = 0.0;
-        break;
-      case HIS:
-      case HID:
-      case HIE:
-        // Discr Bias & Derivs
-        tautomerLambda = getTautomerLambda(residue);
-
-        discrBias = -4.0 * HIStitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-        discrBias += -4.0 * HIStautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-        dDiscr_dTitr = -8.0 * HIStitrBiasMag * (titrationLambda - 0.5);
-        dDiscr_dTaut = -8.0 * HIStautBiasMag * (tautomerLambda - 0.5);
-
-        // pH Bias & Derivs
-        // At tautomerLambda=1 HIE is fully on.
-        pKa1 = TitrationUtils.Titration.HIStoHIE.pKa;
-        // At tautomerLambda=0 HID is fully on.
-        pKa2 = TitrationUtils.Titration.HIStoHID.pKa;
-        pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (
-            tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2
-                - constantSystemPh));
-        dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (
-            (pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
-
-        // Model Bias & Derivs
-
-        double coeffA0 = HIDtoHIEquadratic;
-        double coeffA1 = HIDtoHIElinear;
-        double coeffB0 = HIEquadratic;
-        double coeffB1 = HIElinear;
-        double coeffC0 = HIDquadratic;
-        double coeffC1 = HIDlinear;
-        double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-        double oneMinusTitrationLambda = (1.0 - titrationLambda);
-        double oneMinusTautomerLambda = (1.0 - tautomerLambda);
-        double coeffBSum = coeffB0 + coeffB1;
-        double coeffCSum = coeffC0 + coeffC1;
-        modelBias =
-            oneMinusTitrationLambda * (coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda)
-                + tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda)
-                + oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda)
-                //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
-                + titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
-        dMod_dTitr = -(coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda)
-            + tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1)
-            + oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1)
-            + tautomerLambda * (coeffCSum - coeffBSum);
-        dMod_dTaut = oneMinusTitrationLambda * (2.0 * coeffA0 * tautomerLambda + coeffA1)
-            + (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda)
-            - (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda)
-            + titrationLambda * (coeffCSum - coeffBSum);
-        break;
-      case LYS:
-      case LYD:
-        // Discr Bias & Derivs
-        discrBias = -4.0 * LYStitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-        dDiscr_dTitr = -8.0 * LYStitrBiasMag * (titrationLambda - 0.5);
-        dDiscr_dTaut = 0.0;
-
-        // pH Bias & Derivs
-        pKa1 = TitrationUtils.Titration.LYStoLYD.pKa;
-        pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (pKa1
-            - constantSystemPh);
-        dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (pKa1 - constantSystemPh);
-        dPh_dTaut = 0.0;
-
-        // Model Bias & Derivs
-        quadratic = LYSquadratic;
-        linear = LYSlinear;
-        modelBias = quadratic * titrationLambdaSquared + linear * titrationLambda;
-        dMod_dTitr = 2 * quadratic * titrationLambda + linear;
-        dMod_dTaut = 0.0;
-        break;
-      case CYS:
-      case CYD:
-        // Discr Bias & Derivs
-        discrBias = -4.0 * CYStitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-        dDiscr_dTitr = -8.0 * CYStitrBiasMag * (titrationLambda - 0.5);
-        dDiscr_dTaut = 0.0;
-
-        // pH Bias & Derivs
-        pKa1 = TitrationUtils.Titration.CYStoCYD.pKa;
-        pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (pKa1
-            - constantSystemPh);
-        dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (pKa1 - constantSystemPh);
-        dPh_dTaut = 0.0;
-
-        // Model Bias & Derivs
-        double cubic = CYScubic;
-        quadratic = CYSquadratic;
-        linear = CYSlinear;
-        modelBias =
-            cubic * titrationLambdaSquared * titrationLambda + quadratic * titrationLambdaSquared
-                + linear * titrationLambda;
-        dMod_dTitr = 3 * cubic * titrationLambdaSquared + 2 * quadratic * titrationLambda + linear;
-        dMod_dTaut = 0.0;
-        break;
-      default:
-        discrBias = 0.0;
-        pHBias = 0.0;
-        modelBias = 0.0;
-        dDiscr_dTitr = 0.0;
-        dDiscr_dTaut = 0.0;
-        dPh_dTitr = 0.0;
-        dPh_dTaut = 0.0;
-        dMod_dTitr = 0.0;
-        dMod_dTaut = 0.0;
-        break;
-    }
-    biasEnergyAndDerivs[0] = discrBias;
-    biasEnergyAndDerivs[1] = pHBias;
-    biasEnergyAndDerivs[2] = -modelBias;
-    biasEnergyAndDerivs[3] = dDiscr_dTitr;
-    biasEnergyAndDerivs[4] = dPh_dTitr;
-    biasEnergyAndDerivs[5] = -dMod_dTitr;
-    biasEnergyAndDerivs[6] = dDiscr_dTaut;
-    biasEnergyAndDerivs[7] = dPh_dTaut;
-    biasEnergyAndDerivs[8] = -dMod_dTaut;
-  }
-
-  /**
-   * Gets the titration lambda for the input residue if the residue is titrating
-   *
-   * @param residue a titrating residue
-   * @return the titration lambda for the residue
-   */
-  public double getTitrationLambda(Residue residue) {
-    if (titratingResidueList.contains(residue)) {
-      int resIndex = titratingResidueList.indexOf(residue);
-      return extendedLambdas[resIndex];
-    } else {
-      return 1.0;
-    }
-  }
-
-  /**
-   * Gets the tautomer lambda for the input residue if the residue is tautomerizing
-   *
-   * @param residue a tautomer residue
-   * @return the tautomer lambda for the residue
-   */
-  public double getTautomerLambda(Residue residue) {
-    if (tautomerizingResidueList.contains(residue)) {
-      int resIndex = tautomerizingResidueList.indexOf(residue);
-      return extendedLambdas[nTitr + resIndex];
-    } else {
-      return 1.0;
-    }
-  }
-
-  /**
-   * Does not allow for changes to the tautomer states of tautomerizing residues
-   */
-  public void setFixedTautomerState(boolean fixTautomerState) {
-    this.fixTautomerState = fixTautomerState;
-  }
-
-  /**
-   * Does not allow for changes to the tautomer states of titrating residues
-   */
-  public void setFixedTitrationState(boolean fixTitrationState) {
-    this.fixTitrationState = fixTitrationState;
-  }
-
-  /**
-   * get total dUvdw/dL for the selected extended system variable
-   */
-  private double getVdwDeriv(int esvID) {
-    return esvVdwDerivs[esvID].get();
-  }
-
-  private double getPermElecDeriv(int esvID) {
-    return esvPermElecDerivs[esvID].get();
-  }
-
-  private double getIndElecDeriv(int esvID) {
-    return esvIndElecDerivs[esvID].get();
-  }
-
-  /**
-   * Returns the titratibility of the passed residue
-   */
-  public boolean isTitratable(Residue residue) {
-    if (residue.getResidueType() == Residue.ResidueType.NA) {
-      return false;
-    }
-    AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-    return AA3.isConstantPhTitratable;
-  }
-
-  /**
-   * Returns the tautomerizibility of a residue
-   */
-  public boolean isTautomer(Residue residue) {
-    if (residue.getResidueType() == Residue.ResidueType.NA) {
-      return false;
-    }
-    AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-    return AA3.isConstantPhTautomer;
-  }
-
-  /**
-   * Sets the Occupancy and B-factor to titration and tautomer coordinates in PDB files
-   *
-   * @param molecularAssembly which mola to update
-   */
-  public void setOccTemp(MolecularAssembly molecularAssembly) {
-    for (Atom atom : molecularAssembly.getAtomList()) {
-      int atomIndex = atom.getIndex() - 1;
-      atom.setOccupancy(this.getTitrationLambda(atomIndex));
-      atom.setTempFactor(this.getTautomerLambda(atomIndex));
-    }
-  }
-
-  /**
-   * Update all theta (lambda) positions after each move from the Stochastic integrator
-   */
-  private void updateLambdas() {
-    double[] thetaPosition = esvState.x();
-    //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
-    for (int i = 0; i < nESVs; i++) {
-      //Check to see if titration/tautomer lambdas are to be fixed
-      if ((!fixTitrationState && i < nTitr) || (!fixTautomerState && i >= nTitr)) {
-        double sinTheta = Math.sin(thetaPosition[i]);
-        extendedLambdas[i] = sinTheta * sinTheta;
-      }
-    }
-    for (int i = 0; i < nAtoms; i++) {
-      int mappedTitrationIndex = titrationIndexMap[i];
-      int mappedTautomerIndex = tautomerIndexMap[i] + nTitr;
-      if (isTitrating(i) && mappedTitrationIndex != -1) {
-        titrationLambdas[i] = extendedLambdas[mappedTitrationIndex];
-      }
-      if (isTautomerizing(i) && mappedTautomerIndex >= nTitr) {
-        tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
-      }
-    }
-    setESVHistogram();
-  }
-
-  /**
-   * Returns whether an atom is titrating
-   */
-  public boolean isTitrating(int atomIndex) {
-    return isTitrating[atomIndex];
-  }
-
-  /**
-   * Returns whether an atom is tautomerizing
-   */
-  public boolean isTautomerizing(int atomIndex) {
-    return isTautomerizing[atomIndex];
-  }
-
-  /**
-   * Goes through residues updates the ESV histogram based on the residues current state
-   */
-  private void setESVHistogram() {
-    for (Residue residue : titratingResidueList) {
-      int index = titratingResidueList.indexOf(residue);
-      if (residue.getAminoAcid3().equals(
-          AminoAcid3.LYS)) { // TODO: Add support for CYS? by adding "|| residue.getAminoAcid3().equals(AminoAcid3.CYS))"
-        double titrLambda = getTitrationLambda(residue);
-        esvHistogram(index, titrLambda);
-      } else {
-        double titrLambda = getTitrationLambda(residue);
-        double tautLambda = getTautomerLambda(residue);
-        esvHistogram(index, titrLambda, tautLambda);
-      }
-    }
-  }
-
-  /**
-   * Updates the ESV histogram of the passed residue at the given lambda
-   *
-   * @param esv the index of the esv to be updated
-   * @param lambda the lambda value to be updated
-   */
-  private void esvHistogram(int esv, double lambda) {
-    int value = (int) (lambda * 10.0);
-    //Cover the case where lambda could be exactly 1.0
-    if (value == 10) {
-      value = 9;
-    }
-    esvHistogram[esv][value][0]++;
-  }
-
-  /**
-   * Updates the ESV histogram of the passed residue at the given titr and taut state
-   *
-   * @param esv the index of the esv to be updated
-   * @param titrLambda the titration lambda coordinate to be updated
-   * @param tautLambda the tautomer lambda coordinate to be updated
-   */
-  private void esvHistogram(int esv, double titrLambda, double tautLambda) {
-    int titrValue = (int) (titrLambda * 10.0);
-    //Cover the case where lambda could be exactly 1.0
-    if (titrValue == 10) {
-      titrValue = 9;
-    }
-    int tautValue = (int) (tautLambda * 10.0);
-    if (tautValue == 10) {
-      tautValue = 9;
-    }
-    esvHistogram[esv][titrValue][tautValue]++;
-  }
-
-  /**
-   * Naive guess as to what the best starting state should be based purely on the acidostat term.
-   */
-  private double initialTitrationState(Residue residue, double initialLambda) {
-    AminoAcid3 AA3 = residue.getAminoAcid3();
-    double initialTitrationLambda;
-    switch (AA3) {
-      case ASD:
-        initialTitrationLambda =
-            (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
-        break;
-      case GLD:
-        initialTitrationLambda =
-            (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
-        break;
-      case HIS:
-        initialTitrationLambda =
-            (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
-        break;
-      case LYS:
-        initialTitrationLambda =
-            (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
-        break;
-      case CYS:
-        initialTitrationLambda =
-            (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
-        break;
-      default:
-        initialTitrationLambda = initialLambda;
-        break;
-    }
-    return initialTitrationLambda;
-  }
-
-  /**
-   * Guess the lambda states for each extended residue
-   */
-  public void reGuessLambdas() {
-    logger.info(" Reinitializing lambdas to match RepEx window pH");
-    for (Residue residue : titratingResidueList) {
-      double lambda = initialTitrationState(residue, 1.0);
-      setTitrationLambda(residue, lambda);
-      int tautomerLambda = (int) Math.round(random());
-      setTautomerLambda(residue, tautomerLambda);
-    }
-  }
-
-  /**
-   * Overwrites the histogram passed into it and returns the new one out ~output never used?~
-   *
-   * @param histogram 2D histogram list with the tautomer and titration states compressed to a 1D
-   *     array
-   * @return another compressed histogram
-   */
-  public int[][] getESVHistogram(int[][] histogram) {
-    for (int i = 0; i < titratingResidueList.size(); i++) {
-      int h = 0;
-      for (int j = 0; j < 10; j++) {
-        for (int k = 0; k < 10; k++) {
-          histogram[i][h++] = esvHistogram[i][j][k];
+    /**
+     * Initialize special residues specified in the key file
+     */
+    private void initSpecialResidues(ArrayList<Double> specialResidues, ArrayList<Double> specialResiduePKAs, ArrayList<Double> specialInitTautomer, ArrayList<Double> specialInitTitration, MolecularAssembly mola) {
+        if((specialResidues.size() != specialResiduePKAs.size() && specialResiduePKAs.size() != 0)
+                || (specialResidues.size() != specialInitTautomer.size() && specialInitTautomer.size() != 0)
+                || (specialResidues.size() != specialInitTitration.size() && specialInitTitration.size() != 0)
+        ) {
+            logger.severe("The number of special residues and their associated values do not match.");
+        } else if(specialResidues.size() != 0) {
+            logger.info("\nSpecial residues and their associated values:");
+            for(int i = 0; i < specialResidues.size(); i++){
+                int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber(); // Shift pdb index by first residue number
+                if (specialResiduePKAs.size() != 0) {
+                    logger.info("Residue: " + specialResidues.get(i) + "-" +
+                            mola.getResidueList().get(resNum).getName()
+                            + " Pka: " + specialResiduePKAs.get(i));
+                }
+                if (specialInitTautomer.size() != 0){
+                    logger.info("Residue: " + specialResidues.get(i) + "-" +
+                            mola.getResidueList().get(resNum).getName()
+                            + " Tautomer: " + specialInitTautomer.get(i));
+                }
+                if (specialInitTitration.size() != 0){
+                    logger.info("Residue: " + specialResidues.get(i) + "-" +
+                            mola.getResidueList().get(resNum).getName()
+                            + " Titration: " + specialInitTitration.get(i));
+                }
+            }
+            logger.info(" ");
+        }
+        logger.info("Special residues: " + specialResidues);
+        logger.info("Special residues pKa: " + specialResiduePKAs);
+        logger.info("Special residues titration: " + specialInitTitration);
+        logger.info("Special residues tautomer: " + specialInitTautomer);
+        for(Residue res : mola.getResidueList()){
+            if(!isTitratable(res) && specialResidues.contains((double) res.getResidueNumber())) {
+                logger.severe("Given special residue: " + res + " is not titratable.");
+            }
         }
     }
 
@@ -1510,10 +1098,10 @@ public class ExtendedSystem implements Potential {
         double residueNumber = residue.getResidueNumber();
         double initialTitrationLambda = 0.0;
         if (specialResidues.contains(residueNumber)) { // If we set a special residue for this state
-             if (specialResiduePKAs.size() != 0) {
-                 initialTitrationLambda =
-                         (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-             }
+            if (specialResiduePKAs.size() != 0) {
+                initialTitrationLambda =
+                        (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
+            }
             if (specialInitTitration.size() != 0) { // Override the pKa value if we have a special initial titration state
                 double value = specialInitTitration.get(specialResidues.indexOf(residueNumber));
                 if (Math.abs(value + 1) > 1e-4) { // If the value is not -1
@@ -1522,8 +1110,8 @@ public class ExtendedSystem implements Potential {
             }
         }
         else if (!guessTitrState) { // If we do not want to guess the titration state but instead use the value
-                                    // passed in via the initialLambda parameter.
-             initialTitrationLambda = initialLambda;
+            // passed in via the initialLambda parameter.
+            initialTitrationLambda = initialLambda;
         }
         else { // Guess titration state
             initialTitrationLambda = switch (AA3) {

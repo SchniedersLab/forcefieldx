@@ -37,10 +37,12 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import com.github.javaparser.resolution.declarations.ResolvedInterfaceDeclaration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Residue;
@@ -51,13 +53,8 @@ import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.vecmath.Vector3d;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,7 +93,7 @@ public class XPHFilter extends SystemFilter {
    * @param properties a {@link CompositeConfiguration} object.
    */
   public XPHFilter(File file, MolecularAssembly system, ForceField forceField,
-      CompositeConfiguration properties, ExtendedSystem esvSystem) {
+                   CompositeConfiguration properties, ExtendedSystem esvSystem) {
     super(file, system, forceField, properties);
     this.fileType = FileType.XPH;
     extendedSystem = esvSystem;
@@ -105,8 +102,8 @@ public class XPHFilter extends SystemFilter {
 
   public XPHFilter(SystemFilter systemFilter, ExtendedSystem esvSystem) {
     super(systemFilter.getFile(), systemFilter.getActiveMolecularSystem(),
-        systemFilter.getActiveMolecularSystem().getForceField(),
-        systemFilter.getActiveMolecularSystem().getProperties());
+            systemFilter.getActiveMolecularSystem().getForceField(),
+            systemFilter.getActiveMolecularSystem().getProperties());
 
     extendedSystem = esvSystem;
   }
@@ -178,7 +175,7 @@ public class XPHFilter extends SystemFilter {
 
     // Check for a blank line.
     data = data.trim();
-    if (data.isEmpty()) {
+    if (data.equals("")) {
       return false;
     }
 
@@ -244,7 +241,7 @@ public class XPHFilter extends SystemFilter {
     File xphFile = activeMolecularAssembly.getFile();
     int nAtoms = activeMolecularAssembly.getAtomArray().length;
     Pattern crystInfoPattern = Pattern.compile(
-        "^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
+            "^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
 
     try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String line = br.readLine();
@@ -267,13 +264,16 @@ public class XPHFilter extends SystemFilter {
         String data = br.readLine();
 
         //Read past blanklines
-        while (data != null && data.trim().isEmpty()) {
+        while (data != null && data.trim().equals("")) {
           data = br.readLine();
         }
 
         // Read Past ESV
-        if (data.contains("ESV")) {
-          while (data != null && !data.trim().isEmpty()) {
+
+        assert data != null;
+        if(data.contains("ESV")) {
+
+          while (data != null && !data.trim().equals("")) {
             data = br.readLine();
           }
         }
@@ -284,7 +284,7 @@ public class XPHFilter extends SystemFilter {
       return nSnaps;
     } catch (Exception ex) {
       logger.log(Level.WARNING,
-          String.format(" Exception reading trajectory file %s: %s", xphFile, ex));
+              String.format(" Exception reading trajectory file %s: %s", xphFile, ex));
       return 1;
     }
   }
@@ -328,7 +328,7 @@ public class XPHFilter extends SystemFilter {
     try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
-      while (data != null && data.trim().isEmpty()) {
+      while (data != null && data.trim().equals("")) {
         data = br.readLine();
       }
       if (data == null) {
@@ -367,13 +367,13 @@ public class XPHFilter extends SystemFilter {
         data = br.readLine();
         if (data == null) {
           logger.warning(
-              format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
+                  format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
           return false;
         }
         tokens = data.trim().split(" +");
         if (tokens.length < 6) {
           logger.warning(
-              format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
+                  format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
           return false;
         }
         // Valid number of tokens, so try to parse this line.
@@ -453,7 +453,7 @@ public class XPHFilter extends SystemFilter {
           if (a1 < a2) {
             if (a2 > numberOfAtoms) {
               logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
-                  activeMolecularAssembly.getFile().getName()));
+                      activeMolecularAssembly.getFile().getName()));
               return false;
             }
             // Check for bidirectional connection
@@ -468,14 +468,14 @@ public class XPHFilter extends SystemFilter {
             }
             if (!bidirectional) {
               logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
-                  activeMolecularAssembly.getFile().getName()));
+                      activeMolecularAssembly.getFile().getName()));
               return false;
             }
             Atom atom1 = atomList.get(a1 - 1);
             Atom atom2 = atomList.get(a2 - 1);
             if (atom1 == null || atom2 == null) {
               logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
-                  activeMolecularAssembly.getFile().getName()));
+                      activeMolecularAssembly.getFile().getName()));
               return false;
             }
             Bond bond = new Bond(atom1, atom2);
@@ -490,7 +490,7 @@ public class XPHFilter extends SystemFilter {
         }
       }
       // Read ESVs
-      while (data != null && data.isEmpty() && br.ready()) {
+      while (data != null && data.equals("") && br.ready()) {
         data = br.readLine().trim();
       }
 
@@ -525,7 +525,7 @@ public class XPHFilter extends SystemFilter {
 
           } else {
             logger.severe(
-                " Number of ESVs in archive doesn't match extended system residue list size.");
+                    " Number of ESVs in archive doesn't match extended system residue list size.");
             return false;
           }
         }
@@ -596,7 +596,7 @@ public class XPHFilter extends SystemFilter {
       data = bufferedReader.readLine();
 
       // Read past blank lines
-      while (data != null && data.trim().isEmpty()) {
+      while (data != null && data.trim().equals("")) {
         data = bufferedReader.readLine();
       }
       if (data == null) {
@@ -605,7 +605,7 @@ public class XPHFilter extends SystemFilter {
 
       // Read Past ESV
       if (data.contains("ESV")) {
-        while (data != null && !data.trim().isEmpty()) {
+        while (data != null && !data.trim().equals("")) {
           data = bufferedReader.readLine();
         }
 
@@ -623,7 +623,7 @@ public class XPHFilter extends SystemFilter {
         int nArchive = parseInt(data.trim().split(" +")[0]);
         if (nArchive != nSystem) {
           String message = format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive,
-              nSystem);
+                  nSystem);
           if (dieOnMissingAtom) {
             logger.severe(message);
           }
@@ -648,7 +648,7 @@ public class XPHFilter extends SystemFilter {
       for (int i = 0; i < nSystem; i++) {
         data = bufferedReader.readLine();
         // Read past blank lines
-        while (data != null && data.trim().isEmpty()) {
+        while (data != null && data.trim().equals("")) {
           data = bufferedReader.readLine();
         }
         tokens = data.trim().split(" +");
@@ -663,7 +663,7 @@ public class XPHFilter extends SystemFilter {
         int xyzIndex = atoms[i].getIndex();
         if (xyzIndex != i + 1) {
           String message = format("Archive atom index %d being read onto system atom index %d.",
-              i + 1, xyzIndex);
+                  i + 1, xyzIndex);
           logger.warning(message);
         }
         atoms[i].moveTo(x, y, z);
@@ -702,7 +702,7 @@ public class XPHFilter extends SystemFilter {
             }
           } else {
             logger.severe(
-                " Number of ESVs in archive doesn't match extended system residue list size.");
+                    " Number of ESVs in archive doesn't match extended system residue list size.");
             return false;
           }
         }
@@ -744,11 +744,11 @@ public class XPHFilter extends SystemFilter {
     }
 
     try (FileWriter fw = new FileWriter(newFile,
-        append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
+            append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
       StringBuilder sb = new StringBuilder(
-          format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
+              format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");
@@ -762,7 +762,7 @@ public class XPHFilter extends SystemFilter {
       if (crystal != null && !crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
         String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n", uc.a, uc.b, uc.c, uc.alpha,
-            uc.beta, uc.gamma);
+                uc.beta, uc.gamma);
         bw.write(params);
       }
 
@@ -775,13 +775,13 @@ public class XPHFilter extends SystemFilter {
       for (Atom a : atoms) {
         if (vdwH) {
           line = new StringBuilder(
-              format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
-                  a.getRedX() - offset.x, a.getRedY() - offset.y, a.getRedZ() - offset.z,
-                  a.getType()));
+                  format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
+                          a.getRedX() - offset.x, a.getRedY() - offset.y, a.getRedZ() - offset.z,
+                          a.getType()));
         } else {
           line = new StringBuilder(
-              format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
-                  a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
+                  format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
+                          a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
         }
         for (Bond b : a.getBonds()) {
           a2 = b.get1_2(a);
@@ -811,7 +811,7 @@ public class XPHFilter extends SystemFilter {
           }
 
           line = new StringBuilder(
-              format("%7d%7d%14.8f%7s\n", i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
+                  format("%7d%7d%14.8f%7s\n", i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
 
           esvLines[i] = line;
 
@@ -832,7 +832,7 @@ public class XPHFilter extends SystemFilter {
           }
 
           line = new StringBuilder(format("%7d%7d%14.8f%7s\n", offsetIndex + i, CAIndex, ESV,
-              residueList.get(i).getAminoAcid3()));
+                  residueList.get(i).getAminoAcid3()));
 
           esvLines[offsetIndex + i] = line;
 
@@ -856,13 +856,13 @@ public class XPHFilter extends SystemFilter {
         }
       } catch (IOException e) {
         String message = format(" There was an unexpected error writing to %s.",
-            getActiveMolecularSystem().toString());
+                getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
       }
     } catch (IOException e) {
       String message = format(" There was an unexpected error writing to %s.",
-          getActiveMolecularSystem().toString());
+              getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;
     }
@@ -903,12 +903,12 @@ public class XPHFilter extends SystemFilter {
     activeMolecularAssembly.setName(newFile.getName());
 
     try (FileWriter fw = new FileWriter(newFile,
-        append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
+            append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       int nSymm = crystal.spaceGroup.symOps.size();
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm;
       StringBuilder sb = new StringBuilder(
-          format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+              format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");
@@ -921,7 +921,7 @@ public class XPHFilter extends SystemFilter {
       if (!crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
         String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n", uc.a, uc.b, uc.c, uc.alpha,
-            uc.beta, uc.gamma);
+                uc.beta, uc.gamma);
         bw.write(params);
       }
 
@@ -947,7 +947,7 @@ public class XPHFilter extends SystemFilter {
           crystal.applySymOp(xyz, xyz, symOp);
           int type = a.getType();
           line = new StringBuilder(
-              format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
+                  format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
           for (Bond b : a.getBonds()) {
             a2 = b.get1_2(a);
             line.append(format("%8d", a2.getIndex() + indexOffset));
@@ -961,13 +961,13 @@ public class XPHFilter extends SystemFilter {
         }
       } catch (IOException e) {
         String message = format(" There was an unexpected error writing to %s.",
-            getActiveMolecularSystem().toString());
+                getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
       }
     } catch (IOException e) {
       String message = format(" There was an unexpected error writing to %s.",
-          getActiveMolecularSystem().toString());
+              getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;
     }

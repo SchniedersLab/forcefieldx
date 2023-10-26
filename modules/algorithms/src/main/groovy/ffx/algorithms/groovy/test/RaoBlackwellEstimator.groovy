@@ -45,7 +45,6 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.XPHFilter
-import org.apache.commons.lang.ArrayUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
