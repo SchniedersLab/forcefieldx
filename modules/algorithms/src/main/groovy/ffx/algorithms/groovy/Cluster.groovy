@@ -124,7 +124,7 @@ class Cluster extends AlgorithmsScript {
   private boolean write
 
   /**
-   * The final argument(s) should be one or two filename.
+   * The final argument(s) should be one or two filenames.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
       description = 'The RMSD distance matrix and optionally the corresponding structure archive (required for --write).')

@@ -118,7 +118,7 @@ class BAR extends AlgorithmsScript {
   private int endingSnapshot = 0
 
   /**
-   * The final argument(s) should be filename for lambda windows in order.
+   * The final argument(s) should be filenames for lambda windows in order.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
       description = 'A single PDB/XYZ when windows are auto-determined (or two for dual topology). Two trajectory files for BAR between two ensembles (or four for dual topology).')
