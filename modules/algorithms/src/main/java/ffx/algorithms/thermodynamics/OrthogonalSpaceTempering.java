@@ -1610,18 +1610,28 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * evaluate2DPMF.
+     * evaluateTotalBias.
      *
-     * @return A StringBuffer with 2D Bias PMF.
+     * @param bias If false, return the negative of the Total OST bias.
+     *
+     * @return A StringBuffer The total OST Bias.
      */
-    public StringBuffer evaluate2DPMF() {
+    public StringBuffer evaluateTotalOSTBias(boolean bias) {
       StringBuffer sb = new StringBuffer();
+      double[] chainRule = new double[2];
       for (int dUdLBin = 0; dUdLBin < dUdLBins; dUdLBin++) {
         double currentdUdL = dUdLforBin(dUdLBin);
         sb.append(format(" %16.8f", currentdUdL));
         for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-          double bias = -evaluateKernel(lambdaBin, dUdLBin, biasMag);
-          sb.append(format(" %16.8f", bias));
+          double currentLambda = lambdaForIndex(lambdaBin);
+          double bias1D = energyAndGradient1D(currentLambda, false);
+          double bias2D = energyAndGradient2D(currentLambda, currentdUdL, chainRule, biasMag);
+          double totalBias = bias1D + bias2D;
+          // If the bias flag is false, turn the total bias into the PMF.
+          if (!bias) {
+            totalBias = -totalBias;
+          }
+          sb.append(format(" %16.8f", totalBias));
         }
         sb.append("\n");
       }
@@ -1629,20 +1639,25 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * evaluateTotalPMF.
+     * evaluate2DOSTBias.
      *
-     * @return A StringBuffer the total 2D PMF.
+     * @param bias If false, return the negative of the 2D OST bias.
+     *
+     * @return A StringBuffer with the 2D OST bias.
      */
-    public StringBuffer evaluateTotalPMF() {
+    public StringBuffer evaluate2DOSTBias(boolean bias) {
       StringBuffer sb = new StringBuffer();
+      double[] chainRule = new double[2];
       for (int dUdLBin = 0; dUdLBin < dUdLBins; dUdLBin++) {
         double currentdUdL = dUdLforBin(dUdLBin);
         sb.append(format(" %16.8f", currentdUdL));
         for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-          setLambda(lambdaForIndex(lambdaBin));
-          double bias1D = -energyAndGradient1D(lambda, false);
-          double totalBias = bias1D - evaluateKernel(lambdaBin, dUdLBin, biasMag);
-          sb.append(format(" %16.8f", totalBias));
+          double currentLambda = lambdaForIndex(lambdaBin);
+          double bias2D = energyAndGradient2D(currentLambda, currentdUdL, chainRule, biasMag);
+          if (!bias) {
+            bias2D = -bias2D;
+          }
+          sb.append(format(" %16.8f", bias2D));
         }
         sb.append("\n");
       }
@@ -1974,7 +1989,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           String dirName = saveDir + File.separator;
           String fileName = dirName + "histogram.txt";
           try {
-            logger.info(" Writing " + fileName);
+            logger.info("\n Writing " + fileName);
             PrintWriter printWriter = new PrintWriter(fileName);
             printWriter.write(stringBuilder.toString());
             printWriter.close();

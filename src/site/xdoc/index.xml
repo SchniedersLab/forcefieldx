@@ -83,16 +83,6 @@
               </p>
             </td>
             <td width="150">
-              <p>Publications</p>
-              <p>
-                <a href="publications.html">
-                  <img src="images/publications.mp4" alt="Publications" width="100" height="100"/>
-                </a>
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td width="150">
               <p>Applications</p>
               <p>
                 <a href="applications.html">
@@ -100,6 +90,8 @@
                 </a>
               </p>
             </td>
+          </tr>
+          <tr>
             <td width="150">
               <p>Method Development</p>
               <p>
@@ -121,6 +113,14 @@
               <p>
                 <a href="modules.html">
                   <img src="images/api.mp4" alt="API" width="100" height="100"/>
+                </a>
+              </p>
+            </td>
+            <td width="150">
+              <p>Publications</p>
+              <p>
+                <a href="publications.html">
+                  <img src="images/publications.mp4" alt="Publications" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -154,11 +154,11 @@
                 <img src="images/sfari.png" alt="SFARI" width="125" align="middle"/>
               </p>
             </td>
-            <!-- td width="150">
+            <td width="150">
               <p>
-                <img src="images/MTP.png" alt="MTP" width="125" align="middle"/>
+                <img src="images/UofI.png" alt="UI" width="125" align="middle"/>
               </p>
-            </td -->
+            </td>
           </tr>
         </table>
       </subsection>

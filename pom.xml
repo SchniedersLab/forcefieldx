@@ -975,7 +975,7 @@
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.3.0</checkstyle.version>
+    <checkstyle.version>3.3.1</checkstyle.version>
     <ciftools-java.version>5.0.2</ciftools-java.version>
     <clean.version>3.3.1</clean.version>
     <clover.version>4.4.1</clover.version>
@@ -989,7 +989,7 @@
     <!-- Control the source version version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.11.0</compiler.version>
-    <dependency.version>3.6.0</dependency.version>
+    <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.1</deploy.version>
     <enforcer.version>3.4.1</enforcer.version>
@@ -999,12 +999,12 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>6.0.0</git-commit-id.version>
+    <git-commit-id.version>7.0.0</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>23.1.0</graal.version>
+    <graal.version>23.1.1</graal.version>
     <groovy-all.version>4.0.15</groovy-all.version>
     <!-- groovy-all.version>5.0.0-alpha-2</groovy-all.version -->
-    <guava.version>32.1.2-jre</guava.version>
+    <guava.version>32.1.3-jre</guava.version>
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
@@ -1017,10 +1017,10 @@
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>7.5.0-v11</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.3.0</jxr.version>
+    <jxr.version>3.3.1</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.20.0</log4j.version>
+    <log4j.version>2.21.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
@@ -1052,7 +1052,7 @@
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.0</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.1.2</surefire.version>
+    <surefire.version>3.2.1</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->

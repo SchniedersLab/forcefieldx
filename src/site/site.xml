@@ -19,7 +19,7 @@
              <span style="color:black">Force Field X</span>
              <br>
              <h4>
-             <span style="color:green">Polyglot</span><span style="color:black"> Software for Molecular Biophysics</span>
+             <span style="color:black">Polyglot Software for Molecular Biophysics</span>
              </h4>
             ]]>
     </name>
@@ -28,10 +28,10 @@
   </bannerLeft>
   <bannerRight>
     <name>The University of Iowa</name>
-    <src>/images/UofI.png</src>
+    <src>/images/UofI2.png</src>
     <href>https://www.uiowa.edu</href>
-    <width>100px</width>
-    <height>100px</height>
+    <width>192px</width>
+    <height>96px</height>
   </bannerRight>
   <custom>
     <fluidoSkin>
@@ -106,10 +106,10 @@
       <item name="Install" href="/install.html"/>
       <item name="User Manual" href="/manual.html"/>
       <item name="Applications" href="/applications.html"/>
-      <item name="Publications" href="/publications.html"/>
       <item name="Method Development" href="/methods.html"/>
       <item name="Build from Source" href="/source.html"/>
       <item name="Developer Guide" href="/modules.html"/>
+      <item name="Publications" href="/publications.html"/>
     </menu>
     <menu name="User Manual" inherit="top">
       <item name="Introduction" href="/manual.html"/>

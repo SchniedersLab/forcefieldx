@@ -122,12 +122,12 @@
     <dependency>
       <groupId>org.graalvm.polyglot</groupId>
       <artifactId>polyglot</artifactId>
-      <version>23.1.0</version>
+      <version>${graal.version}</version>
     </dependency>
     <dependency>
       <groupId>org.graalvm.polyglot</groupId>
       <artifactId>python</artifactId>
-      <version>23.1.0</version>
+      <version>${graal.version}</version>
       <scope>runtime</scope>
       <type>pom</type>
     </dependency>
