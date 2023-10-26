@@ -127,7 +127,7 @@ public class INTFilter extends SystemFilter {
 
       String data = br.readLine().trim();
       // Read blank lines at the top of the file
-      while (data.length() == 0) {
+      while (data.isEmpty()) {
         data = br.readLine().trim();
       }
       int numberOfAtoms;

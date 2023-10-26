@@ -77,7 +77,7 @@ public class TopologyOptions {
    * The ArgGroup keeps the TopologyOptions together when printing help.
    */
   @ArgGroup(heading = "%n Alchemical Options for Dual and Quad Topologies%n", validate = false)
-  public TopologyOptionGroup group = new TopologyOptionGroup();
+  private final TopologyOptionGroup group = new TopologyOptionGroup();
 
   /**
    * --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].

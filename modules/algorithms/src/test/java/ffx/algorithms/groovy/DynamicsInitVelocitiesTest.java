@@ -81,7 +81,7 @@ public class DynamicsInitVelocitiesTest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Water Tiny Initialize Velocities", // info
-                "ffx/algorithms/structures/watertiny.xyz", // filename
+                "watertiny.xyz", // filename
                 64.8511, // endKineticEnergy
                 -218.0760, // endPotentialEnergy
                 -153.2249 // endTotalEnergy
@@ -99,7 +99,7 @@ public class DynamicsInitVelocitiesTest extends AlgorithmsTest {
         "-i", "VelocityVerlet",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 

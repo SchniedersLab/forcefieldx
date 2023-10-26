@@ -252,7 +252,7 @@ public class TitrationUtils {
     }
   }
 
-  enum LysStates {
+  public enum LysStates {
     LYD, LYS
   }
 
@@ -291,7 +291,7 @@ public class TitrationUtils {
     }
   }
 
-  enum HisStates {
+  public enum HisStates {
     HIS, HID, HIE
   }
 
@@ -352,7 +352,7 @@ public class TitrationUtils {
     }
   }
 
-  enum CysStates {
+  public enum CysStates {
     CYS, CYD
   }
 
@@ -839,30 +839,30 @@ public class TitrationUtils {
 
     // The following terms are not supported yet.
     List<ImproperTorsion> improperTorsions = residue.getImproperTorsionList();
-    if (improperTorsions != null && improperTorsions.size() > 0) {
+    if (improperTorsions != null && !improperTorsions.isEmpty()) {
       logger.severe(
           " Improper torsions are not supported yet for pH-dependent rotamer optimization.");
     }
 
     List<StretchTorsion> stretchTorsions = residue.getStretchTorsionList();
-    if (stretchTorsions != null && stretchTorsions.size() > 0) {
+    if (stretchTorsions != null && !stretchTorsions.isEmpty()) {
       logger.severe(
           " Stretch-torsions are not supported yet for pH-dependent rotamer optimization.");
     }
 
     List<AngleTorsion> angleTorsions = residue.getAngleTorsionList();
-    if (angleTorsions != null && angleTorsions.size() > 0) {
+    if (angleTorsions != null && !angleTorsions.isEmpty()) {
       logger.severe(" Angle-torsions are not supported yet for pH-dependent rotamer optimization.");
     }
 
     List<TorsionTorsion> torsionTorsions = residue.getTorsionTorsionList();
-    if (torsionTorsions != null && torsionTorsions.size() > 0) {
+    if (torsionTorsions != null && !torsionTorsions.isEmpty()) {
       logger.severe(
           " Torsion-torsions are not supported yet for pH-dependent rotamer optimization.");
     }
 
     List<UreyBradley> ureyBradleys = residue.getUreyBradleyList();
-    if (ureyBradleys != null && ureyBradleys.size() > 0) {
+    if (ureyBradleys != null && !ureyBradleys.isEmpty()) {
       logger.severe(" Urey-Bradleys are not supported yet for pH-dependent rotamer optimization.");
     }
 

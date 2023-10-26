@@ -972,6 +972,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     String tempString = format("Temp: %.2f", thermostat.getTargetTemperature());
     linesList.add(tempString);
 
+    String timeString = format(" Time: %7.3e", totalSimTime);
+    linesList.add(timeString);
+
     if (esvSystem != null) {
       String pHString = format("pH: %.2f", esvSystem.getConstantPh());
       linesList.add(pHString);

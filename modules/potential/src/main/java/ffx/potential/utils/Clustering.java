@@ -145,15 +145,17 @@ public class Clustering {
 
   /**
    * Perform an iterative clustering for a specified number of clusters. Designed and tested by
-   * researchers at Takeda:
+   * researchers at Takeda (see method authors).
    *
    * @param distMatrix Coordinate input serves as the data points.
    * @param trials Number of iterations to perform clustering.
    * @param tolerance RMSD cutoff to divide same values from different.
    * @return The clusters.
+   * Created by:
    * @author Yuya, Kinoshita
    * @author Koki, Nishimura
-   * @author Masatoshi, Karashima Implemented by:
+   * @author Masatoshi, Karashima
+   * Implemented by:
    * @author Aaron J. Nessler
    */
   public static List<CentroidCluster<Conformation>> iterativeClustering(List<double[]> distMatrix,
@@ -168,7 +170,7 @@ public class Clustering {
         remaining.add(j);
       }
       List<CentroidCluster<Conformation>> clusters = new ArrayList<>();
-      while (remaining.size() > 0) {
+      while (!remaining.isEmpty()) {
         int seed = (int) floor(random() * (remaining.size() - 1));
         int index = remaining.get(seed);
         CentroidCluster<Conformation> cluster = new CentroidCluster<>(
@@ -195,7 +197,7 @@ public class Clustering {
         }
         clusters.add(cluster);
       }
-      if (bestClusters.size() == 0 || clusters.size() < bestClusters.size()) {
+      if (bestClusters.isEmpty() || clusters.size() < bestClusters.size()) {
         if (log.isLoggable(Level.FINE)) {
           int numStructs = 0;
           for (CentroidCluster<Conformation> cluster : clusters) {

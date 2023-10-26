@@ -100,7 +100,7 @@ public class KeyFilter {
           continue;
         }
         s = s.trim();
-        if (s.equals("")) {
+        if (s.isEmpty()) {
           continue; // Skip blank lines
         }
         // Store comments together

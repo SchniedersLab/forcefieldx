@@ -165,7 +165,7 @@ public class DistanceMatrixFilter {
       String data = br.readLine();
 
       // Check for blank lines at the top of the file
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = br.readLine();
       }
 

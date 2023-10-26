@@ -50,7 +50,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
-/** Proof-of-concept use of the TornadoVM for parallelization of Java code. */
+/**
+ * Proof-of-concept use of the TornadoVM for parallelization of Java code.
+ */
 public class TornadoDFT {
 
   float[] inReal;

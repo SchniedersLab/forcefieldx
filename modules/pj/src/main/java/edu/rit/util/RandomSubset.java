@@ -97,19 +97,17 @@ public class RandomSubset
 
 // Hidden helper classes.
     // Helper abstract base class.
-    private abstract class Helper {
+    private abstract static class Helper {
 
         // Returns the element in the permutation array at index i.
         public abstract int getElement(int i);
 
         // Sets the element in the permutation array at index i to the given
         // value.
-        public abstract void setElement(int i,
-                int value);
+        public abstract void setElement(int i, int value);
 
         // Swaps the elements in the permutation array at indexes i and j.
-        public abstract void swapElements(int i,
-                int j);
+        public abstract void swapElements(int i, int j);
 
         // Returns the index in the permutation array at which the given value
         // resides.
@@ -120,15 +118,14 @@ public class RandomSubset
     }
 
     // Sparse implementation helper class.
-    private class SparseHelper
+    private static class SparseHelper
             extends Helper {
         // A sparse array containing a permutation of the integers from 0 to
         // N-1. Implemented as a mapping from array index to array element. If
         // an array index is not in the map, the corresponding array element is
         // the same as the array index.
 
-        private HashMap<Integer, Integer> permutation
-                = new HashMap<Integer, Integer>();
+        private final HashMap<Integer, Integer> permutation = new HashMap<>();
 
         // Returns the element in the permutation array at index i.
         public int getElement(int i) {
@@ -138,8 +135,7 @@ public class RandomSubset
 
         // Sets the element in the permutation array at index i to the given
         // value.
-        public void setElement(int i,
-                int value) {
+        public void setElement(int i, int value) {
             if (value == i) {
                 permutation.remove(i);
             } else {
@@ -148,8 +144,7 @@ public class RandomSubset
         }
 
         // Swaps the elements in the permutation array at indexes i and j.
-        public void swapElements(int i,
-                int j) {
+        public void swapElements(int i, int j) {
             int tmp = getElement(i);
             setElement(i, getElement(j));
             setElement(j, tmp);

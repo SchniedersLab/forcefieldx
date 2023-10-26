@@ -1,23 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>edu.uiowa.eng.ffx</groupId>
-  <artifactId>numerics</artifactId>
+  <artifactId>ffx-numerics</artifactId>
   <packaging>jar</packaging>
   <name>Numerics</name>
   <description>
-    The Numerics module includes support for FFTs,
-    limited memory BFGS optimization, b-Splines, Erf/Erfc
-    and tensor recursions.
+    The Numerics module includes support for FFTs, limited memory BFGS optimization, b-Splines, special functions,
+    and multipole tensor recursions.
   </description>
   <build>
     <resources>
@@ -74,49 +71,38 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
-      <type>jar</type>
       <version>${commons-math3.version}</version>
     </dependency>
-    <dependency>
+    <!-- dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
-    </dependency>
+    </dependency -->
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>pj</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-pj</artifactId>
       <version>${pj.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-utilities</artifactId>
+      <version>1.0.0-beta</version>
+    </dependency>
+    <!-- dependency>
       <groupId>org.jogamp</groupId>
       <artifactId>jogamp-fat</artifactId>
       <version>${jogamp-fat.version}</version>
-      <type>jar</type>
-    </dependency>
+    </dependency -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>tornado</groupId>
       <artifactId>tornado-api</artifactId>
       <version>${tornado.version}</version>
-    </dependency>
-    <!-- dependency>
-        <groupId>tornado</groupId>
-        <artifactId>tornado-matrices</artifactId>
-        <version>${tornado.version}</version>
-    </dependency -->
-    <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>utilities</artifactId>
-      <version>1.0.0-beta</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

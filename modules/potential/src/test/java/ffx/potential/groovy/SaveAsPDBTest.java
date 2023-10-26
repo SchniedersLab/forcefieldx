@@ -46,7 +46,8 @@ public class SaveAsPDBTest extends PotentialTest {
   @Test
   public void testSaveAsPDB() {
     // Set-up the input arguments for the SaveAsPDB script.
-    String[] args = {"src/main/java/ffx/potential/structures/peptide-amber99sb.xyz"};
+    String filepath = getResourcePath("peptide-amber99sb.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

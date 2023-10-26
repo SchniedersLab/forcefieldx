@@ -37,23 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.numerics.multipole.GKSource.cn;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
-import static ffx.potential.parameters.MultipoleType.t000;
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t002;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t011;
-import static ffx.potential.parameters.MultipoleType.t020;
-import static ffx.potential.parameters.MultipoleType.t100;
-import static ffx.potential.parameters.MultipoleType.t101;
-import static ffx.potential.parameters.MultipoleType.t110;
-import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.dWater;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -70,10 +53,25 @@ import ffx.numerics.multipole.QIFrame;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
 import ffx.potential.nonbonded.pme.Polarization;
-import ffx.potential.parameters.ForceField;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.numerics.multipole.GKSource.cn;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Parallel calculation of the Generalized Kirkwood reaction field energy.

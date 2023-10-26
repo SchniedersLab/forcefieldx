@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
-  <artifactId>potential</artifactId>
+  <artifactId>ffx-potential</artifactId>
   <build>
     <plugins>
       <plugin>
@@ -15,16 +14,13 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <taskdef name="groovyc"
-                  classname="org.codehaus.groovy.ant.Groovyc">
+                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.compile.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}"
-                  srcdir="${basedir}/src/main/groovy/"
-                  listfiles="false" verbose="true"
-                  targetBytecode="${targetVersion}"
-                  stacktrace="true" parameters="true">
+                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
+                         listfiles="false" verbose="false" targetBytecode="${targetVersion}" stacktrace="true"
+                         parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
                 <!-- configscript="${basedir}/src/config/config.groovy" -->
@@ -100,23 +96,25 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <compilerArg>-Xlint:all</compilerArg>
-            <compilerArg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</compilerArg>
-          </compilerArgs>
-          <debug>true</debug>
-          <source>${compileVersion}</source>
-          <target>${targetVersion}</target>
-          <useIncrementalCompilation>true</useIncrementalCompilation>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>edu.uiowa.eng.ffx</groupId>
-              <artifactId>utilities</artifactId>
-              <version>${project.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+                <arg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</arg>
+                <arg>-proc:full</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>ffx-utilities</artifactId>
+                  <version>${project.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
         <version>${compiler.version}</version>
       </plugin>
         <plugin>
@@ -130,6 +128,20 @@
     </plugins>
     <resources>
       <resource>
+        <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/../../groovy</targetPath>
+      </resource>
+      <resource>
+        <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/src/site/resources/scripts</targetPath>
+      </resource>
+      <resource>
         <directory>${basedir}/src/main/java/ffx/potential/parameters/ff
         </directory>
         <includes>
@@ -137,100 +149,161 @@
         </includes>
         <targetPath>ffx/potential/parameters/ff</targetPath>
       </resource>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/potential/structures
-        </directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>ffx/potential/structures</targetPath>
-      </resource>
     </resources>
   </build>
   <dependencies>
     <dependency>
-      <artifactId>pj</artifactId>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <type>jar</type>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>${jna.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.biojava</groupId>
+      <artifactId>biojava-core</artifactId>
+      <version>${biojava.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- The log4j is included to control its version -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>log4j-1.2-api</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <version>${log4j.version}</version>
+    </dependency>
+    <!-- The slf4j is included to control its version -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-nop.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>${slf4j-nop.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>tornado</groupId>
+      <artifactId>tornado-api</artifactId>
+      <version>${tornado.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.vecmath</groupId>
+      <artifactId>vecmath</artifactId>
+      <version>${vecmath.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jogamp.java3d</groupId>
+      <artifactId>j3dutils</artifactId>
+      <version>${java3d.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jogamp.java3d</groupId>
+      <artifactId>vecmath</artifactId>
+      <version>${java3d.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openscience.cdk</groupId>
+      <artifactId>cdk-core</artifactId>
+      <version>${cdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openscience.cdk</groupId>
+      <artifactId>cdk-standard</artifactId>
+      <version>${cdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openscience.cdk</groupId>
+      <artifactId>cdk-interfaces</artifactId>
+      <version>${cdk.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>ffx-pj</artifactId>
+      <groupId>${project.groupId}</groupId>
       <version>${pj.version}</version>
     </dependency>
     <dependency>
-      <artifactId>crystal</artifactId>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <type>jar</type>
+      <artifactId>ffx-crystal</artifactId>
+      <groupId>${project.groupId}</groupId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <artifactId>numerics</artifactId>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <type>jar</type>
+      <artifactId>ffx-numerics</artifactId>
+      <groupId>${project.groupId}</groupId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <artifactId>utilities</artifactId>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <type>jar</type>
+      <artifactId>ffx-utilities</artifactId>
+      <groupId>${project.groupId}</groupId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>commons-beanutils</artifactId>
-      <groupId>commons-beanutils</groupId>
-      <type>jar</type>
-      <version>${commons-beanutils.version}</version>
     </dependency>
     <dependency>
       <artifactId>commons-configuration2</artifactId>
       <groupId>org.apache.commons</groupId>
-      <type>jar</type>
       <version>${commons-configuration2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <artifactId>commons-io</artifactId>
       <groupId>commons-io</groupId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <artifactId>commons-lang3</artifactId>
       <groupId>org.apache.commons</groupId>
-      <type>jar</type>
       <version>${commons-lang3.version}</version>
     </dependency>
     <dependency>
       <artifactId>commons-math3</artifactId>
       <groupId>org.apache.commons</groupId>
-      <type>jar</type>
       <version>${commons-math3.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>commons-collections4</artifactId>
-      <groupId>org.apache.commons</groupId>
-      <type>jar</type>
-      <version>${commons-collections4.version}</version>
     </dependency>
     <dependency>
       <artifactId>j3dcore</artifactId>
       <groupId>org.jogamp.java3d</groupId>
-      <type>jar</type>
       <version>${java3d.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>biojava-structure</artifactId>
-      <exclusions>
-        <exclusion>
-          <artifactId>vecmath</artifactId>
-          <groupId>java3d</groupId>
-        </exclusion>
-      </exclusions>
-      <groupId>org.biojava</groupId>
-      <type>jar</type>
-      <version>${biojava.version}</version>
     </dependency>
     <dependency>
       <artifactId>junit</artifactId>
       <groupId>junit</groupId>
       <scope>test</scope>
-      <type>jar</type>
       <version>${junit.version}</version>
     </dependency>
     <dependency>
@@ -266,74 +339,17 @@
     <dependency>
       <artifactId>cdk-data</artifactId>
       <groupId>org.openscience.cdk</groupId>
-      <type>jar</type>
       <version>${cdk.version}</version>
     </dependency>
     <dependency>
       <artifactId>cdk-isomorphism</artifactId>
       <groupId>org.openscience.cdk</groupId>
-      <type>jar</type>
       <version>${cdk.version}</version>
     </dependency>
-    <dependency>
-      <artifactId>cdk-log4j</artifactId>
-      <groupId>org.openscience.cdk</groupId>
-      <type>jar</type>
-      <version>${cdk.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>cdk-atomtype</artifactId>
-      <groupId>org.openscience.cdk</groupId>
-      <type>jar</type>
-      <version>${cdk.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-core</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-      <type>jar</type>
-      <version>${log4j.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-api</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-      <type>jar</type>
-      <version>${log4j.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-1.2-api</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-      <type>jar</type>
-      <version>${log4j.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <groupId>org.apache.logging.log4j</groupId>
-      <version>${log4j.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>slf4j-nop</artifactId>
-      <groupId>org.slf4j</groupId>
-      <version>${slf4j-nop.version}</version>
-    </dependency>
-    <!-- dependency>
-        <groupId>org.tensorflow</groupId>
-        <artifactId>libtensorflow</artifactId>
-        <version>${tensorflow.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.tensorflow</groupId>
-        <artifactId>libtensorflow_jni</artifactId>
-        <version>${tensorflow.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.tensorflow</groupId>
-        <artifactId>libtensorflow_jni_gpu</artifactId>
-        <version>${tensorflow.version}</version>
-    </dependency -->
   </dependencies>
   <description>
     The Potential module computes the potential energy of a
-    molecular system via a classical force field.
+    molecular system via a classical force field such as AMOEBA, Amber, OPLS-AA or CHARMM.
   </description>
   <developers>
     <developer>
@@ -357,7 +373,7 @@
   </organization>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>ffx</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
     <version>1.0.0-beta</version>

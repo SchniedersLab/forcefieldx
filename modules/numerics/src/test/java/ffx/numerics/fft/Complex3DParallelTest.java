@@ -43,6 +43,8 @@ import edu.rit.pj.ParallelTeam;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
+
+import ffx.utilities.FFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +53,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class Complex3DParallelTest {
+public class Complex3DParallelTest extends FFXTest {
 
   private final String info;
   private final int nx;

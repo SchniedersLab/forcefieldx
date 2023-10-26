@@ -76,7 +76,7 @@ public class DynamicsNVTTest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Water Box NVT", // info
-                "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                "waterbox_eq.xyz", // filename
                 296.18798, // Final temperature.
                 -24952.08001403058 // Final total energy
             }
@@ -93,7 +93,7 @@ public class DynamicsNVTTest extends AlgorithmsTest {
         "-i", "VelocityVerlet",
         "-b", "Bussi",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 

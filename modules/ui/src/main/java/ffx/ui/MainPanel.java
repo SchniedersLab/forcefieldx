@@ -87,6 +87,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Month;
 import java.util.ArrayList;
@@ -143,10 +145,10 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   public static final String date = "May 2020";
   /** Constant */
   public static final String border =
-      " ______________________________________________________________________________\n";
+      " _________________________________________________________________________\n";
   /** Constant */
-  public static final String title = "        FORCE FIELD X - Software for Molecular Biophysics \n";
-  /** Attempts to initialize version, date, and SCM versioning from bin/build.properties. */
+  public static final String title = "        FORCE FIELD X - Polyglot Software for Molecular Biophysics \n";
+
   public static final String aboutString;
   /** Constant <code>KEYWORDS=1</code> */
   static final int KEYWORDS = 1;
@@ -234,30 +236,34 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         //
       }
     }
-    aboutString =
-        "        Version "
+    aboutString = "        Version "
             + commitVersion
             + "  "
             + commitDate
             + " \n"
             + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders  2001-2023 \n"
-            + "        Portions Copyright (c):\n"
-            + "          Timothy D. Fenn      2009-2023 \n"
-            + "          Jacob M. Litman      2015-2023 \n"
-            + "          Rae A. Corrigan      2019-2023 \n"
-            + "          Guowei Qi            2019-2023 \n"
-            + "          Mallory R. Tollefson 2019-2023 \n"
-            + "          Aaron J. Nessler     2021-2023 \n"
-            + "\n"
-            + "        All Rights Reserved \n"
-            + "\n"
-            + "        Force Field X is distributed under the GPL v. 3 license\n"
-            + "        with linking exception and is hosted by the Schnieders Lab \n"
-            + "        at The University of Iowa.\n"
-            + "\n"
-            + "        For publications see    http://ffx.biochem.uiowa.edu/publications.html \n"
-            + "        For the GPL v.3 license http://ffx.biochem.uiowa.edu/license.html \n";
+            + " \n"
+            + """     
+                      Copyright (c)  Michael J. Schnieders  2001-2023
+                      Portions Copyright (c):
+                        Timothy D. Fenn      2009-2023
+                        Jacob M. Litman      2015-2023
+                        Rae A. Corrigan      2019-2023
+                        Guowei Qi            2019-2023
+                        Mallory R. Tollefson 2019-2023
+                        Aaron J. Nessler     2021-2023
+                        Andrew C. Thiel      2021-2023
+                                        
+                      All Rights Reserved
+                      
+                      Force Field X is distributed under the GPL v. 3 license
+                      with linking exception and is hosted by the Schnieders Lab
+                      at The University of Iowa.
+                        
+                      User manual:   https://ffx.biochem.uiowa.edu/manual.html
+                      Publications:  https://ffx.biochem.uiowa.edu/publications.html
+                      License:       https://ffx.biochem.uiowa.edu/licenses.html
+              """;
 
     try {
       String ffxString = System.getProperty("ffx.dir", ".");
@@ -522,7 +528,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         // Others
         break;
       case "GarbageCollect":
-        Runtime.getRuntime().runFinalization();
         Runtime.getRuntime().gc();
         break;
       case "Exit":
@@ -704,20 +709,12 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         // gc =
         // GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
       } catch (Exception e) {
-        e.fillInStackTrace();
-        e.printStackTrace();
-        logger.log(
-            Level.SEVERE,
-            " Exception encountered when trying to get the best GraphicsConfiguration",
-            e);
+        logger.log(Level.SEVERE, " Exception encountered when trying to get the best GraphicsConfiguration", e);
       }
       try {
         graphicsCanvas = new GraphicsCanvas(gc, this);
       } catch (Exception e) {
-        e.fillInStackTrace();
-        e.printStackTrace();
-        logger.log(
-            Level.SEVERE, " Exception encountered when trying to create the GraphicsCanvas", e);
+        logger.log(Level.SEVERE, " Exception encountered when trying to create the GraphicsCanvas", e);
       }
       graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
     }
@@ -1737,8 +1734,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     // Convert the string to a URL instance.
     URL fromURL;
     try {
-      fromURL = new URL(fromString);
-    } catch (MalformedURLException e) {
+      URI uri = new URI(fromString);
+      fromURL = uri.toURL();
+    } catch (MalformedURLException | URISyntaxException e) {
       String message = format(" URL incorrectly formatted %s.", fromString);
       logger.log(Level.INFO, message, e);
       return null;
@@ -2215,7 +2213,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         }
       }
     }
-    String s = "" + address.getHostAddress();
+    String s = address.getHostAddress();
     s = JOptionPane.showInputDialog("Enter an IP Address (XXX.XXX.XXX.XXX)", s);
     if (s == null) {
       return;

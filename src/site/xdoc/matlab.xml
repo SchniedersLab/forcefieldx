@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document
-  xmlns="http://maven.apache.org/XDOC/2.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
     <title>Matlab</title>
@@ -84,7 +82,9 @@
         </p>
       </subsection>
       <subsection name="Running Force Field X Commands">
-        <p>Once Matlab is running on Java v. 10, a Force Field X example is available in the file "ffx/matlab/ForceFieldX.m".</p>
+        <p>Once Matlab is running on Java v. 10, a Force Field X example is available in the file
+          "ffx/matlab/ForceFieldX.m".
+        </p>
       </subsection>
     </section>
   </body>

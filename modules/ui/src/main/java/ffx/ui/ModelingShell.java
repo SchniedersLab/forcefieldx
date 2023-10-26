@@ -54,9 +54,10 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.Console;
-import ffx.utilities.FFXScript;
+import ffx.utilities.GroovyFileFilter;
 import groovy.lang.Binding;
 import groovy.lang.Script;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -67,9 +68,12 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -84,7 +88,15 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+
 import org.codehaus.groovy.runtime.MethodClosure;
+
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.Language;
+import org.graalvm.polyglot.proxy.ProxyArray;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the Groovy scripting
@@ -95,24 +107,36 @@ import org.codehaus.groovy.runtime.MethodClosure;
  */
 public class ModelingShell extends Console implements AlgorithmListener {
 
-  /** The logger for this class. */
+  /**
+   * The logger for this class.
+   */
   private static final Logger logger = Logger.getLogger(ModelingShell.class.getName());
   private static final double toSeconds = 1.0e-9;
 
-  /** A reference to the main application container. */
+  /**
+   * A reference to the main application container.
+   */
   private final MainPanel mainPanel;
-  /** The flag headless is true for the CLI and false for the GUI. */
+  /**
+   * The flag headless is true for the CLI and false for the GUI.
+   */
   private final boolean headless;
-  /** The flag interrupted is true if a script is running and the user requests it be canceled. */
+  /**
+   * The flag interrupted is true if a script is running and the user requests it be canceled.
+   */
   private boolean interrupted;
   /**
    * An algorithm that implements the Terminatable interface can be cleanly terminated before
    * completion. For example, after completion of an optimization step or MD step.
    */
   private Terminatable terminatableAlgorithm = null;
-  /** Flag to indicate if a script is running. */
+  /**
+   * Flag to indicate if a script is running.
+   */
   private boolean scriptRunning;
-  /** Timing. */
+  /**
+   * Timing.
+   */
   private long time;
 
   private long subTime;
@@ -130,7 +154,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     initContext(getShell().getContext());
   }
 
-  /** after */
+  /**
+   * after
+   */
   public void after() {
     time = System.nanoTime() - time;
     scriptRunning = false;
@@ -144,7 +170,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     mainPanel.getModelingPanel().enableLaunch(true);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean algorithmUpdate(MolecularAssembly active) {
     if (interrupted) {
@@ -207,7 +235,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     };
   }
 
-  /** before */
+  /**
+   * before
+   */
   public void before() {
     interrupted = false;
     terminatableAlgorithm = null;
@@ -299,16 +329,16 @@ public class ModelingShell extends Console implements AlgorithmListener {
   /**
    * md
    *
-   * @param nStep The number of MD steps.
-   * @param timeStep a double.
-   * @param printInterval a double.
-   * @param saveInterval a double.
-   * @param temperature a double.
+   * @param nStep          The number of MD steps.
+   * @param timeStep       a double.
+   * @param printInterval  a double.
+   * @param saveInterval   a double.
+   * @param temperature    a double.
    * @param initVelocities a boolean.
-   * @param dyn a {@link java.io.File} object.
+   * @param dyn            a {@link java.io.File} object.
    */
   public void md(int nStep, double timeStep, double printInterval, double saveInterval,
-      double temperature, boolean initVelocities, File dyn) {
+                 double temperature, boolean initVelocities, File dyn) {
     if (interrupted || terminatableAlgorithm != null) {
       return;
     }
@@ -323,7 +353,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /** Configure the Swing GUI for the shell. */
+  /**
+   * Configure the Swing GUI for the shell.
+   */
   @Override
   public void run() {
     if (!headless) {
@@ -385,7 +417,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     return timer;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "Force Field X Shell";
@@ -403,7 +437,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /** Initialize access to Force Field X variables and methods from with the Shell. */
+  /**
+   * Initialize access to Force Field X variables and methods from with the Shell.
+   */
   private void initContext(Binding binding) {
     binding.setVariable("dat", mainPanel.getHierarchy());
     binding.setVariable("cmd", mainPanel);
@@ -473,7 +509,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     binding.setVariable("listener", this);
   }
 
-  /** Update the shell menu items. */
+  /**
+   * Update the shell menu items.
+   */
   private void initMenus() {
     JFrame frame = (JFrame) this.getFrame();
     MenuBar menuBar = frame.getMenuBar();
@@ -492,7 +530,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     menu.remove(7);
   }
 
-  /** Initialize the Shell. */
+  /**
+   * Initialize the Shell.
+   */
   private void init() {
     try {
       super.run();
@@ -530,12 +570,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
       ImageIcon icon = new ImageIcon(iconURL);
       frame.setIconImage(icon.getImage());
       frame.setSize(600, 600);
-
     } catch (Exception e) {
-      System.out.println(" Exception starting up the FFX console.");
-      System.out.println(e);
-      e.printStackTrace();
-      logger.warning(e.toString());
+      logger.warning(" Exception starting up the FFX console.\n" + e);
     }
   }
 
@@ -544,24 +580,30 @@ public class ModelingShell extends Console implements AlgorithmListener {
   }
 
   /**
-   * runFFXScript
+   * runFFXScript - Execute a FFX script.
    *
-   * @param file a {@link java.io.File} object.
+   * @param file    a {@link java.io.File} object.
    * @param argList List of String inputs to the script.
    * @return Returns a reference to the executed script.
    */
   public Script runFFXScript(File file, List<String> argList) {
-    logger.info(" Executing external script: " + file.getAbsolutePath() + "\n");
+    GroovyFileFilter groovyFileFilter = new GroovyFileFilter();
+    // Check that the file is a Groovy script.
+    if (!groovyFileFilter.accept(file)) {
+      // If not, assume its a Python script.
+      return runNonGroovyScript(file, argList);
+    }
 
+    logger.info(" Executing external Groovy script: " + file.getAbsolutePath() + "\n");
     try {
       before();
-      Script groovyScript = null;
+      Script script = null;
       try {
         // Run the file using the current Shell and its Binding.
         Object o = getShell().run(file, argList);
 
         if (o instanceof Script) {
-          groovyScript = (FFXScript) o;
+          script = (Script) o;
         }
 
         // Do not destroy the system when using the GUI.
@@ -576,7 +618,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
       }
       after();
-      return groovyScript;
+      return script;
     } catch (Exception e) {
       // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
       // some versions of Groovy.
@@ -588,9 +630,80 @@ public class ModelingShell extends Console implements AlgorithmListener {
   }
 
   /**
-   * runFFXScript
+   * runPythonScript - Execute a Python script.
    *
-   * @param script a compiled FFX script.
+   * @param file    a {@link java.io.File} object.
+   * @param argList List of String inputs to the script.
+   * @return Returns a reference to the executed script.
+   */
+  public Script runNonGroovyScript(File file, List<String> argList) {
+    logger.info(" Attempting to execute Polyglot script:\n  " + file.getAbsolutePath() + "\n");
+
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(" Available languages: ");
+      try (Engine engine = Engine.create()) {
+        Map<String, Language> map = engine.getLanguages();
+        for (Map.Entry<String, Language> entry : map.entrySet()) {
+          logger.fine("  " + entry.getKey());
+        }
+      } catch (Exception ex) {
+        logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
+      }
+    }
+
+    try {
+      before();
+      Script script = null;
+      String language = Source.findLanguage(file);
+      logger.info(" Detected script language: " + language);
+      Source source = Source.newBuilder(language, file).build();
+      try (Context context = getContext(language)) {
+        // Get the bindings for the language.
+        Value bindings = context.getBindings(language);
+        // Use the Polyglot ProxyArray to pass the command line arguments to the script.
+        List<Object> objList = new ArrayList<>(argList);
+        ProxyArray argArray = ProxyArray.fromList(objList);
+        bindings.putMember("args", argArray);
+        // Run the file using the current Shell and its Binding.
+        Value result = context.eval(source);
+        logger.info(" Execution of Polyglot script completed.");
+      } catch (Exception ex) {
+        logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
+      }
+      after();
+      return script;
+    } catch (Exception e) {
+      // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in some versions of Groovy.
+      String message = "Error evaluating script.";
+      logger.log(Level.WARNING, message, e);
+    }
+    return null;
+  }
+
+  private Context getContext(String language) {
+    if (language.equalsIgnoreCase("python")) {
+      // For Python, try to locate the Graal Python executable.
+
+      // The default location is $FFX_HOME/ffx_venv/bin/graalpy.
+      String FFX_HOME = System.getProperty("basedir");
+      Path graalpy = Paths.get(FFX_HOME, "ffx_venv", "bin", "graalpy");
+
+      // Override the default location with the -Dgraalpy=path.to.graalpy option.
+      String graalpyString = System.getProperty("graalpy", graalpy.toString());
+      graalpy = Paths.get(graalpyString);
+      if (graalpy.toFile().exists()) {
+        logger.fine(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy);
+        return Context.newBuilder(language).allowAllAccess(true).option("python.Executable", graalpyString).build();
+      }
+    }
+    // Fall through to default.
+    return Context.newBuilder(language).allowAllAccess(true).build();
+  }
+
+  /**
+   * runFFXScript - Execute a compiled FFX script.
+   *
+   * @param script  a compiled FFX script.
    * @param argList List of String inputs to the script.
    * @return Returns a reference to the executed script.
    */
@@ -693,7 +806,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * Fix up the "Result: " message, then call the original method.
    *
    * @param string String to ouput.
-   * @param style Style to use.
+   * @param style  Style to use.
    */
   void appendOutputNl(String string, Style style) {
     if (interrupted) {
@@ -717,7 +830,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /** scroll */
+  /**
+   * scroll
+   */
   private void scroll() {
     JTextPane output = getOutputArea();
     JSplitPane splitPane = getSplitPane();
@@ -733,7 +848,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * appendOutput
    *
    * @param string a {@link java.lang.String} object.
-   * @param style a {@link javax.swing.text.Style} object.
+   * @param style  a {@link javax.swing.text.Style} object.
    */
   private void appendOutput(String string, Style style) {
     if (interrupted) {
@@ -757,7 +872,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * setMeasurement
    *
    * @param measurement a {@link java.lang.String} object.
-   * @param d a double.
+   * @param d           a double.
    */
   void setMeasurement(String measurement, double d) {
     try {
@@ -768,7 +883,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
   }
 
-  /** sync */
+  /**
+   * sync
+   */
   void sync() {
     try {
       setVariable("active", mainPanel.getHierarchy().getActive());

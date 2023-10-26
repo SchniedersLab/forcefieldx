@@ -37,23 +37,32 @@
 // ******************************************************************************
 package ffx;
 
-import static java.lang.String.format;
-
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
+import ffx.potential.Utilities;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.ModelingShell;
 import ffx.ui.OSXAdapter;
 import ffx.utilities.FFXScript;
 import groovy.lang.Script;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.log4j.PropertyConfigurator;
+
+import javax.annotation.Nullable;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -61,21 +70,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.time.StopWatch;
-import org.apache.log4j.PropertyConfigurator;
-import sun.misc.Unsafe;
+
+import static java.lang.String.format;
 
 /**
  * The Main class is the entry point to the graphical user interface version of Force Field X.
@@ -161,7 +163,7 @@ public final class Main extends JFrame {
    * @param commandLineFile a {@link java.io.File} object.
    * @param argList a {@link java.util.List} object.
    */
-  public Main(File commandLineFile, List<String> argList) {
+  public Main(@Nullable File commandLineFile, List<String> argList) {
     super("Force Field X");
     // Start the clock.
     stopWatch.start();
@@ -170,7 +172,7 @@ public final class Main extends JFrame {
     try {
       SwingUtilities.invokeAndWait(initGUI);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning(" Exception initializing the GUI.\n" + e);
     }
 
     // Run the supplied command or file.
@@ -182,7 +184,6 @@ public final class Main extends JFrame {
       StringBuilder sb = new StringBuilder();
       sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
       Runtime runtime = Runtime.getRuntime();
-      runtime.runFinalization();
       runtime.gc();
       long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
       long KB = 1024;
@@ -217,7 +218,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
   }
@@ -291,7 +292,7 @@ public final class Main extends JFrame {
     } catch (Throwable t) {
       int statusCode = 1;
       logger.info(" Uncaught exception: exiting with status code " + statusCode);
-      t.printStackTrace();
+      logger.info(Utilities.stackTraceToString(t));
       System.exit(statusCode);
     }
     return null;
@@ -300,7 +301,6 @@ public final class Main extends JFrame {
   /** Print out help for the command line version of Force Field X. */
   private static void commandLineInterfaceHelp(boolean listTestScripts) {
     logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
-    logger.info("  where commands include:");
     if (listTestScripts) {
       FFXScript.listGroovyScripts(false, true);
       logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
@@ -400,7 +400,7 @@ public final class Main extends JFrame {
           // Set the system property.
           System.setProperty(key, value);
         } else {
-          if (arg.length() > 0) {
+          if (!arg.isEmpty()) {
             System.setProperty(arg, "");
           }
         }
@@ -470,7 +470,8 @@ public final class Main extends JFrame {
         defaultLogger.removeHandler(h);
       }
     } catch (Exception e) {
-      System.err.println(e.toString());
+      String error = e.toString();
+      System.err.println(error);
     }
 
     // Turn off log4j
@@ -500,18 +501,6 @@ public final class Main extends JFrame {
     logHandler.setLevel(level);
     ffxLogger.addHandler(logHandler);
     ffxLogger.setLevel(level);
-
-    // This removes logger warnings about Illegal Access.
-    try {
-      Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-      theUnsafe.setAccessible(true);
-      Unsafe u = (Unsafe) theUnsafe.get(null);
-      Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
-      Field logger = cls.getDeclaredField("logger");
-      u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
-    } catch (Exception e) {
-      // ignore
-    }
   }
 
   /** Start up the Parallel Java communication layer. */
@@ -568,7 +557,8 @@ public final class Main extends JFrame {
       // Log the exception to System.err because the logging subsystem has not be initialized yet.
       String message = " Exception starting up the Parallel Java communication layer.";
       System.err.println(message);
-      System.err.println(e);
+      String error = e.toString();
+      System.err.println(error);
     }
   }
 

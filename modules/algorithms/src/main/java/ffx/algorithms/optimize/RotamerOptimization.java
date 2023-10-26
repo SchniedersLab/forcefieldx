@@ -84,6 +84,7 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.ObjectPair;
 import ffx.utilities.Resources;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -105,6 +106,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -119,29 +121,53 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class RotamerOptimization implements Terminatable {
 
-  /** Logger for this class. */
+  /**
+   * Logger for this class.
+   */
   private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
-  /** Fallback if there is no vdW node. */
+  /**
+   * Fallback if there is no vdW node.
+   */
   private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
-  /** MolecularAssembly to perform rotamer optimization on. */
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
   protected final MolecularAssembly molecularAssembly;
-  /** The Potential to evaluate during rotamer optimization. */
+  /**
+   * The Potential to evaluate during rotamer optimization.
+   */
   protected final Potential potential;
-  /** AlgorithmListener who should receive updates as the optimization runs. */
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
   protected final AlgorithmListener algorithmListener;
-  /** World Parallel Java communicator. */
+  /**
+   * World Parallel Java communicator.
+   */
   private final Comm world;
-  /** Number of Parallel Java processes. */
+  /**
+   * Number of Parallel Java processes.
+   */
   private final int numProc;
-  /** Rank of this process. */
+  /**
+   * Rank of this process.
+   */
   private final int rank;
-  /** Flag to indicate if this is the master process. */
-  private final boolean master;
-  /** Flag to control the verbosity of printing. */
+  /**
+   * Flag to indicate if this is the master process.
+   */
+  private final boolean rank0;
+  /**
+   * Flag to control the verbosity of printing.
+   */
   private final boolean print = false;
-  /** Flag to calculate and print additional energies (mostly for debugging). */
+  /**
+   * Flag to calculate and print additional energies (mostly for debugging).
+   */
   private final boolean verboseEnergies = true;
-  /** If true, write out an energy restart file. */
+  /**
+   * If true, write out an energy restart file.
+   */
   private final boolean writeEnergyRestart = true;
   /**
    * Parameters for box optimization are stored here.
@@ -159,7 +185,9 @@ public class RotamerOptimization implements Terminatable {
    * existing potential energy code. May discard the input file.
    */
   private final ToDoubleFunction<File> eFunction;
-  /** Flag to indicate verbose logging. */
+  /**
+   * Flag to indicate verbose logging.
+   */
   private final boolean verbose;
   /**
    * The DistanceMatrix class handles calculating distances between residues.
@@ -173,57 +201,99 @@ public class RotamerOptimization implements Terminatable {
    * The EliminatedRotamers class tracks eliminated rotamers and rotamer paris.
    */
   private EliminatedRotamers eR;
-  /** RotamerLibrary instance. */
+  /**
+   * RotamerLibrary instance.
+   */
   protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
-  /** Parallel evaluation of quantities used during Goldstein Pair elimination. */
+  /**
+   * Parallel evaluation of quantities used during Goldstein Pair elimination.
+   */
   private GoldsteinPairRegion goldsteinPairRegion;
-  /** Parallel evaluation of many-body energy sums. */
+  /**
+   * Parallel evaluation of many-body energy sums.
+   */
   private EnergyRegion energyRegion;
-  /** Flag to indicate a request to terminate the optimization. */
+  /**
+   * Flag to indicate a request to terminate the optimization.
+   */
   private boolean terminate = false;
-  /** Flag to indicate if the algorithm is running (done == false) or completed (done == true). */
+  /**
+   * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
+   */
   private boolean done = true;
-  /** Two-Body cutoff distance. */
+  /**
+   * Two-Body cutoff distance.
+   */
   private double twoBodyCutoffDist;
-  /** Flag to control use of 3-body terms. */
+  /**
+   * Flag to control use of 3-body terms.
+   */
   private boolean threeBodyTerm = false;
-  /** Three-body cutoff distance. */
+  /**
+   * Three-body cutoff distance.
+   */
   private double threeBodyCutoffDist;
-  /** Interaction partners of a Residue that come after it. */
+  /**
+   * Interaction partners of a Residue that come after it.
+   */
   private int[][] resNeighbors;
-  /** All interaction partners of a Residue, including prior residues. */
+  /**
+   * All interaction partners of a Residue, including prior residues.
+   */
   private int[][] bidiResNeighbors;
-  /** Flag to prune clashes. */
+  /**
+   * Flag to prune clashes.
+   */
   private boolean pruneClashes = true;
-  /** Flag to prune pair clashes. */
+  /**
+   * Flag to prune pair clashes.
+   */
   private boolean prunePairClashes = true;
-  /** Number of permutations whose energy is explicitly evaluated. */
+  /**
+   * Number of permutations whose energy is explicitly evaluated.
+   */
   private int evaluatedPermutations = 0;
-  /** Permutations are printed when modulo this field is zero. */
+  /**
+   * Permutations are printed when modulo this field is zero.
+   */
   private int evaluatedPermutationsPrint = 0;
-  /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
+  /**
+   * List of residues to optimize; they may not be contiguous or all members of the same chain.
+   */
   private List<Residue> residueList;
   /**
    * This is the optimal rotamers corresponding to residueList.
    */
   private int[] optimum;
 
-  /** Size of the sliding window. */
+  /**
+   * Size of the sliding window.
+   */
   private int windowSize = 7;
-  /** The distance the sliding window moves. */
+  /**
+   * The distance the sliding window moves.
+   */
   private int increment = 3;
-  /** In sliding window, whether to revert an unfavorable change. */
+  /**
+   * In sliding window, whether to revert an unfavorable change.
+   */
   private boolean revert;
-  /** The sliding window direction. */
+  /**
+   * The sliding window direction.
+   */
   private Direction direction = Direction.FORWARD;
 
   /**
    * The distance that the distance matrix checks for.
    */
   private double distance = 2.0;
-  /** Default distance method is to find the shortest distance between residues. */
+  /**
+   * Default distance method is to find the shortest distance between residues.
+   */
   private DistanceMethod distanceMethod = DistanceMethod.RESIDUE;
-  /** The algorithm to use for rotamer optimization. */
+  /**
+   * The algorithm to use for rotamer optimization.
+   */
   private Algorithm algorithm = null;
 
   /**
@@ -231,35 +301,55 @@ public class RotamerOptimization implements Terminatable {
    * Elimination criteria.
    */
   private boolean useGoldstein = true;
-  /** The number of most-favorable structures to include as output. */
+  /**
+   * The number of most-favorable structures to include as output.
+   */
   private int ensembleNumber = 1;
-  /** The energy buffer applied to each elimination criteria to affect an ensemble. */
+  /**
+   * The energy buffer applied to each elimination criteria to affect an ensemble.
+   */
   private double ensembleBuffer = 0.0;
-  /** The step value of the energy buffer for use with ensemble search. */
+  /**
+   * The step value of the energy buffer for use with ensemble search.
+   */
   private double ensembleBufferStep = 0.5;
-  /** The energy boundary for structures to be included in the final ensemble. */
+  /**
+   * The energy boundary for structures to be included in the final ensemble.
+   */
   private double ensembleEnergy = 0.0;
-  /** File to contain ensemble of structures. */
+  /**
+   * File to contain ensemble of structures.
+   */
   private File ensembleFile;
-  /** PDBFilter to write out ensemble snapshots. */
+  /**
+   * PDBFilter to write out ensemble snapshots.
+   */
   private PDBFilter ensembleFilter;
   /**
    * Flag to load the distance matrix as needed; if false, matrix is prefilled at the beginning of
    * rotamer optimization.
    */
   private boolean lazyMatrix = false;
-  /** Clash energy threshold (kcal/mole). */
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
   private double clashThreshold = 25.0;
   /**
    * Clash energy threshold (kcal/mol) for MultiResidues, which can have much more variation in self
    * and 2-Body energies.
    */
   private double multiResClashThreshold = 80.0;
-  /** Clash energy threshold (kcal/mole). */
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
   private double pairClashThreshold = 25.0;
-  /** Pair clash energy threshold (kcal/mol) for MultiResidues. */
+  /**
+   * Pair clash energy threshold (kcal/mol) for MultiResidues.
+   */
   private double multiResPairClashAddn = 80.0;
-  /** An array of atomic coordinates (length 3 * the number of atoms). */
+  /**
+   * An array of atomic coordinates (length 3 * the number of atoms).
+   */
   private double[] x = null;
   /**
    * A flag to indicate use of the full N-Body AMOEBA potential energy during the rotamer
@@ -271,7 +361,9 @@ public class RotamerOptimization implements Terminatable {
    * indicates the threshold is not being implemented.
    */
   private double nucleicCorrectionThreshold = 0;
-  /** The approximate energy from summing the backbone energy, self-energies, pair-energies, etc. */
+  /**
+   * The approximate energy from summing the backbone energy, self-energies, pair-energies, etc.
+   */
   private double approximateEnergy = 0;
   /**
    * Minimum number of nucleic acid Rotamers to use for rotamer optimization should some be
@@ -294,60 +386,94 @@ public class RotamerOptimization implements Terminatable {
    * An array of all residues in the system, which is used to compute a distance matrix.
    */
   private Residue[] allResiduesArray = null;
-  /** Number of residues being optimized. */
+  /**
+   * Number of residues being optimized.
+   */
   private int nAllResidues = 0;
   /**
    * The array of optimum rotamers for the subset of residues being optimized during box or window
    * optimization.
    */
   private int[] optimumSubset;
-  /** If true, load an energy restart file. */
+  /**
+   * If true, load an energy restart file.
+   */
   private boolean loadEnergyRestart = false;
-  /** Energy restart File instance. */
+  /**
+   * Energy restart File instance.
+   */
   private File energyRestartFile;
-  /** ParallelTeam instance. */
+  /**
+   * ParallelTeam instance.
+   */
   private ParallelTeam parallelTeam;
   /**
    * Flag to indicate computation of 4-body energy values. This is limited to the study 4-body energy
    * magnitudes, but is not included in the rotamer optimization.
    */
   private boolean compute4BodyEnergy = false;
-  /** Flag to indicate use of box optimization. */
+  /**
+   * Flag to indicate use of box optimization.
+   */
   private boolean usingBoxOptimization = false;
   /**
    * If a pair of residues have two atoms closer together than the superposition threshold, the
    * energy is set to NaN.
    */
   private double superpositionThreshold = 0.25;
-  /** Flag to indicate computation of a many-body expansion for original coordinates. */
+  /**
+   * Flag to indicate computation of a many-body expansion for original coordinates.
+   */
   private boolean decomposeOriginal = false;
-  /** Flag to indicate use of MC optimization. */
+  /**
+   * Flag to indicate use of MC optimization.
+   */
   private boolean monteCarlo = false;
-  /** Number of MC optimization steps. */
+  /**
+   * Number of MC optimization steps.
+   */
   private int nMCSteps = 1000000;
-  /** MC temperature (K). */
+  /**
+   * MC temperature (K).
+   */
   private double mcTemp = 298.15;
-  /** Check to see if proposed move has an eliminated 2-body or higher-order term. */
+  /**
+   * Check to see if proposed move has an eliminated 2-body or higher-order term.
+   */
   private boolean mcUseAll = false;
-  /** Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing. */
+  /**
+   * Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
+   */
   private boolean mcNoEnum = false;
   /**
    * Sets whether files should be printed; true for standalone applications, false for some
    * applications which use rotamer optimization as part of a larger process.
    */
   private boolean printFiles = true;
-  /** Stores states of each ensemble if printFiles is false. */
+  /**
+   * Stores states of each ensemble if printFiles is false.
+   */
   private List<ObjectPair<ResidueState[], Double>> ensembleStates;
-  /** Maximum depth to check if a rotamer can be eliminated. */
+  /**
+   * Maximum depth to check if a rotamer can be eliminated.
+   */
   private int maxRotCheckDepth;
-  /** Writes energies to restart file. */
+  /**
+   * Writes energies to restart file.
+   */
   private BufferedWriter energyWriter;
 
-  /** False unless JUnit testing. */
+  /**
+   * False unless JUnit testing.
+   */
   private boolean testing = false;
-  /** False unless ManyBodyTest is occurring. */
+  /**
+   * False unless ManyBodyTest is occurring.
+   */
   private boolean monteCarloTesting = false;
-  /** Test Self-Energy Elimination. */
+  /**
+   * Test Self-Energy Elimination.
+   */
   private boolean testSelfEnergyEliminations = false;
   /**
    * Test Pair-Energy Elimination.
@@ -380,11 +506,11 @@ public class RotamerOptimization implements Terminatable {
    * RotamerOptimization constructor.
    *
    * @param molecularAssembly The MolecularAssembly to search rotamers for.
-   * @param potential a {@link ffx.numerics.Potential} object.
+   * @param potential         a {@link ffx.numerics.Potential} object.
    * @param algorithmListener AlgorithmListener to update the GUI.
    */
   public RotamerOptimization(MolecularAssembly molecularAssembly, Potential potential,
-      AlgorithmListener algorithmListener) {
+                             AlgorithmListener algorithmListener) {
 
     this.molecularAssembly = molecularAssembly;
     this.potential = potential;
@@ -404,7 +530,7 @@ public class RotamerOptimization implements Terminatable {
     numProc = world.size();
     rank = world.rank();
 
-    master = rank == 0;
+    rank0 = rank == 0;
 
     boxOpt = new BoxOptimization();
 
@@ -520,15 +646,15 @@ public class RotamerOptimization implements Terminatable {
     String mcNoEnum = properties.getString("ro-debug-mcNoEnum");
     if (mcTemp != null) {
       this.mcTemp = parseDouble(mcTemp);
-      logIfMaster(format(" (KEY) mcTemp: %10.6f", this.mcTemp));
+      logIfRank0(format(" (KEY) mcTemp: %10.6f", this.mcTemp));
     }
     if (mcUseAll != null) {
       this.mcUseAll = parseBoolean(mcUseAll);
-      logIfMaster(format(" (KEY) mcUseAll: %b", this.mcUseAll));
+      logIfRank0(format(" (KEY) mcUseAll: %b", this.mcUseAll));
     }
     if (mcNoEnum != null) {
       this.mcNoEnum = parseBoolean(mcNoEnum);
-      logIfMaster(format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
+      logIfRank0(format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
     }
 
     String lazyMatrix = properties.getString("ro-lazyMatrix");
@@ -638,7 +764,7 @@ public class RotamerOptimization implements Terminatable {
    */
   public boolean checkNeighboringTriple(int i, int j, int k) {
     assert i != j && i != k && j != k;
-    int[] vals = new int[] {i, j, k};
+    int[] vals = new int[]{i, j, k};
     Arrays.sort(vals);
     final int first = vals[0];
     final int second = vals[1];
@@ -652,8 +778,8 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Checks the pair elimination array to see if this permutation has been eliminated.
    *
-   * @param i Residue number
-   * @param ri Rotamer number
+   * @param i           Residue number
+   * @param ri          Rotamer number
    * @param currentRots Array of current rotamers indeces.
    * @return If valid
    */
@@ -698,7 +824,7 @@ public class RotamerOptimization implements Terminatable {
    *
    * @param residues Current window of optimization.
    * @param rotamers Set of rotamers to calculate an approximate energy for.
-   * @param print Verbosity flag
+   * @param print    Verbosity flag
    * @return Approximate permutation energy (backbone + selfs + pairs + trimers).
    */
   public double computeEnergy(Residue[] residues, int[] rotamers, boolean print) {
@@ -753,7 +879,7 @@ public class RotamerOptimization implements Terminatable {
    * @param resList Reside list.
    * @return Returns the current energy.
    * @throws ArithmeticException Thrown if there is an arithmetic exception computing the
-   *     energy.
+   *                             energy.
    */
   public double currentEnergyWrapper(List<Residue> resList) throws ArithmeticException {
     return currentEnergy(resList);
@@ -855,7 +981,7 @@ public class RotamerOptimization implements Terminatable {
   }
 
   public double goldsteinPairSumOverK(Residue[] residues, int lb, int ub, int i, int riA, int riB,
-      int j, int rjC, int rjD, List<Residue> blockedResidues, int[] possK) {
+                                      int j, int rjC, int rjD, List<Residue> blockedResidues, int[] possK) {
     double sumOverK = 0.0;
 
     for (int indK = lb; indK <= ub; indK++) {
@@ -948,14 +1074,14 @@ public class RotamerOptimization implements Terminatable {
     return sumOverK;
   }
 
-  public void logIfMaster(String msg) {
-    if (master) {
+  public void logIfRank0(String msg) {
+    if (rank0) {
       logger.info(msg);
     }
   }
 
-  public void logIfMaster(String msg, Level level) {
-    if (master) {
+  public void logIfRank0(String msg, Level level) {
+    if (rank0) {
       logger.log(level, msg);
     }
   }
@@ -1036,7 +1162,7 @@ public class RotamerOptimization implements Terminatable {
        * The memory and compute overhead can be a problem for some very large structures.
        */
       if (distance > 0) {
-        dM = new DistanceMatrix(this, molecularAssembly, algorithmListener, allResiduesArray,
+        dM = new DistanceMatrix(molecularAssembly, algorithmListener, allResiduesArray,
             allResiduesList, distanceMethod, distance, twoBodyCutoffDist, threeBodyCutoffDist,
             lazyMatrix);
       }
@@ -1056,9 +1182,8 @@ public class RotamerOptimization implements Terminatable {
             e = globalOptimization(residueList);
             arraycopy(optimumSubset, 0, optimum, 0, residueList.size());
           }
-          case WINDOW ->
-              e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
-                  direction);
+          case WINDOW -> e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
+              direction);
           case BOX -> e = boxOpt.boxOptimization(residueList);
           default -> {
           }
@@ -1083,14 +1208,14 @@ public class RotamerOptimization implements Terminatable {
    * A brute-force global optimization over side-chain rotamers using a recursive algorithm.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-   * @param i a int.
-   * @param lowEnergy a double.
-   * @param optimum an array of {@link int} objects.
+   * @param residues          an array of {@link ffx.potential.bonded.Residue} objects.
+   * @param i                 a int.
+   * @param lowEnergy         a double.
+   * @param optimum           an array of {@link int} objects.
    * @return the current energy.
    */
   public double rotamerOptimization(MolecularAssembly molecularAssembly, Residue[] residues, int i,
-      double lowEnergy, int[] optimum) {
+                                    double lowEnergy, int[] optimum) {
 
     // This is the initialization condition.
     if (i == 0) {
@@ -1257,7 +1382,7 @@ public class RotamerOptimization implements Terminatable {
   /**
    * setEnsemble.
    *
-   * @param ensemble a int.
+   * @param ensemble       a int.
    * @param ensembleBuffer a double.
    */
   public void setEnsemble(int ensemble, double ensembleBuffer) {
@@ -1306,7 +1431,7 @@ public class RotamerOptimization implements Terminatable {
    * Sets the option to use a number of Monte Carlo steps for final optimization.
    *
    * @param monteCarlo If Monte Carlo is to be considered
-   * @param nMCsteps Number of steps to be taken
+   * @param nMCsteps   Number of steps to be taken
    */
   public void setMonteCarlo(boolean monteCarlo, int nMCsteps) {
     this.monteCarlo = monteCarlo;
@@ -1450,7 +1575,7 @@ public class RotamerOptimization implements Terminatable {
    * distance larger than the cutoff are set to 0.
    *
    * @param threeBodyCutoffDist Separation distance at which the interaction of three side-chains
-   *     is assumed to have an energy of 0.
+   *                            is assumed to have an energy of 0.
    */
   public void setThreeBodyCutoff(double threeBodyCutoffDist) {
     this.threeBodyCutoffDist = threeBodyCutoffDist;
@@ -1474,7 +1599,7 @@ public class RotamerOptimization implements Terminatable {
    * larger than the cutoff are set to 0.
    *
    * @param twoBodyCutoffDist Separation distance at which the interaction of two side-chains is
-   *     assumed to have an energy of 0.
+   *                          assumed to have an energy of 0.
    */
   public void setTwoBodyCutoff(double twoBodyCutoffDist) {
     this.twoBodyCutoffDist = twoBodyCutoffDist;
@@ -1505,7 +1630,9 @@ public class RotamerOptimization implements Terminatable {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void terminate() {
     terminate = true;
@@ -1520,7 +1647,9 @@ public class RotamerOptimization implements Terminatable {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     if (eR != null) {
@@ -1559,13 +1688,17 @@ public class RotamerOptimization implements Terminatable {
     applyRotamer(residue, rotamers[ri]);
   }
 
-  /** ONLY FOR UNIT TESTING. Sets a boolean to turn the pair elimination criteria off. */
+  /**
+   * ONLY FOR UNIT TESTING. Sets a boolean to turn the pair elimination criteria off.
+   */
   public void turnRotamerPairEliminationOff() {
     logger.info(" Turning off pair eliminations.");
     pairEliminationOn = false;
   }
 
-  /** ONLY FOR UNIT TESTING. Sets a boolean to turn the self elimination criteria off. */
+  /**
+   * ONLY FOR UNIT TESTING. Sets a boolean to turn the self elimination criteria off.
+   */
   public void turnRotamerSingleEliminationOff() {
     logger.info(" Turning off single eliminations.");
     selfEliminationOn = false;
@@ -1575,15 +1708,15 @@ public class RotamerOptimization implements Terminatable {
    * Recursive brute-force method which uses single, pair, and potentially trimer energies to
    * calculate an optimum set of rotamers.
    *
-   * @param residues Optimization window
-   * @param i Current residue in the recursion.
-   * @param lowEnergy Minimum energy yet found by the recursion.
-   * @param optimum Optimum rotamer set yet found by the recursion.
+   * @param residues        Optimization window
+   * @param i               Current residue in the recursion.
+   * @param lowEnergy       Minimum energy yet found by the recursion.
+   * @param optimum         Optimum rotamer set yet found by the recursion.
    * @param currentRotamers Rotamer permutation under investigation.
    * @return Minimum energy found under this node in the recursion.
    */
   private double decomposedRotamerOptimization(Residue[] residues, int i, double lowEnergy,
-      int[] optimum, int[] currentRotamers) {
+                                               int[] optimum, int[] currentRotamers) {
 
     // This is the initialization condition.
     if (i == 0) {
@@ -1656,16 +1789,16 @@ public class RotamerOptimization implements Terminatable {
    * information from dead-end or Goldstein elimination. The useAllElims variable should be set false
    * if detailed balance is to be maintained. At present, no support for ensembles.
    *
-   * @param residues Optimization window
-   * @param optimum Array to store optimum rotamers
-   * @param initialRots Array with starting rotamers
-   * @param maxIters Number of MC steps to run
+   * @param residues      Optimization window
+   * @param optimum       Array to store optimum rotamers
+   * @param initialRots   Array with starting rotamers
+   * @param maxIters      Number of MC steps to run
    * @param randomizeRots Scramble initialRots
-   * @param useAllElims Use pair/triple elimination information
+   * @param useAllElims   Use pair/triple elimination information
    * @return Lowest energy found
    */
   private double rotamerOptimizationMC(Residue[] residues, int[] optimum, int[] initialRots,
-      int maxIters, boolean randomizeRots, boolean useAllElims) {
+                                       int maxIters, boolean randomizeRots, boolean useAllElims) {
 
     long initTime = -System.nanoTime();
     if (randomizeRots) {
@@ -1689,7 +1822,7 @@ public class RotamerOptimization implements Terminatable {
     double currentEnergy = initialEnergy;
 
     int nAccept = 0;
-    logIfMaster(
+    logIfRank0(
         format(" Beginning %d iterations of Monte Carlo search " + "starting from energy %10.6f",
             maxIters, initialEnergy));
 
@@ -1708,11 +1841,11 @@ public class RotamerOptimization implements Terminatable {
 
     initTime += System.nanoTime();
     double fractAccept = ((double) nAccept) / ((double) maxIters);
-    logIfMaster(
+    logIfRank0(
         format(" %d steps of DEE-MC completed in %10.6f seconds", maxIters, (initTime * 1.0E-9)));
-    logIfMaster(format(" Number of steps accepted: %d for %10.6f of total", nAccept, fractAccept));
-    logIfMaster(format(" Lowest energy found: %10.6f kcal/mol", optimumEnergy));
-    logIfMaster(format(" Final energy found: %10.6f kcal/mol", currentEnergy));
+    logIfRank0(format(" Number of steps accepted: %d for %10.6f of total", nAccept, fractAccept));
+    logIfRank0(format(" Lowest energy found: %10.6f kcal/mol", optimumEnergy));
+    logIfRank0(format(" Final energy found: %10.6f kcal/mol", currentEnergy));
 
     return optimumEnergy;
   }
@@ -1720,8 +1853,8 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Scrambles an array of rotamers.
    *
-   * @param rotamers Array of rotamers.
-   * @param residues Array of residues.
+   * @param rotamers    Array of rotamers.
+   * @param residues    Array of residues.
    * @param useAllElims If trye, use all elliminations.
    */
   private void randomizeRotamers(int[] rotamers, Residue[] residues, boolean useAllElims) {
@@ -1761,17 +1894,17 @@ public class RotamerOptimization implements Terminatable {
    * A global optimization over side-chain rotamers using a recursive algorithm and information about
    * eliminated rotamers, rotamer pairs and rotamer triples
    *
-   * @param molecularAssembly MolecularAssmebly to use.
-   * @param residues Array of residues.
-   * @param i Current permutation.
-   * @param currentRotamers Current array of rotamers.
-   * @param lowEnergy Lowest energy found.
-   * @param optimum Optimum set of rotamers.
+   * @param molecularAssembly   MolecularAssmebly to use.
+   * @param residues            Array of residues.
+   * @param i                   Current permutation.
+   * @param currentRotamers     Current array of rotamers.
+   * @param lowEnergy           Lowest energy found.
+   * @param optimum             Optimum set of rotamers.
    * @param permutationEnergies Energies of visited permutations or null.
    * @return current energy.
    */
   private double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue[] residues,
-      int i, int[] currentRotamers, double lowEnergy, int[] optimum, double[] permutationEnergies) {
+                                        int i, int[] currentRotamers, double lowEnergy, int[] optimum, double[] permutationEnergies) {
     // This is the initialization condition.
     if (i == 0) {
       evaluatedPermutations = 0;
@@ -1873,7 +2006,7 @@ public class RotamerOptimization implements Terminatable {
           algorithmListener.algorithmUpdate(molecularAssembly);
         }
         if (ensembleNumber > 1) {
-          if (master && printFiles) {
+          if (rank0 && printFiles) {
             try {
               FileWriter fw = new FileWriter(ensembleFile, true);
               BufferedWriter bw = new BufferedWriter(fw);
@@ -1909,11 +2042,11 @@ public class RotamerOptimization implements Terminatable {
 
         if (useForceFieldEnergy) {
           // Log current results
-          logIfMaster(format(" %6e AMOEBA: %12.4f 3-Body: %12.4f Neglected: %12.4f (%12.4f)",
+          logIfRank0(format(" %6e AMOEBA: %12.4f 3-Body: %12.4f Neglected: %12.4f (%12.4f)",
               (double) evaluatedPermutations, comparisonEnergy, approximateEnergy,
               comparisonEnergy - approximateEnergy, lowEnergy));
         } else {
-          logIfMaster(
+          logIfRank0(
               format(" %12s %25f %25f", evaluatedPermutations, approximateEnergy, lowEnergy));
         }
       }
@@ -1927,8 +2060,8 @@ public class RotamerOptimization implements Terminatable {
    * A global optimization over side-chain rotamers using a recursive algorithm and information about
    * eliminated rotamers, rotamer pairs and rotamer triples.
    *
-   * @param residues Residue array.
-   * @param i Current number of permutations.
+   * @param residues        Residue array.
+   * @param i               Current number of permutations.
    * @param currentRotamers Current rotamer list.
    * @return 0.
    */
@@ -1941,7 +2074,7 @@ public class RotamerOptimization implements Terminatable {
 
     if (evaluatedPermutations >= evaluatedPermutationsPrint) {
       if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
-        logIfMaster(
+        logIfRank0(
             format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
         evaluatedPermutationsPrint *= 10;
       }
@@ -1997,16 +2130,16 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Finds all permutations within buffer energy of GMEC.
    *
-   * @param residues Array of residues.
-   * @param i Current depth in residue/rotamer tree.
-   * @param currentRotamers Current set of rotamers at this node.
-   * @param gmecEnergy Minimum energy for these residues.
+   * @param residues            Array of residues.
+   * @param i                   Current depth in residue/rotamer tree.
+   * @param currentRotamers     Current set of rotamers at this node.
+   * @param gmecEnergy          Minimum energy for these residues.
    * @param permutationEnergies Energy of all permutations.
-   * @param permutations Contains accepted permutations.
+   * @param permutations        Contains accepted permutations.
    * @return 0.
    */
   private double dryRunForEnsemble(Residue[] residues, int i, int[] currentRotamers,
-      double gmecEnergy, double[] permutationEnergies, int[][] permutations) {
+                                   double gmecEnergy, double[] permutationEnergies, int[][] permutations) {
     // This is the initialization condition.
     if (i == 0) {
       evaluatedPermutations = 0;
@@ -2129,8 +2262,8 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Finds the first non-eliminated rotamer permutation.
    *
-   * @param residues Array of residues.
-   * @param i Current permutation.
+   * @param residues        Array of residues.
+   * @param i               Current permutation.
    * @param currentRotamers Current list of rotamers.
    * @return If valid permutation found.
    */
@@ -2234,7 +2367,7 @@ public class RotamerOptimization implements Terminatable {
         logger.severe(
             " No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
       }
-      if (master && printFiles && ensembleFile == null) {
+      if (rank0 && printFiles && ensembleFile == null) {
         File file = molecularAssembly.getFile();
         String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
         ensembleFile = new File(filename + ".ens");
@@ -2254,19 +2387,19 @@ public class RotamerOptimization implements Terminatable {
             null);
         logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
       }
-      logIfMaster(format("%30s %35s %35s", "Condition", "Number of Permutations Left",
+      logIfRank0(format("%30s %35s %35s", "Condition", "Number of Permutations Left",
           "Number of Permutations Removed"));
-      logIfMaster(format("%30s %35s %35s", "No Eliminations", permutations, ""));
-      logIfMaster(format("%30s %35s %35s", "Single Eliminations", singletonPermutations,
+      logIfRank0(format("%30s %35s %35s", "No Eliminations", permutations, ""));
+      logIfRank0(format("%30s %35s %35s", "Single Eliminations", singletonPermutations,
           permutations - singletonPermutations));
-      logIfMaster(
+      logIfRank0(
           format("%30s %35s %35s", "Pair Eliminations", afterPairElim, pairTotalElimination));
-      logIfMaster(
+      logIfRank0(
           format("%30s %35s %35s", "Single and Pair Eliminations", (double) evaluatedPermutations,
               pairTotalElimination + (permutations - singletonPermutations)));
 
-      logIfMaster("\n Energy of permutations:");
-      logIfMaster(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
+      logIfRank0("\n Energy of permutations:");
+      logIfRank0(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
 
       double e;
       if (useMonteCarlo()) {
@@ -2274,7 +2407,7 @@ public class RotamerOptimization implements Terminatable {
         arraycopy(currentRotamers, 0, optimumSubset, 0, nResidues);
         rotamerOptimizationMC(residues, optimumSubset, currentRotamers, nMCSteps, false, mcUseAll);
 
-        logIfMaster(" Ensembles not currently compatible with Monte Carlo search");
+        logIfRank0(" Ensembles not currently compatible with Monte Carlo search");
         // Not currently compatible with ensembles.
       } else {
         double[] permutationEnergies = new double[evaluatedPermutations];
@@ -2283,7 +2416,7 @@ public class RotamerOptimization implements Terminatable {
         e = rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers, Double.MAX_VALUE,
             optimumSubset, permutationEnergies);
         int[][] acceptedPermutations = new int[evaluatedPermutations][];
-        logIfMaster(format(
+        logIfRank0(format(
             "\n Checking permutations for distance < %5.3f kcal/mol from GMEC energy %10.8f kcal/mol",
             ensembleEnergy, e));
         dryRunForEnsemble(residues, 0, currentRotamers, e, permutationEnergies,
@@ -2293,7 +2426,7 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < acceptedPermutations.length; i++) {
           if (acceptedPermutations[i] != null) {
             ++numAcceptedPermutations;
-            logIfMaster(
+            logIfRank0(
                 format(" Accepting permutation %d at %8.6f < %8.6f", i, permutationEnergies[i] - e,
                     ensembleEnergy));
             for (int j = 0; j < nResidues; j++) {
@@ -2305,7 +2438,7 @@ public class RotamerOptimization implements Terminatable {
             ResidueState[] states = ResidueState.storeAllCoordinates(residues);
             ensembleStates.add(new ObjectPair<>(states, permutationEnergies[i]));
 
-            if (printFiles && master) {
+            if (printFiles && rank0) {
               try {
                 FileWriter fw = new FileWriter(ensembleFile, true);
                 BufferedWriter bw = new BufferedWriter(fw);
@@ -2328,23 +2461,23 @@ public class RotamerOptimization implements Terminatable {
             }
           }
         }
-        logIfMaster(format(" Number of permutations within %5.3f kcal/mol of GMEC energy: %6.4e",
+        logIfRank0(format(" Number of permutations within %5.3f kcal/mol of GMEC energy: %6.4e",
             ensembleEnergy, (double) numAcceptedPermutations));
         ensembleStates.sort(null);
       }
 
-      logIfMaster(" Final rotamers:");
-      logIfMaster(format("%17s %10s %11s %12s %11s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4"));
+      logIfRank0(" Final rotamers:");
+      logIfRank0(format("%17s %10s %11s %12s %11s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4"));
       for (int i = 0; i < nResidues; i++) {
         Residue residue = residues[i];
         Rotamer[] rotamers = residue.getRotamers();
         int ri = optimumSubset[i];
         Rotamer rotamer = rotamers[ri];
-        logIfMaster(format(" %c (%7s,%2d) %s", residue.getChainID(), residue.toString(rotamer), ri,
+        logIfRank0(format(" %c (%7s,%2d) %s", residue.getChainID(), residue.toString(rotamer), ri,
             rotamer.toAngleString()));
         RotamerLibrary.applyRotamer(residue, rotamer);
       }
-      logIfMaster("\n");
+      logIfRank0("\n");
 
       double sumSelfEnergy = 0;
       double sumPairEnergy = 0;
@@ -2354,7 +2487,7 @@ public class RotamerOptimization implements Terminatable {
         Rotamer[] rotamers = residue.getRotamers();
         int ri = optimumSubset[i];
         sumSelfEnergy += eE.getSelf(i, ri);
-        logIfMaster(
+        logIfRank0(
             format(" Final self Energy (%8s,%2d): %12.4f", residue.toString(rotamers[ri]), ri,
                 eE.getSelf(i, ri)));
       }
@@ -2368,7 +2501,7 @@ public class RotamerOptimization implements Terminatable {
           int rj = optimumSubset[j];
           sumPairEnergy += eE.get2Body(i, ri, j, rj);
           if (eE.get2Body(i, ri, j, rj) > 10.0) {
-            logIfMaster(format(" Large Final Pair Energy (%8s,%2d) (%8s,%2d): %12.4f",
+            logIfRank0(format(" Large Final Pair Energy (%8s,%2d) (%8s,%2d): %12.4f",
                 residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
                 eE.get2Body(i, ri, j, rj)));
           }
@@ -2384,9 +2517,9 @@ public class RotamerOptimization implements Terminatable {
             format(" Exception %s in calculating current energy at the end of triples", ex));
       }
 
-      logIfMaster(format(" %12s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
-      logIfMaster(format(" %12s %25f %25s", "Self:", sumSelfEnergy, ""));
-      logIfMaster(format(" %12s %25f %25s", "Pair:", sumPairEnergy, ""));
+      logIfRank0(format(" %12s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
+      logIfRank0(format(" %12s %25f %25s", "Self:", sumSelfEnergy, ""));
+      logIfRank0(format(" %12s %25f %25s", "Pair:", sumPairEnergy, ""));
 
       approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
 
@@ -2408,13 +2541,13 @@ public class RotamerOptimization implements Terminatable {
         approximateEnergy += sumTrimerEnergy;
         double higherOrderEnergy =
             e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - eE.getBackboneEnergy();
-        logIfMaster(format(" %12s %25f %25s", "Trimer:", sumTrimerEnergy, ""));
-        logIfMaster(format(" %12s %25f %25s", "Neglected:", higherOrderEnergy, ""));
+        logIfRank0(format(" %12s %25f %25s", "Trimer:", sumTrimerEnergy, ""));
+        logIfRank0(format(" %12s %25f %25s", "Neglected:", higherOrderEnergy, ""));
       } else {
         double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - eE.getBackboneEnergy();
-        logIfMaster(format(" %12s %25f %25s", "Neglected:", higherOrderEnergy, ""));
+        logIfRank0(format(" %12s %25f %25s", "Neglected:", higherOrderEnergy, ""));
       }
-      logIfMaster(format(" %12s %25f %25s", "Approximate:", approximateEnergy, ""));
+      logIfRank0(format(" %12s %25f %25s", "Approximate:", approximateEnergy, ""));
       return e;
     }
 
@@ -2441,7 +2574,7 @@ public class RotamerOptimization implements Terminatable {
 
     while (currentEnsemble != ensembleNumber) {
       if (monteCarlo) {
-        logIfMaster(" Ensemble search not currently compatible with Monte Carlo");
+        logIfRank0(" Ensemble search not currently compatible with Monte Carlo");
         ensembleNumber = 1;
       }
 
@@ -2473,7 +2606,7 @@ public class RotamerOptimization implements Terminatable {
         }
       }
 
-      logIfMaster(" Collecting Permutations:");
+      logIfRank0(" Collecting Permutations:");
       dryRun(residues, 0, currentRotamers);
 
       double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
@@ -2484,7 +2617,7 @@ public class RotamerOptimization implements Terminatable {
             " No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
       }
       if (ensembleNumber > 1) {
-        if (master && printFiles && ensembleFile == null) {
+        if (rank0 && printFiles && ensembleFile == null) {
           File file = molecularAssembly.getFile();
           String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
           ensembleFile = new File(filename + ".ens");
@@ -2504,23 +2637,23 @@ public class RotamerOptimization implements Terminatable {
               null);
           logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
         }
-        logIfMaster(format(" Ensemble Search Stats: (buffer: %5.3f, current: %d, target: %d)",
+        logIfRank0(format(" Ensemble Search Stats: (buffer: %5.3f, current: %d, target: %d)",
             ensembleBuffer, currentEnsemble, ensembleNumber));
       }
       if (ensembleNumber == 1 || finalTry) {
-        logIfMaster(format("%30s %35s %35s", "Condition", "Number of Permutations Left",
+        logIfRank0(format("%30s %35s %35s", "Condition", "Number of Permutations Left",
             "Number of Permutations Removed"));
-        logIfMaster(format("%30s %35s %35s", "No Eliminations", permutations, ""));
-        logIfMaster(format("%30s %35s %35s", "Single Eliminations", singletonPermutations,
+        logIfRank0(format("%30s %35s %35s", "No Eliminations", permutations, ""));
+        logIfRank0(format("%30s %35s %35s", "Single Eliminations", singletonPermutations,
             permutations - singletonPermutations));
-        logIfMaster(
+        logIfRank0(
             format("%30s %35s %35s", "Pair Eliminations", afterPairElim, pairTotalElimination));
-        logIfMaster(
+        logIfRank0(
             format("%30s %35s %35s", "Single and Pair Eliminations", (double) evaluatedPermutations,
                 pairTotalElimination + (permutations - singletonPermutations)));
 
-        logIfMaster("\n Energy of permutations:");
-        logIfMaster(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
+        logIfRank0("\n Energy of permutations:");
+        logIfRank0(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
 
         break;
       }
@@ -2541,7 +2674,7 @@ public class RotamerOptimization implements Terminatable {
         if (currentEnsemble == 0) {
           // TODO: Decide whether we like these next four lines.  Has the potential to produce a
           // crazy amount of permutations.
-          logIfMaster(" Ensemble still empty; increasing buffer energy.");
+          logIfRank0(" Ensemble still empty; increasing buffer energy.");
           startingBuffer = 3 * startingBuffer;
           setEnsemble(10, startingBuffer);
           iterations = 0;
@@ -2571,8 +2704,8 @@ public class RotamerOptimization implements Terminatable {
     double sumSelfEnergy = 0;
     double sumLowSelfEnergy = 0;
 
-    logIfMaster("\n Energy contributions:");
-    logIfMaster(format(" %15s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
+    logIfRank0("\n Energy contributions:");
+    logIfRank0(format(" %15s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
 
     for (int i = 0; i < nResidues; i++) {
       int ri = optimumSubset[i];
@@ -2586,7 +2719,7 @@ public class RotamerOptimization implements Terminatable {
       double lowest = eE.lowestSelfEnergy(residues, i);
       sumLowSelfEnergy += lowest;
       if (self - lowest > 10.0) {
-        logIfMaster(
+        logIfRank0(
             format(" %15s %25f %25f", "Self (" + residues[i] + "," + ri + "):", self, lowest));
       }
     }
@@ -2621,12 +2754,12 @@ public class RotamerOptimization implements Terminatable {
         }
       }
       if (sumPairEnergyI - sumLowPairEnergyI > 10.0) {
-        logIfMaster(
+        logIfRank0(
             format(" %15s %25f %25f", "Self (" + residues[i] + "," + ri + ")", sumPairEnergyI,
                 sumLowPairEnergyI));
         sb.trimToSize();
         if (!sb.toString().isEmpty()) {
-          logIfMaster(sb.toString());
+          logIfRank0(sb.toString());
         }
       }
     }
@@ -2639,9 +2772,9 @@ public class RotamerOptimization implements Terminatable {
       logger.severe(
           format(" Exception %s in calculating current energy at the end of self and pairs", ex));
     }
-    logIfMaster(format(" %15s %25f %25s", "Backbone:", eE.getBackboneEnergy(), ""));
-    logIfMaster(format(" %15s %25f %25f", "Self:", sumSelfEnergy, sumLowSelfEnergy));
-    logIfMaster(format(" %15s %25f %25f", "Pair:", sumPairEnergy, sumLowPairEnergy));
+    logIfRank0(format(" %15s %25f %25s", "Backbone:", eE.getBackboneEnergy(), ""));
+    logIfRank0(format(" %15s %25f %25f", "Self:", sumSelfEnergy, sumLowSelfEnergy));
+    logIfRank0(format(" %15s %25f %25f", "Pair:", sumPairEnergy, sumLowPairEnergy));
 
     approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
 
@@ -2669,17 +2802,17 @@ public class RotamerOptimization implements Terminatable {
       approximateEnergy += sumTrimerEnergy;
       double higherOrderEnergy =
           e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - eE.getBackboneEnergy();
-      logIfMaster(format(" %15s %25f %25s", "Trimer:", sumTrimerEnergy, ""));
-      logIfMaster(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
+      logIfRank0(format(" %15s %25f %25s", "Trimer:", sumTrimerEnergy, ""));
+      logIfRank0(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
     } else {
       double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - eE.getBackboneEnergy();
-      logIfMaster(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
+      logIfRank0(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
     }
 
-    logIfMaster(format(" %15s %25f %25s", "Approximate:", approximateEnergy, ""));
+    logIfRank0(format(" %15s %25f %25s", "Approximate:", approximateEnergy, ""));
 
-    logIfMaster("\n Final rotamers:");
-    logIfMaster(
+    logIfRank0("\n Final rotamers:");
+    logIfRank0(
         format("%17s %10s %11s %12s %11s %14s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4",
             "Energy"));
     for (int i = 0; i < nResidues; i++) {
@@ -2687,11 +2820,11 @@ public class RotamerOptimization implements Terminatable {
       Rotamer[] rotamers = residue.getRotamers();
       int ri = optimumSubset[i];
       Rotamer rotamer = rotamers[ri];
-      logIfMaster(format(" %3d %c (%7s,%2d) %s %12.4f ", i + 1, residue.getChainID(),
+      logIfRank0(format(" %3d %c (%7s,%2d) %s %12.4f ", i + 1, residue.getChainID(),
           residue.toString(rotamers[ri]), ri, rotamer.toAngleString(), residueEnergy[i]));
       RotamerLibrary.applyRotamer(residue, rotamer);
     }
-    logIfMaster("\n");
+    logIfRank0("\n");
     return e;
   }
 
@@ -2781,7 +2914,7 @@ public class RotamerOptimization implements Terminatable {
 
   @SuppressWarnings("fallthrough")
   private double slidingWindowOptimization(List<Residue> residueList, int windowSize, int increment,
-      boolean revert, double distance, Direction direction) {
+                                           boolean revert, double distance, Direction direction) {
 
     long beginTime = -System.nanoTime();
     boolean incrementTruncated = false;
@@ -2804,20 +2937,20 @@ public class RotamerOptimization implements Terminatable {
         // Fall through into the FORWARD case.
       case FORWARD:
         for (int windowStart = 0; windowStart + (windowSize - 1) < nOptimize;
-            windowStart += increment) {
+             windowStart += increment) {
           long windowTime = -System.nanoTime();
 
           windowEnd = windowStart + (windowSize - 1);
 
-          logIfMaster(format("\n Iteration %d of the sliding window.\n", counter++));
+          logIfRank0(format("\n Iteration %d of the sliding window.\n", counter++));
 
           Residue firstResidue = residueList.get(windowStart);
           Residue lastResidue = residueList.get(windowEnd);
           if (firstResidue != lastResidue) {
-            logIfMaster(
+            logIfRank0(
                 format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
           } else {
-            logIfMaster(format(" Residue %s", firstResidue.toString()));
+            logIfRank0(format(" Residue %s", firstResidue.toString()));
           }
           List<Residue> currentWindow = new ArrayList<>();
           for (int i = windowStart; i <= windowEnd; i++) {
@@ -2843,7 +2976,7 @@ public class RotamerOptimization implements Terminatable {
                     double rotamerSeparation = dM.get2BodyDistance(indexI, ri, j, rj);
                     if (rotamerSeparation <= distance) {
                       if (!currentWindow.contains(residuej)) {
-                        logIfMaster(format(" Adding residue %s at distance %16.8f Ang from %s %d.",
+                        logIfRank0(format(" Adding residue %s at distance %16.8f Ang from %s %d.",
                             residuej.toFormattedString(false, true), rotamerSeparation,
                             residuei.toFormattedString(false, true), ri));
                         currentWindow.add(residuej);
@@ -2880,7 +3013,7 @@ public class RotamerOptimization implements Terminatable {
             Residue prevResidue = firstResidue.getPreviousResidue();
             if (prevResidue != null && prevResidue.getResidueType() == NA
                 && !currentWindow.contains(prevResidue) && prevResidue.getRotamers() != null) {
-              logIfMaster(format(
+              logIfRank0(format(
                   " Adding nucleic acid residue 5' of window start %s to give it flexibility about its sugar pucker.",
                   prevResidue));
               currentWindow.add(prevResidue);
@@ -2940,7 +3073,7 @@ public class RotamerOptimization implements Terminatable {
             }
           }
 
-          if (master && printFiles) {
+          if (rank0 && printFiles) {
             File file = molecularAssembly.getFile();
             if (firstWindowSaved) {
               file.delete();
@@ -2968,8 +3101,8 @@ public class RotamerOptimization implements Terminatable {
           }
           long currentTime = System.nanoTime();
           windowTime += currentTime;
-          logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
-          logIfMaster(
+          logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
+          logIfRank0(
               format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
         }
         break;
@@ -2995,9 +3128,9 @@ public class RotamerOptimization implements Terminatable {
   /**
    * applyEliminationCriteria.
    *
-   * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
+   * @param residues    an array of {@link ffx.potential.bonded.Residue} objects.
    * @param getEnergies a boolean.
-   * @param verbose a boolean.
+   * @param verbose     a boolean.
    */
   private void applyEliminationCriteria(Residue[] residues, boolean getEnergies, boolean verbose) {
     Level prevLevel = logger.getLevel();
@@ -3014,57 +3147,57 @@ public class RotamerOptimization implements Terminatable {
         if (useGoldstein) {
           if (selfEliminationOn) {
             i++;
-            logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
+            logIfRank0(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
             // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
             while (goldsteinDriver(residues)) {
               i++;
-              logIfMaster(this.toString());
-              logIfMaster(
+              logIfRank0(this.toString());
+              logIfRank0(
                   format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
             }
           }
           if (pairEliminationOn) {
             i++;
-            logIfMaster(
+            logIfRank0(
                 format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
             // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
             pairEliminated = false;
             while (goldsteinPairDriver(residues)) {
               pairEliminated = true;
               i++;
-              logIfMaster(this.toString());
-              logIfMaster(
+              logIfRank0(this.toString());
+              logIfRank0(
                   format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
             }
           }
         } else {
           if (selfEliminationOn) {
             i++;
-            logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
+            logIfRank0(format("\n Iteration %d: Applying Single DEE conditions ", i));
             // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
             while (deeRotamerElimination(residues)) {
               i++;
-              logIfMaster(toString());
-              logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+              logIfRank0(toString());
+              logIfRank0(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
             }
           }
           if (pairEliminationOn) {
             i++;
-            logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+            logIfRank0(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
             // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
             pairEliminated = false;
             while (deeRotamerPairElimination(residues)) {
               pairEliminated = true;
               i++;
-              logIfMaster(toString());
-              logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+              logIfRank0(toString());
+              logIfRank0(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
             }
           }
         }
         eR.validateDEE(residues);
-        logIfMaster(toString());
+        logIfRank0(toString());
       } while (pairEliminated);
-      logIfMaster(" Self-consistent DEE rotamer elimination achieved.\n");
+      logIfRank0(" Self-consistent DEE rotamer elimination achieved.\n");
     }
     if (!verbose) {
       logger.setLevel(prevLevel);
@@ -3077,7 +3210,7 @@ public class RotamerOptimization implements Terminatable {
 
     if (verboseEnergies) {
       try {
-        logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
+        logIfRank0(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
       } catch (ArithmeticException ex) {
         logger.severe(
             format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
@@ -3132,55 +3265,55 @@ public class RotamerOptimization implements Terminatable {
       if (useGoldstein) {
         if (selfEliminationOn) {
           i++;
-          logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
+          logIfRank0(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
           // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
           while (goldsteinDriver(residues)) {
             i++;
-            logIfMaster(this.toString());
-            logIfMaster(
+            logIfRank0(this.toString());
+            logIfRank0(
                 format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
           }
         }
         if (pairEliminationOn) {
           i++;
-          logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
+          logIfRank0(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
           // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
           while (goldsteinPairDriver(residues)) {
             pairEliminated = true;
             i++;
-            logIfMaster(this.toString());
-            logIfMaster(
+            logIfRank0(this.toString());
+            logIfRank0(
                 format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
           }
         }
       } else {
         if (selfEliminationOn) {
           i++;
-          logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
+          logIfRank0(format("\n Iteration %d: Applying Single DEE conditions ", i));
           // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
           while (deeRotamerElimination(residues)) {
             i++;
-            logIfMaster(toString());
-            logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+            logIfRank0(toString());
+            logIfRank0(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
           }
         }
         if (pairEliminationOn) {
           i++;
-          logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+          logIfRank0(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
           // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
           while (deeRotamerPairElimination(residues)) {
             pairEliminated = true;
             i++;
-            logIfMaster(toString());
-            logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+            logIfRank0(toString());
+            logIfRank0(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
           }
         }
       }
       eR.validateDEE(residues);
-      logIfMaster(toString());
+      logIfRank0(toString());
     } while (pairEliminated);
 
-    logIfMaster(" Self-consistent DEE rotamer elimination achieved.\n");
+    logIfRank0(" Self-consistent DEE rotamer elimination achieved.\n");
   }
 
   /**
@@ -3326,7 +3459,7 @@ public class RotamerOptimization implements Terminatable {
 
     eE = new EnergyExpansion(this, dM, eR, molecularAssembly, potential, algorithmListener,
         allResiduesList, resNeighbors, threeBodyTerm, decomposeOriginal, usingBoxOptimization,
-        verbose, pruneClashes, prunePairClashes, master);
+        verbose, pruneClashes, prunePairClashes, rank0);
 
     // Update the EliminatedRotamers instance with the EnergyExpansion instance.
     eR.setEnergyExpansion(eE);
@@ -3350,10 +3483,10 @@ public class RotamerOptimization implements Terminatable {
       }
 
       SelfEnergyRegion selfEnergyRegion = new SelfEnergyRegion(this, eE, eR, residues, energyWriter,
-          world, numProc, pruneClashes, master, rank, verbose, writeEnergyRestart, printFiles);
+          world, numProc, pruneClashes, rank0, rank, verbose, writeEnergyRestart, printFiles);
       energyWorkerTeam.execute(selfEnergyRegion);
       long singlesTime = System.nanoTime() - energyStartTime;
-      logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
+      logIfRank0(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
       if (logger.isLoggable(Level.FINE)) {
         Resources.logResources();
       }
@@ -3364,13 +3497,13 @@ public class RotamerOptimization implements Terminatable {
 
       TwoBodyEnergyRegion twoBodyEnergyRegion = new TwoBodyEnergyRegion(this, dM, eE, eR, residues,
           allResiduesList, energyWriter, world, numProc, prunePairClashes, superpositionThreshold,
-          master, rank, verbose, writeEnergyRestart, printFiles);
+          rank0, rank, verbose, writeEnergyRestart, printFiles);
       energyWorkerTeam.execute(twoBodyEnergyRegion);
       long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
 
       long triplesTime = 0;
       long quadsTime = 0;
-      logIfMaster(format(" Time for 2-body energies:   %12.4g", (pairsTime * 1.0E-9)));
+      logIfRank0(format(" Time for 2-body energies:   %12.4g", (pairsTime * 1.0E-9)));
       if (logger.isLoggable(Level.FINE)) {
         Resources.logResources();
       }
@@ -3380,11 +3513,11 @@ public class RotamerOptimization implements Terminatable {
           eE.allocate3BodyJobMap(residues, nResidues, false);
         }
         ThreeBodyEnergyRegion threeBodyEnergyRegion = new ThreeBodyEnergyRegion(this, dM, eE, eR,
-            residues, allResiduesList, energyWriter, world, numProc, superpositionThreshold, master,
+            residues, allResiduesList, energyWriter, world, numProc, superpositionThreshold, rank0,
             rank, verbose, writeEnergyRestart, printFiles);
         energyWorkerTeam.execute(threeBodyEnergyRegion);
         triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
-        logIfMaster(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
+        logIfRank0(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
         if (logger.isLoggable(Level.FINE)) {
           Resources.logResources();
         }
@@ -3397,11 +3530,11 @@ public class RotamerOptimization implements Terminatable {
             residues, allResiduesList, superpositionThreshold);
         energyWorkerTeam.execute(fourBodyEnergyRegion);
         quadsTime = System.nanoTime() - (triplesTime + pairsTime + singlesTime + energyStartTime);
-        logIfMaster(format(" Time for 4-Body energies:   %12.4g", quadsTime * 1.0E-9));
+        logIfRank0(format(" Time for 4-Body energies:   %12.4g", quadsTime * 1.0E-9));
       }
 
       long allTime = singlesTime + pairsTime + triplesTime + quadsTime;
-      logIfMaster(format(" Time for all energies:    %12.4g", allTime * 1.0E-9));
+      logIfRank0(format(" Time for all energies:    %12.4g", allTime * 1.0E-9));
     } catch (Exception ex) {
       String message = " Exception computing rotamer energies in parallel.";
       logger.log(Level.SEVERE, message, ex);
@@ -3412,7 +3545,7 @@ public class RotamerOptimization implements Terminatable {
       atom.setUse(true);
     }
     // Print the energy with all rotamers in their default conformation.
-    if (verboseEnergies && master) {
+    if (verboseEnergies && rank0) {
       try {
         double defaultEnergy = currentEnergy(residues);
         logger.info(format(" Energy of the system with rotamers in their default conformation: %s",
@@ -3513,7 +3646,7 @@ public class RotamerOptimization implements Terminatable {
       if (eliminationEnergy == Double.MAX_VALUE) {
         // This branch is taken if every ri conflicts with at least one j,rj. In that case, nothing
         // can be eliminated yet!
-        logIfMaster(" Could not eliminate any i,ri because eliminationEnergy was never set!",
+        logIfRank0(" Could not eliminate any i,ri because eliminationEnergy was never set!",
             Level.FINE);
       } else {
         /*
@@ -3528,7 +3661,7 @@ public class RotamerOptimization implements Terminatable {
           // doesn't clash with all phase space.
           if (!Double.isFinite(minEnergySingles[ri])) {
             if (eR.eliminateRotamer(residues, i, ri, print)) {
-              logIfMaster(format("  Rotamer elimination of (%8s,%2d) that always clashes.",
+              logIfRank0(format("  Rotamer elimination of (%8s,%2d) that always clashes.",
                   residuei.toFormattedString(false, true), ri));
               eliminated = true;
             }
@@ -3537,7 +3670,7 @@ public class RotamerOptimization implements Terminatable {
           // else's worst possible energy.
           if (minEnergySingles[ri] > eliminationEnergy + ensembleBuffer) {
             if (eR.eliminateRotamer(residues, i, ri, print)) {
-              logIfMaster(format("  Rotamer elimination of (%8s,%2d) by (%8s,%2d): %12.4f > %6.4f.",
+              logIfRank0(format("  Rotamer elimination of (%8s,%2d) by (%8s,%2d): %12.4f > %6.4f.",
                   residuei.toFormattedString(false, true), ri,
                   residuei.toFormattedString(false, true), eliminatingRotamer, minEnergySingles[ri],
                   eliminationEnergy + ensembleBuffer));
@@ -3638,7 +3771,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         if (pairEliminationEnergy == Double.MAX_VALUE) {
-          logIfMaster(format(
+          logIfRank0(format(
               " All rotamer pairs for residues %s and %s have possible conflicts; cannot perform any eliminations!",
               residuei.toFormattedString(false, true), residuej), Level.FINE);
         } else {
@@ -3654,14 +3787,14 @@ public class RotamerOptimization implements Terminatable {
               if (minPairEnergies[ri][rj] > comparisonEnergy) {
                 if (eR.eliminateRotamerPair(residues, i, ri, j, rj, print)) {
                   eliminated = true;
-                  logIfMaster(format(" Eliminating rotamer pair: %s %d, %s %d (%s > %s + %6.6f)",
+                  logIfRank0(format(" Eliminating rotamer pair: %s %d, %s %d (%s > %s + %6.6f)",
                       residuei.toFormattedString(false, true), ri,
                       residuej.toFormattedString(false, true), rj,
                       formatEnergy(minPairEnergies[ri][rj]), formatEnergy(pairEliminationEnergy),
                       ensembleBuffer), Level.INFO);
                 } else {
                   // See above check(i, ri, j, rj) for why this should not be taken!
-                  logIfMaster(
+                  logIfRank0(
                       format(" Already eliminated rotamer pair! %s %d, %s %d (%s > %1s + %6.6f)",
                           residuei.toFormattedString(false, true), ri,
                           residuej.toFormattedString(false, true), rj,
@@ -3710,7 +3843,7 @@ public class RotamerOptimization implements Terminatable {
       }
     }
     if (!eliminated) {
-      logIfMaster(" No more single rotamers to eliminate.");
+      logIfRank0(" No more single rotamers to eliminate.");
     }
     return eliminated;
   }
@@ -3719,9 +3852,9 @@ public class RotamerOptimization implements Terminatable {
    * Attemps to eliminate rotamer riA based on riB.
    *
    * @param residues Array of Residues.
-   * @param i Residue i index.
-   * @param riA Rotamer to attempt elimination of.
-   * @param riB Rotamer to attempt elimination by.
+   * @param i        Residue i index.
+   * @param riA      Rotamer to attempt elimination of.
+   * @param riB      Rotamer to attempt elimination by.
    * @return If riA was eliminated.
    */
   private boolean goldsteinElimination(Residue[] residues, int i, int riA, int riB) {
@@ -3838,10 +3971,10 @@ public class RotamerOptimization implements Terminatable {
 
     if (goldsteinEnergy > ensembleBuffer) {
       if (eR.eliminateRotamer(residues, i, riA, print)) {
-        logIfMaster(format("  Rotamer elimination of (%8s,%2d) by (%8s,%2d): %12.4f > %6.4f.",
+        logIfRank0(format("  Rotamer elimination of (%8s,%2d) by (%8s,%2d): %12.4f > %6.4f.",
             resi.toFormattedString(false, true), riA, resi.toFormattedString(false, true), riB,
             goldsteinEnergy, ensembleBuffer));
-        logIfMaster(format("   Self: %12.4f, Pairs: %12.4f, Triples: %12.4f.", selfDiff, sumPairDiff,
+        logIfRank0(format("   Self: %12.4f, Pairs: %12.4f, Triples: %12.4f.", selfDiff, sumPairDiff,
             sumTripleDiff));
         return true;
       }
@@ -3928,16 +4061,16 @@ public class RotamerOptimization implements Terminatable {
    * Attempt to eliminate rotamer pair (ResI-RotA, ResJ-RotC) using (ResI-RotB, ResJ-RotD).
    *
    * @param residues Array of residues.
-   * @param i Index of the first residue.
-   * @param riA Index of the first residue's rotamer to eliminate.
-   * @param riB Index of the first residue's rotamer to use for elimination.
-   * @param j Index of the 2nd residue.
-   * @param rjC Index of the 2nd residue's rotamer to eliminate.
-   * @param rjD Index of the 2nd residue's rotamer to use for elimination.
+   * @param i        Index of the first residue.
+   * @param riA      Index of the first residue's rotamer to eliminate.
+   * @param riB      Index of the first residue's rotamer to use for elimination.
+   * @param j        Index of the 2nd residue.
+   * @param rjC      Index of the 2nd residue's rotamer to eliminate.
+   * @param rjD      Index of the 2nd residue's rotamer to use for elimination.
    * @return Return true if eliminated.
    */
   private boolean goldsteinPairElimination(Residue[] residues, int i, int riA, int riB, int j,
-      int rjC, int rjD) {
+                                           int rjC, int rjD) {
 
     List<Residue> missedResidues = null;
 
@@ -3961,7 +4094,7 @@ public class RotamerOptimization implements Terminatable {
       logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
     }
     if (missedResidues != null && !missedResidues.isEmpty()) {
-      logIfMaster(format(
+      logIfRank0(format(
           " Skipping energy comparison due to a missed residue: i %d riA %d riB %d j %d rjC %d rjD %d",
           i, riA, riB, j, rjC, rjD), Level.FINE);
       return false;
@@ -3970,7 +4103,7 @@ public class RotamerOptimization implements Terminatable {
     if (goldsteinEnergy > ensembleBuffer) {
       if (missedResidues.isEmpty()) {
         if (eR.eliminateRotamerPair(residues, i, riA, j, rjC, print)) {
-          logIfMaster(format(
+          logIfRank0(format(
               "  Pair elimination of [(%8s,%2d),(%8s,%2d)] by [(%8s,%2d),(%8s,%2d)]: %12.4f > %6.4f",
               residues[i].toFormattedString(false, true), riA,
               residues[j].toFormattedString(false, true), rjC,
@@ -3979,7 +4112,7 @@ public class RotamerOptimization implements Terminatable {
           return true;
         }
       } else {
-        logIfMaster(format(
+        logIfRank0(format(
             "  No Pair elimination of [(%8s,%2d),(%8s,%2d)] by [(%8s,%2d),(%8s,%2d)]: %12.4f > %6.4f",
             residues[i].toFormattedString(false, true), riA,
             residues[j].toFormattedString(false, true), rjC,
@@ -3989,7 +4122,7 @@ public class RotamerOptimization implements Terminatable {
         for (Residue residueM : missedResidues) {
           sb.append(residueM);
         }
-        logIfMaster(format("   due to %s.", sb));
+        logIfRank0(format("   due to %s.", sb));
       }
     }
     return false;
@@ -4012,7 +4145,7 @@ public class RotamerOptimization implements Terminatable {
    * specific test case.
    *
    * @param testSelfEnergyEliminations True when only self energies are calculated; pairs,
-   *     triples, etc., are assumed to be 0.
+   *                                   triples, etc., are assumed to be 0.
    */
   void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
     this.testing = true;
@@ -4030,7 +4163,7 @@ public class RotamerOptimization implements Terminatable {
    * specific test case.
    *
    * @param testPairEnergyEliminations True when only pair energies are calculated; selves,
-   *     triples, etc., are assumed to be 0.
+   *                                   triples, etc., are assumed to be 0.
    */
   void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
     this.testing = true;
@@ -4048,12 +4181,12 @@ public class RotamerOptimization implements Terminatable {
    * specific test case.
    *
    * @param testTripleEnergyEliminations1 True when only triple energies are calculated; selves,
-   *     pairs, etc., are assumed to be 0.
+   *                                      pairs, etc., are assumed to be 0.
    * @param testTripleEnergyEliminations2 True when only triple energies are calculated; selves,
-   *     pairs, etc., are assumed to be 0.
+   *                                      pairs, etc., are assumed to be 0.
    */
   void setTestTripleEnergyEliminations(int testTripleEnergyEliminations1,
-      int testTripleEnergyEliminations2) {
+                                       int testTripleEnergyEliminations2) {
     this.testing = true;
     this.testTripleEnergyEliminations1 = testTripleEnergyEliminations1;
     this.testTripleEnergyEliminations2 = testTripleEnergyEliminations2;
@@ -4110,7 +4243,7 @@ public class RotamerOptimization implements Terminatable {
    * Test the elimination criteria by setting self and 3-body interactions to zero.
    *
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-   * @param resID The residue to test.
+   * @param resID    The residue to test.
    */
   private void testPairEnergyElimination(Residue[] residues, int resID) {
     int nRes = residues.length;
@@ -4166,8 +4299,8 @@ public class RotamerOptimization implements Terminatable {
    * at fixed rotamers and all rotamer interactions with those two residues are calculated.
    *
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-   * @param resID1 The residue number for one of two fixed residues.
-   * @param resID2 The second residue number for one of two fixed residues.
+   * @param resID1   The residue number for one of two fixed residues.
+   * @param resID2   The second residue number for one of two fixed residues.
    */
   private void testTripleEnergyElimination(Residue[] residues, int resID1, int resID2) {
     int nRes = residues.length;
@@ -4278,27 +4411,49 @@ public class RotamerOptimization implements Terminatable {
 
   private class BoxOptimization {
 
-    /** Number of boxes for box optimization in X, Y, Z. */
+    /**
+     * Number of boxes for box optimization in X, Y, Z.
+     */
     public final int[] numXYZBoxes = {3, 3, 3};
-    /** Box border size. */
+    /**
+     * Box border size.
+     */
     public double boxBorderSize = 0;
-    /** Approximate box size. */
+    /**
+     * Approximate box size.
+     */
     public double approxBoxLength = 0;
-    /** Box optimization inclusion criteria. */
+    /**
+     * Box optimization inclusion criteria.
+     */
     public int boxInclusionCriterion = 1;
-    /** Index of the first box to optimize. */
+    /**
+     * Index of the first box to optimize.
+     */
     public int boxStart = 0;
-    /** Index of the last box to optimize. */
+    /**
+     * Index of the last box to optimize.
+     */
     public int boxEnd = -1;
-    /** Flag to indicate manual definition of a super box. */
+    /**
+     * Flag to indicate manual definition of a super box.
+     */
     public boolean manualSuperbox = false;
-    /** Dimensions of the box. */
+    /**
+     * Dimensions of the box.
+     */
     public double[] boxDimensions;
-    /** Buffer size for the super box. */
+    /**
+     * Buffer size for the super box.
+     */
     public double superboxBuffer = 8.0;
-    /** Box index loaded during a restart. */
+    /**
+     * Box index loaded during a restart.
+     */
     public int boxLoadIndex = -1;
-    /** Box indeces loaded during a restart. */
+    /**
+     * Box indeces loaded during a restart.
+     */
     public int[] boxLoadCellIndices;
 
     /**
@@ -4329,24 +4484,24 @@ public class RotamerOptimization implements Terminatable {
       }
       if (boxEnd > totalCells - 1) {
         boxEnd = totalCells - 1;
-        logIfMaster(" Final box out of range: reset to last possible box.");
+        logIfRank0(" Final box out of range: reset to last possible box.");
       } else if (boxEnd < 0) {
         boxEnd = totalCells - 1;
       }
       BoxOptCell[] cells = loadCells(crystal, residues);
       int numCells = cells.length;
-      logIfMaster(format(" Optimizing boxes  %d  to  %d", (boxStart + 1), (boxEnd + 1)));
+      logIfRank0(format(" Optimizing boxes  %d  to  %d", (boxStart + 1), (boxEnd + 1)));
       for (int i = 0; i < numCells; i++) {
         BoxOptCell celli = cells[i];
         List<Residue> residueSubsetList = celli.getResiduesAsList();
         int[] cellIndices = celli.getXYZIndex();
-        logIfMaster(format("\n Iteration %d of the box optimization.", (i + 1)));
-        logIfMaster(format(" Cell index (linear): %d", (celli.getLinearIndex() + 1)));
-        logIfMaster(format(" Cell xyz indices: x = %d, y = %d, z = %d", cellIndices[0] + 1,
+        logIfRank0(format("\n Iteration %d of the box optimization.", (i + 1)));
+        logIfRank0(format(" Cell index (linear): %d", (celli.getLinearIndex() + 1)));
+        logIfRank0(format(" Cell xyz indices: x = %d, y = %d, z = %d", cellIndices[0] + 1,
             cellIndices[1] + 1, cellIndices[2] + 1));
         int nResidueSubset = residueSubsetList.size();
         if (nResidueSubset > 0) {
-          if (master && writeEnergyRestart && printFiles) {
+          if (rank0 && writeEnergyRestart && printFiles) {
             String boxHeader = format(" Box %d: %d,%d,%d", i + 1, cellIndices[0], cellIndices[1],
                 cellIndices[2]);
             try {
@@ -4369,10 +4524,10 @@ public class RotamerOptimization implements Terminatable {
           Residue firstResidue = residueSubsetList.get(0);
           Residue lastResidue = residueSubsetList.get(nResidueSubset - 1);
           if (firstResidue != lastResidue) {
-            logIfMaster(
+            logIfRank0(
                 format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
           } else {
-            logIfMaster(format(" Residue %s", firstResidue.toString()));
+            logIfRank0(format(" Residue %s", firstResidue.toString()));
           }
           if (revert) {
             ResidueState[] coordinates = ResidueState.storeAllCoordinates(residueSubsetList);
@@ -4407,8 +4562,8 @@ public class RotamerOptimization implements Terminatable {
             }
             long currentTime = System.nanoTime();
             boxTime += currentTime;
-            logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfMaster(
+            logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
+            logIfRank0(
                 format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           } else {
             globalOptimization(residueSubsetList);
@@ -4420,28 +4575,28 @@ public class RotamerOptimization implements Terminatable {
             }
             long currentTime = System.nanoTime();
             boxTime += currentTime;
-            logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfMaster(
+            logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
+            logIfRank0(
                 format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           }
-          if (master && printFiles) {
+          if (rank0 && printFiles) {
             // Don't write a file if it's the final iteration.
             if (i == (numCells - 1)) {
               continue;
             }
             try {
               if (firstResidue != lastResidue) {
-                logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue,
+                logIfRank0(format(" File with residues %s ... %s in window written.", firstResidue,
                     lastResidue));
               } else {
-                logIfMaster(format(" File with residue %s in window written.", firstResidue));
+                logIfRank0(format(" File with residue %s in window written.", firstResidue));
               }
             } catch (Exception e) {
               logger.warning("Exception writing to file.");
             }
           }
         } else {
-          logIfMaster(" Empty box: no residues found.");
+          logIfRank0(" Empty box: no residues found.");
         }
       }
       return 0.0;
@@ -4562,7 +4717,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Creates and fills cells (boxes) for box optimization.
      *
-     * @param crystal Polymer crystal or dummy crystal
+     * @param crystal  Polymer crystal or dummy crystal
      * @param residues All residues to be optimized
      * @return Filled cells.
      */
@@ -4571,7 +4726,7 @@ public class RotamerOptimization implements Terminatable {
       double xCellBorderFracSize = (boxBorderSize / crystal.a);
       double yCellBorderFracSize = (boxBorderSize / crystal.b);
       double zCellBorderFracSize = (boxBorderSize / crystal.c);
-      logIfMaster(
+      logIfRank0(
           format(" Number of boxes along x: %d, y: %d, z: %d", numXYZBoxes[0], numXYZBoxes[1],
               numXYZBoxes[2]));
 
@@ -4642,9 +4797,9 @@ public class RotamerOptimization implements Terminatable {
      * specifying approxBoxLength over-rides numXYZBoxes, and always rounds the number of boxes down
      * (to ensure boxes are always at least the specified size).
      *
-     * @param crystal Crystal group.
+     * @param crystal  Crystal group.
      * @param residues List of residues to be optimized.
-     * @param cells BoxOptCell instance.
+     * @param cells    BoxOptCell instance.
      */
     private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
       // Search through residues, add them to all boxes containing their

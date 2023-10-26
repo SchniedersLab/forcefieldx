@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>User Manual</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="User Manual Sections">
+      <table>
+        <tr>
+          <th>Section</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td>
+            <a href="commands.html">Commands</a>
+          </td>
+          <td>Documentation for all FFX commands including structure analysis, molecular dynamics, optimization,
+            thermodynamics and refinement.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="properties.html">Properties</a>
+          </td>
+          <td>Documentation of properties that control potential energy functions, electrostatic methods, implicit
+            solvents and sampling.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="examples.html">Examples</a>
+          </td>
+          <td>Examples including input formats, structural optimization, polymorph search and biomolecular refinement.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="parallel.html">Parallelization</a>
+          </td>
+          <td>Parallelization using shared memory, message passing and GPU approaches.</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="binder.html">Binder</a>
+          </td>
+          <td>Use FFX online within a Java or Kotlin Jupyter notebook.</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="colab.html">Colab</a>
+          </td>
+          <td>Use FFX online within Colab including access to a GPU.</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="docker.html">Docker</a>
+          </td>
+          <td>Instructions for how to build a Docker image and use FFX from a Java or Kotlin Jupyter notebook on your
+            local machine.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="mathematica.html">Mathematica</a>
+          </td>
+          <td>Instructions for how to use FFX within Mathematica.</td>
+        </tr>
+      </table>
+      <subsection name="Polyglot Language Support" id="polyglot">
+        <p>Our goal is to help everyone easily use their preferred software environment across
+          Linux, MacOS and Windows platforms.
+        </p>
+        <table width="600">
+          <tr>
+            <td width="150">
+              <p>
+                <img src="images/groovy.png" alt="Groovy" width="150" height="150" align="middle"/>
+              </p>
+              <p>
+                <a href="commands.html">Commands</a>
+                are generally written in the
+                <a href="http://groovy-lang.org/index.html">Groovy</a>
+                scripting language because the syntax is
+                convenient for refactoring between commands and our core Java libraries.
+                The Groovy commands are compiled ahead of time into Java bytecode for syntax checking, better
+                performance and for unit testing. Groovy commands are also available from the "groovy" directory for
+                custom modification. Modified scripts or new commands can be evaluated using the "ffx" or "ffxc"
+                start-up commands for execution.
+              </p>
+            </td>
+            <td width="150">
+              <p>
+                <img src="images/java.png" alt="Java" width="150" height="150" align="middle"/>
+              </p>
+              <p>
+                The core libraries are written in Java, which is being explored as an alternative to traditional
+                CPU languages (e.g., C, C++ and Fortran). With the introduction of a unified
+                "single instruction multiple data" (SIMD) API for either AVX instructions on x64 or NEON instructions on
+                AArch64, code running on a JVM is increasingly competitive with the performance of natively compiled
+                languages on CPUs.
+              </p>
+            </td>
+            <td width="150">
+              <p>
+                <img src="images/kotlin.png" alt="Kotlin" width="150" height="150" align="middle"/>
+              </p>
+              <p>
+                Kotlin is an emerging language from JetBrains that is interoperable with Java. You can use Kotlin to
+                control FFX from within a Jupyter Notebook, including convenient support directly within the IntelliJ
+                IDE. The "Lets-Plot" Kotlin <a href="https://github.com/JetBrains/lets-plot-kotlin">library</a> is
+                especially
+                interesting.
+              </p>
+            </td>
+            <td width="150">
+              <p>
+                <img src="images/python.png" alt="Python" width="150" height="150" align="middle"/>
+              </p>
+              <p>
+                Python is a popular language for scientific computing, which is now supported in by an embedded
+                <a href="https://www.graalvm.org/latest/reference-manual/python/">Python v. 3.10 engine.</a>
+                Example Python scripts can be found in the "python" directory.
+                Just like for Groovy, you can send Python scripts to the "ffx" or "ffxc" start-up commands for
+                execution.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="User Interfaces">
+        <p>
+          The screenshot below of the Force Field X graphical user interface (GUI) shows
+          "Compound 23", which was the 23rd molecule predicted as part of the CCDC crystal structure prediction series.
+          Force Field X commands can be run with the GUI or with the command line interface.
+        </p>
+        <img src="images/ffx-gui.png" alt="Force Field X" align="middle"/>
+        <!-- p>Please try the following refinement command using the graphical user interface:</p>
+        <source>ffx xray.Minimize examples/4yhr.pdb</source>
+        <p>Or with the command line interface:</p>
+        <source>ffxc xray.Minimize examples/4yhr.pdb</source -->
+      </subsection>
+    </section>
+  </body>
+</document>

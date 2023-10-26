@@ -65,8 +65,15 @@ import javax.lang.model.type.TypeMirror;
  */
 @SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
 @SupportedOptions({"keywordDir"})
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class KeywordProcessor extends AbstractProcessor {
+
+  /**
+   * Default constructor.
+   */
+  public KeywordProcessor() {
+    super();
+  }
 
   /**
    * Processes a set of annotation types on type elements originating from the prior round and
@@ -79,7 +86,7 @@ public class KeywordProcessor extends AbstractProcessor {
    */
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    if (annotations.size() == 0) {
+    if (annotations.isEmpty()) {
       return true;
     }
 
@@ -130,7 +137,7 @@ public class KeywordProcessor extends AbstractProcessor {
         sb.append(format("  Type:         %s\n", type));
       }
       String defaultValue = ffxKeyword.defaultValue();
-      if (defaultValue != null && !defaultValue.equals("")) {
+      if (defaultValue != null && !defaultValue.isEmpty()) {
         sb.append(format("  Default:      %s\n", ffxKeyword.defaultValue()));
       }
       sb.append(format("  Definition:   %s\n", ffxKeyword.description()));

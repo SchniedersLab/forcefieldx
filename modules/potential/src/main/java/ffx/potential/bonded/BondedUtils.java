@@ -517,8 +517,14 @@ public class BondedUtils {
         }
         return N;
       }
-      default -> throw new IllegalArgumentException(
-          format(" Could not definitely identify amide nitrogen for residue %s", residue));
+//      default -> throw new IllegalArgumentException(
+//          format(" Could not definitely identify amide nitrogen for residue %s", residue));
+      default -> {
+        if(logger.isLoggable(Level.FINE)){
+          logger.warning(format(" Nitrogen could not be mapped for amide nitrogen of residue %s ", residue));
+        }
+        return null;
+      }
     }
   }
 

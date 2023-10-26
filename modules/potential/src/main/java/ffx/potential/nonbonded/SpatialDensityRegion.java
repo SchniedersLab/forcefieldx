@@ -231,48 +231,7 @@ public class SpatialDensityRegion extends ParallelRegion {
           continue;
         }
 
-        double xu = xf[i];
-        double yu = yf[i];
-        double zu = zf[i];
-
-        // Move the atom into the range 0.0 <= x < 1.0
-        while (xu >= 1.0) {
-          xu -= 1.0;
-        }
-        while (xu < 0.0) {
-          xu += 1.0;
-        }
-        while (yu >= 1.0) {
-          yu -= 1.0;
-        }
-        while (yu < 0.0) {
-          yu += 1.0;
-        }
-        while (zu >= 1.0) {
-          zu -= 1.0;
-        }
-        while (zu < 0.0) {
-          zu += 1.0;
-        }
-
-        // The cell indices of this atom.
-        int a = (int) floor(xu * nA);
-        int b = (int) floor(yu * nB);
-        int c = (int) floor(zu * nC);
-
-        // Check to make sure a, b and c are less than nA, nB and nC, respectively.
-        if (a >= nA) {
-          a = nA - 1;
-        }
-        if (b >= nB) {
-          b = nB - 1;
-        }
-        if (c >= nC) {
-          c = nC - 1;
-        }
-
-        // The cell index of this atom.
-        final int index = a + b * nA + c * nAB;
+        final int index = getCellIndex(i);
         cellIndexs[i] = index;
 
         // The offset of this atom from the beginning of the cell.
@@ -339,6 +298,52 @@ public class SpatialDensityRegion extends ParallelRegion {
     if (logger.isLoggable(Level.FINEST)) {
       logger.finest(format(" Empty chunks: %d out of %d.", nWork - actualWork, nWork));
     }
+  }
+
+  private int getCellIndex(int i) {
+    double xu = xf[i];
+    double yu = yf[i];
+    double zu = zf[i];
+
+    // Move the atom into the range 0.0 <= x < 1.0
+    while (xu >= 1.0) {
+      xu -= 1.0;
+    }
+    while (xu < 0.0) {
+      xu += 1.0;
+    }
+    while (yu >= 1.0) {
+      yu -= 1.0;
+    }
+    while (yu < 0.0) {
+      yu += 1.0;
+    }
+    while (zu >= 1.0) {
+      zu -= 1.0;
+    }
+    while (zu < 0.0) {
+      zu += 1.0;
+    }
+
+    // The cell indices of this atom.
+    int a = (int) floor(xu * nA);
+    int b = (int) floor(yu * nB);
+    int c = (int) floor(zu * nC);
+
+    // Check to make sure a, b and c are less than nA, nB and nC, respectively.
+    if (a >= nA) {
+      a = nA - 1;
+    }
+    if (b >= nB) {
+      b = nB - 1;
+    }
+    if (c >= nC) {
+      c = nC - 1;
+    }
+
+    // The cell index of this atom.
+    final int index = a + b * nA + c * nAB;
+    return index;
   }
 
   /**

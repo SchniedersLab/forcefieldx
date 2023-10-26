@@ -342,8 +342,7 @@ public class Job
             }
 
             // Call main() method with arguments.
-            String[] args
-                    = myArguments.toArray(new String[myArguments.size()]);
+            String[] args = myArguments.toArray(new String[0]);
             mainMethod.invoke(null, (Object) args);
         } catch (Throwable exc) {
             exc.printStackTrace(Stdio.err());

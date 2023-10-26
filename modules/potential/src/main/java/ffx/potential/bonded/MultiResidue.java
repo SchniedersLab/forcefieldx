@@ -88,7 +88,7 @@ public class MultiResidue extends Residue {
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    */
   public MultiResidue(Residue residue, ForceField forceField) {
-    super("" + residue.getResidueNumber() + "-" + "MultiResidue", residue.getResidueNumber(),
+    super(residue.getResidueNumber() + "-" + "MultiResidue", residue.getResidueNumber(),
         residue.residueType, residue.getChainID(), residue.getChainID().toString());
     this.forceField = forceField;
     activeResidue = residue;
@@ -423,11 +423,10 @@ public class MultiResidue extends Residue {
         allRotamers = addAllDefaultRotamers(usual, nRots);
       }
       rotamers = allRotamers;
-      return rotamers;
     } else {
       rotamers = addAllDefaultRotamers(usual, nRots);
-      return rotamers;
     }
+    return rotamers;
   }
 
   /** {@inheritDoc} */

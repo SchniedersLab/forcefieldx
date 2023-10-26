@@ -1,111 +1,119 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-  xmlns="http://maven.apache.org/XDOC/2.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
-  <properties>
-    <title>Commands</title>
-    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-  </properties>
-  <body>
-    <section name="Optimization and Sampling Commands for Testing Purposes">
-      <table>
-        <thead>
-          <tr>
-            <th>Command</th>
-            <th>Purpose</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <a href="commands/test.ApplyTorsions.html">test.ApplyTorsions</a>
-            </td>
-            <td>The ApplyTorsions command is used to apply a custom set of torsions to a
-              side-chain.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.CreateRotamers.html">test.CreateRotamers</a>
-            </td>
-            <td>The CreateRotamers command creates a set of conformation dependent rotamers.</td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.CrystalSearch.html">test.CrystalSearch</a>
-            </td>
-            <td>The CrystalSearch command searches for minimum energy polymorphs for a given space
-              group.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.IdentifyRotamers.html">test.IdentifyRotamers</a>
-            </td>
-            <td>The IdentifyRotamers command attempts to identify which rotamer each Residue in the
-              system is in.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.ManyBodyPhScan.html">test.ManyBodyPhScan</a>
-            </td>
-            <td>The ManyBodyPhScan command runs a pH Scan with ManyBody.</td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.MinimizePh.html">test.MinimizePh</a>
-            </td>
-            <td>The MinimizePh command uses a limited-memory BFGS algorithm to minimize the energy of
-              a CpHMD molecular system.
-            </td>
-          </tr>
-          <!-- tr>
-            <td>
-              <a href="commands/MostBar.html">MostBar</a>
-            </td>
-            <td>The MostBar script uses a single set of archive file(s) from a Metropolized
-              Orthogonal Space Tempering run to evaluate free energy via the Bennett Acceptance Ratio.
-            </td>
-          </tr -->
-          <tr>
-            <td>
-              <a href="commands/test.OSTBias.html">test.OSTBias</a>
-            </td>
-            <td>The OSTBias command tests the Orthogonal Space Tempering Potential.</td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.PhBar.html">test.PhBAR</a>
-            </td>
-            <td>The PhBar command uses the BAR algorithm to estimate a free energy difference for a
-              CpHMD system.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.PhDynamics.html">test.PhDynamics</a>
-            </td>
-            <td>The PhDynamics command implements constant pH molecular dynamics.
-            </td>
-          </tr>
-          <!-- tr>
-            <td>
-              <a href="commands/RepexThermo.html">RepexThermo</a>
-            </td>
-            <td>The RepexThermo command uses the Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.</td>
-          </tr -->
-          <tr>
-            <td>
-              <a href="commands/test.SortXPH.html">test.SortXPh</a>
-            </td>
-            <td>The SortXPH command unwinds .ARC files from CpHMD runs.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-  </body>
+    <properties>
+        <title>Commands</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Optimization and Sampling Commands for Testing Purposes">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <a href="commands/test.ApplyTorsions.html">test.ApplyTorsions</a>
+                        </td>
+                        <td>The ApplyTorsions command is used to apply a custom set of torsions to a
+                            side-chain.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.CoformerBindingSearch.html">test.CoformerBindingSearch</a>
+                        </td>
+                        <td>Calculates interaction energies of different molecular orientations and saves low energy
+                            orientations.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.CreateRotamers.html">test.CreateRotamers</a>
+                        </td>
+                        <td>The CreateRotamers command creates a set of conformation dependent rotamers.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.CrystalSearch.html">test.CrystalSearch</a>
+                        </td>
+                        <td>The CrystalSearch command searches for minimum energy polymorphs for a given space
+                            group.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.IdentifyRotamers.html">test.IdentifyRotamers</a>
+                        </td>
+                        <td>The IdentifyRotamers command attempts to identify which rotamer each Residue in the
+                            system is in.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.ManyBodyPhScan.html">test.ManyBodyPhScan</a>
+                        </td>
+                        <td>The ManyBodyPhScan command runs a pH Scan with ManyBody.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.MinimizePh.html">test.MinimizePh</a>
+                        </td>
+                        <td>The MinimizePh command uses a limited-memory BFGS algorithm to minimize the energy of
+                            a CpHMD molecular system.
+                        </td>
+                    </tr>
+                    <!-- tr>
+                      <td>
+                        <a href="commands/MostBar.html">MostBar</a>
+                      </td>
+                      <td>The MostBar script uses a single set of archive file(s) from a Metropolized
+                        Orthogonal Space Tempering run to evaluate free energy via the Bennett Acceptance Ratio.
+                      </td>
+                    </tr -->
+                    <tr>
+                        <td>
+                            <a href="commands/test.OSTBias.html">test.OSTBias</a>
+                        </td>
+                        <td>The OSTBias command tests the Orthogonal Space Tempering Potential.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.PhBar.html">test.PhBAR</a>
+                        </td>
+                        <td>The PhBar command uses the BAR algorithm to estimate a free energy difference for a
+                            CpHMD system.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/test.PhDynamics.html">test.PhDynamics</a>
+                        </td>
+                        <td>The PhDynamics command implements constant pH molecular dynamics.
+                        </td>
+                    </tr>
+                    <!-- tr>
+                      <td>
+                        <a href="commands/RepexThermo.html">RepexThermo</a>
+                      </td>
+                      <td>The RepexThermo command uses the Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.</td>
+                    </tr -->
+                    <tr>
+                        <td>
+                            <a href="commands/test.SortXPH.html">test.SortXPh</a>
+                        </td>
+                        <td>The SortXPH command unwinds .ARC files from CpHMD runs.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
 </document>

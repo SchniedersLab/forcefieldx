@@ -37,6 +37,13 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXKeyword;
+
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW;
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
 import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
@@ -45,12 +52,6 @@ import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  * The VDWType class defines van der Waals type for a normal interaction or a special 1-4
  * interaction.
@@ -58,24 +59,33 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[1 integer and 3 reals] " + "Provides values for a single van der Waals parameter. "
-        + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
-        + "Note that vdw parameters are given for atom classes, not atom types. "
-        + "The three real number modifiers give the values of the atom size in Angstroms, homoatomic well depth in kcal/mole, and an optional reduction factor for univalent atoms.")
-@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[1 integer and 2 reals] "
-        + "Provides values for a single van der Waals parameter for use in 1-4 nonbonded interactions. "
-        + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
-        + "Note that vdw parameters are given for atom classes, not atom types. "
-        + "The two real number modifiers give the values of the atom size in Angstroms and the homoatomic well depth in kcal/mole. "
-        + "Reduction factors, if used, are carried over from the vdw keyword for the same atom class.")
+@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = """
+        [1 integer and 3 reals]
+        Provides values for a single van der Waals parameter. The integer modifier, if positive,
+        gives the atom class number for which vdw parameters are to be defined. Note that vdw parameters are given for atom classes, not atom types.
+        The three real number modifiers give the values of the atom size in Angstroms, homoatomic well depth in kcal/mole,
+        and an optional reduction factor for univalent atoms.
+        """)
+@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = """
+        [1 integer and 2 reals]
+        Provides values for a single van der Waals parameter for use in 1-4 nonbonded interactions.
+        The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined.
+        Note that vdw parameters are given for atom classes, not atom types.
+        The two real number modifiers give the values of the atom size in Angstroms and the homoatomic well depth in kcal/mole.
+        Reduction factors, if used, are carried over from the vdw keyword for the same atom class.
+        """)
 public final class VDWType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(VDWType.class.getName());
-  /** The radius of the minimum well depth energy (angstroms). */
+  /**
+   * The radius of the minimum well depth energy (angstroms).
+   */
   public final double radius;
-  /** The minimum energy of the vdw function (kcal/mol). */
+  /**
+   * The minimum energy of the vdw function (kcal/mol).
+   */
   public final double wellDepth;
   /**
    * Reduction factor for evaluating van der Waals pairs. Valid range: 0.0 .GT. reduction .LE. 1.0
@@ -83,18 +93,22 @@ public final class VDWType extends BaseType implements Comparator<String> {
    * it is not being used.
    */
   public final double reductionFactor;
-  /** The atom class that uses this van der Waals parameter. */
+  /**
+   * The atom class that uses this van der Waals parameter.
+   */
   public int atomClass;
-  /** Is this a normal vdW parameter or is it for 1-4 interactions. */
+  /**
+   * Is this a normal vdW parameter or is it for 1-4 interactions.
+   */
   private final VDWMode vdwMode;
 
   /**
    * van der Waals constructor. If the reduction factor is .LE. 0.0, no reduction is used for this
    * atom type.
    *
-   * @param atomClass The atom class that uses this van der Waals parameter.
-   * @param radius The radius of the minimum well depth energy (angstroms).
-   * @param wellDepth The minimum energy of the vdw function (kcal/mol).
+   * @param atomClass       The atom class that uses this van der Waals parameter.
+   * @param radius          The radius of the minimum well depth energy (angstroms).
+   * @param wellDepth       The minimum energy of the vdw function (kcal/mol).
    * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
    */
   public VDWType(int atomClass, double radius, double wellDepth, double reductionFactor) {
@@ -105,14 +119,14 @@ public final class VDWType extends BaseType implements Comparator<String> {
    * van der Waals constructor. If the reduction factor is .LE. 0.0, no reduction is used for this
    * atom type.
    *
-   * @param atomClass The atom class that uses this van der Waals parameter.
-   * @param radius The radius of the minimum well depth energy (angstroms).
-   * @param wellDepth The minimum energy of the vdw function (kcal/mol).
+   * @param atomClass       The atom class that uses this van der Waals parameter.
+   * @param radius          The radius of the minimum well depth energy (angstroms).
+   * @param wellDepth       The minimum energy of the vdw function (kcal/mol).
    * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
-   * @param vdwMode The VDWMode to use.
+   * @param vdwMode         The VDWMode to use.
    */
   public VDWType(int atomClass, double radius, double wellDepth, double reductionFactor,
-      VDWMode vdwMode) {
+                 VDWMode vdwMode) {
     super(VDW, Integer.toString(atomClass));
     this.atomClass = atomClass;
     this.radius = radius;
@@ -127,8 +141,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
   /**
    * Average two VDWType objects.
    *
-   * @param vdwType1 The first VDWType.
-   * @param vdwType2 The second VDWType.
+   * @param vdwType1  The first VDWType.
+   * @param vdwType2  The second VDWType.
    * @param atomClass The new atom class.
    * @return The new averaged VDWType.
    */
@@ -145,7 +159,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
   /**
    * Construct a VDWType from multiple input lines.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a VDWType instance.
    */
@@ -173,7 +187,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
   /**
    * Construct a 1-4 VDWType from multiple input lines.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a VDWType instance.
    */
@@ -198,7 +212,9 @@ public final class VDWType extends BaseType implements Comparator<String> {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     int t1 = parseInt(s1);
@@ -206,7 +222,9 @@ public final class VDWType extends BaseType implements Comparator<String> {
     return Integer.compare(t1, t2);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -219,7 +237,9 @@ public final class VDWType extends BaseType implements Comparator<String> {
     return (vdwType.atomClass == this.atomClass);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(atomClass);
@@ -258,7 +278,9 @@ public final class VDWType extends BaseType implements Comparator<String> {
     setKey(Integer.toString(atomClass));
   }
 
-  /** Torsion modes include Normal or In-Plane */
+  /**
+   * Torsion modes include Normal or In-Plane
+   */
   public enum VDWMode {
     NORMAL, VDW14
   }

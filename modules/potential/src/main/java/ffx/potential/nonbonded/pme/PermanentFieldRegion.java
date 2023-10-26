@@ -37,24 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.special.Erf.erfc;
-import static ffx.potential.parameters.MultipoleType.t000;
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t002;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t011;
-import static ffx.potential.parameters.MultipoleType.t020;
-import static ffx.potential.parameters.MultipoleType.t100;
-import static ffx.potential.parameters.MultipoleType.t101;
-import static ffx.potential.parameters.MultipoleType.t110;
-import static ffx.potential.parameters.MultipoleType.t200;
-import static java.lang.String.format;
-import static java.util.Arrays.copyOf;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -69,9 +51,27 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.numerics.special.Erf.erfc;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Parallel computation of the permanent field.

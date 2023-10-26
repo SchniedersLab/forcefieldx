@@ -43,6 +43,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serial;
 
 /**
  * Class LongRange provides a range of type <code>long</code>. A range object has
@@ -88,6 +89,7 @@ public class LongRange
         implements Externalizable {
 
 // Hidden data members.
+    @Serial
     private static final long serialVersionUID = 9196521188817114486L;
 
     long lb;

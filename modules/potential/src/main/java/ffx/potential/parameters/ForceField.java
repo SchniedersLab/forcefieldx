@@ -1385,7 +1385,7 @@ public class ForceField {
     StringBuilder sb = new StringBuilder("\n");
     Map<String, ? extends BaseType> t = forceFieldTypes.get(type);
 
-    if (t.size() == 0) {
+    if (t.isEmpty()) {
       return "";
     }
 

@@ -41,6 +41,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -133,6 +134,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
       description = "Tolerance to determine if two AUs are different.")
   private double matchTol
+
+  /**
+   * --ht or --hitTolerance Tolerance to determine if a comparison should be counted as a "hit".
+   */
+  @CommandLine.Option(names = ['--ht', '--hitTolerance'], paramLabel = '-1.0', defaultValue = '-1.0',
+          description = "Sum comparisons that attain a value lower than this tolerance.")
+  private double hitTol
 
   /**
    * -w or --write Write out the PAC RMSD matrix.
@@ -325,7 +333,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     runningStatistics =
-        pac.comparisons(numAU, inflationFactor, matchTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
+        pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
             alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
             lowMemory, pacFilename)

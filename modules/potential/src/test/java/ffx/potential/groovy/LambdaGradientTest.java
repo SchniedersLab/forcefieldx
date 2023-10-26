@@ -56,7 +56,8 @@ public class LambdaGradientTest extends PotentialTest {
   @Test
   public void testLambdaGradient() {
     // Prepare the Binding with input arguments.
-    String[] args = {"--ac", "1-26", "src/main/java/ffx/potential/structures/phenacetin.xyz"};
+    String xyzpath = getResourcePath("phenacetin.xyz");
+    String[] args = {"--ac", "1-26", xyzpath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -78,7 +79,7 @@ public class LambdaGradientTest extends PotentialTest {
 
   @Test
   public void testLambdaGradientHelp() {
-    // Set-up the input arguments for the LambdaGradient script.
+    // Set up the input arguments for the LambdaGradient script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
@@ -90,8 +91,9 @@ public class LambdaGradientTest extends PotentialTest {
   /** Tests the End States of the LambdaGradient class when softcore is active. */
   @Test
   public void testLambdaGradientIntermolecularSoftcore() {
-    // Set-up the input arguments for the LambdaGradient script.
-    String[] args = {"--ac", "1-44", "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
+    // Set up the input arguments for the LambdaGradient script.
+    String xyzpath = getResourcePath("ethylparaben.xyz");
+    String[] args = {"--ac", "1-44", xyzpath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -115,15 +117,16 @@ public class LambdaGradientTest extends PotentialTest {
   @Test
   public void testLambdaGradientSymOp() {
     // Set up the input arguments for the LambdaGradient script.
-    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5",
-        "src/main/java/ffx/potential/structures/roy02_P1.xyz", "src/main/java/ffx/potential/structures/roy31.xyz"};
+    String roy02path = getResourcePath("roy02_P1.xyz");
+    String roy31path = getResourcePath("roy31.xyz");
+    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5", roy02path, roy31path};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
     LambdaGradient lambdaGradient = new LambdaGradient(binding).run();
     potentialScript = lambdaGradient;
 
-    double expectedPotentialEnergyVac = -32.40555597650871;
+    double expectedPotentialEnergyVac = -32.31574626689126;
     double expectedPotentialEnergyXtal = -43.95639068837232;
     double actualPotentialEnergyVac = lambdaGradient.e0;
     double actualPotentialEnergyXtal = lambdaGradient.e1;

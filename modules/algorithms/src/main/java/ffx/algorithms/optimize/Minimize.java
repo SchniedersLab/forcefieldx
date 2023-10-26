@@ -208,6 +208,13 @@ public class Minimize implements OptimizationListener, Terminatable {
   }
 
   /**
+   * Getter for the number of iterations completed this minimization.
+   *
+   * @return The number of iterations
+   */
+  public int getIterations(){return nSteps;}
+
+  /**
    * minimize
    *
    * @return a {@link ffx.numerics.Potential} object.
@@ -320,7 +327,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     if (terminate) {
-      logger.info(" The optimization recieved a termination request.");
+      logger.info(" The optimization received a termination request.");
       // Tell the L-BFGS optimizer to terminate.
       return false;
     }

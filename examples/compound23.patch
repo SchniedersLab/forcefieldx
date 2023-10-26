@@ -1,0 +1,1952 @@
+forcefield AMOEBA_BIO_2018
+renumberPatch false
+#############################
+##                         ##
+##  Literature References  ##
+##                         ##
+#############################
+
+Walker, B., Liu, C., Wait, E., Ren, P., J. Comput. Chem. 2022, 1. https://doi.org/10.1002/jcc.26954
+
+Wu, J.C.; Chattree, G.; Ren, P.Y.; Automation of AMOEBA polarizable force field
+parameterization for small molecules. Theor Chem Acc.
+
+atom          401    401    Cl    "pbchemXXIII         "        17    35.453    1
+atom          402    402    Cl    "pbchemXXIII         "        17    35.453    1
+atom          403    403    O     "pbchemXXIII         "         8    15.999    2
+atom          404    404    O     "pbchemXXIII         "         8    15.999    1
+atom          405    405    N     "pbchemXXIII         "         7    14.007    3
+atom          406    406    C     "pbchemXXIII         "         6    12.011    4
+atom          407    407    C     "pbchemXXIII         "         6    12.011    4
+atom          408    408    C     "pbchemXXIII         "         6    12.011    3
+atom          409    409    C     "pbchemXXIII         "         6    12.011    3
+atom         410   410    C     "pbchemXXIII         "         6    12.011    3
+atom         411   411    C     "pbchemXXIII         "         6    12.011    3
+atom         412   412    C     "pbchemXXIII         "         6    12.011    3
+atom         413   413    C     "pbchemXXIII         "         6    12.011    3
+atom         414   414    C     "pbchemXXIII         "         6    12.011    3
+atom         415   415    C     "pbchemXXIII         "         6    12.011    3
+atom         416   416    C     "pbchemXXIII         "         6    12.011    3
+atom         417   417    C     "pbchemXXIII         "         6    12.011    3
+atom         418   418    C     "pbchemXXIII         "         6    12.011    3
+atom         419   419    C     "pbchemXXIII         "         6    12.011    3
+atom         420   420    C     "pbchemXXIII         "         6    12.011    3
+atom         421   421    C     "pbchemXXIII         "         6    12.011    3
+atom         422   422    C     "pbchemXXIII         "         6    12.011    3
+atom         423   423    C     "pbchemXXIII         "         6    12.011    3
+atom         424   424    C     "pbchemXXIII         "         6    12.011    3
+atom         425   425    H     "pbchemXXIII         "         1     1.008    1
+atom         426   426    H     "pbchemXXIII         "         1     1.008    1
+atom         427   427    H     "pbchemXXIII         "         1     1.008    1
+atom         428   428    H     "pbchemXXIII         "         1     1.008    1
+atom         429   429    H     "pbchemXXIII         "         1     1.008    1
+atom         430   430    H     "pbchemXXIII         "         1     1.008    1
+atom         431   431    H     "pbchemXXIII         "         1     1.008    1
+atom         432   432    H     "pbchemXXIII         "         1     1.008    1
+atom         433   433    H     "pbchemXXIII         "         1     1.008    1
+atom         434   434    H     "pbchemXXIII         "         1     1.008    1
+atom         435   435    H     "pbchemXXIII         "         1     1.008    1
+atom         436   436    H     "pbchemXXIII         "         1     1.008    1
+atom         437   437    H     "pbchemXXIII         "         1     1.008    1
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6]-[H])(-[#6])(-[H])-[H]', [2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [13]]] with tinker type descriptions [[('C', '"Ethylbenzene CH3"')]]
+# [406] = [[6]]
+vdw 406 3.8200 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6])(-[H])-[H]', [5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"')]]
+# [425] = [[27, 28]]
+vdw 425 2.9600 0.0240 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6])(-[H])-[H]', [5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"')]]
+# [426] = [[29, 30]]
+vdw 426 2.9600 0.0240 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#8]=[#6]-[#6]', [2]]] to SMARTS from parameter file [['[#8]=[#6](-[#6]1:[#6]2:[#6](:[#7](:[#6]:1-[H])-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"3-Formylindole C=O"')]]
+# Missing vdw parameters
+# [424] = [[26]]
+vdw 424 3.8200 0.1060
+
+# amoeba09 matching SMARTS from molecule  [['[#7](-[#6])-[H]', [1]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[H])-[H])-[#6](-[H])(-[H])-[H]', [3]]] with tinker type descriptions [[('N', '"Acetamide N"')]]
+# Missing vdw parameters
+# [405] = [[5]]
+vdw 405 3.7100 0.1100
+
+# amoeba09 matching SMARTS from molecule  [['[#7](-[#6])-[H]', [3]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[H])-[H])-[#6](-[H])(-[H])-[H]', [4]]] with tinker type descriptions [[('H', '"Acetamide H2N"')]]
+# Missing vdw parameters
+# [429] = [[35]]
+vdw 429 2.5900 0.0220 0.900
+
+# amoeba09 matching SMARTS from molecule  [['[#8](-[#6])-[H]', [1]]] to SMARTS from parameter file [['[#8](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H]', [1]]] with tinker type descriptions [[('O', '"Acetic Acid OH"')]]
+# [403] = [[3]]
+vdw 403 3.4050 0.1100
+
+# amoeba09 matching SMARTS from molecule  [['[#8](-[#6])-[H]', [3]]] to SMARTS from parameter file [['[#8](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H]', [8]]] with tinker type descriptions [[('H', '"Acetic Acid HO"')]]
+# [437] = [[43]]
+vdw 437 2.6550 0.0150 0.910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6](:[#6])-[H])-[H]', [2]]] to SMARTS from parameter file [['[#6]1(:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Benzene C"')]]
+# [422] = [[24]]
+vdw 422 3.8000 0.0890
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6](:[#6]):[#6])(-[H])-[H]', [3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"')]]
+# [408] = [[8]]
+vdw 408 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6](:[#6]):[#6])(-[H])-[H]', [3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"')]]
+# [409] = [[9]]
+vdw 409 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]):[#6]', [2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"')]]
+# Missing vdw parameters
+# [411] = [[12]]
+vdw 411 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6](:[#6])-[H])-[H]', [1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"')]]
+# [412] = [[13, 14]]
+vdw 412 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6](:[#6])-[H]):[#6]', [6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [7]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"')]]
+# [413] = [[15]]
+vdw 413 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]):[#6]', [3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [7]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"')]]
+# Missing vdw parameters
+# [415] = [[17]]
+vdw 415 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6]):[#6]', [1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"')]]
+# [416] = [[18]]
+vdw 416 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6](:[#6])-[H])-[H]', [1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"')]]
+# [418] = [[20]]
+vdw 418 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]:[#6])(:[#6]-[H])-[H]', [2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"')]]
+# Missing vdw parameters
+# [420] = [[22]]
+vdw 420 3.8000 0.0910
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6](:[#6])-[H]):[#6]', [5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [427] = [[31, 32]]
+vdw 427 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [428] = [[33, 34]]
+vdw 428 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6](:[#6])-[H]):[#6]', [5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [430] = [[36]]
+vdw 430 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6](:[#6])-[H]):[#6]', [5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [431] = [[37]]
+vdw 431 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [432] = [[38]]
+vdw 432 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [433] = [[39]]
+vdw 433 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(:[#6](:[#6])-[H]):[#6]', [5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [434] = [[40]]
+vdw 434 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [435] = [[41]]
+vdw 435 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"')]]
+# [436] = [[42]]
+vdw 436 2.9800 0.0260 0.920
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [3]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [15]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"')]]
+# [410] = [[10, 11]]
+vdw 410 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [3]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [15]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"')]]
+# [414] = [[16]]
+vdw 414 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6]:[#6])-[H]', [4]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [16]]] with tinker type descriptions [[('C', '"3-Ethylindole C6"')]]
+# Missing vdw parameters
+# [417] = [[19]]
+vdw 417 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [3]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [15]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"')]]
+# [419] = [[21]]
+vdw 419 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [3]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [15]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"')]]
+# [421] = [[23]]
+vdw 421 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]-[H])(:[#6](:[#6])-[H])-[H]', [1]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [15]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"')]]
+# [423] = [[25]]
+vdw 423 3.8000 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[H])-[H])(-[#6])(-[H])-[H]', [1]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [5]]] with tinker type descriptions [[('C', '"3-Ethylindole CH2"')]]
+# Missing vdw parameters
+# [407] = [[7]]
+vdw 407 3.8200 0.1040
+
+# amoeba09 matching SMARTS from molecule  [['[#8]=[#6]-[#6]', [1]]] to SMARTS from parameter file [['[#8]=[#6](-[#6]1:[#6]2:[#6](:[#7](:[#6]:1-[H])-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [1]]] with tinker type descriptions [[('O', '"3-Formylindole O=C"')]]
+# Missing vdw parameters
+# [404] = [[4]]
+vdw         404               3.4000     0.1120
+
+# amoeba09 matching SMARTS from molecule  [['[#17]', [1]]] to SMARTS from parameter file [['[#17]-[#6](-[H])(-[H])-[H]', [1]]] with tinker type descriptions [[('Cl', '"CH3Cl"')]]
+# Missing vdw parameters
+# [401] = [[1]]
+vdw 401 3.898 0.413
+
+# amoeba09 matching SMARTS from molecule  [['[#17]', [1]]] to SMARTS from parameter file [['[#17]-[#6](-[H])(-[H])-[H]', [1]]] with tinker type descriptions [[('Cl', '"CH3Cl"')]]
+# Missing vdw parameters
+# [402] = [[2]]
+vdw 402 3.898 0.413
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [401, 417] = [[1], [19]]
+bond         401   417          300.0     1.73
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [402, 420] = [[2], [22]]
+bond         402   420          300.0     1.73
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [408, 406] = [[8], [6]]
+bond         408   406          453.20     1.5
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [409, 407] = [[9], [7]]
+bond         409   407          453.20     1.5
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [406, 425] = [[6], [27, 28]]
+bond         406   425          341.00     1.1
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [405, 411] = [[5], [12]]
+bond         405   411          600.0     1.4
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [405, 415] = [[5], [17]]
+bond         405   415          600.0     1.42
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [416, 424] = [[18], [26]]
+bond         416   424          385.0     1.48
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [410, 408] = [[10, 11], [8]]
+bond         410   408          471.90     1.4
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [413, 409] = [[15], [9]]
+bond         413   409          471.90     1.4
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [414, 409] = [[16], [9]]
+bond         414   409          471.90     1.4
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [412, 410] = [[13, 14], [10, 11]]
+bond         412   410          471.90     1.39
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [412, 411] = [[13, 14], [12]]
+bond         412   411          385.0     1.4
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [417, 413] = [[19], [15]]
+bond         417   413          385.0     1.39
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [418, 414] = [[20], [16]]
+bond         418   414          471.90     1.39
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [416, 415] = [[18], [17]]
+bond         416   415          385.0     1.3818
+
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [419, 415] = [[21], [17]]
+bond         419   415          385.0     1.4
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [421, 416] = [[23], [18]]
+bond         421   416          471.90     1.4
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [420, 417] = [[22], [19]]
+bond         420   417          385.0     1.4
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [420, 418] = [[22], [20]]
+bond         420   418          385.0     1.4
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [423, 421] = [[25], [23]]
+bond         423   421          471.90     1.39
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [427, 410] = [[31, 32], [10, 11]]
+bond         427   410          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [428, 412] = [[33, 34], [13, 14]]
+bond         428   412          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [430, 413] = [[36], [15]]
+bond         430   413          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [431, 414] = [[37], [16]]
+bond         431   414          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [432, 418] = [[38], [20]]
+bond         432   418          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [433, 419] = [[39], [21]]
+bond         433   419          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [434, 421] = [[40], [23]]
+bond         434   421          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [435, 422] = [[41], [24]]
+bond         435   422          370.50     1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [422, 419] = [[24], [21]]
+bond         422   419          471.90     1.39
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [423, 422] = [[25], [24]]
+bond         423   422          471.90     1.4
+
+# Missing bond parameters, assigning default parameters via element and valence
+# [407, 406] = [[7], [6]]
+bond         407   406          385.0     1.54
+
+# amoeba21 comments=C=O, sp2 carbon, carboxylic ester on benzene OCO, Oxygen of Carboxylic acid (protonated) SMARTS match = [CX3](=O)([OH1])[cccccc] [OX2H1]([C](=O))
+# [424, 403] = [[26], [3]]
+bond 424 403 285.608373 1.36
+
+# amoeba21 comments=HO, H on Oxygen OCO, Oxygen of Carboxylic acid (protonated) SMARTS match = [H][OH1] [OX2H1]([C](=O))
+# [437, 403] = [[43], [3]]
+bond 437 403 487.84939 0.98
+
+# amoeba21 comments=C=O, sp2 carbon, carboxylic ester on benzene O=C, Oxygen of carbonyl group, Acetic Acid SMARTS match = [CX3](=O)([OH1])[cccccc] [OX1]=[CX3][OH1]
+# [424, 404] = [[26], [4]]
+bond 424 404 666.175304 1.22
+
+# amoeba21 comments=HN, H on Nitrogen N3, sp3 Nitrogen SMARTS match = [H][N] [NX3]
+# [429, 405] = [[35], [5]]
+bond 429 405 451.428409 1.02
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2]
+# [426, 407] = [[29, 30], [7]]
+bond 426 407 340.532535 1.1
+
+# amoeba21 comments=HC, H on aromatic carbon car, SMARTS match = [H][c] [c]
+# [436, 423] = [[42], [25]]
+bond 436 423 368.093365 1.09
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [401, 417, 413] = [[1], [19], [15]]
+angle        401   417   413      60.0     120.49870000000001
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [401, 417, 420] = [[1], [19], [22]]
+angle        401   417   420      60.0     119.2507
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [402, 420, 417] = [[2], [22], [19]]
+angle        402   420   417      60.0     119.4266
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [402, 420, 418] = [[2], [22], [20]]
+angle        402   420   418      60.0     120.88080000000001
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [403, 424, 416] = [[3], [26], [18]]
+angle        403   424   416      65.0     113.91270000000002
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [405, 411, 412] = [[5], [12], [13, 14]]
+angle        405   411   412      60.0     120.72
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [405, 415, 416] = [[5], [17], [18]]
+angle        405   415   416      60.0     116.84519999999999
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [405, 415, 419] = [[5], [17], [21]]
+angle        405   415   419      60.0     123.7788
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [411, 405, 415] = [[12], [5], [17]]
+angle        411   405   415      65.0     119.88430000000001
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [409, 407, 406] = [[9], [7], [6]]
+angle        409   407   406      60.0     110.5868
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [408, 406, 407] = [[8], [6], [7]]
+angle        408   406   407      60.0     111.44
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [408, 406, 425] = [[8], [6], [27, 28]]
+angle        408   406   425      39.57     110.28
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [409, 407, 426] = [[9], [7], [29, 30]]
+angle        409   407   426      39.57     110.12
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [404, 424, 416] = [[4], [26], [18]]
+angle       404   424   416      65.0     127.90679999999999
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [429, 405, 411] = [[35], [5], [12]]
+angle       429   405   411      35.0     110.84129999999999
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [429, 405, 415] = [[35], [5], [17]]
+angle       429   405   415      35.0     108.2197
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [436, 423, 421] = [[42], [25], [23]]
+angle       436   423   421      35.25     120.05
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [410, 408, 406] = [[10, 11], [8], [6]]
+angle       410   408   406      33.81     121.08
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [413, 409, 407] = [[15], [9], [7]]
+angle       413   409   407      33.81     120.49
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [414, 409, 407] = [[16], [9], [7]]
+angle       414   409   407      33.81     121.08
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [412, 410, 408] = [[13, 14], [10, 11], [8]]
+angle       412   410   408      64.67     121.53
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [417, 413, 409] = [[19], [15], [9]]
+angle       417   413   409      60.0     121.22
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [418, 414, 409] = [[20], [16], [9]]
+angle       418   414   409      64.67     120.9
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [410, 408, 410] = [[10, 11], [8], [10, 11]]
+angle       410   408   410      64.67     117.64
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [411, 412, 410] = [[12], [13, 14], [10, 11]]
+angle       411   412   410      60.0     120.36
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [412, 411, 412] = [[13, 14], [12], [13, 14]]
+angle       412   411   412      60.0     118.52
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [414, 409, 413] = [[16], [9], [15]]
+angle       414   409   413      64.67     118.35
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [420, 418, 414] = [[22], [20], [16]]
+angle       420   418   414      60.0     120.34
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [421, 416, 415] = [[23], [18], [17]]
+angle       421   416   415      60.0     120.39
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [422, 419, 415] = [[24], [21], [17]]
+angle       422   419   415      60.0     120.72
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [423, 421, 416] = [[25], [23], [18]]
+angle       423   421   416      64.67     120.29
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [423, 422, 419] = [[25], [24], [21]]
+angle       423   422   419      64.67     120.41
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [422, 423, 421] = [[24], [25], [23]]
+angle       422   423   421      64.67     119.59
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [427, 410, 408] = [[31, 32], [10, 11], [8]]
+angle       427   410   408      35.25     119.47
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [430, 413, 409] = [[36], [15], [9]]
+angle       430   413   409      35.25     120.2
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [431, 414, 409] = [[37], [16], [9]]
+angle       431   414   409      35.25     119.75
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [428, 412, 410] = [[33, 34], [13, 14], [10, 11]]
+angle       428   412   410      35.25     119.86
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [428, 412, 411] = [[33, 34], [13, 14], [12]]
+angle       428   412   411      38.0     119.74
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [427, 410, 412] = [[31, 32], [10, 11], [13, 14]]
+angle       427   410   412      35.25     118.97
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [432, 418, 414] = [[38], [20], [16]]
+angle       432   418   414      35.25     120.79
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [433, 419, 415] = [[39], [21], [17]]
+angle       433   419   415      38.0     119.06
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [434, 421, 416] = [[40], [23], [18]]
+angle       434   421   416      35.25     119.11
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [430, 413, 417] = [[36], [15], [19]]
+angle       430   413   417      38.0     118.57
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [431, 414, 418] = [[37], [16], [20]]
+angle       431   414   418      35.25     119.34
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [432, 418, 420] = [[38], [20], [22]]
+angle       432   418   420      38.0     118.87
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [433, 419, 422] = [[39], [21], [24]]
+angle       433   419   422      35.25     120.2
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [436, 423, 422] = [[42], [25], [24]]
+angle       436   423   422      35.25     120.34
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [434, 421, 423] = [[40], [23], [25]]
+angle       434   421   423      35.25     120.6
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [435, 422, 423] = [[41], [24], [25]]
+angle       435   422   423      35.25     120.13
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [424, 416, 421] = [[26], [18], [23]]
+angle       424   416   421      60.0     119.66
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [415, 416, 424] = [[17], [18], [26]]
+angle       415   416   424      60.0     119.64
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [419, 422, 435] = [[21], [24], [41]]
+angle       419   422   435      35.25     119.46
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [420, 417, 413] = [[22], [19], [15]]
+angle       420   417   413      60.0     119.83
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [419, 415, 416] = [[21], [17], [18]]
+angle       419   415   416      60.0     118.56
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [418, 420, 417] = [[20], [22], [19]]
+angle       418   420   417      60.0     119.36
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [425, 406, 425] = [[27, 28], [6], [27, 28]]
+angle        425   406   425      39.57     108.4303
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [406, 407, 426] = [[6], [7], [29, 30]]
+angle        406   407   426      50.0     108.95
+
+
+# Missing angle parameters, assigning default parameters via element and valence
+# [407, 406, 425] = [[7], [6], [27, 28]]
+angle        407   406   425      50.0     108.99
+
+
+# amoeba21 comments=O=C, Oxygen of carbonyl group, Acetic Acid C=O, sp2 carbon, carboxylic ester on benzene OCO, Oxygen of Carboxylic acid (protonated) SMARTS match = [OX1]=[CX3][OH1] [CX3](=O)([OH1])[cccccc] [OX2H1]([C](=O))
+# [404, 424, 403] = [[4], [26], [3]]
+angle 404 424 403 71.920181 123.94000000000001
+
+
+# amoeba21 comments=HO, H on Oxygen OCO, Oxygen of Carboxylic acid (protonated) C=O, sp2 carbon, carboxylic ester on benzene SMARTS match = [H][OH1] [OX2H1]([C](=O)) [CX3](=O)([OH1])[cccccc]
+# [437, 403, 424] = [[43], [3], [26]]
+angle 437 403 424 45.148513 105.2
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [426, 407, 426] = [[29, 30], [7], [29, 30]]
+angle 426 407 426 30.490529 109.0188
+
+
+# Missing strbnd parameters, zeroing out parameters
+# [401, 417, 413] = [[1], [19], [15]]
+strbnd       401   417   413      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [401, 417, 420] = [[1], [19], [22]]
+strbnd       401   417   420      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [402, 420, 417] = [[2], [22], [19]]
+strbnd       402   420   417      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [402, 420, 418] = [[2], [22], [20]]
+strbnd       402   420   418      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [403, 424, 416] = [[3], [26], [18]]
+strbnd       403   424   416      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [405, 411, 412] = [[5], [12], [13, 14]]
+strbnd       405   411   412      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [405, 415, 416] = [[5], [17], [18]]
+strbnd       405   415   416      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [405, 415, 419] = [[5], [17], [21]]
+strbnd       405   415   419      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [411, 405, 415] = [[12], [5], [17]]
+strbnd       411   405   415      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [409, 407, 406] = [[9], [7], [6]]
+strbnd       409   407   406      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [408, 406, 407] = [[8], [6], [7]]
+strbnd       408   406   407      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [408, 406, 425] = [[8], [6], [27, 28]]
+strbnd       408   406   425      11.50      11.50
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [409, 407, 426] = [[9], [7], [29, 30]]
+strbnd       409   407   426      11.50      11.50
+
+# Missing strbnd parameters, zeroing out parameters
+# [404, 424, 416] = [[4], [26], [18]]
+strbnd       404   424   416      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [429, 405, 411] = [[35], [5], [12]]
+strbnd       429   405   411       0       0
+
+# Missing strbnd parameters, zeroing out parameters
+# [429, 405, 415] = [[35], [5], [17]]
+strbnd       429   405   415       0       0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [436, 423, 421] = [[42], [25], [23]]
+strbnd       436   423   421      11.50      11.50
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [410, 408, 406] = [[10, 11], [8], [6]]
+strbnd       410   408   406      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [413, 409, 407] = [[15], [9], [7]]
+strbnd       413   409   407      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [414, 409, 407] = [[16], [9], [7]]
+strbnd       414   409   407      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [412, 410, 408] = [[13, 14], [10, 11], [8]]
+strbnd       412   410   408      18.70      18.70
+
+# Missing strbnd parameters, zeroing out parameters
+# [417, 413, 409] = [[19], [15], [9]]
+strbnd       417   413   409      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [418, 414, 409] = [[20], [16], [9]]
+strbnd       418   414   409      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [410, 408, 410] = [[10, 11], [8], [10, 11]]
+strbnd       410   408   410      18.70      18.70
+
+# Missing strbnd parameters, zeroing out parameters
+# [411, 412, 410] = [[12], [13, 14], [10, 11]]
+strbnd       411   412   410      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [412, 411, 412] = [[13, 14], [12], [13, 14]]
+strbnd       412   411   412      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [414, 409, 413] = [[16], [9], [15]]
+strbnd       414   409   413      18.70      18.70
+
+# Missing strbnd parameters, zeroing out parameters
+# [420, 418, 414] = [[22], [20], [16]]
+strbnd       420   418   414      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [421, 416, 415] = [[23], [18], [17]]
+strbnd       421   416   415      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [422, 419, 415] = [[24], [21], [17]]
+strbnd       422   419   415      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [423, 421, 416] = [[25], [23], [18]]
+strbnd       423   421   416      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [423, 422, 419] = [[25], [24], [21]]
+strbnd       423   422   419      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [422, 423, 421] = [[24], [25], [23]]
+strbnd       422   423   421      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [427, 410, 408] = [[31, 32], [10, 11], [8]]
+strbnd       427   410   408      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [430, 413, 409] = [[36], [15], [9]]
+strbnd       430   413   409      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [431, 414, 409] = [[37], [16], [9]]
+strbnd       431   414   409      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [428, 412, 410] = [[33, 34], [13, 14], [10, 11]]
+strbnd       428   412   410      11.60      38.00
+
+# Missing strbnd parameters, zeroing out parameters
+# [428, 412, 411] = [[33, 34], [13, 14], [12]]
+strbnd       428   412   411      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [427, 410, 412] = [[31, 32], [10, 11], [13, 14]]
+strbnd       427   410   412      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [432, 418, 414] = [[38], [20], [16]]
+strbnd       432   418   414      11.60      38.00
+
+# Missing strbnd parameters, zeroing out parameters
+# [433, 419, 415] = [[39], [21], [17]]
+strbnd       433   419   415      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [434, 421, 416] = [[40], [23], [18]]
+strbnd       434   421   416      11.60      38.00
+
+# Missing strbnd parameters, zeroing out parameters
+# [430, 413, 417] = [[36], [15], [19]]
+strbnd       430   413   417      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [431, 414, 418] = [[37], [16], [20]]
+strbnd       431   414   418      11.60      38.00
+
+# Missing strbnd parameters, zeroing out parameters
+# [432, 418, 420] = [[38], [20], [22]]
+strbnd       432   418   420      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [433, 419, 422] = [[39], [21], [24]]
+strbnd       433   419   422      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [436, 423, 422] = [[42], [25], [24]]
+strbnd       436   423   422      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [434, 421, 423] = [[40], [23], [25]]
+strbnd       434   421   423      11.60      38.00
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [435, 422, 423] = [[41], [24], [25]]
+strbnd       435   422   423      11.60      38.00
+
+# Missing strbnd parameters, zeroing out parameters
+# [424, 416, 421] = [[26], [18], [23]]
+strbnd       424   416   421      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [415, 416, 424] = [[17], [18], [26]]
+strbnd       415   416   424      0      0
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H]):[#6]', [4, 2, 5]]] to SMARTS from parameter file [['[#7]1(:[#6]2:[#6](:[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H]):[#6]:1-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [10, 5, 11]]] with tinker type descriptions [[('H', '"3-Ethylindole H2C"'), ('C', '"3-Ethylindole CH2"'), ('H', '"3-Ethylindole H2C"')]]
+# [419, 422, 435] = [[21], [24], [41]]
+strbnd       419   422   435      11.50      11.50
+
+# Missing strbnd parameters, zeroing out parameters
+# [420, 417, 413] = [[22], [19], [15]]
+strbnd       420   417   413      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [419, 415, 416] = [[21], [17], [18]]
+strbnd       419   415   416      0      0
+
+# Missing strbnd parameters, zeroing out parameters
+# [418, 420, 417] = [[20], [22], [19]]
+strbnd       418   420   417      0      0
+
+# amoeba21 comments=O=C, Oxygen of carbonyl group, Acetic Acid C=O, sp2 carbon, carboxylic ester on benzene OCO, Oxygen of Carboxylic acid (protonated) SMARTS match = [OX1]=[CX3][OH1] [CX3](=O)([OH1])[cccccc] [OX2H1]([C](=O))
+# [404, 424, 403] = [[4], [26], [3]]
+strbnd 404 424 403 17.7072 -17.7072
+
+# amoeba21 comments=HO, H on Oxygen OCO, Oxygen of Carboxylic acid (protonated) C=O, sp2 carbon, carboxylic ester on benzene SMARTS match = [H][OH1] [OX2H1]([C](=O)) [CX3](=O)([OH1])[cccccc]
+# [437, 403, 424] = [[43], [3], [26]]
+strbnd 437 403 424 31.0755 31.0755
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [426, 407, 426] = [[29, 30], [7], [29, 30]]
+strbnd 426 407 426 5.7126 5.7126
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7]-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"')]]
+# [405, 411] = [[5], [12]]
+opbend       405   411    0    0           107.90
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7]-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"')]]
+# [405, 415] = [[5], [17]]
+opbend       405   415    0    0           107.90
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](:[#6]):[#6])=[#8]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Formylindole C=O"'), ('C', '"3-Formylindole C3"')]]
+# [416, 424] = [[18], [26]]
+opbend       416   424    0    0            42.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7]-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"')]]
+# [411, 405] = [[12], [5]]
+opbend       411   405    0    0            12.90
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7]-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"')]]
+# [415, 405] = [[17], [5]]
+opbend       415   405    0    0            12.90
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7]-[H]', [3, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"NMeFormamide HN"'), ('N', '"NMeFormamide N"')]]
+# [429, 405] = [[35], [5]]
+opbend       429   405    0    0             5.80
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6]):[#6]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [406, 408] = [[6], [8]]
+opbend       406   408    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6]):[#6]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [407, 409] = [[7], [9]]
+opbend       407   409    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [9, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [408, 410] = [[8], [10, 11]]
+opbend       408   410    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [9, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [410, 408] = [[10, 11], [8]]
+opbend       410   408    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [9, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [409, 413] = [[9], [15]]
+opbend       409   413    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [9, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [413, 409] = [[15], [9]]
+opbend       413   409    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6]):[#6](:[#6])-[H]', [6, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [409, 414] = [[9], [16]]
+opbend       409   414    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6]):[#6](:[#6])-[H]', [6, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [414, 409] = [[16], [9]]
+opbend       414   409    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [410, 412] = [[10, 11], [13, 14]]
+opbend       410   412    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [412, 410] = [[13, 14], [10, 11]]
+opbend       412   410    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1-[H])-[H]', [5, 6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"p-Cresol C3"'), ('C', '"p-Cresol C4-OH"')]]
+# [411, 412] = [[12], [13, 14]]
+opbend       411   412    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1-[H])-[H]', [5, 6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"p-Cresol C3"'), ('C', '"p-Cresol C4-OH"')]]
+# [412, 411] = [[13, 14], [12]]
+opbend       412   411    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6]:[#6])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [413, 417] = [[15], [19]]
+opbend       413   417    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6]:[#6])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [417, 413] = [[19], [15]]
+opbend       417   413    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [414, 418] = [[16], [20]]
+opbend       414   418    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [418, 414] = [[20], [16]]
+opbend       418   414    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6]):[#6]', [2, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [415, 416] = [[17], [18]]
+opbend       415   416    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6]):[#6]', [2, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [416, 415] = [[18], [17]]
+opbend       416   415    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]:[#6])(:[#6])-[H]', [2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [415, 419] = [[17], [21]]
+opbend       415   419    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6]:[#6])(:[#6])-[H]', [2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [419, 415] = [[21], [17]]
+opbend       419   415    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6])-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [416, 421] = [[18], [23]]
+opbend       416   421    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6])-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [421, 416] = [[23], [18]]
+opbend       421   416    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1)-[H]', [6, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"')]]
+# [417, 420] = [[19], [22]]
+opbend       417   420    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1)-[H]', [6, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"')]]
+# [420, 417] = [[22], [19]]
+opbend       420   417    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1-[H])-[H]', [6, 7]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"p-Cresol C4-OH"'), ('C', '"p-Cresol C3"')]]
+# [418, 420] = [[20], [22]]
+opbend       418   420    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](-[#6]):[#6]:[#6]:[#6]:[#6]:1-[H])-[H]', [6, 7]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"p-Cresol C4-OH"'), ('C', '"p-Cresol C3"')]]
+# [420, 418] = [[22], [20]]
+opbend       420   418    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [421, 423] = [[23], [25]]
+opbend       421   423    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]):[#6])(:[#6](:[#6])-[H])-[H]', [5, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [423, 421] = [[25], [23]]
+opbend       423   421    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [8, 6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [427, 410] = [[31, 32], [10, 11]]
+opbend       427   410    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [428, 412] = [[33, 34], [13, 14]]
+opbend       428   412    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [8, 6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [430, 413] = [[36], [15]]
+opbend       430   413    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6])(-[H])-[H])(:[#6](:[#6])-[H]):[#6]', [8, 6]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [431, 414] = [[37], [16]]
+opbend       431   414    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [432, 418] = [[38], [20]]
+opbend       432   418    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [433, 419] = [[39], [21]]
+opbend       433   419    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [434, 421] = [[40], [23]]
+opbend       434   421    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6])(:[#6])-[H]', [4, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"')]]
+# [435, 422] = [[41], [24]]
+opbend       435   422    0    0            15.10
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](:[#6]):[#6])=[#8]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Formylindole C=O"'), ('C', '"3-Formylindole C3"')]]
+# [424, 416] = [[26], [18]]
+opbend       424   416    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6])-[H])(:[#6])-[H]', [2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"'), ('C', '"3-Ethylindole C6"')]]
+# [419, 422] = [[21], [24]]
+opbend       419   422    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6])-[H])(:[#6])-[H]', [2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"'), ('C', '"3-Ethylindole C6"')]]
+# [422, 419] = [[24], [21]]
+opbend       422   419    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6])-[H])(:[#6](:[#6])-[H])-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"'), ('C', '"3-Ethylindole C6"')]]
+# [422, 423] = [[24], [25]]
+opbend       422   423    0    0            14.40
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6])-[H])(:[#6](:[#6])-[H])-[H]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"3-Ethylindole C5"'), ('C', '"3-Ethylindole C6"')]]
+# [423, 422] = [[25], [24]]
+opbend       423   422    0    0            14.40
+
+# amoeba21 comments=C=O, sp2 carbon, carboxylic ester OCO, Oxygen of Carboxylic acid (protonated) SMARTS match = [CX3](=O)([OH1]) [OX2H1]([C](=O))
+# [403, 424] = [[3], [26]]
+opbend 403 424 0 0 116.1422
+
+# amoeba21 comments=C=O, sp2 carbon, carboxylic ester O=C, Oxygen of carbonyl group, Acetic Acid SMARTS match = [CX3](=O)([OH1]) [OX1]=[CX3][OH1]
+# [404, 424] = [[4], [26]]
+opbend 404 424 0 0 117.7066
+
+# amoeba21 comments=HC, H on aromatic carbon car, SMARTS match = [H][c] [c]
+# [436, 423] = [[42], [25]]
+opbend 436 423 0 0 72.8135
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# WARNING DEFAULT MM3 OPBEND VALUES USED 
+# [401, 417] = [[1], [19]]
+opbend 401 417 0 0 14.39
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# WARNING DEFAULT MM3 OPBEND VALUES USED 
+# [402, 420] = [[2], [22]]
+opbend 402 420 0 0 14.39
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [409, 413, 417, 401] = [[9], [15], [19], [1]]
+torsion 409 413 417 401 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [430, 413, 417, 401] = [[36], [15], [19], [1]]
+torsion 430 413 417 401 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [402, 420, 417, 401] = [[2], [22], [19], [1]]
+torsion 402 420 417 401 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [418, 420, 417, 401] = [[20], [22], [19], [1]]
+torsion 418 420 417 401 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [413, 417, 420, 402] = [[15], [19], [22], [2]]
+torsion 413 417 420 402 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [414, 418, 420, 402] = [[16], [20], [22], [2]]
+torsion 414 418 420 402 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [432, 418, 420, 402] = [[38], [20], [22], [2]]
+torsion 432 418 420 402 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]~[*]~[*]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [2, 1, 5, 6]]] with tinker type descriptions [[('H', '"Alkane H3C-"'), ('C', '"Alkane CH3-"'), ('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [415, 416, 424, 403] = [[17], [18], [26], [3]]
+# Fitted from Fragment  SMARTS [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 18_26_Index_0.mol
+# Torsion 415 416 424 403 RMSD(MM2,QM) 0.7774594566099376 RelativeRMSD(MM2,QM) 0.1061832022980708
+# torsion % [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] % 1,2,3,4 % -0.477,1.402,-0.135
+torsion 415 416 424 403 -0.477 0.0 1 1.402 180.0 2 -0.135 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]~[*]~[*]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [2, 1, 5, 6]]] with tinker type descriptions [[('H', '"Alkane H3C-"'), ('C', '"Alkane CH3-"'), ('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [421, 416, 424, 403] = [[23], [18], [26], [3]]
+# Fitted from Fragment  SMARTS [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] torsion atom indexes = 4,1,2,3 with smarts torsion indices 7,2,3,4 from fragment 18_26_Index_0.mol
+# Torsion 421 416 424 403 RMSD(MM2,QM) 0.7774594566099376 RelativeRMSD(MM2,QM) 0.1061832022980708
+# torsion % [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] % 7,2,3,4 % 0.147,1.512,-0.088
+torsion 421 416 424 403 0.147 0.0 1 1.512 180.0 2 -0.088 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [410, 412, 411, 405] = [[10, 11], [13, 14], [12], [5]]
+torsion 410 412 411 405 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [428, 412, 411, 405] = [[33, 34], [13, 14], [12], [5]]
+torsion 428 412 411 405 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [421, 416, 415, 405] = [[23], [18], [17], [5]]
+torsion 421 416 415 405 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [424, 416, 415, 405] = [[26], [18], [17], [5]]
+torsion 424 416 415 405 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [422, 419, 415, 405] = [[24], [21], [17], [5]]
+torsion 422 419 415 405 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [433, 419, 415, 405] = [[39], [21], [17], [5]]
+torsion 433 419 415 405 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]~[*]~[*]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [2, 1, 5, 6]]] with tinker type descriptions [[('H', '"Alkane H3C-"'), ('C', '"Alkane CH3-"'), ('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [409, 407, 406, 408] = [[9], [7], [6], [8]]
+# Fitted from Fragment  SMARTS [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 6_7_Index_0.mol
+# Torsion 408 406 407 409 RMSD(MM2,QM) 0.2803132273931501 RelativeRMSD(MM2,QM) 0.03606467479680695
+# torsion % [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,4 % 0.501,-0.184,1.160
+torsion 408 406 407 409 0.501 0.0 1 -0.184 180.0 2 1.160 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]~[*]~[*]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [2, 1, 5, 6]]] with tinker type descriptions [[('H', '"Alkane H3C-"'), ('C', '"Alkane CH3-"'), ('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [416, 415, 405, 411] = [[18], [17], [5], [12]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 4,1,2,5 with smarts torsion indices 16,2,3,8 from fragment 5_17_Index_0.mol
+# Torsion 411 405 415 416 RMSD(MM2,QM) 0.27360247797602505 RelativeRMSD(MM2,QM) 0.0669861498592892 Boltzmann Fit
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 16,2,3,8 % -2.404,0.346,-1.589
+torsion 411 405 415 416 -2.404 0.0 1 0.346 180.0 2 -1.589 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[*]~[*]~[*]~[*]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [2, 1, 5, 6]]] with tinker type descriptions [[('H', '"Alkane H3C-"'), ('C', '"Alkane CH3-"'), ('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [415, 405, 411, 412] = [[17], [5], [12], [13, 14]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 4,1,2,5 with smarts torsion indices 14,2,3,8 from fragment 5_12_Index_0.mol
+# Torsion 415 405 411 412 RMSD(MM2,QM) 0.13912095648011796 RelativeRMSD(MM2,QM) 0.04302991720632496 Boltzmann Fit
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 14,2,3,8 % -0.987,1.888,-0.921
+torsion 415 405 411 412 -0.987 0.0 1 1.888 180.0 2 -0.921 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6](-[#6](-[H])-[H])(-[H])-[H]):[#6])(:[#6])-[H]', [9, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [7, 2, 1, 13]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"'), ('C', '"Ethylbenzene CH3"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [413, 409, 407, 406] = [[15], [9], [7], [6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 0,1,2,6 with smarts torsion indices 1,2,3,8 from fragment 6_8_Index_0.mol
+# Torsion 406 407 409 413 RMSD(MM2,QM) 0.12699428938980847 RelativeRMSD(MM2,QM) 0.07250328754271201
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 1,2,3,8 % -0.480,0.457,-0.464
+torsion 406 407 409 413 -0.480 0.0 1 0.457 180.0 2 -0.464 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6](-[#6](-[H])-[H])(-[H])-[H]):[#6])-[H])(:[#6])-[H]', [2, 3, 4, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [3, 2, 1, 13]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"'), ('C', '"Ethylbenzene CH3"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [414, 409, 407, 406] = [[16], [9], [7], [6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 6_8_Index_0.mol
+# Torsion 406 407 409 414 RMSD(MM2,QM) 0.12699428938980847 RelativeRMSD(MM2,QM) 0.07250328754271201
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 1,2,3,4 % -0.480,0.457,-0.464
+torsion 406 407 409 414 -0.480 0.0 1 0.457 180.0 2 -0.464 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])(:[#6])-[H]', [6, 3, 2, 7]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [18, 1, 2, 7]]] with tinker type descriptions [[('H', '"Ethylbenzene H2C"'), ('C', '"Ethylbenzene CH2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [413, 409, 407, 426] = [[15], [9], [7], [29, 30]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 5,1,2,6 with smarts torsion indices 15,2,3,8 from fragment 6_8_Index_0.mol
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 15,2,3,8 % 0.0,0.0,0.108
+torsion 426 407 409 413 0.0 0 1 0.0 180 2 0.108 0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])-[H])-[H]', [7, 4, 3, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [18, 1, 2, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2C"'), ('C', '"Ethylbenzene CH2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [414, 409, 407, 426] = [[16], [9], [7], [29, 30]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 5,1,2,3 with smarts torsion indices 15,2,3,4 from fragment 6_8_Index_0.mol
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 15,2,3,4 % 0.0,0.0,0.108
+torsion 426 407 409 414 0.0 0 1 0.0 180 2 0.108 0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]=[#8]):[#6]):[#6]', [5, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#6]1:[#6]2:[#6](:[#7](:[#6]:1-[H])-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [7, 3, 2, 1]]] with tinker type descriptions [[('C', '"3-Formylindole C2"'), ('C', '"3-Formylindole C3"'), ('C', '"3-Formylindole C=O"'), ('O', '"3-Formylindole O=C"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [404, 424, 416, 415] = [[4], [26], [18], [17]]
+# Fitted from Fragment  SMARTS [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] torsion atom indexes = 0,1,2,5 with smarts torsion indices 1,2,3,6 from fragment 18_26_Index_0.mol
+# Torsion 415 416 424 404 RMSD(MM2,QM) 0.7774594566099376 RelativeRMSD(MM2,QM) 0.1061832022980708
+# torsion % [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] % 1,2,3,6 % 0.171,1.402,-0.170
+torsion 415 416 424 404 0.171 0.0 1 1.402 180.0 2 -0.170 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6]=[#8]):[#6])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#6]1:[#6]2:[#6](:[#7](:[#6]:1-[H])-[H]):[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H]', [7, 3, 2, 1]]] with tinker type descriptions [[('C', '"3-Formylindole C2"'), ('C', '"3-Formylindole C3"'), ('C', '"3-Formylindole C=O"'), ('O', '"3-Formylindole O=C"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [404, 424, 416, 421] = [[4], [26], [18], [23]]
+# Fitted from Fragment  SMARTS [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] torsion atom indexes = 4,1,2,5 with smarts torsion indices 7,2,3,6 from fragment 18_26_Index_0.mol
+# Torsion 421 416 424 404 RMSD(MM2,QM) 0.7774594566099376 RelativeRMSD(MM2,QM) 0.1061832022980708
+# torsion % [#6]1(:[#6](-[#6](-[#8]-[H])=[#8]):[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[#7](-[H])-[H] % 7,2,3,6 % -0.452,1.512,-0.217
+torsion 421 416 424 404 -0.452 0.0 1 1.512 180.0 2 -0.217 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])-[H])(:[#6])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [4, 3, 2, 1]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [412, 410, 408, 406] = [[13, 14], [10, 11], [8], [6]]
+torsion 412 410 408 406 -0.610 0.0 1 5.9245 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [417, 413, 409, 407] = [[19], [15], [9], [7]]
+torsion 417 413 409 407 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])-[H])(:[#6])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [4, 3, 2, 1]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [418, 414, 409, 407] = [[20], [16], [9], [7]]
+torsion 418 414 409 407 -0.610 0.0 1 5.9245 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])(:[#6])-[H]', [9, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 2, 1]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [427, 410, 408, 406] = [[31, 32], [10, 11], [8], [6]]
+torsion 427 410 408 406 0.000 0.0 1 7.8165 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])(:[#6])-[H]', [9, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 2, 1]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [430, 413, 409, 407] = [[36], [15], [9], [7]]
+torsion 430 413 409 407 0.000 0.0 1 7.8165 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6])(:[#6])-[H]', [9, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 2, 1]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene CH2"')]]
+# [431, 414, 409, 407] = [[37], [16], [9], [7]]
+torsion 431 414 409 407 0.000 0.0 1 7.8165 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [411, 412, 410, 408] = [[12], [13, 14], [10, 11], [8]]
+torsion 411 412 410 408 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [420, 417, 413, 409] = [[22], [19], [15], [9]]
+torsion 420 417 413 409 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [420, 418, 414, 409] = [[22], [20], [16], [9]]
+torsion 420 418 414 409 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](:[#6](:[#6](:[#6]:1)-[H])-[H])-[#6])-[H])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [4, 3, 2, 7]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [412, 410, 408, 410] = [[13, 14], [10, 11], [8], [10, 11]]
+torsion 412 410 408 410 -0.670 0.0 1 5.7165 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [412, 411, 412, 410] = [[13, 14], [12], [13, 14], [10, 11]]
+torsion 412 411 412 410 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6](:[#6]:[#6]:1)-[H])-[H])-[H]', [1, 2, 3, 8]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [4, 3, 2, 7]]] with tinker type descriptions [[('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [418, 414, 409, 413] = [[20], [16], [9], [15]]
+torsion 418 414 409 413 -0.670 0.0 1 5.7165 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [417, 413, 409, 414] = [[19], [15], [9], [16]]
+torsion 417 413 409 414 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [423, 421, 416, 415] = [[25], [23], [18], [17]]
+torsion 423 421 416 415 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [423, 422, 419, 415] = [[25], [24], [21], [17]]
+torsion 423 422 419 415 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [422, 419, 415, 416] = [[24], [21], [17], [18]]
+torsion 422 419 415 416 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](:[#6](:[#6]:[#6]:1)-[#6])-[H])-[H])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[H]-[#7](-[H])[#6](-[#7](-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H]', [11, 12, 13, 8]]] with tinker type descriptions [[('C', '"Benzamidine C4"'), ('C', '"Benzamidine C3"'), ('C', '"Benzamidine C2"'), ('C', '"Benzamidine C1-CN2"')]]
+# [422, 423, 421, 416] = [[24], [25], [23], [18]]
+torsion 422 423 421 416 -0.670 0.0 1 6.287333333333333 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [421, 416, 415, 419] = [[23], [18], [17], [21]]
+torsion 421 416 415 419 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](:[#6](:[#6]:[#6]:1)-[H])-[H])-[H])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [3, 4, 5, 6]]] with tinker type descriptions [[('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"')]]
+# [421, 423, 422, 419] = [[23], [25], [24], [21]]
+torsion 421 423 422 419 -0.670 0.0 1 6.287333333333333 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6]):[#6])-[H])(:[#6])-[H]', [8, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 2]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [428, 412, 410, 408] = [[33, 34], [13, 14], [10, 11], [8]]
+torsion 428 412 410 408 0.550 0.0 1 6.817333333333333 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6]):[#6])-[H])(:[#6])-[H]', [8, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 2]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [432, 418, 414, 409] = [[38], [20], [16], [9]]
+torsion 432 418 414 409 0.550 0.0 1 6.817333333333333 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6](:[#6]:[#6]:1)-[H])-[H])-[H]', [12, 2, 3, 8]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 2, 7]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [427, 410, 408, 410] = [[31, 32], [10, 11], [8], [10, 11]]
+torsion 427 410 408 410 0.550 0.0 1 6.246499999999999 180.0 2 -0.550 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [427, 410, 412, 411] = [[31, 32], [10, 11], [13, 14], [12]]
+torsion 427 410 412 411 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [428, 412, 411, 412] = [[33, 34], [13, 14], [12], [13, 14]]
+torsion 428 412 411 412 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6](:[#6]:[#6]:1)-[H])-[H])-[H]', [12, 2, 3, 8]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 2, 7]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [431, 414, 409, 413] = [[37], [16], [9], [15]]
+torsion 431 414 409 413 0.550 0.0 1 6.246499999999999 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]1(:[#6](:[#6](-[#6](-[#6])(-[H])-[H]):[#6](:[#6]:[#6]:1)-[H])-[H])-[H]', [11, 8, 3, 2]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [8, 7, 2, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"'), ('C', '"Ethylbenzene C2"')]]
+# [430, 413, 409, 414] = [[36], [15], [9], [16]]
+torsion 430 413 409 414 0.550 0.0 1 6.246499999999999 180.0 2 -0.550 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [434, 421, 416, 415] = [[40], [23], [18], [17]]
+torsion 434 421 416 415 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [435, 422, 419, 415] = [[41], [24], [21], [17]]
+torsion 435 422 419 415 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](-[#6]):[#6])-[H])(:[#6])-[H]', [8, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 2]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C1-CH2"')]]
+# [436, 423, 421, 416] = [[42], [25], [23], [18]]
+torsion 436 423 421 416 0.550 0.0 1 6.817333333333333 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](:[#6])-[H])-[H])(:[#6])-[H]', [8, 1, 2, 3]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 4, 5]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C4"')]]
+# [436, 423, 422, 419] = [[42], [25], [24], [21]]
+torsion 436 423 422 419 0.550 0.0 1 6.817333333333333 180.0 2 -0.550 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [431, 414, 418, 420] = [[37], [16], [20], [22]]
+torsion 431 414 418 420 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](:[#6](:[#6])-[H])-[H])-[H])-[H]', [7, 3, 2, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [10, 5, 4, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H4"'), ('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [435, 422, 423, 421] = [[41], [24], [25], [23]]
+torsion 435 422 423 421 0.550 0.0 1 11.384 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](:[#6])-[H])-[H])(:[#6])-[H]', [5, 3, 2, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [10, 5, 4, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H4"'), ('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [434, 421, 423, 422] = [[40], [23], [25], [24]]
+torsion 434 421 423 422 0.550 0.0 1 11.384 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6](:[#6])-[H])-[H])(:[#6])-[H]', [5, 3, 2, 1]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [10, 5, 4, 3]]] with tinker type descriptions [[('H', '"Ethylbenzene H4"'), ('C', '"Ethylbenzene C4"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"')]]
+# [433, 419, 422, 423] = [[39], [21], [24], [25]]
+torsion 433 419 422 423 0.550 0.0 1 11.384 180.0 2 -0.550 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6]-[#6])-[H])(:[#6])-[H]', [7, 1, 2, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 12]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('H', '"Ethylbenzene H2"')]]
+# [428, 412, 410, 427] = [[33, 34], [13, 14], [10, 11], [31, 32]]
+torsion 428 412 410 427 0.000 0.0 1 6.355333333333333 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6]-[#6])-[H])(:[#6])-[H]', [7, 1, 2, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 12]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('H', '"Ethylbenzene H2"')]]
+# [432, 418, 414, 431] = [[38], [20], [16], [37]]
+torsion 432 418 414 431 0.000 0.0 1 6.355333333333333 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]:[#6](:[#6](:[#6])-[H])-[H]', [6, 2, 3, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 4, 11]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C3"'), ('H', '"Ethylbenzene H3"')]]
+# [435, 422, 419, 433] = [[41], [24], [21], [39]]
+torsion 435 422 419 433 0.000 0.0 1 6.355333333333333 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](:[#6](:[#6]-[#6])-[H])(:[#6])-[H]', [7, 1, 2, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [11, 4, 3, 12]]] with tinker type descriptions [[('H', '"Ethylbenzene H3"'), ('C', '"Ethylbenzene C3"'), ('C', '"Ethylbenzene C2"'), ('H', '"Ethylbenzene H2"')]]
+# [436, 423, 421, 434] = [[42], [25], [23], [40]]
+torsion 436 423 421 434 0.000 0.0 1 6.355333333333333 180.0 2 0.000 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6]:[#6](:[#6](:[#6])-[H])-[H]', [6, 2, 3, 5]]] to SMARTS from parameter file [['[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H]', [12, 3, 4, 11]]] with tinker type descriptions [[('H', '"Ethylbenzene H2"'), ('C', '"Ethylbenzene C2"'), ('C', '"Ethylbenzene C3"'), ('H', '"Ethylbenzene H3"')]]
+# [436, 423, 422, 435] = [[42], [25], [24], [41]]
+torsion 436 423 422 435 0.000 0.0 1 6.355333333333333 180.0 2 0.000 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [424, 416, 421, 434] = [[26], [18], [23], [40]]
+torsion 424 416 421 434 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [419, 415, 416, 424] = [[21], [17], [18], [26]]
+torsion 419 415 416 424 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [423, 421, 416, 424] = [[25], [23], [18], [26]]
+torsion 423 421 416 424 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [416, 415, 419, 433] = [[18], [17], [21], [39]]
+torsion 416 415 419 433 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [417, 420, 418, 432] = [[19], [22], [20], [38]]
+torsion 417 420 418 432 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene HC', 'Benzene C', 'Benzene C', 'Benzene C']
+# [420, 417, 413, 430] = [[22], [19], [15], [36]]
+torsion 420 417 413 430 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [418, 420, 417, 413] = [[20], [22], [19], [15]]
+torsion 418 420 417 413 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# Ring bond detected for missing torsion
+# Transferring from ['Benzene C', 'Benzene C', 'Benzene C', 'Benzene C']
+# [417, 420, 418, 414] = [[19], [22], [20], [16]]
+torsion 417 420 418 414 -0.67 0.0 1 6.287 180.0 2 0 0.0 3
+
+# matching SMARTS from molecule  ('[#6]1(:[#6](:[#6](:[#6]:[#6](:[#6]:1-[#1])-[#1])-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6]:,-[#6]:[#6](-[#1]):[#6](-[#1]):[#6]', (28, 6, 8, 10)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [425, 406, 408, 410] = [[27, 28], [6], [8], [10, 11]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 5,1,2,6 with smarts torsion indices 15,2,3,8 from fragment 6_8_Index_0.mol
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 15,2,3,8 % 0.0,0.0,0.108
+torsion 425 406 408 410 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-,:[#6]-[#1])-,:[#6](-,:[#6]-[#1])-[#6](-[#6](-[#6]-,:[#6](-[#1])-,:[#6]-[#1])(-[#1])-[#1])(-[#1])-[#1]', (28, 6, 7, 29)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [426, 407, 406, 425] = [[29, 30], [7], [6], [27, 28]]
+# Fitted from Fragment  SMARTS [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 5,1,2,7 with smarts torsion indices 18,2,3,16 from fragment 6_7_Index_0.mol
+# torsion % [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 18,2,3,16 % 0.0,0.0,0.299
+torsion 425 406 407 426 0.0 0 1 0.0 180 2 0.299 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-,:[#6]-[#1])-,:[#6](-,:[#6]-[#1])-[#6](-[#6](-[#6]-,:[#6](-[#1])-,:[#6]-[#1])(-[#1])-[#1])(-[#1])-[#1]', (8, 6, 7, 29)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [426, 407, 406, 408] = [[29, 30], [7], [6], [8]]
+# Fitted from Fragment  SMARTS [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,7 with smarts torsion indices 1,2,3,16 from fragment 6_7_Index_0.mol
+# torsion % [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,16 % 0.0,0.0,0.108
+torsion 408 406 407 426 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#8](-[#1])-[#6](=[#8])-[#6]1:[#6]:[#6](:[#6](:[#6](:[#6]:1-[#1])-[#1])-[#1])-[#1]', (18, 26, 3, 43)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [437, 403, 424, 416] = [[43], [3], [26], [18]]
+# Fitted from Fragment  SMARTS [H]-[#8]-[#6](=[#8])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,4 with smarts torsion indices 1,2,3,5 from fragment 3_26_Index_0.mol
+# Torsion 437 403 424 416 RMSD(MM2,QM) 0.17576393059041442 RelativeRMSD(MM2,QM) 0.020013750430288295 Boltzmann Fit
+# torsion % [H]-[#8]-[#6](=[#8])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,5 % 1.132,3.430,0.668
+torsion 437 403 424 416 1.132 0.0 1 3.430 180.0 2 0.668 0.0 3
+
+# matching SMARTS from molecule  ('[#8](-[#1])-[#6](=[#8])-[#6]1:[#6]:[#6](:[#6](:[#6](:[#6]:1-[#1])-[#1])-[#1])-[#1]', (4, 26, 3, 43)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [437, 403, 424, 404] = [[43], [3], [26], [4]]
+# Fitted from Fragment  SMARTS [H]-[#8]-[#6](=[#8])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 3_26_Index_0.mol
+# Torsion 437 403 424 404 RMSD(MM2,QM) 0.17576393059041442 RelativeRMSD(MM2,QM) 0.020013750430288295 Boltzmann Fit
+# torsion % [H]-[#8]-[#6](=[#8])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,4 % 0.393,3.430,0.857
+torsion 437 403 424 404 0.393 0.0 1 3.430 180.0 2 0.857 0.0 3
+
+# matching SMARTS from molecule  ('[#6]1(:[#6](:[#6]:[#6]:[#6](:[#6]:1-[#6](=[#8])-[#8]-[#1])-[#1])-[#1])-[#7](-[#1])-[#6]-,:[#6]:[#6](-[#1]):[#6]:,-[#6]-[#1]', (35, 5, 17, 18)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [429, 405, 415, 416] = [[35], [5], [17], [18]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,5 with smarts torsion indices 1,2,3,8 from fragment 5_17_Index_0.mol
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,8 % 0.0,0.0,0.108
+torsion 429 405 415 416 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6]1(:[#6](:[#6]:[#6]:[#6](:[#6]:1-[#6](=[#8])-[#8]-[#1])-[#1])-[#1])-[#7](-[#1])-[#6]-,:[#6]:[#6](-[#1]):[#6]:,-[#6]-[#1]', (35, 5, 17, 21)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [429, 405, 415, 419] = [[35], [5], [17], [21]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 5_17_Index_0.mol
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,4 % 0.0,0.0,0.108
+torsion 429 405 415 419 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])-,:[#6](-,:[#6]-[#1])-[#7](-[#1])-[#6](-,:[#6])-,:[#6](-,:[#6]-[#1])-[#1]', (21, 17, 5, 12)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [419, 415, 405, 411] = [[21], [17], [5], [12]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 4,1,2,3 with smarts torsion indices 16,2,3,4 from fragment 5_17_Index_0.mol
+# Torsion 411 405 415 419 RMSD(MM2,QM) 0.27360247797602505 RelativeRMSD(MM2,QM) 0.0669861498592892 Boltzmann Fit
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[#6](=[#8])-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 16,2,3,4 % -1.357,2.112,-1.710
+torsion 411 405 415 419 -1.357 0.0 1 2.112 180.0 2 -1.710 0.0 3
+
+# matching SMARTS from molecule  ('[#6]1(:[#6](:[#6](:[#6]:[#6](:[#6]:1-[#1])-[#1])-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6](-[#6])(-[#1])-[#1]', (7, 6, 8, 11)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [410, 408, 406, 407] = [[10, 11], [8], [6], [7]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] torsion atom indexes = 0,1,2,6 with smarts torsion indices 1,2,3,8 from fragment 6_8_Index_0.mol
+# Torsion 407 406 408 410 RMSD(MM2,QM) 0.12699428938980847 RelativeRMSD(MM2,QM) 0.07250328754271201
+# torsion % [#6](-[#6](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])(-[H])-[H] % 1,2,3,8 % -0.480,0.457,-0.464
+torsion 407 406 408 410 -0.480 0.0 1 0.457 180.0 2 -0.464 0.0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])-,:[#6](-[#1])-,:[#6](-,:[#6](-,:[#6]:[#6]:,-[#6](:,-[#6](:,-[#6]:[#6]-[#1])-[#1])-[#1])-[#1])-[#7](-[#6])-[#1]', (13, 12, 5, 35)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [429, 405, 411, 412] = [[35], [5], [12], [13, 14]]
+# Fitted from Fragment  SMARTS [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 0,1,2,5 with smarts torsion indices 1,2,3,8 from fragment 5_12_Index_0.mol
+# torsion % [H]-[#7](-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H])-[#6]1:[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 1,2,3,8 % 0.0,0.0,0.108
+torsion 429 405 411 412 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])-,:[#6]-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-,:[#6]-[#1])-,:[#6]-[#1]', (9, 7, 6, 28)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [425, 406, 407, 409] = [[27, 28], [6], [7], [9]]
+# Fitted from Fragment  SMARTS [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] torsion atom indexes = 5,1,2,3 with smarts torsion indices 18,2,3,4 from fragment 6_7_Index_0.mol
+# torsion % [#6]1(-[#6](-[#6](-[#6]2:[#6](:[#6](:[#6](:[#6](:[#6]:2-[H])-[H])-[H])-[H])-[H])(-[H])-[H])(-[H])-[H]):[#6](:[#6](:[#6](:[#6](:[#6]:1-[H])-[H])-[H])-[H])-[H] % 18,2,3,4 % 0.0,0.0,0.108
+torsion 425 406 407 409 0.0 0 1 0.0 180 2 0.108 0 3
+
+#SOLUTE-SMARTS 437 [#1]([OH1](C=O))
+
+SOLUTE 437 2.574 2.758 2.9054
+
+#SOLUTE-SMARTS 436 [#1][#6;D3]
+
+SOLUTE 436 2.574 2.758 2.9054
+
+#SOLUTE-SMARTS 429 [#1]([N;D3])
+
+SOLUTE 429 2.9089 2.836 3.5214
+
+#SOLUTE-SMARTS 426 [#1][C;D4][N,c;D3]
+
+SOLUTE 426 3.0556 2.996 4.032
+
+#SOLUTE-SMARTS 421 c([cH0])
+
+SOLUTE 421 3.8585 3.766 3.8448
+
+#SOLUTE-SMARTS 424 [#6;D3]([*])([*])(=[*])
+
+SOLUTE 424 2.9301 4.506 4.2118
+
+#SOLUTE-SMARTS 423 c(c(c([cH0])))
+
+SOLUTE 423 3.8286 3.893 4.5084
+
+#SOLUTE-SMARTS 420 [cH0]
+
+SOLUTE 420 3.6909 3.766 4.4258
+
+#SOLUTE-SMARTS 405 [#7;D3]
+
+SOLUTE 405 3.4243 3.491 4.2676
+
+#SOLUTE-SMARTS 404 O(=C(c))
+
+SOLUTE 404 2.9835 3.356 2.9616
+
+#SOLUTE-SMARTS 403 [OH1](C=O)
+
+SOLUTE 403 3.3991 2.819 2.9337
+
+
+# [401] = [[1]]
+polarize           401          2.5670     0.3900 417
+# amoeba21 comments=Cl connected to aromatic atom SMARTS match = [Cl][a]
+# [402] = [[2]]
+polarize           402          2.5670     0.3900 420
+# amoeba21 comments=O connected to carbonyl group SMARTS match = [OX2][CX3]
+# [403] = [[3]]
+polarize           403          0.8320     0.3900 424 437
+# amoeba21 comments=O on carbonyl group SMARTS match = [OX1]=[CX3]
+# [404] = [[4]]
+polarize           404          0.9140     0.3900 424
+# amoeba21 comments=N connected to aromatic carbon via single bond SMARTS match = [N][c]
+# [405] = [[5]]
+polarize           405          1.1850     0.3900 429
+# [406] = [[6]]
+polarize           406          1.4150     0.3900 425
+# amoeba21 comments=C connected to aromatic carbon SMARTS match = [C][c]
+# [407] = [[7]]
+polarize           407          1.4150     0.3900 426
+# [408] = [[8]]
+polarize           408          2.0650     0.3900 410
+# [409] = [[9]]
+polarize           409          2.0650     0.3900 413 414
+# [410] = [[10, 11]]
+polarize          410          2.0650     0.3900 408 412 427
+# [411] = [[12]]
+polarize          411          2.0650     0.3900 412
+# [412] = [[13, 14]]
+polarize          412          2.0650     0.3900 410 411 428
+# [413] = [[15]]
+polarize          413          2.0650     0.3900 409 417 430
+# [414] = [[16]]
+polarize          414          2.0650     0.3900 409 418 431
+# [415] = [[17]]
+polarize          415          2.0650     0.3900 416 419
+# [416] = [[18]]
+polarize          416          2.0650     0.3900 415 421
+# [417] = [[19]]
+polarize          417          2.0650     0.3900 401 413 420
+# [418] = [[20]]
+polarize          418          2.0650     0.3900 414 420 432
+# [419] = [[21]]
+polarize          419          2.0650     0.3900 415 422 433
+# [420] = [[22]]
+polarize          420          2.0650     0.3900 402 417 418
+# [421] = [[23]]
+polarize          421          2.0650     0.3900 416 423 434
+# [422] = [[24]]
+polarize          422          2.0650     0.3900 419 423 435
+# amoeba21 comments=C on carbonyl O SMARTS match = [CX3](=O)
+# [423] = [[25]]
+polarize          423          2.0650     0.3900 421 422 436
+# amoeba21 comments=C on carbonyl O SMARTS match = [CX3](=O)
+# [424] = [[26]]
+polarize          424          2.0650     0.3900 403 404
+# [425] = [[27, 28]]
+polarize          425          0.4800     0.3900 406
+# amoeba21 comments=H on non-aromatic carbon SMARTS match = [H][C]
+# [426] = [[29, 30]]
+polarize          426          0.4800     0.3900 407
+# [427] = [[31, 32]]
+polarize          427          0.4320     0.3900 410
+# [428] = [[33, 34]]
+polarize          428          0.4320     0.3900 412
+# amoeba21 comments=H on non-aromatic nitrogen SMARTS match = [H][N]
+# [429] = [[35]]
+polarize          429          0.4570     0.3900 405
+# [430] = [[36]]
+polarize          430          0.4320     0.3900 413
+# [431] = [[37]]
+polarize          431          0.4320     0.3900 414
+# [432] = [[38]]
+polarize          432          0.4320     0.3900 418
+# [433] = [[39]]
+polarize          433          0.4320     0.3900 419
+# [434] = [[40]]
+polarize          434          0.4320     0.3900 421
+# [435] = [[41]]
+polarize          435          0.4320     0.3900 422
+# amoeba21 comments=H on aromatic carbon SMARTS match = [H][c]
+# [436] = [[42]]
+polarize          436          0.4320     0.3900 423
+# amoeba21 comments=H on non-aromatic oxygen SMARTS match = [H][O]
+# [437] = [[43]]
+polarize          437          0.4570     0.3900 403
+
+#
+# Multipoles from Electrostatic Potential Fitting
+#
+
+# [401] = [[1]]
+multipole   401  417  420              -0.39652
+                                        0.13928    0.00000   -0.25266
+                                       -0.79877
+                                        0.00000   -0.37716
+                                        0.24618    0.00000    1.17593
+# [402] = [[2]]
+multipole   402  420  417              -0.39484
+                                        0.13917    0.00000   -0.26462
+                                       -0.79616
+                                        0.00000   -0.36705
+                                        0.24905    0.00000    1.16321
+# [403] = [[3]]
+multipole   403  424  437              -0.30916
+                                        0.23458    0.00000    0.34893
+                                        0.19664
+                                        0.00000   -0.78633
+                                       -0.44529    0.00000    0.58969
+# [404] = [[4]]
+multipole   404  424  403              -0.36738
+                                       -0.04973    0.00000    0.44895
+                                       -0.67788
+                                        0.00000   -0.14091
+                                       -0.03898    0.00000    0.81879
+# [405] = [[5]]
+multipole   405  415  411              -0.23450
+                                        0.38065    0.00000    0.35326
+                                        0.36072
+                                        0.00000   -1.02656
+                                       -0.41433    0.00000    0.66584
+# [406] = [[6]]
+multipole   406  408  407              -0.10914
+                                        0.20354    0.00000    0.07510
+                                       -0.04747
+                                        0.00000   -0.28467
+                                       -0.12577    0.00000    0.33214
+# [407] = [[7]]
+multipole   407  409  406              -0.10767
+                                        0.17322    0.00000    0.12663
+                                       -0.06733
+                                        0.00000   -0.28296
+                                       -0.14054    0.00000    0.35029
+# [408] = [[8]]
+multipole   408 -410 -410              -0.10587
+                                        0.00000    0.00000   -0.08600
+                                        0.43298
+                                        0.00000   -1.09885
+                                        0.00000    0.00000    0.66587
+# [409] = [[9]]
+multipole   409  407  413              -0.08116
+                                        0.02480    0.00000    0.09277
+                                        0.43814
+                                        0.00000   -1.06939
+                                        0.00909    0.00000    0.63125
+# [410] = [[10, 11]]
+multipole   410  408  412              -0.09030
+                                        0.13421    0.00000    0.14976
+                                        0.56493
+                                        0.00000   -1.10473
+                                       -0.04800    0.00000    0.53980
+# [411] = [[12]]
+multipole   411 -412 -412               0.00414
+                                        0.00000    0.00000    0.09921
+                                        0.44434
+                                        0.00000   -1.11733
+                                        0.00000    0.00000    0.67299
+# [412] = [[13, 14]]
+multipole   412  411  410              -0.09925
+                                        0.12214    0.00000    0.09800
+                                        0.61993
+                                        0.00000   -1.10516
+                                       -0.05422    0.00000    0.48523
+# [413] = [[15]]
+multipole   413  417  409              -0.03274
+                                        0.08369    0.00000    0.14835
+                                        0.58045
+                                        0.00000   -1.19274
+                                       -0.24022    0.00000    0.61229
+# [414] = [[16]]
+multipole   414  409  418              -0.07087
+                                        0.11361    0.00000    0.15066
+                                        0.54567
+                                        0.00000   -1.07789
+                                       -0.03128    0.00000    0.53222
+# [415] = [[17]]
+multipole   415  405  416               0.02186
+                                        0.02541    0.00000    0.01229
+                                        0.50149
+                                        0.00000   -1.12311
+                                       -0.02513    0.00000    0.62162
+# [416] = [[18]]
+multipole   416  424  415              -0.03732
+                                        0.07232    0.00000    0.24301
+                                        0.51155
+                                        0.00000   -1.09281
+                                       -0.04813    0.00000    0.58126
+# [417] = [[19]]
+multipole   417  401  420               0.24958
+                                        0.02751    0.00000    0.39102
+                                        0.42739
+                                        0.00000   -1.10919
+                                       -0.00030    0.00000    0.68180
+# [418] = [[20]]
+multipole   418  420  414              -0.02493
+                                        0.07330    0.00000    0.20017
+                                        0.58429
+                                        0.00000   -1.08466
+                                       -0.15535    0.00000    0.50037
+# [419] = [[21]]
+multipole   419  415  422              -0.09020
+                                        0.14428    0.00000    0.18916
+                                        0.60792
+                                        0.00000   -1.15256
+                                       -0.07007    0.00000    0.54464
+# [420] = [[22]]
+multipole   420  402  417               0.24961
+                                        0.05504    0.00000    0.37785
+                                        0.41414
+                                        0.00000   -1.11430
+                                       -0.00428    0.00000    0.70016
+# [421] = [[23]]
+multipole   421  416  423              -0.05600
+                                        0.11968    0.00000    0.21028
+                                        0.57964
+                                        0.00000   -1.03422
+                                       -0.07091    0.00000    0.45458
+# [422] = [[24]]
+multipole   422  419  423              -0.07362
+                                        0.14139    0.00000    0.08330
+                                        0.54067
+                                        0.00000   -0.99701
+                                        0.03627    0.00000    0.45634
+# [423] = [[25]]
+multipole   423  421  422              -0.07210
+                                        0.16525    0.00000    0.07244
+                                        0.54341
+                                        0.00000   -0.99625
+                                        0.05162    0.00000    0.45284
+# [424] = [[26]]
+multipole   424  404  403               0.27315
+                                       -0.09652    0.00000   -0.00811
+                                        0.21846
+                                        0.00000   -0.61917
+                                        0.00875    0.00000    0.40071
+# [425] = [[27, 28]]
+multipole   425  406  408               0.09911
+                                        0.03373    0.00000    0.13560
+                                       -0.03533
+                                        0.00000   -0.17224
+                                        0.05024    0.00000    0.20757
+# [426] = [[29, 30]]
+multipole   426  407  409               0.10278
+                                        0.05070    0.00000    0.14010
+                                       -0.03408
+                                        0.00000   -0.17745
+                                        0.07773    0.00000    0.21153
+# [427] = [[31, 32]]
+multipole   427  410  408               0.09645
+                                        0.02992    0.00000    0.14149
+                                       -0.11564
+                                        0.00000   -0.13308
+                                        0.04131    0.00000    0.24872
+# [428] = [[33, 34]]
+multipole   428  412  411               0.11152
+                                        0.03024    0.00000    0.14063
+                                       -0.09250
+                                        0.00000   -0.15753
+                                        0.00118    0.00000    0.25003
+# [429] = [[35]]
+multipole   429  405  415               0.22665
+                                        0.06423    0.00000   -0.00181
+                                       -0.02862
+                                        0.00000   -0.00687
+                                        0.04244    0.00000    0.03549
+# [430] = [[36]]
+multipole   430  413  417               0.14467
+                                        0.02454    0.00000    0.15525
+                                        0.06108
+                                        0.00000   -0.21388
+                                        0.01293    0.00000    0.15280
+# [431] = [[37]]
+multipole   431  414  409               0.10454
+                                        0.01200    0.00000    0.14513
+                                       -0.11342
+                                        0.00000   -0.13346
+                                        0.01725    0.00000    0.24688
+# [432] = [[38]]
+multipole   432  418  420               0.13639
+                                        0.05866    0.00000    0.15009
+                                       -0.02422
+                                        0.00000   -0.20037
+                                        0.03848    0.00000    0.22459
+# [433] = [[39]]
+multipole   433  419  415               0.13027
+                                        0.02169    0.00000    0.12619
+                                       -0.07220
+                                        0.00000   -0.17619
+                                       -0.06113    0.00000    0.24839
+# [434] = [[40]]
+multipole   434  421  416               0.12633
+                                        0.02654    0.00000    0.12732
+                                       -0.03945
+                                        0.00000   -0.16272
+                                       -0.04635    0.00000    0.20217
+# [435] = [[41]]
+multipole   435  422  419               0.09253
+                                        0.00200    0.00000    0.13367
+                                       -0.15852
+                                        0.00000   -0.13735
+                                        0.01015    0.00000    0.29587
+# [436] = [[42]]
+multipole   436  423  421               0.09164
+                                        0.00580    0.00000    0.11633
+                                       -0.14529
+                                        0.00000   -0.13126
+                                        0.00289    0.00000    0.27655
+# [437] = [[43]]
+multipole   437  403  424               0.27204
+                                       -0.00028    0.00000    0.05208
+                                       -0.13796
+                                        0.00000   -0.09197
+                                        0.05120    0.00000    0.22993
+
+#
+# Charge Penetration from Electrostatic Potential Fitting
+#
+
+chgpen           401          0.0000    0.00000
+chgpen           402          0.0000    0.00000
+chgpen           403          0.0000    0.00000
+chgpen           404          0.0000    0.00000
+chgpen           405          0.0000    0.00000
+chgpen           406          0.0000    0.00000
+chgpen           407          0.0000    0.00000
+chgpen           408          0.0000    0.00000
+chgpen           409          0.0000    0.00000
+chgpen           410          0.0000    0.00000
+chgpen           411          0.0000    0.00000
+chgpen           412          0.0000    0.00000
+chgpen           413          0.0000    0.00000
+chgpen           414          0.0000    0.00000
+chgpen           415          0.0000    0.00000
+chgpen           416          0.0000    0.00000
+chgpen           417          0.0000    0.00000
+chgpen           418          0.0000    0.00000
+chgpen           419          0.0000    0.00000
+chgpen           420          0.0000    0.00000
+chgpen           421          0.0000    0.00000
+chgpen           422          0.0000    0.00000
+chgpen           423          0.0000    0.00000
+chgpen           424          0.0000    0.00000
+chgpen           425          0.0000    0.00000
+chgpen           426          0.0000    0.00000
+chgpen           427          0.0000    0.00000
+chgpen           428          0.0000    0.00000
+chgpen           429          0.0000    0.00000
+chgpen           430          0.0000    0.00000
+chgpen           431          0.0000    0.00000
+chgpen           432          0.0000    0.00000
+chgpen           433          0.0000    0.00000
+chgpen           434          0.0000    0.00000
+chgpen           435          0.0000    0.00000
+chgpen           436          0.0000    0.00000
+chgpen           437          0.0000    0.00000

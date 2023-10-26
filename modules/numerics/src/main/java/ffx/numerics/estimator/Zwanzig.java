@@ -43,6 +43,7 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
 
 import ffx.utilities.Constants;
+
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,19 +101,19 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be all
    * NaN.
    *
-   * @param lambdaValues Values of lambda dynamics was run at.
-   * @param energiesLow Potential energies of trajectory L at lambda L-dL. Ignored for forwards
-   *     FEP.
-   * @param energiesAt Potential energies of trajectory L at lambda L.
-   * @param energiesHigh Potential energies of trajectory L at lambda L+dL. Ignored for backwards
-   *     FEP.
-   * @param temperature Temperature each lambda window was run at (single-element indicates
-   *     identical temperatures).
+   * @param lambdaValues   Values of lambda dynamics was run at.
+   * @param energiesLow    Potential energies of trajectory L at lambda L-dL. Ignored for forwards
+   *                       FEP.
+   * @param energiesAt     Potential energies of trajectory L at lambda L.
+   * @param energiesHigh   Potential energies of trajectory L at lambda L+dL. Ignored for backwards
+   *                       FEP.
+   * @param temperature    Temperature each lambda window was run at (single-element indicates
+   *                       identical temperatures).
    * @param directionality Forwards vs. backwards FEP.
    */
   public Zwanzig(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
-      double[][] energiesHigh,
-      double[] temperature, Directionality directionality) {
+                 double[][] energiesHigh,
+                 double[] temperature, Directionality directionality) {
     super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
     this.directionality = directionality;
     nWindows = nTrajectories - 1;
@@ -127,15 +128,19 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     estimateDG();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Zwanzig copyEstimator() {
     return new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, directionality);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void estimateDG(final boolean randomSamples) {
+  public final void estimateDG(final boolean randomSamples) {
     double cumDG = 0;
 
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
@@ -192,43 +197,57 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     totalFreeEnergyUncertainty = 0.0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void estimateDG() {
+  public final void estimateDG() {
     estimateDG(false);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getBinEnergies() {
     return copyOf(windowFreeEnergyDifferences, nWindows);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getBinUncertainties() {
     return copyOf(windowFreeEnergyUncertainties, nWindows);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getFreeEnergy() {
     return totalFreeEnergyDifference;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getUncertainty() {
     return totalFreeEnergyUncertainty;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int numberOfBins() {
     return nWindows;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getBinEnthalpies() {
     return copyOf(windowEnthalpies, nWindows);

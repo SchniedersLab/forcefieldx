@@ -52,7 +52,7 @@ public class GradientOptions {
    * The ArgGroup keeps the GradientOptions together when printing help.
    */
   @ArgGroup(heading = "%n Gradient Options%n", validate = false)
-  public GradientOptionGroup group = new GradientOptionGroup();
+  private final GradientOptionGroup group = new GradientOptionGroup();
 
   /**
    * -d or --dx Finite-difference step size.
@@ -105,9 +105,9 @@ public class GradientOptions {
         paramLabel = "1.0e-3 kcal/mol/Å", description = "Gradient error tolerance.")
     public double tolerance;
 
-    /** --ga or --gradientAtoms Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N]. */
+    /** --ga or --gradientAtoms Ranges of degrees of freedom to test [ALL, NONE, Range(s): 1-3,6-N]. */
     @Option(names = {"--ga", "--gradientAtoms"}, paramLabel = "ALL", defaultValue = "ALL",
-        description = "Ranges of atoms to test [ALL, NONE, Range(s): 1-3,6-N].")
+        description = "Ranges of degrees of freedom to test [ALL, NONE, Range(s): 1-3,6-N].")
     public String gradientAtoms;
 
     /** -v or --verbose is a flag to print out energy at each step. */

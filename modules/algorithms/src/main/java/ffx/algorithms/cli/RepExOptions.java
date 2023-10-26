@@ -9,7 +9,7 @@ public class RepExOptions {
    * The ArgGroup keeps the RepExOptions together when printing help.
    */
   @ArgGroup(heading = "%n Replica Exchange Options%n", validate = false)
-  public RepExOptions.RepExOptionGroup group = new RepExOptions.RepExOptionGroup();
+  private final RepExOptions.RepExOptionGroup group = new RepExOptions.RepExOptionGroup();
 
   public boolean getRepEx() {
     return group.repEx;

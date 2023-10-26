@@ -414,7 +414,7 @@ public class LogPanel extends JPanel implements ActionListener {
       statusProgressBar.setString("1 Job Running");
       statusProgressBar.setIndeterminate(true);
     } else {
-      statusProgressBar.setString("" + count + " Jobs Running");
+      statusProgressBar.setString(count + " Jobs Running");
       statusProgressBar.setIndeterminate(true);
     }
   }

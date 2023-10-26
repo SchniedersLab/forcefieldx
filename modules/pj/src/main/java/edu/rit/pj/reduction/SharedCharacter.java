@@ -270,7 +270,7 @@ public class SharedCharacter
      * @return Current value.
      */
     public int intValue() {
-        return (int) get();
+        return get();
     }
 
     /**
@@ -280,7 +280,7 @@ public class SharedCharacter
      * @return Current value.
      */
     public long longValue() {
-        return (long) get();
+        return get();
     }
 
     /**
@@ -290,7 +290,7 @@ public class SharedCharacter
      * @return Current value.
      */
     public float floatValue() {
-        return (float) get();
+        return get();
     }
 
     /**
@@ -300,7 +300,7 @@ public class SharedCharacter
      * @return Current value.
      */
     public double doubleValue() {
-        return (double) get();
+        return get();
     }
 
 }

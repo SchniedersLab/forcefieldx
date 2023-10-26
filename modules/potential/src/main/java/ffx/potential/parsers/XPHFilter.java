@@ -37,12 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import com.github.javaparser.resolution.declarations.ResolvedInterfaceDeclaration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
-import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Residue;
@@ -53,8 +51,13 @@ import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.vecmath.Vector3d;
 
-import java.io.*;
-import java.lang.reflect.Array;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -175,7 +178,7 @@ public class XPHFilter extends SystemFilter {
 
     // Check for a blank line.
     data = data.trim();
-    if (data.equals("")) {
+    if (data.isEmpty()) {
       return false;
     }
 
@@ -264,16 +267,13 @@ public class XPHFilter extends SystemFilter {
         String data = br.readLine();
 
         //Read past blanklines
-        while (data != null && data.trim().equals("")) {
+        while (data != null && data.trim().isEmpty()) {
           data = br.readLine();
         }
 
         // Read Past ESV
-
-        assert data != null;
-        if(data.contains("ESV")) {
-
-          while (data != null && !data.trim().equals("")) {
+        if (data.contains("ESV")) {
+          while (data != null && !data.trim().isEmpty()) {
             data = br.readLine();
           }
         }
@@ -328,7 +328,7 @@ public class XPHFilter extends SystemFilter {
     try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = br.readLine();
       }
       if (data == null) {
@@ -490,7 +490,7 @@ public class XPHFilter extends SystemFilter {
         }
       }
       // Read ESVs
-      while (data != null && data.equals("") && br.ready()) {
+      while (data != null && data.isEmpty() && br.ready()) {
         data = br.readLine().trim();
       }
 
@@ -596,7 +596,7 @@ public class XPHFilter extends SystemFilter {
       data = bufferedReader.readLine();
 
       // Read past blank lines
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = bufferedReader.readLine();
       }
       if (data == null) {
@@ -605,7 +605,7 @@ public class XPHFilter extends SystemFilter {
 
       // Read Past ESV
       if (data.contains("ESV")) {
-        while (data != null && !data.trim().equals("")) {
+        while (data != null && !data.trim().isEmpty()) {
           data = bufferedReader.readLine();
         }
 
@@ -648,7 +648,7 @@ public class XPHFilter extends SystemFilter {
       for (int i = 0; i < nSystem; i++) {
         data = bufferedReader.readLine();
         // Read past blank lines
-        while (data != null && data.trim().equals("")) {
+        while (data != null && data.trim().isEmpty()) {
           data = bufferedReader.readLine();
         }
         tokens = data.trim().split(" +");

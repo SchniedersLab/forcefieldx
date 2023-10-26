@@ -123,6 +123,13 @@ public class StringUtils {
   }
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private StringUtils() {
+    // Empty constructor.
+  }
+
+  /**
    * cifForID
    *
    * @param id a {@link java.lang.String} object.
@@ -252,7 +259,7 @@ public class StringUtils {
     } else if (val <= minVal) {
       throw new IllegalArgumentException(
           String.format(
-              " Value %f is less than the minumum of %f enforced by width %d", val, minVal, width));
+              " Value %f is less than the minimum of %f enforced by width %d", val, minVal, width));
     }
 
     String str = String.format("%" + width + "." + prec + "f", val);
@@ -505,5 +512,40 @@ public class StringUtils {
    */
   public static String tryParseWater(String name) {
     return waterNames.contains(name.toUpperCase()) ? STANDARD_WATER_NAME : null;
+  }
+
+  /**
+   * Write atoms ranges for a list of atom indices.
+   * @param atoms Atoms indices for which a comma separated list is desired.
+   * @return String of the atom list (comma separated, hyphens for large ranges).
+   */
+  public static String writeAtomRanges(int[] atoms){
+    Arrays.sort(atoms);
+    int nAtoms = atoms.length;
+    StringBuilder output = new StringBuilder();
+    for(int i = 0; i < nAtoms; i++){
+      int index = 0;
+      int current = atoms[i] + 1;
+      output.append(current);
+      // Determine if multiple entries are in a row (replace with "-").
+      while(i + index + 1 < nAtoms && atoms[i + index + 1] + 1 == current + index + 1){
+        index++;
+      }
+      if(index >= 2){
+        output.append("-").append(atoms[i + index] + 1);
+      }else if(index == 1){
+        output.append(",").append(atoms[i + index] + 1);
+      }
+      i += index;
+      if(i + 1 < nAtoms){
+        output.append(",");
+      }
+    }
+    String string = output.toString();
+    if(string.endsWith(",")){
+      return string.substring(0,string.length() - 1);
+    }else {
+      return output.toString();
+    }
   }
 }

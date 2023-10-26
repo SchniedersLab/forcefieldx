@@ -45,6 +45,8 @@ import ffx.potential.utils.PotentialsUtils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+
+import ffx.utilities.FFXTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,22 +55,21 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Mallory R. Tollefson */
 @RunWith(Parameterized.class)
-public class LoopClosureTest {
+public class LoopClosureTest extends FFXTest {
 
   private final MolecularAssembly molecularAssembly;
   private final Loop loop;
 
-  private double[][] xyzNTest;
-  private double[][] xyzCTest;
-  private double[][] xyzATest;
+  private final double[][] xyzNTest;
+  private final double[][] xyzCTest;
+  private final double[][] xyzATest;
 
   public LoopClosureTest(
       double[][] xyzNTest, double[][] xyzATest, double[][] xyzCTest, double[][] xyzOTest) {
     int startResidue = 2;
     int endResidue = 4;
     ClassLoader classLoader = getClass().getClassLoader();
-    File structure =
-        new File(classLoader.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
+    File structure = new File(classLoader.getResource("LoopClosureTest.pdb").getPath());
     PotentialsUtils potentialsUtils = new PotentialsUtils();
     molecularAssembly = potentialsUtils.open(structure);
     loop = new Loop(molecularAssembly, startResidue, endResidue);

@@ -37,22 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
-import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
-import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
-import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parsers.XYZFileFilter.isXYZ;
-import static ffx.utilities.KeywordGroup.NonBondedCutoff;
-import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static java.util.Arrays.sort;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -114,8 +98,8 @@ import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Constants;
 import ffx.utilities.FFXKeyword;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -131,7 +115,21 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
+import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
+import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
+import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static ffx.utilities.KeywordGroup.NonBondedCutoff;
+import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.util.Arrays.sort;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Compute the potential energy and derivatives of a molecular system described by a force field.
@@ -1666,7 +1664,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       // Remove bonds that are already dealt with via angles.
       for (Angle angle : numericAngles) {
-        numericBonds.removeAll(angle.getBondList());
+        angle.getBondList().forEach(numericBonds::remove);
       }
 
       // Remove already-constrained angles and bonds (e.g. SETTLE-constrained ones).
@@ -1776,7 +1774,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             return new ForceFieldEnergyOpenMM(assembly, platform, restraints, numThreads);
           } catch (Exception ex) {
             logger.warning(format(" Exception creating ForceFieldEnergyOpenMM: %s", ex));
-            ex.printStackTrace();
 
             ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
             if (ffxEnergy == null) {
@@ -1886,7 +1883,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (destroyed) {
       // This regularly occurs with Repex OST, as multiple OrthogonalSpaceTempering objects wrap a
       // single FFE.
-      logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+      logger.fine(format(" This ForceFieldEnergy is already destroyed: %s", this));
       return true;
     } else {
       try {
@@ -2905,20 +2902,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           permanentMultipoleEnergy, nPermanentInteractions));
     }
     if (polarizationTerm) {
-      sb.append(
-          format("REMARK   3   %s %g (%d)\n", "POLARIZATION               : ", polarizationEnergy,
-              nPermanentInteractions));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "POLARIZATION               : ",
+          polarizationEnergy, nPermanentInteractions));
     }
     sb.append(format("REMARK   3   %s %g\n", "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
     if (nsymm > 1) {
-      sb.append(
-          format("REMARK   3   %s %g\n", "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
+      sb.append(format("REMARK   3   %s %g\n", "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
     }
     if (crystal.getUnitCell() != crystal) {
       nsymm = crystal.spaceGroup.getNumberOfSymOps();
-      sb.append(
-          format("REMARK   3   %s %g\n", "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+      if (nsymm > 1) {
+        sb.append(format("REMARK   3   %s %g\n", "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+      }
     }
     sb.append("REMARK   3\n");
 
@@ -3948,6 +3944,105 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return sb.toString();
   }
 
+
+  /**
+   * Log out all bonded energy terms.
+   */
+  public void logBondedTerms() {
+    if (bondTerm && nBonds > 0) {
+      logger.info("\n Bond Stretching Interactions:");
+      Bond[] bonds = getBonds();
+      for (Bond bond : bonds) {
+        logger.info(" Bond \t" + bond.toString());
+      }
+    }
+
+    if (angleTerm && nAngles > 0) {
+      logger.info("\n Angle Bending Interactions:");
+      Angle[] angles = getAngles();
+      for (Angle angle : angles) {
+        logger.info(" Angle \t" + angle.toString());
+      }
+    }
+
+    if (stretchBendTerm && nStretchBends > 0) {
+      logger.info("\n Stretch-Bend Interactions:");
+      StretchBend[] stretchBends = getStretchBends();
+      for (StretchBend stretchBend : stretchBends) {
+        logger.info(" Stretch-Bend \t" + stretchBend.toString());
+      }
+    }
+    if (ureyBradleyTerm && nUreyBradleys > 0) {
+      logger.info("\n Urey-Bradley Interactions:");
+      UreyBradley[] ureyBradleys = getUreyBradleys();
+      for (UreyBradley ureyBradley : ureyBradleys) {
+        logger.info("Urey-Bradley \t" + ureyBradley.toString());
+      }
+    }
+    if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
+      logger.info("\n Out-of-Plane Bend Interactions:");
+      OutOfPlaneBend[] outOfPlaneBends = getOutOfPlaneBends();
+      for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+        logger.info(" Out-of-Plane Bend \t" + outOfPlaneBend.toString());
+      }
+    }
+    if (torsionTerm && nTorsions > 0) {
+      logger.info("\n Torsion Angle Interactions:");
+      Torsion[] torsions = getTorsions();
+      for (Torsion torsion : torsions) {
+        logger.info(" Torsion \t" + torsion.toString());
+      }
+    }
+    if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
+      logger.info("\n Pi-Orbital Torsion Interactions:");
+      PiOrbitalTorsion[] piOrbitalTorsions = getPiOrbitalTorsions();
+      for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+        logger.info(" Pi-Torsion \t" + piOrbitalTorsion.toString());
+      }
+    }
+    if (stretchTorsionTerm && nStretchTorsions > 0) {
+      logger.info("\n Stretch-Torsion Interactions:");
+      StretchTorsion[] stretchTorsions = getStretchTorsions();
+      for (StretchTorsion stretchTorsion : stretchTorsions) {
+        logger.info(" Stretch-Torsion \t" + stretchTorsion.toString());
+      }
+    }
+    if (angleTorsionTerm && nAngleTorsions > 0) {
+      logger.info("\n Angle-Torsion Interactions:");
+      AngleTorsion[] angleTorsions = getAngleTorsions();
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        logger.info(" Angle-Torsion \t" + angleTorsion.toString());
+      }
+    }
+    if (torsionTorsionTerm && nTorsionTorsions > 0) {
+      logger.info("\n Torsion-Torsion Interactions:");
+      TorsionTorsion[] torsionTorsions = getTorsionTorsions();
+      for (TorsionTorsion torsionTorsion : torsionTorsions) {
+        logger.info(" Torsion-Torsion \t" + torsionTorsion.toString());
+      }
+    }
+    if (improperTorsionTerm && nImproperTorsions > 0) {
+      logger.info("\n Improper Interactions:");
+      ImproperTorsion[] improperTorsions = getImproperTorsions();
+      for (ImproperTorsion improperTorsion : improperTorsions) {
+        logger.info(" Improper \t" + improperTorsion.toString());
+      }
+    }
+    if (restraintBondTerm && nRestraintBonds > 0) {
+      logger.info("\n Restraint Bond Interactions:");
+      List<RestraintBond> restraintBonds = getRestraintBonds();
+      for (RestraintBond restraintBond : restraintBonds) {
+        logger.info(" Restraint Bond \t" + restraintBond.toString());
+      }
+    }
+    if (restrainTerm && !coordRestraints.isEmpty()) {
+      logger.info("\n Coordinate Restraint Interactions:");
+      for (CoordRestraint restraint : coordRestraints) {
+        logger.info(" Coordinate Restraint \t" + restraint.toString());
+      }
+    }
+  }
+
   /**
    * Setter for the field <code>lambdaBondedTerms</code>.
    *
@@ -3994,7 +4089,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(
             gz)) {
           StringBuilder sb = new StringBuilder(
-              format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
+              format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a, gx, gy, gz));
           double[] vals = new double[3];
           a.getVelocity(vals);
           sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
@@ -4097,7 +4192,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
         if (logger.isLoggable(Level.FINEST)) {
           logger.info(
-              format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
+              format(" MTRIXn SymOp: %d of %d\n" + symOp, i + 1, MTRX1List.length));
         }
         spaceGroup.symOps.add(symOp);
       }

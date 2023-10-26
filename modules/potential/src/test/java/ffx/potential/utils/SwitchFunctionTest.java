@@ -47,6 +47,8 @@ import ffx.numerics.switching.PowerSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import java.util.logging.Logger;
+
+import ffx.utilities.FFXTest;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.Test;
 
@@ -57,7 +59,7 @@ import org.junit.Test;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class SwitchFunctionTest {
+public class SwitchFunctionTest extends FFXTest {
   private static final Logger logger = Logger.getLogger(SwitchFunctionTest.class.getName());
 
   // A set of standard multiples of ulp(0) and ulp(1)

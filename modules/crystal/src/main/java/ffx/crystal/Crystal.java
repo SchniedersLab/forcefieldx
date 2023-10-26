@@ -214,8 +214,7 @@ public class Crystal {
    * @param gamma The gamma angle.
    * @param sgNumber The space group number.
    */
-  public Crystal(double a, double b, double c, double alpha, double beta, double gamma,
-      int sgNumber) {
+  public Crystal(double a, double b, double c, double alpha, double beta, double gamma, int sgNumber) {
     this(a, b, c, alpha, beta, gamma, SpaceGroupDefinitions.spaceGroupFactory(sgNumber).pdbName);
   }
 
@@ -1035,8 +1034,7 @@ public class Crystal {
 
   public boolean randomParameters(double dens, double mass) {
     double[] params = latticeSystem.resetUnitCellParams();
-    boolean succeed =
-        changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
+    boolean succeed = changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
     if (succeed) {
       setDensity(dens, mass);
     }
@@ -1107,7 +1105,9 @@ public class Crystal {
     double scale = cbrt(currentDensity / dens);
     changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
     currentDensity = getDensity(mass);
-    logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(format(" Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
+    }
   }
 
   /**
@@ -1293,7 +1293,7 @@ public class Crystal {
   }
 
   /** Update all Crystal variables that are a function of unit cell parameters. */
-  public void updateCrystal() {
+  public final void updateCrystal() {
 
     double cos_alpha;
     double sin_beta;

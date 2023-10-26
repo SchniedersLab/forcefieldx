@@ -166,7 +166,7 @@ public class SturmMethod {
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder string = new StringBuilder();
       for (int i = order; i >= 0; i--) {
-        string.append(format(" Coefficients in Sturm solver\n"));
+        string.append(" Coefficients in Sturm solver\n");
         string.append(format("%d %f\n", i, sseq[0].coefficients[i]));
       }
       logger.fine(string.toString());
@@ -176,7 +176,7 @@ public class SturmMethod {
 
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder string1 = new StringBuilder();
-      string1.append(format(" Sturm sequence for:\n"));
+      string1.append(" Sturm sequence for:\n");
       for (int i = order; i >= 0; i--) {
         string1.append(format("%f ", sseq[0].coefficients[i]));
         string1.append("\n");
@@ -206,7 +206,7 @@ public class SturmMethod {
     }
 
     if (nchanges != atmin[0]) {
-      logger.fine(format(" Solve: unable to bracket all negative roots\n"));
+      logger.fine(" Solve: unable to bracket all negative roots\n");
       atmin[0] = nchanges;
     }
 
@@ -218,7 +218,7 @@ public class SturmMethod {
       nchanges = numChanges(np, sseq, max);
     }
     if (nchanges != atmax[0]) {
-      logger.fine(format(" Solve: unable to bracket all positive roots\n"));
+      logger.fine(" Solve: unable to bracket all positive roots\n");
       atmax[0] = nchanges;
     }
 
@@ -303,12 +303,6 @@ public class SturmMethod {
             xyz_a[1] = r_a[i - stt_res][1];
             xyz_a[2] = r_a[i - stt_res][2];
             backBoneAtom.moveTo(xyz_a);
-            break;
-          case "HA":
-            newResidue.deleteAtom(backBoneAtom);
-            break;
-          case "H":
-            newResidue.deleteAtom(backBoneAtom);
             break;
           case "O":
             OAtoms.add(backBoneAtom);

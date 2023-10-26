@@ -157,7 +157,8 @@ class PrepareSpaceGroups extends PotentialScript {
     // Turn off electrostatic interactions.
     System.setProperty("mpoleterm", "false")
 
-    // Make sure an a-axis value is set.
+    // Set the spacegroup to P1 and choose a default a-axis.
+    System.setProperty("spacegroup", "P1")
     System.setProperty("a-axis", "10.0")
 
     // Load the MolecularAssembly.
@@ -201,8 +202,8 @@ class PrepareSpaceGroups extends PotentialScript {
         if (spacegroup2.number != spacegroup.number) {
           continue
         }
-      }else{
-        spacegroup2=spacegroup;
+      } else {
+        spacegroup2 = spacegroup;
       }
 
       if (chiral && !spacegroup.respectsChirality()) {
@@ -238,12 +239,17 @@ class PrepareSpaceGroups extends PotentialScript {
           spacegroup2.shortName)
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
+      // Cut off of aperiodic systems are infinity... replicates crystal factory stalls...
+      if(cutoff2 == Double.POSITIVE_INFINITY){
+        cutoff2 = 0.1;
+      }
       crystal = replicatesCrystalFactory(crystal, cutoff2)
-
       // Turn off special position checks.
       crystal.setSpecialPositionCutoff(0.0)
       crystal.getUnitCell().setSpecialPositionCutoff(0.0)
       energy.setCrystal(crystal)
+
+      activeAssembly.moveAllIntoUnitCell();
 
       if (symScalar > 0.0) {
         SymOp symOp = randomSymOpFactory(symScalar)
@@ -267,8 +273,8 @@ class PrepareSpaceGroups extends PotentialScript {
       numberCreated++
 
       // Write the new properties file.
-      new BufferedReader(new FileReader(propertyFile)).withCloseable {keyReader ->
-        new PrintWriter(new BufferedWriter(new FileWriter(keyFile))).withCloseable {keyWriter ->
+      new BufferedReader(new FileReader(propertyFile)).withCloseable { keyReader ->
+        new PrintWriter(new BufferedWriter(new FileWriter(keyFile))).withCloseable { keyWriter ->
           try {
             while (keyReader.ready()) {
               String line = keyReader.readLine().trim()
@@ -283,10 +289,10 @@ class PrepareSpaceGroups extends PotentialScript {
                     logger.fine(format(" Updating : %s", line))
                   } else if (first == "parameters") {
                     if (tokens.length > 1) {
-                      if(tokens[1].startsWith("/") || tokens[1].startsWith("\\")){
-                        //Absolute path specified, therefore do not modify.
+                      if (tokens[1].startsWith("/") || tokens[1].startsWith("\\")) {
+                        // Absolute path specified, therefore do not modify.
                         keyWriter.println(format("parameters %s", tokens[1]))
-                      }else {
+                      } else {
                         keyWriter.println(format("parameters ../%s", tokens[1]))
                       }
                     } else {
@@ -303,12 +309,13 @@ class PrepareSpaceGroups extends PotentialScript {
 
             // Update the space group and unit cell parameters.
             keyWriter.println(format("spacegroup %s", spacegroup2.shortName))
-            keyWriter.println(format("a-axis %12.8f", crystal.a))
-            keyWriter.println(format("b-axis %12.8f", crystal.b))
-            keyWriter.println(format("c-axis %12.8f", crystal.c))
-            keyWriter.println(format("alpha  %12.8f", crystal.alpha))
-            keyWriter.println(format("beta   %12.8f", crystal.beta))
-            keyWriter.println(format("gamma  %12.8f", crystal.gamma))
+            Crystal unitCell = crystal.getUnitCell()
+            keyWriter.println(format("a-axis %12.8f", unitCell.a))
+            keyWriter.println(format("b-axis %12.8f", unitCell.b))
+            keyWriter.println(format("c-axis %12.8f", unitCell.c))
+            keyWriter.println(format("alpha  %12.8f", unitCell.alpha))
+            keyWriter.println(format("beta   %12.8f", unitCell.beta))
+            keyWriter.println(format("gamma  %12.8f", unitCell.gamma))
           } catch (IOException ex) {
             logger.warning(" Exception writing keyfile." + ex.toString())
           }
@@ -316,7 +323,9 @@ class PrepareSpaceGroups extends PotentialScript {
       }
     }
 
+    // Clear the JVM properties set above.
     System.clearProperty("mpoleterm")
+    System.clearProperty("spacegroup")
     System.clearProperty("a-axis")
 
     return this

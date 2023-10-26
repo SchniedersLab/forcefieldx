@@ -57,7 +57,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class Erf {
 
-  /** Mathematical and machine-dependent constants. */
+  /**
+   * Mathematical and machine-dependent constants.
+   */
   private static final double sqrtPI = 1.0 / sqrt(PI);
 
   private static final double oneSixteenth = 1.0 / 16.0;
@@ -79,7 +81,8 @@ public class Erf {
    */
   private static final double xBig = 26.543;
 
-  private Erf() {}
+  private Erf() {
+  }
 
   /**
    * Evaluates erf(x) for a real argument x.
@@ -107,15 +110,14 @@ public class Erf {
    * Evaluates erf(x) or erfc(x) for a real argument x. When called with mode = false, erf is
    * returned, while with mode = true, erfc is returned.
    *
-   * @param arg the value to evaluate erf or erfc at.
+   * @param x    the value to evaluate erf or erfc at.
    * @param mode if mode is true, evaluate erfc, otherwise evaluate erf.
    * @return if (!mode) erf(arg), else erfc(arg)
    * @since 1.0
    */
-  private static double erfCore(double arg, boolean mode) {
+  private static double erfCore(double x, boolean mode) {
 
     // Store the argument and its absolute value.
-    final double x = arg;
     final double y = abs(x);
     double result = 0.0;
 

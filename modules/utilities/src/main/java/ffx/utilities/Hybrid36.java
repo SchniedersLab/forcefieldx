@@ -62,6 +62,13 @@ public class Hybrid36 {
   private static boolean firstCall = true;
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private Hybrid36() {
+    // Empty constructor.
+  }
+
+  /**
    * Hybrid-36 decoder: converts string s to integer result.
    *
    * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial

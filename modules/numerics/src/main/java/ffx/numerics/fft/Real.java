@@ -46,19 +46,19 @@ import static org.apache.commons.math3.util.FastMath.sin;
  * Compute the FFT of real, double precision data of arbitrary length n using a Complex transform.
  *
  * @author Michal J. Schnieders<br> Derived from: <br> Bruce R. Miller bruce.miller@nist.gov <br>
- *     Contribution of the National Institute of Standards and Technology, not subject to copyright.
- *     <br>
- *     Derived from:<br> GSL (Gnu Scientific Library) FFT Code by Brian Gough bjg@vvv.lanl.gov
+ * Contribution of the National Institute of Standards and Technology, not subject to copyright.
+ * <br>
+ * Derived from:<br> GSL (Gnu Scientific Library) FFT Code by Brian Gough bjg@vvv.lanl.gov
  * @see <ul>
- *           <li><a href="http://dx.doi.org/10.1109/TASSP.1987.1165220" target="_blank"> Henrik V.
- *               Sorenson, Douglas L. Jones, Michael T. Heideman, and C. Sidney Burrus. Real-valued fast
- *               fourier fft algorithms. IEEE Transactions on Acoustics, Speech, and Signal Processing,
- *               ASSP-35(6):849–863, 1987. </a>
- *           <li><a href="http://www.jstor.org/stable/2003354" target="_blank">J. W. Cooley and J. W.
- *               Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
- *           <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
- *               Wikipedia </a>
- *         </ul>
+ * <li><a href="http://dx.doi.org/10.1109/TASSP.1987.1165220" target="_blank"> Henrik V.
+ * Sorenson, Douglas L. Jones, Michael T. Heideman, and C. Sidney Burrus. Real-valued fast
+ * fourier fft algorithms. IEEE Transactions on Acoustics, Speech, and Signal Processing,
+ * ASSP-35(6):849–863, 1987. </a>
+ * <li><a href="http://www.jstor.org/stable/2003354" target="_blank">J. W. Cooley and J. W.
+ * Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
+ * <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
+ * Wikipedia </a>
+ * </ul>
  * @since 1.0
  */
 public class Real {
@@ -88,7 +88,7 @@ public class Real {
   /**
    * fft
    *
-   * @param data Input data.
+   * @param data   Input data.
    * @param offset Offset to the beginning of the data.
    */
   public void fft(double[] data, int offset) {
@@ -99,7 +99,7 @@ public class Real {
   /**
    * ifft
    *
-   * @param data Input data.
+   * @param data   Input data.
    * @param offset Offset to the beginning of the data.
    */
   public void ifft(double[] data, int offset) {
@@ -115,7 +115,7 @@ public class Real {
   /**
    * inverse
    *
-   * @param data Input data.
+   * @param data   Input data.
    * @param offset Offset to the beginning of the data.
    */
   public void inverse(double[] data, int offset) {
@@ -142,7 +142,7 @@ public class Real {
   /**
    * Unpack following the forward Complex FFT.
    *
-   * @param data Input data.
+   * @param data   Input data.
    * @param offset Offset to the beginning of the data.
    */
   private void unpack(double[] data, int offset) {
@@ -183,7 +183,7 @@ public class Real {
   /**
    * Pack prior to inverse Complex FFT.
    *
-   * @param data Input data.
+   * @param data   Input data.
    * @param offset Offset to the beginning of the data.
    */
   private void pack(double[] data, int offset) {

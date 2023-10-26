@@ -54,7 +54,7 @@ public class RandomUnitCellOptions {
    * The ArgGroup keeps the Random SymOp Options together when printing help.
    */
   @ArgGroup(heading = "%n Random Unit Cell Options%n", validate = false)
-  public RandomUnitCellOptionGroup group = new RandomUnitCellOptionGroup();
+  private final RandomUnitCellOptionGroup group = new RandomUnitCellOptionGroup();
 
   /**
    * Randomize the unit cell for a MolecularAssembly.

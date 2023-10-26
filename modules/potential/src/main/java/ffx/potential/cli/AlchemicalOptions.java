@@ -67,7 +67,7 @@ public class AlchemicalOptions {
    * The ArgGroup keeps the AlchemicalOptions together when printing help.
    */
   @ArgGroup(heading = "%n Alchemical Options%n", validate = false)
-  public AlchemicalOptionGroup group = new AlchemicalOptionGroup();
+  private final AlchemicalOptionGroup group = new AlchemicalOptionGroup();
 
   /**
    * Sets the uncharged atoms for a MolecularAssembly.

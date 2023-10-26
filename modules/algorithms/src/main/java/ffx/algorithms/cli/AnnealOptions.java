@@ -37,19 +37,19 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.anneal.AnnealingSchedule;
 import ffx.algorithms.optimize.anneal.FlatEndAnnealSchedule;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import java.io.File;
-import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
+
+import java.io.File;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that utilize simulated annealing.
@@ -66,7 +66,7 @@ public class AnnealOptions {
    * The ArgGroup keeps the AnnealOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Simulated Annealing Options%n", validate = false)
-  public AnnealOptionGroup group = new AnnealOptionGroup();
+  private final AnnealOptionGroup group = new AnnealOptionGroup();
 
   /**
    * Number of annealing windows.

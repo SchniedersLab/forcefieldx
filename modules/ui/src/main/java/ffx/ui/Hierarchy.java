@@ -749,7 +749,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
     }
 
     if (activeSystem.getCycles() > 1) {
-      step.setText("" + activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
+      step.setText(activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
     } else {
       step.setText("");
     }
