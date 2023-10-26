@@ -75,7 +75,7 @@ public class RealSpaceOptions extends DataRefinementOptions {
   /**
    * Process input to collect Real Space Files.
    *
-   * @param filenames Input filename (first filename is ignored).
+   * @param filenames Input filenames (first filename is ignored).
    * @param molecularAssembly Currently open molecularAssembly.
    * @return a list of Real Space File instances.
    */
@@ -116,7 +116,7 @@ public class RealSpaceOptions extends DataRefinementOptions {
   /**
    * Process input from opened molecular assemblies to a RefinementEnergy
    *
-   * @param filenames All filename included in the real-space data.
+   * @param filenames All filenames included in the real-space data.
    * @param molecularAssemblies Array of MolecularAssembly instances.
    * @return An assembled RefinementEnergy with real-space energy.
    */

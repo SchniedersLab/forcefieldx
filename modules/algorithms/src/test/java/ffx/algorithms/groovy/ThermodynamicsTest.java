@@ -228,7 +228,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
           break;
         default:
           assertTrue(
-              format("Must have 1, 2, or 4 distinct filename, found %d for test %s", nFiles, info),
+              format("Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
               nFiles == 1 || nFiles == 2 || nFiles == 4);
           for (int i = 0; i < nFiles; i++) {
             for (int j = i + 1; j < nFiles; j++) {
@@ -364,7 +364,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     /*
-     Test info, filename, mode, dG, tol(dG), grad atoms, PE, dU/dL, d2U/dL2,
+     Test info, filenames, mode, dG, tol(dG), grad atoms, PE, dU/dL, d2U/dL2,
      dU/dX, d2U/dXdL, Groovy options, properties, Groovy flags
     */
     return Arrays.asList(new Object[][] {
