@@ -54,6 +54,10 @@ import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
+import ffx.numerics.Potential;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
@@ -72,6 +76,10 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.fitting.leastsquares.*;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.util.Pair;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -1301,9 +1309,8 @@ public class TitrationUtils {
             hisVDWTypes[index][state]);
         if (hisMultipoleTypes[index][state] == null || hisPolarizeTypes[index][state] == null
             || hisSoluteTypes[index][state] == null) {
-          logger.severe(
-              format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n", atomName,
-                  hisAtomTypes[index][state]));
+          logger.severe(format(" Titration parameters could not be assigned for His atom %s.\n %s\n",
+              atomName, hisAtomTypes[index][state]));
         }
       }
     }
@@ -1618,6 +1625,144 @@ public class TitrationUtils {
   }
 
   /**
+   * Predict pKa from a set of residue fractions (deprotonated / (deprotonated + protonated)). This method minimizes
+   * the L2 loss between the the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
+   * coefficient predictions.
+   *
+   * @param pHScale pH values at which the residue fractions were measured
+   * @param residueFractions a sorted array of residue fractions (deprotonated / (deprotonated + protonated))
+   * @return {n, pKa}
+   */
+  public static double[] predictHillCoeffandPka(double[] pHScale, double[] residueFractions) {
+
+    // Potentials for n and pKa, since LGBFS optimizer gradient is only for 1D array of gradients
+    Potential hendersonHasselbach = new Potential() {
+      static final double logb10 = Math.log(10);
+
+      @Override
+      public double energy(double[] x) {
+        return leastSquaresLoss(residueFractions, getValues(x));
+      }
+
+      public double leastSquaresLoss(double[] residueFractions, double[] guessedFractions) {
+        double loss = 0.0;
+        for (int i = 0; i < residueFractions.length; i++) {
+          loss += Math.pow(residueFractions[i] - guessedFractions[i], 2);
+        }
+        return loss;
+      }
+
+      public double[] getValues(double[] x) {
+        double[] values = new double[pHScale.length];
+        for (int i = 0; i < pHScale.length; i++) {
+          values[i] = 1 / (1 + Math.pow(10, x[0] * (x[1] - pHScale[i])));
+        }
+        return values;
+      }
+
+      public void gradient(double[] x, double[] gradient) {
+        // reset gradient
+        Arrays.fill(gradient, 0.0);
+        double[] values = getValues(x);
+        for (int i = 0; i < pHScale.length; i++) {
+          // term = 10^(n(pKa - pH))
+          double term = Math.pow(10, x[0] * (x[1] - pHScale[i]));
+
+          // d = (1 + term)^2
+          double d = (1 + term) * (1 + term);
+
+          // -sum(d(cost)/dn) across pH values
+          gradient[0] += 2*(residueFractions[i] - values[i]) * logb10 * (x[1] - pHScale[i]) * term / d;
+
+          // -sum(d(cost)/dpKa) across pH values
+          gradient[1] += 2*(residueFractions[i] - values[i]) * x[0] * logb10 * term / d;
+        }
+      }
+
+      @Override
+      public double energyAndGradient(double[] x, double[] g) {
+        gradient(x, g);
+        return energy(x);
+      }
+
+      @Override
+      public double[] getAcceleration(double[] acceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+      }
+      @Override
+      public STATE getEnergyTermState() {
+        return null;
+      }
+      @Override
+      public void setEnergyTermState(STATE state) {}
+      @Override
+      public double[] getMass() {
+        return new double[0];
+      }
+      @Override
+      public int getNumberOfVariables() {
+        return 0;
+      }
+      @Override
+      public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getScaling() {
+        return null;
+      }
+      @Override
+      public void setScaling(double[] scaling) {}
+      @Override
+      public double getTotalEnergy() {
+        return 0;
+      }
+      @Override
+      public VARIABLE_TYPE[] getVariableTypes() {
+        return new VARIABLE_TYPE[0];
+      }
+      @Override
+      public double[] getVelocity(double[] velocity) {
+        return new double[0];
+      }
+      @Override
+      public void setAcceleration(double[] acceleration) {}
+      @Override
+      public void setPreviousAcceleration(double[] previousAcceleration) { }
+      @Override
+      public void setVelocity(double[] velocity) {}
+    };
+
+    // Call L-BFGS optimizer on hendersonHasselbach least squares potential
+    int n = 2;
+    double[] x = new double[]{1.0, 7.0}; // initial guess pKa
+    int m = 3;
+    double energy = hendersonHasselbach.energy(x);
+    double[] grad = new double[n];
+    hendersonHasselbach.energyAndGradient(x, grad);
+    hendersonHasselbach.setScaling(new double[]{1.0, 1.0});
+    double eps = 1e-5;
+    int maxIterations = 100;
+    OptimizationListener listener = new OptimizationListener() {
+      @Override
+      public boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
+                                        double coordinateRMS, double f, double df, double angle,
+                                        LineSearch.LineSearchResult info) {
+        return true;
+      }
+    };
+
+    int statuspKa = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations,
+            hendersonHasselbach, listener);
+
+    return new double[]{x[0], x[1]};
+  }
+
+  /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
    * energy of protonation, obtained via BAR on capped monomers. pKa values from Thurlkill, Richard
    * L., et al. "pK values of the ionizable groups of proteins." Protein science 15.5 (2006):
@@ -1627,20 +1772,25 @@ public class TitrationUtils {
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
    * <p>
-   * -(quadratic * lambda^2 + linear * lambda)
+   * ASP value from Grimsley, Gerald R., J. Martin Scholtz, and C. Nick Pace.
+   * "A summary of the measured pK values of the ionizable groups in folded proteins."
+   * Protein Science 18.1 (2009): 247-251.
+   *
    */
   public enum Titration {
 
-    ASHtoASP(3.67, -71.10, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP), GLHtoGLU(4.25,
-        -83.40, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU), LYStoLYD(10.40, 41.77, 0.0,
-        -69.29, 24.17778, AminoAcid3.LYS,
-        AminoAcid3.LYD), //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    CYStoCYD(8.55, -66.2, 34.567, -151.95, 196.33, AminoAcid3.CYS,
-            AminoAcid3.CYD), //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.20, 0.0, -64.317, 30.35, AminoAcid3.HIS,
-            AminoAcid3.HID), //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, 0.0, -62.931, 32.00, AminoAcid3.HIS, AminoAcid3.HIE), HIDtoHIE(Double.NaN,
-        0.00, 0.0, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
+
+    ASHtoASP(3.94, -71.10, 15.675, -110.470, 166.591, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -83.40, 26.509, -128.030, 187.460, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.77, 6.875, -78.868, 26.703, AminoAcid3.LYS, AminoAcid3.LYD),
+    //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
+    CYStoCYD(8.55, -66.2, 37.039, -168.470, 216.663, AminoAcid3.CYS, AminoAcid3.CYD),
+    //HE2 is the proton that is lost
+    HIStoHID(7.00, 40.20, 13.602, -83.166, 35.615, AminoAcid3.HIS, AminoAcid3.HID),
+    //HD1 is the proton that is lost
+    HIStoHIE(6.60, 37.44, 14.535, -82.064, 37.452, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(Double.NaN, 0.00, 3.287, -40.806, 34.172, AminoAcid3.HID, AminoAcid3.HIE);
+
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 

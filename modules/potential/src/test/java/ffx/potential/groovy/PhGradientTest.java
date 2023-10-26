@@ -199,7 +199,7 @@ public class PhGradientTest extends PotentialTest {
                 -42.77517305,
                 7648,
                 -8.00000000,
-                -4.27009315
+                -3.90174646
             },
             {
                 "HDECK peptide",
@@ -231,7 +231,7 @@ public class PhGradientTest extends PotentialTest {
                 -22.35053436,
                 8280,
                 -8.00000000,
-                -152.33788000
+                -163.72800000
             }
         });
   }

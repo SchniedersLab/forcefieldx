@@ -476,6 +476,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     esvSystem = system;
     SystemState esvState = esvSystem.getState();
     this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvState);
+    if(!esvSystem.getConstraints().isEmpty()){
+      esvIntegrator.addConstraints(esvSystem.getConstraints());
+    }
     this.esvThermostat = new Adiabatic(esvState, potential.getVariableTypes());
     printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
