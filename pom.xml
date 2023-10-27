@@ -977,13 +977,13 @@
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.3.1</checkstyle.version>
     <ciftools-java.version>5.0.2</ciftools-java.version>
-    <clean.version>3.3.1</clean.version>
+    <clean.version>3.3.2</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.9.0</commons-configuration2.version>
-    <commons-io.version>2.14.0</commons-io.version>
+    <commons-io.version>2.15.0</commons-io.version>
     <commons-lang3.version>3.13.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
@@ -1032,7 +1032,7 @@
     <project-info-reports.version>3.4.5</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <properties.version>1.2.0</properties.version>
+    <properties.version>1.2.1</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>

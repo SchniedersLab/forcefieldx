@@ -50,6 +50,10 @@
               </p>
             </td>
           </tr>
+          <tr>
+            <td> <!-- BLANK --> </td>
+            <td> <!-- BLANK --> </td>
+          </tr>
         </table>
       </subsection>
       <subsection name="Getting Started">
@@ -133,20 +137,32 @@
         </p>
         <table>
           <tr>
+            <td>
+              <p>
+                CHE 1751688
+              </p>
+            </td>
+            <td>
+              <p>
+                R01 DC012049
+              </p>
+            </td>
+            <td>
+              <!-- BLANK -->
+            </td>
+            <td>
+              <!-- BLANK -->
+            </td>
+          </tr>
+          <tr>
             <td width="150">
               <p>
                 <img src="images/NSF.png" alt="NSF" width="125" align="middle"/>
-              </p>
-              <p>
-                CHE 1751688
               </p>
             </td>
             <td width="150">
               <p>
                 <img src="images/NIH.png" alt="NIH" width="125" align="middle"/>
-              </p>
-              <p>
-                R01 DC012049
               </p>
             </td>
             <td width="150">

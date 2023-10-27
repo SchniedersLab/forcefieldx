@@ -134,7 +134,7 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${basedir}/src/site/resources/script</outputDirectory>
+              <outputDirectory>${basedir}/target/site/resources/script</outputDirectory>
               <resources>
                 <resource>
                   <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
