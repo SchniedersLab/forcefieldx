@@ -13,26 +13,9 @@
   <packaging>jar</packaging>
   <name>Algorithms</name>
   <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations,
-    and
-    calculation of free energy differences.
+    and calculation of free energy differences.
   </description>
   <build>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>${basedir}/../../groovy</targetPath>
-      </resource>
-      <resource>
-        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>${basedir}/src/site/resources/scripts</targetPath>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -120,6 +103,50 @@
             <type>jar</type>
           </dependency>
         </dependencies>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${resources.version}</version>
+        <executions>
+          <execution>
+            <id>copy-groovy-scripts</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/../../groovy</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+                  <includes>
+                    <include>*</include>
+                  </includes>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-groovy-scripts-website</id>
+            <phase>site</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/src/site/resources/script</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+                  <includes>
+                    <include>*</include>
+                  </includes>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

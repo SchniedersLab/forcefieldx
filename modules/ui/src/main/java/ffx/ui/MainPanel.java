@@ -141,8 +141,8 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
 
   /** Constant <code>version="1.0.0-BETA"</code> */
   public static final String version = "1.0.0-BETA";
-  /** Constant <code>date="May 2020"</code> */
-  public static final String date = "May 2020";
+  /** Constant <code>date="October 2023"</code> */
+  public static final String date = "October 2023";
   /** Constant */
   public static final String border =
       " _________________________________________________________________________\n";

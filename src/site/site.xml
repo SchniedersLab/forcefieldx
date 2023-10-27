@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project name="Force Field X" xmlns="http://maven.apache.org/DECORATION/1.8.0"
+<project xmlns="http://maven.apache.org/DECORATION/1.8.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
   <version position="right"/>
@@ -14,7 +14,7 @@
           img="/images/icon90.png"/>
   </poweredBy>
   <bannerLeft>
-    <name>
+    <!-- name>
       <![CDATA[
              <span style="color:black">Force Field X</span>
              <br>
@@ -22,9 +22,10 @@
              <span style="color:black">Polyglot Software for Molecular Biophysics</span>
              </h4>
             ]]>
-    </name>
-    <!-- name>Force Field X: Software for Molecular Biophysics</name -->
-    <!-- href>http://ffx.biochem.uiowa.edu</href -->
+    </name -->
+    <src>/images/FFX-Logo-Banner.png</src>
+    <name>Force Field X: Polyglot Software for Molecular Biophysics</name>
+    <href>https://ffx.biochem.uiowa.edu</href>
   </bannerLeft>
   <bannerRight>
     <name>The University of Iowa</name>

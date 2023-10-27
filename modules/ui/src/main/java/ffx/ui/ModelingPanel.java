@@ -1101,24 +1101,24 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         activeSystem = mainPanel.getHierarchy().getActive();
       }
       // Finally, create and execute the command in a new thread.
-      FFXExec tinkerExec =
+      FFXExec ffxExec =
           new FFXExec(activeSystem, logName, command, dir, mainPanel, newFile, openOnto);
-      Thread tinkerThread = new Thread(tinkerExec);
-      tinkerThread.setPriority(Thread.NORM_PRIORITY);
-      tinkerThread.setName(logName);
+      Thread ffxThread = new Thread(ffxExec);
+      ffxThread.setPriority(Thread.NORM_PRIORITY);
+      ffxThread.setName(logName);
       // If the job progressively modifies coordinates, connect to it.
       if (commandActions.toUpperCase().contains("CONNECT")) {
-        mainPanel.connectToTINKER(activeSystem, tinkerThread);
+        mainPanel.connectToTINKER(activeSystem, ffxThread);
       } else {
-        tinkerThread.start();
+        ffxThread.start();
       }
       // If some action should be taken when the job finishes,
       // add it to the Modeling Jobs Vector
       if (!commandActions.equalsIgnoreCase("NONE")) {
-        executingCommands.add(tinkerThread);
+        executingCommands.add(ffxThread);
         // mainPanel.getLogPanel().refreshStatus();
       }
-      return tinkerExec;
+      return ffxExec;
     }
   }
 
