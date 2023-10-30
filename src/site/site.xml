@@ -14,15 +14,6 @@
           img="/images/icon90.png"/>
   </poweredBy>
   <bannerLeft>
-    <!-- name>
-      <![CDATA[
-             <span style="color:black">Force Field X</span>
-             <br>
-             <h4>
-             <span style="color:black">Polyglot Software for Molecular Biophysics</span>
-             </h4>
-            ]]>
-    </name -->
     <src>/images/FFX-Logo-Banner.png</src>
     <name>Force Field X: Polyglot Software for Molecular Biophysics</name>
     <href>https://ffx.biochem.uiowa.edu</href>
@@ -32,7 +23,7 @@
     <src>/images/UofI2.png</src>
     <href>https://www.uiowa.edu</href>
     <width>192px</width>
-    <height>96px</height>
+    <height>108px</height>
   </bannerRight>
   <custom>
     <fluidoSkin>
@@ -55,11 +46,11 @@
       <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
       <copyrightClass>pull-right</copyrightClass>
       <gitHub>
-        <projectId>mjschnie/ffx</projectId>
+        <projectId>SchniedersLab/forcefieldx</projectId>
         <!-- ribbonOrientation: left/right -->
         <ribbonOrientation>right</ribbonOrientation>
         <!-- ribbonColor: red/green/black/darkblue/orange/gray -->
-        <ribbonColor>green</ribbonColor>
+        <ribbonColor>black</ribbonColor>
       </gitHub>
       <!-- profile: pre-release|sandbox|retired -->
       <profile>production</profile>
@@ -71,29 +62,22 @@
       <breadcrumbDivider>»</breadcrumbDivider>
     </fluidoSkin>
   </custom>
-
-  <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
-
   <body>
     <head>
+      <!-- Google Analytics 4 -->
       <![CDATA[
-                <!-- Global site tag (gtag.js) - Google Analytics -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=UA-12576019-1"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments)};
-                    gtag('js', new Date());
-                    gtag('config', 'UA-12576019-1');
-                </script>
-            ]]>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1M8ZSTSYQ6"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-1M8ZSTSYQ6');
+        </script>
+      ]]>
     </head>
     <links>
       <item name="Biomedical Engineering"  href="https://www.engineering.uiowa.edu/bme"/>
-      <item name="Biochemisty and Molecular Biology" href="https://www.medicine.uiowa.edu/biochemistry"/>
-      <!-- item name="CBCB" href="https://genome.uiowa.edu/home"/>
-      <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
-      <item name="IVR"  href="http://ivr.uiowa.edu"/>
-      <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
+      <item name="Biochemistry and Molecular Biology" href="https://www.medicine.uiowa.edu/biochemistry"/>
     </links>
     <breadcrumbs>
       <item name="Sitemap" href="/sitemap.html"/>
