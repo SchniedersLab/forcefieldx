@@ -60,7 +60,7 @@ import static org.apache.commons.math3.util.FastMath.cos
  * ffxc XYZtoQE [options] &lt;filename&gt;
  */
 @Command(description = "Generate QE input from a XYZ file.", name = "XYZtoQE")
-class XYZtoQE extends PotentialScript {
+class ExportQE extends PotentialScript {
 
   /**
    * --ns or --numSteps Number of structural optimization steps performed in this run.
@@ -135,7 +135,7 @@ class XYZtoQE extends PotentialScript {
   /**
    * XYZtoQE Constructor.
    */
-  XYZtoQE() {
+  ExportQE() {
     this(new Binding())
   }
 
@@ -143,7 +143,7 @@ class XYZtoQE extends PotentialScript {
    * XYZtoQE Constructor.
    * @param binding Groovy Binding to use.
    */
-  XYZtoQE(Binding binding) {
+  ExportQE(Binding binding) {
     super(binding)
   }
 
@@ -151,7 +151,7 @@ class XYZtoQE extends PotentialScript {
    * Execute the script.
    */
   @Override
-  XYZtoQE run() {
+  ExportQE run() {
 
     // Init the context and bind variables.
     if (!init()) {

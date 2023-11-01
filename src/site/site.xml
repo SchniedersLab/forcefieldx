@@ -184,7 +184,7 @@
           <item name="SaveAsPDB" href="/commands/SaveAsPDB.html"/>
           <item name="SaveAsXYZ" href="/commands/SaveAsXYZ.html"/>
           <item name="SaveRotamers" href="/commands/SaveRotamers.html"/>
-          <item name="XYZtoQE" href="/commands/XYZtoQE.html"/>
+          <item name="ExportQE" href="/commands/ExportQE.html"/>
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">

@@ -70,7 +70,7 @@
             <argument>ffx.potential.groovy.Timer</argument>
             <argument>ffx.potential.groovy.Volume</argument>
             <argument>ffx.potential.groovy.VolumeArc</argument>
-            <argument>ffx.potential.groovy.XYZtoQE</argument>
+            <argument>ffx.potential.groovy.ExportQE</argument>
             <argument>ffx.potential.groovy.test.CoordShakeEnergy</argument>
             <argument>ffx.potential.groovy.test.EnergyOpenMM</argument>
             <argument>ffx.potential.groovy.test.Gradient</argument>

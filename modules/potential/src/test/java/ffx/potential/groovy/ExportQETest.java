@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.groovy.XYZtoQE;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
@@ -47,7 +46,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  */
 
-public class XYZtoQETest extends PotentialTest {
+public class ExportQETest extends PotentialTest {
 
   /** Tests the XYZtoQE script. */
   @Test
@@ -59,7 +58,7 @@ public class XYZtoQETest extends PotentialTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the XYZtoQE script.
-    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    ExportQE xyzToQE = new ExportQE(binding).run();
     potentialScript = xyzToQE;
     // TODO validate output.
   }
@@ -71,7 +70,7 @@ public class XYZtoQETest extends PotentialTest {
     binding.setVariable("args", args);
 
     // Construct and evaluate the XYZtoQE script.
-    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    ExportQE xyzToQE = new ExportQE(binding).run();
     potentialScript = xyzToQE;
   }
 }
