@@ -11,7 +11,8 @@ header = """{
   ],
   "imports": [
     "ffx.Main",
-    "ffx.Main.*"
+    "ffx.Main.*",
+    "ffx.utilities.DownloadUtils.*"
   ],
   "init": [
    "System.setProperty(\\\"java.awt.headless\\\",\\\"true\\\")",
