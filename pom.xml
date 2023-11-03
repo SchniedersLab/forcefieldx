@@ -554,8 +554,8 @@
         <type>mail</type>
       </notifier>
     </notifiers>
-    <system>Travis CI</system>
-    <url>https://app.travis-ci.com/github/SchniedersLab/forcefieldx</url>
+    <system>Github Actions</system>
+    <url>https://github.com/SchniedersLab/forcefieldx/actions</url>
   </ciManagement>
   <contributors>
     <contributor>
@@ -1008,7 +1008,7 @@
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.5</javaparser.version>
+    <javaparser.version>3.25.6</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.6.0</javadoc.version>
     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
@@ -1121,7 +1121,7 @@
             <id>aggregate</id>
             <reports>
               <report>aggregate</report>
-              <!--report>test-aggregate</report-->
+              <report>test-aggregate</report>
             </reports>
           </reportSet>
         </reportSets>
@@ -1138,11 +1138,11 @@
             </reports>
           </reportSet>
         </reportSets>
+        <configuration>
+          <linkJavadoc>true</linkJavadoc>
+          <javadocVersion>${compileVersion}</javadocVersion>
+        </configuration>
         <version>${jxr.version}</version>
-        <!-- configuration>
-            <goal>aggregate</goal>
-            <goal>test-aggregate</goal>
-        </configuration -->
       </plugin>
       <plugin>
         <artifactId>maven-surefire-report-plugin</artifactId>

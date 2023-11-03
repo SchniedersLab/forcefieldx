@@ -91,7 +91,7 @@ public class OSTGradientTest extends AlgorithmsTest {
   }
 
   @Test
-  public void testDynamicsNVE() {
+  public void testOSTGradient() {
 
     double lambda = random();
     int atomID = (int) floor(FastMath.random() * nAtoms) + 1;
@@ -99,6 +99,34 @@ public class OSTGradientTest extends AlgorithmsTest {
     // Set-up the input arguments for the script.
     String[] args = {
         "--ac", "ALL",
+        "-l", Double.toString(lambda),
+        "--ga", Integer.toString(atomID),
+        getResourcePath(filename)
+    };
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the script.
+    OSTGradient ostGradient = new OSTGradient(binding).run();
+    algorithmsScript = ostGradient;
+
+    double dUdLError = ostGradient.dUdLError;
+    double nFailures = ostGradient.nFailures;
+
+    // Assert that energy is conserved at the end of the dynamics trajectory.
+    assertEquals(info + ": dUdL error: ", 0.0, dUdLError, tolerance);
+    assertEquals(info + ": Number of coordinate gradient errors: ", 0, nFailures, 0);
+  }
+
+  @Test
+  public void testMetaDynamicsGradient() {
+
+    double lambda = random();
+    int atomID = (int) floor(FastMath.random() * nAtoms) + 1;
+
+    // Set-up the input arguments for the script.
+    String[] args = {
+        "--ac", "ALL",
+        "--meta",
         "-l", Double.toString(lambda),
         "--ga", Integer.toString(atomID),
         getResourcePath(filename)

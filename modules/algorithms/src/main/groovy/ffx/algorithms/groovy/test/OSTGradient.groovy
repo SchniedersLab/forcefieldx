@@ -38,7 +38,11 @@
 package ffx.algorithms.groovy.test
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
+import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSTOptions
+import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -47,6 +51,7 @@ import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.utils.GradientUtils
 import org.apache.commons.io.FilenameUtils
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -64,13 +69,20 @@ import static java.lang.String.format
 class OSTGradient extends AlgorithmsScript {
 
   @Mixin
-  AlchemicalOptions alchemicalOptions
-
-  @Mixin
   AtomSelectionOptions atomSelectionOptions
 
   @Mixin
   GradientOptions gradientOptions
+
+  @Mixin
+  AlchemicalOptions alchemicalOptions
+
+  /**
+   * --meta or --metaDynamics Use a 1D metadynamics bias.
+   */
+  @Option(names = ["--meta", "--metaDynamics"],
+      defaultValue = "false", description = "Use a 1D metadynamics style bias.")
+  private boolean metaDynamics
 
   /**
    * An XYZ or PDB input file.
@@ -140,8 +152,19 @@ class OSTGradient extends AlgorithmsScript {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    orthogonalSpaceTempering = OSTOptions.constructOST(energy, lambdaRestart,
-        histogramRestart, activeAssembly, null, algorithmListener)
+    // Construct some options with defaults.
+    DynamicsOptions dynamicsOptions = new DynamicsOptions()
+    LambdaParticleOptions lambdaParticleOptions = new LambdaParticleOptions()
+    MultiDynamicsOptions multiDynamicsOptions = new MultiDynamicsOptions()
+    ThermodynamicsOptions thermodynamicsOptions = new ThermodynamicsOptions()
+    OSTOptions ostOptions = new OSTOptions()
+    // Apply the metaDynamics flag.
+    ostOptions.setMetaDynamics(metaDynamics)
+
+    // Construct the Thermodynamics instance.
+    orthogonalSpaceTempering = ostOptions.constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null,
+        dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+        null, !multiDynamicsOptions.isSynchronous())
 
     // Get the lambda value to test.
     double lambda = alchemicalOptions.getInitialLambda(false)

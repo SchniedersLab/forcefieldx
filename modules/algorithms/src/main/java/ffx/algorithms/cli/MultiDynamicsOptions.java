@@ -343,22 +343,22 @@ public class MultiDynamicsOptions {
   private static class MultiDynamicsOptionGroup {
 
     /** --firstDir The first directory to use for multiple walker jobs. */
-    @Option(names = {
-        "--firstDir"}, defaultValue = "0", paramLabel = "0", description = "The first directory to use for multiple walker jobs.")
-    private int firstDir;
+    @Option(names = {"--firstDir"}, defaultValue = "0", paramLabel = "0",
+        description = "The first directory to use for multiple walker jobs.")
+    private int firstDir = 0;
 
     /** -y or --synchronous sets synchronous walker communication (not recommended) */
-    @Option(names = {"-y",
-        "--synchronous"}, defaultValue = "false", description = "Walker communication is synchronous")
-    private boolean synchronous;
+    @Option(names = {"-y", "--synchronous"}, defaultValue = "false",
+        description = "Walker communication is synchronous")
+    private boolean synchronous = false;
 
     /**
      * -dw or --distributeWalkers allows walkers to start from multiple conformations; AUTO picks up
      * per-walker conformations as filename.pdb_(walker number), and specifying a residue starts a
      * rotamer optimization to generate side-chain configurations to start from.
      */
-    @Option(names = {"--dw",
-        "--distributeWalkers"}, paramLabel = "OFF", defaultValue = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
-    private String distributeWalkersString;
+    @Option(names = {"--dw", "--distributeWalkers"}, paramLabel = "OFF", defaultValue = "OFF",
+        description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
+    private String distributeWalkersString = "OFF";
   }
 }

@@ -228,6 +228,7 @@
         <item name="User Interfaces" href="modules/ffx-ui/index.html"/>
         <item name="Utilities" href="modules/ffx-utilities/index.html"/>
       </item>
+      <item name="JavaDocs" href="/apidocs/index.html"/>
       <item name="License" href="/licenses.html"/>
       <item name="Development Team" href="/team.html"/>
     </menu>

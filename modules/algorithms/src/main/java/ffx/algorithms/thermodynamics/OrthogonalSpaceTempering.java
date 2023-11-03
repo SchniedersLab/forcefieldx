@@ -529,8 +529,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     if (print) {
       logger.info(format(" %s %16.8f", "Bias Energy       ", biasEnergy));
-      logger.info(format(" %s %16.8f  %s", "OST Potential    ", forceFieldEnergy + biasEnergy,
-          "(Kcal/mole)"));
+      logger.info(format(" %s %16.8f  %s", "OST Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
     }
 
     if (propagateLambda) {
@@ -1816,8 +1815,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             metaFreeEnergy[lambdaBin] = energyAndGradientMeta(midLambda, false);
             freeEnergy = -(metaFreeEnergy[lambdaBin] - metaFreeEnergy[0]);
 
-            stringBuilder.append(
-                format(" %6.2e %7.5f %7.1f %7.1f %9.2f %9.2f %9.2f %9.2f %9.2f\n", lambdaCount,
+            stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %9.2f %9.2f %9.2f %9.2f %9.2f\n", lambdaCount,
                     midLambda, mindUdLForLambda, maxdUdLforLambda, ensembleAveragedUdL[lambdaBin],
                     bias1D, freeEnergyOST, metaFreeEnergy[lambdaBin], freeEnergy));
           }
@@ -1827,11 +1825,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         temperingWeight = exp(temperEnergy / deltaT);
 
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-          logger.info(
-              "  Weight   Lambda      dU/dL Bins   <dU/dL>      g(L) dG_OST(L)  Meta(L) dG_Meta(L)");
+          logger.info("  Weight   Lambda      dU/dL Bins   <dU/dL>      g(L) dG_OST(L)  Meta(L) dG_Meta(L)");
           logger.info(stringBuilder.toString());
-          logger.info(format(
-              " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+          logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
               freeEnergy, totalWeight, temperingWeight, biasCount));
           logger.info(format(" Minimum Bias %8.3f", minFL));
           previousFreeEnergy = freeEnergy;
@@ -2744,7 +2740,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           biasEnergy += e;
           // Add the dMeta/dL contribution.
           if (gradient) {
-            dUdLambda -= deltaL / dUdLVariance * e;
+            dUdLambda -= deltaL / lambdaVariance * e;
           }
         }
       }
