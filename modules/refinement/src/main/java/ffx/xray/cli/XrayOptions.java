@@ -93,12 +93,18 @@ public class XrayOptions extends DataRefinementOptions {
    */
   @ArgGroup(heading = "%n X-ray Bulk Solvent Options%n", validate = false)
   private final BulkSolventGroup solventGroup = new BulkSolventGroup();
-  /** The refinement mode to use. */
+  /**
+   * The refinement mode to use.
+   */
   public RefinementMode refinementMode = RefinementMode.COORDINATES;
-  /** The SolventModel to use. */
+  /**
+   * The SolventModel to use.
+   */
   public SolventModel solventModel = SolventModel.POLYNOMIAL;
 
-  /** Parse options. */
+  /**
+   * Parse options.
+   */
   public void init() {
     refinementMode = RefinementMinimize.parseMode(group.modeString);
     solventModel = CrystalReciprocalSpace.parseSolventModel(solventGroup.solventString);
@@ -108,7 +114,7 @@ public class XrayOptions extends DataRefinementOptions {
    * Process input to collect Diffraction Files.
    *
    * @param filenames Input filenames (first filename is ignored).
-   * @param systems Currently open systems.
+   * @param systems   Currently open systems.
    * @return a list of DiffractionFile instances.
    */
   public List<DiffractionFile> processData(List<String> filenames, MolecularAssembly[] systems) {
@@ -171,8 +177,8 @@ public class XrayOptions extends DataRefinementOptions {
    * setProperties.
    *
    * @param parseResult a {@link picocli.CommandLine.ParseResult} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   * @param properties  a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *                    object.
    */
   public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
     // wA
@@ -273,8 +279,8 @@ public class XrayOptions extends DataRefinementOptions {
   /**
    * Process input from opened molecular assemblies to a DiffractionData.
    *
-   * @param filenames All filenames included in the diffraction data.
-   * @param assemblies All molecular assemblies included in the diffraction data.
+   * @param filenames   All filenames included in the diffraction data.
+   * @param assemblies  All molecular assemblies included in the diffraction data.
    * @param parseResult A ParseResult option from a Groovy script.
    * @return An assembled DiffractionData
    */
@@ -296,10 +302,10 @@ public class XrayOptions extends DataRefinementOptions {
    */
   private static class XrayOptionGroup {
 
-    /** --rmo or --refineMolOcc */
-    @Option(
-        names = {"--rmo", "--refineMolOcc"},
-        paramLabel = "false",
+    /**
+     * --rmo or --refineMolOcc
+     */
+    @Option(names = {"--rmo", "--refineMolOcc"}, paramLabel = "false", defaultValue = "false",
         description = "Refine on molecules.")
     boolean refineMolOcc = false;
 
@@ -308,9 +314,7 @@ public class XrayOptions extends DataRefinementOptions {
      * COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES,
      * COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(
-        names = {"-m", "--mode"},
-        paramLabel = "coordinates",
+    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates", defaultValue = "coordinates",
         description = "Refinement mode: coordinates, bfactors and/or occupancies.")
     String modeString = "coordinates";
   }
@@ -320,24 +324,24 @@ public class XrayOptions extends DataRefinementOptions {
    */
   private static class XrayReflectionsGroup {
 
-    /** --nBins sets the number of reflection bins to use. */
-    @Option(
-        names = {"--nBins"},
-        paramLabel = "10",
+    /**
+     * --nBins sets the number of reflection bins to use.
+     */
+    @Option(names = {"--nBins"}, paramLabel = "10", defaultValue = "10",
         description = "The number of refection bins.")
     int nBins = 10;
 
-    /** --FSigFCutoff */
-    @Option(
-        names = {"--FSigFCutoff"},
-        paramLabel = "-1.0",
+    /**
+     * --FSigFCutoff
+     */
+    @Option(names = {"--FSigFCutoff"}, paramLabel = "-1.0", defaultValue = "-1.0",
         description = "F / SigF cutoff (-1.0 is no cutoff).")
     double fSigFCutoff = -1.0;
 
-    /** -R or --rFreeFlag */
-    @Option(
-        names = {"-R", "--rFreeFlag"},
-        paramLabel = "-1",
+    /**
+     * -R or --rFreeFlag
+     */
+    @Option(names = {"-R", "--rFreeFlag"}, paramLabel = "-1", defaultValue = "-1",
         description = "R-Free Flag value (-1 attempts to auto-determine from the data).")
     int rFreeFlag = -1;
 
@@ -345,11 +349,8 @@ public class XrayOptions extends DataRefinementOptions {
      * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is
      * from a neutron experiment.
      */
-    @Option(
-        names = {"-X", "--data"},
-        arity = "3",
-        description =
-            "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -X filename 1.0 false).")
+    @Option(names = {"-X", "--data"}, arity = "3",
+        description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -X filename 1.0 false).")
     String[] data = null;
   }
 
@@ -358,24 +359,24 @@ public class XrayOptions extends DataRefinementOptions {
    */
   private static class BFactorGroup {
 
-    /** -B or --bSimWeight */
-    @Option(
-        names = {"-B", "--bSimWeight"},
-        paramLabel = "1.0",
+    /**
+     * -B or --bSimWeight
+     */
+    @Option(names = {"-B", "--bSimWeight"}, paramLabel = "1.0", defaultValue = "1.0",
         description = "B-Factor similarity weight.")
     double bSimWeight = 1.0;
 
-    /** --nResidueBFactor */
-    @Option(
-        names = {"--nResidueBFactor"},
-        paramLabel = "0",
+    /**
+     * --nResidueBFactor
+     */
+    @Option(names = {"--nResidueBFactor"}, paramLabel = "0", defaultValue = "0",
         description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
     int nResidueBFactor = 0;
 
-    /** -u or --addAnisoU */
-    @Option(
-        names = {"-U", "--addAnisoU"},
-        paramLabel = "false",
+    /**
+     * -u or --addAnisoU
+     */
+    @Option(names = {"-U", "--addAnisoU"}, paramLabel = "false", defaultValue = "false",
         description = "Add Anisotropic B-Factors to refinement.")
     boolean anisoU = false;
   }
@@ -385,46 +386,45 @@ public class XrayOptions extends DataRefinementOptions {
    */
   private static class ScatteringGroup {
 
-    /** --aRadBuffer */
-    @Option(
-        names = {"--aRadBuffer"},
-        paramLabel = "0.75",
+    /**
+     * --aRadBuffer
+     */
+    @Option(names = {"--aRadBuffer"}, paramLabel = "0.75", defaultValue = "0.75",
         description = "Set the distance beyond the atomic radius to evaluate scattering (A).")
     double aRadBuffer = 0.75;
 
-    /** -G or --sampling */
-    @Option(
-        names = {"-G", "--sampling"},
-        paramLabel = "0.6",
+    /**
+     * -G or --sampling
+     */
+    @Option(names = {"-G", "--sampling"}, paramLabel = "0.6", defaultValue = "0.6",
         description = "The number of grid spaces per Angstrom for the scattering FFT grid.")
     double sampling = 0.6;
 
-    /** --sf or --splineFit */
-    @Option(
-        names = {"--sf", "--splineFit"},
-        paramLabel = "true",
+    /**
+     * --sf or --splineFit
+     */
+    @Option(names = {"--sf", "--splineFit"}, paramLabel = "true", defaultValue = "true",
         description = "Use a resolution dependent spline scale.")
     boolean splineFit = true;
 
-    /** -A or --allGaussians */
-    @Option(
-        names = {"-A", "--allGaussians"},
-        paramLabel = "false",
-        description =
-            "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
+    /**
+     * -A or --allGaussians
+     */
+    @Option(names = {"-A", "--allGaussians"}, paramLabel = "false", defaultValue = "false",
+        description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
     boolean allGaussians = false;
 
-    /** --xrayScaleTol */
-    @Option(
-        names = {"--xrayScaleTol"},
-        paramLabel = "1.0e-4",
+    /**
+     * --xrayScaleTol
+     */
+    @Option(names = {"--xrayScaleTol"}, paramLabel = "1.0e-4", defaultValue = "1.0e-4",
         description = "X-ray scale optimization tolerance.")
     double xrayScaleTol = 1.0e-4;
 
-    /** --sigmaATol */
-    @Option(
-        names = {"--sigmaATol"},
-        paramLabel = "0.05",
+    /**
+     * --sigmaATol
+     */
+    @Option(names = {"--sigmaATol"}, paramLabel = "0.05", defaultValue = "0.05",
         description = "Sigma A optimization tolerance.")
     double sigmaATol = 0.05;
   }
@@ -434,17 +434,17 @@ public class XrayOptions extends DataRefinementOptions {
    */
   private static class BulkSolventGroup {
 
-    /** -S or --solventGridSearch */
-    @Option(
-        names = {"-S", "--solventGridSearch"},
-        paramLabel = "false",
+    /**
+     * -S or --solventGridSearch
+     */
+    @Option(names = {"-S", "--solventGridSearch"}, paramLabel = "false", defaultValue = "false",
         description = "Perform a grid search for optimal bulk solvent parameters.")
     boolean gridSearch = false;
 
-    /** -sol or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]. */
-    @Option(
-        names = {"--sol", "--solvent"},
-        paramLabel = "POLYNOMIAL",
+    /**
+     * -sol or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
+     */
+    @Option(names = {"--sol", "--solvent"}, paramLabel = "POLYNOMIAL", defaultValue = "POLYNOMIAL",
         description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
     String solventString = "POLYNOMIAL";
   }

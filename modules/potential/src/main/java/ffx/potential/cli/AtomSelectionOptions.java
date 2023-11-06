@@ -41,11 +41,13 @@ import static ffx.utilities.StringUtils.parseAtomRanges;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -66,7 +68,7 @@ public class AtomSelectionOptions {
   private final AtomSelectionOptionGroup group = new AtomSelectionOptionGroup();
 
   public static void actOnAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
-      @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description) {
+                                @Nonnull BiConsumer<Atom, Boolean> action, @Nonnull String description) {
     if (selection == null || selection.equalsIgnoreCase("")) {
       // Empty or null string -- no changes.
       return;
@@ -143,10 +145,10 @@ public class AtomSelectionOptions {
    * @return True if one of the fields is not empty.
    */
   public boolean isAtomSelectionSet() {
-    if (group.activeAtoms != null && group.activeAtoms.isEmpty()) {
+    if (group.activeAtoms != null && !group.activeAtoms.isEmpty()) {
       return true;
     }
-    return group.inactiveAtoms != null && group.inactiveAtoms.isEmpty();
+    return group.inactiveAtoms != null && !group.inactiveAtoms.isEmpty();
   }
 
   private void setInactive(MolecularAssembly assembly) {
@@ -162,16 +164,20 @@ public class AtomSelectionOptions {
    */
   private static class AtomSelectionOptionGroup {
 
-    /** --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+    /**
+     * --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].
+     */
     @Option(names = {"--aa",
         "--active"}, paramLabel = "<selection>", defaultValue = "",
         description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
-    public String activeAtoms;
+    public String activeAtoms = "";
 
-    /** --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N]. */
+    /**
+     * --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].
+     */
     @Option(names = {"--ia",
         "--inactive"}, paramLabel = "<selection>", defaultValue = "",
         description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
-    public String inactiveAtoms;
+    public String inactiveAtoms = "";
   }
 }

@@ -52,7 +52,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import ffx.potential.extended.ExtendedSystem;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -182,7 +181,7 @@ public class ThermodynamicsOptions {
   }
 
   /**
-   * The algorithm to be used (e.g. OST, window-based methods, etc).
+   * The algorithm to be used (e.g. OST, window-based methods, etc.).
    *
    * @return Returns a String for requested algorithm.
    */

@@ -43,10 +43,11 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,7 +86,7 @@ public class HistogramReader extends BufferedReader {
    * @param histogram The Histogram instance.
    * @param reader The Reader to use.
    */
-  public HistogramReader(Histogram histogram, Reader reader) {
+  public HistogramReader(@Nullable Histogram histogram, Reader reader) {
     super(reader);
     this.histogram = histogram;
   }

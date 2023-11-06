@@ -43,9 +43,11 @@ import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.DataRefinementOptions;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
 import picocli.CommandLine.Option;
 
 /**
@@ -59,28 +61,26 @@ public class RealSpaceOptions extends DataRefinementOptions {
 
   private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 
-  /** The refinement mode to use. */
+  /**
+   * The refinement mode to use.
+   */
   public RefinementMode refinementMode = RefinementMode.COORDINATES;
 
   /**
-   * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is
-   * from a neutron experiment.
+   * -X or --data Specify input data filename and weight applied to the data (wA).
    */
-  @Option(
-      names = {"-X", "--data"},
-      arity = "2",
+  @Option(names = {"-X", "--data"}, arity = "2",
       description = "Specify input data filename and its weight (wA) (e.g. -X filename 1.0).")
   String[] data = null;
 
   /**
    * Process input to collect Real Space Files.
    *
-   * @param filenames Input filenames (first filename is ignored).
+   * @param filenames         Input filenames (first filename is ignored).
    * @param molecularAssembly Currently open molecularAssembly.
    * @return a list of Real Space File instances.
    */
-  public List<RealSpaceFile> processData(
-      List<String> filenames, MolecularAssembly molecularAssembly) {
+  public List<RealSpaceFile> processData(List<String> filenames, MolecularAssembly molecularAssembly) {
 
     logger.info("\n");
 
@@ -116,17 +116,15 @@ public class RealSpaceOptions extends DataRefinementOptions {
   /**
    * Process input from opened molecular assemblies to a RefinementEnergy
    *
-   * @param filenames All filenames included in the real-space data.
+   * @param filenames           All filenames included in the real-space data.
    * @param molecularAssemblies Array of MolecularAssembly instances.
    * @return An assembled RefinementEnergy with real-space energy.
    */
-  public RefinementEnergy toRealSpaceEnergy(
-      List<String> filenames, MolecularAssembly[] molecularAssemblies) {
+  public RefinementEnergy toRealSpaceEnergy(List<String> filenames, MolecularAssembly[] molecularAssemblies) {
 
     RealSpaceFile[] mapFiles = processData(filenames, molecularAssemblies[0]).toArray(new RealSpaceFile[0]);
-    RealSpaceData realspaceData = new RealSpaceData(
-            molecularAssemblies, molecularAssemblies[0].getProperties(),
-            molecularAssemblies[0].getParallelTeam(), mapFiles);
+    RealSpaceData realspaceData = new RealSpaceData(molecularAssemblies, molecularAssemblies[0].getProperties(),
+        molecularAssemblies[0].getParallelTeam(), mapFiles);
 
     return new RefinementEnergy(realspaceData, RefinementMode.COORDINATES);
   }

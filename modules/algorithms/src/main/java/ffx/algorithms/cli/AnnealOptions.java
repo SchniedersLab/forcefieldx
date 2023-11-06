@@ -80,31 +80,31 @@ public class AnnealOptions {
   /**
    * Creates a SimulatedAnnealing object.
    *
-   * @param dynamicsOptions Dynamics options to use.
+   * @param dynamicsOptions   Dynamics options to use.
    * @param molecularAssembly MolecularAssembly
-   * @param potential Potential
+   * @param potential         Potential
    * @param algorithmListener AlgorithmListener
    * @return SimulatedAnnealing
    */
   public SimulatedAnnealing createAnnealer(DynamicsOptions dynamicsOptions,
-      MolecularAssembly molecularAssembly, Potential potential,
-      AlgorithmListener algorithmListener) {
+                                           MolecularAssembly molecularAssembly, Potential potential,
+                                           AlgorithmListener algorithmListener) {
     return createAnnealer(dynamicsOptions, molecularAssembly, potential, algorithmListener, null);
   }
 
   /**
    * Creates a SimulatedAnnealing object.
    *
-   * @param dynamicsOptions Dynamics options to use.
+   * @param dynamicsOptions   Dynamics options to use.
    * @param molecularAssembly MolecularAssembly
-   * @param potential Potential
+   * @param potential         Potential
    * @param algorithmListener AlgorithmListener
-   * @param dynFile Dynamics restart file.
+   * @param dynFile           Dynamics restart file.
    * @return SimulatedAnnealing
    */
-  public SimulatedAnnealing createAnnealer(DynamicsOptions dynamicsOptions,
-      MolecularAssembly molecularAssembly, Potential potential, AlgorithmListener algorithmListener,
-      File dynFile) {
+  public SimulatedAnnealing createAnnealer(DynamicsOptions dynamicsOptions, MolecularAssembly molecularAssembly,
+                                           Potential potential, AlgorithmListener algorithmListener,
+                                           File dynFile) {
     AnnealingSchedule schedule = getSchedule();
     double totNormLen = schedule.totalWindowLength();
     long totSteps = dynamicsOptions.getSteps();
@@ -258,49 +258,57 @@ public class AnnealOptions {
    */
   private static class AnnealOptionGroup {
 
-    /** -w or --windows Number of annealing windows (10). */
-    @Option(names = {"-W",
-        "--windows"}, paramLabel = "10", defaultValue = "10", description = "Number of annealing windows.")
-    private int windows;
+    /**
+     * -w or --windows Number of annealing windows (10).
+     */
+    @Option(names = {"-W", "--windows"}, paramLabel = "10", defaultValue = "10",
+        description = "Number of annealing windows.")
+    private int windows = 10;
 
-    /** -l or --low Low temperature limit in degrees Kelvin (10.0). */
-    @Option(names = {"--tl",
-        "--temperatureLow"}, paramLabel = "10.0", defaultValue = "10.0", description = "Low temperature limit (Kelvin).")
-    private double low;
+    /**
+     * -l or --low Low temperature limit in degrees Kelvin (10.0).
+     */
+    @Option(names = {"--tl", "--temperatureLow"}, paramLabel = "10.0", defaultValue = "10.0",
+        description = "Low temperature limit (Kelvin).")
+    private double low = 10.0;
 
-    /** -u or --upper Upper temperature limit in degrees Kelvin (1000.0). */
-    @Option(names = {"--tu",
-        "--temperatureUpper"}, paramLabel = "1000.0", defaultValue = "1000.0", description = "High temperature limit (Kelvin).")
-    private double upper;
+    /**
+     * -u or --upper Upper temperature limit in degrees Kelvin (1000.0).
+     */
+    @Option(names = {"--tu", "--temperatureUpper"}, paramLabel = "1000.0", defaultValue = "1000.0",
+        description = "High temperature limit (Kelvin).")
+    private double upper = 1000.0;
 
     /**
      * --rv or --reinitVelocities forces simulated annealing to re-initialize velocities to the new
      * temperature at each annealing step, rather than letting the thermostat shift temperature
      * downwards.
      */
-    @Option(names = {"--rv",
-        "--reinitVelocities"}, paramLabel = "false", defaultValue = "false", description = "Re-initialize velocities before each round of annealing.")
-    private boolean reinitVelocities;
+    @Option(names = {"--rv", "--reinitVelocities"}, paramLabel = "false", defaultValue = "false",
+        description = "Re-initialize velocities before each round of annealing.")
+    private boolean reinitVelocities = false;
 
-    /** --tmS or --temperingSchedule sets the schedule to be used. */
-    @Option(names = {"--tmS",
-        "--temperingSchedule"}, paramLabel = "EXP", defaultValue = "EXP", description = "Tempering schedule: choose between EXP (exponential) or LINEAR")
-    private String temperString;
+    /**
+     * --tmS or --temperingSchedule sets the schedule to be used.
+     */
+    @Option(names = {"--tmS", "--temperingSchedule"}, paramLabel = "EXP", defaultValue = "EXP",
+        description = "Tempering schedule: choose between EXP (exponential) or LINEAR")
+    private String temperString = "EXP";
 
     /**
      * --tmB or --temperingBefore sets the number of annealing windows to hold flat at the high
      * temperature (in addition to normal windows).
      */
-    @Option(names = {"--tmB",
-        "--temperingBefore"}, paramLabel = "0", defaultValue = "0", description = "Number of (annealing, not MD/MC) steps to remain at the high temperature")
-    private int temperBefore;
+    @Option(names = {"--tmB", "--temperingBefore"}, paramLabel = "0", defaultValue = "0",
+        description = "Number of (annealing, not MD/MC) steps to remain at the high temperature")
+    private int temperBefore = 0;
 
     /**
      * --tmA or --temperingAfter sets the number of annealing windows to hold flat at the low
      * temperature (in addition to normal windows).
      */
-    @Option(names = {"--tmA",
-        "--temperingAfter"}, paramLabel = "0", defaultValue = "0", description = "Number of (annealing, not MD/MC) steps to remain at the low temperature")
-    private int temperAfter;
+    @Option(names = {"--tmA", "--temperingAfter"}, paramLabel = "0", defaultValue = "0",
+        description = "Number of (annealing, not MD/MC) steps to remain at the low temperature")
+    private int temperAfter = 0;
   }
 }

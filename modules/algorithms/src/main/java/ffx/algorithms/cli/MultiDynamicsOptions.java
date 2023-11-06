@@ -337,6 +337,10 @@ public class MultiDynamicsOptions {
     return group.firstDir;
   }
 
+  public void setFirstDir(int firstDir) {
+    group.firstDir = firstDir;
+  }
+
   /**
    * Collection of Multi-Walker Dynamics Options.
    */

@@ -87,12 +87,16 @@ public class LambdaParticleOptions {
    */
   private static class LambdaParticleOptionGroup {
 
-    /** -m or --lambdaMass to set the mass of the lambda particle. */
+    /**
+     * -m or --lambdaMass to set the mass of the lambda particle.
+     */
     @Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18", defaultValue = "1.0E-18",
         description = "Mass of the lambda particle.")
     private double lambdaMass = 1.0E-18;
 
-    /** -x or --lambdaFriction to set friction on the lambda particle */
+    /**
+     * -x or --lambdaFriction to set friction on the lambda particle
+     */
     @Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18", defaultValue = "1.0E-18",
         description = "Friction on the lambda particle.")
     private double lambdaFriction = 1.0E-18;

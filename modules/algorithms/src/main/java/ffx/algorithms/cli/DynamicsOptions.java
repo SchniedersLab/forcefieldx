@@ -50,6 +50,7 @@ import ffx.potential.cli.WriteoutOptions;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
+import javax.annotation.Nullable;
 import java.util.logging.Logger;
 
 /**
@@ -131,7 +132,7 @@ public class DynamicsOptions {
    */
   public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
                                        MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
-                                       MDEngine requestedEngine) {
+                                       @Nullable MDEngine requestedEngine) {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
