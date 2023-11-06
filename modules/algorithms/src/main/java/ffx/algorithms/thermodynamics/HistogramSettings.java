@@ -37,11 +37,12 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * HistogramSettings is a mutable settings class for OST histograms. Many fields in Histogram are (or
@@ -104,11 +105,17 @@ public class HistogramSettings {
    * <p>The default temperingFactor = 2.0.
    */
   public double temperingFactor = DEFAULT_TEMPERING_FACTOR;
-  /** Time step in picoseconds. */
+  /**
+   * Time step in picoseconds.
+   */
   public double dt = DEFAULT_TIMESTEP;
-  /** Reasonable thetaFriction is ~60 per picosecond (1.0e-12). */
+  /**
+   * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
+   */
   public double thetaFriction = DEFAULT_THETA_FRICTION;
-  /** Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams). */
+  /**
+   * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
+   */
   public double thetaMass = DEFAULT_THETA_MASS;
   /**
    * Interval between adding a count to the Recursion kernel in MD steps.
@@ -186,15 +193,21 @@ public class HistogramSettings {
   // If set true (either by method or property setting temperOffset), no longer calculate based on
   // bias magnitude.
   private boolean temperOffsetSet = false;
-  /** Once the lambda reset value is reached, OST statistics are reset. */
+  /**
+   * Once the lambda reset value is reached, OST statistics are reset.
+   */
   private double lambdaResetValue = DEFAULT_LAMBDA_RESET;
-  /** Flag set to false once OST statistics are reset at lambdaResetValue. */
+  /**
+   * Flag set to false once OST statistics are reset at lambdaResetValue.
+   */
   private boolean resetStatistics = DEFAULT_RESET_STATISTICS;
 
   private boolean metaDynamics = false;
   private boolean writeIndependent = false;
   private boolean independentWalkers = false;
-  /** Flag indicating if a histogram file was read in. */
+  /**
+   * Flag indicating if a histogram file was read in.
+   */
   final boolean histogramRead;
 
   public HistogramSettings(File hisFile, String lamFileName, CompositeConfiguration properties)
@@ -203,8 +216,8 @@ public class HistogramSettings {
         properties.getBoolean("discrete-lambda", DEFAULT_DISCRETE_LAMBDA));
   }
 
-  public HistogramSettings(File hisFile, String lamFileName, CompositeConfiguration properties,
-      boolean discreteLambda) throws IOException {
+  public HistogramSettings(File hisFile, String lamFileName,
+                           CompositeConfiguration properties, boolean discreteLambda) throws IOException {
     histogramFile = hisFile;
     hisFileName = hisFile.toString();
     this.lambdaFileName = lamFileName;
@@ -222,8 +235,7 @@ public class HistogramSettings {
     }
 
     if (histogramFile.exists()) {
-      try (HistogramReader hr = new HistogramReader(null,
-          new BufferedReader(new FileReader(histogramFile)))) {
+      try (HistogramReader hr = new HistogramReader(null, new BufferedReader(new FileReader(histogramFile)))) {
         hr.readHistogramFile();
         temperature = hr.getTemperature();
         thetaMass = hr.getThetaMass();

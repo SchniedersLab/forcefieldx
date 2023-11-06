@@ -1012,12 +1012,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       doUnitCellReset = properties.getBoolean("ost-opt-unitcell-reset", false);
 
       logger.info("\n Optimization Parameters");
-      logger.info(format("  Energy Window:                  %6.4f (kcal/mol)", energyWindow));
-      logger.info(format("  EPS:                            %6.5f ", eps));
+      logger.info(format("  Energy Window:                  %6.3f (kcal/mol)", energyWindow));
+      logger.info(format("  EPS:                            %6.4f RMS (kcal/mol/Å)", eps));
       logger.info(format("  Tolerance:                      %6.4f (kcal/mol)", tolerance));
       logger.info(format("  Frequency:                      %6d (steps)", frequency));
-      logger.info(format("  Lambda Cutoff:                  %6.4f ", lambdaCutoff));
-      logger.info(format("  Unit Cell Reset:                %B ", doUnitCellReset));
+      logger.info(format("  Lambda Cutoff:                  %6.4f", lambdaCutoff));
+      logger.info(format("  Unit Cell Reset:                %6B", doUnitCellReset));
     }
 
     /**
@@ -1365,8 +1365,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private final IntegrationType integrationType;
     /**
-     * Random force conversion to kcal/mol/A; Units: Sqrt (4.184 Joule per calorie) / (nanometers per
-     * meter)
+     * Random force conversion to kcal/mol/A;
+     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
      */
     private final double randomConvert = sqrt(4.184) / 10e9;
     /**
@@ -1382,7 +1382,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private final double lambdaResetValue;
     private final boolean writeIndependent;
-    private final boolean metaDynamics;
+    /**
+     * Flag to indicate use of 1D meta-dynamics instead of OST.
+     */
+    boolean metaDynamics;
     private final boolean independentWalkers;
     /**
      * Flag to indicate if OST should send and receive counts between processes synchronously or
@@ -1583,8 +1586,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       lastReceivedLambda = getLambda();
       if (discreteLambda) {
         lastReceivedLambda = discretizedLambda(lastReceivedLambda);
-        logger.info(
-            format(" Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
+        logger.info(format(" Discrete lambda: initializing lambda to nearest bin %.5f", lastReceivedLambda));
         lambda = mapLambda(lastReceivedLambda);
         theta = asin(sqrt(lambda));
         lambdaInterface.setLambda(lastReceivedLambda);
@@ -1668,6 +1670,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
+     * Configure the Histogram to use 1D meta-dynamics.
+     * @param metaDynamics If true, use 1D meta-dynamics.
+     */
+    public void setMetaDynamics(boolean metaDynamics) {
+      this.metaDynamics = metaDynamics;
+    }
+
+    /**
      * For MPI parallel jobs, returns true if the walkers are independent (i.e. contribute to only
      * their own histogram).
      *
@@ -1712,15 +1722,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     public String toString() {
-      return " OST Histogram" + format("\n  Gaussian bias magnitude: %6.3f (kcal/mol)", biasMag)
+      return " OST Histogram"
+          + format("\n  Gaussian bias magnitude: %6.3f (kcal/mol)", biasMag)
           + format("\n  Tempering offset:        %6.3f (kcal/mol)", temperOffset)
           + format("\n  Tempering rate:          %6.3f", temperingFactor)
           + format("\n  Discrete lambda:         %6B", discreteLambda)
           + format("\n  Number of Lambda bins:   %6d", lambdaBins)
           + format("\n  Lambda bin width:        %6.3f", lambdaBinWidth)
           + format("\n  Number of dU/dL bins:    %6d", dUdLBins)
-          + format("\n  dU/dL bin width:         %6.3f (kcal/mol)", dUdLBinWidth) + format(
-          "\n  Histogram restart:       %s", FileUtils.relativePathTo(histogramFile));
+          + format("\n  dU/dL bin width:         %6.3f (kcal/mol)", dUdLBinWidth)
+          + format("\n  Use meta-dynamics:       %6B", metaDynamics)
+          + format("\n  Histogram restart:       %s", FileUtils.relativePathTo(histogramFile));
     }
 
     public double updateFreeEnergyEstimate(boolean print, boolean save) {
@@ -2115,7 +2127,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           histogramReader.readHistogramFile();
           // Currently, the restart format does not include info on using discrete lambda values.
           updateFreeEnergyEstimate(true, false);
-          logger.info(format("\n Read OST histogram from %s.", histogramFileName));
+          logger.info(format("\n Read OST histogram from %s.", histogramToRead.getName()));
         } catch (FileNotFoundException ex) {
           logger.info(" Histogram restart file could not be found and will be ignored.");
         }

@@ -59,6 +59,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
 
+import static ffx.utilities.Constants.FSEC_TO_PSEC;
+
 /**
  * Represents command line options for scripts that utilize variants of the Orthogonal Space
  * Tempering (OST) algorithm. Metadynamics will be treated as a special case of OST where there is no
@@ -83,48 +85,6 @@ public class OSTOptions {
    */
   @ArgGroup(heading = "%n Monte Carlo Orthogonal Space Tempering Options%n", validate = false)
   private final MCOSTOptionGroup mcGroup = new MCOSTOptionGroup();
-
-  /**
-   * Static method for constructing an orthogonal space tempering object with numerous default
-   * settings. Largely intended for use with the Histogram script and other scripts which don't need
-   * to actively perform OST, just read its histogram.
-   *
-   * @param crystalPotential  a {@link ffx.crystal.CrystalPotential} to build the OST around.
-   * @param lambdaRestart     a {@link java.io.File} lambda restart file.
-   * @param histogramRestart  a {@link java.io.File} histogram restart file.
-   * @param firstAssembly     the first {@link ffx.potential.MolecularAssembly} in the OST system.
-   * @param configuration     a {@link org.apache.commons.configuration2.Configuration} with
-   *                          additional properties.
-   * @param algorithmListener any {@link ffx.algorithms.AlgorithmListener} that OST should
-   *                          update.
-   * @return the newly built {@link OrthogonalSpaceTempering} object.
-   * @throws IOException Can be thrown by errors reading restart files.
-   */
-  public static OrthogonalSpaceTempering constructOST(CrystalPotential crystalPotential,
-                                                      File lambdaRestart, File histogramRestart, MolecularAssembly firstAssembly,
-                                                      Configuration configuration, AlgorithmListener algorithmListener) throws IOException {
-    LambdaInterface linter = (LambdaInterface) crystalPotential;
-    CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
-    if (configuration != null) {
-      allProperties.addConfiguration(configuration);
-    }
-
-    String lamRestartName =
-        lambdaRestart == null ? histogramRestart.toString().replaceFirst("\\.his$", ".lam")
-            : lambdaRestart.toString();
-    HistogramSettings hOps = new HistogramSettings(histogramRestart, lamRestartName, allProperties);
-
-    // These fields are needed for the OST constructor, but otherwise are not used.
-    boolean asynchronous = false;
-    double timeStep = 1.0;
-    double printInterval = 1.0;
-    double saveInterval = 100.0;
-    double temperature = 298.15;
-
-    return new OrthogonalSpaceTempering(linter, crystalPotential, lambdaRestart, hOps, allProperties,
-        temperature, timeStep, printInterval, saveInterval, asynchronous, false, algorithmListener,
-        0.0);
-  }
 
   /**
    * Applies relevant options to an OST, and returns either the OST object or something that wraps
@@ -236,8 +196,7 @@ public class OSTOptions {
                                                @Nullable AlgorithmListener algorithmListener, boolean async) throws IOException {
 
     LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
-    CompositeConfiguration compositeConfiguration = new CompositeConfiguration(
-        firstAssembly.getProperties());
+    CompositeConfiguration compositeConfiguration = new CompositeConfiguration(firstAssembly.getProperties());
     if (addedProperties != null) {
       compositeConfiguration.addConfiguration(addedProperties);
     }
@@ -335,13 +294,12 @@ public class OSTOptions {
                                                      String lambdaFileName, CompositeConfiguration compositeConfiguration, int index,
                                                      DynamicsOptions dynamicsOptions, LambdaParticleOptions lambdaParticleOptions,
                                                      boolean writeIndependent, boolean async, boolean overrideHistogram) throws IOException {
-    HistogramSettings histogramSettings = new HistogramSettings(histogramRestartFile, lambdaFileName,
-        compositeConfiguration);
+    HistogramSettings histogramSettings = new HistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration);
     histogramSettings.temperingFactor = getTemperingParameter(index);
     if (thresholdsSet()) {
       histogramSettings.setTemperOffset(getTemperingThreshold(index));
     }
-    histogramSettings.dt = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
+    histogramSettings.dt = dynamicsOptions.getDt() * FSEC_TO_PSEC;
     histogramSettings.setWriteIndependent(writeIndependent);
     histogramSettings.setIndependentWalkers(group.independentWalkers);
     histogramSettings.setMetaDynamics(group.metaDynamics);

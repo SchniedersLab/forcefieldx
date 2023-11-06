@@ -75,6 +75,7 @@ class HistogramWriter extends PrintWriter {
     printf("dUdL-Bins        %15d\n", histogram.dUdLBins);
     printf("Min-dUdL         %15.8e\n", histogram.mindUdL);
     printf("dUdL-Bin-Width   %15.8e\n", histogram.dUdLBinWidth);
+    printf("Meta-Dynamics    %15b\n", histogram.metaDynamics);
     for (int i = 0; i < histogram.lambdaBins; i++) {
       printf("%g", histogram.getRecursionKernelValue(i, 0));
       for (int j = 1; j < histogram.dUdLBins; j++) {

@@ -1026,8 +1026,8 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.7.5</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <!-- PMD does not handle Java language version 21 yet. -->
-    <pmd.version>3.21.0</pmd.version>
+    <pmd.version>3.21.2</pmd.version>
+    <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
     <project-info-reports.version>3.4.5</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->

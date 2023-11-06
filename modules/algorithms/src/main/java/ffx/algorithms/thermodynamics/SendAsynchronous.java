@@ -126,7 +126,7 @@ class SendAsynchronous extends Thread {
       // indicating that it is time to shut down.
       boolean terminateSignal = stream(receiveCount).allMatch(Double::isNaN);
       if (terminateSignal) {
-        logger.info(" Termination signal received -- finishing execution.");
+        logger.fine(" Termination signal received -- finishing execution.");
         break;
       }
 

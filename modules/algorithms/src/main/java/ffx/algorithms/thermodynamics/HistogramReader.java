@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -45,6 +46,7 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +73,7 @@ public class HistogramReader extends BufferedReader {
   private double mindUdL;
   private double dUdLBinWidth;
   private double[][] counts;
+  private boolean metaDynamics = false;
 
   public HistogramReader(Reader reader) {
     this(null, reader);
@@ -132,13 +135,12 @@ public class HistogramReader extends BufferedReader {
       dUdLBins = parseInt(readLine().split(" +")[1]);
       mindUdL = parseDouble(readLine().split(" +")[1]);
       dUdLBinWidth = parseDouble(readLine().split(" +")[1]);
-
       counts = new double[lambdaBins][dUdLBins];
       int i = 0;
       String[] toks = readLine().split(" +");
       if (toks.length == 2) {
-        // Read the flag for the tempering method.
-        int temperingFlag = parseInt(readLine().split(" +")[1]);
+        // Read the flag for the metadynamics.
+        metaDynamics = parseBoolean(toks[1]);
       } else {
         // Read the first line of the histogram.
         for (int j = 0; j < dUdLBins; j++) {
@@ -161,6 +163,7 @@ public class HistogramReader extends BufferedReader {
         histogram.allocateRecursionKernel();
         // Set the recursion kernel.
         histogram.setRecursionKernel(counts);
+        histogram.setMetaDynamics(metaDynamics);
       }
 
     } catch (Exception e) {

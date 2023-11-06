@@ -38,7 +38,11 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
+import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSTOptions
+import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -130,13 +134,24 @@ class Histogram extends AlgorithmsScript {
 
     // Print the current energy
     energy.energy(true, true)
+    logger.info("")
 
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    orthogonalSpaceTempering = OSTOptions.
-        constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null, algorithmListener)
+    // Construct some options with defaults.
+    DynamicsOptions dynamicsOptions = new DynamicsOptions()
+    LambdaParticleOptions lambdaParticleOptions = new LambdaParticleOptions()
+    MultiDynamicsOptions multiDynamicsOptions = new MultiDynamicsOptions()
+    ThermodynamicsOptions thermodynamicsOptions = new ThermodynamicsOptions()
+    OSTOptions ostOptions = new OSTOptions()
+
+    // Construct the Thermodynamics instance.
+    orthogonalSpaceTempering = ostOptions.constructOST(energy,
+        lambdaRestart, histogramRestart, activeAssembly, null,
+        dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+        algorithmListener, !multiDynamicsOptions.isSynchronous())
 
     if (save) {
       orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
