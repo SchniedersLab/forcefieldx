@@ -2,8 +2,6 @@ package ffx.utilities;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.lang.Double.parseDouble;

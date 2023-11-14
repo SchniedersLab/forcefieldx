@@ -53,7 +53,7 @@ import static java.lang.String.format;
 public class DoubleXMLAdapter extends XmlAdapter<String, Double> {
 
   @Override
-  public Double unmarshal(@Nullable String v) throws Exception {
+  public Double unmarshal(@Nullable String v) {
     if (v == null || v.isEmpty() || v.equalsIgnoreCase("null")) {
       return null;
     }
@@ -61,7 +61,7 @@ public class DoubleXMLAdapter extends XmlAdapter<String, Double> {
   }
 
   @Override
-  public String marshal(@Nullable Double v) throws Exception {
+  public String marshal(@Nullable Double v) {
     if (v == null) {
       return null;
     }

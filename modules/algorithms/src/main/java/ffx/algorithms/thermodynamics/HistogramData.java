@@ -342,7 +342,7 @@ public class HistogramData {
   /**
    * Either the discrete lambda values used, or null (continuous lambda).
    */
-  public double lambdaLadder[] = null;
+  public double[] lambdaLadder = null;
 
   /**
    * The variance for the Gaussian bias in the lambda dimension.
