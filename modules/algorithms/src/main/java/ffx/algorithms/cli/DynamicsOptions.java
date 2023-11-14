@@ -47,6 +47,7 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
+import ffx.utilities.Constants;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -54,7 +55,7 @@ import javax.annotation.Nullable;
 import java.util.logging.Logger;
 
 /**
- * Represents command line options for scripts that calculate thermodynamics.
+ * Represents command line options for scripts that run molecular dynamics.
  *
  * @author Michael J. Schnieders
  * @author Hernan V. Bernabe
@@ -88,6 +89,19 @@ public class DynamicsOptions {
     return group.checkpoint;
   }
 
+  /**
+   * The checkpoint frequency in steps.
+   *
+   * @param defaultFrequency The default frequency if the checkpoint interval is less than the time step.
+   * @return The checkpoint frequency in steps.
+   */
+  public int getCheckpointFrequency(int defaultFrequency) {
+    if (group.checkpoint > getDtPsec()) {
+      return (int) (group.checkpoint / getDtPsec());
+    }
+    return defaultFrequency;
+  }
+
   public void setCheckpoint(double checkpoint) {
     group.checkpoint = checkpoint;
   }
@@ -100,6 +114,10 @@ public class DynamicsOptions {
    */
   public double getDt() {
     return group.dt;
+  }
+
+  public double getDtPsec() {
+    return group.dt * Constants.FSEC_TO_PSEC;
   }
 
   public void setDt(double dt) {
@@ -169,6 +187,18 @@ public class DynamicsOptions {
    */
   public double getReport() {
     return group.report;
+  }
+
+  /**
+   * The molecular dynamics reporting frequency in steps.
+   * @param defaultFrequency The default frequency if the report interval is less than the time step.
+   * @return The reporting frequency in steps.
+   */
+  public int getReportFrequency(int defaultFrequency) {
+    if (group.report > getDtPsec()) {
+      return (int) (group.report / getDtPsec());
+    }
+    return defaultFrequency;
   }
 
   public void setReport(double report) {

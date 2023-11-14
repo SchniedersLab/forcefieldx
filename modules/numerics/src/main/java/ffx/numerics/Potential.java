@@ -58,7 +58,7 @@ public interface Potential extends OptimizationInterface {
 
   /**
    * Returns the list of Constraints associated with this Potential. The default implementation
-   * returns an empty list. TODO: Implement for all Potentials.
+   * returns an empty list.
    *
    * @return All Constraints.
    */

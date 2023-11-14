@@ -40,10 +40,13 @@ package ffx.realspace.groovy.test
 import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
+import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
-import ffx.algorithms.thermodynamics.HistogramSettings
+import ffx.algorithms.thermodynamics.HistogramData
+import ffx.algorithms.thermodynamics.LambdaData
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters
 import ffx.numerics.Potential
@@ -74,6 +77,9 @@ class Alchemical extends AlgorithmsScript {
 
   @Mixin
   DynamicsOptions dynamicsOptions
+
+  @Mixin
+  LambdaParticleOptions lambdaParticleOptions
 
   @Mixin
   RealSpaceOptions realSpaceOptions
@@ -298,30 +304,30 @@ class Alchemical extends AlgorithmsScript {
       }
     }
 
-    RefinementEnergy refinementEnergy =
-        realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+    RefinementEnergy refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
 
     refinementEnergy.setLambda(lambda)
 
     boolean asynchronous = true
 
     CompositeConfiguration props = assemblies[0].getProperties()
-    HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
-        props)
-    OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
-        refinementEnergy, refinementEnergy, lambdaRestart,
-        hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),
-        dynamicsOptions.getReport(),
-        dynamicsOptions.getCheckpoint(), asynchronous, true, algorithmListener)
+
+    HistogramData histogramData = HistogramData.readHistogram(histogramRestart)
+    if (lambdaRestart == null) {
+      String filename = histogramRestart.toString().replaceFirst('\\.his$', '.lam');
+      lambdaRestart = new File(filename);
+    }
+    LambdaData lambdaData = LambdaData.readLambdaData(lambdaRestart)
+
+    OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(refinementEnergy,
+        refinementEnergy, histogramData, lambdaData, props, dynamicsOptions, lambdaParticleOptions, algorithmListener)
 
     orthogonalSpaceTempering.setLambda(lambda)
 
     orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly)
     // Create the MolecularDynamics instance.
-
     MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering,
-        assemblies[0].getProperties(),
-        null, thermostat, integrator)
+        assemblies[0].getProperties(), null, thermostat, integrator)
 
     algorithmFunctions.energy(assemblies[0])
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,

@@ -40,7 +40,8 @@ package ffx.algorithms.cli;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MDEngine;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.thermodynamics.HistogramSettings;
+import ffx.algorithms.thermodynamics.HistogramData;
+import ffx.algorithms.thermodynamics.LambdaData;
 import ffx.algorithms.thermodynamics.MonteCarloOST;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters;
@@ -57,8 +58,6 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
-
-import static ffx.utilities.Constants.FSEC_TO_PSEC;
 
 /**
  * Represents command line options for scripts that utilize variants of the Orthogonal Space
@@ -173,48 +172,72 @@ public class OSTOptions {
    * @param lambdaRestartFile     a {@link java.io.File} lambda restart file.
    * @param histogramRestartFile  a {@link java.io.File} histogram restart file.
    * @param firstAssembly         the first {@link ffx.potential.MolecularAssembly} in the OST system.
-   * @param addedProperties       a {@link org.apache.commons.configuration2.Configuration} with
-   *                              additional properties.
-   * @param dynamicsOptions       a {@link ffx.algorithms.cli.DynamicsOptions} with MD-related
-   *                              settings.
-   * @param thermodynamicsOptions a {@link ffx.algorithms.cli.ThermodynamicsOptions} with
-   *                              thermodynamics-related settings.
-   * @param lambdaParticleOptions a {@link ffx.algorithms.cli.LambdaParticleOptions} with lambda
-   *                              particle-related settings.
-   * @param algorithmListener     any {@link ffx.algorithms.AlgorithmListener} that OST should
-   *                              update.
+   * @param addedProperties       a {@link org.apache.commons.configuration2.Configuration} with additional properties.
+   * @param dynamicsOptions       a {@link ffx.algorithms.cli.DynamicsOptions} with MD-related settings.
+   * @param thermodynamicsOptions a {@link ffx.algorithms.cli.ThermodynamicsOptions} with thermodynamics-related settings.
+   * @param lambdaParticleOptions a {@link ffx.algorithms.cli.LambdaParticleOptions} with lambda particle-related settings.
+   * @param algorithmListener     any {@link ffx.algorithms.AlgorithmListener} that OST should update.
    * @param async                 If OST should use asynchronous communications.
    * @return the newly built {@link OrthogonalSpaceTempering} object.
-   * @throws IOException Can be thrown by errors reading restart files.
    */
   public OrthogonalSpaceTempering constructOST(CrystalPotential crystalPotential,
                                                @Nullable File lambdaRestartFile,
                                                File histogramRestartFile, MolecularAssembly firstAssembly,
-                                               @Nullable Configuration addedProperties, DynamicsOptions dynamicsOptions,
-                                               ThermodynamicsOptions thermodynamicsOptions, LambdaParticleOptions lambdaParticleOptions,
-                                               @Nullable AlgorithmListener algorithmListener, boolean async) throws IOException {
+                                               @Nullable Configuration addedProperties,
+                                               DynamicsOptions dynamicsOptions, ThermodynamicsOptions thermodynamicsOptions,
+                                               LambdaParticleOptions lambdaParticleOptions,
+                                               @Nullable AlgorithmListener algorithmListener, boolean async) {
 
     LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
     CompositeConfiguration compositeConfiguration = new CompositeConfiguration(firstAssembly.getProperties());
     if (addedProperties != null) {
       compositeConfiguration.addConfiguration(addedProperties);
     }
-    double temp = dynamicsOptions.getTemperature();
-    double dt = dynamicsOptions.getDt();
-    double report = dynamicsOptions.getReport();
-    double checkpoint = dynamicsOptions.getCheckpoint();
-    boolean resetNSteps = thermodynamicsOptions.getResetNumSteps();
 
-    String lamRestartName = lambdaRestartFile == null ? histogramRestartFile.toString().replaceFirst("\\.his$", ".lam")
-        : lambdaRestartFile.toString();
+    // Load HistogramData
+    HistogramData histogramData = HistogramData.readHistogram(histogramRestartFile);
+    // Apply command line settings to the HistogramData if a restart file wasn't read in.
+    int histogramIndex = 0;
+    if (histogramData.wasHistogramRead()) {
+      logger.info("\n Read histogram restart from: " + histogramRestartFile);
+      logger.info(histogramData.toString());
+    } else {
+      // Overwrite defaults with properties.
+      histogramData.applyProperties(compositeConfiguration);
+      // Overwrite defaults & properties with command line options.
+      histogramData.setIndependentWalkers(group.independentWalkers);
+      histogramData.setWriteIndependent(group.independentWalkers);
+      histogramData.setAsynchronous(async);
+      histogramData.setTemperingFactor(getTemperingParameter(histogramIndex));
+      if (thresholdsSet()) {
+        histogramData.setTemperingOffset(getTemperingThreshold(histogramIndex));
+      }
+      histogramData.setMetaDynamics(group.metaDynamics);
+      histogramData.setBiasMag(getBiasMag(histogramIndex));
+      histogramData.setCountInterval(group.countInterval);
+      logger.info("\n OST Histogram Settings");
+      logger.info(histogramData.toString());
+    }
 
-    HistogramSettings histogramSettings = generateHistogramSettings(histogramRestartFile,
-        lamRestartName, compositeConfiguration, 0, dynamicsOptions, lambdaParticleOptions,
-        group.independentWalkers, group.metaDynamics, async);
+    // Load LambdaData
+    if (lambdaRestartFile == null) {
+      String filename = histogramRestartFile.toString().replaceFirst("\\.his$", ".lam");
+      lambdaRestartFile = new File(filename);
+    }
+    LambdaData lambdaData = LambdaData.readLambdaData(lambdaRestartFile);
+    // Apply command line settings the LambdaData instances.
+    if (lambdaData.wasLambdaRead()) {
+      logger.info(" Read lambda restart from:    " + lambdaRestartFile);
+    } else {
+      lambdaData.setHistogramIndex(histogramIndex);
+      if (thermodynamicsOptions.getResetNumSteps()) {
+        lambdaData.setStepsTaken(0);
+      }
+    }
 
     OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(lambdaInterface,
-        crystalPotential, lambdaRestartFile, histogramSettings, compositeConfiguration, temp, dt,
-        report, checkpoint, async, resetNSteps, algorithmListener, group.lambdaWriteOut);
+        crystalPotential, histogramData, lambdaData, compositeConfiguration,
+        dynamicsOptions, lambdaParticleOptions, algorithmListener);
     orthogonalSpaceTempering.setHardWallConstraint(mcGroup.mcHardWall);
 
     // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
@@ -274,70 +297,6 @@ public class OSTOptions {
   }
 
   /**
-   * Constructs histogram settings based on stored values.
-   *
-   * @param histogramRestartFile   Histogram restart (.his) file.
-   * @param lambdaFileName         Name of the lambda file.
-   * @param compositeConfiguration All properties requested.
-   * @param index                  Index of the histogram (RepEx/independent walkers).
-   * @param dynamicsOptions        Dynamics options.
-   * @param lambdaParticleOptions  Lambda particle options.
-   * @param writeIndependent       Whether walkers should write their own histogram files.
-   * @param async                  Whether to use asynchronous communication.
-   * @param overrideHistogram      Whether to override settings stored in the histogram restart file
-   *                               (if it exists).
-   * @return Settings to apply to a new Histogram object.
-   * @throws IOException From reading the histogram file.
-   */
-  public HistogramSettings generateHistogramSettings(File histogramRestartFile,
-                                                     String lambdaFileName, CompositeConfiguration compositeConfiguration, int index,
-                                                     DynamicsOptions dynamicsOptions, LambdaParticleOptions lambdaParticleOptions,
-                                                     boolean writeIndependent, boolean async, boolean overrideHistogram) throws IOException {
-    HistogramSettings histogramSettings = new HistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration);
-    histogramSettings.temperingFactor = getTemperingParameter(index);
-    if (thresholdsSet()) {
-      histogramSettings.setTemperOffset(getTemperingThreshold(index));
-    }
-    histogramSettings.dt = dynamicsOptions.getDt() * FSEC_TO_PSEC;
-    histogramSettings.setWriteIndependent(writeIndependent);
-    histogramSettings.setIndependentWalkers(group.independentWalkers);
-    histogramSettings.setMetaDynamics(group.metaDynamics);
-    histogramSettings.asynchronous = async;
-    if (overrideHistogram || !histogramRestartFile.exists()) {
-      histogramSettings.setBiasMag(getBiasMag(index));
-      // TODO: Let temperature be an array thing too.
-      histogramSettings.temperature = dynamicsOptions.getTemperature();
-      histogramSettings.thetaFriction = lambdaParticleOptions.getLambdaFriction();
-      histogramSettings.thetaMass = lambdaParticleOptions.getLambdaMass();
-      histogramSettings.countInterval = group.countInterval;
-    }
-
-    return histogramSettings;
-  }
-
-  /**
-   * Constructs histogram settings based on stored values.
-   *
-   * @param histogramRestartFile   Histogram restart (.his) file.
-   * @param lambdaFileName         Name of the lambda file.
-   * @param compositeConfiguration All properties requested.
-   * @param index                  Index of the histogram (RepEx/independent walkers).
-   * @param dynamicsOptions        Dynamics options.
-   * @param lambdaParticleOptions  Lambda particle options.
-   * @param writeIndependent       Whether walkers should write their own histogram files.
-   * @param async                  Whether to use asynchronous communication.
-   * @return Settings to apply to a new Histogram object.
-   * @throws IOException From reading the histogram file.
-   */
-  public HistogramSettings generateHistogramSettings(File histogramRestartFile,
-                                                     String lambdaFileName, CompositeConfiguration compositeConfiguration, int index,
-                                                     DynamicsOptions dynamicsOptions, LambdaParticleOptions lambdaParticleOptions,
-                                                     boolean writeIndependent, boolean async) throws IOException {
-    return generateHistogramSettings(histogramRestartFile, lambdaFileName, compositeConfiguration,
-        index, dynamicsOptions, lambdaParticleOptions, writeIndependent, async, false);
-  }
-
-  /**
    * Checks if independent walkers has been specified.
    *
    * @return Walker independence.
@@ -386,12 +345,12 @@ public class OSTOptions {
   public MonteCarloOST setupMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering,
                                   MolecularAssembly[] molecularAssemblies, DynamicsOptions dynamicsOptions,
                                   ThermodynamicsOptions thermodynamicsOptions, boolean verbose,
-                                  AlgorithmListener algorithmListener) {
+                                  File dynRestart, AlgorithmListener algorithmListener) {
     dynamicsOptions.init();
 
     MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
         orthogonalSpaceTempering, molecularAssemblies[0], molecularAssemblies[0].getProperties(),
-        algorithmListener, dynamicsOptions, verbose, mcGroup.mcMDSteps);
+        algorithmListener, dynamicsOptions, verbose, mcGroup.mcMDSteps, dynRestart);
 
     MolecularDynamics md = monteCarloOST.getMD();
     for (int i = 1; i < molecularAssemblies.length; i++) {

@@ -50,7 +50,6 @@ import static org.junit.Assert.assertTrue;
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
-import ffx.algorithms.groovy.Thermodynamics;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
 import java.io.File;
@@ -1026,7 +1025,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     thermodynamics.run();
     OrthogonalSpaceTempering orthogonalSpaceTempering = thermodynamics.getOST();
     Histogram histogram = orthogonalSpaceTempering.getHistogram();
-    double delG = histogram.updateFreeEnergyEstimate(true, false);
+    double delG = histogram.updateFreeEnergyDifference(true, false);
     assertEquals(format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
   }
 

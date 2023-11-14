@@ -123,8 +123,7 @@ public class SendSynchronous {
         logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", walkerLambda));
       }
 
-      // For i == rank, the addBias method will handle updating FLambda (and optionally printing).
-      currentHistogram.addToRecursionKernelValue(walkerLambda, walkerdUdL, weight, i != rank);
+      currentHistogram.addToRecursionKernelValue(walkerLambda, walkerdUdL, weight);
     }
   }
 

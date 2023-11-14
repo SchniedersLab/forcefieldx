@@ -156,7 +156,7 @@ class Histogram extends AlgorithmsScript {
     if (save) {
       orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
       OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
-      histogram.updateFreeEnergyEstimate(false, true)
+      histogram.updateFreeEnergyDifference(false, true)
       StringBuffer sb = histogram.evaluateTotalOSTBias(bias)
 
       String dirName = saveDir.toString() + File.separator

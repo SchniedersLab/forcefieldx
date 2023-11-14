@@ -40,7 +40,7 @@ package ffx.algorithms.groovy.test
 import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
-import ffx.algorithms.thermodynamics.HistogramReader
+import ffx.algorithms.thermodynamics.HistogramData
 import ffx.crystal.CrystalPotential
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
@@ -276,22 +276,10 @@ class MostBar extends AlgorithmsScript {
 
     if (lamBins < 1) {
       File histogramFile = new File(histogramName)
-      if (!histogramFile.exists() || !histogramFile.canRead()) {
-        // @formatter:off
-        logger.severe(" Histogram file ${histogramName} does not exist or could not be read!")
-        // @formatter:on
-      }
-
-      HistogramReader hr = null
-      try {
-        hr = new HistogramReader(new BufferedReader(new FileReader(histogramFile)))
-        hr.readHistogramFile()
-        lamBins = hr.getLambdaBins()
-        // @formatter:off
+      HistogramData histogramData = HistogramData.readHistogram(histogramFile)
+      lamBins = histogramData.getLambdaBins()
+      if (histogramData.wasHistogramRead()) {
         logger.info(" Autodetected ${lamBins} from histogram file.")
-        // @formatter:on
-      } finally {
-        hr?.close()
       }
     }
 
@@ -369,7 +357,7 @@ class MostBar extends AlgorithmsScript {
 
     logger.info("\n Initial estimate via the iteration method.")
     SequentialEstimator bar = new BennettAcceptanceRatio(lamPoints, eLow, eAt, eHigh,
-        new double[] {temp})
+        new double[]{temp})
     SequentialEstimator forwards = bar.getInitialForwardsGuess()
     SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
