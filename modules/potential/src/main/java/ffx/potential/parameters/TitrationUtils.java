@@ -1578,7 +1578,7 @@ public class TitrationUtils {
     } else if(proteinDielectric == 2.0){
       fMod = Titration.ASHtoASP.freeEnergyDiff2;
     }
-
+    logger.info("ASP FMOD:" + fMod);
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
     //rotamerPhBiasMap.put(ASP, acidostat - fModA);
     /*
@@ -1709,7 +1709,7 @@ public class TitrationUtils {
    */
   public enum Titration {
 
-    ASHtoASP(3.94, -70.35, -35.35,-45.16, -23.15, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
+    ASHtoASP(3.94, -70.35, -35.35,-45.39, -23.15, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
     GLHtoGLU(4.25, -81.90, -39.71, -55.74, -26.3,0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 41.45, 20.0, 41.31, 19.7,0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
