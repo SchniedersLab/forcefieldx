@@ -61,6 +61,9 @@ import static org.apache.commons.math3.util.FastMath.floorDiv
 /**
  * The Cluster script clusters structures utilizing RMSD.
  *
+ * The Iterative Hierarchical Clustering method was contributed by Yuya Kinoshita, Koki Nishimura and
+ * Masatoshi Karashima from Takeda Pharmaceuticals.
+ *
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  * @author Michael J. Schnieders
@@ -69,7 +72,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv
  * <br>
  * ffxc Cluster [options] &lt;filename&gt;
  */
-@Command(description = " Cluster structures using an RMSD matrix.", name = "Cluster")
+@Command(description = "Cluster structures using an RMSD matrix.", name = "Cluster")
 class Cluster extends AlgorithmsScript {
 
   /**

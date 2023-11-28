@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project name="Force Field X" xmlns="http://maven.apache.org/DECORATION/1.8.0"
+<project xmlns="http://maven.apache.org/DECORATION/1.8.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
   <version position="right"/>
@@ -14,24 +14,16 @@
           img="/images/icon90.png"/>
   </poweredBy>
   <bannerLeft>
-    <name>
-      <![CDATA[
-             <span style="color:black">Force Field X</span>
-             <br>
-             <h4>
-             <span style="color:green">Sustainable</span><span style="color:black"> Software for Molecular Biophysics</span>
-             </h4>
-            ]]>
-    </name>
-    <!-- name>Force Field X: Software for Molecular Biophysics</name -->
-    <!-- href>http://ffx.biochem.uiowa.edu</href -->
+    <src>/images/FFX-Logo-Banner.png</src>
+    <name>Force Field X: Polyglot Software for Molecular Biophysics</name>
+    <href>https://ffx.biochem.uiowa.edu</href>
   </bannerLeft>
   <bannerRight>
     <name>The University of Iowa</name>
-    <src>/images/UofI.png</src>
+    <src>/images/UofI2.png</src>
     <href>https://www.uiowa.edu</href>
-    <width>100px</width>
-    <height>100px</height>
+    <width>192px</width>
+    <height>108px</height>
   </bannerRight>
   <custom>
     <fluidoSkin>
@@ -39,7 +31,7 @@
       <leftColumnClass>span2</leftColumnClass>
       <bodyColumnClass>span10</bodyColumnClass>
       <sideBarEnabled>true</sideBarEnabled>
-      <topBarEnabled>true</topBarEnabled>
+      <topBarEnabled>false</topBarEnabled>
       <topBarContainerStyle>width: 90%;</topBarContainerStyle>
       <topBarIcon>
         <name>Force Field X</name>
@@ -54,11 +46,11 @@
       <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
       <copyrightClass>pull-right</copyrightClass>
       <gitHub>
-        <projectId>mjschnie/ffx</projectId>
+        <projectId>SchniedersLab/forcefieldx</projectId>
         <!-- ribbonOrientation: left/right -->
         <ribbonOrientation>right</ribbonOrientation>
         <!-- ribbonColor: red/green/black/darkblue/orange/gray -->
-        <ribbonColor>green</ribbonColor>
+        <ribbonColor>black</ribbonColor>
       </gitHub>
       <!-- profile: pre-release|sandbox|retired -->
       <profile>production</profile>
@@ -70,44 +62,42 @@
       <breadcrumbDivider>»</breadcrumbDivider>
     </fluidoSkin>
   </custom>
-
-  <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
-
   <body>
     <head>
+      <!-- Google Analytics 4 -->
       <![CDATA[
-                <!-- Global site tag (gtag.js) - Google Analytics -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=UA-12576019-1"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments)};
-                    gtag('js', new Date());
-                    gtag('config', 'UA-12576019-1');
-                </script>
-            ]]>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1M8ZSTSYQ6"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-1M8ZSTSYQ6');
+        </script>
+      ]]>
     </head>
     <links>
-      <!-- item name="Biochemisty and Molecular Biology" href="http://www.medicine.uiowa.edu/biochemistry"/>
-      <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
-      <item name="CBCB" href="https://genome.uiowa.edu/home"/>
-      <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
-      <item name="IVR"  href="http://ivr.uiowa.edu"/>
-      <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
+      <item name="Biomedical Engineering"  href="https://www.engineering.uiowa.edu/bme"/>
+      <item name="Biochemistry and Molecular Biology" href="https://www.medicine.uiowa.edu/biochemistry"/>
     </links>
     <breadcrumbs>
       <item name="Sitemap" href="/sitemap.html"/>
       <item name="Home" href="/index.html"/>
     </breadcrumbs>
-    <menu name="Overview" inherit="top">
+    <menu>
       <item name="Welcome" href="/index.html"/>
+    </menu>
+    <menu name="About Force Field X" inherit="top">
       <item name="Download" href="/download.html"/>
       <item name="Install" href="/install.html"/>
-      <item name="Source Code" href="/source.html"/>
-      <item name="Methods" href="/methods.html"/>
+      <item name="User Manual" href="/manual.html"/>
       <item name="Applications" href="/applications.html"/>
+      <item name="Method Development" href="/methods.html"/>
+      <item name="Build from Source" href="/source.html"/>
+      <item name="Developer Guide" href="/modules.html"/>
       <item name="Publications" href="/publications.html"/>
     </menu>
-    <menu name="Manual" inherit="top">
+    <menu name="User Manual" inherit="top">
+      <item name="Introduction" href="/manual.html"/>
       <item name="Commands" href="/commands.html" collapse="true">
         <item name="Energy and Structure Analysis" href="/commands-energy.html" collapse="true">
           <item name="Density" href="/commands/Density.html"/>
@@ -155,8 +145,8 @@
             <item name="MinimizePh" href="/commands/test.MinimizePh.html"/>
             <!-- item name="MostBar" href="/commands/test.CoordShakeEnergy.html"/ -->
             <item name="OSTGradient" href="/commands/test.OSTGradient.html"/>
-            <item name="PhBar" href="/commands/test.PhBar.html"/>
             <item name="PhDynamics" href="/commands/test.PhDynamics.html"/>
+            <item name="RaoBlackwellEstimator" href="/commands/test.RaoBlackwellEstimator.html"/>
             <!-- item name="RepexThermo" href="/commands/test.RepexThermo.html"/ -->
             <item name="SortXPH" href="/commands/test.SortXPH.html"/>
           </item>
@@ -194,7 +184,7 @@
           <item name="SaveAsPDB" href="/commands/SaveAsPDB.html"/>
           <item name="SaveAsXYZ" href="/commands/SaveAsXYZ.html"/>
           <item name="SaveRotamers" href="/commands/SaveRotamers.html"/>
-          <item name="XYZtoQE" href="/commands/XYZtoQE.html"/>
+          <item name="ExportQE" href="/commands/ExportQE.html"/>
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
@@ -221,28 +211,27 @@
         <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html"/>
       </item>
       <item name="Parallelization" href="/parallel.html"/>
-      <item name="License" href="/licenses.html"/>
-      <item name="FFX Team" href="/team.html"/>
-    </menu>
-    <menu name="Integrations" inherit="top">
       <item name="Binder" href="/binder.html"/>
-      <item name="Docker" href="/docker.html"/>
       <item name="Google Colab" href="/colab.html"/>
+      <item name="Docker" href="/docker.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
-      <!-- item name="Matlab" href="/matlab.html"/ -->
     </menu>
-    <menu name="Modules" inherit="top">
-      <item name="Modules" href="/modules.html"/>
-      <item name="Algorithms" href="modules/algorithms/index.html"/>
-      <item name="Crystal" href="modules/crystal/index.html"/>
-      <item name="Experiment" href="modules/experiment/index.html"/>
-      <item name="Numerics" href="modules/numerics/index.html"/>
-      <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
-      <item name="Parallel Java" href="modules/pj/index.html"/>
-      <item name="Potential" href="modules/potential/index.html"/>
-      <item name="User Interfaces" href="modules/ui/index.html"/>
-      <item name="Utilities" href="modules/utilities/index.html"/>
+    <menu name="Developer Guide" inherit="top">
+      <item name="Introduction" href="/modules.html" collapse="true">
+        <item name="Algorithms" href="modules/ffx-algorithms/index.html"/>
+        <item name="Crystal" href="modules/ffx-crystal/index.html"/>
+        <item name="Numerics" href="modules/ffx-numerics/index.html"/>
+        <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
+        <item name="Parallel Java" href="modules/ffx-pj/index.html"/>
+        <item name="Potential" href="modules/ffx-potential/index.html"/>
+        <item name="Refinement" href="modules/ffx-refinement/index.html"/>
+        <item name="User Interfaces" href="modules/ffx-ui/index.html"/>
+        <item name="Utilities" href="modules/ffx-utilities/index.html"/>
+      </item>
+      <item name="JavaDocs" href="/apidocs/index.html"/>
+      <item name="License" href="/licenses.html"/>
+      <item name="Development Team" href="/team.html"/>
     </menu>
-    <menu name="Project Info" ref="reports"/>
+    <menu name="Project Documentation" ref="reports"/>
   </body>
 </project>

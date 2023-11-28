@@ -43,11 +43,18 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.RotamerOptimization.Algorithm;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.*;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 import java.util.logging.Logger;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -67,13 +74,13 @@ public class ManyBodyOptions {
    * The ArgGroup keeps the ManyBodyOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Optimization Options%n", validate = false)
-  private final  ManyBodyOptionGroup group = new ManyBodyOptionGroup();
+  private final ManyBodyOptionGroup group = new ManyBodyOptionGroup();
 
   /**
    * The ArgGroup keeps the BoxOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
-  private final  BoxOptionGroup boxGroup = new BoxOptionGroup();
+  private final BoxOptionGroup boxGroup = new BoxOptionGroup();
 
   /**
    * The ArgGroup keeps the WindowOptionGroup together when printing help.
@@ -425,38 +432,6 @@ public class ManyBodyOptions {
     residueGroup.finish = finish;
   }
 
-  public boolean getOnlyTitration() {
-    return residueGroup.onlyTitration;
-  }
-
-  public void setOnlyTitration(boolean onlyTitration) {
-    residueGroup.onlyTitration = onlyTitration;
-  }
-
-  public boolean getOnlyProtons() {
-    return residueGroup.onlyProtons;
-  }
-
-  public void setOnlyProtons(boolean onlyProtons) {
-    residueGroup.onlyProtons = onlyProtons;
-  }
-
-  public int getInterestedResidue() {
-    return residueGroup.interestedResidue;
-  }
-
-  public void setInterestedResidue(int interestedResidue) {
-    residueGroup.interestedResidue = interestedResidue;
-  }
-
-  public double getDistanceCutoff() {
-    return residueGroup.distanceCutoff;
-  }
-
-  public void setDistanceCutoff(double distanceCutoff) {
-    residueGroup.distanceCutoff = distanceCutoff;
-  }
-
   /**
    * Cutoff distance for two-body interactions.
    *
@@ -731,88 +706,8 @@ public class ManyBodyOptions {
     return group.titrationPH;
   }
 
-  public boolean getTitration() {
-    return group.titration;
-  }
-
   public boolean isTitrating() {
     return group.titrationPH == 0;
-  }
-
-  public String selectDistanceResidues(List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
-                                       double distanceCutoff){
-    String listResidues = "";
-    if (mutatingResidue != -1 && distanceCutoff != -1) {
-      List<Integer> residueNumber = new ArrayList<>();
-      for (Residue residue : residueList) {
-        residueNumber.add(residue.getResidueNumber());
-      }
-      double[] mutatingResCoor = new double[3];
-      int index = residueNumber.indexOf(mutatingResidue);
-      mutatingResCoor = residueList.get(index).getAtomByName("CA", true).getXYZ(mutatingResCoor);
-      for (Residue residue: residueList) {
-        double[] currentResCoor = new double[3];
-        currentResCoor = residue.getAtomByName("CA", true).getXYZ(currentResCoor);
-        double dist = DoubleMath.dist(mutatingResCoor, currentResCoor);
-        if (dist < distanceCutoff) {
-          listResidues += "," + residue.getChainID() + residue.getResidueNumber();
-        }
-      }
-      listResidues = listResidues.substring(1);
-    } else if (onlyTitration || onlyProtons){
-      String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
-      List<String> titratableResiudesList = Arrays.asList(titratableResidues);
-      for (Residue residue : residueList) {
-        if (titratableResiudesList.contains(residue.getName())) {
-          String titrateResNum = Integer.toString(residue.getResidueNumber());
-          if(!listResidues.contains(titrateResNum)){
-            listResidues += "," + residue.getChainID()+ titrateResNum;
-          }
-          if (distanceCutoff != -1){
-            for (Residue residue2: residueList) {
-              boolean includeResidue = evaluateAllRotDist(residue, residue2, distanceCutoff);
-              if(includeResidue){
-                String residue2Number = Integer.toString(residue2.getResidueNumber());
-                if(!listResidues.contains(residue2Number)){
-                  listResidues += "," + residue2.getChainID()+ residue2Number;
-                }
-              }
-            }
-          }
-
-        }
-
-      }
-
-      listResidues = listResidues.substring(1);
-    }
-    return listResidues;
-  }
-  private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff){
-    residueA.setRotamers(RotamerLibrary.getDefaultLibrary());
-    residueB.setRotamers(RotamerLibrary.getDefaultLibrary());
-    Rotamer[] rotamersA = residueA.getRotamers();
-    Rotamer[] rotamersB = residueB.getRotamers();
-    double[] aCoor = new double[3];
-    double[] bCoor = new double[3];
-    if(rotamersB != null){
-      for(Rotamer rotamerA: rotamersA){
-        residueA.setRotamer(rotamerA);
-        for(Rotamer rotamerB: rotamersB){
-          residueB.setRotamer(rotamerB);
-          for(Atom atomA: residueA.getAtomList()){
-            for(Atom atomB: residueB.getAtomList()){
-              double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor));
-              if(dist <= distanceCutoff){
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -875,13 +770,6 @@ public class ManyBodyOptions {
     @Option(names = {"--pH",
         "--titrationPH"}, paramLabel = "0", defaultValue = "0", description = " Optimize the titration state of ASP, GLU, HIS and LYS residues at the given pH (pH = 0 turns off titration")
     private double titrationPH;
-
-    /**
-     * --pH or --titrationPH Optimize the titration state of ASP, GLU, HIS and LYS residues.
-     */
-    @Option(names = {"--tR",
-            "--titration"}, paramLabel = "false", defaultValue = "false", description = " Turn on titration state optimization")
-    private boolean titration;
 
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all
@@ -1049,26 +937,6 @@ public class ManyBodyOptions {
     @Option(names = {"--lR",
         "--listResidues"}, paramLabel = "<list>", defaultValue = "none", description = "Select a list of residues to optimize (eg. A11,A24,B40).")
     private String listResidues;
-
-    /** --oT or --onlyTitrtaion Rotamer optimize only titratable residues. */
-    @Option(names = {"--oT",
-            "--onlyTitration"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only titratable residues.")
-    private boolean onlyTitration;
-
-    /** --oP or --onlyProtons Rotamer optimize only proton movement. */
-    @Option(names = {"--oP",
-            "--onlyProtons"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only proton movement.")
-    private boolean onlyProtons;
-
-    /** --iR or --interestedResidue Optimize rotamers within some distance of a specific residue. */
-    @Option(names = {"--iR",
-            "--interestedResidue"}, paramLabel = "", defaultValue = "-1", description = "Optimize rotamers within some distance of a specific residue.")
-    private int interestedResidue = -1;
-
-    /** --dC or --distanceCutoff Distance which rotamers will be included when using only protons, titratable residues, or interested residue. */
-    @Option(names = {"--dC",
-            "--distanceCutoff"}, paramLabel = "", defaultValue = "-1", description = "Distance which rotamers will be included when using only protons, titratable residues, or interested residue.")
-    private double distanceCutoff = -1;
 
   }
 

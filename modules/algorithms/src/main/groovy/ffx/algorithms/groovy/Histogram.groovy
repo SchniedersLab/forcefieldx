@@ -38,7 +38,11 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
+import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSTOptions
+import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -58,11 +62,18 @@ import picocli.CommandLine.Parameters
 class Histogram extends AlgorithmsScript {
 
   /**
-   * -p or --pmf Save the histogram, PMF and 2D bias to files.
+   * -s or --save Save the histogram, PMF and 2D bias to files.
    */
-  @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-      description = 'Save the bias histogram to histogram.txt, the PMF to pmf.txt, and 2D PMF to pmf.2D.txt')
-  boolean pmf = false
+  @Option(names = ['-s', '--save'], paramLabel = 'false',
+      description = 'Save the bias histogram to histogram.txt, the total PMF to pmf.txt, and 2D PMF to pmf.2D.txt')
+  boolean save = false
+
+  /**
+   * -b or --bias By default, the PMF is saved. This flag flips the sign to give the OST bias.
+   */
+  @Option(names = ['-b', '--bias'], paramLabel = 'false',
+      description = 'By default, the PMF is saved. This flag flips the sign to give the OST bias.')
+  boolean bias = false
 
   /**
    * An XYZ or PDB input file.
@@ -123,20 +134,30 @@ class Histogram extends AlgorithmsScript {
 
     // Print the current energy
     energy.energy(true, true)
+    logger.info("")
 
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    orthogonalSpaceTempering = OSTOptions.
-        constructOST(energy, lambdaRestart, histogramRestart, activeAssembly, null,
-            algorithmListener)
+    // Construct some options with defaults.
+    DynamicsOptions dynamicsOptions = new DynamicsOptions()
+    LambdaParticleOptions lambdaParticleOptions = new LambdaParticleOptions()
+    MultiDynamicsOptions multiDynamicsOptions = new MultiDynamicsOptions()
+    ThermodynamicsOptions thermodynamicsOptions = new ThermodynamicsOptions()
+    OSTOptions ostOptions = new OSTOptions()
 
-    if (pmf) {
+    // Construct the Thermodynamics instance.
+    orthogonalSpaceTempering = ostOptions.constructOST(energy,
+        lambdaRestart, histogramRestart, activeAssembly, null,
+        dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+        algorithmListener, !multiDynamicsOptions.isSynchronous())
+
+    if (save) {
       orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
       OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
-      histogram.updateFreeEnergyEstimate(false, true)
-      StringBuffer sb = histogram.evaluateTotalPMF()
+      histogram.updateFreeEnergyDifference(false, true)
+      StringBuffer sb = histogram.evaluateTotalOSTBias(bias)
 
       String dirName = saveDir.toString() + File.separator
       String file = dirName + "pmf.txt"
@@ -145,7 +166,7 @@ class Histogram extends AlgorithmsScript {
       fileWriter.write(sb.toString())
       fileWriter.close()
 
-      sb = histogram.evaluate2DPMF()
+      sb = histogram.evaluate2DOSTBias(bias)
       file = dirName + "pmf.2D.txt"
       logger.info(" Writing " + file)
       fileWriter = new FileWriter(file)

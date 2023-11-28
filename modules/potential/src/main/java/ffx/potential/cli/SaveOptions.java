@@ -52,7 +52,9 @@ import picocli.CommandLine.Option;
  */
 public class SaveOptions {
 
-  /** -c or --constrain Apply geometric constraints before saving. */
+  /**
+   * -c or --constrain Apply geometric constraints before saving.
+   */
   @Option(names = {"-c", "--constrain"}, paramLabel = "false", defaultValue = "false",
       description = "Apply geometric constraints before saving.")
   public boolean constrain = false;

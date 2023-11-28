@@ -51,6 +51,16 @@ import picocli.CommandLine.Option;
 public class LambdaParticleOptions {
 
   /**
+   * The default theta friction is 91 per psec.
+   */
+  private static final double DEFAULT_THETA_FRICTION = 91.0;
+
+  /**
+   * The default theta mass is 10 AMU.
+   */
+  private static final double DEFAULT_THETA_MASS = 10.0;
+
+  /**
    * The ArgGroup keeps the LambdaParticleOptions together when printing help.
    */
   @ArgGroup(heading = "%n Lambda Particle Options for MD-OST%n", validate = false)
@@ -87,14 +97,18 @@ public class LambdaParticleOptions {
    */
   private static class LambdaParticleOptionGroup {
 
-    /** -m or --lambdaMass to set the mass of the lambda particle. */
-    @Option(names = {"--lm",
-        "--lambdaMass"}, paramLabel = "1.0E-18", defaultValue = "1.0E-18", description = "Mass of the lambda particle.")
-    private double lambdaMass;
+    /**
+     * -m or --lambdaMass to set the mass of the lambda particle.
+     */
+    @Option(names = {"--lm", "--lambdaMass"}, paramLabel = "" + DEFAULT_THETA_MASS, defaultValue = "" + DEFAULT_THETA_MASS,
+        description = "Mass of the lambda particle (AMU).")
+    private double lambdaMass = DEFAULT_THETA_MASS;
 
-    /** -x or --lambdaFriction to set friction on the lambda particle */
-    @Option(names = {"--lf",
-        "--lambdaFriction"}, paramLabel = "1.0E-18", defaultValue = "1.0E-18", description = "Friction on the lambda particle.")
-    private double lambdaFriction;
+    /**
+     * -x or --lambdaFriction to set the friction on the lambda particle.
+     */
+    @Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "" + DEFAULT_THETA_FRICTION, defaultValue = "" + DEFAULT_THETA_FRICTION,
+        description = "Friction on the lambda particle (1/psec).")
+    private double lambdaFriction = DEFAULT_THETA_FRICTION;
   }
 }

@@ -54,6 +54,10 @@ import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
+import ffx.numerics.Potential;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
@@ -69,7 +73,6 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
-import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
@@ -91,13 +94,6 @@ public class TitrationUtils {
   private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
 
   private static final double LOG10 = log(10.0);
-
-  private Double fModA;
-  private Double fModG;
-  private Double fModL;
-  private Double fModHE;
-  private Double fModHD;
-
 
   private static final MultipoleType aspZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
       new int[] {0, 140, 139}, MultipoleFrameDefinition.ZTHENX, false);
@@ -139,8 +135,7 @@ public class TitrationUtils {
       new double[] {0.0}, new double[] {0.0}, new int[] {0});
   private static final PiOrbitalTorsionType zeroPiOrbitalTorsionType = new PiOrbitalTorsionType(
       new int[] {0, 0}, 0.0);
-  private double proteinDielectric;
-  private boolean tanhCorrection = false;
+
   enum AspStates {
     ASP, ASH1, ASH2
   }
@@ -495,23 +490,6 @@ public class TitrationUtils {
     constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
     constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
     checkParameterTypes("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
-  }
-
-  public TitrationUtils(ForceField forceField, double proteinDielectric, boolean tanhCorrection){
-    this(forceField);
-    this.proteinDielectric = proteinDielectric;
-    this.tanhCorrection = tanhCorrection;
-    //String fModA = forceField.getProperties().getString("fModA");
-    //this.fModA = Double.parseDouble(fModA);
-    //logger.info("ASP fMOD = " + fModA);
-    //String fModG = forceField.getProperties().getString("fModG");
-    //this.fModG = Double.parseDouble(fModG);
-    //String fModL = forceField.getProperties().getString("fModL");
-    //this.fModL = Double.parseDouble(fModL);
-    //String fModHE = forceField.getProperties().getString("fModHE");
-    //this.fModHE = Double.parseDouble(fModHE);
-    //String fModHD = forceField.getProperties().getString("fModHD");
-    //this.fModHD = Double.parseDouble(fModHD);
   }
 
   public boolean testResidueTypes(Residue residue) {
@@ -1570,17 +1548,8 @@ public class TitrationUtils {
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
     double fMod = Titration.ASHtoASP.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.ASHtoASP.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.ASHtoASP.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.ASHtoASP.freeEnergyDiff2;
-    }
-    logger.info("ASP FMOD:" + fMod);
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
-    //rotamerPhBiasMap.put(ASP, acidostat - fModA);
+
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
      */
@@ -1591,17 +1560,8 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
     fMod = Titration.GLHtoGLU.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.GLHtoGLU.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.GLHtoGLU.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.GLHtoGLU.freeEnergyDiff2;
-    }
-
     rotamerPhBiasMap.put(GLU, acidostat - fMod);
-    //rotamerPhBiasMap.put(GLU, acidostat - fModG);
+
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
@@ -1613,17 +1573,8 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
     fMod = Titration.LYStoLYD.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.LYStoLYD.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.LYStoLYD.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.LYStoLYD.freeEnergyDiff2;
-    }
-
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
-    //rotamerPhBiasMap.put(LYD, acidostat - fModL);
+
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
      */
@@ -1634,14 +1585,6 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.CYStoCYD.pKa - pH);
     fMod = Titration.CYStoCYD.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.CYStoCYD.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.CYStoCYD.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.CYStoCYD.freeEnergyDiff2;
-    }
     rotamerPhBiasMap.put(CYD, acidostat - fMod);
 
     /*
@@ -1654,31 +1597,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
     fMod = Titration.HIStoHID.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.HIStoHID.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.HIStoHID.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.HIStoHID.freeEnergyDiff2;
-    }
     rotamerPhBiasMap.put(HID, acidostat - fMod);
-    //rotamerPhBiasMap.put(HID, acidostat - fModHD);
+
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
     fMod = Titration.HIStoHIE.freeEnergyDiff;
-    if(tanhCorrection){
-      fMod = Titration.HIStoHIE.freeEnergyDiffGK;
-      if(proteinDielectric == 2.0){
-        fMod = Titration.HIStoHIE.freeEnergyDiffGK2;
-      }
-    } else if(proteinDielectric == 2.0){
-      fMod = Titration.HIStoHIE.freeEnergyDiff2;
-    }
     rotamerPhBiasMap.put(HIE, acidostat - fMod);
-    //rotamerPhBiasMap.put(HIE, acidostat - fModHE);
   }
 
   public double getRotamerPhBias(AminoAcid3 AA3) {
@@ -1724,9 +1650,6 @@ public class TitrationUtils {
     public final double pKa;
     // Free energy differences used in rotamer optimization
     public final double freeEnergyDiff;
-    public final double freeEnergyDiff2;
-    public final double freeEnergyDiffGK;
-    public final double freeEnergyDiffGK2;
     public final double cubic;
     public final double quadratic;
     public final double linear;

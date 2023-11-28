@@ -333,7 +333,9 @@ public abstract class Thermostat {
    * @param targetTemperature the target Temperature for the Maxwell distribution.
    */
   public void maxwell(double targetTemperature) {
-    logger.info("\n Initializing velocities to target temperature");
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine("\n Initializing velocities to target temperature");
+    }
 
     setTargetTemperature(targetTemperature);
 

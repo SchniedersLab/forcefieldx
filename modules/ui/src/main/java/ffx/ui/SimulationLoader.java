@@ -69,7 +69,7 @@ public class SimulationLoader implements ActionListener {
   private boolean finished = false;
   private MainPanel mainPanel;
   private FFXSystem system;
-  private SimulationUpdate tinkerUpdate = null;
+  private SimulationUpdate ffxUpdate = null;
   private boolean firstUpdate = true;
   private Timer timer;
   private double time = 0.0;
@@ -124,11 +124,11 @@ public class SimulationLoader implements ActionListener {
       }
     } // A Simulation System exists, attempt to Update it.
     else {
-      if (tinkerUpdate == null || tinkerUpdate.read) {
-        tinkerUpdate = client.getUpdate();
+      if (ffxUpdate == null || ffxUpdate.read) {
+        ffxUpdate = client.getUpdate();
       }
-      if (tinkerUpdate != null
-          && !tinkerUpdate.read
+      if (ffxUpdate != null
+          && !ffxUpdate.read
           && !mainPanel.getGraphics3D().isSceneRendering()) {
         update();
       }
@@ -231,38 +231,38 @@ public class SimulationLoader implements ActionListener {
     if (system.isStale()) {
       return;
     }
-    if (tinkerUpdate == null || tinkerUpdate.read) {
+    if (ffxUpdate == null || ffxUpdate.read) {
       return;
     }
     // Sanity check - FFX and TINKER should agree on the number of atoms.
     List<Atom> atoms = system.getAtomList();
     int n = atoms.size();
-    if (tinkerUpdate.numatoms != n) {
+    if (ffxUpdate.numatoms != n) {
       finished = true;
       return;
     }
     // This is either an MD Run.
-    if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.SIMULATION) {
-      if (tinkerUpdate.time == time) {
-        tinkerUpdate.read = true;
+    if (ffxUpdate.type == ffx.ui.commands.SimulationUpdate.SIMULATION) {
+      if (ffxUpdate.time == time) {
+        ffxUpdate.read = true;
         return;
       }
-      time = tinkerUpdate.time;
-    } else if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.OPTIMIZATION) {
-      if (tinkerUpdate.step == step) {
-        tinkerUpdate.read = true;
+      time = ffxUpdate.time;
+    } else if (ffxUpdate.type == ffx.ui.commands.SimulationUpdate.OPTIMIZATION) {
+      if (ffxUpdate.step == step) {
+        ffxUpdate.read = true;
         return;
       }
-      step = tinkerUpdate.step;
+      step = ffxUpdate.step;
     }
     // Reset the Maximum Magnitude Values, such that they will be consistent
     // with this frame of the simulation after the update.
     double[] d = new double[3];
     for (Atom a : atoms) {
       int index = a.getIndex() - 1;
-      d[0] = tinkerUpdate.coordinates[0][index];
-      d[1] = tinkerUpdate.coordinates[1][index];
-      d[2] = tinkerUpdate.coordinates[2][index];
+      d[0] = ffxUpdate.coordinates[0][index];
+      d[1] = ffxUpdate.coordinates[1][index];
+      d[2] = ffxUpdate.coordinates[2][index];
       a.moveTo(d);
     }
     if (firstUpdate) {
@@ -272,7 +272,7 @@ public class SimulationLoader implements ActionListener {
     mainPanel.getGraphics3D().updateScene(system, true, false, null, false, null);
     mainPanel.getHierarchy().updateStatus();
     mainPanel.getHierarchy().repaint();
-    tinkerUpdate.read = true;
-    tinkerUpdate = client.getUpdate();
+    ffxUpdate.read = true;
+    ffxUpdate = client.getUpdate();
   }
 }

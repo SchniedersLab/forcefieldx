@@ -42,9 +42,9 @@ import picocli.CommandLine.Option;
 public class RepexOSTOptions {
 
   /** --rxf or --repexFrequency sets the interval (in psec) between replica exchange attempts. */
-  @Option(names = {"--rxf",
-      "--repexFrequency"}, paramLabel = "5.0", defaultValue = "5.0", description = "Picoseconds between exchange attempts.")
-  private double repexFrequency;
+  @Option(names = {"--rxf", "--repexFrequency"}, paramLabel = "5.0", defaultValue = "5.0",
+      description = "Picoseconds between exchange attempts.")
+  private double repexFrequency = 5.0;
 
   /**
    * The interval (in psec) between replica exchange attempts.

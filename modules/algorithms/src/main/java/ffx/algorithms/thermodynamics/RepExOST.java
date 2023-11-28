@@ -161,14 +161,7 @@ public class RepExOST {
     dynFile = new File(format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
     this.molecularDynamics.setFallbackDynFile(dynFile);
 
-    File lambdaFile = new File(format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
-    currentHistoIndex = rank;
-    if (lambdaFile.exists()) {
-      try (LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaFile)))) {
-        lr.readLambdaFile(false);
-        currentHistoIndex = lr.getHistogramIndex();
-      }
-    }
+    currentHistoIndex = orthogonalSpaceTempering.getHistogram().ld.histogramIndex;
 
     allHistograms = orthogonalSpaceTempering.getAllHistograms();
     this.numPairs = size - 1;

@@ -6,7 +6,7 @@
     <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
   </properties>
   <body>
-    <section name="Selected Publications that Use Force Field X">
+    <section name="Selected Recent Publications with Force Field X">
       <table>
         <tr>
           <th>Year</th>
@@ -16,6 +16,30 @@
           <td>
             <b>2023</b>
           </td>
+          <td>
+            Nessler, A., Okada, O., Kinoshita, Y., Nishimura, K., Nagata, H., Fukuzawa, K., Yonemochi, E. and Schnieders, M.
+            Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
+            <a href="https://doi.org/10.26434/chemrxiv-2023-cl0c5">
+              <i>ChemRxiv. Cambridge: Cambridge Open Engage</i>
+              <b>2023</b>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <b><!-- BLANK --></b>
+          </td>
+          <td>
+            Thiel, A., Speranza, M., Jadhav, S., Stevens, L., Unruh, D., Ren, P., Ponder, J., Shen, J. and Schnieders, M.
+            Constant-pH Simulations with the Polarizable Atomic Multipole AMOEBA Force Field.
+            <a href="https://doi.org/10.26434/chemrxiv-2023-96z34">
+              <i>ChemRxiv. Cambridge: Cambridge Open Engage</i>
+              <b>2023</b>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td><!-- BLANK --></td>
           <td>Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
             J.,
             A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.
@@ -159,96 +183,6 @@
               <i>Journal of Chemical Theory and Computation</i>
               <b>2014</b>
               10, (7), 2781-2791.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <b>2012</b>
-          </td>
-          <td>
-            Ren, P., Chun, J., Thomas, D. G., Schnieders, M. J., Marucho, M., Zhang, J., and N. A. Baker,
-            Biomolecular electrostatics and solvation: a computational perspective.
-            <a href="https://dx.doi.org/10.1017/S003358351200011X">
-              <i>Quarterly Reviews of Biophysics</i>
-              <b>2012</b>
-              45, (4), 427-91.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td><!-- BLANK --></td>
-          <td>
-            Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
-            The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable
-            Force Field.
-            <a href="https://dx.doi.org/10.1021/ct300035u">
-              <i>Journal of Chemical Theory and Computation</i>
-              <b>2012</b>
-              8, (5), 1721–36.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td><!-- BLANK --></td>
-          <td>
-            Schnieders, M. J., T. S. Kaoud, C. Yan; K. N. Dalby and P. Ren
-            Computational Insights for the Discovery of Non-ATP Competitive Inhibitors of MAP Kinases.
-            <a href="https://dx.doi.org/10.2174/138920012799362873">
-              <i>Current Pharmaceutical Design</i>
-              <b>2012</b>
-              18, (9), 1173-85.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <b>2011</b>
-          </td>
-          <td>
-            Fenn, T. D. and M. J. Schnieders,
-            Polarizable atomic multipole X-ray refinement: Weighting schemes for macromolecular diffraction.
-            <a href="https://dx.doi.org/10.1107/S0907444911039060">
-              <i>Acta Crystallographica Section D</i>
-              <b>2011</b>
-              67, (11), 957-65.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td><!-- BLANK --></td>
-          <td>Schnieders, M. J., T. D. Fenn and V. S. Pande,
-            Polarizable atomic multipole X-ray refinement:
-            Particle-mesh Ewald electrostatics for macromolecular crystals.
-            <a href="https://dx.doi.org/10.1021/ct100506d">
-              <i>Journal of Chemical Theory and Computation</i>
-              <b>2011</b>
-              7, (4), 1141-56.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <b>2010</b>
-          </td>
-          <td>
-            Fenn, T. D., M. J. Schnieders and A. T. Brunger,
-            A smooth and differentiable bulk-solvent model for macromolecular diffraction.
-            <a target="_blank" href="https://dx.doi.org/10.1107/S0907444910031045">
-              <i>Acta Crystallographica Section D</i>
-              <b>2010</b>, 66, (9), 1024-31.
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td><!-- BLANK --></td>
-          <td>Ponder, J. W., C. Wu, P. Ren, V. S. Pande, J. D. Chodera, M. J. Schnieders,
-            I. Haque, D. L. Mobley, D. S. Lambrecht, R. A. DiStasio, M. Head-Gordon,
-            G. N. I. Clark, M. E. Johnson and T. Head-Gordon,
-            Current Status of the AMOEBA Polarizable Force Field.
-            <a target="_blank" href="https://dx.doi.org/10.1021/jp910674d">
-              <i>The Journal of Physical Chemistry B</i>
-              <b>2010</b>, 114, 2549-64.
             </a>
           </td>
         </tr>

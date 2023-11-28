@@ -1,6 +1,6 @@
 
-Installing GraalPy and Torch
-====================================
+Installation of Torch for use of ANI-2x
+=======================================
 
 ## Download and install GraalPy from Github
 

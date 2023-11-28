@@ -40,6 +40,7 @@ package ffx.algorithms.groovy
 import edu.rit.pj.Comm
 import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.*
+import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.crystal.CrystalPotential
@@ -283,24 +284,20 @@ class Thermodynamics extends AlgorithmsScript {
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
               additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
-              algorithmListener,
-              !multiDynamicsOptions.isSynchronous())
+              algorithmListener, !multiDynamicsOptions.isSynchronous())
       if (!lamExists) {
         orthogonalSpaceTempering.setLambda(initLambda)
       }
       // Can be either the OST or a Barostat on top of it.
-      CrystalPotential ostPotential =
-          ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
-              dynamicsOptions, barostatOptions)
+      CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
+          dynamicsOptions, barostatOptions)
       if (ostOptions.monteCarlo) {
-        MonteCarloOST mcOST = ostOptions.
-            setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
-                verbose, algorithmListener)
+        MonteCarloOST mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies,
+            dynamicsOptions, thermodynamicsOptions, verbose, dyn, algorithmListener)
         ostOptions.beginMCOST(mcOST, dynamicsOptions, thermodynamicsOptions)
       } else {
-        ostOptions.
-            beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamicsOptions,
-                writeoutOptions, thermodynamicsOptions, dyn, algorithmListener)
+        ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamicsOptions,
+            writeoutOptions, thermodynamicsOptions, dyn, algorithmListener)
       }
 
       logger.info(" Done running OST")

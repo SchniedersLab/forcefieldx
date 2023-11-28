@@ -126,7 +126,7 @@ class SendAsynchronous extends Thread {
       // indicating that it is time to shut down.
       boolean terminateSignal = stream(receiveCount).allMatch(Double::isNaN);
       if (terminateSignal) {
-        logger.info(" Termination signal received -- finishing execution.");
+        logger.fine(" Termination signal received -- finishing execution.");
         break;
       }
 
@@ -148,7 +148,7 @@ class SendAsynchronous extends Thread {
 
       // Increase the Recursion Kernel based on the input of current walker.
       // Guaranteed to be from a different process.
-      histogram.addToRecursionKernelValue(lambda, dUdL, weight, true);
+      histogram.addToRecursionKernelValue(lambda, dUdL, weight);
 
       // Check if we have been interrupted.
       if (isInterrupted()) {

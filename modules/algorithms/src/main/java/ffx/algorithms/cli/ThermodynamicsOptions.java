@@ -44,12 +44,14 @@ import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -101,16 +103,16 @@ public class ThermodynamicsOptions {
    * Run an alchemical free energy window.
    *
    * @param molecularAssemblies All involved MolecularAssemblies.
-   * @param crystalPotential The Potential to be sampled.
-   * @param dynamicsOptions DynamicsOptions.
-   * @param writeoutOptions WriteoutOptions
-   * @param dyn MD restart file
-   * @param algorithmListener AlgorithmListener
+   * @param crystalPotential    The Potential to be sampled.
+   * @param dynamicsOptions     DynamicsOptions.
+   * @param writeoutOptions     WriteoutOptions
+   * @param dyn                 MD restart file
+   * @param algorithmListener   AlgorithmListener
    * @return The MolecularDynamics object constructed.
    */
   public MolecularDynamics runFixedAlchemy(MolecularAssembly[] molecularAssemblies,
-      CrystalPotential crystalPotential, DynamicsOptions dynamicsOptions,
-      WriteoutOptions writeoutOptions, File dyn, AlgorithmListener algorithmListener) {
+                                           CrystalPotential crystalPotential, DynamicsOptions dynamicsOptions,
+                                           WriteoutOptions writeoutOptions, File dyn, AlgorithmListener algorithmListener) {
     dynamicsOptions.init();
 
     MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, crystalPotential,
@@ -154,8 +156,8 @@ public class ThermodynamicsOptions {
   }
 
   private void runDynamics(MolecularDynamics molecularDynamics, long nSteps,
-      DynamicsOptions dynamicsOptions, WriteoutOptions writeoutOptions, boolean initVelocities,
-      File dyn) {
+                           DynamicsOptions dynamicsOptions, WriteoutOptions writeoutOptions, boolean initVelocities,
+                           File dyn) {
     molecularDynamics.dynamic(nSteps, dynamicsOptions.getDt(), dynamicsOptions.getReport(),
         dynamicsOptions.getWrite(), dynamicsOptions.getTemperature(), initVelocities,
         writeoutOptions.getFileType(), dynamicsOptions.getCheckpoint(), dyn);
@@ -179,7 +181,7 @@ public class ThermodynamicsOptions {
   }
 
   /**
-   * The algorithm to be used (e.g. OST, window-based methods, etc).
+   * The algorithm to be used (e.g. OST, window-based methods, etc.).
    *
    * @return Returns a String for requested algorithm.
    */
@@ -200,25 +202,25 @@ public class ThermodynamicsOptions {
      * -Q or --equilibrate sets the number of equilibration steps prior to production OST counts
      * begin.
      */
-    @Option(names = {"-Q",
-        "--equilibrate"}, paramLabel = "1000", defaultValue = "1000", description = "Number of equilibration steps before evaluation of thermodynamics.")
-    private long equilibrationSteps;
+    @Option(names = {"-Q", "--equilibrate"}, paramLabel = "1000", defaultValue = "1000",
+        description = "Number of equilibration steps before evaluation of thermodynamics.")
+    private long equilibrationSteps = 1000;
 
     /**
      * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart files and thus resets
      * the histogram; use -rn false to continue from the end of any prior simulation.
      */
-    @Option(names = {"--rn",
-        "--resetNumSteps"}, defaultValue = "false", description = "Ignore prior steps logged in .lam or similar files")
-    private boolean resetNumSteps;
+    @Option(names = {"--rn", "--resetNumSteps"}, defaultValue = "false",
+        description = "Ignore prior steps logged in .lam or similar files")
+    private boolean resetNumSteps = false;
 
     /**
      * --tA or --thermodynamicsAlgorithm specifies the algorithm to be used; currently serves as a
      * switch between OST and window-based methods.
      */
-    @Option(names = {"--tA",
-        "--thermodynamicsAlgorithm"}, paramLabel = "OST", defaultValue = "OST", description = "Choice of thermodynamics algorithm. The default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
-    private String thermoAlgoString;
+    @Option(names = {"--tA", "--thermodynamicsAlgorithm"}, paramLabel = "OST", defaultValue = "OST",
+        description = "Choice of thermodynamics algorithm. The default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
+    private String thermoAlgoString = "OST";
   }
 
   /**
@@ -246,7 +248,7 @@ public class ThermodynamicsOptions {
      * @param name Name to parse
      * @return A ThermodynamicsAlgorithm.
      * @throws IllegalArgumentException If name did not correspond to any alias of any
-     *     ThermodynamicsAlgorithm.
+     *                                  ThermodynamicsAlgorithm.
      */
     public static ThermodynamicsAlgorithm parse(String name) throws IllegalArgumentException {
       String ucName = name.toUpperCase();

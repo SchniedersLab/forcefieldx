@@ -107,16 +107,16 @@ public class RandomUnitCellOptions {
      * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random
      * placement in the unit cell, negative for no SymOp).
      */
-    @Option(names = {"--rsym",
-        "--randomSymOp"}, paramLabel = "-1.0", defaultValue = "-1.0", description = "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
-    private double randomSymOp;
+    @Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0", defaultValue = "-1.0",
+        description = "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
+    private double randomSymOp = -1.0;
 
     /**
      * --ruc or --randomUnitCell Random unit cell parameters will be used achieve the specified
      * density (g/cc) (no default density).
      */
-    @Option(names = {"--ruc",
-        "--randomUnitCell"}, paramLabel = "-1.0", defaultValue = "-1.0", description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
-    private double randomUnitCell;
+    @Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0", defaultValue = "-1.0",
+        description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
+    private double randomUnitCell = -1.0;
   }
 }
