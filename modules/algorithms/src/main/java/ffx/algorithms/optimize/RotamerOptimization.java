@@ -2236,6 +2236,7 @@ public class RotamerOptimization implements Terminatable {
           String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
           List<String> titratableResiudesList = Arrays.asList(titratableResidues);
           double selfEnergy = energyRegion.getSelf();
+          logger.info("Initial self: " + selfEnergy);
           if(recomputeSelf){
             int count = 0;
             for(Residue residue: residues){
@@ -2243,6 +2244,7 @@ public class RotamerOptimization implements Terminatable {
               double biasCurrent = 0;
               Rotamer[] rotamers = residue.getRotamers();
               int currentRotamer = currentRotamers[count];
+              logger.info("Rotamer" + rotamers[currentRotamer].getName());
               switch (rotamers[currentRotamer].getName()) {
                 case "HIE" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
@@ -2261,6 +2263,7 @@ public class RotamerOptimization implements Terminatable {
                           TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
                   biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
                           TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                  logger.info("In the LYD: " + bias7 + " " + biasCurrent);
                 }
                 case "GLU" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
@@ -2278,9 +2281,11 @@ public class RotamerOptimization implements Terminatable {
                 }
               }
               selfEnergy = selfEnergy - bias7 + biasCurrent;
+              logger.info("After bias update energy self energy: " + selfEnergy);
               count += 1;
             }
           }
+          logger.info("Update self energy: " + selfEnergy);
           double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
                   energyRegion.getTwoBody() + energyRegion.getThreeBody();
           if(evaluatedPermutations == 1){
