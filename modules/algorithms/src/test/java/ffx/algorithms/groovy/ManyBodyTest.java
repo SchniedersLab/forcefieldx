@@ -226,7 +226,7 @@ public class ManyBodyTest extends AlgorithmsTest {
   @Test
   public void testManyBodyTitration() {
     // Set-up the input arguments for the script.
-    String[] args = {"--pH","7.0","--eR",
+    String[] args = {"--tR", "--pH","7.0","--eR",
         getResourcePath("DEHK.rot.restart"),
         getResourcePath("DEHK.rot.pdb")
     };
@@ -237,11 +237,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -93.18377835710643;
+    double expectedTotalPotential = -321.72679980;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -179.5339377645139;
+    double expectedApproximateEnergy = -227.523807;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     //TODO: Adjust delta back to norm and determine why getApproximate() is returning funky values
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-0);

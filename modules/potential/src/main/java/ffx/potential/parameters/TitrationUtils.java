@@ -1650,6 +1650,9 @@ public class TitrationUtils {
     public final double pKa;
     // Free energy differences used in rotamer optimization
     public final double freeEnergyDiff;
+    public final double freeEnergyDiff2;
+    public final double freeEnergyDiffGK;
+    public final double freeEnergyDiffGK2;
     public final double cubic;
     public final double quadratic;
     public final double linear;
