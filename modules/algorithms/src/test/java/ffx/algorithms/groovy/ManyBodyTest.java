@@ -96,8 +96,8 @@ public class ManyBodyTest extends AlgorithmsTest {
         "--tC", "1.5",
         "-T", "--thC",
         "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.box.restart",
-        "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        getResourcePath("5awl.box.restart"),
+        getResourcePath("5awl.pdb")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -120,7 +120,7 @@ public class ManyBodyTest extends AlgorithmsTest {
   public void testManyBodyGlobal() {
     // Set-up the input arguments for the script.
     String[] args = {
-        "-a", "2", "-L", "2", "--tC", "2", "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        "-a", "2", "-L", "2", "--tC", "2", getResourcePath("5awl.pdb")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -174,7 +174,7 @@ public class ManyBodyTest extends AlgorithmsTest {
         "--tC", "2",
         "--pr", "2",
         "--mC", "100",
-        "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        getResourcePath("5awl.pdb")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -204,8 +204,8 @@ public class ManyBodyTest extends AlgorithmsTest {
   public void testManyBodyRestart() {
     // Set-up the input arguments for the script.
     String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.test.restart",
-        "src/main/java/ffx/algorithms/structures/5awl.pdb"
+        getResourcePath("5awl.test.restart"),
+        getResourcePath("5awl.pdb")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());

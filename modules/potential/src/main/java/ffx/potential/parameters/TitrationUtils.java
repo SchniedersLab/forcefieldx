@@ -136,6 +136,9 @@ public class TitrationUtils {
   private static final PiOrbitalTorsionType zeroPiOrbitalTorsionType = new PiOrbitalTorsionType(
       new int[] {0, 0}, 0.0);
 
+  private double proteinDielectric;
+  private boolean tanhCorrection = false;
+
   enum AspStates {
     ASP, ASH1, ASH2
   }
@@ -165,6 +168,7 @@ public class TitrationUtils {
     private final int offsetASH2;
 
     private final int tautomerDirection;
+
 
     public int getOffset(AspStates state) {
       if (state == AspStates.ASP) {
@@ -490,6 +494,23 @@ public class TitrationUtils {
     constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
     constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
     checkParameterTypes("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
+  }
+
+  public TitrationUtils(ForceField forceField, double proteinDielectric, boolean tanhCorrection){
+    this(forceField);
+    this.proteinDielectric = proteinDielectric;
+    this.tanhCorrection = tanhCorrection;
+    //String fModA = forceField.getProperties().getString("fModA");
+    //this.fModA = Double.parseDouble(fModA);
+    //logger.info("ASP fMOD = " + fModA);
+    //String fModG = forceField.getProperties().getString("fModG");
+    //this.fModG = Double.parseDouble(fModG);
+    //String fModL = forceField.getProperties().getString("fModL");
+    //this.fModL = Double.parseDouble(fModL);
+    //String fModHE = forceField.getProperties().getString("fModHE");
+    //this.fModHE = Double.parseDouble(fModHE);
+    //String fModHD = forceField.getProperties().getString("fModHD");
+    //this.fModHD = Double.parseDouble(fModHD);
   }
 
   public boolean testResidueTypes(Residue residue) {
@@ -1548,7 +1569,16 @@ public class TitrationUtils {
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
     double fMod = Titration.ASHtoASP.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.ASHtoASP.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.ASHtoASP.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.ASHtoASP.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
+
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
@@ -1560,6 +1590,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
     fMod = Titration.GLHtoGLU.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.GLHtoGLU.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.GLHtoGLU.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.GLHtoGLU.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
 
@@ -1573,6 +1611,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
     fMod = Titration.LYStoLYD.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.LYStoLYD.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.LYStoLYD.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.LYStoLYD.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
@@ -1585,6 +1631,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.CYStoCYD.pKa - pH);
     fMod = Titration.CYStoCYD.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.CYStoCYD.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.CYStoCYD.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.CYStoCYD.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(CYD, acidostat - fMod);
 
     /*
@@ -1597,6 +1651,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
     fMod = Titration.HIStoHID.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.HIStoHID.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.HIStoHID.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.HIStoHID.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(HID, acidostat - fMod);
 
     /*
@@ -1604,6 +1666,14 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
     fMod = Titration.HIStoHIE.freeEnergyDiff;
+    if(tanhCorrection){
+      fMod = Titration.HIStoHIE.freeEnergyDiffGK;
+      if(proteinDielectric == 2.0){
+        fMod = Titration.HIStoHIE.freeEnergyDiffGK2;
+      }
+    } else if(proteinDielectric == 2.0){
+      fMod = Titration.HIStoHIE.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(HIE, acidostat - fMod);
   }
 
@@ -1619,6 +1689,144 @@ public class TitrationUtils {
       }
     }
     return total;
+  }
+
+  /**
+   * Predict pKa from a set of residue fractions (deprotonated / (deprotonated + protonated)). This method minimizes
+   * the L2 loss between the the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
+   * coefficient predictions.
+   *
+   * @param pHScale pH values at which the residue fractions were measured
+   * @param residueFractions a sorted array of residue fractions (deprotonated / (deprotonated + protonated))
+   * @return {n, pKa}
+   */
+  public static double[] predictHillCoeffandPka(double[] pHScale, double[] residueFractions) {
+
+    // Potentials for n and pKa, since LGBFS optimizer gradient is only for 1D array of gradients
+    Potential hendersonHasselbach = new Potential() {
+      static final double logb10 = Math.log(10);
+
+      @Override
+      public double energy(double[] x) {
+        return leastSquaresLoss(residueFractions, getValues(x));
+      }
+
+      public double leastSquaresLoss(double[] residueFractions, double[] guessedFractions) {
+        double loss = 0.0;
+        for (int i = 0; i < residueFractions.length; i++) {
+          loss += Math.pow(residueFractions[i] - guessedFractions[i], 2);
+        }
+        return loss;
+      }
+
+      public double[] getValues(double[] x) {
+        double[] values = new double[pHScale.length];
+        for (int i = 0; i < pHScale.length; i++) {
+          values[i] = 1 / (1 + Math.pow(10, x[0] * (x[1] - pHScale[i])));
+        }
+        return values;
+      }
+
+      public void gradient(double[] x, double[] gradient) {
+        // reset gradient
+        Arrays.fill(gradient, 0.0);
+        double[] values = getValues(x);
+        for (int i = 0; i < pHScale.length; i++) {
+          // term = 10^(n(pKa - pH))
+          double term = Math.pow(10, x[0] * (x[1] - pHScale[i]));
+
+          // d = (1 + term)^2
+          double d = (1 + term) * (1 + term);
+
+          // -sum(d(cost)/dn) across pH values
+          gradient[0] += 2*(residueFractions[i] - values[i]) * logb10 * (x[1] - pHScale[i]) * term / d;
+
+          // -sum(d(cost)/dpKa) across pH values
+          gradient[1] += 2*(residueFractions[i] - values[i]) * x[0] * logb10 * term / d;
+        }
+      }
+
+      @Override
+      public double energyAndGradient(double[] x, double[] g) {
+        gradient(x, g);
+        return energy(x);
+      }
+
+      @Override
+      public double[] getAcceleration(double[] acceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+      }
+      @Override
+      public STATE getEnergyTermState() {
+        return null;
+      }
+      @Override
+      public void setEnergyTermState(STATE state) {}
+      @Override
+      public double[] getMass() {
+        return new double[0];
+      }
+      @Override
+      public int getNumberOfVariables() {
+        return 0;
+      }
+      @Override
+      public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getScaling() {
+        return null;
+      }
+      @Override
+      public void setScaling(double[] scaling) {}
+      @Override
+      public double getTotalEnergy() {
+        return 0;
+      }
+      @Override
+      public VARIABLE_TYPE[] getVariableTypes() {
+        return new VARIABLE_TYPE[0];
+      }
+      @Override
+      public double[] getVelocity(double[] velocity) {
+        return new double[0];
+      }
+      @Override
+      public void setAcceleration(double[] acceleration) {}
+      @Override
+      public void setPreviousAcceleration(double[] previousAcceleration) { }
+      @Override
+      public void setVelocity(double[] velocity) {}
+    };
+
+    // Call L-BFGS optimizer on hendersonHasselbach least squares potential
+    int n = 2;
+    double[] x = new double[]{1.0, 7.0}; // initial guess pKa
+    int m = 3;
+    double energy = hendersonHasselbach.energy(x);
+    double[] grad = new double[n];
+    hendersonHasselbach.energyAndGradient(x, grad);
+    hendersonHasselbach.setScaling(new double[]{1.0, 1.0});
+    double eps = 1e-5;
+    int maxIterations = 100;
+    OptimizationListener listener = new OptimizationListener() {
+      @Override
+      public boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
+                                        double coordinateRMS, double f, double df, double angle,
+                                        LineSearch.LineSearchResult info) {
+        return true;
+      }
+    };
+
+    int statuspKa = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations,
+            hendersonHasselbach, listener);
+
+    return new double[]{x[0], x[1]};
   }
 
   /**
