@@ -98,7 +98,7 @@ import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.io.File;
@@ -120,8 +120,8 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parsers.XYZFileFilter.isXYZ;
-import static ffx.utilities.KeywordGroup.NonBondedCutoff;
-import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
+import static ffx.utilities.PropertyGroup.NonBondedCutoff;
+import static ffx.utilities.PropertyGroup.PotentialFunctionSelection;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -195,7 +195,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
   private final List<Constraint> constraints;
 
-  @FFXKeyword(name = "vdw-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0", description = """
+  @FFXProperty(name = "vdw-cutoff", propertyGroup = NonBondedCutoff, defaultValue = "12.0", description = """
       Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions.
       The energy for any pair of van der Waals sites beyond the cutoff distance will be set to zero.
       Other properties can be used to define the smoothing scheme near the cutoff distance.
@@ -204,13 +204,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       """)
   private double vdwCutoff;
 
-  @FFXKeyword(name = "ewald-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "7.0", description = """
+  @FFXProperty(name = "ewald-cutoff", propertyGroup = NonBondedCutoff, defaultValue = "7.0", description = """
       Sets the value in Angstroms of the real-space distance cutoff for use during Ewald summation.
       By default, in the absence of the ewald-cutoff property, a value of 7.0 is used.
       """)
   private double ewaldCutoff;
 
-  @FFXKeyword(name = "gk-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0", description = """
+  @FFXProperty(name = "gk-cutoff", propertyGroup = NonBondedCutoff, defaultValue = "12.0", description = """
       Sets the value in Angstroms of the generalized Kirkwood distance cutoff for use
       during implicit solvent simulations. By default, in the absence of the gk-cutoff property,
       no cutoff is used under aperiodic boundary conditions and the vdw-cutoff is used under PBC.
@@ -219,7 +219,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
   private static final double DEFAULT_LIST_BUFFER = 2.0;
 
-  @FFXKeyword(name = "list-buffer", keywordGroup = NonBondedCutoff, defaultValue = "2.0", description = """
+  @FFXProperty(name = "list-buffer", propertyGroup = NonBondedCutoff, defaultValue = "2.0", description = """
       Sets the size of the neighbor list buffer in Angstroms for potential energy functions.
       This value is added to the actual cutoff distance to determine which pairs will be kept on the neighbor list.
       This buffer value is used for all potential function neighbor lists.
@@ -332,7 +332,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Indicates use of the Lambda state variable.
    */
-  @FFXKeyword(name = "lambdaterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "lambdaterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "false", description = "Specifies use of the Lambda state variable.")
   protected boolean lambdaTerm;
   /**
@@ -500,84 +500,84 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Specifies use of the bond stretch potential.
    */
-  @FFXKeyword(name = "bondterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "bondterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the bond stretch potential.")
   private boolean bondTerm;
 
   /**
    * Specifies use of the angle bend potential.
    */
-  @FFXKeyword(name = "angleterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "angleterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the angle bend potential.")
   private boolean angleTerm;
 
   /**
    * Evaluate Stretch-Bend energy terms.
    */
-  @FFXKeyword(name = "strbndterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "strbndterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the stretch-bend potential.")
   private boolean stretchBendTerm;
 
   /**
    * Evaluate Urey-Bradley energy terms.
    */
-  @FFXKeyword(name = "ureyterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "ureyterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the Urey-Bradley potential.")
   private boolean ureyBradleyTerm;
 
   /**
    * Evaluate Out of Plane Bend energy terms.
    */
-  @FFXKeyword(name = "opbendterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "opbendterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the out-of-plane potential.")
   private boolean outOfPlaneBendTerm;
 
   /**
    * Evaluate Torsion energy terms.
    */
-  @FFXKeyword(name = "torsionterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "torsionterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the torsional potential.")
   private boolean torsionTerm;
 
   /**
    * Evaluate Stretch-Torsion energy terms.
    */
-  @FFXKeyword(name = "strtorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "strtorterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the stretch-torsion potential.")
   private boolean stretchTorsionTerm;
 
   /**
    * Evaluate Angle-Torsion energy terms.
    */
-  @FFXKeyword(name = "angtorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "angtorterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the angle-torsion potential.")
   private boolean angleTorsionTerm;
 
   /**
    * Evaluate Improper Torsion energy terms.
    */
-  @FFXKeyword(name = "imptorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "imptorterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the improper torsion potential.")
   private boolean improperTorsionTerm;
 
   /**
    * Evaluate Pi-Orbital Torsion energy terms.
    */
-  @FFXKeyword(name = "pitorsterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "pitorsterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the pi-system torsion potential.")
   private boolean piOrbitalTorsionTerm;
 
   /**
    * Evaluate Torsion-Torsion energy terms.
    */
-  @FFXKeyword(name = "tortorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "tortorterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = "Specifies use of the pi-system torsion potential.")
   private boolean torsionTorsionTerm;
 
   /**
    * Evaluate van der Waals energy term.
    */
-  @FFXKeyword(name = "vdwterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "vdwterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = """
       Specifies use of the vdw der Waals potential.
       If set to false, all non-bonded terms are turned off.
@@ -587,7 +587,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Evaluate permanent multipole electrostatics energy term.
    */
-  @FFXKeyword(name = "mpoleterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "mpoleterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = """
       Specifies use of the fixed charge electrostatic potential.
       Setting mpoleterm to false also turns off polarization and generalized Kirkwood,
@@ -598,7 +598,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Evaluate polarization energy term.
    */
-  @FFXKeyword(name = "polarizeterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "polarizeterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "true", description = """
       Specifies use of the polarizable electrostatic potential.
       Setting polarizeterm to false overrides the polarization property.
@@ -608,7 +608,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Evaluate generalized Kirkwood energy term.
    */
-  @FFXKeyword(name = "gkterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection,
+  @FFXProperty(name = "gkterm", clazz = Boolean.class, propertyGroup = PotentialFunctionSelection,
       defaultValue = "false", description = "Specifies use of generalized Kirkwood electrostatics.")
   private boolean generalizedKirkwoodTerm;
 

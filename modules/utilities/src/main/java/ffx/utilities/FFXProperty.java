@@ -37,59 +37,63 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
 /**
- * The Keyword Group for an FFX Keyword.
+ * The FFXProperty Annotation should be used to document fields that are set using property files,
+ * keyword files, force field parameter files and the Java property system.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  */
-public enum KeywordGroup {
+@Retention(RUNTIME)
+@Documented
+@Target({TYPE, FIELD})
+@Repeatable(value = FFXProperties.class)
+public @interface FFXProperty {
+
   /**
-   * Energy unit conversion factors.
+   * The name of this FFXProperty.
+   *
+   * @return The name of this FFXProperty.
    */
-  EnergyUnitConversion,
+  String name();
+
   /**
-   * Electrostatics functional form.
+   * The Class used to represent the value of this FFXProperty.
+   * <p>
+   * The default is an instance of Double, which may be stored as a primitive double.
+   *
+   * @return The Class used to represent this FFXProperty.
    */
-  ElectrostaticsFunctionalForm,
+  Class<?> clazz() default Double.class;
+
   /**
-   * Implicit solvent functional form.
+   * The  Property Group this FFXKeyword belongs to.
+   *
+   * @return The property group for this FFXProperty.
    */
-  ImplicitSolvent,
+  PropertyGroup propertyGroup();
+
   /**
-   * Local geometry functional form.
+   * The default value for this FFXProperty. If there is no default value, then the field is an empty
+   * String.
+   *
+   * @return The default value of this Property.
    */
-  LocalGeometryFunctionalForm,
+  String defaultValue() default "";
+
   /**
-   * Potential function parameter.
+   * A description of this FFXProperty.
+   *
+   * @return The description.
    */
-  PotentialFunctionParameter,
-  /**
-   * Potential function selection.
-   */
-  PotentialFunctionSelection,
-  /**
-   * Unit cell and space group.
-   */
-  UnitCellAndSpaceGroup,
-  /**
-   * Van der Waals functional form.
-   */
-  VanDerWaalsFunctionalForm,
-  /**
-   * Non-bonded cutoff.
-   */
-  NonBondedCutoff,
-  /**
-   * Particle-mesh Ewald parameters.
-   */
-  ParticleMeshEwald,
-  /**
-   * Constant pH molecular dynamics parameters.
-   */
-  ConstantPhMolecularDynamics,
-  /**
-   * Refinement parameters.
-   */
-  Refinement
+  String description();
+
 }

@@ -464,73 +464,73 @@
             </goals>
             <configuration>
               <target>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ElectrostaticsFunctionalForm.adoc">
                   <header>== Electrostatics Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ElectrostaticsFunctionalForm">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/EnergyUnitConversion.adoc">
                   <header>== Energy Unit Conversion</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion">
+                           dir="${project.basedir}/src/site/asciidoc/properties/EnergyUnitConversion">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ImplicitSolvent.adoc">
                   <header>== Implicit Solvent</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ImplicitSolvent">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/LocalGeometryFunctionalForm.adoc">
                   <header>== Local Geometry Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/LocalGeometryFunctionalForm">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/NonBondedCutoff.adoc">
                   <header>== Non-Bonded Cutoff</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff">
+                           dir="${project.basedir}/src/site/asciidoc/properties/NonBondedCutoff">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ParticleMeshEwald.adoc">
                   <header>== Particle-Mesh Ewald</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ParticleMeshEwald">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionParameter.adoc">
                   <header>== Potential Function Parameter</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter">
+                           dir="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionParameter">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionSelection.adoc">
                   <header>== Potential Function Selection</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection">
+                           dir="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionSelection">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/UnitCellAndSpaceGroup.adoc">
                   <header>== Unit Cell and Space Group</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup">
+                           dir="${project.basedir}/src/site/asciidoc/properties/UnitCellAndSpaceGroup">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/VanDerWaalsFunctionalForm.adoc">
                   <header>== Van Der Waals Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/VanDerWaalsFunctionalForm">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>

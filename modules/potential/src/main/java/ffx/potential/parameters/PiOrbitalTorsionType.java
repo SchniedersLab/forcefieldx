@@ -38,13 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -58,7 +58,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "pitors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "pitors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [2 integers and 1 real]
     Provides the values for a single pi-orbital torsional angle potential parameter.
     The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angle to be parameterized.
@@ -77,7 +77,7 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
   /**
    * Convert Pi-Torsion energy to kcal/mole.
    */
-  @FFXKeyword(name = "pitorsunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+  @FFXProperty(name = "pitorsunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
       Sets the scale factor needed to convert the energy value computed by the pi-orbital torsional angle potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.
       """)

@@ -38,14 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.UREYBRAD;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "ureybrad", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "ureybrad", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [3 integers and 2 reals]
     Provides the values for a single Urey-Bradley cross term potential parameter.
     The integer modifiers give the atom class numbers for the three kinds of atoms
@@ -85,7 +85,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   /**
    * Convert Urey-Bradley stretch energy to kcal/mole.
    */
-  @FFXKeyword(name = "ureyunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+  @FFXProperty(name = "ureyunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
       Sets the scale factor needed to convert the energy value computed by the Urey-Bradley potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.
       """)
@@ -94,7 +94,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   /**
    * Cubic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "urey-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "urey-cubic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the cubic term in the Taylor series expansion form of the Urey-Bradley potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       The default value in the absence of the urey-cubic keyword is zero; i.e., the cubic Urey-Bradley term is omitted.
@@ -104,7 +104,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   /**
    * Quartic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "urey-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "urey-quartic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the quartic term in the Taylor series expansion form of the Urey-Bradley potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       The default value in the absence of the urey-quartic keyword is zero; i.e., the quartic Urey-Bradley term is omitted.

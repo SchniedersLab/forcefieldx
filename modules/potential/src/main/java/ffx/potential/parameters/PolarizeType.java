@@ -38,7 +38,7 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -47,7 +47,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +67,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """ 
+@FFXProperty(name = "polarize", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """ 
     [1 integer, up to 3 reals and up to 8 integers]
     Provides the values for a single atomic dipole polarizability parameter.
     The initial integer modifier, if positive, gives the atom type number for which a polarizability parameter is to be defined.

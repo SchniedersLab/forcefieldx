@@ -37,28 +37,59 @@
 // ******************************************************************************
 package ffx.utilities;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
 /**
- * The FFXKeyword Annotation can be applied multiple times to some classes.
+ * The Keyword Group for an FFX Keyword.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
-@Retention(RUNTIME)
-@Documented
-@Target({TYPE, FIELD})
-public @interface FFXKeywords {
-
+public enum PropertyGroup {
   /**
-   * An array of FFXKeyword annotations.
-   *
-   * @return the FFXKeyword annotations.
+   * Energy unit conversion factors.
    */
-  FFXKeyword[] value();
+  EnergyUnitConversion,
+  /**
+   * Electrostatics functional form.
+   */
+  ElectrostaticsFunctionalForm,
+  /**
+   * Implicit solvent functional form.
+   */
+  ImplicitSolvent,
+  /**
+   * Local geometry functional form.
+   */
+  LocalGeometryFunctionalForm,
+  /**
+   * Potential function parameter.
+   */
+  PotentialFunctionParameter,
+  /**
+   * Potential function selection.
+   */
+  PotentialFunctionSelection,
+  /**
+   * Unit cell and space group.
+   */
+  UnitCellAndSpaceGroup,
+  /**
+   * Van der Waals functional form.
+   */
+  VanDerWaalsFunctionalForm,
+  /**
+   * Non-bonded cutoff.
+   */
+  NonBondedCutoff,
+  /**
+   * Particle-mesh Ewald parameters.
+   */
+  ParticleMeshEwald,
+  /**
+   * Constant pH molecular dynamics parameters.
+   */
+  ConstantPhMolecularDynamics,
+  /**
+   * Refinement parameters.
+   */
+  Refinement
 }

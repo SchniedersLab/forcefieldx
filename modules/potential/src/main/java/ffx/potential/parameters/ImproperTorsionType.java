@@ -38,15 +38,15 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -60,7 +60,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "imptors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "imptors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [4 integers and up to 3 real/real/integer triples]
     Provides the values for a single AMBER-style improper torsional angle parameter.
     The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined.
@@ -105,7 +105,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   /**
    * Convert angle bending energy to kcal/mole.
    */
-  @FFXKeyword(name = "imptorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+  @FFXProperty(name = "imptorunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
       Sets the scale factor needed to convert the energy value computed by the AMBER-style improper
       torsional angle potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.

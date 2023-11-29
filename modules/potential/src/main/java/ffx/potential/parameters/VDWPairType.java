@@ -37,13 +37,13 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdwpr", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "vdwpr", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [2 integers and 2 reals]
     Provides the values for the vdw parameters for a single special heteroatomic pair of atoms.
     The integer modifiers give the pair of atom class numbers for which special vdw parameters are to be defined.

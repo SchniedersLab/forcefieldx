@@ -38,13 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ATOM;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "atom", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "atom", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [2 integers, name, quoted string, integer, real and integer]
     Provides the values needed to define a single force field atom type.
     The first two integer modifiers denote the atom type and class numbers.

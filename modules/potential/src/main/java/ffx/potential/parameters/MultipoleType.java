@@ -45,7 +45,7 @@ import static ffx.potential.parameters.ForceField.ELEC_FORM.FIXED_CHARGE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
 import static ffx.utilities.Constants.BOHR;
 import static ffx.utilities.Constants.BOHR2;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -56,7 +56,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.io.BufferedReader;
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "multipole", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "multipole", clazz = String[].class, propertyGroup = PotentialFunctionParameter, description = """
     [5 lines with: 3 or 4 integers and 1 real; 3 reals; 1 real; 2 reals; 3 reals]
     Provides the values for a set of atomic multipole parameters at a single site.
     A complete keyword entry consists of five consecutive lines, the first line containing the multipole keyword and the four following lines.

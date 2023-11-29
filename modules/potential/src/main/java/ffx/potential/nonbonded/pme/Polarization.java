@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
-@FFXKeyword(name = "polarization", clazz = String.class,
-    keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual", description = """
+@FFXProperty(name = "polarization", clazz = String.class,
+    propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual", description = """
     [DIRECT / MUTUAL / NONE]
     Selects between the use of direct and mutual dipole polarization for force fields
     that incorporate the polarization term. The direct modifier avoids an iterative calculation by using only the

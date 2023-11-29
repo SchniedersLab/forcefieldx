@@ -38,11 +38,11 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Comparator;
 
@@ -52,7 +52,7 @@ import java.util.Comparator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "charge", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "charge", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [1 integer and 1 real]
     Provides a value for a single atomic partial charge electrostatic parameter.
     The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined.

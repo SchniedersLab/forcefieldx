@@ -44,7 +44,7 @@ import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
-import static ffx.utilities.KeywordGroup.UnitCellAndSpaceGroup;
+import static ffx.utilities.PropertyGroup.UnitCellAndSpaceGroup;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -60,7 +60,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +89,7 @@ public class Crystal {
   /**
    * The space group of the crystal.
    */
-  @FFXKeyword(name = "SpaceGroup", keywordGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
+  @FFXProperty(name = "SpaceGroup", propertyGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
       description = """
           This property defines the crystal space group used during structural manipulations and force field calculations.
           """)
@@ -98,7 +98,7 @@ public class Crystal {
   /**
    * Length of the cell edge in the direction of the <b>a</b> basis vector.
    */
-  @FFXKeyword(name = "a-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "None",
+  @FFXProperty(name = "a-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "None",
       description = """
           Sets the value of the a-axis length for a crystal unit cell, or, equivalently, 
           the X-axis length for a periodic box (Angstroms).
@@ -108,7 +108,7 @@ public class Crystal {
   /**
    * Length of the cell edge in the direction of the <b>b</b> basis vector.
    */
-  @FFXKeyword(name = "b-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+  @FFXProperty(name = "b-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
       description = """
           Sets the value of the b-axis length for a crystal unit cell, or, equivalently, 
           the Y-axis length for a periodic box (Angstroms).
@@ -118,7 +118,7 @@ public class Crystal {
   /**
    * Length of the cell edge in the direction of the <b>c</b> basis vector.
    */
-  @FFXKeyword(name = "c-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+  @FFXProperty(name = "c-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
       description = """
           Sets the value of the c-axis length for a crystal unit cell, or, equivalently,
           the Z-axis length for a periodic box (Angstroms).
@@ -128,7 +128,7 @@ public class Crystal {
   /**
    * The interaxial lattice angle between <b>b</b> and <b>c</b>.
    */
-  @FFXKeyword(name = "alpha", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
+  @FFXProperty(name = "alpha", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
       description = """
           Sets the value of the α-angle of a crystal unit cell, i.e.,
           the angle between the b-axis and c-axis of a unit cell, or, equivalently,
@@ -139,7 +139,7 @@ public class Crystal {
   /**
    * The interaxial lattice angle between <b>a</b> and <b>c</b>.
    */
-  @FFXKeyword(name = "beta", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+  @FFXProperty(name = "beta", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
       description = """
           Sets the value of the β-angle of a crystal unit cell, i.e.,
           the angle between the a-axis and c-axis of a unit cell, or, equivalently,
@@ -150,7 +150,7 @@ public class Crystal {
   /**
    * The interaxial lattice angle between <b>a</b> and <b>b</b>.
    */
-  @FFXKeyword(name = "gamma", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+  @FFXProperty(name = "gamma", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
       description = """
           Sets the value of the γ-angle of a crystal unit cell, i.e.,
           the angle between the a-axis and b-axis of a unit cell, or, equivalently,

@@ -38,12 +38,12 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.BIOTYPE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "biotype", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "biotype", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [integer, name, quoted string and integer]
     Provides the values to define the correspondence between a single bio-polymer atom type and its force field atom type.
     """)

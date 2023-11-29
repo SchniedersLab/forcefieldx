@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "forcefield", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "forcefield", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [name]
     Provides a name for the force field to be used in the current calculation.
     Its value is usually set in the master force field parameter file for the calculation

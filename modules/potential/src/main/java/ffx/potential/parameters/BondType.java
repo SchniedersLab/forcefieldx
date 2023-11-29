@@ -38,14 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.BOND;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "bond", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "bond", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [2 integers and 2 reals]
     Provides the values for a single bond stretching parameter.
     The integer modifiers give the atom class numbers for the two kinds of atoms involved in the bond which is to be defined.
@@ -82,7 +82,7 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Convert bond stretch energy to kcal/mole.
    */
-  @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+  @FFXProperty(name = "bondunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
       Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.
       """)
@@ -91,7 +91,7 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Cubic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "bond-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "bond-cubic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the cubic term in the Taylor series expansion form of the bond stretching potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the bond stretching energy unit conversion factor, the force constant,
@@ -103,7 +103,7 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Quartic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "bond-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "bond-quartic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the quartic term in the Taylor series expansion form of the bond stretching potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the bond stretching energy unit conversion factor, the force constant,

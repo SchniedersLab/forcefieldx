@@ -38,8 +38,8 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -47,7 +47,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.sort;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -63,7 +63,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "tortors", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "tortors", clazz = String[].class, propertyGroup = PotentialFunctionParameter, description = """
     [7 integers, then multiple lines of 2 integers and 1 real]
     Provides the values for a single torsion-torsion parameter.
     The first five integer modifiers give the atom class numbers for the atoms involved in the two adjacent torsional angles to be defined.
@@ -82,7 +82,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   /**
    * Convert Torsion-Torsion energy to kcal/mole.
    */
-  @FFXKeyword(name = "tortorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+  @FFXProperty(name = "tortorunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
       Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.
       """)

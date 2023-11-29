@@ -59,19 +59,19 @@ import javax.lang.model.type.TypeMirror;
 
 
 /**
- * Log out FFXKeyword Annotations for documentation purposes.
+ * Log out FFXProperty Annotations for documentation purposes.
  *
  * @author Michael J. Schnieders
  */
-@SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
-@SupportedOptions({"keywordDir"})
+@SupportedAnnotationTypes({"ffx.utilities.FFXProperty", "ffx.utilities.FFXProperties"})
+@SupportedOptions({"propertyDir"})
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
-public class KeywordProcessor extends AbstractProcessor {
+public class PropertyProcessor extends AbstractProcessor {
 
   /**
    * Default constructor.
    */
-  public KeywordProcessor() {
+  public PropertyProcessor() {
     super();
   }
 
@@ -90,16 +90,16 @@ public class KeywordProcessor extends AbstractProcessor {
       return true;
     }
 
-    String keywordDir = processingEnv.getOptions().get("keywordDir");
-    // System.out.println(" KeywordDir: " + keywordDir);
+    String propertyDir = processingEnv.getOptions().get("propertyDir");
+    // System.out.println(" PropertyDir: " + propertyDir);
 
-    // Create the Keyword directory
-    Path keyPath = Paths.get(keywordDir);
-    if (!Files.exists(keyPath)) {
+    // Create the Property directory
+    Path propertyPath = Paths.get(propertyDir);
+    if (!Files.exists(propertyPath)) {
       try {
-        Files.createDirectory(keyPath);
+        Files.createDirectory(propertyPath);
       } catch (IOException exception) {
-        System.out.println(" Exception creating keyword directory:\n " + exception);
+        System.out.println(" Exception creating Property directory:\n " + exception);
       }
     }
 
@@ -108,61 +108,60 @@ public class KeywordProcessor extends AbstractProcessor {
     // System.out.println(" First Annotation Type:   " + typeElements[0]);
 
     // Collect fields and classes annotated once.
-    List<FFXKeyword> keywordList = new ArrayList<>();
-    Set<? extends Element> annotatedKeywords = roundEnv.getElementsAnnotatedWith(FFXKeyword.class);
-    for (Element element : annotatedKeywords) {
-      FFXKeyword ffxKeyword = element.getAnnotation(FFXKeyword.class);
-      keywordList.add(ffxKeyword);
+    List<FFXProperty> propertyList = new ArrayList<>();
+    Set<? extends Element> annotatedProperties = roundEnv.getElementsAnnotatedWith(FFXProperty.class);
+    for (Element element : annotatedProperties) {
+      FFXProperty ffxProperty = element.getAnnotation(FFXProperty.class);
+      propertyList.add(ffxProperty);
     }
     // Collect classes annotated more than once.
-    Set<? extends Element> keywordArrays = roundEnv.getElementsAnnotatedWith(FFXKeywords.class);
-    for (Element element : keywordArrays) {
-      FFXKeywords ffxKeywords = element.getAnnotation(FFXKeywords.class);
-      FFXKeyword[] keywords = ffxKeywords.value();
-      Collections.addAll(keywordList, keywords);
+    Set<? extends Element> propertyArrays = roundEnv.getElementsAnnotatedWith(FFXProperties.class);
+    for (Element element : propertyArrays) {
+      FFXProperties ffxProperties = element.getAnnotation(FFXProperties.class);
+      FFXProperty[] properties = ffxProperties.value();
+      Collections.addAll(propertyList, properties);
     }
 
-    // System.out.println(" FFXKeyword Annotations Processed: " + keywordList.size());
-    // Loop over FFXKeyword annotations.
-    for (FFXKeyword ffxKeyword : keywordList) {
-      StringBuilder sb = new StringBuilder(format("\n=== %s\n", ffxKeyword.name()));
+    // System.out.println(" FFXProperty Annotations Processed: " + propertyList.size());
+    // Loop over FFXProperty annotations.
+    for (FFXProperty ffxProperty : propertyList) {
+      StringBuilder sb = new StringBuilder(format("\n=== %s\n", ffxProperty.name()));
       sb.append("[%collapsible]\n====\n");
       // This causes a MirroredTypeException, which has a TypeMirror whose value is the class.
       try {
-        Class<?> clazz = ffxKeyword.clazz();
+        Class<?> clazz = ffxProperty.clazz();
       } catch (MirroredTypeException e) {
         TypeMirror typeMirror = e.getTypeMirror();
         String type = typeMirror.toString();
         type = type.replace("java.lang.", "");
         sb.append(format("  Type:         %s\n", type));
       }
-      String defaultValue = ffxKeyword.defaultValue();
+      String defaultValue = ffxProperty.defaultValue();
       if (defaultValue != null && !defaultValue.isEmpty()) {
-        sb.append(format("  Default:      %s\n", ffxKeyword.defaultValue()));
+        sb.append(format("  Default:      %s\n", ffxProperty.defaultValue()));
       }
-      sb.append(format("  Definition:   %s\n", ffxKeyword.description()));
+      sb.append(format("  Definition:   %s\n", ffxProperty.description()));
       sb.append("====\n");
 
-      // Create the Keyword Group subdirectory.
-      KeywordGroup group = ffxKeyword.keywordGroup();
-      Path groupPath = Paths.get(keyPath.toString(), group.name());
+      // Create the Property Group subdirectory.
+      PropertyGroup group = ffxProperty.propertyGroup();
+      Path groupPath = Paths.get(propertyPath.toString(), group.name());
 
       if (!Files.exists(groupPath)) {
         try {
           Files.createDirectory(groupPath);
         } catch (IOException exception) {
-          System.out.println(" Exception creating keyword group sub-directory:\n " + exception);
+          System.out.println(" Exception creating property group sub-directory:\n " + exception);
         }
       }
 
-      // Create or update the file for this Keyword.
-      Path keywordPath = Paths.get(groupPath.toString(), ffxKeyword.name() + ".adoc");
+      // Create or update the file for this Property.
+      Path adocPath = Paths.get(groupPath.toString(), ffxProperty.name() + ".adoc");
       try {
-        Files.writeString(keywordPath, sb.toString(), CREATE, WRITE, TRUNCATE_EXISTING);
+        Files.writeString(adocPath, sb.toString(), CREATE, WRITE, TRUNCATE_EXISTING);
       } catch (Exception e) {
-        System.out.println(" Exception writing keyword:\n " + e);
+        System.out.println(" Exception writing property:\n " + e);
       }
-
       // System.out.println(sb);
     }
 

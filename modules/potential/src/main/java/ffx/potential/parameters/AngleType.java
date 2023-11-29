@@ -39,9 +39,9 @@ package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLEP;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -49,7 +49,7 @@ import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -63,7 +63,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "angle", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "angle", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [3 integers and 4 reals]
     Provides the values for a single bond angle bending parameter.
     The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined.
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
     This "hydrogen environment" option is provided to implement the corresponding feature of the AMOEBA force field.
     The default units for the force constant are kcal/mole/radian^2, but this can be controlled via the angleunit keyword.
     """)
-@FFXKeyword(name = "anglep", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+@FFXProperty(name = "anglep", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
     [3 integers and 3 reals]
     Provides the values for a single projected in-plane bond angle bending parameter.
     The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined.
@@ -109,7 +109,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * Convert angle bending energy to kcal/mole.
    */
-  @FFXKeyword(name = "angleunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)^2", description = """
+  @FFXProperty(name = "angleunit", propertyGroup = EnergyUnitConversion, defaultValue = "(Pi/180)^2", description = """
       Sets the scale factor needed to convert the energy value computed by the bond angle bending potential into units of kcal/mole.
       The correct value is force field dependent and typically provided in the header of the master force field parameter file.
       """)
@@ -118,7 +118,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * Cubic coefficient in angle bending potential.
    */
-  @FFXKeyword(name = "angle-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "angle-cubic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the cubic term in the Taylor series expansion form of the bond angle bending potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the angle bending energy unit conversion factor, the force constant,
@@ -130,7 +130,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * Quartic coefficient in angle bending potential.
    */
-  @FFXKeyword(name = "angle-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "angle-quartic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the quartic term in the Taylor series expansion form of the bond angle bending potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the angle bending energy unit conversion factor, the force constant,
@@ -142,7 +142,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * Pentic coefficient in angle bending potential.
    */
-  @FFXKeyword(name = "angle-pentic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "angle-pentic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the fifth power term in the Taylor series expansion form of the bond angle bending potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the angle bending energy unit conversion factor, the force constant,
@@ -154,7 +154,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * Sextic coefficient in angle bending potential.
    */
-  @FFXKeyword(name = "angle-sextic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+  @FFXProperty(name = "angle-sextic", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
       Sets the value of the sixth power term in the Taylor series expansion form of the bond angle bending potential energy.
       The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
       This term multiplied by the angle bending energy unit conversion factor, the force constant,

@@ -41,8 +41,8 @@ import static ffx.numerics.special.Erf.erfc;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.utilities.FFXKeyword;
-import ffx.utilities.KeywordGroup;
+import ffx.utilities.FFXProperty;
+import ffx.utilities.PropertyGroup;
 
 /**
  * Mutable Particle Mesh Ewald constants.
@@ -70,7 +70,7 @@ public class EwaldParameters {
    */
   public static final double DEFAULT_EWALD_COEFFICIENT = 0.545;
 
-  @FFXKeyword(name = "ewald-alpha", keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "0.545",
+  @FFXProperty(name = "ewald-alpha", propertyGroup = PropertyGroup.ParticleMeshEwald, defaultValue = "0.545",
       description = """
           Sets the value of the Ewald coefficient, which controls the width of the Gaussian screening charges during
           particle mesh Ewald summation for multipole electrostatics. In the absence of the ewald-alpha keyword, 

@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW;
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
@@ -59,7 +59,7 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+@FFXProperty(name = "vdw", clazz = String.class, propertyGroup = PotentialFunctionParameter,
     description = """
         [1 integer and 3 reals]
         Provides values for a single van der Waals parameter. The integer modifier, if positive,
@@ -67,7 +67,7 @@ import static java.lang.String.format;
         The three real number modifiers give the values of the atom size in Angstroms, homoatomic well depth in kcal/mole,
         and an optional reduction factor for univalent atoms.
         """)
-@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+@FFXProperty(name = "vdw14", clazz = String.class, propertyGroup = PotentialFunctionParameter,
     description = """
         [1 integer and 2 reals]
         Provides values for a single van der Waals parameter for use in 1-4 nonbonded interactions.

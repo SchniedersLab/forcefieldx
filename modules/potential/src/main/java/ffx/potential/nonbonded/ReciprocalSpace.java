@@ -46,8 +46,8 @@ import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
-import ffx.utilities.FFXKeyword;
-import ffx.utilities.KeywordGroup;
+import ffx.utilities.FFXProperty;
+import ffx.utilities.PropertyGroup;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.nio.DoubleBuffer;
@@ -143,7 +143,7 @@ public class ReciprocalSpace {
   /**
    * The b-Spline order to use for discretization to/from the reciprocal grid.
    */
-  @FFXKeyword(name = "pme-order", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-order", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "5", description = """
       Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge
       or atomic multipole electrostatics. A default value of 5 is used in the absence of the pme-order keyword.
@@ -211,7 +211,7 @@ public class ReciprocalSpace {
   private static final double DEFAULT_PME_MESH_DENSITY = 1.2;
   private static final double oneThird = 1.0 / 3.0;
 
-  @FFXKeyword(name = "pme-mesh-density", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-mesh-density", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "1.2", description = """
       The default in the absence of the pme-grid keyword is to set the grid size along each
       axis to the smallest factor of 2, 3 and/or 5 that is at least as large as
@@ -222,10 +222,10 @@ public class ReciprocalSpace {
   /**
    * The X-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-x", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-grid-x", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "NONE", description =
       "Specifies the PME grid dimension along the x-axis and takes precedence over the pme-grid keyword.")
-  @FFXKeyword(name = "pme-grid", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-grid", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "NONE", description = """
       [3 integers]
       Sets the dimensions of the reciprocal space grid used during particle mesh Ewald
@@ -241,7 +241,7 @@ public class ReciprocalSpace {
   /**
    * The Y-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-y", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-grid-y", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "NONE", description =
       "Specifies the PME grid dimension along the y-axis and takes precedence over the pme-grid keyword.")
   private int fftY;
@@ -249,7 +249,7 @@ public class ReciprocalSpace {
   /**
    * The Z-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-z", clazz = Integer.class, keywordGroup = KeywordGroup.ParticleMeshEwald,
+  @FFXProperty(name = "pme-grid-z", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
       defaultValue = "NONE", description =
       "Specifies the PME grid dimension along the z-axis and takes precedence over the pme-grid keyword.")
   private int fftZ;

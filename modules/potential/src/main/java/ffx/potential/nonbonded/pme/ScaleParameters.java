@@ -38,12 +38,12 @@
 package ffx.potential.nonbonded.pme;
 
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
 import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.logging.Logger;
 
@@ -66,14 +66,14 @@ public class ScaleParameters {
   /**
    * The interaction energy between 1-2 multipoles is scaled by m12scale.
    */
-  @FFXKeyword(name = "mpole-12-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "mpole-12-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to permanent atomic multipole
           electrostatic interactions between 1-2 connected atoms, i.e., atoms that are directly bonded.
           The default value of 0.0 is used, if the mpole-12-scale property is not given
           in either the parameter file or the property file.
           """)
-  @FFXKeyword(name = "chg-12-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "chg-12-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to charge-charge electrostatic
           interactions between 1-2 connected atoms, i.e., atoms that are directly bonded.
@@ -85,14 +85,14 @@ public class ScaleParameters {
   /**
    * The interaction energy between 1-3 multipoles is scaled by m13scale.
    */
-  @FFXKeyword(name = "mpole-13-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "mpole-13-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to permanent atomic multipole
           electrostatic interactions between 1-3 connected atoms, i.e., atoms separated by two covalent bonds.
           The default value of 0.0 is used, if the mpole-13-scale keyword is not given
           in either the parameter file or the property file.
           """)
-  @FFXKeyword(name = "chg-13-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "chg-13-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to charge-charge electrostatic
           interactions between 1-3 connected atoms, i.e., atoms separated by two covalent bonds.
@@ -104,14 +104,14 @@ public class ScaleParameters {
   /**
    * The interaction energy between 1-4 multipoles is scaled by m14scale.
    */
-  @FFXKeyword(name = "mpole-14-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "mpole-14-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to permanent atomic multipole
           electrostatic interactions between 1-4 connected atoms, i.e., atoms separated by three covalent bonds.
           The default value of 1.0 is used, if the mpole-14-scale keyword is not given
           in either the parameter file or the property file.
           """)
-  @FFXKeyword(name = "chg-14-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "chg-14-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to charge-charge electrostatic
           interactions between 1-4 connected atoms, i.e., atoms separated by three covalent bonds.
@@ -123,14 +123,14 @@ public class ScaleParameters {
   /**
    * The interaction energy between 1-5 multipoles is scaled by m15scale.
    */
-  @FFXKeyword(name = "mpole-15-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "mpole-15-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to permanent atomic multipole
           electrostatic interactions between 1-5 connected atoms, i.e., atoms separated by four covalent bonds.
           The default value of 1.0 is used, if the mpole-15-scale keyword is not given
           in either the parameter file or the property file.
           """)
-  @FFXKeyword(name = "chg-15-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "chg-15-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to charge-charge electrostatic
           interactions between 1-5 connected atoms, i.e., atoms separated by four covalent bonds.
@@ -147,7 +147,7 @@ public class ScaleParameters {
   /**
    * DIRECT-11-SCALE factor.
    */
-  @FFXKeyword(name = "direct-11-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "direct-11-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to the permanent (direct) field
           due to atoms within a polarization group during an induced dipole calculation,
@@ -161,7 +161,7 @@ public class ScaleParameters {
    * The DIRECT_12_SCALE factor is assumed to be 1.0. If this assumption is violated by a keyword,
    * FFX will exit.
    */
-  @FFXKeyword(name = "direct-12-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "direct-12-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to the permanent (direct) field
           due to atoms in 1-2 polarization groups during an induced dipole calculation,
@@ -175,7 +175,7 @@ public class ScaleParameters {
    * The DIRECT_13_SCALE factor is assumed to be 1.0. If this assumption is violated by a keyword,
    * FFX will exit.
    */
-  @FFXKeyword(name = "direct-13-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "direct-13-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to the permanent (direct) field
           due to atoms in 1-3 polarization groups during an induced dipole calculation,
@@ -189,7 +189,7 @@ public class ScaleParameters {
    * The DIRECT_14_SCALE factor is assumed to be 1.0. If this assumption is violated by a keyword,
    * FFX will exit.
    */
-  @FFXKeyword(name = "direct-14-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "direct-14-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to the permanent (direct) field
           due to atoms in 1-4 polarization groups during an induced dipole calculation,
@@ -208,7 +208,7 @@ public class ScaleParameters {
    * The interaction energy between a permanent multipole and polarizable site that are 1-2 is scaled
    * by p12scale.
    */
-  @FFXKeyword(name = "polar-12-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "polar-12-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-2 connected atoms located in different polarization groups.
@@ -221,7 +221,7 @@ public class ScaleParameters {
    * The interaction energy between a permanent multipole and polarizable site that are 1-3 is scaled
    * by p13scale.
    */
-  @FFXKeyword(name = "polar-13-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "polar-13-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """ 
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-3 connected atoms located in different polarization groups.
@@ -234,7 +234,7 @@ public class ScaleParameters {
    * The interaction energy between a permanent multipole and polarizable site that are 1-4 is scaled
    * by p14scale.
    */
-  @FFXKeyword(name = "polar-14-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "polar-14-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-4 connected atoms located in different polarization groups.
@@ -247,7 +247,7 @@ public class ScaleParameters {
    * The interaction energy between a permanent multipole and polarizable site that are 1-5 is scaled
    * by p15scale. Only 1.0 is supported.
    */
-  @FFXKeyword(name = "polar-15-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "polar-15-scale", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-5 connected atoms located in different polarization groups.
@@ -267,7 +267,7 @@ public class ScaleParameters {
   /**
    * An intra-12-scale factor other than 0.0 is not supported and will cause FFX to exit.
    */
-  @FFXKeyword(name = "polar-12-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "polar-12-intra", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-2 connected atoms located in the same polarization group.
@@ -278,7 +278,7 @@ public class ScaleParameters {
   /**
    * An intra-13-scale factor other than 0.0 is not supported and will cause FFX to exit.
    */
-  @FFXKeyword(name = "polar-13-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "polar-13-intra", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-3 connected atoms located in the same polarization group.
@@ -290,7 +290,7 @@ public class ScaleParameters {
    * Provides a multiplicative scale factor that is applied to polarization interactions between 1-4
    * connected atoms located in the same polarization group.
    */
-  @FFXKeyword(name = "polar-14-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.5",
+  @FFXProperty(name = "polar-14-intra", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.5",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-4 connected atoms located in the same polarization group.
@@ -301,7 +301,7 @@ public class ScaleParameters {
   /**
    * An intra-15-scale factor other than 1.0 is not supported and will cause FFX to exit.
    */
-  @FFXKeyword(name = "polar-15-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "polar-15-intra", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to polarization interactions
           between 1-5 connected atoms located in the same polarization group.
