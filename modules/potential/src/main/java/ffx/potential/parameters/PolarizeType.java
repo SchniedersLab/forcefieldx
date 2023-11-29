@@ -48,6 +48,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.utilities.FFXKeyword;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,50 +61,64 @@ import java.util.logging.Logger;
 
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.
+ * <p>
+ * If this modifier is not present, then charge penetration values will be used for polarization damping, as in the HIPPO polarization model.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[1 integer, up to 3 reals and up to 8 integers] "
-        + "Provides the values for a single atomic dipole polarizability parameter. "
-        + "The initial integer modifier, if positive, gives the atom type number for which a polarizability parameter is to be defined. "
-        + "If the first integer modifier is negative, then the parameter value to follow applies only to the specific atom whose atom number is the negative of the modifier. "
-        + "The first real number modifier gives the value of the dipole polarizability in Ang^3. "
-        + "The second real number modifier, if present, gives the Thole damping value. "
-        + "A Thole value of zero implies undamped polarization. "
-        // + "If this modifier is not present, then charge penetration values will be used for polarization damping, as in the HIPPO polarization model. "
-        + "The third real modifier, if present, gives a direct field damping value only used with the AMOEBA+ polarization model. "
-        + "The remaining integer modifiers list the atom type numbers of atoms directly bonded to the current atom and which will be considered to be part of the current atom’s polarization group. "
-        + "If the parameter is for a specific atom, then the integers defining the polarization group are ignored.")
+@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """ 
+    [1 integer, up to 3 reals and up to 8 integers]
+    Provides the values for a single atomic dipole polarizability parameter.
+    The initial integer modifier, if positive, gives the atom type number for which a polarizability parameter is to be defined.
+    If the first integer modifier is negative, then the parameter value to follow applies only to the specific atom whose atom number is the negative of the modifier.
+    The first real number modifier gives the value of the dipole polarizability in Ang^3.
+    The second real number modifier, if present, gives the Thole damping value.
+    A Thole value of zero implies undamped polarization.
+    The third real modifier, if present, gives a direct field damping value only used with the AMOEBA+ polarization model.
+    The remaining integer modifiers list the atom type numbers of atoms directly bonded to the current atom and which will be considered to be part of the current atom’s polarization group.
+    If the parameter is for a specific atom, then the integers defining the polarization group are ignored.
+    """)
 public final class PolarizeType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(PolarizeType.class.getName());
 
   private static final double sixth = 1.0 / 6.0;
-  /** Thole damping factor. */
+  /**
+   * Thole damping factor.
+   */
   public final double thole;
-  /** Value of polarizability scale factor. */
+  /**
+   * Value of polarizability scale factor.
+   */
   public double pdamp;
-  /** Direct polarization damping. */
+  /**
+   * Direct polarization damping.
+   */
   public final double ddp;
-  /** Isotropic polarizability in units of Angstroms^3. */
+  /**
+   * Isotropic polarizability in units of Angstroms^3.
+   */
   public final double polarizability;
-  /** Atom type number. */
+  /**
+   * Atom type number.
+   */
   public int type;
-  /** Connected types in the polarization group of each atom (can be null). */
+  /**
+   * Connected types in the polarization group of each atom (can be null).
+   */
   public int[] polarizationGroup;
 
   /**
    * PolarizeType Constructor.
    *
-   * @param atomType The atom type.
-   * @param polarizability The polarizability.
-   * @param thole The Thole damping constant.
+   * @param atomType          The atom type.
+   * @param polarizability    The polarizability.
+   * @param thole             The Thole damping constant.
    * @param polarizationGroup The atom types in the polarization group.
    */
   public PolarizeType(int atomType, double polarizability, double thole, double ddp,
-      int[] polarizationGroup) {
+                      int[] polarizationGroup) {
     super(POLARIZE, Integer.toString(atomType));
     this.type = atomType;
     this.thole = thole;
@@ -120,7 +135,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   /**
    * Construct a PolarizeType from a reference type and updated polarizability.
    *
-   * @param polarizeType The reference PolarizeType.
+   * @param polarizeType   The reference PolarizeType.
    * @param polarizability The updated polarizability.
    */
   public PolarizeType(PolarizeType polarizeType, double polarizability) {
@@ -134,12 +149,12 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * assignPolarizationGroups.
    *
    * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param ip11 an array of {@link int} objects.
-   * @param ip12 an array of {@link int} objects.
-   * @param ip13 an array of {@link int} objects.
+   * @param ip11  an array of {@link int} objects.
+   * @param ip12  an array of {@link int} objects.
+   * @param ip13  an array of {@link int} objects.
    */
   public static void assignPolarizationGroups(Atom[] atoms, int[][] ip11, int[][] ip12,
-      int[][] ip13) {
+                                              int[][] ip13) {
 
     // Find directly connected group members for each atom.
     List<Integer> group = new ArrayList<>();
@@ -253,14 +268,14 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * Average two PolarizeType instances. The atom types to include in the new polarizationGroup must
    * be supplied.
    *
-   * @param polarizeType1 The first PolarizeType.
-   * @param polarizeType2 The second PolarizeType.
-   * @param atomType The atom type to use for the new PolarizeType.
+   * @param polarizeType1     The first PolarizeType.
+   * @param polarizeType2     The second PolarizeType.
+   * @param atomType          The atom type to use for the new PolarizeType.
    * @param polarizationGroup The atom types to include in the new polarizationGroup.
    * @return The averaged PolarizeType.
    */
   public static PolarizeType average(PolarizeType polarizeType1, PolarizeType polarizeType2,
-      int atomType, int[] polarizationGroup) {
+                                     int atomType, int[] polarizationGroup) {
     if (polarizeType1 == null || polarizeType2 == null) {
       return null;
     }
@@ -273,7 +288,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   /**
    * Construct a PolarizeType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a PolarizeType instance.
    */
@@ -321,8 +336,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * polarization group. The method is called on each newly found group member.
    *
    * @param polarizationGroup Atom types that should be included in the group.
-   * @param group XYZ indices of current group members.
-   * @param seed The bonds of the seed atom are queried for inclusion in the group.
+   * @param group             XYZ indices of current group members.
+   * @param seed              The bonds of the seed atom are queried for inclusion in the group.
    */
   private static void growGroup(List<Integer> polarizationGroup, List<Integer> group, Atom seed) {
     List<Bond> bonds = seed.getBonds();
@@ -357,7 +372,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * polarization group. The method is called on each newly found group member.
    *
    * @param group XYZ indices of current group members.
-   * @param seed The bonds of the seed atom are queried for inclusion in the group.
+   * @param seed  The bonds of the seed atom are queried for inclusion in the group.
    */
   public static void growGroup(List<Integer> group, Atom seed) {
     List<Bond> bonds = seed.getBonds();
@@ -400,7 +415,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     polarizationGroup = newGroup;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     int t1 = parseInt(s1);
@@ -408,7 +425,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     return Integer.compare(t1, t2);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -421,7 +440,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     return polarizeType.type == this.type;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(type);

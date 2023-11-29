@@ -12,7 +12,7 @@
             <p>The majority of polymorph search algorithms are based on searching a potential energy surface over
                 space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic
                 search procedure<sub>1</sub> that samples the phase space of polymorphs at a prescribed temperature and
-                pressure (<italic>i.e.</italic> NPT).
+                pressure (<i>i.e.</i> NPT).
             </p>
             <p>The general procedure for the thermodynamic polymorph search is as follows:
             </p>

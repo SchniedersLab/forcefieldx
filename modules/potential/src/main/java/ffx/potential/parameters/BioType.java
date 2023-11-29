@@ -44,6 +44,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 import ffx.utilities.FFXKeyword;
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -55,32 +56,45 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "biotype", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[integer, name, quoted string and integer] "
-        + "Provides the values to define the correspondence between a single bio-polymer atom type and its force field atom type.")
+@FFXKeyword(name = "biotype", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+    [integer, name, quoted string and integer]
+    Provides the values to define the correspondence between a single bio-polymer atom type and its force field atom type.
+    """)
 public final class BioType extends BaseType implements Comparator<String> {
 
-  /** A Logger for the BioType class. */
+  /**
+   * A Logger for the BioType class.
+   */
   private static final Logger logger = Logger.getLogger(BioType.class.getName());
-  /** The PDB atom name for this BioType. */
+  /**
+   * The PDB atom name for this BioType.
+   */
   public final String atomName;
-  /** The PDB molecule name for this BioType. */
+  /**
+   * The PDB molecule name for this BioType.
+   */
   public final String moleculeName;
-  /** Bonds are required to listed atom names. */
+  /**
+   * Bonds are required to listed atom names.
+   */
   public final String[] bonds;
-  /** The index of this BioType. */
+  /**
+   * The index of this BioType.
+   */
   public int index;
-  /** The force field atom type to be used for the molecule / atom name combination. */
+  /**
+   * The force field atom type to be used for the molecule / atom name combination.
+   */
   public int atomType;
 
   /**
    * BioType Constructor.
    *
-   * @param index int
-   * @param atomName String
+   * @param index        int
+   * @param atomName     String
    * @param moleculeName String
-   * @param atomType int
-   * @param bonds an array of {@link java.lang.String} objects.
+   * @param atomType     int
+   * @param bonds        an array of {@link java.lang.String} objects.
    */
   public BioType(int index, String atomName, String moleculeName, int atomType, String[] bonds) {
     super(BIOTYPE, Integer.toString(index));
@@ -98,7 +112,7 @@ public final class BioType extends BaseType implements Comparator<String> {
   /**
    * Construct an BioType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return an BioType instance.
    */
@@ -139,7 +153,9 @@ public final class BioType extends BaseType implements Comparator<String> {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     int t1 = parseInt(s1);
@@ -147,7 +163,9 @@ public final class BioType extends BaseType implements Comparator<String> {
     return Integer.compare(t1, t2);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -160,7 +178,9 @@ public final class BioType extends BaseType implements Comparator<String> {
     return bioType.index == this.index;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(index);
@@ -188,7 +208,7 @@ public final class BioType extends BaseType implements Comparator<String> {
    * incrementIndexAndType
    *
    * @param indexIncrement The index increment.
-   * @param typeIncrement The type increment.
+   * @param typeIncrement  The type increment.
    */
   void incrementIndexAndType(int indexIncrement, int typeIncrement) {
     index += indexIncrement;

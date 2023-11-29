@@ -59,11 +59,13 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "bond", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[2 integers and 2 reals] " + "Provides the values for a single bond stretching parameter. "
-        + "The integer modifiers give the atom class numbers for the two kinds of atoms involved in the bond which is to be defined. "
-        + "The real number modifiers give the force constant value for the bond and the ideal bond length in Angstroms. "
-        + "The default value of 1.0 is used, if the bondunit keyword is not given in the force field parameter file or the keyfile.")
+@FFXKeyword(name = "bond", clazz = String.class, keywordGroup = PotentialFunctionParameter, description = """
+    [2 integers and 2 reals]
+    Provides the values for a single bond stretching parameter.
+    The integer modifiers give the atom class numbers for the two kinds of atoms involved in the bond which is to be defined.
+    The real number modifiers give the force constant value for the bond and the ideal bond length in Angstroms.
+    The default value of 1.0 is used, if the bondunit keyword is not given in the force field parameter file or the keyfile.
+    """)
 public final class BondType extends BaseType implements Comparator<String> {
 
   public static final double DEFAULT_BOND_UNIT = 1.0;
@@ -80,31 +82,34 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Convert bond stretch energy to kcal/mole.
    */
-  @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
-      "Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+      Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole.
+      The correct value is force field dependent and typically provided in the header of the master force field parameter file.
+      """)
   public double bondUnit = DEFAULT_BOND_UNIT;
 
   /**
    * Cubic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "bond-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
-      "Sets the value of the cubic term in the Taylor series expansion form of the bond stretching potential energy. "
-          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-          + "This term multiplied by the bond stretching energy unit conversion factor, the force constant, "
-          + "and the cube of the deviation of the bond length from its ideal value gives the cubic contribution to the bond stretching energy. "
-          + "The default value in the absence of the bond-cubic keyword is zero; i.e., the cubic bond stretching term is omitted.")
+  @FFXKeyword(name = "bond-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+      Sets the value of the cubic term in the Taylor series expansion form of the bond stretching potential energy.
+      The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
+      This term multiplied by the bond stretching energy unit conversion factor, the force constant,
+      and the cube of the deviation of the bond length from its ideal value gives the cubic contribution to the bond stretching energy.
+      The default value in the absence of the bond-cubic keyword is zero; i.e., the cubic bond stretching term is omitted.
+      """)
   public double cubic = DEFAULT_BOND_CUBIC;
 
   /**
    * Quartic coefficient in bond stretch potential.
    */
-  @FFXKeyword(name = "bond-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
-      "Sets the value of the quartic term in the Taylor series expansion form of the bond stretching potential energy. "
-          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-          + "This term multiplied by the bond stretching energy unit conversion factor, the force constant, "
-          + "and the forth power of the deviation of the bond length from its ideal value gives the quartic contribution to the bond stretching energy. "
-          + "The default value in the absence of the bond-quartic keyword is zero; i.e., the quartic bond stretching term is omitted.")
+  @FFXKeyword(name = "bond-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description = """
+      Sets the value of the quartic term in the Taylor series expansion form of the bond stretching potential energy.
+      The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient.
+      This term multiplied by the bond stretching energy unit conversion factor, the force constant,
+      and the forth power of the deviation of the bond length from its ideal value gives the quartic contribution to the bond stretching energy.
+      The default value in the absence of the bond-quartic keyword is zero; i.e., the quartic bond stretching term is omitted.
+      """)
   public double quartic = DEFAULT_BOND_QUARTIC;
 
   /**

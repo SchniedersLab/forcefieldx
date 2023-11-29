@@ -106,15 +106,18 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final VanDerWaalsRegion vanDerWaalsRegion;
   private final VanDerWaalsForm vdwForm;
   @FFXKeyword(name = "vdwindex", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
-      description = "[CLASS / TYPE] "
-          + "Specifies whether van der Waals parameters are provided for atom classes or atom types. "
-          + "While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type. "
-          + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
+      description = """ 
+          [CLASS / TYPE]
+          Specifies whether van der Waals parameters are provided for atom classes or atom types.
+          While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type.
+          The default in the absence of the vdwindex property is to index vdW parameters by atom class.
+          """)
   private final String vdwIndex;
-  @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9",
-      description =
-          "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
-              + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
+  @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9", description = """
+      Allows modification of the cutoff windows for van der Waals potential energy interactions. "
+      The default value in the absence of the vdw-taper keyword is to begin the cutoff window 
+      at 0.9 of the vdw cutoff distance.
+      """)
   private final double vdwTaper;
 
   private final NonbondedCutoff nonbondedCutoff;

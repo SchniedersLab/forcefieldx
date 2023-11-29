@@ -37,18 +37,11 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import static ffx.utilities.Constants.NS2SEC;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.lang.System.nanoTime;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.log;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.cli.DynamicsOptions;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MDVerbosity;
 import ffx.algorithms.dynamics.MDWriteAction;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.algorithms.mc.BoltzmannMC;
@@ -58,13 +51,18 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.EnergyException;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.io.File;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static ffx.utilities.Constants.NS2SEC;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.lang.System.nanoTime;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * Sample a thermodynamic path using the OST method, with the time-dependent bias built up using
@@ -97,9 +95,7 @@ public class MonteCarloOST extends BoltzmannMC {
    * Logger object to print out information for this class.
    */
   private static final Logger logger = Logger.getLogger(MonteCarloOST.class.getName());
-  /**
-   * The MD moves are only valid if energy is conserved. For this reason, energy drift is monitored.
-   */
+
   /**
    * Controls the effect of verbose by logging at FINE vs. INFO.
    */
@@ -109,6 +105,9 @@ public class MonteCarloOST extends BoltzmannMC {
    */
   private final MDVerbosity mdVerbosity;
 
+  /**
+   * The MD moves are only valid if energy is conserved. For this reason, energy drift is monitored.
+   */
   private static final double ENERGY_CONSERVATION_TOLERANCE = 10.0;
   /**
    * Potential object used to retrieve the coordinates for the system.

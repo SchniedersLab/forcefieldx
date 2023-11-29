@@ -343,17 +343,6 @@ public class RepExOST {
     logIfMaster(message);
   }
 
-  /**
-   * Logs a message if it is the lowest-ranked process computing a given swap. Currently, this just
-   * wraps logIfMaster, as all processes compute all swaps.
-   *
-   * @param message Message to log
-   * @param level Logging level to log at
-   */
-  private void logIfSwapping(Level level, String message) {
-    logIfMaster(level, message);
-  }
-
   private void setFiles() {
     File[] trajFiles = Arrays.stream(allFilenames).map(
         (String fn) -> format("%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn,

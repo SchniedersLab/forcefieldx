@@ -57,6 +57,7 @@ import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.utilities.FFXKeyword;
+
 import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,74 +73,133 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "multipole", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description =
-    "[5 lines with: 3 or 4 integers and 1 real; 3 reals; 1 real; 2 reals; 3 reals] "
-        + "Provides the values for a set of atomic multipole parameters at a single site. "
-        + "A complete keyword entry consists of five consecutive lines, the first line containing the multipole keyword and the four following lines. "
-        + "The first line contains three integers which define the atom type on which the multipoles are centered, and the Z-axis and X-axis defining atom types for this center. "
-        + "The optional fourth integer contains the Y-axis defining atom type, and is only required for locally chiral multipole sites. "
-        + "The real number on the first line gives the monopole (atomic charge) in electrons."
-        + "The second line contains three real numbers which give the X-, Y- and Z-components of the atomic dipole in electron-Ang. "
-        + "The final three lines, consisting of one, two and three real numbers give the upper triangle of the traceless atomic quadrupole tensor in electron-Ang^2.")
+@FFXKeyword(name = "multipole", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description = """
+    [5 lines with: 3 or 4 integers and 1 real; 3 reals; 1 real; 2 reals; 3 reals]
+    Provides the values for a set of atomic multipole parameters at a single site.
+    A complete keyword entry consists of five consecutive lines, the first line containing the multipole keyword and the four following lines.
+    The first line contains three integers which define the atom type on which the multipoles are centered,
+    and the Z-axis and X-axis defining atom types for this center.
+    The optional fourth integer contains the Y-axis defining atom type, and is only required for locally chiral multipole sites.
+    The real number on the first line gives the monopole (atomic charge) in electrons.
+    The second line contains three real numbers which give the X-, Y- and Z-components of the atomic dipole in electron-Ang.
+    The final three lines, consisting of one, two and three real numbers give the upper triangle of the
+    traceless atomic quadrupole tensor in electron-Ang^2.
+    """)
 public final class MultipoleType extends BaseType implements Comparator<String> {
 
-  /** Constant <code>zeroM</code> */
+  /**
+   * Constant <code>zeroM</code>
+   */
   public static final double[] zeroM = new double[10];
-  /** Constant <code>zeroD</code> */
+  /**
+   * Constant <code>zeroD</code>
+   */
   public static final double[] zeroD = new double[3];
-  /** Constant <code>zeroD</code> */
+  /**
+   * Constant <code>zeroD</code>
+   */
   public static final double[][] zeroQ = new double[3][3];
-  /** Constant <code>chrg=t000</code> */
+  /**
+   * Constant <code>chrg=t000</code>
+   */
   public static final int t000 = 0;
-  /** Constant <code>t100=1</code> */
+  /**
+   * Constant <code>t100=1</code>
+   */
   public static final int t100 = 1;
-  /** Constant <code>t010=2</code> */
+  /**
+   * Constant <code>t010=2</code>
+   */
   public static final int t010 = 2;
-  /** Constant <code>t001=3</code> */
+  /**
+   * Constant <code>t001=3</code>
+   */
   public static final int t001 = 3;
-  /** Constant <code>t200=4</code> */
+  /**
+   * Constant <code>t200=4</code>
+   */
   public static final int t200 = 4;
-  /** Constant <code>t020=5</code> */
+  /**
+   * Constant <code>t020=5</code>
+   */
   public static final int t020 = 5;
-  /** Constant <code>t002=6</code> */
+  /**
+   * Constant <code>t002=6</code>
+   */
   public static final int t002 = 6;
-  /** Constant <code>t110=7</code> */
+  /**
+   * Constant <code>t110=7</code>
+   */
   public static final int t110 = 7;
-  /** Constant <code>t101=8</code> */
+  /**
+   * Constant <code>t101=8</code>
+   */
   public static final int t101 = 8;
-  /** Constant <code>t011=9</code> */
+  /**
+   * Constant <code>t011=9</code>
+   */
   public static final int t011 = 9;
-  /** Constant <code>t300=10</code> */
+  /**
+   * Constant <code>t300=10</code>
+   */
   public static final int t300 = 10;
-  /** Constant <code>t030=11</code> */
+  /**
+   * Constant <code>t030=11</code>
+   */
   public static final int t030 = 11;
-  /** Constant <code>t003=12</code> */
+  /**
+   * Constant <code>t003=12</code>
+   */
   public static final int t003 = 12;
-  /** Constant <code>t210=13</code> */
+  /**
+   * Constant <code>t210=13</code>
+   */
   public static final int t210 = 13;
-  /** Constant <code>t201=14</code> */
+  /**
+   * Constant <code>t201=14</code>
+   */
   public static final int t201 = 14;
-  /** Constant <code>t120=15</code> */
+  /**
+   * Constant <code>t120=15</code>
+   */
   public static final int t120 = 15;
-  /** Constant <code>t021=16</code> */
+  /**
+   * Constant <code>t021=16</code>
+   */
   public static final int t021 = 16;
-  /** Constant <code>t102=17</code> */
+  /**
+   * Constant <code>t102=17</code>
+   */
   public static final int t102 = 17;
-  /** Constant <code>t012=18</code> */
+  /**
+   * Constant <code>t012=18</code>
+   */
   public static final int t012 = 18;
-  /** Constant <code>t111=19</code> */
+  /**
+   * Constant <code>t111=19</code>
+   */
   public static final int t111 = 19;
 
   private static final Logger logger = Logger.getLogger(MultipoleType.class.getName());
-  /** Partial atomic charge (e). */
+  /**
+   * Partial atomic charge (e).
+   */
   public final double charge;
-  /** Atomic dipole. 1 x 3 (e Angstroms). */
+  /**
+   * Atomic dipole. 1 x 3 (e Angstroms).
+   */
   public final double[] dipole;
-  /** Atomic quadrupole. 3 x 3 (e Angstroms^2). */
+  /**
+   * Atomic quadrupole. 3 x 3 (e Angstroms^2).
+   */
   public final double[][] quadrupole;
-  /** Local frame definition method. */
+  /**
+   * Local frame definition method.
+   */
   public final MultipoleFrameDefinition frameDefinition;
-  /** Atom types that define the local frame of this multipole. */
+  /**
+   * Atom types that define the local frame of this multipole.
+   */
   public final int[] frameAtomTypes;
   /**
    * Charge, dipole, and quadrupole packed into tensor notation: c, dx, dy, dz, qxx, qyy, qzz, qxy,
@@ -151,14 +211,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * Multipole Constructor. Conversion to electron Angstroms should be requested only when reading
    * multipole values from the force field file.
    *
-   * @param multipole an array of {@link double} objects.
-   * @param frameAtomTypes an array of {@link int} objects.
+   * @param multipole       an array of {@link double} objects.
+   * @param frameAtomTypes  an array of {@link int} objects.
    * @param frameDefinition a
-   *     {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
+   *                        {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
    * @param convertFromBohr a boolean.
    */
   public MultipoleType(double[] multipole, int[] frameAtomTypes,
-      MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
+                       MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
     super(MULTIPOLE, frameAtomTypes);
     this.multipole = (convertFromBohr) ? bohrToElectronAngstroms(multipole) : multipole;
     this.frameAtomTypes = frameAtomTypes;
@@ -173,7 +233,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * Construct a MultipoleType from a reference type and updated coefficients.
    *
    * @param multipoleType Reference MultipoleType.
-   * @param multipole The updated multipole parameters.
+   * @param multipole     The updated multipole parameters.
    */
   public MultipoleType(MultipoleType multipoleType, double[] multipole) {
     this(multipole, Arrays.copyOf(multipoleType.frameAtomTypes, multipoleType.frameAtomTypes.length),
@@ -183,16 +243,16 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Constructor for MultipoleType.
    *
-   * @param charge a double.
-   * @param dipole an array of {@link double} objects.
-   * @param quadrupole an array of {@link double} objects.
-   * @param frameAtomTypes an array of {@link int} objects.
+   * @param charge          a double.
+   * @param dipole          an array of {@link double} objects.
+   * @param quadrupole      an array of {@link double} objects.
+   * @param frameAtomTypes  an array of {@link int} objects.
    * @param frameDefinition a
-   *     {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
+   *                        {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
    * @param convertFromBohr a boolean.
    */
   public MultipoleType(double charge, double[] dipole, double[][] quadrupole, int[] frameAtomTypes,
-      MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
+                       MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
     super(MULTIPOLE, frameAtomTypes);
     this.charge = charge;
     if (convertFromBohr) {
@@ -212,17 +272,17 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Assign the multipole type.
    *
-   * @param elecForm The electrostatics form.
-   * @param atom The atom to assign.
+   * @param elecForm   The electrostatics form.
+   * @param atom       The atom to assign.
    * @param forceField The force field.
-   * @param multipole Copy the multipole parameters to this array.
-   * @param i the index of the atom.
-   * @param axisAtom Store the axis atom indices into this array.
-   * @param frame Store the frame definition into this array.
+   * @param multipole  Copy the multipole parameters to this array.
+   * @param i          the index of the atom.
+   * @param axisAtom   Store the axis atom indices into this array.
+   * @param frame      Store the frame definition into this array.
    * @return True if the multipole type was assigned.
    */
   public static boolean assignMultipole(ELEC_FORM elecForm, Atom atom, ForceField forceField,
-      double[] multipole, int i, int[][] axisAtom, MultipoleFrameDefinition[] frame) {
+                                        double[] multipole, int i, int[][] axisAtom, MultipoleFrameDefinition[] frame) {
     MultipoleType type = multipoleTypeFactory(elecForm, atom, forceField);
     if (type == null) {
       return false;
@@ -237,13 +297,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * Average two MultipoleType instances. The atom types that define the frame of the new type must
    * be supplied.
    *
-   * @param multipoleType1 a {@link ffx.potential.parameters.MultipoleType} object.
-   * @param multipoleType2 a {@link ffx.potential.parameters.MultipoleType} object.
+   * @param multipoleType1      a {@link ffx.potential.parameters.MultipoleType} object.
+   * @param multipoleType2      a {@link ffx.potential.parameters.MultipoleType} object.
    * @param multipoleFrameTypes an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.MultipoleType} object.
    */
   public static MultipoleType averageTypes(MultipoleType multipoleType1,
-      MultipoleType multipoleType2, int[] multipoleFrameTypes) {
+                                           MultipoleType multipoleType2, int[] multipoleFrameTypes) {
     if (multipoleType1.frameDefinition != multipoleType2.frameDefinition) {
       return null;
     }
@@ -260,14 +320,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * checkMultipoleChirality.
    *
-   * @param frame a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
-   *     object.
+   * @param frame       a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
+   *                    object.
    * @param frameCoords an array of {@link double} objects.
    * @param localOrigin an array of {@link double} objects.
    * @return Whether this multipole underwent chiral inversion.
    */
   public static boolean checkMultipoleChirality(MultipoleFrameDefinition frame, double[] localOrigin,
-      double[][] frameCoords) {
+                                                double[][] frameCoords) {
     if (frame != MultipoleFrameDefinition.ZTHENX) {
       return false;
     }
@@ -297,13 +357,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Return the rotation matrix for the local to lab frame.
    *
-   * @param frame the multipole frame definition
+   * @param frame       the multipole frame definition
    * @param frameCoords the coordinates of the frame atoms
    * @param localOrigin the local origin of the frame
    * @return the rotation matrix
    */
   public static double[][] getRotationMatrix(MultipoleFrameDefinition frame, double[] localOrigin,
-      double[][] frameCoords) {
+                                             double[][] frameCoords) {
     double[][] rotMat = new double[3][3];
     getRotationMatrix(frame, localOrigin, frameCoords, rotMat);
     return rotMat;
@@ -312,13 +372,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Return the rotation matrix for the local to lab frame.
    *
-   * @param frame the multipole frame definition
+   * @param frame       the multipole frame definition
    * @param frameCoords the coordinates of the frame atoms
    * @param localOrigin the local origin of the frame
-   * @param rotMat the rotation matrix.
+   * @param rotMat      the rotation matrix.
    */
   public static void getRotationMatrix(MultipoleFrameDefinition frame, double[] localOrigin,
-      double[][] frameCoords, double[][] rotMat) {
+                                       double[][] frameCoords, double[][] rotMat) {
     double[] zAxis = new double[3];
     double[] xAxis = new double[3];
     double[] yAxis = new double[3];
@@ -473,13 +533,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * multipoleTypeFactory.
    *
-   * @param elecForm The electrostatics form being used.
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param elecForm   The electrostatics form being used.
+   * @param atom       a {@link ffx.potential.bonded.Atom} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @return a {@link ffx.potential.parameters.MultipoleType} object.
    */
   public static MultipoleType multipoleTypeFactory(ELEC_FORM elecForm, Atom atom,
-      ForceField forceField) {
+                                                   ForceField forceField) {
     AtomType atomType = atom.getAtomType();
     if (atomType == null) {
       String message = " Multipoles can only be assigned to atoms that have been typed.";
@@ -712,9 +772,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Parse a single line multipole.
    *
-   * @param input Input String.
+   * @param input  Input String.
    * @param tokens Input tokens.
-   * @param br A BufferedReader instance.
+   * @param br     A BufferedReader instance.
    * @return a MultipoleType instance.
    * @since 1.0
    */
@@ -826,7 +886,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Parse a single line multipole.
    *
-   * @param input Input String.
+   * @param input  Input String.
    * @param tokens Input tokens.
    * @return a MultipoleType instance.
    * @since 1.0
@@ -914,7 +974,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * Map charge parameters to a Multipole instance.
    *
-   * @param input Input string.
+   * @param input  Input string.
    * @param tokens Input string tokens.
    * @return a MultipoleType instance
    */
@@ -923,7 +983,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       logger.log(Level.WARNING, "Invalid CHARGE type:\n{0}", input);
     } else {
       try {
-        int[] atomTypes = new int[] {parseInt(tokens[1])};
+        int[] atomTypes = new int[]{parseInt(tokens[1])};
         double charge = parseDouble(tokens[2]);
         double[] dipole = new double[3];
         double[][] quadrupole = new double[3][3];
@@ -940,8 +1000,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * rotateDipole.
    *
-   * @param rotMat an array of {@link double} objects.
-   * @param dipole an array of {@link double} objects.
+   * @param rotMat        an array of {@link double} objects.
+   * @param dipole        an array of {@link double} objects.
    * @param rotatedDipole an array of {@link double} objects.
    */
   public static void rotateDipole(double[][] rotMat, double[] dipole, double[] rotatedDipole) {
@@ -956,14 +1016,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * rotateMultipole.
    *
-   * @param rotmat an array of {@link double} objects.
-   * @param dipole an array of {@link double} objects.
-   * @param quadrupole an array of {@link double} objects.
-   * @param rotatedDipole an array of {@link double} objects.
+   * @param rotmat            an array of {@link double} objects.
+   * @param dipole            an array of {@link double} objects.
+   * @param quadrupole        an array of {@link double} objects.
+   * @param rotatedDipole     an array of {@link double} objects.
    * @param rotatedQuadrupole an array of {@link double} objects.
    */
   public static void rotateMultipole(double[][] rotmat, double[] dipole, double[][] quadrupole,
-      double[] rotatedDipole, double[][] rotatedQuadrupole) {
+                                     double[] rotatedDipole, double[][] rotatedQuadrupole) {
 
     // Initialize the rotated multipole to zero.
     fill(rotatedDipole, 0.0);
@@ -996,7 +1056,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * scale.
    *
-   * @param type a {@link ffx.potential.parameters.MultipoleType} object.
+   * @param type      a {@link ffx.potential.parameters.MultipoleType} object.
    * @param cdtScales an array of {@link double} objects.
    * @return an array of {@link double} objects.
    */
@@ -1015,7 +1075,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     double chargeScale = cdtScales[0];
     double dipoleScale = cdtScales[1];
     double quadScale = cdtScales[2];
-    return new double[] {multipole[t000] * chargeScale, multipole[t100] * dipoleScale,
+    return new double[]{multipole[t000] * chargeScale, multipole[t100] * dipoleScale,
         multipole[t010] * dipoleScale, multipole[t001] * dipoleScale, multipole[t200] * quadScale,
         multipole[t020] * quadScale, multipole[t002] * quadScale, multipole[t110] * quadScale,
         multipole[t101] * quadScale, multipole[t011] * quadScale};
@@ -1026,13 +1086,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   /**
    * weightMultipoleTypes.
    *
-   * @param types an array of {@link ffx.potential.parameters.MultipoleType} objects.
-   * @param weights an array of {@link double} objects.
+   * @param types          an array of {@link ffx.potential.parameters.MultipoleType} objects.
+   * @param weights        an array of {@link double} objects.
    * @param frameAtomTypes an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.MultipoleType} object.
    */
   public static MultipoleType weightMultipoleTypes(MultipoleType[] types, double[] weights,
-      int[] frameAtomTypes) {
+                                                   int[] frameAtomTypes) {
     double[] weightedMultipole = weightMultipole(types, weights);
     if (weightedMultipole == null) {
       return null;
@@ -1041,7 +1101,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   }
 
   private static double[] bohrToElectronAngstroms(double[] multipole) {
-    return new double[] {multipole[t000], multipole[t100] *= BOHR, multipole[t010] *= BOHR,
+    return new double[]{multipole[t000], multipole[t100] *= BOHR, multipole[t010] *= BOHR,
         multipole[t001] *= BOHR, multipole[t200] *= BOHR2, multipole[t020] *= BOHR2,
         multipole[t002] *= BOHR2, multipole[t110] *= BOHR2, multipole[t101] *= BOHR2,
         multipole[t011] *= BOHR2};
@@ -1052,29 +1112,33 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    *
    * @param charge a double.
    * @param dipole an array of {@link double} objects.
-   * @param quad an array of {@link double} objects.
+   * @param quad   an array of {@link double} objects.
    * @return an array of {@link double} objects.
    */
   private static double[] pack(double charge, double[] dipole, double[][] quad) {
-    return new double[] {charge, dipole[0], dipole[1], dipole[2], quad[0][0], quad[1][1], quad[2][2],
+    return new double[]{charge, dipole[0], dipole[1], dipole[2], quad[0][0], quad[1][1], quad[2][2],
         quad[0][1], quad[0][2], quad[1][2]};
   }
 
-  /** Unpack dipole from 1d tensor-form multipole. */
+  /**
+   * Unpack dipole from 1d tensor-form multipole.
+   */
   private static double[] unpackDipole(double[] mpole) {
-    return new double[] {mpole[t100], mpole[t010], mpole[t001]};
+    return new double[]{mpole[t100], mpole[t010], mpole[t001]};
   }
 
-  /** Unpack quadrupole from 1d tensor-form multipole. */
+  /**
+   * Unpack quadrupole from 1d tensor-form multipole.
+   */
   private static double[][] unpackQuad(double[] mpole) {
-    return new double[][] {{mpole[t200], mpole[t110], mpole[t101]},
+    return new double[][]{{mpole[t200], mpole[t110], mpole[t101]},
         {mpole[t110], mpole[t020], mpole[t011]}, {mpole[t101], mpole[t011], mpole[t002]}};
   }
 
   /**
    * Create a new multipole representing a weighted average.
    *
-   * @param types an array of {@link ffx.potential.parameters.MultipoleType} objects.
+   * @param types   an array of {@link ffx.potential.parameters.MultipoleType} objects.
    * @param weights an array of {@link double} objects.
    * @return an array of {@link double} objects.
    */
@@ -1106,7 +1170,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     return weightedMultipole;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     String[] keys1 = s1.split(" ");
@@ -1137,7 +1203,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -1165,17 +1233,17 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * @return An uneditable copy of this type's dipole. To make changes, use getMultipoleReference().
    */
   public double[] getDipole() {
-    return new double[] {multipole[t100], multipole[t010], multipole[t001]};
+    return new double[]{multipole[t100], multipole[t010], multipole[t001]};
   }
 
   /**
    * Getter for the field <code>multipole</code>.
    *
    * @return An uneditable copy of this type's multipole. To make changes, use
-   *     getMultipoleReference().
+   * getMultipoleReference().
    */
   public double[] getMultipole() {
-    return new double[] {multipole[t000], multipole[t100], multipole[t010], multipole[t001],
+    return new double[]{multipole[t000], multipole[t100], multipole[t010], multipole[t001],
         multipole[t200], multipole[t020], multipole[t002], multipole[t110], multipole[t101],
         multipole[t011]};
   }
@@ -1184,21 +1252,25 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * Getter for the field <code>quadrupole</code>.
    *
    * @return An uneditable copy of this type's quadrupole. To make changes, use
-   *     getMultipoleReference().
+   * getMultipoleReference().
    */
   public double[][] getQuadrupole() {
-    return new double[][] {{multipole[t200], multipole[t110], multipole[t101]},
+    return new double[][]{{multipole[t200], multipole[t110], multipole[t101]},
         {multipole[t110], multipole[t020], multipole[t011]},
         {multipole[t101], multipole[t011], multipole[t002]}};
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(frameAtomTypes);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return toBohrString();
@@ -1288,8 +1360,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   private String toBohrString() {
     StringBuilder multipoleBuffer = new StringBuilder("multipole");
     switch (frameDefinition) {
-      case NONE ->
-          multipoleBuffer.append(format("  %5d  %5s  %5s  %5s", frameAtomTypes[0], "", "", ""));
+      case NONE -> multipoleBuffer.append(format("  %5d  %5s  %5s  %5s", frameAtomTypes[0], "", "", ""));
       case ZONLY -> multipoleBuffer.append(
           format("  %5d  %5d  %5s  %5s", frameAtomTypes[0], frameAtomTypes[1], "", ""));
       case ZTHENX -> {
@@ -1324,7 +1395,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     return multipoleBuffer.toString();
   }
 
-  /** The local multipole frame is defined by the Z-then-X or Bisector convention. */
+  /**
+   * The local multipole frame is defined by the Z-then-X or Bisector convention.
+   */
   public enum MultipoleFrameDefinition {
     NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD,
   }
