@@ -418,15 +418,15 @@ public class HistogramData {
     // Check that histogram size matches the number of lambda and dU/dL bins.
     int hisLambdaBins = zHistogram.length;
     if (lambdaBins != hisLambdaBins) {
-      logger.warning(" Current LambdaBins: " + lambdaBins);
-      logger.warning(" Updated to:         " + hisLambdaBins);
+      logger.fine(" Current LambdaBins: " + lambdaBins);
+      logger.fine(" Updated to:         " + hisLambdaBins);
       lambdaBins = hisLambdaBins;
       lambdaBinWidth = 1.0 / (lambdaBins - 1);
     }
     int hisDUDLBins = zHistogram[0].length;
     if (dUdLBins != hisDUDLBins) {
-      logger.warning(" Current dUdLBins:   " + dUdLBins);
-      logger.warning(" Updated to:         " + hisDUDLBins);
+      logger.fine(" Current dUdLBins:   " + dUdLBins);
+      logger.fine(" Updated to:         " + hisDUDLBins);
       dUdLBins = hisDUDLBins;
     }
     rectifyLambdaVariables();

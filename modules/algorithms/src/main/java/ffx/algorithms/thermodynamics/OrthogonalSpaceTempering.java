@@ -2165,51 +2165,52 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return The bias energy.
      */
     double computeBiasEnergy(double currentLambda, double currentdUdL) {
+      synchronized (this) {
+        int currentLambdaBin = indexForLambda(currentLambda);
+        int currentdUdLBin = binFordUdL(currentdUdL);
 
-      int currentLambdaBin = indexForLambda(currentLambda);
-      int currentdUdLBin = binFordUdL(currentdUdL);
+        double bias1D;
+        double bias2D = 0.0;
 
-      double bias1D;
-      double bias2D = 0.0;
+        if (!hd.metaDynamics) {
+          if (hd.biasMag > 0.0) {
+            int lambdaBiasCutoff = hd.lambdaBiasCutoff;
+            for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
 
-      if (!hd.metaDynamics) {
-        if (hd.biasMag > 0.0) {
-          int lambdaBiasCutoff = hd.lambdaBiasCutoff;
-          for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
+              int lambdaBin = currentLambdaBin + iL;
+              double deltaL = currentLambda - (lambdaBin * hd.lambdaBinWidth);
+              double deltaL2 = deltaL * deltaL;
+              double expL2 = exp(-deltaL2 / (2.0 * hd.lambdaVariance));
 
-            int lambdaBin = currentLambdaBin + iL;
-            double deltaL = currentLambda - (lambdaBin * hd.lambdaBinWidth);
-            double deltaL2 = deltaL * deltaL;
-            double expL2 = exp(-deltaL2 / (2.0 * hd.lambdaVariance));
+              // Mirror conditions for recursion kernel counts.
+              lambdaBin = lambdaMirror(lambdaBin);
+              double mirrorFactor = mirrorFactor(lambdaBin);
 
-            // Mirror conditions for recursion kernel counts.
-            lambdaBin = lambdaMirror(lambdaBin);
-            double mirrorFactor = mirrorFactor(lambdaBin);
+              int dUdLbiasCutoff = hd.dUdLBiasCutoff;
+              for (int iFL = -dUdLbiasCutoff; iFL <= dUdLbiasCutoff; iFL++) {
+                int dUdLBin = currentdUdLBin + iFL;
 
-            int dUdLbiasCutoff = hd.dUdLBiasCutoff;
-            for (int iFL = -dUdLbiasCutoff; iFL <= dUdLbiasCutoff; iFL++) {
-              int dUdLBin = currentdUdLBin + iFL;
+                double weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
+                if (weight <= 0.0) {
+                  continue;
+                }
 
-              double weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
-              if (weight <= 0.0) {
-                continue;
+                double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
+                double deltaFL2 = deltaFL * deltaFL;
+                double bias = weight * hd.biasMag * expL2 * exp(-deltaFL2 / (2.0 * hd.dUdLVariance));
+                bias2D += bias;
               }
-
-              double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
-              double deltaFL2 = deltaFL * deltaFL;
-              double bias = weight * hd.biasMag * expL2 * exp(-deltaFL2 / (2.0 * hd.dUdLVariance));
-              bias2D += bias;
             }
           }
+          // Compute the energy for the recursion worker at F(L) using interpolation.
+          bias1D = energyAndGradient1D(currentLambda, false);
+        } else {
+          bias1D = energyAndGradientMeta(currentLambda, false);
         }
-        // Compute the energy for the recursion worker at F(L) using interpolation.
-        bias1D = energyAndGradient1D(currentLambda, false);
-      } else {
-        bias1D = energyAndGradientMeta(currentLambda, false);
-      }
 
-      // Return the total bias.
-      return bias1D + bias2D;
+        // Return the total bias.
+        return bias1D + bias2D;
+      }
     }
 
     /**

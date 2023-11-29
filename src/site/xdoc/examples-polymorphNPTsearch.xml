@@ -116,7 +116,7 @@
                     crystalline
                     state, while intermediate lambda values are alchemical.
                 </p>
-                <source>ffxc Thermodynamics -Dmdmove-full=true -Dlambda-bin-width=0.02 -Dost-opt-energy-window=10.0 --iW
+                <source>ffxc Thermodynamics -Dlambda-bin-width=0.02 -Dost-opt-energy-window=10.0 --iW
                     --minD=1.1 -Dpolarization=direct -d 2.0 -r 0.1 -l 0.0 -n 1000000 -Q 0 -i stochastic --rsym 2.0 --ruc
                     1.25 -t 298.5 --ac ALL -p 1.0 --bM=0.0001 -o CBZ.xyz
                 </source>

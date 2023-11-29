@@ -984,7 +984,7 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.9.0</commons-configuration2.version>
     <commons-io.version>2.15.0</commons-io.version>
-    <commons-lang3.version>3.13.0</commons-lang3.version>
+    <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>21</compileVersion>
@@ -993,7 +993,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.1</deploy.version>
     <enforcer.version>3.4.1</enforcer.version>
-    <exec.version>3.1.0</exec.version>
+    <exec.version>3.1.1</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1020,7 +1020,7 @@
     <jxr.version>3.3.1</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.21.1</log4j.version>
+    <log4j.version>2.22.0</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
@@ -1029,7 +1029,7 @@
     <pmd.version>3.21.2</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.4.5</project-info-reports.version>
+    <project-info-reports.version>3.5.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
@@ -1061,7 +1061,7 @@
     <tornado.version>0.15.2</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.16.1</versions.version>
+    <versions.version>2.16.2</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
