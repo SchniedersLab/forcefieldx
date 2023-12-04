@@ -73,7 +73,7 @@ public class EwaldParameters {
   @FFXProperty(name = "ewald-alpha", propertyGroup = PropertyGroup.ParticleMeshEwald, defaultValue = "0.545",
       description = """
           Sets the value of the Ewald coefficient, which controls the width of the Gaussian screening charges during
-          particle mesh Ewald summation for multipole electrostatics. In the absence of the ewald-alpha keyword, 
+          particle mesh Ewald summation for multipole electrostatics. In the absence of the ewald-alpha keyword,
           the default value is 0.545, which is appropriate for most applications.
           """)
   public double aewald;

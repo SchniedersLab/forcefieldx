@@ -198,7 +198,7 @@
         <item name="Potential Function Selection" href="/properties/PotentialFunctionSelection.html"/>
         <item name="Unit Cell and Space Group" href="/properties/UnitCellAndSpaceGroup.html"/>
         <item name="Van Der Waals Functional Form" href="/properties/VanDerWaalsFunctionalForm.html"/>
-        <item name="Structural Refinement" href="/properties-refine.html"/>
+        <item name="Structural Refinement" href="/properties/StructuralRefinement.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">
         <item name="Input Files for FFX" href="/examples-input.html"/>

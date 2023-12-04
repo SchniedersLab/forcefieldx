@@ -70,7 +70,7 @@ import java.util.logging.Logger;
     The last two integer modifiers contain the number of data grid points that lie along each axis of the torsion-torsion map.
     For example, this value will be 13 for a 30 degree torsional angle spacing, i.e., 360/30 = 12, but 13
     values are required since data values for -180 and +180 degrees must both be supplied.
-    The subsequent lines contain the torsion-torsion map data as the integer values in degrees of each 
+    The subsequent lines contain the torsion-torsion map data as the integer values in degrees of each
     torsional angle and the target energy value in kcal/mole.
     """)
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {

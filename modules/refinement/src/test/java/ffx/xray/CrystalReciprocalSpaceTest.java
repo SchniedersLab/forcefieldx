@@ -147,7 +147,7 @@ public class CrystalReciprocalSpaceTest extends AlgorithmsTest {
     pdbFile.readFile();
     pdbFile.applyAtomProperties();
     molecularAssembly.finalize(true, forceField);
-    ForceFieldEnergy.energyFactory(molecularAssembly, pdbFile.getCoordRestraints());
+    ForceFieldEnergy.energyFactory(molecularAssembly);
 
     List<Atom> atomList = molecularAssembly.getAtomList();
     Atom[] atomArray = atomList.toArray(new Atom[0]);

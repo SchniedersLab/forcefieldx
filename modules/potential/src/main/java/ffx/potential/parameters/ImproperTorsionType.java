@@ -66,7 +66,7 @@ import java.util.logging.Logger;
     The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined.
     By convention, the third atom class of the four is the trigonal atom on which the improper torsion is centered.
     The torsional angle computed is literally that defined by the four atom classes in the order specified by the keyword.
-    Each of the remaining triples of real/real/integer modifiers give the half-amplitude, 
+    Each of the remaining triples of real/real/integer modifiers give the half-amplitude,
     phase offset in degrees and periodicity of a particular improper torsional term, respectively.
     Periodicities through 3-fold are allowed for improper torsional parameters.
     """)

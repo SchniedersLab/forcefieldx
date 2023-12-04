@@ -289,9 +289,9 @@ public class PotentialsFileOpener implements FileOpener {
         assembly.finalize(true, forceField);
         ForceFieldEnergy energy;
         if (nThreads > 0) {
-          energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
+          energy = ForceFieldEnergy.energyFactory(assembly, nThreads);
         } else {
-          energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
+          energy = ForceFieldEnergy.energyFactory(assembly);
         }
         assembly.setPotential(energy);
         assemblies.add(assembly);
@@ -331,10 +331,9 @@ public class PotentialsFileOpener implements FileOpener {
               filter.applyAtomProperties();
               newAssembly.finalize(true, assembly.getForceField());
               if (nThreads > 0) {
-                energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(),
-                    nThreads);
+                energy = ForceFieldEnergy.energyFactory(assembly, nThreads);
               } else {
-                energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
+                energy = ForceFieldEnergy.energyFactory(assembly);
               }
               newAssembly.setPotential(energy);
               assemblies.add(newAssembly);

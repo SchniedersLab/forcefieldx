@@ -327,7 +327,7 @@ import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
 import ffx.potential.nonbonded.NonbondedCutoff;
@@ -417,12 +417,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    *
    * @param molecularAssembly Assembly to construct energy for.
    * @param requestedPlatform requested OpenMM platform to be used.
-   * @param restraints Harmonic coordinate restraints.
    * @param nThreads Number of threads to use in the super class ForceFieldEnergy instance.
    */
-  protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform,
-      List<CoordRestraint> restraints, int nThreads) {
-    super(molecularAssembly, restraints, nThreads);
+  protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, int nThreads) {
+    super(molecularAssembly, nThreads);
 
     Crystal crystal = getCrystal();
     int symOps = crystal.spaceGroup.getNumberOfSymOps();
@@ -4939,13 +4937,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       int forceGroup = forceField.getInteger("COORD_RESTRAINT_FORCE_GROUP", 0);
 
-      for (CoordRestraint coordRestraint : getCoordRestraints()) {
-        double forceConstant = coordRestraint.getForceConstant();
+      for (RestrainPosition restrainPosition : getCoordRestraints()) {
+        double forceConstant = restrainPosition.getForceConstant();
         forceConstant *= OpenMM_KJPerKcal;
         forceConstant *= (OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm);
-        Atom[] restAtoms = coordRestraint.getAtoms();
-        int nRestAts = coordRestraint.getNumAtoms();
-        double[][] oCoords = coordRestraint.getOriginalCoordinates();
+        Atom[] restAtoms = restrainPosition.getAtoms();
+        int nRestAts = restrainPosition.getNumAtoms();
+        double[][] oCoords = restrainPosition.getEquilibriumCoordinates();
         for (int i = 0; i < nRestAts; i++) {
           oCoords[i][0] *= OpenMM_NmPerAngstrom;
           oCoords[i][1] *= OpenMM_NmPerAngstrom;

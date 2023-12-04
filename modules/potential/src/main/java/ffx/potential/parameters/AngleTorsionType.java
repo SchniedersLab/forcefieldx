@@ -74,7 +74,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
   /** Convert angle-torsion to kcal/mole. */
   @FFXProperty(name = "angtorunit", propertyGroup = EnergyUnitConversion, defaultValue = "Pi/180", description = """
       Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle
-      cross term into units of kcal/mole. The correct value is force field dependent and typically provided in the 
+      cross term into units of kcal/mole. The correct value is force field dependent and typically provided in the
       header of the master force field parameter file.
       """)
   public double angtorunit = DEFAULT_ANGTOR_UNIT;

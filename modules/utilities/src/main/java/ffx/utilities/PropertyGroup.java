@@ -91,5 +91,5 @@ public enum PropertyGroup {
   /**
    * Refinement parameters.
    */
-  Refinement
+  StructuralRefinement
 }

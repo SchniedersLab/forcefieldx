@@ -309,7 +309,7 @@
               <directory>groovy</directory>
             </fileset>
             <fileset>
-              <directory>src/site/asciidoc/keywords</directory>
+              <directory>src/site/asciidoc/properties</directory>
             </fileset>
             <fileset>
               <directory>src/site/asciidoc/commands</directory>
@@ -531,6 +531,13 @@
                   <header>== Van Der Waals Functional Form</header>
                   <fileset erroronmissingdir="false"
                            dir="${project.basedir}/src/site/asciidoc/properties/VanDerWaalsFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/StructuralRefinement.adoc">
+                  <header>== Structural Refinement</header>
+                  <fileset erroronmissingdir="false"
+                           dir="${project.basedir}/src/site/asciidoc/properties/StructuralRefinement">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
@@ -1002,7 +1009,7 @@
     <git-commit-id.version>7.0.0</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>23.1.1</graal.version>
-    <groovy-all.version>4.0.15</groovy-all.version>
+    <groovy-all.version>4.0.16</groovy-all.version>
     <!-- groovy-all.version>5.0.0-alpha-2</groovy-all.version -->
     <guava.version>32.1.3-jre</guava.version>
     <install.version>3.1.1</install.version>

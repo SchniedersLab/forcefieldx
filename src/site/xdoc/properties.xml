@@ -180,12 +180,12 @@
             <tr>
               <td>
                 <p>
-                  <a href="properties-refine.html">X-ray, Neutron and Real Space Refinement</a>
+                  <a href="properties/StructuralRefinement.html">Structural Refinement</a>
                 </p>
               </td>
               <td>
-                <p>Control details of structural refinement against experimental data sets and
-                  advanced force fields.
+                <p>Control details of structural refinement against a target function defined by
+                  experimental data sets (X-ray, Neutron and/or CryoEM) and advanced force fields.
                 </p>
               </td>
             </tr>

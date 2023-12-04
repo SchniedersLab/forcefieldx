@@ -100,7 +100,7 @@ public class Crystal {
    */
   @FFXProperty(name = "a-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "None",
       description = """
-          Sets the value of the a-axis length for a crystal unit cell, or, equivalently, 
+          Sets the value of the a-axis length for a crystal unit cell, or, equivalently,
           the X-axis length for a periodic box (Angstroms).
           """)
   public double a;
@@ -110,7 +110,7 @@ public class Crystal {
    */
   @FFXProperty(name = "b-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
       description = """
-          Sets the value of the b-axis length for a crystal unit cell, or, equivalently, 
+          Sets the value of the b-axis length for a crystal unit cell, or, equivalently,
           the Y-axis length for a periodic box (Angstroms).
           """)
   public double b;

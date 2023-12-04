@@ -56,7 +56,7 @@ import java.util.Comparator;
     [1 integer and 1 real]
     Provides a value for a single atomic partial charge electrostatic parameter.
     The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined.
-    Note that charge parameters are given for atom types, not atom classes. If the integer modifier is negative, 
+    Note that charge parameters are given for atom types, not atom classes. If the integer modifier is negative,
     then the parameter value to follow applies only to the individual atom whose atom number is the negative of the modifier.
     The real number modifier gives the values of the atomic partial charge in electrons.
     """)

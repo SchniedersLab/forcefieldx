@@ -82,7 +82,7 @@ import ffx.potential.constraint.CcmaConstraint;
 import ffx.potential.constraint.SettleConstraint;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
-import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
@@ -116,6 +116,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
+import static ffx.potential.nonbonded.RestrainPosition.parseRestrainPositions;
 import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -167,15 +168,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * An array of Coordinate Restraint terms.
    */
-  private final List<CoordRestraint> coordRestraints;
+  private final List<RestrainPosition> restrainPositions;
   /**
    * An NCS restraint term.
    */
   private final NCSRestraint ncsRestraint;
-  /**
-   * A coordinate restraint term.
-   */
-  private final CoordRestraint autoCoordRestraint;
   /**
    * A Center-of-Mass restraint term.
    */
@@ -631,7 +628,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Evaluate Restrain energy term.
    */
-  private boolean restrainTerm;
+  private boolean restrainPositionTerm;
   /**
    * Evaluate Restraint Bond energy terms.
    */
@@ -820,7 +817,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Original state of the Restrain energy term flag.
    */
-  private boolean restrainTermOrig;
+  private boolean restrainPositionTermOrig;
   /**
    * Time to evaluate Center of Mass restraint term.
    */
@@ -860,7 +857,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Time to evaluate coordinate restraint term.
    */
-  private long coordRestraintTime;
+  private long restrainPositionTime;
 
   private double relativeSolvationEnergy;
   /**
@@ -874,28 +871,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   protected ForceFieldEnergy(MolecularAssembly molecularAssembly) {
-    this(molecularAssembly, null);
+    this(molecularAssembly, ParallelTeam.getDefaultThreadCount());
   }
 
   /**
    * Constructor for ForceFieldEnergy.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param restraints        list of {@link ffx.potential.nonbonded.CoordRestraint} objects.
-   */
-  protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
-    this(molecularAssembly, restraints, ParallelTeam.getDefaultThreadCount());
-  }
-
-  /**
-   * Constructor for ForceFieldEnergy.
-   *
-   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param restraints        a {@link java.util.List} object.
    * @param numThreads        a int.
    */
-  protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints,
-                             int numThreads) {
+  protected ForceFieldEnergy(MolecularAssembly molecularAssembly, int numThreads) {
     // Get a reference to the sorted atom array.
     this.molecularAssembly = molecularAssembly;
     atoms = molecularAssembly.getAtomArray();
@@ -967,13 +952,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     restraintBondTerm = false;
     lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
-    restrainTerm = forceField.getBoolean("RESTRAINTERM", false);
+    restrainPositionTerm = forceField.getBoolean("RESTRAINTERM", false);
     comTerm = forceField.getBoolean("COMRESTRAINTERM", false);
     lambdaTorsions = forceField.getBoolean("TORSION_LAMBDATERM", false);
     printOnFailure = forceField.getBoolean("PRINT_ON_FAILURE", false);
 
     if (properties.containsKey("restrain-groups")) {
       restrainGroupTerm = true;
+    }
+
+    if (properties.containsKey("restrain-position") || properties.containsKey("restrain-position-lambda")) {
+      restrainPositionTerm = true;
     }
 
     // For RESPA
@@ -995,7 +984,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     polarizationTermOrig = polarizationTerm;
     generalizedKirkwoodTermOrig = generalizedKirkwoodTerm;
     ncsTermOrig = ncsTerm;
-    restrainTermOrig = restrainTerm;
+    restrainPositionTermOrig = restrainPositionTerm;
     comTermOrig = comTerm;
     restrainGroupTermOrig = restrainGroupTerm;
 
@@ -1447,22 +1436,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       ncsRestraint = null;
     }
 
-    coordRestraints = new ArrayList<>();
-    if (restraints != null) {
-      coordRestraints.addAll(restraints);
-    }
-
-    if (restrainTerm) {
-      this.autoCoordRestraint = new CoordRestraint(atoms, forceField);
-      coordRestraints.add(autoCoordRestraint);
+    if (restrainPositionTerm) {
+      restrainPositions = parseRestrainPositions(molecularAssembly);
+      if (!restrainPositions.isEmpty()) {
+        restrainPositionTerm = true;
+        restrainPositionTermOrig = restrainPositionTerm;
+      } else {
+        restrainPositionTerm = false;
+      }
     } else {
-      autoCoordRestraint = null;
-    }
-
-    if (!coordRestraints.isEmpty()) {
-      restrainTerm = true;
-      restrainTermOrig = restrainTerm;
-      logger.log(Level.FINE, " restrainTerm set true");
+      restrainPositions = null;
     }
 
     if (comTerm) {
@@ -1759,36 +1742,22 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
    *
-   * @param assembly To create FFE over
+   * @param assembly   To create FFE over
    * @return a {@link ffx.potential.ForceFieldEnergy} object.
    */
   public static ForceFieldEnergy energyFactory(MolecularAssembly assembly) {
-    return energyFactory(assembly, null);
+    return energyFactory(assembly, ParallelTeam.getDefaultThreadCount());
   }
 
   /**
    * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
    *
    * @param assembly   To create FFE over
-   * @param restraints Harmonic restraints
-   * @return a {@link ffx.potential.ForceFieldEnergy} object.
-   */
-  public static ForceFieldEnergy energyFactory(MolecularAssembly assembly,
-                                               List<CoordRestraint> restraints) {
-    return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
-  }
-
-  /**
-   * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
-   *
-   * @param assembly   To create FFE over
-   * @param restraints Harmonic restraints
    * @param numThreads Number of threads to use for FFX energy
    * @return A ForceFieldEnergy on some Platform
    */
   @SuppressWarnings("fallthrough")
-  public static ForceFieldEnergy energyFactory(MolecularAssembly assembly,
-                                               List<CoordRestraint> restraints, int numThreads) {
+  public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, int numThreads) {
     ForceField forceField = assembly.getForceField();
     String platformString = toEnumForm(forceField.getString("PLATFORM", "FFX"));
     try {
@@ -1796,13 +1765,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       switch (platform) {
         case OMM, OMM_REF, OMM_CUDA:
           try {
-            return new ForceFieldEnergyOpenMM(assembly, platform, restraints, numThreads);
+            return new ForceFieldEnergyOpenMM(assembly, platform, numThreads);
           } catch (Exception ex) {
             logger.warning(format(" Exception creating ForceFieldEnergyOpenMM: %s", ex));
 
             ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
             if (ffxEnergy == null) {
-              ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+              ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
               assembly.setPotential(ffxEnergy);
             }
             return ffxEnergy;
@@ -1812,7 +1781,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         default:
           ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
           if (ffxEnergy == null) {
-            ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+            ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
             assembly.setPotential(ffxEnergy);
           }
           return ffxEnergy;
@@ -1822,7 +1791,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           format(" String %s did not match a known energy implementation", platformString));
       ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
       if (ffxEnergy == null) {
-        ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+        ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
         assembly.setPotential(ffxEnergy);
       }
       return ffxEnergy;
@@ -1965,7 +1934,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       electrostaticTime = 0;
       restraintBondTime = 0;
       ncsTime = 0;
-      coordRestraintTime = 0;
+      restrainPositionTime = 0;
       rTorsTime = 0;
 
       // Zero out the potential energy of each bonded term.
@@ -2040,12 +2009,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           ncsEnergy = ncsRestraint.residual(gradient, print);
           ncsTime += System.nanoTime();
         }
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-          coordRestraintTime = -System.nanoTime();
-          for (CoordRestraint restraint : coordRestraints) {
+        if (restrainPositionTerm) {
+          restrainPositionTime = -System.nanoTime();
+          for (RestrainPosition restraint : restrainPositions) {
             restrainEnergy += restraint.residual(gradient, print);
           }
-          coordRestraintTime += System.nanoTime();
+          restrainPositionTime += System.nanoTime();
         }
         if (comTerm) {
           comRestraintTime = -System.nanoTime();
@@ -2392,8 +2361,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    *
    * @return a {@link java.util.List} object.
    */
-  public List<CoordRestraint> getCoordRestraints() {
-    return new ArrayList<>(coordRestraints);
+  public List<RestrainPosition> getCoordRestraints() {
+    return new ArrayList<>(restrainPositions);
   }
 
   /**
@@ -2496,7 +2465,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         improperTorsionTerm = improperTorsionTermOrig;
         restraintBondTerm = restraintBondTermOrig;
         ncsTerm = ncsTermOrig;
-        restrainTerm = restrainTermOrig;
+        restrainPositionTerm = restrainPositionTermOrig;
         restrainGroupTerm = restrainGroupTermOrig;
         comTerm = comTermOrig;
         vanderWaalsTerm = false;
@@ -2525,7 +2494,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         improperTorsionTerm = false;
         restraintBondTerm = false;
         ncsTerm = false;
-        restrainTerm = false;
+        restrainPositionTerm = false;
         comTerm = false;
         restrainGroupTerm = false;
         break;
@@ -2544,7 +2513,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         improperTorsionTerm = improperTorsionTermOrig;
         restraintBondTerm = restraintBondTermOrig;
         ncsTerm = ncsTermOrig;
-        restrainTermOrig = restrainTerm;
+        restrainPositionTermOrig = restrainPositionTerm;
         comTermOrig = comTerm;
         restrainGroupTermOrig = restrainGroupTerm;
         vanderWaalsTerm = vanderWaalsTermOrig;
@@ -2652,8 +2621,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (ncsTerm && ncsRestraint != null) {
           ncsRestraint.setLambda(lambda);
         }
-        if (restrainTerm && !coordRestraints.isEmpty()) {
-          for (CoordRestraint restraint : coordRestraints) {
+        if (restrainPositionTerm && !restrainPositions.isEmpty()) {
+          for (RestrainPosition restraint : restrainPositions) {
             restraint.setLambda(lambda);
           }
         }
@@ -2902,9 +2871,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           format("REMARK   3   %s %g (%d)\n", "NCS RESTRAINT              : ", ncsEnergy, nAtoms));
     }
 
-    if (restrainTerm && !coordRestraints.isEmpty()) {
+    if (restrainPositionTerm && !restrainPositions.isEmpty()) {
       int nRests = 0;
-      for (CoordRestraint restraint : coordRestraints) {
+      for (RestrainPosition restraint : restrainPositions) {
         nRests += restraint.getNumAtoms();
       }
       sb.append(format("REMARK   3   %s %g (%d)\n", "COORDINATE RESTRAINTS      : ", restrainEnergy,
@@ -3314,8 +3283,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (ncsTerm && ncsRestraint != null) {
         d2EdLambda2 += ncsRestraint.getd2EdL2();
       }
-      if (restrainTerm && !coordRestraints.isEmpty()) {
-        for (CoordRestraint restraint : coordRestraints) {
+      if (restrainPositionTerm && !restrainPositions.isEmpty()) {
+        for (RestrainPosition restraint : restrainPositions) {
           d2EdLambda2 += restraint.getd2EdL2();
         }
       }
@@ -3358,8 +3327,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (ncsTerm && ncsRestraint != null) {
         dEdLambda += ncsRestraint.getdEdL();
       }
-      if (restrainTerm && !coordRestraints.isEmpty()) {
-        for (CoordRestraint restraint : coordRestraints) {
+      if (restrainPositionTerm && !restrainPositions.isEmpty()) {
+        for (RestrainPosition restraint : restrainPositions) {
           dEdLambda += restraint.getdEdL();
         }
       }
@@ -3401,8 +3370,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (ncsTerm && ncsRestraint != null) {
         ncsRestraint.getdEdXdL(gradients);
       }
-      if (restrainTerm && !coordRestraints.isEmpty()) {
-        for (CoordRestraint restraint : coordRestraints) {
+      if (restrainPositionTerm && !restrainPositions.isEmpty()) {
+        for (RestrainPosition restraint : restrainPositions) {
           restraint.getdEdXdL(gradients);
         }
       }
@@ -3684,7 +3653,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       logger.severe(" NCS energy term cannot be used with variable systems sizes.");
     }
 
-    if (restrainTerm) {
+    if (restrainPositionTerm) {
       logger.severe(" Restrain energy term cannot be used with variable systems sizes.");
     }
 
@@ -3896,13 +3865,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       sb.append(format("  %s %20.8f %12d %12.3f\n", "NCS Restraint     ", ncsEnergy, nAtoms,
           ncsTime * toSeconds));
     }
-    if (restrainTerm && !coordRestraints.isEmpty()) {
+    if (restrainPositionTerm && !restrainPositions.isEmpty()) {
       int nRests = 0;
-      for (CoordRestraint restraint : coordRestraints) {
+      for (RestrainPosition restraint : restrainPositions) {
         nRests += restraint.getNumAtoms();
       }
       sb.append(format("  %s %20.8f %12d %12.3f\n", "Coord. Restraints ", restrainEnergy, nRests,
-          coordRestraintTime * toSeconds));
+          restrainPositionTime * toSeconds));
     }
     if (comTerm) {
       sb.append(format("  %s %20.8f %12d %12.3f\n", "COM Restraint     ", comRestraintEnergy, nAtoms,
@@ -4060,9 +4029,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         logger.info(" Restraint Bond \t" + restraintBond.toString());
       }
     }
-    if (restrainTerm && !coordRestraints.isEmpty()) {
+    if (restrainPositionTerm && !restrainPositions.isEmpty()) {
       logger.info("\n Coordinate Restraint Interactions:");
-      for (CoordRestraint restraint : coordRestraints) {
+      for (RestrainPosition restraint : restrainPositions) {
         logger.info(" Coordinate Restraint \t" + restraint.toString());
       }
     }

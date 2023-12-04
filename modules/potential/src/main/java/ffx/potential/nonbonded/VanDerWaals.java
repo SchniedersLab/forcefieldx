@@ -115,7 +115,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final String vdwIndex;
   @FFXProperty(name = "vdw-taper", propertyGroup = NonBondedCutoff, defaultValue = "0.9", description = """
       Allows modification of the cutoff windows for van der Waals potential energy interactions. "
-      The default value in the absence of the vdw-taper keyword is to begin the cutoff window 
+      The default value in the absence of the vdw-taper keyword is to begin the cutoff window
       at 0.9 of the vdw cutoff distance.
       """)
   private final double vdwTaper;

@@ -398,7 +398,7 @@ public class ReflectionList {
 
   private void setResolutionBins(@Nullable CompositeConfiguration properties) {
     if (properties != null) {
-      nBins = properties.getInt("nbins", 10);
+      nBins = properties.getInt("reflection-bins", 10);
     }
     double nBinsDouble = nBins;
     for (HKL ih : hklList) {
