@@ -294,7 +294,10 @@ public class RestrainPosition implements LambdaInterface {
       double dr2 = dr * dr;
       residual += dr2;
       if (gradient || lambdaTerm) {
-        final double scale = fx2 * dr / r;
+        double scale = fx2 * dr;
+        if (r > 0.0) {
+          scale /= r;
+        }
         final double dedx = dx[0] * scale;
         final double dedy = dx[1] * scale;
         final double dedz = dx[2] * scale;

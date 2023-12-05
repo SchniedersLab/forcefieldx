@@ -4295,6 +4295,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           OpenMM_DoubleArray_set(exptCoefficients, 1, 0.017);
           OpenMM_DoubleArray_set(exptCoefficients, 2, 0.657);
           OpenMM_DoubleArray_set(exptCoefficients, 3, 0.475);
+          // PointerByReference exptCoefficients = OpenMM_DoubleArray_create(1);
+          // OpenMM_DoubleArray_set(exptCoefficients, 0, 1.044);
           OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce,
               exptCoefficients);
           OpenMM_DoubleArray_destroy(exptCoefficients);
