@@ -764,40 +764,51 @@ public class Octree {
         mI.setPermanentMultipole(globalMultipole[0][i]);
 //        mK.setPermanentMultipole(cells.get(k).getMultipole());
 
-        double[] multipoleCell = cells.get(k).getMultipole();
-        double[] tracelessQDBCell = cells.get(k).getTracelessQDP();
-        multipoleCell[4] = tracelessQDBCell[0] * 3.0; // xx
-        multipoleCell[5] = tracelessQDBCell[4] * 3.0; // yy
-        multipoleCell[6] = tracelessQDBCell[8] * 3.0; // zz
-        multipoleCell[7] = tracelessQDBCell[1] * 3.0/2.0; // xy
-        multipoleCell[8] = tracelessQDBCell[2] * 3.0/2.0; // xz
-        multipoleCell[9] = tracelessQDBCell[5] * 3.0/2.0; // yz
+//        double[] multipoleCell = cells.get(k).getMultipole();
+//        double[] tracelessQDBCell = cells.get(k).getTracelessQDP();
+//        multipoleCell[4] = tracelessQDBCell[0];// * 3.0; // xx
+//        multipoleCell[5] = tracelessQDBCell[4];// * 3.0; // yy
+//        multipoleCell[6] = tracelessQDBCell[8];// * 3.0; // zz
+//        multipoleCell[7] = tracelessQDBCell[1];// * 3.0/2.0; // xy
+//        multipoleCell[8] = tracelessQDBCell[2];// * 3.0/2.0; // xz
+//        multipoleCell[9] = tracelessQDBCell[5];// * 3.0/2.0; // yz
         //TODO: Multiplying by 3 or 3/2 is done to try to cancel the effect in PolarizableMultipole.setMultipole()
-        mK.setPermanentMultipole(multipoleCell);
+//        mK.setPermanentMultipole(multipoleCell);
+
+//        double[] multipoleCell = cells.get(k).getMultipole();
+//        multipoleCell[4] = multipoleCell[4] * 3.0;
+//        multipoleCell[5] = multipoleCell[5] * 3.0;
+//        multipoleCell[6] = multipoleCell[6] * 3.0;
+//        multipoleCell[7] = multipoleCell[7] * 3.0/2.0;
+//        multipoleCell[8] = multipoleCell[8] * 3.0/2.0;
+//        multipoleCell[9] = multipoleCell[9] * 3.0/2.0;
+//        mK.setPermanentMultipole(multipoleCell); // was accidentally not set initially
 
         // Set the multipole moments for site K.
-//        double[] multipoleCell = cells.get(k).getMultipole();
-//        double r = Math.sqrt(r2);
-//        double r3 = Math.pow(r,3);
-//        double r5 = Math.pow(r,5);
-//        double dx = dx_local[0];
-//        double dy = dx_local[1];
-//        double dz = dx_local[2];
-//        double[] weight = new double[10];
-//        weight[0] = 1 / r;
-//        weight[1] = -dx / r3;
-//        weight[2] = -dy / r3;
-//        weight[3] = -dz / r3;
-//        weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
-//        weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
-//        weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
-//        weight[7] = 3 * dx * dy / r5;
-//        weight[8] = 3 * dx * dz / r5;
-//        weight[9] = 3 * dy * dz / r5;
-//        for (int q = 0; q < 10; q++) {
-//            multipoleCell[q] = multipoleCell[q] * weight[q];
-//        }
-//        mK.setPermanentMultipole(multipoleCell);
+        double[] multipoleCell = cells.get(k).getMultipole();
+        double r = Math.sqrt(r2);
+        double r3 = Math.pow(r,3);
+        double r5 = Math.pow(r,5);
+        double dx = dx_local[0];
+        double dy = dx_local[1];
+        double dz = dx_local[2];
+        double[] weight = new double[10];
+        weight[0] = 1.0 / r;
+        weight[1] = -dx / r3;
+        weight[2] = -dy / r3;
+        weight[3] = -dz / r3;
+        weight[4] = ((3.0 * Math.pow(dx, 2)) / r5 - (1 / r3)) * 3.0;
+        weight[5] = ((3.0 * Math.pow(dy, 2)) / r5 - (1 / r3)) * 3.0;
+        weight[6] = ((3.0 * Math.pow(dz, 2)) / r5 - (1 / r3)) * 3.0;
+        weight[7] = (3.0 * dx * dy / r5) * 3.0/2.0;
+        weight[8] = (3.0 * dx * dz / r5) * 3.0/2.0;
+        weight[9] = (3.0 * dy * dz / r5) * 3.0/2.0;
+        //TODO: remove * 3 and * 3/2
+        for (int q = 0; q < 10; q++) {
+//            multipoleCell[q] = -1.0 * multipoleCell[q] * weight[q];
+            multipoleCell[q] = multipoleCell[q] * weight[q];
+        }
+        mK.setPermanentMultipole(multipoleCell);
 
         double selfScale = 1.0;
         QIFrame qiFrame = new QIFrame();
@@ -1206,32 +1217,32 @@ public class Octree {
                         interactionCount[i] += 1;
                         interactionWithCell(i, c);
 
-                        double dx = particles[i].getX() - cells.get(c).getX();
-                        double dy = particles[i].getY() - cells.get(c).getY();
-                        double dz = particles[i].getZ() - cells.get(c).getZ();
-                        double r3 = Math.pow(r, 3);
-                        double r5 = r3 * Math.pow(r, 2);
-
-                        // Calculate the weight from each multipole
-                        double[] weight = new double[10];
-                        weight[0] = 1 / r;
-                        weight[1] = -dx / r3;
-                        weight[2] = -dy / r3;
-                        weight[3] = -dz / r3;
-                        weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
-                        weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
-                        weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
-                        weight[7] = 3 * dx * dy / r5;
-                        weight[8] = 3 * dx * dz / r5;
-                        weight[9] = 3 * dy * dz / r5;
+//                        double dx = particles[i].getX() - cells.get(c).getX();
+//                        double dy = particles[i].getY() - cells.get(c).getY();
+//                        double dz = particles[i].getZ() - cells.get(c).getZ();
+//                        double r3 = Math.pow(r, 3);
+//                        double r5 = r3 * Math.pow(r, 2);
+//
+//                        // Calculate the weight from each multipole
+//                        double[] weight = new double[10];
+//                        weight[0] = 1 / r;
+//                        weight[1] = -dx / r3;
+//                        weight[2] = -dy / r3;
+//                        weight[3] = -dz / r3;
+//                        weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
+//                        weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
+//                        weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
+//                        weight[7] = 3 * dx * dy / r5;
+//                        weight[8] = 3 * dx * dz / r5;
+//                        weight[9] = 3 * dy * dz / r5;
 
                         // Calculate dot product of multipole array and weight array
-                        double dotProduct = 0.0;
-                        double[] multipoleArray = cells.get(c).getMultipole();
-                        for (int d = 0; d < weight.length; d++) {
-                            dotProduct = dotProduct + multipoleArray[d] * weight[d];
-                        }
-                        phi[i] += dotProduct;
+//                        double dotProduct = 0.0;
+//                        double[] multipoleArray = cells.get(c).getMultipole();
+//                        for (int d = 0; d < weight.length; d++) {
+//                            dotProduct = dotProduct + multipoleArray[d] * weight[d];
+//                        }
+//                        phi[i] += dotProduct;
 //            logger.info(format("Atom %d far field dot product = %4.3f. phi = %4.3f",i,dotProduct,phi[i]));
 //            particles[i].addToPhi(dotProduct);
                     }
@@ -1243,13 +1254,12 @@ public class Octree {
             for (int j = 0; j < cells.get(p).getNumLeaves(); j++) {
 //            OctreeParticle source = particles.get(cells.get(p).getLeavesValueAtIndex(j));
                 interactionCount[i] += 1;
-                Atom source = particles[cells.get(p).getLeavesValueAtIndex(j)];
-                double r = distance(particles[i].getXYZ(null), source.getXYZ(null));
-//                if (r != 0) {
-//          logger.info(format("Atom %d to atom %d r = %4.3f",i,cells.get(p).getLeavesValueAtIndex(j),r));
-//              particles.get(i).addToPhi(source.getCharge() / r);
-                phi[i] += source.getCharge() / r;
-                //TODO: fix logic
+//                Atom source = particles[cells.get(p).getLeavesValueAtIndex(j)];
+//                double r = distance(particles[i].getXYZ(null), source.getXYZ(null));
+////                if (r != 0) {
+////          logger.info(format("Atom %d to atom %d r = %4.3f",i,cells.get(p).getLeavesValueAtIndex(j),r));
+////              particles.get(i).addToPhi(source.getCharge() / r);
+//                phi[i] += source.getCharge() / r;
 //                if (i <= cells.get(p).getLeavesValueAtIndex(j)) { //if statment to restrict atom interactions happening x2
 ////                    logger.info(format("Interacting atom %d with %d", i, cells.get(p).getLeavesValueAtIndex(j)));
 //                    interaction(i, cells.get(p).getLeavesValueAtIndex(j));
