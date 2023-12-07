@@ -41,8 +41,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.ForceFieldEnergyOpenMM
-import ffx.potential.MolecularAssembly
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
@@ -139,7 +138,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
         break
     }
 
-    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+    if (forceFieldEnergy instanceof OpenMMEnergy) {
       ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(
           activeAssembly)
       minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)

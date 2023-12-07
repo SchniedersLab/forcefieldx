@@ -49,11 +49,12 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
@@ -154,7 +155,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         return MinimizationEngine.FFX;
       }
     } else {
-      if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+      if (potentialEnergy instanceof OpenMMEnergy) {
         return MinimizationEngine.OPENMM;
       } else {
         return MinimizationEngine.FFX;
@@ -175,7 +176,7 @@ public class Minimize implements OptimizationListener, Terminatable {
       AlgorithmListener listener, MinimizationEngine engine) {
     return switch (engine) {
       case OPENMM ->
-          new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
+          new MinimizeOpenMM(assembly, (OpenMMEnergy) potentialEnergy, listener);
       default -> new Minimize(assembly, potentialEnergy, listener);
     };
   }

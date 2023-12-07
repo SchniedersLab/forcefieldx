@@ -39,7 +39,7 @@ package ffx.potential.groovy.test
 
 import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
@@ -189,9 +189,9 @@ class MultiTopTimer extends PotentialScript {
     for (int i = 0; i < iterations; i++) {
       long time = -System.nanoTime()
       if (gradient) {
-        if (potential instanceof ForceFieldEnergyOpenMM) {
-          ((ForceFieldEnergyOpenMM) potential).setLambda(lambda);
-          ((ForceFieldEnergyOpenMM) potential).updateParameters();
+        if (potential instanceof OpenMMEnergy) {
+          ((OpenMMEnergy) potential).setLambda(lambda);
+          ((OpenMMEnergy) potential).updateParameters();
         }
         potential.energyAndGradient(x, g, print)
       } else {
