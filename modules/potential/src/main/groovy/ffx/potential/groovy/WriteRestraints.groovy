@@ -49,7 +49,7 @@ import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
- * WriteRestraints logs position restraints for a PDB file.
+ * WriteRestraints logs "restrain-position" properties for a PDB file.
  * <br>
  * Usage:
  * <br>
@@ -65,9 +65,30 @@ class WriteRestraints extends PotentialScript {
   String chain = null
 
   /**
+   * -k or --forceConstant to specify the force constant in kcal/mol/A^2
+   */
+  @Option(names = ['-k', '--forceConstant'], defaultValue = '100.0', paramLabel = '100.0',
+      description = 'The force constant (kcal/mol/A^2).')
+  double forceConstant = 100.0
+
+  /**
+   * -d or --flatBottom to specify the flat bottom distance in Angstroms.
+   */
+  @Option(names = ['-d', '--flatBottom'], defaultValue = '0.0', paramLabel = '0.0',
+      description = 'The flat bottom distance in Angstroms.')
+  double fbDistance = 0.0
+
+  /**
+   * -s or --select Select every ith restraint. 
+   */
+  @Option(names = ['-s', '--select'], defaultValue = '1', paramLabel = '1',
+      description = 'Select every ith matching restraint and ignore the rest.')
+  int select = 1
+
+  /**
    * The final argument is an XYZ or PDB coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "file",
+  @Parameters(arity = '1', paramLabel = 'file',
       description = 'The atomic coordinate file in XYZ or PDB format.')
   private String filename = null
 
@@ -106,6 +127,7 @@ class WriteRestraints extends PotentialScript {
 
     logger.info("\n Writing restraints for " + filename + "\n")
 
+    int count = 0
 
     Polymer[] polymers = activeAssembly.getChains()
     for (Polymer polymer : polymers) {
@@ -121,21 +143,25 @@ class WriteRestraints extends PotentialScript {
       }
       Residue[] residues = polymer.getResidues()
       for (Residue residue : residues) {
-        Atom CA = residue.getAtomByName("CA", true)
-        if (CA != null) {
-          double x = CA.getX()
-          double y = CA.getY()
-          double z = CA.getZ()
-          logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f", CA.getIndex(), x, y, z))
+        // Check for an amino acid c-alpha or a nucleic acid phosphate.
+        Atom atom = residue.getAtomByName("CA", true)
+        if (atom == null) {
+          atom = residue.getAtomByName("P", true)
         }
 
-        Atom P = residue.getAtomByName("P", true)
-        if (P != null) {
-          double x = P.getX()
-          double y = P.getY()
-          double z = P.getZ()
-          logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f", P.getIndex(), x, y, z))
+        // Continue if an atom isn't found.
+        if (atom == null) {
+          continue
         }
+
+        if (count % select == 0) {
+          double x = atom.getX()
+          double y = atom.getY()
+          double z = atom.getZ()
+          logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f %12.8f %12.8f",
+              atom.getIndex(), x, y, z, forceConstant, fbDistance))
+        }
+        count++
       }
     }
 

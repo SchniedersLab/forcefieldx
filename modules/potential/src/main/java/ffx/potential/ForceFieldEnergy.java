@@ -2361,7 +2361,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    *
    * @return a {@link java.util.List} object.
    */
-  public List<RestrainPosition> getCoordRestraints() {
+  public List<RestrainPosition> getRestrainPositions() {
     if (restrainPositions == null) {
       return Collections.emptyList();
     }
