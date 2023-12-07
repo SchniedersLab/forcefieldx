@@ -2302,20 +2302,20 @@ public class RotamerOptimization implements Terminatable {
                   case "GLU":
                   case "LYS":
                   case "ASP":
-                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    titrateBoltzmann[titrateRes][0] += boltzmannWeight;
                     break;
                   case "HID":
                   case "LYD":
-                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
                     break;
                   case "HIE":
-                    titrateBoltzmann[titrateRes][3] += boltzmannWeight;
+                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
                     break;
                   case "GLH":
-                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
                     break;
                   case "ASH":
-                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
                     break;
                   default:
                 }
