@@ -143,7 +143,7 @@ class ReducedPartition extends AlgorithmsScript {
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
-        double[] titrateArray
+        double[][] titrateArray
         double[] titrateBoltzmann
         double totalBoltzmann = 0
         List<Residue> residueList = activeAssembly.getResidueList()
@@ -171,12 +171,12 @@ class ReducedPartition extends AlgorithmsScript {
         String listResidues = ""
         //Select residues with alpha carbons within the distance cutoff
         if (mutatingResidue != -1 && distanceCutoff != -1) {
-            listResidues = manyBodyOptions.selectDistanceResidues(residueList,mutatingResidue,onlyTitration,onlyProtons,distanceCutoff)
+            listResidues = manyBodyOptions.selectDistanceResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, distanceCutoff)
         }
 
         //Select only the titrating residues or the titrating residues and those within the distance cutoff
         if (onlyTitration || onlyProtons) {
-           listResidues = manyBodyOptions.selectDistanceResidues(residueList,mutatingResidue,onlyTitration,onlyProtons,distanceCutoff)
+            listResidues = manyBodyOptions.selectDistanceResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, distanceCutoff)
         }
 
         String filename = filenames.get(0)
@@ -282,7 +282,7 @@ class ReducedPartition extends AlgorithmsScript {
 
             //Keep track of the number of titrating residues
             if (pKa) {
-                titrateArray = new double[selectedResidues.size()]
+                titrateArray = new double[selectedResidues.size()][3]
             }
 
             //Calculate possible permutations for assembly
@@ -309,13 +309,17 @@ class ReducedPartition extends AlgorithmsScript {
             int titrateCount = 0
 
             for (Residue residue : selectedResidues) {
-                logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
-                        titrateArray[titrateCount])
+                logger.info("Residue: " + residue.getName() + residue.getResidueNumber() +"\t" +
+                        titrateArray[titrateCount][0] + "\t" +
+                        titrateArray[titrateCount][1] + "\t" +
+                        titrateArray[titrateCount][2])
                 if (printBoltzmann) {
                     logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
                             titrateBoltzmann[titrateCount])
                     logger.info("Total Boltzmann: " + totalBoltzmann)
                 }
+
+
                 titrateCount += 1
             }
         } else {
@@ -336,21 +340,21 @@ class ReducedPartition extends AlgorithmsScript {
         return potentialEnergy
     }
 
-    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff){
+    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff) {
         residueA.setRotamers(RotamerLibrary.getDefaultLibrary())
         residueB.setRotamers(RotamerLibrary.getDefaultLibrary())
         Rotamer[] rotamersA = residueA.getRotamers()
         Rotamer[] rotamersB = residueB.getRotamers()
         double[] aCoor = new double[3]
         double[] bCoor = new double[3]
-        for(Rotamer rotamerA: rotamersA){
+        for (Rotamer rotamerA : rotamersA) {
             residueA.setRotamer(rotamerA)
-            for(Rotamer rotamerB: rotamersB){
+            for (Rotamer rotamerB : rotamersB) {
                 residueB.setRotamer(rotamerB)
-                for(Atom atomA: residueA.getAtomList()){
-                    for(Atom atomB: residueB.getAtomList()){
+                for (Atom atomA : residueA.getAtomList()) {
+                    for (Atom atomB : residueB.getAtomList()) {
                         double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor))
-                        if(dist <= distanceCutoff){
+                        if (dist <= distanceCutoff) {
                             return true
                         }
                     }

@@ -268,8 +268,8 @@ public class RotamerOptimization implements Terminatable {
 
   private double totalBoltzmann = 0;
   private double refEnergy = 0;
-  private double[] fraction;
-  private double[] titrateBoltzmann;
+  private double[][] fraction;
+  private double[][] titrateBoltzmann;
   private double pH;
   private boolean onlyProtons = false;
   private boolean recomputeSelf = false;
@@ -2298,9 +2298,26 @@ public class RotamerOptimization implements Terminatable {
               int currentRotamer = currentRotamers[titrateRes];
               if (titratableResiudesList.contains(residue.getName())) {
                 switch (rotamers[currentRotamer].getName()) {
-                  case "HIS", "GLH", "ASH", "LYS" -> titrateBoltzmann[titrateRes] += boltzmannWeight;
-                  default -> {
-                  }
+                  case "HIS":
+                  case "GLU":
+                  case "LYS":
+                  case "ASP":
+                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    break;
+                  case "HID":
+                  case "LYD":
+                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    break;
+                  case "HIE":
+                    titrateBoltzmann[titrateRes][3] += boltzmannWeight;
+                    break;
+                  case "GLH":
+                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    break;
+                  case "ASH":
+                    titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    break;
+                  default:
                 }
               }
               titrateRes += 1;
@@ -2336,9 +2353,9 @@ public class RotamerOptimization implements Terminatable {
    * Get the ensemble average of protonated rotamers for all titratable sites
    * @return fraction of protonated residues
    */
-  public double[] getFraction() {return fraction;}
+  public double[][] getFraction() {return fraction;}
 
-  public double[] getTitrateBoltzmann() {return  titrateBoltzmann;}
+  public double[][] getTitrateBoltzmann() {return  titrateBoltzmann;}
 
   /**
    * Re-compute permutations with new parameters if too many permutations present
@@ -2350,13 +2367,15 @@ public class RotamerOptimization implements Terminatable {
    * @return permutation check
    * @throws Exception too many permutations to continue
    */
-  public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[] titrateArray, Algorithm algorithm) throws Exception {
+  public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[][] titrateArray, Algorithm algorithm) throws Exception {
     boolean perm = false;
-    fraction = new double[titrateArray.length];
-    titrateBoltzmann = new double[titrateArray.length];
+    fraction = new double[titrateArray.length][3];
+    titrateBoltzmann = new double[titrateArray.length][3];
     partitionFunction(residues, i, currentRotamers);
     for(int m=0; m<fraction.length; m++){
-      fraction[m] = titrateBoltzmann[m]/totalBoltzmann;
+      for(int n=0; n<3; n++){
+        fraction[m][n] = titrateBoltzmann[m][n]/totalBoltzmann;
+      }
     }
     logger.info("Total permutations evaluated: " + evaluatedPermutations);
     try{
