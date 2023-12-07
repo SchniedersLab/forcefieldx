@@ -63,6 +63,7 @@ public class Rotamer {
   public final double chi5;
   final double chi6;
   final double chi7;
+
   /**
    * An array of chi angles for this rotamer.
    */
@@ -394,4 +395,9 @@ public class Rotamer {
   public double getRotamerPhBias() {
     return titrationUtils.getRotamerPhBias(aminoAcid3);
   }
+
+  public double[] getAngles() {
+    return angles;
+  }
+
 }

@@ -2292,6 +2292,7 @@ public class RotamerOptimization implements Terminatable {
             refEnergy = totalEnergy;
           }
           double boltzmannWeight = exp((-1.0/(1.9872042599E-3 * 298.15))*(totalEnergy-refEnergy));
+          double protonPos;
           if(fraction.length > 0){
             for (Residue residue: residues) {
               Rotamer[] rotamers = residue.getRotamers();
@@ -2312,10 +2313,20 @@ public class RotamerOptimization implements Terminatable {
                     titrateBoltzmann[titrateRes][2] += boltzmannWeight;
                     break;
                   case "GLH":
-                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    protonPos = rotamers[currentRotamer].getAngles()[5];
+                    if(protonPos == 0){
+                      titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    } else {
+                      titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    }
                     break;
                   case "ASH":
-                    titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    protonPos = rotamers[currentRotamer].getAngles()[4];
+                    if(protonPos == 0){
+                      titrateBoltzmann[titrateRes][1] += boltzmannWeight;
+                    } else {
+                      titrateBoltzmann[titrateRes][2] += boltzmannWeight;
+                    }
                     break;
                   default:
                 }
