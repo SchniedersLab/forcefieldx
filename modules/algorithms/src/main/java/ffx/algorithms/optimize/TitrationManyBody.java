@@ -102,8 +102,16 @@ public class TitrationManyBody {
     protonatedAssembly.setFile(structureFile);
 
     TitrationUtils titrationUtils;
+    double dielectric = 1;
+    boolean tanh = false;
+    try{
+      dielectric = potentialEnergy.getGK().getSolutePermittivity();
+      tanh = potentialEnergy.getGK().getTanhCorrection();
+    } catch (Exception e){
+      logger.info("Working in crystal structure");
+    }
     titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(),
-            potentialEnergy.getGK().getSolutePermittivity(), potentialEnergy.getGK().getTanhCorrection());
+            dielectric, tanh);
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
