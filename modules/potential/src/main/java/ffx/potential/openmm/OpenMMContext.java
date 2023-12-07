@@ -114,11 +114,11 @@ public class OpenMMContext {
    */
   public OpenMMContext(ForceField forceField, Platform requestedPlatform, Atom[] atoms, int enforcePBC,
                        OpenMMEnergy openMMEnergy) {
-    loadPlatform(requestedPlatform);
     platform = requestedPlatform;
-    this.enforcePBC = enforcePBC;
     this.atoms = atoms;
+    this.enforcePBC = enforcePBC;
     this.openMMEnergy = openMMEnergy;
+    loadPlatform(requestedPlatform);
     openMMIntegrator = new OpenMMIntegrator(forceField, constraintTolerance);
   }
 
