@@ -103,7 +103,7 @@ public class TitrationManyBody {
 
     TitrationUtils titrationUtils;
     double dielectric = 1;
-    boolean tanh = false;
+    boolean tanh = true;
     try{
       dielectric = potentialEnergy.getGK().getSolutePermittivity();
       tanh = potentialEnergy.getGK().getTanhCorrection();
