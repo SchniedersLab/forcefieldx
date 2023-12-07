@@ -2313,7 +2313,7 @@ public class RotamerOptimization implements Terminatable {
                     titrateBoltzmann[titrateRes][2] += boltzmannWeight;
                     break;
                   case "GLH":
-                    protonPos = rotamers[currentRotamer].getAngles()[5];
+                    protonPos = rotamers[currentRotamer].getAngles()[6];
                     if(protonPos == 0){
                       titrateBoltzmann[titrateRes][1] += boltzmannWeight;
                     } else {
