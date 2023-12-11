@@ -2234,9 +2234,7 @@ public class RotamerOptimization implements Terminatable {
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
           parallelTeam.execute(energyRegion);
           String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
-          List<String> titratableResiudesList = Arrays.asList(titratableResidues);
           double selfEnergy = energyRegion.getSelf();
-          logger.info("Initial self: " + selfEnergy);
           if(recomputeSelf){
             int count = 0;
             for(Residue residue: residues){
@@ -2263,7 +2261,6 @@ public class RotamerOptimization implements Terminatable {
                           TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
                   biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
                           TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
-                  logger.info("In the LYD: " + bias7 + " " + biasCurrent);
                 }
                 case "GLU" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
@@ -2281,24 +2278,23 @@ public class RotamerOptimization implements Terminatable {
                 }
               }
               selfEnergy = selfEnergy - bias7 + biasCurrent;
-              logger.info("After bias update energy self energy: " + selfEnergy);
               count += 1;
             }
           }
-          logger.info("Update self energy: " + selfEnergy);
           double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
                   energyRegion.getTwoBody() + energyRegion.getThreeBody();
           if(evaluatedPermutations == 1){
             refEnergy = totalEnergy;
           }
           double boltzmannWeight = exp((-1.0/(1.9872042599E-3 * 298.15))*(totalEnergy-refEnergy));
-          double protonPos;
           if(fraction.length > 0){
             for (Residue residue: residues) {
               Rotamer[] rotamers = residue.getRotamers();
               int currentRotamer = currentRotamers[titrateRes];
-              if (titratableResiudesList.contains(residue.getName())) {
-                switch (rotamers[currentRotamer].getName()) {
+              int count = rotamers[currentRotamer].getWeight();
+              titrateBoltzmann[titrateRes][count] += boltzmannWeight;
+
+                /*switch (rotamers[currentRotamer].getName()) {
                   case "HIS":
                   case "GLU":
                   case "LYS":
@@ -2329,8 +2325,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                     break;
                   default:
-                }
-              }
+                }*/
               titrateRes += 1;
             }
           }
@@ -2380,11 +2375,11 @@ public class RotamerOptimization implements Terminatable {
    */
   public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[][] titrateArray, Algorithm algorithm) throws Exception {
     boolean perm = false;
-    fraction = new double[titrateArray.length][3];
-    titrateBoltzmann = new double[titrateArray.length][3];
+    fraction = new double[titrateArray.length][54];
+    titrateBoltzmann = new double[titrateArray.length][54];
     partitionFunction(residues, i, currentRotamers);
     for(int m=0; m<fraction.length; m++){
-      for(int n=0; n<3; n++){
+      for(int n=0; n<54; n++){
         fraction[m][n] = titrateBoltzmann[m][n]/totalBoltzmann;
       }
     }

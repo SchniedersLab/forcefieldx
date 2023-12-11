@@ -142,7 +142,6 @@ public class Rotamer {
   }
 
 
-
   /**
    * Constructor for Rotamer.
    *

@@ -282,7 +282,7 @@ class ReducedPartition extends AlgorithmsScript {
 
             //Keep track of the number of titrating residues
             if (pKa) {
-                titrateArray = new double[selectedResidues.size()][3]
+                titrateArray = new double[selectedResidues.size()][54]
             }
 
             //Calculate possible permutations for assembly
@@ -306,13 +306,58 @@ class ReducedPartition extends AlgorithmsScript {
 
         //Print information from the fraction protonated calculations
         if (pKa) {
+            FileWriter fileWriter = new FileWriter("populations.txt")
             int titrateCount = 0
-
             for (Residue residue : selectedResidues) {
-                logger.info("Residue: " + residue.getName() + residue.getResidueNumber() +"\t" +
-                        titrateArray[titrateCount][0] + "\t" +
-                        titrateArray[titrateCount][1] + "\t" +
-                        titrateArray[titrateCount][2])
+                double sum1 = 0
+                double sum2 = 0
+                double sum3 = 0
+                Rotamer[] rotamers = residue.getRotamers()
+                for(Rotamer rotamer: rotamers){
+                    fileWriter.write(residue.getName() + residue.getResidueNumber() +"\t" +
+                            rotamer.toString() + "\t" + titrateArray[titrateCount][rotamer.getWeight()] + "\n")
+                    switch(rotamer.getName()) {
+                        case "HIS":
+                        case "LYS":
+                        case "GLU":
+                        case "ASP":
+                            sum1 += titrateArray[titrateCount][rotamer.getWeight()]
+                            break
+                        case "HIE":
+                        case "LYD":
+                        case "GLH":
+                        case "ASH":
+                            sum2 += titrateArray[titrateCount][rotamer.getWeight()]
+                            break
+                        case "HID":
+                            sum3 += titrateArray[titrateCount][rotamer.getWeight()]
+                            break
+                        default:
+                            break
+                    }
+                }
+                switch(residue.getName()) {
+                    case "HIS":
+                        logger.info(residue.getResidueNumber() +"\tHIS" +  "\t" + sum1 + "\t" +
+                                "HIE" + "\t" + sum2 + "\t" +
+                                "HID" + "\t" + sum3)
+                        break
+                    case "LYS":
+                        logger.info(residue.getResidueNumber() +"\tLYS" +  "\t" + sum1 + "\t" +
+                                "LYD" +  "\t" + sum2)
+                        break
+                    case "ASH":
+                        logger.info(residue.getResidueNumber() +"\tASP" +  "\t" + sum1 + "\t" +
+                                "ASH" + "\t" + sum2)
+                        break
+                    case "GLH":
+                        logger.info(residue.getResidueNumber() +"\tGLU" +  "\t" + sum1 + "\t" +
+                                "GLH" + "\t" + sum2)
+                        break
+                    default:
+                        break
+                }
+
                 if (printBoltzmann) {
                     logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
                             titrateBoltzmann[titrateCount])
@@ -322,6 +367,8 @@ class ReducedPartition extends AlgorithmsScript {
 
                 titrateCount += 1
             }
+            fileWriter.close()
+            System.out.println("Successfully wrote to the populations file.")
         } else {
             //Calculate Gibbs free energy change of mutating residues
             double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]))
