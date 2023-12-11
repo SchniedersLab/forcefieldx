@@ -314,8 +314,9 @@ class ReducedPartition extends AlgorithmsScript {
                 double sum3 = 0
                 Rotamer[] rotamers = residue.getRotamers()
                 for(Rotamer rotamer: rotamers){
+                    String rotPop = String.format("%.6f",titrateArray[titrateCount][rotamer.getWeight()])
                     fileWriter.write(residue.getName() + residue.getResidueNumber() +"\t" +
-                            rotamer.toString() + "\t" + titrateArray[titrateCount][rotamer.getWeight()] + "\n")
+                            rotamer.toString() + "\t" + rotPop + "\n")
                     switch(rotamer.getName()) {
                         case "HIS":
                         case "LYS":
@@ -336,23 +337,26 @@ class ReducedPartition extends AlgorithmsScript {
                             break
                     }
                 }
+                String sumOne = String.format("%.6f",sum1)
+                String sumTwo = String.format("%.6f",sum2)
+                String sumThree = String.format("%.6f",sum3)
                 switch(residue.getName()) {
                     case "HIS":
-                        logger.info(residue.getResidueNumber() +"\tHIS" +  "\t" + sum1 + "\t" +
-                                "HIE" + "\t" + sum2 + "\t" +
-                                "HID" + "\t" + sum3)
+                        logger.info(residue.getResidueNumber() +"\tHIS" +  "\t" + sumOne + "\t" +
+                                "HIE" + "\t" + sumTwo + "\t" +
+                                "HID" + "\t" + sumThree)
                         break
                     case "LYS":
-                        logger.info(residue.getResidueNumber() +"\tLYS" +  "\t" + sum1 + "\t" +
-                                "LYD" +  "\t" + sum2)
+                        logger.info(residue.getResidueNumber() +"\tLYS" +  "\t" + sumOne + "\t" +
+                                "LYD" +  "\t" + sumTwo)
                         break
                     case "ASH":
-                        logger.info(residue.getResidueNumber() +"\tASP" +  "\t" + sum1 + "\t" +
-                                "ASH" + "\t" + sum2)
+                        logger.info(residue.getResidueNumber() +"\tASP" +  "\t" + sumOne + "\t" +
+                                "ASH" + "\t" + sumTwo)
                         break
                     case "GLH":
-                        logger.info(residue.getResidueNumber() +"\tGLU" +  "\t" + sum1 + "\t" +
-                                "GLH" + "\t" + sum2)
+                        logger.info(residue.getResidueNumber() +"\tGLU" +  "\t" + sumOne + "\t" +
+                                "GLH" + "\t" + sumTwo)
                         break
                     default:
                         break
