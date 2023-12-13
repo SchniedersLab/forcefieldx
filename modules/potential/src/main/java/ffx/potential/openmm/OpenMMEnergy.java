@@ -45,6 +45,7 @@ import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Platform;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
@@ -193,7 +194,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         // Truncate to max 100 characters.
         host = host.substring(0, Math.min(messageLen, host.length()));
         // Pad to 100 characters.
-        host = String.format("%-100s", host);
+        host = format("%-100s", host);
         char[] messageOut = host.toCharArray();
         CharacterBuf out = CharacterBuf.buffer(messageOut);
 
@@ -207,9 +208,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         try {
           world.allGather(out, in);
         } catch (IOException ex) {
-          logger.severe(
-              String.format(" Failure at the allGather step for determining rank: %s\n%s", ex,
-                  Utilities.stackTraceToString(ex)));
+          logger.severe(format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
         }
         int ownIndex = -1;
         int rank = world.rank();
@@ -226,9 +225,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
           }
         }
         if (!selfFound) {
-          logger.severe(
-              String.format(" Rank %d: Could not find any incoming host messages matching self %s!",
-                  rank, host.trim()));
+          logger.severe(format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
         } else {
           index = ownIndex % nDevs;
         }
@@ -289,8 +286,8 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param mask The State mask.
    * @return Returns the State.
    */
-  public OpenMMState createState(int mask) {
-    return new OpenMMState(openMMContext, mask, atoms, getNumberOfVariables());
+  public OpenMMState getOpenMMState(int mask) {
+    return openMMContext.getOpenMMState(mask);
   }
 
   /**
@@ -332,7 +329,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     setCoordinates(x);
 
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Energy, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy);
     double e = openMMState.potentialEnergy;
     openMMState.free();
 
@@ -382,7 +379,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     setCoordinates(x);
 
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Energy | OpenMM_State_Forces, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy | OpenMM_State_Forces);
     double e = openMMState.potentialEnergy;
     g = openMMState.getGradient(g);
     openMMState.free();
@@ -490,16 +487,27 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
   /**
    * Returns the MolecularAssembly instance.
+   *
    * @return molecularAssembly
    */
   public MolecularAssembly getMolecularAssembly() {
     return molecularAssembly;
   }
 
+  /**
+   * Set the lambdaTerm flag.
+   *
+   * @param lambdaTerm The value to set.
+   */
   public void setLambdaTerm(boolean lambdaTerm) {
     this.lambdaTerm = lambdaTerm;
   }
 
+  /**
+   * Get the lambdaTerm flag.
+   *
+   * @return lambdaTerm.
+   */
   public boolean getLambdaTerm() {
     return lambdaTerm;
   }
@@ -511,7 +519,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   @Override
   public double[] getGradient(double[] g) {
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Forces, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Forces);
     g = openMMState.getGradient(g);
     openMMState.free();
     return g;

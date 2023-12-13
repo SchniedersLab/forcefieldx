@@ -130,7 +130,7 @@ public class MinimizeOpenMM extends Minimize {
 
       // Get the minimized coordinates, forces and potential energy back from OpenMM.
       int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Forces;
-      OpenMMState openMMState = openMMEnergy.createState(mask);
+      OpenMMState openMMState = openMMContext.getOpenMMState(mask);
       energy = openMMState.potentialEnergy;
       openMMState.getPositions(x);
       openMMState.getGradient(grad);

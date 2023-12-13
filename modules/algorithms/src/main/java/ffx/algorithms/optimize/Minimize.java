@@ -49,8 +49,10 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.Platform;
 import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
+
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,33 +69,61 @@ public class Minimize implements OptimizationListener, Terminatable {
 
   private static final Logger logger = Logger.getLogger(Minimize.class.getName());
 
-  /** The MolecularAssembly being operated on. */
+  /**
+   * The MolecularAssembly being operated on.
+   */
   protected final MolecularAssembly molecularAssembly;
-  /** The potential energy to optimize. */
+  /**
+   * The potential energy to optimize.
+   */
   protected final Potential potential;
-  /** The AlgorithmListener to update the UI. */
+  /**
+   * The AlgorithmListener to update the UI.
+   */
   protected final AlgorithmListener algorithmListener;
-  /** Number of variables. */
+  /**
+   * Number of variables.
+   */
   protected final int n;
-  /** Current value of each variable. */
+  /**
+   * Current value of each variable.
+   */
   protected final double[] x;
-  /** The gradient. */
+  /**
+   * The gradient.
+   */
   protected final double[] grad;
-  /** Scaling applied to each variable. */
+  /**
+   * Scaling applied to each variable.
+   */
   protected final double[] scaling;
-  /** A flag to indicate the algorithm is done. */
+  /**
+   * A flag to indicate the algorithm is done.
+   */
   protected boolean done = false;
-  /** A flag to indicate the algorithm should be terminated. */
+  /**
+   * A flag to indicate the algorithm should be terminated.
+   */
   protected boolean terminate = false;
-  /** Minimization time in nanoseconds. */
+  /**
+   * Minimization time in nanoseconds.
+   */
   protected long time;
-  /** The final potential energy. */
+  /**
+   * The final potential energy.
+   */
   protected double energy;
-  /** The return status of the optimization. */
+  /**
+   * The return status of the optimization.
+   */
   protected int status;
-  /** The number of optimization steps taken. */
+  /**
+   * The number of optimization steps taken.
+   */
   protected int nSteps;
-  /** The final RMS gradient. */
+  /**
+   * The final RMS gradient.
+   */
   double rmsGradient;
 
   /**
@@ -109,11 +139,11 @@ public class Minimize implements OptimizationListener, Terminatable {
    * Constructor for Minimize.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param potential a {@link ffx.numerics.Potential} object.
+   * @param potential         a {@link ffx.numerics.Potential} object.
    * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
    */
   public Minimize(MolecularAssembly molecularAssembly, Potential potential,
-      AlgorithmListener algorithmListener) {
+                  AlgorithmListener algorithmListener) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.potential = potential;
@@ -145,7 +175,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   }
 
   public static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
-      Potential potentialEnergy) {
+                                                 Potential potentialEnergy) {
     CompositeConfiguration properties = molecularAssembly.getProperties();
     String minimizeEngine = properties.getString("minimize-engine", null);
     if (minimizeEngine != null) {
@@ -166,17 +196,16 @@ public class Minimize implements OptimizationListener, Terminatable {
   /**
    * dynamicsFactory.
    *
-   * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param assembly        a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param engine a {@link MDEngine} object.
+   * @param listener        a {@link ffx.algorithms.AlgorithmListener} object.
+   * @param engine          a {@link MDEngine} object.
    * @return a {@link MolecularDynamics} object.
    */
   public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
-      AlgorithmListener listener, MinimizationEngine engine) {
+                                         AlgorithmListener listener, MinimizationEngine engine) {
     return switch (engine) {
-      case OPENMM ->
-          new MinimizeOpenMM(assembly, (OpenMMEnergy) potentialEnergy, listener);
+      case OPENMM -> new MinimizeOpenMM(assembly, (OpenMMEnergy) potentialEnergy, listener);
       default -> new Minimize(assembly, potentialEnergy, listener);
     };
   }
@@ -213,7 +242,9 @@ public class Minimize implements OptimizationListener, Terminatable {
    *
    * @return The number of iterations
    */
-  public int getIterations(){return nSteps;}
+  public int getIterations() {
+    return nSteps;
+  }
 
   /**
    * minimize
@@ -237,7 +268,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   /**
    * minimize
    *
-   * @param eps The convergence criteria.
+   * @param eps           The convergence criteria.
    * @param maxIterations The maximum number of iterations.
    * @return a {@link ffx.numerics.Potential} object.
    */
@@ -248,8 +279,8 @@ public class Minimize implements OptimizationListener, Terminatable {
   /**
    * minimize
    *
-   * @param m The number of previous steps used to estimate the Hessian.
-   * @param eps The convergence criteria.
+   * @param m             The number of previous steps used to estimate the Hessian.
+   * @param eps           The convergence criteria.
    * @param maxIterations The maximum number of iterations.
    * @return a {@link ffx.numerics.Potential} object.
    */
@@ -274,8 +305,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     done = true;
 
     switch (status) {
-      case 0 ->
-          logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
+      case 0 -> logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
       case 1 -> logger.info(format("\n Optimization terminated at step %d.", nSteps));
       default -> logger.warning("\n Optimization failed.");
     }
@@ -293,8 +323,8 @@ public class Minimize implements OptimizationListener, Terminatable {
    */
   @Override
   public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
-      double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
-      double angle, LineSearch.LineSearchResult lineSearchResult) {
+                                    double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
+                                    double angle, LineSearch.LineSearchResult lineSearchResult) {
     long currentTime = System.nanoTime();
     Double seconds = (currentTime - time) * 1.0e-9;
     time = currentTime;
@@ -335,7 +365,9 @@ public class Minimize implements OptimizationListener, Terminatable {
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void terminate() {
     terminate = true;
@@ -362,25 +394,25 @@ public class Minimize implements OptimizationListener, Terminatable {
 
     // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
     // is internally stored as a bit field.
-    private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(
-        ForceFieldEnergy.Platform.class);
+    private final EnumSet<Platform> platforms = EnumSet.noneOf(
+        Platform.class);
 
     /**
      * Constructs a DynamicsEngine using the two presently known types of Platform.
      *
-     * @param ffx Add support for the FFX reference energy platform.
+     * @param ffx    Add support for the FFX reference energy platform.
      * @param openMM Add support for the OpenMM energy platforms.
      */
     MinimizationEngine(boolean ffx, boolean openMM) {
       if (ffx) {
-        platforms.add(ForceFieldEnergy.Platform.FFX);
+        platforms.add(Platform.FFX);
       }
       if (openMM) {
-        platforms.add(ForceFieldEnergy.Platform.OMM);
-        platforms.add(ForceFieldEnergy.Platform.OMM_REF);
-        platforms.add(ForceFieldEnergy.Platform.OMM_CUDA);
-        platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
-        platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+        platforms.add(Platform.OMM);
+        platforms.add(Platform.OMM_REF);
+        platforms.add(Platform.OMM_CUDA);
+        platforms.add(Platform.OMM_OPENCL);
+        platforms.add(Platform.OMM_OPTCPU);
       }
     }
 
@@ -389,7 +421,7 @@ public class Minimize implements OptimizationListener, Terminatable {
      *
      * @return An EnumSet
      */
-    public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
+    public EnumSet<Platform> getSupportedPlatforms() {
       return EnumSet.copyOf(platforms);
     }
 
@@ -399,7 +431,7 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @param platform The requested platform.
      * @return If supported
      */
-    public boolean supportsPlatform(ForceFieldEnergy.Platform platform) {
+    public boolean supportsPlatform(Platform platform) {
       return platforms.contains(platform);
     }
   }

@@ -45,7 +45,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
-import ffx.potential.ForceFieldEnergy.Platform;
+import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
@@ -528,8 +528,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     if (!scfAlgorithm.isSupported(Platform.FFX)) {
       // Can't know a-priori whether this is being constructed under an FFX or OpenMM
       // ForceFieldEnergy, so fine logging.
-      logger.fine(
-          format(
+      logger.fine(format(
               " SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!",
               scfAlgorithm));
       scfAlgorithm = SCFAlgorithm.CG;

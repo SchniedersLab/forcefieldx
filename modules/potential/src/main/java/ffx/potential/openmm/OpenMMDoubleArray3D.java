@@ -35,45 +35,58 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_create;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_set;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM DoubleArray wrapper.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMDoubleArray3D {
 
-  private final List<Platform> supportedPlatforms;
+  private final PointerByReference pointer;
 
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * Constructor.
+   *
+   * @param d1 The size of the first dimension.
+   * @param d2 The size of the second dimension.
+   * @param d3 The size of the third dimension.
+   */
+  public OpenMMDoubleArray3D(int d1, int d2, int d3) {
+    pointer = OpenMM_3D_DoubleArray_create(d1, d2, d3);
   }
 
   /**
-   * Checks if this platform is supported
+   * Set the value of the array at the given index.
    *
-   * @param platform To check
-   * @return Supported
+   * @param d1    The first dimension index.
+   * @param d2    The second dimension index.
+   * @param value The value to set.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void set(int d1, int d2, OpenMMDoubleArray value) {
+    OpenMM_3D_DoubleArray_set(pointer, d1, d2, value.getPointer());
   }
+
+  /**
+   * Destroy the array.
+   */
+  public void destroy() {
+    OpenMM_3D_DoubleArray_destroy(pointer);
+  }
+
+
+  /**
+   * Get the pointer to the array.
+   *
+   * @return The pointer.
+   */
+  public PointerByReference getPointer() {
+    return pointer;
+  }
+
 }

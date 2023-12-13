@@ -35,45 +35,54 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addParticle;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addPerParticleParameter;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_destroy;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM CustomExternalForce.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMCustomExternalForce extends OpenMMForce {
 
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * OpenMM CustomExternalForce constructor.
+   *
+   * @param energy The energy expression.
+   */
+  public OpenMMCustomExternalForce(String energy) {
+    forcePointer = OpenMM_CustomExternalForce_create(energy);
   }
 
   /**
-   * Checks if this platform is supported
+   * Add per particle parameter.
    *
-   * @param platform To check
-   * @return Supported
+   * @param parameterName The parameter name.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void addPerParticleParameter(String parameterName) {
+    OpenMM_CustomExternalForce_addPerParticleParameter(forcePointer, parameterName);
   }
+
+  /**
+   * Add a particle to the force.
+   *
+   * @param index              The particle index.
+   * @param particleParameters The particle parameters.
+   */
+  public void addParticle(int index, OpenMMDoubleArray particleParameters) {
+    OpenMM_CustomExternalForce_addParticle(forcePointer, index, particleParameters.getPointer());
+  }
+
+  /**
+   * Destroy the force.
+   */
+  public void destroy() {
+    if (forcePointer != null) {
+      OpenMM_CustomExternalForce_destroy(forcePointer);
+      forcePointer = null;
+    }
+  }
+
 }

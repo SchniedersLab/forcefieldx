@@ -35,45 +35,23 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
-
-import ffx.potential.Platform;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+package ffx.potential;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * Platform describes a set of force field implementations that include a pure Java reference
+ * implementation (FFX), and two OpenMM implementations (OMM_CUDA and OMM_REF are supported)
+ *
+ * <p>FFX: reference FFX implementation
+ *
+ * <p>OMM: Currently an alias for OMM_CUDA, may eventually become "try to find best OpenMM
+ * implementation" OMM_CUDA:
+ *
+ * <p>OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
+ *
+ * <p>OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
+ *
+ * <p>OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
-
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
-  }
-
-  /**
-   * Checks if this platform is supported
-   *
-   * @param platform To check
-   * @return Supported
-   */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
-  }
+public enum Platform {
+  FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL
 }

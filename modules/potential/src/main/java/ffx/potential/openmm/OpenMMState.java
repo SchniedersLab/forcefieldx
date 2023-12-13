@@ -1,3 +1,40 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.potential.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
@@ -72,18 +109,17 @@ public class OpenMMState {
   /**
    * Construct an OpenMM State with the requested information.
    *
-   * @param openMMContext OpenMM Context.
-   * @param mask          Mask of information to retrieve.
-   * @param atoms         Array of atoms.
+   * @param state Pointer to an OpenMM state.
+   * @param mask  Mask of information to retrieve.
+   * @param atoms Array of atoms.
+   * @param dof   Degrees of freedom.
    */
-  public OpenMMState(OpenMMContext openMMContext, int mask, Atom[] atoms, int dof) {
+  protected OpenMMState(PointerByReference state, int mask, Atom[] atoms, int dof) {
+    this.state = state;
     this.mask = mask;
     this.atoms = atoms;
     this.n = dof;
     nAtoms = atoms.length;
-
-    // Retrieve the state.
-    state = openMMContext.getState(mask);
 
     if (stateContains(OpenMM_State_Energy)) {
       potentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
@@ -104,14 +140,6 @@ public class OpenMMState {
    */
   private boolean stateContains(int flag) {
     return (mask & flag) == flag;
-  }
-
-  public void free() {
-    if (state != null) {
-      logger.fine(" Free OpenMM State.");
-      OpenMM_State_destroy(state);
-      logger.fine(" Free OpenMM State completed.");
-    }
   }
 
   /**
@@ -287,5 +315,16 @@ public class OpenMMState {
       }
     }
     return v;
+  }
+
+  /**
+   * Free the OpenMM state.
+   */
+  public void free() {
+    if (state != null) {
+      logger.fine(" Free OpenMM State.");
+      OpenMM_State_destroy(state);
+      logger.fine(" Free OpenMM State completed.");
+    }
   }
 }

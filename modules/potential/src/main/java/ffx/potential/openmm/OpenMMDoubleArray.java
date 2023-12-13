@@ -35,45 +35,74 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_append;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_set;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM DoubleArray wrapper.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMDoubleArray {
 
-  private final List<Platform> supportedPlatforms;
+  private final PointerByReference pointer;
 
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * Constructor.
+   *
+   * @param size The size of the array.
+   */
+  public OpenMMDoubleArray(int size) {
+    pointer = OpenMM_DoubleArray_create(size);
   }
 
   /**
-   * Checks if this platform is supported
+   * Append a double value to the array.
    *
-   * @param platform To check
-   * @return Supported
+   * @param value The value to append.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void append(double value) {
+    OpenMM_DoubleArray_append(pointer, value);
   }
+
+  /**
+   * Set a value in the array.
+   *
+   * @param index The index of the value.
+   * @param value The value.
+   */
+  public void set(int index, double value) {
+    OpenMM_DoubleArray_set(pointer, index, value);
+  }
+
+  /**
+   * Destroy the array.
+   */
+  public void destroy() {
+    OpenMM_DoubleArray_destroy(pointer);
+  }
+
+  /**
+   * Resize the array.
+   *
+   * @param size The new size.
+   */
+  public void resize(int size) {
+    OpenMM_DoubleArray_resize(pointer, size);
+  }
+
+  /**
+   * Get the pointer to the array.
+   *
+   * @return The pointer.
+   */
+  public PointerByReference getPointer() {
+    return pointer;
+  }
+
 }
