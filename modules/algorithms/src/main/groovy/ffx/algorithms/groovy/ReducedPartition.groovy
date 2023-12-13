@@ -8,6 +8,7 @@ import ffx.numerics.math.DoubleMath
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
@@ -20,6 +21,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+import static java.lang.String.format
 
 /**
  * The ReductionPartition script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -116,6 +118,16 @@ class ReducedPartition extends AlgorithmsScript {
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
+        }
+
+        boolean lambdaTerm = alchemicalOptions.hasSoftcore()
+        if (lambdaTerm) {
+            // Turn on softcore van der Waals
+            System.setProperty("lambdaterm", "true")
+            // Turn of alchemical electrostatics
+            System.setProperty("elec-lambdaterm", "false")
+            // Turn on intra-molecular softcore
+            System.setProperty("intramolecular-softcore", "true");
         }
         System.setProperty("ro-ensembleEnergy", ensembleEnergy)
         activeAssembly = getActiveAssembly(filenames.get(0))
@@ -254,6 +266,14 @@ class ReducedPartition extends AlgorithmsScript {
                 MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
+            }
+            
+            if (lambdaTerm) {
+                alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
+                LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
+                double lambda = alchemicalOptions.getInitialLambda()
+                logger.info(format(" Setting ManyBody softcore lambda to: %5.3f", lambda))
+                lambdaInterface.setLambda(lambda)
             }
 
             //Run rotamer optimization with specified parameter
