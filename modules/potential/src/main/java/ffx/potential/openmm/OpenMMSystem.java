@@ -422,9 +422,15 @@ public class OpenMMSystem {
     }
 
     collisionFreq = forceField.getDouble("COLLISION_FREQ", 0.1);
+  }
 
-    // Set up rigid constraints. These flags need to be set before bonds and angles are created
-    // below.
+  /**
+   * Add forces to the system.
+   */
+  public void addForces() {
+
+    // Set up rigid constraints.
+    // These flags need to be set before bonds and angles are created below.
     boolean rigidHydrogen = forceField.getBoolean("RIGID_HYDROGEN", false);
     boolean rigidBonds = forceField.getBoolean("RIGID_BONDS", false);
     boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
@@ -512,6 +518,7 @@ public class OpenMMSystem {
 
     setDefaultPeriodicBoxVectors();
 
+    VanDerWaals vdW = openMMEnergy.getVdwNode();
     if (vdW != null) {
       logger.info("\n Non-Bonded Terms\n");
       VanDerWaalsForm vdwForm = vdW.getVDWForm();

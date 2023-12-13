@@ -143,6 +143,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     openMMContext = new OpenMMContext(forceField, requestedPlatform, atoms, enforcePBC, this);
     openMMSystem = new OpenMMSystem(this);
+    openMMSystem.addForces();
 
     // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
     lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
