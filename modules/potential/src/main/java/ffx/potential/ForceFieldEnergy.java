@@ -2300,7 +2300,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (angleType.angleFunction == AngleType.AngleFunction.SEXTIC) {
       energy = format("""
               k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
-              d=%.15g*theta-theta0";
+              d=%.15g*theta-theta0;
               """,
           angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
     } else {
@@ -2400,14 +2400,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (bondType.bondFunction == BondType.BondFunction.QUARTIC) {
       energy = format("""
               k*(d^2 + %.15g*d^3 + %.15g*d^4);
-              d=r-r0";
+              d=r-r0;
               """,
           bondType.cubic / OpenMM_NmPerAngstrom,
           bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
     } else {
       energy = """
           k*(d^2);
-          d=r-r0";
+          d=r-r0;
           """;
     }
     return energy;
