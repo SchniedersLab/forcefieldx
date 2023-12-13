@@ -43,7 +43,7 @@ package ffx.utilities;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public enum KeywordGroup {
+public enum PropertyGroup {
   /**
    * Energy unit conversion factors.
    */
@@ -91,5 +91,5 @@ public enum KeywordGroup {
   /**
    * Refinement parameters.
    */
-  Refinement
+  StructuralRefinement
 }

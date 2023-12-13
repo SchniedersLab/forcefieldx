@@ -188,17 +188,17 @@
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
-        <item name="Electrostatics Functional Form" href="/keywords/ElectrostaticsFunctionalForm.html"/>
-        <item name="Energy Unit Conversion" href="/keywords/EnergyUnitConversion.html"/>
-        <item name="Implicit Solvent" href="/keywords/ImplicitSolvent.html"/>
-        <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
-        <item name="Non-Bonded Cutoff" href="/keywords/NonBondedCutoff.html"/>
-        <item name="Particle-Mesh Ewald" href="/keywords/ParticleMeshEwald.html"/>
-        <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
-        <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
-        <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>
-        <item name="Van Der Waals Functional Form" href="/keywords/VanDerWaalsFunctionalForm.html"/>
-        <item name="Structural Refinement" href="/properties-refine.html"/>
+        <item name="Electrostatics Functional Form" href="/properties/ElectrostaticsFunctionalForm.html"/>
+        <item name="Energy Unit Conversion" href="/properties/EnergyUnitConversion.html"/>
+        <item name="Implicit Solvent" href="/properties/ImplicitSolvent.html"/>
+        <item name="Local Geometry Functional Form" href="/properties/LocalGeometryFunctionalForm.html"/>
+        <item name="Non-Bonded Cutoff" href="/properties/NonBondedCutoff.html"/>
+        <item name="Particle-Mesh Ewald" href="/properties/ParticleMeshEwald.html"/>
+        <item name="Potential Function Parameter" href="/properties/PotentialFunctionParameter.html"/>
+        <item name="Potential Function Selection" href="/properties/PotentialFunctionSelection.html"/>
+        <item name="Unit Cell and Space Group" href="/properties/UnitCellAndSpaceGroup.html"/>
+        <item name="Van Der Waals Functional Form" href="/properties/VanDerWaalsFunctionalForm.html"/>
+        <item name="Structural Refinement" href="/properties/StructuralRefinement.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">
         <item name="Input Files for FFX" href="/examples-input.html"/>

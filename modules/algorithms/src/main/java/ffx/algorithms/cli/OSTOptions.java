@@ -56,7 +56,6 @@ import picocli.CommandLine.Option;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
@@ -117,7 +116,7 @@ public class OSTOptions {
 
     if (nEquil > 0) {
       logger.info("\n Beginning MC-OST equilibration.");
-      monteCarloOST.setMDMoveParameters(nEquil);
+      monteCarloOST.setTotalSteps(nEquil);
       if (mcGroup.twoStep) {
         monteCarloOST.sampleTwoStep();
       } else {
@@ -129,7 +128,7 @@ public class OSTOptions {
 
     logger.info("\n Beginning MC-OST sampling.");
     monteCarloOST.setLambdaStdDev(mcGroup.mcLambdaStdDev);
-    monteCarloOST.setMDMoveParameters(dynamicsOptions.getSteps());
+    monteCarloOST.setTotalSteps(dynamicsOptions.getSteps());
 
     if (mcGroup.twoStep) {
       monteCarloOST.sampleTwoStep();

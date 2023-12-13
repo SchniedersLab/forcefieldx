@@ -42,23 +42,58 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * The FFXKeyword Annotation can be applied multiple times to some classes.
+ * The FFXProperty Annotation should be used to document fields that are set using property files,
+ * keyword files, force field parameter files and the Java property system.
  *
  * @author Michael J. Schnieders
  */
 @Retention(RUNTIME)
 @Documented
 @Target({TYPE, FIELD})
-public @interface FFXKeywords {
+@Repeatable(value = FFXProperties.class)
+public @interface FFXProperty {
 
   /**
-   * An array of FFXKeyword annotations.
+   * The name of this FFXProperty.
    *
-   * @return the FFXKeyword annotations.
+   * @return The name of this FFXProperty.
    */
-  FFXKeyword[] value();
+  String name();
+
+  /**
+   * The Class used to represent the value of this FFXProperty.
+   * <p>
+   * The default is an instance of Double, which may be stored as a primitive double.
+   *
+   * @return The Class used to represent this FFXProperty.
+   */
+  Class<?> clazz() default Double.class;
+
+  /**
+   * The  Property Group this FFXKeyword belongs to.
+   *
+   * @return The property group for this FFXProperty.
+   */
+  PropertyGroup propertyGroup();
+
+  /**
+   * The default value for this FFXProperty. If there is no default value, then the field is an empty
+   * String.
+   *
+   * @return The default value of this Property.
+   */
+  String defaultValue() default "";
+
+  /**
+   * A description of this FFXProperty.
+   *
+   * @return The description.
+   */
+  String description();
+
 }

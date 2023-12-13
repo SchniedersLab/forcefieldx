@@ -103,6 +103,8 @@ public class DiffractionData implements DataContainer {
   private final double sigmaATol;
   private final double bSimWeight;
   private final double bNonZeroWeight;
+
+
   private final double bMass;
   private final boolean residueBFactor;
   private final int nResidueBFactor;
@@ -237,23 +239,23 @@ public class DiffractionData implements DataContainer {
     this.dataFiles = datafile;
     this.n = datafile.length;
 
-    int rflag = properties.getInt("rfreeflag", -1);
-    fsigfCutoff = properties.getDouble("fsigfcutoff", -1.0);
-    gridSearch = properties.getBoolean("gridsearch", false);
-    splineFit = properties.getBoolean("splinefit", true);
-    use_3g = properties.getBoolean("use_3g", true);
-    aRadBuff = properties.getDouble("aradbuff", 0.75);
+    int rflag = properties.getInt("rfree-flag", -1);
+    fsigfCutoff = properties.getDouble("f-sigf-cutoff", -1.0);
+    gridSearch = properties.getBoolean("solvent-grid-search", false);
+    splineFit = properties.getBoolean("spline-fit", true);
+    use_3g = properties.getBoolean("use-3g", true);
+    aRadBuff = properties.getDouble("scattering-buffer", 0.75);
     double sampling = properties.getDouble("sampling", 0.6);
-    xrayScaleTol = properties.getDouble("xrayscaletol", 1e-4);
-    sigmaATol = properties.getDouble("sigmaatol", 0.05);
-    xWeight = properties.getDouble("xweight", 1.0);
-    bSimWeight = properties.getDouble("bsimweight", 1.0);
-    bNonZeroWeight = properties.getDouble("bnonzeroweight", 1.0);
-    bMass = properties.getDouble("bmass", 5.0);
-    residueBFactor = properties.getBoolean("residuebfactor", false);
-    nResidueBFactor = properties.getInt("nresiduebfactor", 1);
-    addAnisou = properties.getBoolean("addanisou", false);
-    refineMolOcc = properties.getBoolean("refinemolocc", false);
+    xrayScaleTol = properties.getDouble("xray-scale-tol", 1e-4);
+    sigmaATol = properties.getDouble("sigmaa-tol", 0.05);
+    xWeight = properties.getDouble("data-weight", 1.0);
+    bSimWeight = properties.getDouble("b-sim-weight", 1.0);
+    bNonZeroWeight = properties.getDouble("b-nonzero-weight", 1.0);
+    bMass = properties.getDouble("bfactor-mass", 5.0);
+    residueBFactor = properties.getBoolean("residue-bfactor", false);
+    nResidueBFactor = properties.getInt("n-residue-bfactor", 1);
+    addAnisou = properties.getBoolean("add-anisou", false);
+    refineMolOcc = properties.getBoolean("refine-mol-occ", false);
     occMass = properties.getDouble("occmass", 10.0);
 
     ForceField forceField = assembly[0].getForceField();

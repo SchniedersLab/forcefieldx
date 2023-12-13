@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Level;
@@ -55,19 +56,26 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdwpr", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[2 integers and 2 reals] "
-        + "Provides the values for the vdw parameters for a single special heteroatomic pair of atoms. "
-        + "The integer modifiers give the pair of atom class numbers for which special vdw parameters are to be defined. "
-        + "The two real number modifiers give the values of the minimum energy contact distance in Angstroms and the well depth at the minimum distance in kcal/mole.")
+@FFXProperty(name = "vdwpr", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [2 integers and 2 reals]
+    Provides the values for the vdw parameters for a single special heteroatomic pair of atoms.
+    The integer modifiers give the pair of atom class numbers for which special vdw parameters are to be defined.
+    The two real number modifiers give the values of the minimum energy contact distance in Angstroms and the well depth at the minimum distance in kcal/mole.
+    """)
 public final class VDWPairType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(VDWPairType.class.getName());
-  /** The radius of the minimum well depth energy (angstroms). */
+  /**
+   * The radius of the minimum well depth energy (angstroms).
+   */
   public final double radius;
-  /** The minimum energy of the vdw function (kcal/mol). */
+  /**
+   * The minimum energy of the vdw function (kcal/mol).
+   */
   public final double wellDepth;
-  /** Atom classes that form this bond stretch. */
+  /**
+   * Atom classes that form this bond stretch.
+   */
   public final int[] atomClasses;
 
   /**
@@ -75,8 +83,8 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
    * atom type.
    *
    * @param atomClasses The atom class that uses this van der Waals Pair.
-   * @param radius The radius of the minimum well depth energy (angstroms).
-   * @param wellDepth The minimum energy of the vdw function (kcal/mol).
+   * @param radius      The radius of the minimum well depth energy (angstroms).
+   * @param wellDepth   The minimum energy of the vdw function (kcal/mol).
    */
   public VDWPairType(int[] atomClasses, double radius, double wellDepth) {
     super(ForceFieldType.VDWPR, sortKey(atomClasses));
@@ -88,8 +96,8 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
   /**
    * Average.
    *
-   * @param vdwType1 a {@link VDWPairType} object.
-   * @param vdwType2 a {@link VDWPairType} object.
+   * @param vdwType1    a {@link VDWPairType} object.
+   * @param vdwType2    a {@link VDWPairType} object.
    * @param atomClasses The atom classes that uses this van der Waals Pair.
    * @return a {@link VDWPairType} object.
    */
@@ -107,7 +115,7 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
   /**
    * Construct a VDWPairType from multiple input lines.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a VDWType instance.
    */
@@ -120,7 +128,7 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
         int atomClass2 = parseInt(tokens[2]);
         double radius = parseDouble(tokens[3]);
         double wellDepth = parseDouble(tokens[4]);
-        return new VDWPairType(new int[] {atomClass1, atomClass2}, radius, wellDepth);
+        return new VDWPairType(new int[]{atomClass1, atomClass2}, radius, wellDepth);
       } catch (NumberFormatException e) {
         String message = "Exception parsing VDWPR type:\n" + input + "\n";
         logger.log(Level.SEVERE, message, e);
@@ -129,7 +137,9 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String key1, String key2) {
     String[] keys1 = key1.split(" ");
@@ -154,7 +164,9 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -167,7 +179,9 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
     return Arrays.equals(atomClasses, vdwPairType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);

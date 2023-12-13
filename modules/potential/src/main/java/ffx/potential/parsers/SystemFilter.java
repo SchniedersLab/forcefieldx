@@ -37,19 +37,16 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static ffx.utilities.StringUtils.parseAtomRange;
-import static java.lang.String.format;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -58,10 +55,9 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.utilities.StringUtils.parseAtomRange;
+import static java.lang.String.format;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -75,43 +71,61 @@ public abstract class SystemFilter {
   private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
   private static Versioning vers = Versioning.TINKER;
   private static int absoluteCounter = 0;
-  /** Constant <code>dieOnMissingAtom=</code> */
+  /**
+   * Constant <code>dieOnMissingAtom=</code>
+   */
   protected final boolean dieOnMissingAtom;
-  /** Standardize atom names to PDB standard by default. */
+  /**
+   * Standardize atom names to PDB standard by default.
+   */
   protected final boolean standardizeAtomNames;
   /**
    * True if atoms are to be printed to their van der Waals centers instead of nuclear centers
    * (applies primarily to hydrogen).
    */
   protected final boolean vdwH;
-  /** The atomList is filled by filters that extend SystemFilter. */
+  /**
+   * The atomList is filled by filters that extend SystemFilter.
+   */
   protected List<Atom> atomList = null;
-  /** The bondList may be filled by the filters that extend SystemFilter. */
+  /**
+   * The bondList may be filled by the filters that extend SystemFilter.
+   */
   protected List<Bond> bondList = null;
   /**
    * All MolecularAssembly instances defined. More than one MolecularAssembly should be defined for
    * PDB entries with alternate locations.
    */
   protected List<MolecularAssembly> systems = new Vector<>();
-  /** Append multiple files into one MolecularAssembly. */
+  /**
+   * Append multiple files into one MolecularAssembly.
+   */
   protected List<File> files;
-  /** The file format being handled. */
+  /**
+   * The file format being handled.
+   */
   protected FileType fileType = FileType.UNK;
-  /** Properties associated with this file. */
+  /**
+   * Properties associated with this file.
+   */
   protected CompositeConfiguration properties;
-  /** The molecular mechanics force field being used. */
+  /**
+   * The molecular mechanics force field being used.
+   */
   protected ForceField forceField;
-  /** True after the file has been read successfully. */
+  /**
+   * True after the file has been read successfully.
+   */
   protected boolean fileRead = false;
   /**
    * The current MolecularAssembly being populated. Note that more than one MolecularAssembly should
    * be defined for PDB files with alternate locations.
    */
   MolecularAssembly activeMolecularAssembly;
-  /** File currently being read. */
+  /**
+   * File currently being read.
+   */
   File currentFile = null;
-  /** A set of coordinate restraints obtained from the properties. */
-  private List<CoordRestraint> coordRestraints;
 
   /**
    * Initializations common to the all the constructors.
@@ -136,14 +150,14 @@ public abstract class SystemFilter {
   /**
    * Constructor for SystemFilter.
    *
-   * @param files a {@link java.util.List} object.
+   * @param files             a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *                          object.
    */
   public SystemFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField,
-      CompositeConfiguration properties) {
+                      CompositeConfiguration properties) {
     this(forceField, properties);
     this.files = files;
     if (files != null) {
@@ -155,14 +169,14 @@ public abstract class SystemFilter {
   /**
    * Constructor for SystemFilter.
    *
-   * @param file a {@link java.io.File} object.
+   * @param file              a {@link java.io.File} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *                          object.
    */
   public SystemFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
-      CompositeConfiguration properties) {
+                      CompositeConfiguration properties) {
     this(forceField, properties);
     files = new ArrayList<>();
     if (file != null) {
@@ -175,14 +189,14 @@ public abstract class SystemFilter {
   /**
    * Constructor for SystemFilter.
    *
-   * @param file a {@link java.io.File} object.
+   * @param file                a {@link java.io.File} object.
    * @param molecularAssemblies a {@link java.util.List} object.
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   * @param forceField          a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *                            object.
    */
   public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies, ForceField forceField,
-      CompositeConfiguration properties) {
+                      CompositeConfiguration properties) {
     this(forceField, properties);
     files = new ArrayList<>();
     if (file != null) {
@@ -262,29 +276,6 @@ public abstract class SystemFilter {
         return version(file, (vers == Versioning.PREFIX));
       }
     }
-  }
-
-  private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks, int tokOffset) {
-    return parseAtomicRanges(mola, Arrays.copyOfRange(toks, tokOffset, toks.length));
-  }
-
-  private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks) {
-    Atom[] atoms = mola.getAtomArray();
-    return Arrays.stream(toks).parallel().flatMap((String tok) -> {
-      if (tok.equalsIgnoreCase("HEAVY")) {
-        return Arrays.stream(mola.getChains())
-            .flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
-      } else if (tok.matches("^[0-9]+$")) {
-        return Stream.of(atoms[Integer.parseInt(tok) - 1]);
-      } else if (tok.matches("^[0-9]+-[0-9]+")) {
-        String[] subtoks = tok.split("-");
-        int first = Integer.parseInt(subtoks[0]) - 1;
-        int last = Integer.parseInt(subtoks[1]) - 1;
-        return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
-      } else {
-        return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
-      }
-    }).collect(Collectors.toSet());
   }
 
   private static File version(File file, boolean prefix) {
@@ -393,6 +384,21 @@ public abstract class SystemFilter {
   }
 
   /**
+   * Converts a list of atom indices to an array of atoms.
+   *
+   * @param atomList List of atom indices.
+   * @param atoms    Array of atoms.
+   * @return Array of atoms.
+   */
+  public static Set<Atom> atomListToSet(List<Integer> atomList, Atom[] atoms) {
+    Set<Atom> atomSet = new HashSet<>();
+    for (int i = 0; i < atomList.size(); i++) {
+      atomSet.add(atoms[atomList.get(i)]);
+    }
+    return atomSet;
+  }
+
+  /**
    * Automatically sets atom-specific flags, particularly nouse and inactive, and apply harmonic
    * restraints. Intended to be called at the end of readFile() implementations.
    *
@@ -404,20 +410,20 @@ public abstract class SystemFilter {
       public concrete, but skeletal method, and then have readFile() call a
       protected abstract readFile method for each implementation.
     */
-    Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
-    int nmolaAtoms = molaAtoms.length;
+    Atom[] atomArray = activeMolecularAssembly.getAtomArray();
+    int nAtoms = atomArray.length;
     String[] nouseKeys = properties.getStringArray("nouse");
     for (String nouseKey : nouseKeys) {
       String[] toks = nouseKey.split("\\s+");
       for (String tok : toks) {
         try {
-          List<Integer> nouseRange = parseAtomRange("nouse", tok, nmolaAtoms);
+          List<Integer> nouseRange = parseAtomRange("nouse", tok, nAtoms);
           for (int j : nouseRange) {
-            molaAtoms[j].setUse(false);
+            atomArray[j].setUse(false);
           }
         } catch (IllegalArgumentException ex) {
           boolean atomFound = false;
-          for (Atom atom : molaAtoms) {
+          for (Atom atom : atomArray) {
             if (atom.getName().equalsIgnoreCase(tok)) {
               atomFound = true;
               atom.setUse(false);
@@ -433,177 +439,35 @@ public abstract class SystemFilter {
     }
 
     if (properties.containsKey("active")) {
-      for (Atom atom : molaAtoms) {
+      for (Atom atom : atomArray) {
         atom.setActive(false);
       }
       String[] activeKeys = properties.getStringArray("active");
       for (String inactiveKey : activeKeys) {
         try {
-          List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nmolaAtoms);
+          List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nAtoms);
           for (int i : inactiveRange) {
-            molaAtoms[i].setActive(false);
+            atomArray[i].setActive(false);
           }
         } catch (IllegalArgumentException ex) {
           logger.log(Level.INFO, ex.getLocalizedMessage());
         }
       }
     } else if (properties.containsKey("inactive")) {
-      for (Atom atom : molaAtoms) {
+      for (Atom atom : atomArray) {
         atom.setActive(true);
       }
       String[] inactiveKeys = properties.getStringArray("inactive");
       for (String inactiveKey : inactiveKeys) {
         try {
-          List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nmolaAtoms);
+          List<Integer> inactiveRange = parseAtomRange("inactive", inactiveKey, nAtoms);
           for (int i : inactiveRange) {
-            molaAtoms[i].setActive(false);
+            atomArray[i].setActive(false);
           }
         } catch (IllegalArgumentException ex) {
           logger.log(Level.INFO, ex.getLocalizedMessage());
         }
       }
-    }
-
-    coordRestraints = new ArrayList<>();
-    String[] cRestraintStrings = properties.getStringArray("restraint");
-    for (String coordRestraint : cRestraintStrings) {
-      String[] toks = coordRestraint.split("\\s+");
-      double forceconst;
-      try {
-        forceconst = Double.parseDouble(toks[0]);
-      } catch (NumberFormatException ex) {
-        logger.log(Level.INFO,
-            " First argument to coordinate restraint must be a positive force constant; discarding coordinate restraint.");
-        continue;
-      }
-      if (forceconst < 0) {
-        logger.log(Level.INFO,
-            " Force constants must be positive. Discarding coordinate restraint.");
-        continue;
-      }
-      logger.info(format(
-          " Adding lambda-disabled coordinate restraint " + "with force constant %10.4f kcal/mol/A",
-          forceconst));
-      Set<Atom> restraintAtoms = parseAtomicRanges(activeMolecularAssembly, toks, 1);
-      if (!(restraintAtoms == null || restraintAtoms.isEmpty())) {
-        Atom[] ats = restraintAtoms.toArray(new Atom[0]);
-        coordRestraints.add(new CoordRestraint(ats, forceField, false, forceconst));
-      } else {
-        logger.warning(format(" Empty or unparseable restraint argument %s", coordRestraint));
-      }
-    }
-
-    String[] lamRestraintStrings = properties.getStringArray("lamrestraint");
-    for (String coordRestraint : lamRestraintStrings) {
-      String[] toks = coordRestraint.split("\\s+");
-      double forceconst = Double.parseDouble(toks[0]);
-      logger.info(format(
-          " Adding lambda-enabled coordinate restraint " + "with force constant %10.4f kcal/mol/A",
-          forceconst));
-      Set<Atom> restraintAtoms = new HashSet<>();
-
-      for (int i = 1; i < toks.length; i++) {
-        try {
-          List<Integer> restrRange = parseAtomRange("restraint", toks[i], nmolaAtoms);
-          for (int j : restrRange) {
-            restraintAtoms.add(molaAtoms[j]);
-          }
-        } catch (IllegalArgumentException ex) {
-          boolean atomFound = false;
-          for (Atom atom : molaAtoms) {
-            if (atom.getName().equalsIgnoreCase(toks[i])) {
-              atomFound = true;
-              restraintAtoms.add(atom);
-            }
-          }
-          if (atomFound) {
-            logger.info(format(" Added atoms with name %s to restraint", toks[i]));
-          } else {
-            logger.log(Level.INFO, format(
-                " Restraint input %s " + "could not be parsed as a numerical range or "
-                    + "an atom type present in assembly", toks[i]));
-          }
-        }
-      }
-      if (!restraintAtoms.isEmpty()) {
-        Atom[] ats = restraintAtoms.toArray(new Atom[0]);
-        coordRestraints.add(new CoordRestraint(ats, forceField, true, forceconst));
-      } else {
-        logger.warning(format(" Empty or unparseable restraint argument %s", coordRestraint));
-      }
-    }
-
-    String[] xyzRestStrings = properties.getStringArray("xyzRestraint");
-
-    // Variables to let sequential and otherwise identical xyzRestraint strings to be globbed into
-    // one restraint.
-    List<Atom> restraintAts = new ArrayList<>();
-    List<double[]> coords = new ArrayList<>();
-    double lastForceConst = 0;
-    boolean lastUseLam = false;
-
-    for (String xR : xyzRestStrings) {
-      String[] toks = xR.split("\\s+");
-      int nToks = toks.length;
-      if (nToks != 6) {
-        logger.info(
-            " XYZ restraint rejected: must have force constant, lambda boolean (true/false), 3 coordinates, and an atom number");
-        logger.info(
-            " For a coordinate restraint centered on original coordinates, use restraint or lamrestraint keys.");
-        logger.info(format(" Rejected restraint string: %s", xR));
-      } else {
-        try {
-          double forceConst = Double.parseDouble(toks[0]);
-          boolean useLambda = Boolean.parseBoolean(toks[1]);
-
-          if (forceConst != lastForceConst || useLambda != lastUseLam) {
-            int nAts = restraintAts.size();
-            if (nAts != 0) {
-              double[][] restXYZ = new double[3][nAts];
-              Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
-              for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < nAts; j++) {
-                  restXYZ[i][j] = coords.get(j)[i];
-                }
-              }
-              CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam,
-                  lastForceConst);
-              thePin.setCoordinatePin(restXYZ);
-              thePin.setIgnoreHydrogen(false);
-              coordRestraints.add(thePin);
-            }
-            restraintAts = new ArrayList<>();
-            coords = new ArrayList<>();
-            lastForceConst = forceConst;
-            lastUseLam = useLambda;
-          }
-
-          double[] atXYZ = new double[3];
-          for (int i = 0; i < 3; i++) {
-            atXYZ[i] = Double.parseDouble(toks[i + 2]);
-          }
-          int atNum = Integer.parseInt(toks[5]) - 1;
-          restraintAts.add(molaAtoms[atNum]);
-          coords.add(atXYZ);
-        } catch (Exception ex) {
-          logger.info(format(" Exception parsing xyzRestraint %s: %s", xR, ex));
-        }
-      }
-    }
-
-    int nAts = restraintAts.size();
-    if (nAts != 0) {
-      double[][] restXYZ = new double[3][nAts];
-      Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
-      for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < nAts; j++) {
-          restXYZ[i][j] = coords.get(j)[i];
-        }
-      }
-      CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
-      thePin.setCoordinatePin(restXYZ);
-      thePin.setIgnoreHydrogen(false);
-      coordRestraints.add(thePin);
     }
 
     String[] noElStrings = properties.getStringArray("noElectro");
@@ -611,13 +475,13 @@ public abstract class SystemFilter {
       String[] toks = noE.split("\\s+");
       for (String tok : toks) {
         try {
-          List<Integer> noERange = parseAtomRange("noElectro", tok, nmolaAtoms);
+          List<Integer> noERange = parseAtomRange("noElectro", tok, nAtoms);
           for (int i : noERange) {
-            molaAtoms[i].setElectrostatics(false);
+            atomArray[i].setElectrostatics(false);
           }
         } catch (IllegalArgumentException ex) {
           boolean atomFound = false;
-          for (Atom atom : molaAtoms) {
+          for (Atom atom : atomArray) {
             if (atom.getName().equalsIgnoreCase(tok)) {
               atomFound = true;
               atom.setElectrostatics(false);
@@ -626,9 +490,8 @@ public abstract class SystemFilter {
           if (atomFound) {
             logger.info(format(" Disabled electrostatics for atoms with name %s", tok));
           } else {
-            logger.log(Level.INFO, format(
-                " No electrostatics input %s could not be parsed as a numerical "
-                    + "range or atom type present in assembly", tok));
+            logger.log(Level.INFO, format(" No electrostatics input %s could not be parsed as a numerical "
+                + "range or atom type present in assembly", tok));
           }
         }
       }
@@ -670,19 +533,6 @@ public abstract class SystemFilter {
    */
   public List<Atom> getAtomList() {
     return atomList;
-  }
-
-  /**
-   * Gets the coordinate restraints parsed by this Filter.
-   *
-   * @return Coordinate restraints.
-   */
-  public List<CoordRestraint> getCoordRestraints() {
-    if (!coordRestraints.isEmpty()) {
-      return new ArrayList<>(coordRestraints);
-    } else {
-      return null;
-    }
   }
 
   /**
@@ -748,7 +598,7 @@ public abstract class SystemFilter {
     if (!systems.isEmpty()) {
       return systems.toArray(new MolecularAssembly[0]);
     } else {
-      return new MolecularAssembly[] {activeMolecularAssembly};
+      return new MolecularAssembly[]{activeMolecularAssembly};
     }
   }
 
@@ -814,7 +664,7 @@ public abstract class SystemFilter {
    * Reads the next model if applicable (currently, ARC files only).
    *
    * @param resetPosition Resets to first frame.
-   * @param print Flag to print.
+   * @param print         Flag to print.
    * @return If next model read.
    */
   public abstract boolean readNext(boolean resetPosition, boolean print);
@@ -823,8 +673,8 @@ public abstract class SystemFilter {
    * Reads the next model if applicable (currently, ARC files only).
    *
    * @param resetPosition Resets to first frame.
-   * @param print Flag to print.
-   * @param parse Parse data in file. May want to skip structures for parallel jobs.
+   * @param print         Flag to print.
+   * @param parse         Parse data in file. May want to skip structures for parallel jobs.
    * @return If next model read.
    */
   public abstract boolean readNext(boolean resetPosition, boolean print, boolean parse);
@@ -842,7 +692,7 @@ public abstract class SystemFilter {
    * Setter for the field <code>properties</code>.
    *
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   *                   object.
    */
   public void setProperties(CompositeConfiguration properties) {
     this.properties = properties;
@@ -856,7 +706,7 @@ public abstract class SystemFilter {
    * scheme will be applied.
    *
    * @param saveFile a {@link java.io.File} object.
-   * @param append a boolean.
+   * @param append   a boolean.
    * @return a boolean.
    */
   public boolean writeFile(File saveFile, boolean append) {
@@ -870,8 +720,8 @@ public abstract class SystemFilter {
    * versioning
    * scheme will be applied.
    *
-   * @param saveFile a {@link java.io.File} object.
-   * @param append a boolean.
+   * @param saveFile   a {@link java.io.File} object.
+   * @param append     a boolean.
    * @param extraLines Additional lines to append to a comments section, or null.
    * @return a boolean.
    */

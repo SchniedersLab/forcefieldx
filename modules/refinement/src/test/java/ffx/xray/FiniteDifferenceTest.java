@@ -127,7 +127,7 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
 
     List<Atom> atomList = molecularAssembly.getAtomList();
     atomArray = atomList.toArray(new Atom[0]);
-    boolean use_3g = properties.getBoolean("use_3g", true);
+    boolean use_3g = properties.getBoolean("use-3g", true);
 
     // initialize atomic form factors
     for (Atom atom : atomArray) {

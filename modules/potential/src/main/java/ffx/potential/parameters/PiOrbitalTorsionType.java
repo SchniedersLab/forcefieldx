@@ -38,13 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -57,35 +58,45 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "pitors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[2 integers and 1 real] "
-        + "Provides the values for a single pi-orbital torsional angle potential parameter. "
-        + "The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angle to be parameterized. "
-        + "The real modifier gives the value of the 2-fold Fourier amplitude for the torsional angle between p-orbitals centered on the defined bond atom classes. "
-        + "The default units for the stretch-torsion force constant can be controlled via the pitorsunit keyword.")
+@FFXProperty(name = "pitors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [2 integers and 1 real]
+    Provides the values for a single pi-orbital torsional angle potential parameter.
+    The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angle to be parameterized.
+    The real modifier gives the value of the 2-fold Fourier amplitude for the torsional angle between p-orbitals centered on the defined bond atom classes.
+    The default units for the stretch-torsion force constant can be controlled via the pitorsunit keyword.
+    """)
 public final class PiOrbitalTorsionType extends BaseType implements Comparator<String> {
 
-  /** A Logger for the PiTorsionType class. */
+  /**
+   * A Logger for the PiTorsionType class.
+   */
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsionType.class.getName());
 
   public static final double DEFAULT_PITORS_UNIT = 1.0;
 
-  /** Convert Pi-Torsion energy to kcal/mole. */
-  @FFXKeyword(name = "pitorsunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
-      "Sets the scale factor needed to convert the energy value computed by the pi-orbital torsional angle potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  /**
+   * Convert Pi-Torsion energy to kcal/mole.
+   */
+  @FFXProperty(name = "pitorsunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+      Sets the scale factor needed to convert the energy value computed by the pi-orbital torsional angle potential into units of kcal/mole.
+      The correct value is force field dependent and typically provided in the header of the master force field parameter file.
+      """)
   public double piTorsUnit = DEFAULT_PITORS_UNIT;
 
-  /** Atom classes that form this Pi-Torsion. */
+  /**
+   * Atom classes that form this Pi-Torsion.
+   */
   public final int[] atomClasses;
 
-  /** Force constant. */
+  /**
+   * Force constant.
+   */
   public double forceConstant;
 
   /**
    * PiTorsionType Constructor.
    *
-   * @param atomClasses int[]
+   * @param atomClasses   int[]
    * @param forceConstant double
    */
   public PiOrbitalTorsionType(int[] atomClasses, double forceConstant) {
@@ -100,11 +111,11 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
    *
    * @param piOrbitalTorsionType1 a {@link PiOrbitalTorsionType} object.
    * @param piOrbitalTorsionType2 a {@link PiOrbitalTorsionType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses           an array of {@link int} objects.
    * @return a {@link PiOrbitalTorsionType} object.
    */
   public static PiOrbitalTorsionType average(PiOrbitalTorsionType piOrbitalTorsionType1,
-      PiOrbitalTorsionType piOrbitalTorsionType2, int[] atomClasses) {
+                                             PiOrbitalTorsionType piOrbitalTorsionType2, int[] atomClasses) {
     if (piOrbitalTorsionType1 == null || piOrbitalTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -118,7 +129,7 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
   /**
    * Construct a PiTorsionType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a PiTorsionType instance.
    */
@@ -160,7 +171,9 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     return c[0] + " " + c[1];
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     String[] keys1 = s1.split(" ");
@@ -178,7 +191,9 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -191,7 +206,9 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     return Arrays.equals(atomClasses, piOrbitalTorsionType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);

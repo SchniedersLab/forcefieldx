@@ -43,7 +43,7 @@ import static java.lang.String.format;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
@@ -165,7 +165,7 @@ public class EnergyExpansion {
     }
     singularityThreshold = properties.getDouble("ro-singularityThreshold",
         DEFAULT_SINGULARITY_THRESHOLD);
-    potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
+    potentialIsOpenMM = potential instanceof OpenMMEnergy;
     if (potentialIsOpenMM) {
       ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold",
           DEFAULT_OMM_RECALCULATE_THRESHOLD);
