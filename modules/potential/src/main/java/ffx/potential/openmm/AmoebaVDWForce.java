@@ -117,7 +117,7 @@ public class AmoebaVDWForce extends OpenMMForce {
       radScale = 0.5;
     }
 
-    ForceField forceField = openMMEnergy.getSystem().getForceField();
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
 
     Map<String, VDWType> vdwTypes = forceField.getVDWTypes();
 

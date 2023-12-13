@@ -79,7 +79,7 @@ public class ImproperTorsionForce extends OpenMMPeriodicTorsionForce {
       addTorsion(a1, a2, a3, a4, type.periodicity, type.phase * OpenMM_RadiansPerDegree, forceConstant);
     }
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Improper Torsions \t%6d\t\t%1d", improperTorsions.length, forceGroup));
   }

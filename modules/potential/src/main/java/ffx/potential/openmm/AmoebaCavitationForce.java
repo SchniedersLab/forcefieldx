@@ -104,7 +104,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
 
     setNonbondedMethod(OpenMM_AmoebaGKCavitationForce_NoCutoff);
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("GK_FORCE_GROUP", 2);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("GK_FORCE_GROUP", 2);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  GaussVol cavitation force \t\t%d", forceGroup));
   }

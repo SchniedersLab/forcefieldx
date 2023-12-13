@@ -104,7 +104,7 @@ public class StretchTorsionForce extends OpenMMCustomCompoundBondForce {
       particles.destroy();
     }
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Stretch-Torsions  \t%6d\t\t%1d", stretchTorsions.length, forceGroup));
   }

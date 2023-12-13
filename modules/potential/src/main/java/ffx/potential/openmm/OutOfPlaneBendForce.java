@@ -89,7 +89,7 @@ public class OutOfPlaneBendForce extends OpenMMCustomCompoundBondForce {
     }
     particles.destroy();
     parameters.destroy();
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Out-of-Plane Bends \t%6d\t\t%1d", outOfPlaneBends.length, forceGroup));
   }

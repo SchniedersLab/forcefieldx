@@ -105,7 +105,7 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
     }
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Restraint bonds force \t%6d\t%d", restraintBonds.size(), forceGroup));
   }

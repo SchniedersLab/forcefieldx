@@ -98,7 +98,7 @@ public class StretchBendForce extends OpenMMCustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Stretch-Bends \t%6d\t\t%1d", stretchBends.length, forceGroup));
   }

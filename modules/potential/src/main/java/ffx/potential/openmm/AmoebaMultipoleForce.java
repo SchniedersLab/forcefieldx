@@ -104,7 +104,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
     double polarScale = 1.0;
     SCFAlgorithm scfAlgorithm = null;
 
-    ForceField forceField = openMMEnergy.getSystem().getForceField();
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
 
     if (pme.getPolarizationType() != Polarization.MUTUAL) {
       setPolarizationType(OpenMM_AmoebaMultipoleForce_Direct);

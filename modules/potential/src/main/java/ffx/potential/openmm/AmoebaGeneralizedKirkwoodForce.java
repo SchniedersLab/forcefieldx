@@ -136,8 +136,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
       default -> setIncludeCavityTerm(OpenMM_False);
     }
 
-    ForceField forceField = openMMEnergy.getSystem().getForceField();
-    ;
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Generalized Kirkwood force \t\t%d", forceGroup));

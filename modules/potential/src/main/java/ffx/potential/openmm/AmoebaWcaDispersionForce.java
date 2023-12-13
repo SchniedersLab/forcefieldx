@@ -117,7 +117,7 @@ public class AmoebaWcaDispersionForce extends OpenMMForce {
     setSlevy(slevy);
     setShctd(shctd);
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("GK_FORCE_GROUP", 1);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("GK_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  WCA dispersion force \t\t\t%d", forceGroup));
   }

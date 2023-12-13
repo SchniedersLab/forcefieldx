@@ -78,7 +78,7 @@ public class UreyBradleyForce extends OpenMMHarmonicBondForce {
       addBond(i1, i2, length, k);
     }
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
   }

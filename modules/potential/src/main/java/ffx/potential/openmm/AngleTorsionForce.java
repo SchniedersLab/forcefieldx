@@ -101,7 +101,7 @@ public class AngleTorsionForce extends OpenMMCustomCompoundBondForce {
       particles.destroy();
     }
 
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
 
     setForceGroup(forceGroup);
 

@@ -222,7 +222,7 @@ public class FixedChargeNonbondedForce extends OpenMMNonbondedForce {
 
     setUseDispersionCorrection(OpenMM_False);
 
-    ForceField forceField = openMMEnergy.getSystem().getForceField();
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
     int pmeGroup = forceField.getInteger("PME_FORCE_GROUP", 1);
     if (forceGroup != pmeGroup) {

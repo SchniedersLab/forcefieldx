@@ -118,7 +118,7 @@ public class RestrainGroupsForce extends OpenMMCustomCentroidBondForce {
     parameters.destroy();
 
     // Add the constraint force.
-    int forceGroup = openMMEnergy.getSystem().getForceField().getInteger("RESTRAIN_GROUPS_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAIN_GROUPS_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
 
     if (openMMEnergy.getCrystal().aperiodic()) {
