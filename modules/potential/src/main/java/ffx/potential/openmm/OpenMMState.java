@@ -173,7 +173,7 @@ public class OpenMMState {
         atom.setAcceleration(xx, yy, zz);
       }
     }
-    forces.destroy();
+    // forces.destroy();
     return a;
   }
 
@@ -221,7 +221,7 @@ public class OpenMMState {
         atom.setXYZGradient(xx, yy, zz);
       }
     }
-    forces.destroy();
+    // forces.destroy();
     return g;
   }
 
@@ -284,7 +284,7 @@ public class OpenMMState {
         atom.moveTo(xx, yy, zz);
       }
     }
-    positions.destroy();
+    // positions.destroy();
     return x;
   }
 
@@ -318,7 +318,7 @@ public class OpenMMState {
         atom.setVelocity(xx, yy, zz);
       }
     }
-    velocities.destroy();
+    // velocities.destroy();
     return v;
   }
 
