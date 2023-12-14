@@ -103,7 +103,7 @@ public class RestrainPositionsForce extends OpenMMCustomExternalForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAIN_POSITION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Restrain Positions\t%6d\t%d", nRestraints, forceGroup));
+    logger.log(Level.INFO, format("  Restrain Positions\t%6d\t\t%d", nRestraints, forceGroup));
   }
 
   /**

@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import edu.rit.pj.Comm;
 import edu.uiowa.jopenmm.OpenMMLibrary;
@@ -45,8 +44,8 @@ import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.Platform;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 
@@ -64,20 +63,14 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPeriodicBoxVectors;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPositions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LocalEnergyMinimizer_minimize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_getSize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_append;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
+import static ffx.potential.openmm.OpenMMEnergy.getDefaultDevice;
+import static ffx.potential.openmm.OpenMMPlatform.getNumPlatforms;
+import static ffx.potential.openmm.OpenMMPlatform.getOpenMMVersion;
+import static ffx.potential.openmm.OpenMMPlatform.getPluginLoadFailures;
+import static ffx.potential.openmm.OpenMMPlatform.loadPluginsFromDirectory;
 import static java.lang.String.format;
 
 /**
@@ -107,7 +100,7 @@ public class OpenMMContext {
   /**
    * OpenMM Platform pointer.
    */
-  private PointerByReference platformPointer = null;
+  private OpenMMPlatform openMMPlatform = null;
   /**
    * ForceFieldEnergyOpenMM instance.
    */
@@ -204,7 +197,7 @@ public class OpenMMContext {
     }
 
     // Create a context.
-    contextPointer = OpenMM_Context_create_2(openMMSystem.getSystem(), integratorPointer, platformPointer);
+    contextPointer = OpenMM_Context_create_2(openMMSystem.getSystemPointer(), integratorPointer, openMMPlatform.getPlatformPointer());
 
     // Revert to the current lambda value.
     if (openMMEnergy.getLambdaTerm()) {
@@ -237,10 +230,10 @@ public class OpenMMContext {
     setPeriodicBoxVectors(crystal);
 
     // Load current atomic positions.
-    setOpenMMPositions(x);
+    setPositions(x);
 
     // Load current velocities.
-    setOpenMMVelocities(v);
+    setVelocities(v);
 
     // Apply constraints starting from current atomic positions.
     OpenMM_Context_applyConstraints(contextPointer, constraintTolerance);
@@ -294,8 +287,8 @@ public class OpenMMContext {
    * @return State pointer.
    */
   public OpenMMState getOpenMMState(int mask) {
-    PointerByReference state = OpenMM_Context_getState(contextPointer, mask, enforcePBC);
-    return new OpenMMState(state, mask, atoms, openMMEnergy.getNumberOfVariables());
+    PointerByReference statePointer = OpenMM_Context_getState(contextPointer, mask, enforcePBC);
+    return new OpenMMState(statePointer, mask, atoms, openMMEnergy.getNumberOfVariables());
   }
 
   public Platform getPlatform() {
@@ -308,7 +301,7 @@ public class OpenMMContext {
    * @param numSteps Number of steps to take.
    */
   public void integrate(int numSteps) {
-    OpenMM_Integrator_step(openMMIntegrator.getIntegratorPointer(), numSteps);
+    openMMIntegrator.step(numSteps);
   }
 
   /**
@@ -327,8 +320,8 @@ public class OpenMMContext {
    *
    * @param x Atomic coordinate array for only active atoms.
    */
-  public void setOpenMMPositions(double[] x) {
-    PointerByReference positions = OpenMM_Vec3Array_create(0);
+  public void setPositions(double[] x) {
+    OpenMMVec3Array positions = new OpenMMVec3Array(0);
     OpenMM_Vec3.ByValue coords = new OpenMM_Vec3.ByValue();
     double[] d = new double[3];
     int index = 0;
@@ -339,18 +332,18 @@ public class OpenMMContext {
         coords.x = d[0] * OpenMM_NmPerAngstrom;
         coords.y = d[1] * OpenMM_NmPerAngstrom;
         coords.z = d[2] * OpenMM_NmPerAngstrom;
-        OpenMM_Vec3Array_append(positions, coords);
+        positions.append(coords);
       } else {
         // OpenMM requires coordinates for even "inactive" atoms with mass of zero.
         coords.x = a.getX() * OpenMM_NmPerAngstrom;
         coords.y = a.getY() * OpenMM_NmPerAngstrom;
         coords.z = a.getZ() * OpenMM_NmPerAngstrom;
-        OpenMM_Vec3Array_append(positions, coords);
+        positions.append(coords);
       }
     }
-    OpenMM_Context_setPositions(contextPointer, positions);
+    OpenMM_Context_setPositions(contextPointer, positions.getPointer());
     logger.finer(" Free OpenMM positions.");
-    OpenMM_Vec3Array_destroy(positions);
+    positions.destroy();
     logger.finer(" Free OpenMM positions completed.");
   }
 
@@ -359,8 +352,8 @@ public class OpenMMContext {
    *
    * @param v Velocity array for active atoms.
    */
-  public void setOpenMMVelocities(double[] v) {
-    PointerByReference velocities = OpenMM_Vec3Array_create(0);
+  public void setVelocities(double[] v) {
+    OpenMMVec3Array velocities = new OpenMMVec3Array(0);
     OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
     int index = 0;
     double[] velocity = new double[3];
@@ -371,19 +364,19 @@ public class OpenMMContext {
         vel.x = velocity[0] * OpenMM_NmPerAngstrom;
         vel.y = velocity[1] * OpenMM_NmPerAngstrom;
         vel.z = velocity[2] * OpenMM_NmPerAngstrom;
-        OpenMM_Vec3Array_append(velocities, vel);
+        velocities.append(vel);
       } else {
         // OpenMM requires velocities for even "inactive" atoms with mass of zero.
         a.setVelocity(0.0, 0.0, 0.0);
         vel.x = 0.0;
         vel.y = 0.0;
         vel.z = 0.0;
-        OpenMM_Vec3Array_append(velocities, vel);
+        velocities.append(vel);
       }
     }
-    OpenMM_Context_setVelocities(contextPointer, velocities);
+    OpenMM_Context_setVelocities(contextPointer, velocities.getPointer());
     logger.finer(" Free OpenMM velocities.");
-    OpenMM_Vec3Array_destroy(velocities);
+    velocities.destroy();
     logger.finer(" Free OpenMM velocities completed.");
   }
 
@@ -460,32 +453,30 @@ public class OpenMMContext {
     logger.log(Level.INFO, " Loaded from:\n {0}", OpenMMLibrary.JNA_NATIVE_LIB.toString());
 
     // Print out the OpenMM Version.
-    Pointer version = OpenMM_Platform_getOpenMMVersion();
-    logger.log(Level.INFO, " Version: {0}", version.getString(0));
+    logger.log(Level.INFO, " Version: {0}", getOpenMMVersion());
 
     // Print out the OpenMM lib directory.
-    logger.log(Level.FINE, " Lib Directory:       {0}", OpenMMUtils.getLibDirectory());
+    String libDirectory = OpenMMUtils.getLibDirectory();
+    logger.log(Level.FINE, " Lib Directory:       {0}", libDirectory);
     // Load platforms and print out their names.
-    PointerByReference libs = OpenMM_Platform_loadPluginsFromDirectory(
-        OpenMMUtils.getLibDirectory());
-    int numLibs = OpenMM_StringArray_getSize(libs);
+    OpenMMStringArray libs = loadPluginsFromDirectory(libDirectory);
+    int numLibs = libs.getSize();
     logger.log(Level.FINE, " Number of libraries: {0}", numLibs);
     for (int i = 0; i < numLibs; i++) {
-      String libString = OpenMMEnergy.stringFromArray(libs, i);
-      logger.log(Level.FINE, "  Library: {0}", libString);
+      logger.log(Level.FINE, "  Library: {0}", libs.get(i));
     }
-    OpenMM_StringArray_destroy(libs);
+    libs.destroy();
 
     // Print out the OpenMM plugin directory.
-    logger.log(Level.INFO, "\n Plugin Directory:  {0}", OpenMMUtils.getPluginDirectory());
+    String pluginDirectory = OpenMMUtils.getPluginDirectory();
+    logger.log(Level.INFO, "\n Plugin Directory:  {0}", pluginDirectory);
     // Load plugins and print out their names.
-    PointerByReference plugins = OpenMM_Platform_loadPluginsFromDirectory(
-        OpenMMUtils.getPluginDirectory());
-    int numPlugins = OpenMM_StringArray_getSize(plugins);
+    OpenMMStringArray plugins = loadPluginsFromDirectory(pluginDirectory);
+    int numPlugins = plugins.getSize();
     logger.log(Level.INFO, " Number of Plugins: {0}", numPlugins);
     boolean cuda = false;
     for (int i = 0; i < numPlugins; i++) {
-      String pluginString = OpenMMEnergy.stringFromArray(plugins, i);
+      String pluginString = plugins.get(i);
       logger.log(Level.INFO, "  Plugin: {0}", pluginString);
       if (pluginString != null) {
         pluginString = pluginString.toUpperCase();
@@ -495,9 +486,9 @@ public class OpenMMContext {
         }
       }
     }
-    OpenMM_StringArray_destroy(plugins);
+    plugins.destroy();
 
-    int numPlatforms = OpenMM_Platform_getNumPlatforms();
+    int numPlatforms = getNumPlatforms();
     logger.log(Level.INFO, " Number of Platforms: {0}", numPlatforms);
 
     if (requestedPlatform == Platform.OMM_CUDA && !cuda) {
@@ -506,19 +497,17 @@ public class OpenMMContext {
 
     // Extra logging to print out plugins that failed to load.
     if (logger.isLoggable(Level.FINE)) {
-      PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
-      int numFailures = OpenMM_StringArray_getSize(pluginFailers);
+      OpenMMStringArray pluginFailures = getPluginLoadFailures();
+      int numFailures = pluginFailures.getSize();
       for (int i = 0; i < numFailures; i++) {
-        String pluginString = OpenMMEnergy.stringFromArray(pluginFailers, i);
-        logger.log(Level.FINE, " Plugin load failure: {0}", pluginString);
+        logger.log(Level.FINE, " Plugin load failure: {0}", pluginFailures.get(i));
       }
-      OpenMM_StringArray_destroy(pluginFailers);
+      pluginFailures.destroy();
     }
 
     String defaultPrecision = "mixed";
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
-    String precision = molecularAssembly.getForceField().getString("PRECISION", defaultPrecision)
-        .toLowerCase();
+    String precision = molecularAssembly.getForceField().getString("PRECISION", defaultPrecision).toLowerCase();
     precision = precision.replace("-precision", "");
     switch (precision) {
       case "double", "mixed", "single" -> logger.info(format(" Precision level: %s", precision));
@@ -529,26 +518,24 @@ public class OpenMMContext {
     }
 
     if (cuda && requestedPlatform != Platform.OMM_REF) {
-      int defaultDevice = OpenMMEnergy.getDefaultDevice(molecularAssembly.getProperties());
-      platformPointer = OpenMM_Platform_getPlatformByName("CUDA");
+      int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
+      openMMPlatform = new OpenMMPlatform("CUDA");
       int deviceID = molecularAssembly.getForceField().getInteger("CUDA_DEVICE", defaultDevice);
       String deviceIDString = Integer.toString(deviceID);
 
-      OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue(platformPointer, OpenMMEnergy.pointerForString("CudaDeviceIndex"),
-          OpenMMEnergy.pointerForString(deviceIDString));
-      OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue(platformPointer, OpenMMEnergy.pointerForString("Precision"),
-          OpenMMEnergy.pointerForString(precision));
+      openMMPlatform.setPropertyDefaultValue("CudaDeviceIndex", deviceIDString);
+      openMMPlatform.setPropertyDefaultValue("Precision", precision);
       logger.info(format(" Platform: AMOEBA CUDA (Device ID %d)", deviceID));
       try {
         Comm world = Comm.world();
         if (world != null) {
           logger.info(format(" Running on host %s, rank %d", world.host(), world.rank()));
         }
-      } catch (IllegalStateException ise) {
+      } catch (IllegalStateException illegalStateException) {
         logger.fine(" Could not find the world communicator!");
       }
     } else {
-      platformPointer = OpenMM_Platform_getPlatformByName("Reference");
+      openMMPlatform = new OpenMMPlatform("Reference");
       logger.info(" Platform: AMOEBA CPU Reference");
     }
   }

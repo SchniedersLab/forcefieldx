@@ -58,6 +58,11 @@ public abstract class OpenMMForce {
   protected PointerByReference forcePointer = null;
 
   /**
+   * The forceIndex is returned by OpenMMSystem.addForce and is used to remove the force.
+   */
+  private int forceIndex = -1;
+
+  /**
    * Get the pointer to the OpenMM Force.
    *
    * @return The pointer to the OpenMM Force.
@@ -117,7 +122,26 @@ public abstract class OpenMMForce {
   }
 
   /**
-   * Check if the force use periodic boundary conditions.
+   * Set the force index.
+   *
+   * @param forceIndex The force index.
+   */
+  public void setForceIndex(int forceIndex) {
+    this.forceIndex = forceIndex;
+  }
+
+  /**
+   * Get the force index.
+   *
+   * @return The force index.
+   */
+  public int getForceIndex() {
+    return forceIndex;
+  }
+
+  /**
+   * Check if the force use periodic boundary conditions. This is a virtual method
+   * that must be implemented by classes that extend OpenMMForce.
    *
    * @return True if the force uses periodic boundary conditions.
    */

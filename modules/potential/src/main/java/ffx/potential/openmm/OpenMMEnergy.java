@@ -37,9 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
@@ -72,7 +69,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_get;
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;
 
@@ -235,33 +231,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       // Behavior is just to keep index = 0.
     }
     return devs[index];
-  }
-
-  /**
-   * Create a JNA Pointer to a String.
-   *
-   * @param string WARNING: assumes ascii-only string
-   * @return pointer.
-   */
-  public static Pointer pointerForString(String string) {
-    Pointer pointer = new Memory(string.length() + 1);
-    pointer.setString(0, string);
-    return pointer;
-  }
-
-  /**
-   * Returns the platform array as a String
-   *
-   * @param stringArray The OpenMM String array.
-   * @param i           The index of the String to return.
-   * @return String The requested String.
-   */
-  public static String stringFromArray(PointerByReference stringArray, int i) {
-    Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
-    if (platformPtr == null) {
-      return null;
-    }
-    return platformPtr.getString(0);
   }
 
   /**
@@ -638,7 +607,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   @Override
   public void setCoordinates(double[] x) {
     // Set both OpenMM and FFX coordinates to x.
-    openMMContext.setOpenMMPositions(x);
+    openMMContext.setPositions(x);
   }
 
   /**

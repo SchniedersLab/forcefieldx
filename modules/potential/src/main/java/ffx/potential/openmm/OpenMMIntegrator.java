@@ -52,6 +52,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addUpdateC
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setConstraintTolerance;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_setRandomNumberSeed;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
@@ -97,6 +98,15 @@ class OpenMMIntegrator {
   public OpenMMIntegrator(ForceField forceField, double constraintTolerance) {
     this.constraintTolerance = constraintTolerance;
     frictionCoefficient = forceField.getDouble("FRICTION_COEFF", 91.0);
+  }
+
+  /**
+   * Use the integrator to step forward.
+   *
+   * @param steps The number of steps to take.
+   */
+  public void step(int steps) {
+    OpenMM_Integrator_step(integratorPointer, steps);
   }
 
   /**

@@ -336,9 +336,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void setOpenMMState() {
     OpenMMContext openMMContext = openMMEnergy.getContext();
-    openMMContext.setOpenMMPositions(state.x());
+    openMMContext.setPositions(state.x());
     openMMContext.setPeriodicBoxVectors(openMMEnergy.getCrystal());
-    openMMContext.setOpenMMVelocities(state.v());
+    openMMContext.setVelocities(state.v());
   }
 
   /**
