@@ -18,7 +18,7 @@ public class OpenMMAndersenThermostat extends OpenMMForce {
    * @param frequency   The collision frequency.
    */
   public OpenMMAndersenThermostat(double temperature, double frequency) {
-    forcePointer = OpenMM_AndersenThermostat_create(temperature, frequency);
+    pointer = OpenMM_AndersenThermostat_create(temperature, frequency);
   }
 
   /**
@@ -27,7 +27,7 @@ public class OpenMMAndersenThermostat extends OpenMMForce {
    * @param temperature The temperature.
    */
   public void setDefaultTemperature(double temperature) {
-    OpenMM_AndersenThermostat_setDefaultTemperature(forcePointer, temperature);
+    OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
   }
 
   /**
@@ -36,16 +36,16 @@ public class OpenMMAndersenThermostat extends OpenMMForce {
    * @param frequency The collision frequency.
    */
   public void setDefaultCollisionFrequency(double frequency) {
-    OpenMM_AndersenThermostat_setDefaultCollisionFrequency(forcePointer, frequency);
+    OpenMM_AndersenThermostat_setDefaultCollisionFrequency(pointer, frequency);
   }
 
   /**
    * Destroy the force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_AndersenThermostat_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_AndersenThermostat_destroy(pointer);
+      pointer = null;
     }
   }
 }

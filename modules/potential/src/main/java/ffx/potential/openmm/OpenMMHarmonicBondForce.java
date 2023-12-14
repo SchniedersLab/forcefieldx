@@ -47,7 +47,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_updatePar
 public class OpenMMHarmonicBondForce extends OpenMMForce {
 
   public OpenMMHarmonicBondForce() {
-    forcePointer = OpenMM_HarmonicBondForce_create();
+    pointer = OpenMM_HarmonicBondForce_create();
   }
 
   /**
@@ -59,7 +59,7 @@ public class OpenMMHarmonicBondForce extends OpenMMForce {
    * @param k      The force constant.
    */
   public void addBond(int i1, int i2, double length, double k) {
-    OpenMM_HarmonicBondForce_addBond(forcePointer, i1, i2, length, k);
+    OpenMM_HarmonicBondForce_addBond(pointer, i1, i2, length, k);
   }
 
   /**
@@ -72,7 +72,7 @@ public class OpenMMHarmonicBondForce extends OpenMMForce {
    * @param k      The force constant.
    */
   public void setBondParameters(int i, int i1, int i2, double length, double k) {
-    OpenMM_HarmonicBondForce_addBond(forcePointer, i1, i2, length, k);
+    OpenMM_HarmonicBondForce_addBond(pointer, i1, i2, length, k);
   }
 
   /**
@@ -82,7 +82,7 @@ public class OpenMMHarmonicBondForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_HarmonicBondForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_HarmonicBondForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 

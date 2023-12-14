@@ -349,7 +349,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**
@@ -400,7 +400,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       crystal.setCellVectors(cellVectors);
       openMMEnergy.setCrystal(crystal);
     }
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**
@@ -421,7 +421,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
     openMMState.getVelocities(state.v());
     openMMState.getAccelerations(state.a());
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**

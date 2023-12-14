@@ -37,40 +37,44 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-import java.util.logging.Logger;
-
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_append;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_get;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_getSize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_resize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_set;
 
+/**
+ * OpenMM String Array.
+ */
 public class OpenMMStringArray {
-
-  private static final Logger logger = Logger.getLogger(OpenMMStringArray.class.getName());
 
   /**
    * String Array Platform pointer.
    */
-  private PointerByReference stringArrayPointer;
+  private PointerByReference pointer;
 
   /**
    * OpenMM String Array constructor.
    *
-   * @param stringArrayPointer The String Array pointer.
+   * @param size The size of the String Array.
    */
-  public OpenMMStringArray(PointerByReference stringArrayPointer) {
-    this.stringArrayPointer = stringArrayPointer;
+  public OpenMMStringArray(int size) {
+    pointer = OpenMM_StringArray_create(size);
   }
 
   /**
-   * Set the String Array pointer.
+   * OpenMM String Array constructor.
    *
-   * @param stringArrayPointer The String Array pointer.
+   * @param pointer The String Array pointer.
    */
-  public void setStringArrayPointer(PointerByReference stringArrayPointer) {
-    this.stringArrayPointer = stringArrayPointer;
+  public OpenMMStringArray(PointerByReference pointer) {
+    this.pointer = pointer;
   }
 
   /**
@@ -79,7 +83,7 @@ public class OpenMMStringArray {
    * @return The number of strings in the String Array.
    */
   public int getSize() {
-    return OpenMM_StringArray_getSize(stringArrayPointer);
+    return OpenMM_StringArray_getSize(pointer);
   }
 
   /**
@@ -93,7 +97,7 @@ public class OpenMMStringArray {
     if (i < 0 || i >= size) {
       return null;
     }
-    Pointer string = OpenMM_StringArray_get(stringArrayPointer, i);
+    Pointer string = OpenMM_StringArray_get(pointer, i);
     if (string == null) {
       return null;
     }
@@ -101,12 +105,44 @@ public class OpenMMStringArray {
   }
 
   /**
+   * Resize the String Array.
+   *
+   * @param size The new size of the String Array.
+   */
+  public void resize(int size) {
+    OpenMM_StringArray_resize(pointer, size);
+  }
+
+  /**
+   * Append a String to the String Array.
+   *
+   * @param string The String to append.
+   */
+  public void append(String string) {
+    Pointer ref = new Memory(string.length() + 1);
+    ref.setString(0, string);
+    OpenMM_StringArray_append(pointer, ref);
+  }
+
+  /**
+   * Set the String at index i.
+   *
+   * @param i      The index of the String to set.
+   * @param string The String to set.
+   */
+  public void set(int i, String string) {
+    Pointer ref = new Memory(string.length() + 1);
+    ref.setString(0, string);
+    OpenMM_StringArray_set(pointer, i, ref);
+  }
+
+  /**
    * Destroy the String Array.
    */
   public void destroy() {
-    if (stringArrayPointer != null) {
-      OpenMM_StringArray_destroy(stringArrayPointer);
-      stringArrayPointer = null;
+    if (pointer != null) {
+      OpenMM_StringArray_destroy(pointer);
+      pointer = null;
     }
   }
 

@@ -53,7 +53,7 @@ public class OpenMMCustomCentroidBondForce extends OpenMMForce {
    * @param energy  The energy expression.
    */
   public OpenMMCustomCentroidBondForce(int nGroups, String energy) {
-    forcePointer = OpenMM_CustomCentroidBondForce_create(nGroups, energy);
+    pointer = OpenMM_CustomCentroidBondForce_create(nGroups, energy);
   }
 
   /**
@@ -62,7 +62,7 @@ public class OpenMMCustomCentroidBondForce extends OpenMMForce {
    * @param name The parameter name.
    */
   public void addPerBondParameter(String name) {
-    OpenMM_CustomCentroidBondForce_addPerBondParameter(forcePointer, name);
+    OpenMM_CustomCentroidBondForce_addPerBondParameter(pointer, name);
   }
 
   /**
@@ -72,7 +72,7 @@ public class OpenMMCustomCentroidBondForce extends OpenMMForce {
    * @param weight The weight of each atom.
    */
   public void addGroup(OpenMMIntArray atoms, OpenMMDoubleArray weight) {
-    OpenMM_CustomCentroidBondForce_addGroup(forcePointer, atoms.getPointer(), weight.getPointer());
+    OpenMM_CustomCentroidBondForce_addGroup(pointer, atoms.getPointer(), weight.getPointer());
   }
 
   /**
@@ -82,7 +82,7 @@ public class OpenMMCustomCentroidBondForce extends OpenMMForce {
    * @param parameters The parameters of each groups.
    */
   public void addBond(OpenMMIntArray groups, OpenMMDoubleArray parameters) {
-    OpenMM_CustomCentroidBondForce_addBond(forcePointer, groups.getPointer(), parameters.getPointer());
+    OpenMM_CustomCentroidBondForce_addBond(pointer, groups.getPointer(), parameters.getPointer());
   }
 
   /**
@@ -91,14 +91,14 @@ public class OpenMMCustomCentroidBondForce extends OpenMMForce {
    * @param periodic 1 if periodic boundary conditions should be used, 0 if not.
    */
   public void setUsesPeriodicBoundaryConditions(int periodic) {
-    OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(forcePointer, periodic);
+    OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(pointer, periodic);
   }
 
   /**
    * Destroy the OpenMM CustomCentroidBondForce.
    */
   public void destroy() {
-    OpenMM_CustomCentroidBondForce_destroy(forcePointer);
+    OpenMM_CustomCentroidBondForce_destroy(pointer);
   }
 
 }

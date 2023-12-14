@@ -42,23 +42,21 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import edu.uiowa.jopenmm.OpenMMLibrary;
 
-import java.util.logging.Logger;
-
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getSpeed;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
 
 public class OpenMMPlatform {
 
-  private static final Logger logger = Logger.getLogger(OpenMMPlatform.class.getName());
-
   /**
    * OpenMM Platform pointer.
    */
-  private PointerByReference platformPointer;
+  private PointerByReference pointer;
 
   /**
    * OpenMM Platform constructor.
@@ -66,7 +64,7 @@ public class OpenMMPlatform {
    * @param platformName The name of the OpenMM Platform.
    */
   public OpenMMPlatform(String platformName) {
-    platformPointer = OpenMM_Platform_getPlatformByName(platformName);
+    pointer = OpenMM_Platform_getPlatformByName(platformName);
   }
 
   /**
@@ -74,19 +72,36 @@ public class OpenMMPlatform {
    *
    * @return The OpenMM Platform pointer.
    */
-  public PointerByReference getPlatformPointer() {
-    return platformPointer;
+  public PointerByReference getPointer() {
+    return pointer;
   }
 
   /**
-   * Get the OpenMM Platform pointer.
+   * Get the name of the OpenMM Platform.
    *
-   * @return The OpenMM Platform pointer.
+   * @return The name of the OpenMM Platform.
+   */
+  public String getName() {
+    Pointer name = OpenMM_Platform_getName(pointer);
+    return name.getString(0);
+  }
+
+  /**
+   * Get an estimate of how fast this Platform class is.
+   *
+   * @return The speed of the OpenMM Platform.
+   */
+  public double getSpeed() {
+    return OpenMM_Platform_getSpeed(pointer);
+  }
+
+  /**
+   * Set an OpenMM Platform property.
    */
   public void setPropertyDefaultValue(String propertyName, String defaultValue) {
     Pointer name = pointerForString(propertyName);
     Pointer value = pointerForString(defaultValue);
-    OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue(platformPointer, name, value);
+    OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue(pointer, name, value);
   }
 
   /**
@@ -128,14 +143,12 @@ public class OpenMMPlatform {
   }
 
   /**
-   * Get the name of the OpenMM Platform.
-   *
-   * @return The name of the OpenMM Platform.
+   * Destroy the OpenMM Platform instance.
    */
   public void destroy() {
-    if (platformPointer != null) {
-      OpenMM_Platform_destroy(platformPointer);
-      platformPointer = null;
+    if (pointer != null) {
+      OpenMM_Platform_destroy(pointer);
+      pointer = null;
     }
   }
 

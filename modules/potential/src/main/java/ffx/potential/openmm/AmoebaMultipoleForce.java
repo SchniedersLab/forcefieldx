@@ -99,7 +99,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
-    forcePointer = OpenMM_AmoebaMultipoleForce_create();
+    pointer = OpenMM_AmoebaMultipoleForce_create();
 
     double polarScale = 1.0;
     SCFAlgorithm scfAlgorithm = null;
@@ -390,7 +390,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param method The polarization method.
    */
   public void setPolarizationType(int method) {
-    OpenMM_AmoebaMultipoleForce_setPolarizationType(forcePointer, method);
+    OpenMM_AmoebaMultipoleForce_setPolarizationType(pointer, method);
   }
 
   /**
@@ -399,7 +399,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param exptCoefficients The extrapolation coefficients.
    */
   public void setExtrapolationCoefficients(OpenMMDoubleArray exptCoefficients) {
-    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(forcePointer, exptCoefficients.getPointer());
+    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(pointer, exptCoefficients.getPointer());
   }
 
   /**
@@ -418,7 +418,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    */
   public void addMultipole(double charge, OpenMMDoubleArray dipole, OpenMMDoubleArray quadrupole, int axisType,
                            int zaxis, int xaxis, int yaxis, double thole, double pdamp, double polarizability) {
-    OpenMM_AmoebaMultipoleForce_addMultipole(forcePointer, charge, dipole.getPointer(), quadrupole.getPointer(),
+    OpenMM_AmoebaMultipoleForce_addMultipole(pointer, charge, dipole.getPointer(), quadrupole.getPointer(),
         axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
   }
 
@@ -440,7 +440,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
   public void setMultipoleParameters(int index, double charge, OpenMMDoubleArray dipoles, OpenMMDoubleArray quadrupoles,
                                      int axisType, int zaxis, int xaxis, int yaxis,
                                      double thole, double pdamp, double polarizability) {
-    OpenMM_AmoebaMultipoleForce_setMultipoleParameters(forcePointer, index, charge,
+    OpenMM_AmoebaMultipoleForce_setMultipoleParameters(pointer, index, charge,
         dipoles.getPointer(), quadrupoles.getPointer(), axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
   }
 
@@ -450,7 +450,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param method The nonbonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_AmoebaMultipoleForce_setNonbondedMethod(forcePointer, method);
+    OpenMM_AmoebaMultipoleForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -459,7 +459,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param cutoff The cutoff distance.
    */
   public void setCutoffDistance(double cutoff) {
-    OpenMM_AmoebaMultipoleForce_setCutoffDistance(forcePointer, cutoff);
+    OpenMM_AmoebaMultipoleForce_setCutoffDistance(pointer, cutoff);
   }
 
   /**
@@ -468,7 +468,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param aewald The Ewald coefficient.
    */
   public void setAEwald(double aewald) {
-    OpenMM_AmoebaMultipoleForce_setAEwald(forcePointer, aewald);
+    OpenMM_AmoebaMultipoleForce_setAEwald(pointer, aewald);
   }
 
   /**
@@ -477,7 +477,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param ewaldTolerance The Ewald error tolerance.
    */
   public void setEwaldErrorTolerance(double ewaldTolerance) {
-    OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(forcePointer, ewaldTolerance);
+    OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(pointer, ewaldTolerance);
   }
 
   /**
@@ -486,7 +486,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param gridDimensions The PME grid dimensions.
    */
   public void setPmeGridDimensions(OpenMMIntArray gridDimensions) {
-    OpenMM_AmoebaMultipoleForce_setPmeGridDimensions(forcePointer, gridDimensions.getPointer());
+    OpenMM_AmoebaMultipoleForce_setPmeGridDimensions(pointer, gridDimensions.getPointer());
   }
 
   //    OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(amoebaMultipoleForce, pme.getPolarEps());
@@ -497,7 +497,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param iterations The mutual induced max iterations.
    */
   public void setMutualInducedMaxIterations(int iterations) {
-    OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(forcePointer, iterations);
+    OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(pointer, iterations);
   }
 
   /**
@@ -506,7 +506,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param epsilon The mutual induced target epsilon.
    */
   public void setMutualInducedTargetEpsilon(double epsilon) {
-    OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(forcePointer, epsilon);
+    OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(pointer, epsilon);
   }
 
   /**
@@ -517,7 +517,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param covalentMap  The covalent map.
    */
   public void setCovalentMap(int i, int covalentType, OpenMMIntArray covalentMap) {
-    OpenMM_AmoebaMultipoleForce_setCovalentMap(forcePointer, i, covalentType, covalentMap.getPointer());
+    OpenMM_AmoebaMultipoleForce_setCovalentMap(pointer, i, covalentType, covalentMap.getPointer());
   }
 
   /**
@@ -527,7 +527,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_AmoebaMultipoleForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_AmoebaMultipoleForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 

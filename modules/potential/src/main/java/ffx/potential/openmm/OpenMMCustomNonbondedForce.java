@@ -52,7 +52,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_setUse
 public class OpenMMCustomNonbondedForce extends OpenMMForce {
 
   public OpenMMCustomNonbondedForce(String energy) {
-    forcePointer = OpenMM_CustomNonbondedForce_create(energy);
+    pointer = OpenMM_CustomNonbondedForce_create(energy);
   }
 
   /**
@@ -62,7 +62,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param value The parameter value.
    */
   public void addGlobalParameter(String name, double value) {
-    OpenMM_CustomNonbondedForce_addGlobalParameter(forcePointer, name, value);
+    OpenMM_CustomNonbondedForce_addGlobalParameter(pointer, name, value);
   }
 
   /**
@@ -71,7 +71,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param name The parameter name.
    */
   public void addPerParticleParameter(String name) {
-    OpenMM_CustomNonbondedForce_addPerParticleParameter(forcePointer, name);
+    OpenMM_CustomNonbondedForce_addPerParticleParameter(pointer, name);
   }
 
   /**
@@ -80,7 +80,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param parameters The particle parameters.
    */
   public void addParticle(OpenMMDoubleArray parameters) {
-    OpenMM_CustomNonbondedForce_addParticle(forcePointer, parameters.getPointer());
+    OpenMM_CustomNonbondedForce_addParticle(pointer, parameters.getPointer());
   }
 
   /**
@@ -90,7 +90,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param group2 The second group.
    */
   public void addInteractionGroup(OpenMMIntSet group1, OpenMMIntSet group2) {
-    OpenMM_CustomNonbondedForce_addInteractionGroup(forcePointer, group1.getPointer(), group2.getPointer());
+    OpenMM_CustomNonbondedForce_addInteractionGroup(pointer, group1.getPointer(), group2.getPointer());
   }
 
   /**
@@ -99,7 +99,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param method The nonbonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_CustomNonbondedForce_setNonbondedMethod(forcePointer, method);
+    OpenMM_CustomNonbondedForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -108,7 +108,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param off The cutoff distance.
    */
   public void setCutoffDistance(double off) {
-    OpenMM_CustomNonbondedForce_setCutoffDistance(forcePointer, off);
+    OpenMM_CustomNonbondedForce_setCutoffDistance(pointer, off);
   }
 
   /**
@@ -117,7 +117,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param useSwitchingFunction If 1, the switching function is used.
    */
   public void setUseSwitchingFunction(int useSwitchingFunction) {
-    OpenMM_CustomNonbondedForce_setUseSwitchingFunction(forcePointer, useSwitchingFunction);
+    OpenMM_CustomNonbondedForce_setUseSwitchingFunction(pointer, useSwitchingFunction);
   }
 
   /**
@@ -126,7 +126,7 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param switchingDistance The switching distance.
    */
   public void setSwitchingDistance(double switchingDistance) {
-    OpenMM_CustomNonbondedForce_setSwitchingDistance(forcePointer, switchingDistance);
+    OpenMM_CustomNonbondedForce_setSwitchingDistance(pointer, switchingDistance);
   }
 
   /**
@@ -136,16 +136,16 @@ public class OpenMMCustomNonbondedForce extends OpenMMForce {
    * @param particle2 The second particle.
    */
   public void addExclusion(int particle1, int particle2) {
-    OpenMM_CustomNonbondedForce_addExclusion(forcePointer, particle1, particle2);
+    OpenMM_CustomNonbondedForce_addExclusion(pointer, particle1, particle2);
   }
 
   /**
    * Destroy the force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_CustomNonbondedForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_CustomNonbondedForce_destroy(pointer);
+      pointer = null;
     }
   }
 }

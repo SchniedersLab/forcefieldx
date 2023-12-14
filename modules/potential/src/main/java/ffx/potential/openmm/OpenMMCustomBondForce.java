@@ -56,7 +56,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * @param energy The definition of the Energy.
    */
   public OpenMMCustomBondForce(String energy) {
-    forcePointer = OpenMM_CustomBondForce_create(energy);
+    pointer = OpenMM_CustomBondForce_create(energy);
   }
 
   /**
@@ -67,7 +67,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * @param parameters The bond parameters.
    */
   public void addBond(int i1, int i2, OpenMMDoubleArray parameters) {
-    OpenMM_CustomBondForce_addBond(forcePointer, i1, i2, parameters.getPointer());
+    OpenMM_CustomBondForce_addBond(pointer, i1, i2, parameters.getPointer());
   }
 
   /**
@@ -76,7 +76,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * @param name The name of the parameter.
    */
   public void addPerBondParameter(String name) {
-    OpenMM_CustomBondForce_addPerBondParameter(forcePointer, name);
+    OpenMM_CustomBondForce_addPerBondParameter(pointer, name);
   }
 
   /**
@@ -86,7 +86,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * @param value The value of the parameter.
    */
   public void addGlobalParameter(String name, double value) {
-    OpenMM_CustomBondForce_addGlobalParameter(forcePointer, name, value);
+    OpenMM_CustomBondForce_addGlobalParameter(pointer, name, value);
   }
 
   /**
@@ -98,7 +98,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * @param parameters The bond parameters.
    */
   public void setBondParameters(int index, int i1, int i2, OpenMMDoubleArray parameters) {
-    OpenMM_CustomBondForce_setBondParameters(forcePointer, index, i1, i2, parameters.getPointer());
+    OpenMM_CustomBondForce_setBondParameters(pointer, index, i1, i2, parameters.getPointer());
   }
 
   /**
@@ -108,7 +108,7 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_CustomBondForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_CustomBondForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 
@@ -116,9 +116,9 @@ public class OpenMMCustomBondForce extends OpenMMForce {
    * Destroy the OpenMM CustomBondForce.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_CustomBondForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_CustomBondForce_destroy(pointer);
+      pointer = null;
     }
   }
 

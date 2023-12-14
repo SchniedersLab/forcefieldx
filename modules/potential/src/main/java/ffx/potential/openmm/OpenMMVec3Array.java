@@ -40,24 +40,23 @@ package ffx.potential.openmm;
 import com.sun.jna.ptr.PointerByReference;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 
-import java.util.logging.Logger;
-
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_getSize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_resize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_set;
 
 /**
  * OpenMM Vec3 Array.
  */
 public class OpenMMVec3Array {
 
-  private static final Logger logger = Logger.getLogger(OpenMMStringArray.class.getName());
-
   /**
    * String vec3 array pointer.
    */
-  private PointerByReference vec3ArrayPointer;
+  private PointerByReference pointer;
 
   /**
    * OpenMM Vec3 Array constructor.
@@ -65,16 +64,16 @@ public class OpenMMVec3Array {
    * @param size The size of the String Array.
    */
   public OpenMMVec3Array(int size) {
-    vec3ArrayPointer = OpenMM_Vec3Array_create(size);
+    pointer = OpenMM_Vec3Array_create(size);
   }
 
   /**
    * OpenMM Vec3 Array constructor.
    *
-   * @param vec3ArrayPointer The Vec3 Array pointer.
+   * @param pointer The Vec3 Array pointer.
    */
-  public OpenMMVec3Array(PointerByReference vec3ArrayPointer) {
-    this.vec3ArrayPointer = vec3ArrayPointer;
+  public OpenMMVec3Array(PointerByReference pointer) {
+    this.pointer = pointer;
   }
 
   /**
@@ -83,7 +82,7 @@ public class OpenMMVec3Array {
    * @return The pointer to the vec3 array.
    */
   public PointerByReference getPointer() {
-    return vec3ArrayPointer;
+    return pointer;
   }
 
   /**
@@ -92,7 +91,7 @@ public class OpenMMVec3Array {
    * @param vec3 The Vec3 to append.
    */
   public void append(OpenMM_Vec3.ByValue vec3) {
-    OpenMM_Vec3Array_append(vec3ArrayPointer, vec3);
+    OpenMM_Vec3Array_append(pointer, vec3);
   }
 
   /**
@@ -101,16 +100,44 @@ public class OpenMMVec3Array {
    * @return The Vec3 at index i.
    */
   public OpenMM_Vec3 get(int i) {
-    return OpenMM_Vec3Array_get(vec3ArrayPointer, i);
+    return OpenMM_Vec3Array_get(pointer, i);
+  }
+
+  /**
+   * Get the size of the Vec3Array.
+   *
+   * @return The size of the Vec3Array.
+   */
+  public int getSize() {
+    return OpenMM_Vec3Array_getSize(pointer);
+  }
+
+  /**
+   * Resize the Vec3Array.
+   *
+   * @param size The new size of the Vec3Array.
+   */
+  public void resize(int size) {
+    OpenMM_Vec3Array_resize(pointer, size);
+  }
+
+  /**
+   * Set a Vec3 in the Vec3Array.
+   *
+   * @param i    The index of the Vec3 to set.
+   * @param vec3 The Vec3 to set.
+   */
+  public void set(int i, OpenMM_Vec3.ByValue vec3) {
+    OpenMM_Vec3Array_set(pointer, i, vec3);
   }
 
   /**
    * Destroy the Vec3Array.
    */
   public void destroy() {
-    if (vec3ArrayPointer != null) {
-      OpenMM_Vec3Array_destroy(vec3ArrayPointer);
-      vec3ArrayPointer = null;
+    if (pointer != null) {
+      OpenMM_Vec3Array_destroy(pointer);
+      pointer = null;
     }
   }
 

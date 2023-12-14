@@ -48,7 +48,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_set;
  */
 public class OpenMMDoubleArray3D {
 
-  private final PointerByReference pointer;
+  private PointerByReference pointer;
 
   /**
    * Constructor.
@@ -76,8 +76,12 @@ public class OpenMMDoubleArray3D {
    * Destroy the array.
    */
   public void destroy() {
-    OpenMM_3D_DoubleArray_destroy(pointer);
+    if (pointer != null) {
+      OpenMM_3D_DoubleArray_destroy(pointer);
+      pointer = null;
+    }
   }
+
 
 
   /**

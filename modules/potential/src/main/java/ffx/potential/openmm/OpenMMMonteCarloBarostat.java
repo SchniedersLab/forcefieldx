@@ -39,10 +39,15 @@ package ffx.potential.openmm;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_getDefaultPressure;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_getDefaultTemperature;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_getFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_getRandomNumberSeed;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setDefaultPressure;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setDefaultTemperature;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setFrequency;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setRandomNumberSeed;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions;
 
 /**
  * OpenMM MonteCarloBarostat.
@@ -57,7 +62,7 @@ public class OpenMMMonteCarloBarostat extends OpenMMForce {
    * @param frequency   The frequency to apply the barostat.
    */
   public OpenMMMonteCarloBarostat(double pressure, double temperature, int frequency) {
-    forcePointer = OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency);
+    pointer = OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency);
   }
 
   /**
@@ -66,7 +71,7 @@ public class OpenMMMonteCarloBarostat extends OpenMMForce {
    * @param seed The random number seed.
    */
   public void setRandomNumberSeed(int seed) {
-    OpenMM_MonteCarloBarostat_setRandomNumberSeed(forcePointer, seed);
+    OpenMM_MonteCarloBarostat_setRandomNumberSeed(pointer, seed);
   }
 
   /**
@@ -75,7 +80,7 @@ public class OpenMMMonteCarloBarostat extends OpenMMForce {
    * @param frequency The frequency.
    */
   public void setFrequency(int frequency) {
-    OpenMM_MonteCarloBarostat_setFrequency(forcePointer, frequency);
+    OpenMM_MonteCarloBarostat_setFrequency(pointer, frequency);
   }
 
   /**
@@ -84,7 +89,7 @@ public class OpenMMMonteCarloBarostat extends OpenMMForce {
    * @param temperature The temperature.
    */
   public void setDefaultTemperature(double temperature) {
-    OpenMM_MonteCarloBarostat_setDefaultTemperature(forcePointer, temperature);
+    OpenMM_MonteCarloBarostat_setDefaultTemperature(pointer, temperature);
   }
 
   /**
@@ -93,16 +98,62 @@ public class OpenMMMonteCarloBarostat extends OpenMMForce {
    * @param pressure The pressure.
    */
   public void setDefaultPressure(double pressure) {
-    OpenMM_MonteCarloBarostat_setDefaultPressure(forcePointer, pressure);
+    OpenMM_MonteCarloBarostat_setDefaultPressure(pointer, pressure);
+  }
+
+  /**
+   * Get the default pressure.
+   *
+   * @return The pressure.
+   */
+  public double getDefaultPressure() {
+    return OpenMM_MonteCarloBarostat_getDefaultPressure(pointer);
+  }
+
+  /**
+   * Get the frequency.
+   *
+   * @return The frequency.
+   */
+  public int getFrequency() {
+    return OpenMM_MonteCarloBarostat_getFrequency(pointer);
+  }
+
+  /**
+   * Get the default temperature.
+   *
+   * @return The temperature.
+   */
+  public double getDefaultTemperature() {
+    return OpenMM_MonteCarloBarostat_getDefaultTemperature(pointer);
+  }
+
+  /**
+   * Get the random number seed.
+   *
+   * @return The random number seed.
+   */
+  public int getRandomNumberSeed() {
+    return OpenMM_MonteCarloBarostat_getRandomNumberSeed(pointer);
+  }
+
+  /**
+   * Does the force use periodic boundary conditions?
+   *
+   * @return True if the force uses periodic boundary conditions.
+   */
+  public boolean usesPeriodicBoundaryConditions() {
+    int periodic = OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions(pointer);
+    return periodic == 1;
   }
 
   /**
    * Destroy the force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_MonteCarloBarostat_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_MonteCarloBarostat_destroy(pointer);
+      pointer = null;
     }
   }
 

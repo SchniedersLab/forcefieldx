@@ -42,6 +42,8 @@ import com.sun.jna.ptr.PointerByReference;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_get;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_getSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_set;
 
@@ -94,6 +96,25 @@ public class OpenMMDoubleArray {
    */
   public void resize(int size) {
     OpenMM_DoubleArray_resize(pointer, size);
+  }
+
+  /**
+   * Get the size of the array.
+   *
+   * @return The size.
+   */
+  public int getSize() {
+    return OpenMM_DoubleArray_getSize(pointer);
+  }
+
+  /**
+   * Get a value from the array.
+   *
+   * @param index The index of the value.
+   * @return The value.
+   */
+  public double get(int index) {
+    return OpenMM_DoubleArray_get(pointer, index);
   }
 
   /**

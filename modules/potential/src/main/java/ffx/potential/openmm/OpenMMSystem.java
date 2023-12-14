@@ -95,6 +95,11 @@ public class OpenMMSystem {
 
   private static final Logger logger = Logger.getLogger(OpenMMSystem.class.getName());
 
+  /**
+   * OpenMM System.
+   */
+  private PointerByReference pointer;
+
   private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
   /**
    * The ForceFieldEnergyOpenMM instance.
@@ -118,10 +123,6 @@ public class OpenMMSystem {
    * Array of atoms in the system.
    */
   private final Atom[] atoms;
-  /**
-   * OpenMM System.
-   */
-  private PointerByReference systemPointer;
   /**
    * This flag indicates bonded force constants and equilibria are updated (e.g. during ManyBody
    * titration).
@@ -298,7 +299,7 @@ public class OpenMMSystem {
     this.openMMContext = openMMEnergy.getContext();
 
     // Create the OpenMM System
-    systemPointer = OpenMM_System_create();
+    pointer = OpenMM_System_create();
     logger.info("\n System created");
 
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
@@ -538,7 +539,7 @@ public class OpenMMSystem {
    */
   public void addForce(OpenMMForce force) {
     if (force != null) {
-      force.setForceIndex(OpenMM_System_addForce(systemPointer, force.forcePointer));
+      force.setForceIndex(OpenMM_System_addForce(pointer, force.pointer));
     }
   }
 
@@ -548,7 +549,7 @@ public class OpenMMSystem {
    */
   public void removeForce(OpenMMForce force) {
     if (force != null) {
-      OpenMM_System_removeForce(systemPointer, force.getForceIndex());
+      OpenMM_System_removeForce(pointer, force.getForceIndex());
     }
   }
 
@@ -631,7 +632,7 @@ public class OpenMMSystem {
     // Begin from the 3 times the number of active atoms.
     int dof = openMMEnergy.getNumberOfVariables();
     // Remove OpenMM constraints.
-    dof = dof - OpenMM_System_getNumConstraints(systemPointer);
+    dof = dof - OpenMM_System_getNumConstraints(pointer);
     // Remove center of mass motion.
     if (cmMotionRemover != null) {
       dof -= 3;
@@ -657,11 +658,11 @@ public class OpenMMSystem {
    * Destroy the system.
    */
   public void free() {
-    if (systemPointer != null) {
+    if (pointer != null) {
       logger.fine(" Free OpenMM system.");
-      OpenMM_System_destroy(systemPointer);
+      OpenMM_System_destroy(pointer);
       logger.fine(" Free OpenMM system completed.");
-      systemPointer = null;
+      pointer = null;
     }
   }
 
@@ -763,8 +764,8 @@ public class OpenMMSystem {
    *
    * @return System referenece.
    */
-  PointerByReference getSystemPointer() {
-    return systemPointer;
+  PointerByReference getPointer() {
+    return pointer;
   }
 
   /**
@@ -793,7 +794,7 @@ public class OpenMMSystem {
       c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
       c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
       c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
-      OpenMM_System_setDefaultPeriodicBoxVectors(systemPointer, a, b, c);
+      OpenMM_System_setDefaultPeriodicBoxVectors(pointer, a, b, c);
     }
   }
 
@@ -928,7 +929,7 @@ public class OpenMMSystem {
       if (mass == 0.0) {
         logger.info(format(" Atom %s has zero mass.", atom));
       }
-      OpenMM_System_addParticle(systemPointer, mass);
+      OpenMM_System_addParticle(pointer, mass);
     }
     logger.log(Level.INFO, format("  Atoms \t\t%6d", atoms.length));
     logger.log(Level.INFO, format("  Mass  \t\t%12.3f", totalMass));
@@ -944,7 +945,7 @@ public class OpenMMSystem {
       if (atom.isActive()) {
         mass = atom.getMass();
       }
-      OpenMM_System_setParticleMass(systemPointer, index++, mass);
+      OpenMM_System_setParticleMass(pointer, index++, mass);
     }
   }
 
@@ -967,7 +968,7 @@ public class OpenMMSystem {
       Atom atom2 = bond.getAtom(1);
       int iAtom1 = atom1.getXyzIndex() - 1;
       int iAtom2 = atom2.getXyzIndex() - 1;
-      OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom2,
+      OpenMM_System_addConstraint(pointer, iAtom1, iAtom2,
           bond.bondType.distance * OpenMM_NmPerAngstrom);
     }
   }
@@ -989,7 +990,7 @@ public class OpenMMSystem {
         BondType bondType = bond.bondType;
         int iAtom1 = atom1.getXyzIndex() - 1;
         int iAtom2 = atom2.getXyzIndex() - 1;
-        OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom2,
+        OpenMM_System_addConstraint(pointer, iAtom1, iAtom2,
             bondType.distance * OpenMM_NmPerAngstrom);
       }
     }
@@ -1029,7 +1030,7 @@ public class OpenMMSystem {
 
         int iAtom1 = atom1.getXyzIndex() - 1;
         int iAtom3 = atom3.getXyzIndex() - 1;
-        OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom3,
+        OpenMM_System_addConstraint(pointer, iAtom1, iAtom3,
             falseBondLength * OpenMM_NmPerAngstrom);
       }
     }

@@ -71,7 +71,7 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
       return;
     }
 
-    forcePointer = OpenMM_AmoebaTorsionTorsionForce_create();
+    pointer = OpenMM_AmoebaTorsionTorsionForce_create();
 
     // Load the torsion-torsions.
     int nTypes = 0;
@@ -185,7 +185,7 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
    * @param gridIndex       The index of the grid.
    */
   public void addTorsionTorsion(int atom1, int atom2, int atom3, int atom4, int atom5, int chiralCheckAtom, int gridIndex) {
-    OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(forcePointer, atom1, atom2, atom3, atom4, atom5, chiralCheckAtom, gridIndex);
+    OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(pointer, atom1, atom2, atom3, atom4, atom5, chiralCheckAtom, gridIndex);
   }
 
   /**
@@ -195,16 +195,16 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
    * @param grid      The grid.
    */
   public void setTorsionTorsionGrid(int gridIndex, PointerByReference grid) {
-    OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid(forcePointer, gridIndex, grid);
+    OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid(pointer, gridIndex, grid);
   }
 
   /**
    * Destroy the Amoeba Torsion-Torsion Force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_destroy(pointer);
+      pointer = null;
     }
   }
 

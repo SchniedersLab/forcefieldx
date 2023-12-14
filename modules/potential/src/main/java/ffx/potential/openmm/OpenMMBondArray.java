@@ -37,28 +37,108 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
+
+import java.nio.IntBuffer;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_get;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_getSize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_resize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_set;
 
+/**
+ * OpenMM Bond Array.
+ */
 public class OpenMMBondArray {
 
   private PointerByReference pointer;
 
+  /**
+   * Create a new bond array.
+   *
+   * @param size The size of the bond array.
+   */
   public OpenMMBondArray(int size) {
     OpenMM_BondArray_create(size);
   }
 
+  /**
+   * Append a bond to the bond array.
+   *
+   * @param i1 The first atom index.
+   * @param i2 The second atom index.
+   */
   public void append(int i1, int i2) {
     OpenMM_BondArray_append(pointer, i1, i2);
   }
 
+  /**
+   * Set the bond at index to i1 and i2.
+   *
+   * @param index The index of the bond to set.
+   * @param i1    The first atom index.
+   * @param i2    The second atom index.
+   */
+  public void set(int index, int i1, int i2) {
+    OpenMM_BondArray_set(pointer, index, i1, i2);
+  }
+
+  /**
+   * Get the size of the bond array.
+   *
+   * @return The size of the bond array.
+   */
+  public int getSize() {
+    return OpenMM_BondArray_getSize(pointer);
+  }
+
+  /**
+   * Resize the bond array.
+   *
+   * @param size The new size of the bond array.
+   */
+  public void resize(int size) {
+    OpenMM_BondArray_resize(pointer, size);
+  }
+
+  /**
+   * Get the bond at index.
+   *
+   * @param index The index of the bond to get.
+   * @param i1    The first atom index.
+   * @param i2    The second atom index.
+   */
+  public void get(int index, IntBuffer i1, IntBuffer i2) {
+    OpenMM_BondArray_get(pointer, index, i1, i2);
+  }
+
+  /**
+   * Get the bond at index.
+   *
+   * @param index The index of the bond to get.
+   * @param i1    The first atom index.
+   * @param i2    The second atom index.
+   */
+  public void get(int index, IntByReference i1, IntByReference i2) {
+    OpenMM_BondArray_get(pointer, index, i1, i2);
+  }
+
+  /**
+   * Get the pointer to the bond array.
+   *
+   * @return The pointer to the bond array.
+   */
   public PointerByReference getPointer() {
     return pointer;
   }
 
+  /**
+   * Destroy the bond array.
+   */
   public void destroy() {
     if (pointer != null) {
       OpenMM_BondArray_destroy(pointer);

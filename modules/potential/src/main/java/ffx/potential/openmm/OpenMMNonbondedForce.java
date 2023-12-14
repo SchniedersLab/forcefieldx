@@ -60,7 +60,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_updateParame
 public class OpenMMNonbondedForce extends OpenMMForce {
 
   public OpenMMNonbondedForce() {
-    forcePointer = OpenMM_NonbondedForce_create();
+    pointer = OpenMM_NonbondedForce_create();
   }
 
   /**
@@ -71,7 +71,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param eps    The vdW eps.
    */
   public void addParticle(double charge, double sigma, double eps) {
-    OpenMM_NonbondedForce_addParticle(forcePointer, charge, sigma, eps);
+    OpenMM_NonbondedForce_addParticle(pointer, charge, sigma, eps);
   }
 
   /**
@@ -83,7 +83,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param eps    The vdW eps.
    */
   public void setParticleParameters(int index, double charge, double sigma, double eps) {
-    OpenMM_NonbondedForce_setParticleParameters(forcePointer, index, charge, sigma, eps);
+    OpenMM_NonbondedForce_setParticleParameters(pointer, index, charge, sigma, eps);
   }
 
   /**
@@ -95,7 +95,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param eps    The vdW eps.
    */
   public void getParticleParameters(int index, DoubleByReference charge, DoubleByReference sigma, DoubleByReference eps) {
-    OpenMM_NonbondedForce_getParticleParameters(forcePointer, index, charge, sigma, eps);
+    OpenMM_NonbondedForce_getParticleParameters(pointer, index, charge, sigma, eps);
   }
 
   /**
@@ -106,7 +106,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param lj14Scale      The LJ 1-4 scale.
    */
   public void createExceptionsFromBonds(OpenMMBondArray bondArray, double coulomb14Scale, double lj14Scale) {
-    OpenMM_NonbondedForce_createExceptionsFromBonds(forcePointer, bondArray.getPointer(), coulomb14Scale, lj14Scale);
+    OpenMM_NonbondedForce_createExceptionsFromBonds(pointer, bondArray.getPointer(), coulomb14Scale, lj14Scale);
   }
 
   /**
@@ -121,7 +121,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    */
   public void getExceptionParameters(int index, IntByReference particle1, IntByReference particle2,
                                      DoubleByReference chargeProd, DoubleByReference sigma, DoubleByReference eps) {
-    OpenMM_NonbondedForce_getExceptionParameters(forcePointer, index, particle1, particle2, chargeProd, sigma, eps);
+    OpenMM_NonbondedForce_getExceptionParameters(pointer, index, particle1, particle2, chargeProd, sigma, eps);
   }
 
   /**
@@ -135,7 +135,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param eps        The eps vdW parameter.
    */
   public void setExceptionParameters(int index, int particle1, int particle2, double chargeProd, double sigma, double eps) {
-    OpenMM_NonbondedForce_setExceptionParameters(forcePointer, index, particle1, particle2, chargeProd, sigma, eps);
+    OpenMM_NonbondedForce_setExceptionParameters(pointer, index, particle1, particle2, chargeProd, sigma, eps);
   }
 
   /**
@@ -144,7 +144,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param method The nonbonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_NonbondedForce_setNonbondedMethod(forcePointer, method);
+    OpenMM_NonbondedForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -156,7 +156,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param nz     The PME grid size in z.
    */
   public void setPMEParameters(double aEwald, int nx, int ny, int nz) {
-    OpenMM_NonbondedForce_setPMEParameters(forcePointer, aEwald, nx, ny, nz);
+    OpenMM_NonbondedForce_setPMEParameters(pointer, aEwald, nx, ny, nz);
   }
 
   /**
@@ -165,7 +165,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param cutoffDistance The cutoff distance.
    */
   public void setCutoffDistance(double cutoffDistance) {
-    OpenMM_NonbondedForce_setCutoffDistance(forcePointer, cutoffDistance);
+    OpenMM_NonbondedForce_setCutoffDistance(pointer, cutoffDistance);
   }
 
   /**
@@ -174,7 +174,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param useSwitchingFunction The switching distance flag.
    */
   public void setUseSwitchingFunction(int useSwitchingFunction) {
-    OpenMM_NonbondedForce_setUseSwitchingFunction(forcePointer, useSwitchingFunction);
+    OpenMM_NonbondedForce_setUseSwitchingFunction(pointer, useSwitchingFunction);
   }
 
   /**
@@ -183,7 +183,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param switchingDistance The switching distance.
    */
   public void setSwitchingDistance(double switchingDistance) {
-    OpenMM_NonbondedForce_setSwitchingDistance(forcePointer, switchingDistance);
+    OpenMM_NonbondedForce_setSwitchingDistance(pointer, switchingDistance);
   }
 
   /**
@@ -192,7 +192,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @param useDispersionCorrection The dispersion correction flag.
    */
   public void setUseDispersionCorrection(int useDispersionCorrection) {
-    OpenMM_NonbondedForce_setUseDispersionCorrection(forcePointer, useDispersionCorrection);
+    OpenMM_NonbondedForce_setUseDispersionCorrection(pointer, useDispersionCorrection);
   }
 
   /**
@@ -201,7 +201,7 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    * @return The number of exceptions.
    */
   public int getNumExceptions() {
-    return OpenMM_NonbondedForce_getNumExceptions(forcePointer);
+    return OpenMM_NonbondedForce_getNumExceptions(pointer);
   }
 
   /**
@@ -211,14 +211,14 @@ public class OpenMMNonbondedForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext context) {
     if (context.hasContextPointer()) {
-      OpenMM_NonbondedForce_updateParametersInContext(forcePointer, context.getContextPointer());
+      OpenMM_NonbondedForce_updateParametersInContext(pointer, context.getPointer());
     }
   }
 
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_NonbondedForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_NonbondedForce_destroy(pointer);
+      pointer = null;
     }
   }
 

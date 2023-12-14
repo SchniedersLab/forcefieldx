@@ -46,7 +46,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_update
 public class OpenMMPeriodicTorsionForce extends OpenMMForce {
 
   public OpenMMPeriodicTorsionForce() {
-    forcePointer = OpenMM_PeriodicTorsionForce_create();
+    pointer = OpenMM_PeriodicTorsionForce_create();
   }
 
   /**
@@ -61,7 +61,7 @@ public class OpenMMPeriodicTorsionForce extends OpenMMForce {
    * @param k           The force constant for the torsion.
    */
   public void addTorsion(int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k) {
-    OpenMM_PeriodicTorsionForce_addTorsion(forcePointer, particle1, particle2, particle3, particle4, periodicity, phase, k);
+    OpenMM_PeriodicTorsionForce_addTorsion(pointer, particle1, particle2, particle3, particle4, periodicity, phase, k);
   }
 
   /**
@@ -77,7 +77,7 @@ public class OpenMMPeriodicTorsionForce extends OpenMMForce {
    * @param k           The force constant for the torsion.
    */
   public void setTorsionParameters(int index, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k) {
-    OpenMM_PeriodicTorsionForce_setTorsionParameters(forcePointer, index, particle1, particle2, particle3, particle4, periodicity, phase, k);
+    OpenMM_PeriodicTorsionForce_setTorsionParameters(pointer, index, particle1, particle2, particle3, particle4, periodicity, phase, k);
   }
 
   /**
@@ -87,14 +87,14 @@ public class OpenMMPeriodicTorsionForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_PeriodicTorsionForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_PeriodicTorsionForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_PeriodicTorsionForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_PeriodicTorsionForce_destroy(pointer);
+      pointer = null;
     }
   }
 

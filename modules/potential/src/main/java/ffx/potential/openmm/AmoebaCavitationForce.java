@@ -85,7 +85,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
       return;
     }
 
-    forcePointer = OpenMM_AmoebaGKCavitationForce_create();
+    pointer = OpenMM_AmoebaGKCavitationForce_create();
     double surfaceTension = chandlerCavitation.getSurfaceTension()
         * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom / OpenMM_NmPerAngstrom;
     double[] rad = gaussVol.getRadii();
@@ -191,7 +191,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
    * @param isHydrogen     Is this a hydrogen atom?
    */
   public void addParticle(double radius, double surfaceTension, int isHydrogen) {
-    OpenMM_AmoebaGKCavitationForce_addParticle(forcePointer, radius, surfaceTension, isHydrogen);
+    OpenMM_AmoebaGKCavitationForce_addParticle(pointer, radius, surfaceTension, isHydrogen);
   }
 
   /**
@@ -203,7 +203,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
    * @param isHydrogen     Is this a hydrogen atom?
    */
   public void setParticleParameters(int index, double radius, double surfaceTension, int isHydrogen) {
-    OpenMM_AmoebaGKCavitationForce_setParticleParameters(forcePointer, index, radius, surfaceTension, isHydrogen);
+    OpenMM_AmoebaGKCavitationForce_setParticleParameters(pointer, index, radius, surfaceTension, isHydrogen);
   }
 
   /**
@@ -212,7 +212,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
    * @param method Nonbonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_AmoebaGKCavitationForce_setNonbondedMethod(forcePointer, method);
+    OpenMM_AmoebaGKCavitationForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -222,7 +222,7 @@ public class AmoebaCavitationForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext context) {
     if (context.hasContextPointer()) {
-      OpenMM_AmoebaGKCavitationForce_updateParametersInContext(forcePointer, context.getContextPointer());
+      OpenMM_AmoebaGKCavitationForce_updateParametersInContext(pointer, context.getPointer());
     }
   }
 }

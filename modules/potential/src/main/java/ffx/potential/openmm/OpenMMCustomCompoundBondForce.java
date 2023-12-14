@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
-
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addPerBondParameter;
@@ -53,7 +51,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_upd
 public class OpenMMCustomCompoundBondForce extends OpenMMForce {
 
   public OpenMMCustomCompoundBondForce(int i, String energy) {
-    forcePointer = OpenMM_CustomCompoundBondForce_create(i, energy);
+    pointer = OpenMM_CustomCompoundBondForce_create(i, energy);
   }
 
   /**
@@ -62,7 +60,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    * @param name The name of the parameter.
    */
   public void addPerBondParameter(String name) {
-    OpenMM_CustomCompoundBondForce_addPerBondParameter(forcePointer, name);
+    OpenMM_CustomCompoundBondForce_addPerBondParameter(pointer, name);
   }
 
   /**
@@ -72,7 +70,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    * @param value The parameter value.
    */
   public void addGlobalParameter(String name, double value) {
-    OpenMM_CustomCompoundBondForce_addGlobalParameter(forcePointer, name, value);
+    OpenMM_CustomCompoundBondForce_addGlobalParameter(pointer, name, value);
   }
 
   /**
@@ -82,7 +80,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    * @param parameters The bond parameters.
    */
   public void addBond(OpenMMIntArray particles, OpenMMDoubleArray parameters) {
-    OpenMM_CustomCompoundBondForce_addBond(forcePointer, particles.getPointer(), parameters.getPointer());
+    OpenMM_CustomCompoundBondForce_addBond(pointer, particles.getPointer(), parameters.getPointer());
   }
 
   /**
@@ -93,7 +91,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    * @param parameters The bond parameters.
    */
   public void setBondParameters(int index, OpenMMIntArray particles, OpenMMDoubleArray parameters) {
-    OpenMM_CustomCompoundBondForce_setBondParameters(forcePointer, index, particles.getPointer(), parameters.getPointer());
+    OpenMM_CustomCompoundBondForce_setBondParameters(pointer, index, particles.getPointer(), parameters.getPointer());
   }
 
   /**
@@ -103,7 +101,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_CustomCompoundBondForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_CustomCompoundBondForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 
@@ -111,7 +109,7 @@ public class OpenMMCustomCompoundBondForce extends OpenMMForce {
    * Clean up.
    */
   public void destroy() {
-    OpenMM_CustomCompoundBondForce_destroy(forcePointer);
+    OpenMM_CustomCompoundBondForce_destroy(pointer);
   }
 
 }

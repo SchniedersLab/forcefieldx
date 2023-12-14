@@ -106,7 +106,7 @@ public class AmoebaVDWForce extends OpenMMForce {
       return;
     }
 
-    forcePointer = OpenMM_AmoebaVdwForce_create();
+    pointer = OpenMM_AmoebaVdwForce_create();
 
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
@@ -279,7 +279,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @return The type.
    */
   public int addParticleType(double rad, double eps) {
-    return OpenMM_AmoebaVdwForce_addParticleType(forcePointer, rad, eps);
+    return OpenMM_AmoebaVdwForce_addParticleType(pointer, rad, eps);
   }
 
   /**
@@ -291,7 +291,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param eps   The well depth.
    */
   public void addTypePair(int type1, int type2, double rad, double eps) {
-    OpenMM_AmoebaVdwForce_addTypePair(forcePointer, type1, type2, rad, eps);
+    OpenMM_AmoebaVdwForce_addTypePair(pointer, type1, type2, rad, eps);
   }
 
   /**
@@ -304,7 +304,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param scaleFactor     The scale factor.
    */
   public void addParticle_1(int ired, int type, double reductionFactor, int isAlchemical, double scaleFactor) {
-    OpenMM_AmoebaVdwForce_addParticle_1(forcePointer, ired, type, reductionFactor, isAlchemical, scaleFactor);
+    OpenMM_AmoebaVdwForce_addParticle_1(pointer, ired, type, reductionFactor, isAlchemical, scaleFactor);
   }
 
   /**
@@ -321,7 +321,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    */
   public void setParticleParameters(int index, int ired, double rad, double eps, double reductionFactor,
                                     int isAlchemical, int type, double scaleFactor) {
-    OpenMM_AmoebaVdwForce_setParticleParameters(forcePointer, index, ired, rad, eps, reductionFactor, isAlchemical, type, scaleFactor);
+    OpenMM_AmoebaVdwForce_setParticleParameters(pointer, index, ired, rad, eps, reductionFactor, isAlchemical, type, scaleFactor);
   }
 
   /**
@@ -330,7 +330,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param cutoff The cutoff distance.
    */
   public void setCutoffDistance(double cutoff) {
-    OpenMM_AmoebaVdwForce_setCutoffDistance(forcePointer, cutoff);
+    OpenMM_AmoebaVdwForce_setCutoffDistance(pointer, cutoff);
   }
 
   /**
@@ -339,7 +339,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param value The flag.
    */
   public void setUseDispersionCorrection(int value) {
-    OpenMM_AmoebaVdwForce_setUseDispersionCorrection(forcePointer, value);
+    OpenMM_AmoebaVdwForce_setUseDispersionCorrection(pointer, value);
   }
 
   /**
@@ -348,7 +348,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param method The non-bonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_AmoebaVdwForce_setNonbondedMethod(forcePointer, method);
+    OpenMM_AmoebaVdwForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -357,7 +357,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param method The alchemical method.
    */
   public void setAlchemicalMethod(int method) {
-    OpenMM_AmoebaVdwForce_setAlchemicalMethod(forcePointer, method);
+    OpenMM_AmoebaVdwForce_setAlchemicalMethod(pointer, method);
   }
 
   /**
@@ -366,7 +366,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param vdWSoftcoreAlpha The softcore power.
    */
   public void setSoftcoreAlpha(double vdWSoftcoreAlpha) {
-    OpenMM_AmoebaVdwForce_setSoftcoreAlpha(forcePointer, vdWSoftcoreAlpha);
+    OpenMM_AmoebaVdwForce_setSoftcoreAlpha(pointer, vdWSoftcoreAlpha);
   }
 
   /**
@@ -375,7 +375,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param vdwSoftcorePower The softcore power.
    */
   public void setSoftcorePower(int vdwSoftcorePower) {
-    OpenMM_AmoebaVdwForce_setSoftcorePower(forcePointer, vdwSoftcorePower);
+    OpenMM_AmoebaVdwForce_setSoftcorePower(pointer, vdwSoftcorePower);
   }
 
   /**
@@ -385,7 +385,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    * @param exclusions The exclusions.
    */
   public void setParticleExclusions(int i, OpenMMIntArray exclusions) {
-    OpenMM_AmoebaVdwForce_setParticleExclusions(forcePointer, i, exclusions.getPointer());
+    OpenMM_AmoebaVdwForce_setParticleExclusions(pointer, i, exclusions.getPointer());
   }
 
   /**
@@ -395,7 +395,7 @@ public class AmoebaVDWForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_AmoebaVdwForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_AmoebaVdwForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 

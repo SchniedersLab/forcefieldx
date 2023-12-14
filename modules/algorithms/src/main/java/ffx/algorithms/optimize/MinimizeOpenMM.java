@@ -134,7 +134,7 @@ public class MinimizeOpenMM extends Minimize {
       energy = openMMState.potentialEnergy;
       openMMState.getPositions(x);
       openMMState.getGradient(grad);
-      openMMState.free();
+      openMMState.destroy();
 
       // Compute the RMS gradient.
       int index = 0;

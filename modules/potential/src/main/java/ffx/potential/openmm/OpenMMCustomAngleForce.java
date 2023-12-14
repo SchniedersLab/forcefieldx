@@ -49,7 +49,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_updatePara
 public class OpenMMCustomAngleForce extends OpenMMForce {
 
   public OpenMMCustomAngleForce(String energy) {
-    forcePointer = OpenMM_CustomAngleForce_create(energy);
+    pointer = OpenMM_CustomAngleForce_create(energy);
   }
 
   /**
@@ -58,7 +58,7 @@ public class OpenMMCustomAngleForce extends OpenMMForce {
    * @param name The name of the parameter.
    */
   public void addPerAngleParameter(String name) {
-    OpenMM_CustomAngleForce_addPerAngleParameter(forcePointer, name);
+    OpenMM_CustomAngleForce_addPerAngleParameter(pointer, name);
   }
 
   /**
@@ -70,7 +70,7 @@ public class OpenMMCustomAngleForce extends OpenMMForce {
    * @param parameters The parameters for the angle.
    */
   public void addAngle(int i1, int i2, int i3, OpenMMDoubleArray parameters) {
-    OpenMM_CustomAngleForce_addAngle(forcePointer, i1, i2, i3, parameters.getPointer());
+    OpenMM_CustomAngleForce_addAngle(pointer, i1, i2, i3, parameters.getPointer());
   }
 
   /**
@@ -83,7 +83,7 @@ public class OpenMMCustomAngleForce extends OpenMMForce {
    * @param parameters The angle parameters.
    */
   public void setAngleParameters(int index, int i1, int i2, int i3, OpenMMDoubleArray parameters) {
-    OpenMM_CustomAngleForce_setAngleParameters(forcePointer, index, i1, i2, i3, parameters.getPointer());
+    OpenMM_CustomAngleForce_setAngleParameters(pointer, index, i1, i2, i3, parameters.getPointer());
   }
 
   /**
@@ -93,7 +93,7 @@ public class OpenMMCustomAngleForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_CustomAngleForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_CustomAngleForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 

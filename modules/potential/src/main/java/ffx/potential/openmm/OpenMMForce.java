@@ -55,7 +55,7 @@ public abstract class OpenMMForce {
   /**
    * The forcePointer is allocated and deallocated by classes that extend OpenMMForce.
    */
-  protected PointerByReference forcePointer = null;
+  protected PointerByReference pointer = null;
 
   /**
    * The forceIndex is returned by OpenMMSystem.addForce and is used to remove the force.
@@ -68,7 +68,7 @@ public abstract class OpenMMForce {
    * @return The pointer to the OpenMM Force.
    */
   public PointerByReference getPointer() {
-    return forcePointer;
+    return pointer;
   }
 
   /**
@@ -87,7 +87,7 @@ public abstract class OpenMMForce {
    * @param forceGroup The force group.
    */
   public void setForceGroup(int forceGroup) {
-    OpenMM_Force_setForceGroup(forcePointer, forceGroup);
+    OpenMM_Force_setForceGroup(pointer, forceGroup);
   }
 
   /**
@@ -96,7 +96,7 @@ public abstract class OpenMMForce {
    * @return The force group.
    */
   public int getForceGroup() {
-    return OpenMM_Force_getForceGroup(forcePointer);
+    return OpenMM_Force_getForceGroup(pointer);
   }
 
   /**
@@ -105,7 +105,7 @@ public abstract class OpenMMForce {
    * @param name The name of the force.
    */
   public void setName(String name) {
-    OpenMM_Force_setName(forcePointer, name);
+    OpenMM_Force_setName(pointer, name);
   }
 
   /**
@@ -114,7 +114,7 @@ public abstract class OpenMMForce {
    * @return The name of the force.
    */
   public String getName() {
-    Pointer pointer = OpenMM_Force_getName(forcePointer);
+    Pointer pointer = OpenMM_Force_getName(this.pointer);
     if (pointer == null) {
       return null;
     }
@@ -146,7 +146,7 @@ public abstract class OpenMMForce {
    * @return True if the force uses periodic boundary conditions.
    */
   public boolean usesPeriodicBoundaryConditions() {
-    int pbc = OpenMM_Force_usesPeriodicBoundaryConditions(forcePointer);
+    int pbc = OpenMM_Force_usesPeriodicBoundaryConditions(pointer);
     return pbc == OpenMM_True;
   }
 

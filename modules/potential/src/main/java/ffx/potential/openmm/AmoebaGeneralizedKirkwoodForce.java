@@ -74,7 +74,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
       return;
     }
 
-    forcePointer = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
+    pointer = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
     setSolventDielectric(gk.getSolventPermittivity());
     setSoluteDielectric(1.0);
     setDielectricOffset(gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
@@ -165,7 +165,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    */
   public void updateForce(Atom[] atoms, OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
-    if (gk == null || forcePointer == null) {
+    if (gk == null || pointer == null) {
       return;
     }
 
@@ -237,7 +237,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param dielectric The solvent dielectric constant.
    */
   public void setSolventDielectric(double dielectric) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(forcePointer, dielectric);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(pointer, dielectric);
   }
 
   /**
@@ -246,7 +246,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param dielectric The solute dielectric constant.
    */
   public void setSoluteDielectric(double dielectric) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(forcePointer, dielectric);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(pointer, dielectric);
   }
 
   /**
@@ -255,7 +255,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param offset The dielectric offset.
    */
   public void setDielectricOffset(double offset) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(forcePointer, offset);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(pointer, offset);
   }
 
   /**
@@ -264,7 +264,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param tanhRescale The tanh rescaling.
    */
   public void setTanhRescaling(int tanhRescale) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(forcePointer, tanhRescale);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(pointer, tanhRescale);
   }
 
   /**
@@ -275,7 +275,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param beta2 The tanh parameter beta2.
    */
   public void setTanhParameters(double beta0, double beta1, double beta2) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(forcePointer, beta0, beta1, beta2);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(pointer, beta0, beta1, beta2);
   }
 
   /**
@@ -284,7 +284,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param radius The probe radius.
    */
   public void setProbeRadius(double radius) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(forcePointer, radius);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(pointer, radius);
   }
 
   /**
@@ -293,7 +293,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param includeCavityTerm The include cavity term.
    */
   public void setIncludeCavityTerm(int includeCavityTerm) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(forcePointer, includeCavityTerm);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(pointer, includeCavityTerm);
   }
 
   /**
@@ -302,7 +302,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param surfaceAreaFactor The surface area factor.
    */
   public void setSurfaceAreaFactor(double surfaceAreaFactor) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(forcePointer, surfaceAreaFactor);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(pointer, surfaceAreaFactor);
   }
 
   /**
@@ -315,7 +315,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param neck     The neck of the particle.
    */
   public void addParticle_1(double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(forcePointer, charge, radius, hctScale, descreen, neck);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(pointer, charge, radius, hctScale, descreen, neck);
   }
 
   /**
@@ -329,7 +329,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param neck     The neck of the particle.
    */
   public void setParticleParameters_1(int index, double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(forcePointer, index, charge, radius, hctScale, descreen, neck);
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(pointer, index, charge, radius, hctScale, descreen, neck);
   }
 
   /**
@@ -339,7 +339,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext openMMContext) {
     if (openMMContext.hasContextPointer()) {
-      OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+      OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(pointer, openMMContext.getPointer());
     }
   }
 

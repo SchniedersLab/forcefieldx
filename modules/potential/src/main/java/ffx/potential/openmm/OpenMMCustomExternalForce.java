@@ -53,7 +53,7 @@ public class OpenMMCustomExternalForce extends OpenMMForce {
    * @param energy The energy expression.
    */
   public OpenMMCustomExternalForce(String energy) {
-    forcePointer = OpenMM_CustomExternalForce_create(energy);
+    pointer = OpenMM_CustomExternalForce_create(energy);
   }
 
   /**
@@ -62,7 +62,7 @@ public class OpenMMCustomExternalForce extends OpenMMForce {
    * @param parameterName The parameter name.
    */
   public void addPerParticleParameter(String parameterName) {
-    OpenMM_CustomExternalForce_addPerParticleParameter(forcePointer, parameterName);
+    OpenMM_CustomExternalForce_addPerParticleParameter(pointer, parameterName);
   }
 
   /**
@@ -72,16 +72,16 @@ public class OpenMMCustomExternalForce extends OpenMMForce {
    * @param particleParameters The particle parameters.
    */
   public void addParticle(int index, OpenMMDoubleArray particleParameters) {
-    OpenMM_CustomExternalForce_addParticle(forcePointer, index, particleParameters.getPointer());
+    OpenMM_CustomExternalForce_addParticle(pointer, index, particleParameters.getPointer());
   }
 
   /**
    * Destroy the force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_CustomExternalForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_CustomExternalForce_destroy(pointer);
+      pointer = null;
     }
   }
 

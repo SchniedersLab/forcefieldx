@@ -53,11 +53,14 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getDataTypes;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVectors;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVolume;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getTime;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -75,7 +78,7 @@ public class OpenMMState {
   /**
    * Pointer to an OpenMM state.
    */
-  private final PointerByReference statePointer;
+  private final PointerByReference pointer;
 
   /**
    * Potential energy (kcal/mol).
@@ -92,7 +95,7 @@ public class OpenMMState {
   /**
    * Mask of information to retrieve.
    */
-  private final int mask;
+  private final int dataTypes;
   /**
    * Array of atoms.
    */
@@ -109,21 +112,20 @@ public class OpenMMState {
   /**
    * Construct an OpenMM State with the requested information.
    *
-   * @param statePointer Pointer to an OpenMM state.
-   * @param mask  Mask of information to retrieve.
-   * @param atoms Array of atoms.
-   * @param dof   Degrees of freedom.
+   * @param pointer Pointer to an OpenMM state.
+   * @param atoms   Array of atoms.
+   * @param dof     Degrees of freedom.
    */
-  protected OpenMMState(PointerByReference statePointer, int mask, Atom[] atoms, int dof) {
-    this.statePointer = statePointer;
-    this.mask = mask;
+  protected OpenMMState(PointerByReference pointer, Atom[] atoms, int dof) {
+    this.pointer = pointer;
+    this.dataTypes = OpenMM_State_getDataTypes(pointer);
     this.atoms = atoms;
     this.n = dof;
     nAtoms = atoms.length;
 
     if (stateContains(OpenMM_State_Energy)) {
-      potentialEnergy = OpenMM_State_getPotentialEnergy(statePointer) * OpenMM_KcalPerKJ;
-      kineticEnergy = OpenMM_State_getKineticEnergy(statePointer) * OpenMM_KcalPerKJ;
+      potentialEnergy = OpenMM_State_getPotentialEnergy(pointer) * OpenMM_KcalPerKJ;
+      kineticEnergy = OpenMM_State_getKineticEnergy(pointer) * OpenMM_KcalPerKJ;
       totalEnergy = potentialEnergy + kineticEnergy;
     } else {
       potentialEnergy = 0.0;
@@ -133,13 +135,12 @@ public class OpenMMState {
   }
 
   /**
-   * Check to see if the state contains the requested information.
+   * Get the time for which this State was created.
    *
-   * @param flag Information to check for.
-   * @return boolean indicating whether the state contains the requested information.
+   * @return The time.
    */
-  private boolean stateContains(int flag) {
-    return (mask & flag) == flag;
+  public double getTime() {
+    return OpenMM_State_getTime(pointer);
   }
 
   /**
@@ -158,7 +159,8 @@ public class OpenMMState {
       a = new double[n];
     }
 
-    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(statePointer));
+    // The returned Vec3Array is constant and should not be destroyed.
+    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(pointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
@@ -173,7 +175,6 @@ public class OpenMMState {
         atom.setAcceleration(xx, yy, zz);
       }
     }
-    // forces.destroy();
     return a;
   }
 
@@ -193,7 +194,8 @@ public class OpenMMState {
       g = new double[n];
     }
 
-    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(statePointer));
+    // The returned Vec3Array is constant and should not be destroyed.
+    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(pointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
@@ -221,7 +223,6 @@ public class OpenMMState {
         atom.setXYZGradient(xx, yy, zz);
       }
     }
-    // forces.destroy();
     return g;
   }
 
@@ -238,7 +239,7 @@ public class OpenMMState {
     OpenMM_Vec3 a = new OpenMM_Vec3();
     OpenMM_Vec3 b = new OpenMM_Vec3();
     OpenMM_Vec3 c = new OpenMM_Vec3();
-    OpenMM_State_getPeriodicBoxVectors(statePointer, a, b, c);
+    OpenMM_State_getPeriodicBoxVectors(pointer, a, b, c);
     double[][] latticeVectors = new double[3][3];
     latticeVectors[0][0] = a.x * OpenMM_AngstromsPerNm;
     latticeVectors[0][1] = a.y * OpenMM_AngstromsPerNm;
@@ -268,9 +269,8 @@ public class OpenMMState {
       x = new double[n];
     }
 
-    OpenMMVec3Array positions = new OpenMMVec3Array(OpenMM_State_getPositions(statePointer));
-
-    PointerByReference positionsPointer = OpenMM_State_getPositions(statePointer);
+    // The returned Vec3Array is constant and should not be destroyed.
+    OpenMMVec3Array positions = new OpenMMVec3Array(OpenMM_State_getPositions(pointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
@@ -284,7 +284,6 @@ public class OpenMMState {
         atom.moveTo(xx, yy, zz);
       }
     }
-    // positions.destroy();
     return x;
   }
 
@@ -304,7 +303,7 @@ public class OpenMMState {
       v = new double[n];
     }
 
-    OpenMMVec3Array velocities = new OpenMMVec3Array(OpenMM_State_getVelocities(statePointer));
+    OpenMMVec3Array velocities = new OpenMMVec3Array(OpenMM_State_getVelocities(pointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
@@ -323,13 +322,69 @@ public class OpenMMState {
   }
 
   /**
-   * Free the OpenMM state.
+   * Get the periodic box volume.
+   *
+   * @return The periodic box volume.
    */
-  public void free() {
-    if (statePointer != null) {
+  public double getPeridoicBoxVolume() {
+    return OpenMM_State_getPeriodicBoxVolume(pointer);
+  }
+
+  /**
+   * Get the potential energy. This field will be zero if the dataTypes mask did not include the energy.
+   *
+   * @return The potential energy.
+   */
+  public double getPotentialEnergy() {
+    return potentialEnergy;
+  }
+
+  /**
+   * Get the kinetic energy. This field will be zero if the dataTypes mask did not include the energy.
+   *
+   * @return The kinetic energy.
+   */
+  public double getKineticEnergy() {
+    return kineticEnergy;
+  }
+
+  /**
+   * Get the total energy. This field will be zero if the dataTypes mask did not include the energy.
+   *
+   * @return The total energy.
+   */
+  public double getTotalEnergy() {
+    return totalEnergy;
+  }
+
+  /**
+   * Get the mask of information contained in the state.
+   *
+   * @return The mask of information contained in the state.
+   */
+  public int getDataTypes() {
+    return dataTypes;
+  }
+
+
+  /**
+   * Destroy the OpenMM state.
+   */
+  public void destroy() {
+    if (pointer != null) {
       logger.fine(" Free OpenMM State.");
-      OpenMM_State_destroy(statePointer);
+      OpenMM_State_destroy(pointer);
       logger.fine(" Free OpenMM State completed.");
     }
+  }
+
+  /**
+   * Check to see if the state contains the requested information.
+   *
+   * @param dataType Information to check for.
+   * @return boolean indicating whether the state contains the requested information.
+   */
+  private boolean stateContains(int dataType) {
+    return (dataTypes & dataType) == dataType;
   }
 }

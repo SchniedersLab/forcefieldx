@@ -51,16 +51,16 @@ public class OpenMMCMMotionRemover extends OpenMMForce {
    * @param frequency The frequency to apply the CMMotionRemover.
    */
   public OpenMMCMMotionRemover(int frequency) {
-    forcePointer = OpenMM_CMMotionRemover_create(frequency);
+    pointer = OpenMM_CMMotionRemover_create(frequency);
   }
 
   /**
    * Destroy the OpenMM CMMotionRemover.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_CMMotionRemover_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_CMMotionRemover_destroy(pointer);
+      pointer = null;
     }
   }
 

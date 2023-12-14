@@ -42,6 +42,8 @@ import com.sun.jna.ptr.PointerByReference;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_get;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_getSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_resize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_set;
 
@@ -50,7 +52,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_set;
  */
 public class OpenMMIntArray {
 
-  private final PointerByReference intArrayPointer;
+  private PointerByReference pointer;
 
   /**
    * Constructor.
@@ -58,7 +60,7 @@ public class OpenMMIntArray {
    * @param size The size of the array.
    */
   public OpenMMIntArray(int size) {
-    intArrayPointer = OpenMM_IntArray_create(size);
+    pointer = OpenMM_IntArray_create(size);
   }
 
   /**
@@ -67,7 +69,7 @@ public class OpenMMIntArray {
    * @param value The value to append.
    */
   public void append(int value) {
-    OpenMM_IntArray_append(intArrayPointer, value);
+    OpenMM_IntArray_append(pointer, value);
   }
 
   /**
@@ -77,14 +79,17 @@ public class OpenMMIntArray {
    * @param value The value.
    */
   public void set(int index, int value) {
-    OpenMM_IntArray_set(intArrayPointer, index, value);
+    OpenMM_IntArray_set(pointer, index, value);
   }
 
   /**
    * Destroy the array.
    */
   public void destroy() {
-    OpenMM_IntArray_destroy(intArrayPointer);
+    if (pointer != null) {
+      OpenMM_IntArray_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
@@ -93,7 +98,27 @@ public class OpenMMIntArray {
    * @param size The new size.
    */
   public void resize(int size) {
-    OpenMM_IntArray_resize(intArrayPointer, size);
+    OpenMM_IntArray_resize(pointer, size);
+  }
+
+
+  /**
+   * Get the size of the array.
+   *
+   * @return The size.
+   */
+  public int getSize() {
+    return OpenMM_IntArray_getSize(pointer);
+  }
+
+  /**
+   * Get a value from the array.
+   *
+   * @param index The index.
+   * @return The value.
+   */
+  public int get(int index) {
+    return OpenMM_IntArray_get(pointer, index);
   }
 
   /**
@@ -102,7 +127,7 @@ public class OpenMMIntArray {
    * @return The pointer.
    */
   public PointerByReference getPointer() {
-    return intArrayPointer;
+    return pointer;
   }
 
 }

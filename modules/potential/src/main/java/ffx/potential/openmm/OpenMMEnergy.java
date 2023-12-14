@@ -301,7 +301,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy);
     double e = openMMState.potentialEnergy;
-    openMMState.free();
+    openMMState.destroy();
 
     if (!isFinite(e)) {
       String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
@@ -352,7 +352,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy | OpenMM_State_Forces);
     double e = openMMState.potentialEnergy;
     g = openMMState.getGradient(g);
-    openMMState.free();
+    openMMState.destroy();
 
     if (!isFinite(e)) {
       String message = format(" Energy from OpenMM was a non-finite %8g", e);
@@ -491,7 +491,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   public double[] getGradient(double[] g) {
     OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Forces);
     g = openMMState.getGradient(g);
-    openMMState.free();
+    openMMState.destroy();
     return g;
   }
 

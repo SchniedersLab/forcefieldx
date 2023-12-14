@@ -41,31 +41,54 @@ import com.sun.jna.ptr.PointerByReference;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_getSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_insert;
 
 public class OpenMMIntSet {
 
-  private PointerByReference intArrayPointer;
+  private PointerByReference pointer;
 
   /**
    * Constructor.
    */
   public OpenMMIntSet() {
-    intArrayPointer = OpenMM_IntSet_create();
+    pointer = OpenMM_IntSet_create();
   }
 
+  /**
+   * Insert a value into the set.
+   *
+   * @param value Value to insert.
+   */
   public void insert(int value) {
-    OpenMM_IntSet_insert(intArrayPointer, value);
+    OpenMM_IntSet_insert(pointer, value);
   }
 
+  /**
+   * Get the pointer to the set.
+   *
+   * @return Pointer to the set.
+   */
   public PointerByReference getPointer() {
-    return intArrayPointer;
+    return pointer;
   }
 
+  /**
+   * Get the size of the set.
+   *
+   * @return Size of the set.
+   */
+  public int getSize() {
+    return OpenMM_IntSet_getSize(pointer);
+  }
+
+  /**
+   * Destroy the set.
+   */
   public void destroy() {
-    if (intArrayPointer != null) {
-      OpenMM_IntSet_destroy(intArrayPointer);
-      intArrayPointer = null;
+    if (pointer != null) {
+      OpenMM_IntSet_destroy(pointer);
+      pointer = null;
     }
   }
 

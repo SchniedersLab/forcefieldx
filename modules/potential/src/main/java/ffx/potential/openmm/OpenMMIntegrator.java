@@ -87,7 +87,7 @@ class OpenMMIntegrator {
   /**
    * OpenMM Integrator pointer.
    */
-  private PointerByReference integratorPointer = null;
+  private PointerByReference pointer = null;
 
   /**
    * Create an Integrator instance.
@@ -106,7 +106,7 @@ class OpenMMIntegrator {
    * @param steps The number of steps to take.
    */
   public void step(int steps) {
-    OpenMM_Integrator_step(integratorPointer, steps);
+    OpenMM_Integrator_step(pointer, steps);
   }
 
   /**
@@ -114,8 +114,8 @@ class OpenMMIntegrator {
    *
    * @return Integrator reference.
    */
-  public PointerByReference getIntegratorPointer() {
-    return integratorPointer;
+  public PointerByReference getPointer() {
+    return pointer;
   }
 
   /**
@@ -143,7 +143,7 @@ class OpenMMIntegrator {
           createCustomMTSLangevinIntegrator(timeStep, temperature, frictionCoefficient, openMMSystem);
     }
 
-    return integratorPointer;
+    return pointer;
   }
 
   /**
@@ -156,9 +156,9 @@ class OpenMMIntegrator {
    */
   public void createLangevinIntegrator(double dt, double temperature, double frictionCoeff, int seed) {
     free();
-    integratorPointer = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
-    OpenMM_LangevinIntegrator_setRandomNumberSeed(integratorPointer, seed);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
+    pointer = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+    OpenMM_LangevinIntegrator_setRandomNumberSeed(pointer, seed);
+    OpenMM_Integrator_setConstraintTolerance(pointer, constraintTolerance);
     logger.info("  Langevin Integrator");
     logger.info(format("  Target Temperature:   %6.2f (K)", temperature));
     logger.info(format("  Friction Coefficient: %6.2f (1/psec)", frictionCoeff));
@@ -191,10 +191,10 @@ class OpenMMIntegrator {
       subSteps = new int[]{1, 2, 8};
     }
 
-    OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
-    OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
+    OpenMM_CustomIntegrator_addPerDofVariable(pointer, "x1", 0.0);
+    OpenMM_CustomIntegrator_addUpdateContextState(pointer);
     createMTSSubStep(1, forceGroups, subSteps);
-    OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
+    OpenMM_CustomIntegrator_addConstrainVelocities(pointer);
     logger.info("  Custom MTS Integrator");
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
     logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
@@ -220,20 +220,20 @@ class OpenMMIntegrator {
       throw new IllegalArgumentException("Force group must be between 0 and 31");
     }
     for (int i = 0; i < stepsPerParentStep; i++) {
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
+      OpenMM_CustomIntegrator_addComputePerDof(pointer, "v",
           "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m");
       if (forceGroups.length == 1) {
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", "x+(dt/" + steps + ")*v");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x1", "x");
-        OpenMM_CustomIntegrator_addConstrainPositions(integratorPointer);
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "x", "x+(dt/" + steps + ")*v");
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "x1", "x");
+        OpenMM_CustomIntegrator_addConstrainPositions(pointer);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "v",
             "v+(x-x1)/(dt/" + steps + ")");
-        OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
+        OpenMM_CustomIntegrator_addConstrainVelocities(pointer);
       } else {
         createMTSSubStep(steps, copyOfRange(forceGroups, 1, forceGroups.length),
             copyOfRange(subSteps, 1, subSteps.length));
       }
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
+      OpenMM_CustomIntegrator_addComputePerDof(pointer, "v",
           "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m");
     }
   }
@@ -267,20 +267,20 @@ class OpenMMIntegrator {
       subSteps = new int[]{1, 2, 8};
     }
 
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "a",
+    OpenMM_CustomIntegrator_addGlobalVariable(pointer, "a",
         exp(-frictionCoeff * dt / n));
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "b",
+    OpenMM_CustomIntegrator_addGlobalVariable(pointer, "b",
         sqrt(1.0 - exp(-2.0 * frictionCoeff * dt / n)));
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "kT",
+    OpenMM_CustomIntegrator_addGlobalVariable(pointer, "kT",
         R * temperature * KCAL_TO_KJ);
-    OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
+    OpenMM_CustomIntegrator_addPerDofVariable(pointer, "x1", 0.0);
     StringBuilder sb = new StringBuilder(" Update Context State\n");
-    OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
+    OpenMM_CustomIntegrator_addUpdateContextState(pointer);
 
     createMTSLangevinSubStep(1, forceGroups, subSteps, sb);
     // Log the substeps.
     logger.finest(" Langevin-MTS steps:" + sb);
-    OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
+    OpenMM_CustomIntegrator_addConstrainVelocities(pointer);
     logger.info("  Custom MTS Langevin Integrator");
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
     logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
@@ -315,35 +315,35 @@ class OpenMMIntegrator {
     for (int i = 0; i < stepsPerParentStep; i++) {
       String step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
       sb.append(" v = ").append(step).append("\n");
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+      OpenMM_CustomIntegrator_addComputePerDof(pointer, "v", step);
       // String step;
       if (forceGroups.length == 1) {
         step = "x+(dt/" + 2 * steps + ")*v";
         sb.append(" x = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "x", step);
         step = "a*v + b*sqrt(kT/m)*gaussian";
         sb.append(" v = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "v", step);
         step = "x+(dt/" + 2 * steps + ")*v";
         sb.append(" x = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "x", step);
         step = "x";
         sb.append(" x1 = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x1", step);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "x1", step);
         sb.append(" Constrain Positions\n");
-        OpenMM_CustomIntegrator_addConstrainPositions(integratorPointer);
+        OpenMM_CustomIntegrator_addConstrainPositions(pointer);
         step = "v+(x-x1)/(dt/" + steps + ")";
         sb.append(" v = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+        OpenMM_CustomIntegrator_addComputePerDof(pointer, "v", step);
         sb.append(" Constrain Velocities\n");
-        OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
+        OpenMM_CustomIntegrator_addConstrainVelocities(pointer);
       } else {
         createMTSLangevinSubStep(steps, copyOfRange(forceGroups, 1, forceGroups.length),
             copyOfRange(subSteps, 1, subSteps.length), sb);
       }
       step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
       sb.append(" v = ").append(step).append("\n");
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+      OpenMM_CustomIntegrator_addComputePerDof(pointer, "v", step);
     }
   }
 
@@ -354,8 +354,8 @@ class OpenMMIntegrator {
    */
   public void createVerletIntegrator(double dt) {
     free();
-    integratorPointer = OpenMM_VerletIntegrator_create(dt);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
+    pointer = OpenMM_VerletIntegrator_create(dt);
+    OpenMM_Integrator_setConstraintTolerance(pointer, constraintTolerance);
     logger.info("  Verlet Integrator");
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
   }
@@ -367,19 +367,19 @@ class OpenMMIntegrator {
    */
   public void createCustomIntegrator(double dt) {
     free();
-    integratorPointer = OpenMM_CustomIntegrator_create(dt);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
+    pointer = OpenMM_CustomIntegrator_create(dt);
+    OpenMM_Integrator_setConstraintTolerance(pointer, constraintTolerance);
   }
 
   /**
    * Destroy the integrator instance.
    */
   public void free() {
-    if (integratorPointer != null) {
+    if (pointer != null) {
       logger.fine(" Free OpenMM Integrator.");
-      OpenMM_Integrator_destroy(integratorPointer);
+      OpenMM_Integrator_destroy(pointer);
       logger.fine(" Free OpenMM Integrator completed.");
-      integratorPointer = null;
+      pointer = null;
     }
   }
 }

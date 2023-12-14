@@ -92,7 +92,7 @@ public class OpenMMContext {
   /**
    * OpenMM Context pointer.
    */
-  private PointerByReference contextPointer = null;
+  private PointerByReference pointer = null;
   /**
    * Requested Platform (i.e. Java or an OpenMM platform).
    */
@@ -165,7 +165,7 @@ public class OpenMMContext {
   public OpenMMContext create(String integratorString, double timeStep, double temperature,
                               boolean forceCreation, OpenMMEnergy openMMEnergy) {
     // Check if the current context is consistent with the requested context.
-    if (contextPointer != null && !forceCreation) {
+    if (pointer != null && !forceCreation) {
       if (this.temperature == temperature && this.timeStep == timeStep
           && this.integratorString.equalsIgnoreCase(integratorString)) {
         // All requested features agree.
@@ -177,11 +177,11 @@ public class OpenMMContext {
     this.timeStep = timeStep;
     this.temperature = temperature;
 
-    if (contextPointer != null) {
+    if (pointer != null) {
       logger.fine(" Free OpenMM Context.");
-      OpenMM_Context_destroy(contextPointer);
+      OpenMM_Context_destroy(pointer);
       logger.fine(" Free OpenMM Context completed.");
-      contextPointer = null;
+      pointer = null;
     }
 
     logger.info("\n Creating OpenMM Context");
@@ -197,7 +197,7 @@ public class OpenMMContext {
     }
 
     // Create a context.
-    contextPointer = OpenMM_Context_create_2(openMMSystem.getSystemPointer(), integratorPointer, openMMPlatform.getPlatformPointer());
+    pointer = OpenMM_Context_create_2(openMMSystem.getPointer(), integratorPointer, openMMPlatform.getPointer());
 
     // Revert to the current lambda value.
     if (openMMEnergy.getLambdaTerm()) {
@@ -236,14 +236,14 @@ public class OpenMMContext {
     setVelocities(v);
 
     // Apply constraints starting from current atomic positions.
-    OpenMM_Context_applyConstraints(contextPointer, constraintTolerance);
+    OpenMM_Context_applyConstraints(pointer, constraintTolerance);
 
     // Application of constraints can change coordinates and velocities.
     // Retrieve them for consistency.
     OpenMMState openMMState = getOpenMMState(OpenMM_State_Positions | OpenMM_State_Velocities);
     openMMState.getPositions(x);
     openMMState.getVelocities(v);
-    openMMState.free();
+    openMMState.destroy();
 
     return this;
   }
@@ -255,10 +255,10 @@ public class OpenMMContext {
    * @return Context pointer.
    */
   public PointerByReference getContextPointer(boolean createContext) {
-    if (contextPointer == null && createContext) {
+    if (pointer == null && createContext) {
       openMMEnergy.createContext(integratorString, timeStep, temperature, true);
     }
-    return contextPointer;
+    return pointer;
   }
 
   /**
@@ -267,8 +267,8 @@ public class OpenMMContext {
    *
    * @return Context pointer.
    */
-  public PointerByReference getContextPointer() {
-    return contextPointer;
+  public PointerByReference getPointer() {
+    return pointer;
   }
 
   /**
@@ -277,7 +277,7 @@ public class OpenMMContext {
    * @return True if the Context pointer is not null.
    */
   public boolean hasContextPointer() {
-    return contextPointer != null;
+    return pointer != null;
   }
 
   /**
@@ -287,8 +287,8 @@ public class OpenMMContext {
    * @return State pointer.
    */
   public OpenMMState getOpenMMState(int mask) {
-    PointerByReference statePointer = OpenMM_Context_getState(contextPointer, mask, enforcePBC);
-    return new OpenMMState(statePointer, mask, atoms, openMMEnergy.getNumberOfVariables());
+    PointerByReference statePointer = OpenMM_Context_getState(pointer, mask, enforcePBC);
+    return new OpenMMState(statePointer, atoms, openMMEnergy.getNumberOfVariables());
   }
 
   public Platform getPlatform() {
@@ -311,7 +311,7 @@ public class OpenMMContext {
    * @param maxIterations Maximum number of iterations.
    */
   public void optimize(double eps, int maxIterations) {
-    OpenMM_LocalEnergyMinimizer_minimize(contextPointer,
+    OpenMM_LocalEnergyMinimizer_minimize(pointer,
         eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
   }
 
@@ -341,7 +341,7 @@ public class OpenMMContext {
         positions.append(coords);
       }
     }
-    OpenMM_Context_setPositions(contextPointer, positions.getPointer());
+    OpenMM_Context_setPositions(pointer, positions.getPointer());
     logger.finer(" Free OpenMM positions.");
     positions.destroy();
     logger.finer(" Free OpenMM positions completed.");
@@ -374,7 +374,7 @@ public class OpenMMContext {
         velocities.append(vel);
       }
     }
-    OpenMM_Context_setVelocities(contextPointer, velocities.getPointer());
+    OpenMM_Context_setVelocities(pointer, velocities.getPointer());
     logger.finer(" Free OpenMM velocities.");
     velocities.destroy();
     logger.finer(" Free OpenMM velocities completed.");
@@ -400,7 +400,7 @@ public class OpenMMContext {
       c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
       c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
       c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
-      OpenMM_Context_setPeriodicBoxVectors(contextPointer, a, b, c);
+      OpenMM_Context_setPeriodicBoxVectors(pointer, a, b, c);
     }
   }
 
@@ -415,9 +415,9 @@ public class OpenMMContext {
    * <p>This is an expensive operation, so you should try to avoid calling it too frequently.
    */
   public void reinitialize() {
-    if (contextPointer != null) {
+    if (pointer != null) {
       int preserveState = 1;
-      OpenMM_Context_reinitialize(contextPointer, preserveState);
+      OpenMM_Context_reinitialize(pointer, preserveState);
     }
   }
 
@@ -428,8 +428,8 @@ public class OpenMMContext {
    * @param value the value of the parameter.
    */
   public void setParameter(String name, double value) {
-    if (contextPointer != null) {
-      OpenMM_Context_setParameter(contextPointer, name, value);
+    if (pointer != null) {
+      OpenMM_Context_setParameter(pointer, name, value);
     }
   }
 
@@ -547,11 +547,11 @@ public class OpenMMContext {
     if (openMMIntegrator != null) {
       openMMIntegrator.free();
     }
-    if (contextPointer != null) {
+    if (pointer != null) {
       logger.fine(" Free OpenMM Context.");
-      OpenMM_Context_destroy(contextPointer);
+      OpenMM_Context_destroy(pointer);
       logger.fine(" Free OpenMM Context completed.");
-      contextPointer = null;
+      pointer = null;
     }
   }
 }

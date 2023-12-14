@@ -57,7 +57,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * OpenMM CustomGBForce constructor.
    */
   public OpenMMCustomGBForce() {
-    forcePointer = OpenMM_CustomGBForce_create();
+    pointer = OpenMM_CustomGBForce_create();
   }
 
   /**
@@ -66,7 +66,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param name The name of the parameter.
    */
   public void addPerParticleParameter(String name) {
-    OpenMM_CustomGBForce_addPerParticleParameter(forcePointer, name);
+    OpenMM_CustomGBForce_addPerParticleParameter(pointer, name);
   }
 
   /**
@@ -76,7 +76,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param value The parameter value.
    */
   public void addGlobalParameter(String name, double value) {
-    OpenMM_CustomGBForce_addGlobalParameter(forcePointer, name, value);
+    OpenMM_CustomGBForce_addGlobalParameter(pointer, name, value);
   }
 
   /**
@@ -87,7 +87,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param type       The computed value type.
    */
   public void addComputedValue(String name, String expression, int type) {
-    OpenMM_CustomGBForce_addComputedValue(forcePointer, name, expression, type);
+    OpenMM_CustomGBForce_addComputedValue(pointer, name, expression, type);
   }
 
   /**
@@ -97,7 +97,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param type       The energy term type.
    */
   public void addEnergyTerm(String expression, int type) {
-    OpenMM_CustomGBForce_addEnergyTerm(forcePointer, expression, type);
+    OpenMM_CustomGBForce_addEnergyTerm(pointer, expression, type);
   }
 
   /**
@@ -106,7 +106,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param particleParameters The particle parameters.
    */
   public void addParticle(OpenMMDoubleArray particleParameters) {
-    OpenMM_CustomGBForce_addParticle(forcePointer, particleParameters.getPointer());
+    OpenMM_CustomGBForce_addParticle(pointer, particleParameters.getPointer());
   }
 
   /**
@@ -116,7 +116,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param particleParameters The particle parameters.
    */
   public void setParticleParameters(int index, OpenMMDoubleArray particleParameters) {
-    OpenMM_CustomGBForce_setParticleParameters(forcePointer, index, particleParameters.getPointer());
+    OpenMM_CustomGBForce_setParticleParameters(pointer, index, particleParameters.getPointer());
   }
 
   /**
@@ -125,7 +125,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * @param off The cutoff distance.
    */
   public void setCutoffDistance(double off) {
-    OpenMM_CustomGBForce_setCutoffDistance(forcePointer, off);
+    OpenMM_CustomGBForce_setCutoffDistance(pointer, off);
   }
 
   /**
@@ -135,7 +135,7 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    */
   public void updateParametersInContext(OpenMMContext context) {
     if (context.hasContextPointer()) {
-      OpenMM_CustomGBForce_updateParametersInContext(forcePointer, context.getContextPointer());
+      OpenMM_CustomGBForce_updateParametersInContext(pointer, context.getPointer());
     }
   }
 
@@ -143,9 +143,9 @@ public class OpenMMCustomGBForce extends OpenMMForce {
    * Destroy the force.
    */
   public void destroy() {
-    if (forcePointer != null) {
-      OpenMM_CustomGBForce_destroy(forcePointer);
-      forcePointer = null;
+    if (pointer != null) {
+      OpenMM_CustomGBForce_destroy(pointer);
+      pointer = null;
     }
   }
 
