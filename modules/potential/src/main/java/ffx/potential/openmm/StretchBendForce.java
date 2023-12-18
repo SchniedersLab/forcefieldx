@@ -1,0 +1,160 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
+package ffx.potential.openmm;
+
+import ffx.potential.bonded.StretchBend;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
+import static java.lang.String.format;
+
+/**
+ * OpenMM Stretch-Bend Force.
+ */
+public class StretchBendForce extends OpenMMCustomCompoundBondForce {
+
+  private static final Logger logger = Logger.getLogger(StretchBendForce.class.getName());
+
+  /**
+   * Create an OpenMM Stretch-Bend Force.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the Stretch-Bends.
+   */
+  public StretchBendForce(OpenMMEnergy openMMEnergy) {
+    super(3, openMMEnergy.getStretchBendEnergyString());
+    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    if (stretchBends == null || stretchBends.length < 1) {
+      return;
+    }
+    addPerBondParameter("r12");
+    addPerBondParameter("r23");
+    addPerBondParameter("theta0");
+    addPerBondParameter("k1");
+    addPerBondParameter("k2");
+    setName("AmoebaStretchBend");
+
+    OpenMMIntArray particles = new OpenMMIntArray(0);
+    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    for (StretchBend stretchBend : stretchBends) {
+      int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
+      int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
+      int i3 = stretchBend.getAtom(2).getXyzIndex() - 1;
+      double r12 = stretchBend.bond0Eq * OpenMM_NmPerAngstrom;
+      double r23 = stretchBend.bond1Eq * OpenMM_NmPerAngstrom;
+      double theta0 = stretchBend.angleEq * OpenMM_RadiansPerDegree;
+      double k1 = stretchBend.force0 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+      double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+      particles.append(i1);
+      particles.append(i2);
+      particles.append(i3);
+      parameters.append(r12);
+      parameters.append(r23);
+      parameters.append(theta0);
+      parameters.append(k1);
+      parameters.append(k2);
+      addBond(particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+    setForceGroup(forceGroup);
+    logger.log(Level.INFO, format("  Stretch-Bends \t%6d\t\t%1d", stretchBends.length, forceGroup));
+  }
+
+  /**
+   * Convenience method to construct an OpenMM Stretch-Bend Force.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the stretch-bends.
+   * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-bends.
+   */
+  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    if (stretchBends == null || stretchBends.length < 1) {
+      return null;
+    }
+    return new StretchBendForce(openMMEnergy);
+  }
+
+  /**
+   * Update this Stretch-Bend Force.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the stretch-bends.
+   */
+  public void updateForce(OpenMMEnergy openMMEnergy) {
+    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    if (stretchBends == null || stretchBends.length < 1) {
+      return;
+    }
+
+    OpenMMIntArray particles = new OpenMMIntArray(0);
+    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    int index = 0;
+    for (StretchBend stretchBend : stretchBends) {
+      int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
+      int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
+      int i3 = stretchBend.getAtom(2).getXyzIndex() - 1;
+      double r12 = stretchBend.bond0Eq * OpenMM_NmPerAngstrom;
+      double r23 = stretchBend.bond1Eq * OpenMM_NmPerAngstrom;
+      double theta0 = stretchBend.angleEq * OpenMM_RadiansPerDegree;
+      double k1 = stretchBend.force0 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+      double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+      particles.append(i1);
+      particles.append(i2);
+      particles.append(i3);
+      parameters.append(r12);
+      parameters.append(r23);
+      parameters.append(theta0);
+      parameters.append(k1);
+      parameters.append(k2);
+      setBondParameters(index++, particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+
+    updateParametersInContext(openMMEnergy.getContext());
+  }
+}

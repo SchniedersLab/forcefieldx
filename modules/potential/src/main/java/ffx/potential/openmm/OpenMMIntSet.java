@@ -35,45 +35,38 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_insert;
 
-/**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
- */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMIntSet {
 
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
-  }
+  private PointerByReference intArrayPointer;
 
   /**
-   * Checks if this platform is supported
-   *
-   * @param platform To check
-   * @return Supported
+   * Constructor.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public OpenMMIntSet() {
+    intArrayPointer = OpenMM_IntSet_create();
   }
+
+  public void insert(int value) {
+    OpenMM_IntSet_insert(intArrayPointer, value);
+  }
+
+  public PointerByReference getPointer() {
+    return intArrayPointer;
+  }
+
+  public void destroy() {
+    if (intArrayPointer != null) {
+      OpenMM_IntSet_destroy(intArrayPointer);
+      intArrayPointer = null;
+    }
+  }
+
 }

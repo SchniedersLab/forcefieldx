@@ -336,16 +336,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void setOpenMMState() {
     OpenMMContext openMMContext = openMMEnergy.getContext();
-    openMMContext.setOpenMMPositions(state.x());
+    openMMContext.setPositions(state.x());
     openMMContext.setPeriodicBoxVectors(openMMEnergy.getCrystal());
-    openMMContext.setOpenMMVelocities(state.v());
+    openMMContext.setVelocities(state.v());
   }
 
   /**
    * Get OpenMM Energies.
    */
   private void getOpenMMEnergies() {
-    OpenMMState openMMState = openMMEnergy.createState(OpenMM_State_Energy);
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(OpenMM_State_Energy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
@@ -389,7 +389,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void getOpenMMEnergiesAndPositions() {
     int mask = OpenMM_State_Energy | OpenMM_State_Positions;
-    OpenMMState openMMState = openMMEnergy.createState(mask);
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
@@ -408,7 +408,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void getAllOpenMMVariables() {
     int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Velocities | OpenMM_State_Forces;
-    OpenMMState openMMState = openMMEnergy.createState(mask);
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));

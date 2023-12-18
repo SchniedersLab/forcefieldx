@@ -35,45 +35,55 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_updateParametersInContext;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM Harmonic Bond Force.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMHarmonicBondForce extends OpenMMForce {
 
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  public OpenMMHarmonicBondForce() {
+    forcePointer = OpenMM_HarmonicBondForce_create();
   }
 
   /**
-   * Checks if this platform is supported
+   * Add a Harmonic Bond.
    *
-   * @param platform To check
-   * @return Supported
+   * @param i1     Index of the first atom.
+   * @param i2     Index of the second atom.
+   * @param length The equilibrium bond length.
+   * @param k      The force constant.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void addBond(int i1, int i2, double length, double k) {
+    OpenMM_HarmonicBondForce_addBond(forcePointer, i1, i2, length, k);
   }
+
+  /**
+   * Set the bond parameters.
+   *
+   * @param i      The bond index.
+   * @param i1     Index of the first atom.
+   * @param i2     Index of the second atom.
+   * @param length The equilibrium bond length.
+   * @param k      The force constant.
+   */
+  public void setBondParameters(int i, int i1, int i2, double length, double k) {
+    OpenMM_HarmonicBondForce_addBond(forcePointer, i1, i2, length, k);
+  }
+
+  /**
+   * Update the parameters in the OpenMM Context.
+   *
+   * @param openMMContext The OpenMM Context.
+   */
+  public void updateParametersInContext(OpenMMContext openMMContext) {
+    if (openMMContext.hasContextPointer()) {
+      OpenMM_HarmonicBondForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
+    }
+  }
+
 }

@@ -37,14 +37,12 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Platform;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
@@ -71,7 +69,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_get;
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;
 
@@ -142,6 +139,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     openMMContext = new OpenMMContext(forceField, requestedPlatform, atoms, enforcePBC, this);
     openMMSystem = new OpenMMSystem(this);
+    openMMSystem.addForces();
 
     // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
     lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
@@ -193,7 +191,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         // Truncate to max 100 characters.
         host = host.substring(0, Math.min(messageLen, host.length()));
         // Pad to 100 characters.
-        host = String.format("%-100s", host);
+        host = format("%-100s", host);
         char[] messageOut = host.toCharArray();
         CharacterBuf out = CharacterBuf.buffer(messageOut);
 
@@ -207,9 +205,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         try {
           world.allGather(out, in);
         } catch (IOException ex) {
-          logger.severe(
-              String.format(" Failure at the allGather step for determining rank: %s\n%s", ex,
-                  Utilities.stackTraceToString(ex)));
+          logger.severe(format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
         }
         int ownIndex = -1;
         int rank = world.rank();
@@ -226,9 +222,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
           }
         }
         if (!selfFound) {
-          logger.severe(
-              String.format(" Rank %d: Could not find any incoming host messages matching self %s!",
-                  rank, host.trim()));
+          logger.severe(format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
         } else {
           index = ownIndex % nDevs;
         }
@@ -237,33 +231,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       // Behavior is just to keep index = 0.
     }
     return devs[index];
-  }
-
-  /**
-   * Create a JNA Pointer to a String.
-   *
-   * @param string WARNING: assumes ascii-only string
-   * @return pointer.
-   */
-  public static Pointer pointerForString(String string) {
-    Pointer pointer = new Memory(string.length() + 1);
-    pointer.setString(0, string);
-    return pointer;
-  }
-
-  /**
-   * Returns the platform array as a String
-   *
-   * @param stringArray The OpenMM String array.
-   * @param i           The index of the String to return.
-   * @return String The requested String.
-   */
-  public static String stringFromArray(PointerByReference stringArray, int i) {
-    Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
-    if (platformPtr == null) {
-      return null;
-    }
-    return platformPtr.getString(0);
   }
 
   /**
@@ -289,8 +256,8 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param mask The State mask.
    * @return Returns the State.
    */
-  public OpenMMState createState(int mask) {
-    return new OpenMMState(openMMContext, mask, atoms, getNumberOfVariables());
+  public OpenMMState getOpenMMState(int mask) {
+    return openMMContext.getOpenMMState(mask);
   }
 
   /**
@@ -332,7 +299,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     setCoordinates(x);
 
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Energy, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy);
     double e = openMMState.potentialEnergy;
     openMMState.free();
 
@@ -382,7 +349,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     setCoordinates(x);
 
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Energy | OpenMM_State_Forces, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy | OpenMM_State_Forces);
     double e = openMMState.potentialEnergy;
     g = openMMState.getGradient(g);
     openMMState.free();
@@ -490,16 +457,27 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
   /**
    * Returns the MolecularAssembly instance.
+   *
    * @return molecularAssembly
    */
   public MolecularAssembly getMolecularAssembly() {
     return molecularAssembly;
   }
 
+  /**
+   * Set the lambdaTerm flag.
+   *
+   * @param lambdaTerm The value to set.
+   */
   public void setLambdaTerm(boolean lambdaTerm) {
     this.lambdaTerm = lambdaTerm;
   }
 
+  /**
+   * Get the lambdaTerm flag.
+   *
+   * @return lambdaTerm.
+   */
   public boolean getLambdaTerm() {
     return lambdaTerm;
   }
@@ -511,7 +489,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   @Override
   public double[] getGradient(double[] g) {
-    OpenMMState openMMState = new OpenMMState(openMMContext, OpenMM_State_Forces, atoms, getNumberOfVariables());
+    OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Forces);
     g = openMMState.getGradient(g);
     openMMState.free();
     return g;
@@ -629,7 +607,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   @Override
   public void setCoordinates(double[] x) {
     // Set both OpenMM and FFX coordinates to x.
-    openMMContext.setOpenMMPositions(x);
+    openMMContext.setPositions(x);
   }
 
   /**

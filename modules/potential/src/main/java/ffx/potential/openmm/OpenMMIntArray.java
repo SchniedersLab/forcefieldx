@@ -35,45 +35,74 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_append;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_resize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_set;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM IntArray wrapper.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMIntArray {
 
-  private final List<Platform> supportedPlatforms;
+  private final PointerByReference intArrayPointer;
 
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * Constructor.
+   *
+   * @param size The size of the array.
+   */
+  public OpenMMIntArray(int size) {
+    intArrayPointer = OpenMM_IntArray_create(size);
   }
 
   /**
-   * Checks if this platform is supported
+   * Append a int value to the array.
    *
-   * @param platform To check
-   * @return Supported
+   * @param value The value to append.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void append(int value) {
+    OpenMM_IntArray_append(intArrayPointer, value);
   }
+
+  /**
+   * Set a value in the array.
+   *
+   * @param index The index.
+   * @param value The value.
+   */
+  public void set(int index, int value) {
+    OpenMM_IntArray_set(intArrayPointer, index, value);
+  }
+
+  /**
+   * Destroy the array.
+   */
+  public void destroy() {
+    OpenMM_IntArray_destroy(intArrayPointer);
+  }
+
+  /**
+   * Resize the array.
+   *
+   * @param size The new size.
+   */
+  public void resize(int size) {
+    OpenMM_IntArray_resize(intArrayPointer, size);
+  }
+
+  /**
+   * Get the pointer to the array.
+   *
+   * @return The pointer.
+   */
+  public PointerByReference getPointer() {
+    return intArrayPointer;
+  }
+
 }

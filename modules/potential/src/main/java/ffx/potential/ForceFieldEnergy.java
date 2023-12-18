@@ -82,18 +82,20 @@ import ffx.potential.constraint.CcmaConstraint;
 import ffx.potential.constraint.SettleConstraint;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
-import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.RestrainGroups;
+import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.openmm.OpenMMEnergy;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
+import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.utils.ConvexHullOps;
 import ffx.potential.utils.EnergyException;
@@ -102,6 +104,7 @@ import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.FFXProperty;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -116,6 +119,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
 import static ffx.potential.nonbonded.RestrainPosition.parseRestrainPositions;
 import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
@@ -129,6 +133,7 @@ import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -2289,6 +2294,53 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return angles;
   }
 
+  public String getAngleEnergyString() {
+    AngleType angleType = angles[0].angleType;
+    String energy;
+    if (angleType.angleFunction == AngleType.AngleFunction.SEXTIC) {
+      energy = format("""
+              k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
+              d=%.15g*theta-theta0;
+              """,
+          angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
+    } else {
+      energy = format("""
+              k*(d^2);
+              d=%.15g*theta-theta0;
+              """,
+          180.0 / PI);
+    }
+    return energy;
+  }
+
+  public String getInPlaneAngleEnergyString() {
+    AngleType angleType = angles[0].angleType;
+    String energy = format("""
+            k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
+            d=theta-theta0;
+            theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3);
+            projx = x2-nx*dot;
+            projy = y2-ny*dot;
+            projz = z2-nz*dot;
+            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
+            nx = px/norm;
+            ny = py/norm;
+            nz = pz/norm;
+            norm = sqrt(px*px + py*py + pz*pz);
+            px = (d1y*d2z-d1z*d2y);
+            py = (d1z*d2x-d1x*d2z);
+            pz = (d1x*d2y-d1y*d2x);
+            d1x = x1-x4;
+            d1y = y1-y4;
+            d1z = z1-z4;
+            d2x = x3-x4;
+            d2y = y3-y4;
+            d2z = z3-z4;
+            """,
+        angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
+    return energy;
+  }
+
   /**
    * Getter for the field <code>angles</code> with only <code>AngleMode</code> angles.
    *
@@ -2340,6 +2392,25 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   public Bond[] getBonds() {
     return bonds;
+  }
+
+  public String getBondEnergyString() {
+    BondType bondType = bonds[0].getBondType();
+    String energy;
+    if (bondType.bondFunction == BondType.BondFunction.QUARTIC) {
+      energy = format("""
+              k*(d^2 + %.15g*d^3 + %.15g*d^4);
+              d=r-r0;
+              """,
+          bondType.cubic / OpenMM_NmPerAngstrom,
+          bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+    } else {
+      energy = """
+          k*(d^2);
+          d=r-r0;
+          """;
+    }
+    return energy;
   }
 
   /**
@@ -2813,6 +2884,34 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return outOfPlaneBends;
   }
 
+  public String getOutOfPlaneEnergyString() {
+    OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBends[0].outOfPlaneBendType;
+    String energy = format(""" 
+            k*(theta^2 + %.15g*theta^3 + %.15g*theta^4 + %.15g*theta^5 + %.15g*theta^6);
+            theta = %.15g*pointangle(x2, y2, z2, x4, y4, z4, projx, projy, projz);
+            projx = x2-nx*dot;
+            projy = y2-ny*dot;
+            projz = z2-nz*dot;
+            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
+            nx = px/norm;
+            ny = py/norm;
+            nz = pz/norm;
+            norm = sqrt(px*px + py*py + pz*pz);
+            px = (d1y*d2z-d1z*d2y);
+            py = (d1z*d2x-d1x*d2z);
+            pz = (d1x*d2y-d1y*d2x);
+            d1x = x1-x4;
+            d1y = y1-y4;
+            d1z = z1-z4;
+            d2x = x3-x4;
+            d2y = y3-y4;
+            d2z = z3-z4
+            """,
+        outOfPlaneBendType.cubic, outOfPlaneBendType.quartic,
+        outOfPlaneBendType.pentic, outOfPlaneBendType.sextic, 180.0 / PI);
+    return energy;
+  }
+
   /**
    * getPDBHeaderString
    *
@@ -2995,6 +3094,32 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return piOrbitalTorsions;
   }
 
+  public String getPiOrbitalTorsionEnergyString() {
+    String energy = """
+        2*k*sin(phi)^2;
+        phi = pointdihedral(x3+c1x, y3+c1y, z3+c1z, x3, y3, z3, x4, y4, z4, x4+c2x, y4+c2y, z4+c2z);
+        c1x = (d14y*d24z-d14z*d24y);
+        c1y = (d14z*d24x-d14x*d24z);
+        c1z = (d14x*d24y-d14y*d24x);
+        c2x = (d53y*d63z-d53z*d63y);
+        c2y = (d53z*d63x-d53x*d63z);
+        c2z = (d53x*d63y-d53y*d63x);
+        d14x = x1-x4;
+        d14y = y1-y4;
+        d14z = z1-z4;
+        d24x = x2-x4;
+        d24y = y2-y4;
+        d24z = z2-z4;
+        d53x = x5-x3;
+        d53y = y5-y3;
+        d53z = z5-z3;
+        d63x = x6-x3;
+        d63y = y6-y3;
+        d63z = z6-z3;
+        """;
+    return energy;
+  }
+
   /**
    * Gets the Platform associated with this force field energy. For the reference platform, always
    * returns FFX.
@@ -3107,6 +3232,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   public StretchBend[] getStretchBends() {
     return stretchBends;
+  }
+
+  public String getStretchBendEnergyString() {
+    String energy = format("(k1*(distance(p1,p2)-r12) + k2*(distance(p2,p3)-r23))*(%.15g*(angle(p1,p2,p3)-theta0))", 180.0 / PI);
+    return energy;
   }
 
   /**
@@ -4032,7 +4162,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (restraintBondTerm && nRestraintBonds > 0) {
       logger.info("\n Restraint Bond Interactions:");
-      List<RestraintBond> restraintBonds = getRestraintBonds();
+      List<RestraintBond> restraintBonds = getRestraintBonds(null);
       for (RestraintBond restraintBond : restraintBonds) {
         logger.info(" Restraint Bond \t" + restraintBond.toString());
       }
@@ -4207,14 +4337,27 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * Getter for the field <code>restraintBonds</code>.
    *
+   * @param bondFunction the type of bond function.
    * @return a {@link java.util.List} object.
    */
-  public List<RestraintBond> getRestraintBonds() {
+  public List<RestraintBond> getRestraintBonds(@Nullable BondType.BondFunction bondFunction) {
+    List<RestraintBond> list = new ArrayList<>();
     if (restraintBonds != null && restraintBonds.length > 0) {
-      return Arrays.asList(restraintBonds);
-    } else {
-      return null;
+      // If the bondFunction is null, return all restrained bonds.
+      if (bondFunction == null) {
+        return Arrays.asList(restraintBonds);
+      }
+      // Otherwise, return only the restraint bonds with the specified bond function.
+      for (RestraintBond restraintBond : restraintBonds) {
+        if (restraintBond.getBondType().bondFunction == bondFunction) {
+          list.add(restraintBond);
+        }
+      }
+      if (!list.isEmpty()) {
+        return list;
+      }
     }
+    return null;
   }
 
   /**
@@ -4237,25 +4380,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   public RestrainGroups getRestrainGroups() {
     return restrainGroups;
-  }
-
-  /**
-   * Platform describes a set of force field implementations that include a pure Java reference
-   * implementation (FFX), and two OpenMM implementations (OMM_CUDA and OMM_REF are supported)
-   *
-   * <p>FFX: reference FFX implementation
-   *
-   * <p>OMM: Currently an alias for OMM_CUDA, may eventually become "try to find best OpenMM
-   * implementation" OMM_CUDA:
-   *
-   * <p>OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
-   *
-   * <p>OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
-   *
-   * <p>OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
-   */
-  public enum Platform {
-    FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL
   }
 
   private class BondedRegion extends ParallelRegion {

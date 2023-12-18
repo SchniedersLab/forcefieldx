@@ -35,45 +35,33 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_destroy;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM CMMotionRemover.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMCMMotionRemover extends OpenMMForce {
 
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * OpenMM CMMotionRemover constructor.
+   *
+   * @param frequency The frequency to apply the CMMotionRemover.
+   */
+  public OpenMMCMMotionRemover(int frequency) {
+    forcePointer = OpenMM_CMMotionRemover_create(frequency);
   }
 
   /**
-   * Checks if this platform is supported
-   *
-   * @param platform To check
-   * @return Supported
+   * Destroy the OpenMM CMMotionRemover.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void destroy() {
+    if (forcePointer != null) {
+      OpenMM_CMMotionRemover_destroy(forcePointer);
+      forcePointer = null;
+    }
   }
+
 }

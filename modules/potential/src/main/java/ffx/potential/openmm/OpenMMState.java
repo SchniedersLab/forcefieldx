@@ -1,3 +1,40 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.potential.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
@@ -22,7 +59,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVectors
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -37,6 +73,11 @@ public class OpenMMState {
   private static final Logger logger = Logger.getLogger(OpenMMState.class.getName());
 
   /**
+   * Pointer to an OpenMM state.
+   */
+  private final PointerByReference statePointer;
+
+  /**
    * Potential energy (kcal/mol).
    */
   public final double potentialEnergy;
@@ -48,10 +89,6 @@ public class OpenMMState {
    * Total energy (kcal/mol).
    */
   public final double totalEnergy;
-  /**
-   * Pointer to an OpenMM state.
-   */
-  private final PointerByReference state;
   /**
    * Mask of information to retrieve.
    */
@@ -72,22 +109,21 @@ public class OpenMMState {
   /**
    * Construct an OpenMM State with the requested information.
    *
-   * @param openMMContext OpenMM Context.
-   * @param mask          Mask of information to retrieve.
-   * @param atoms         Array of atoms.
+   * @param statePointer Pointer to an OpenMM state.
+   * @param mask  Mask of information to retrieve.
+   * @param atoms Array of atoms.
+   * @param dof   Degrees of freedom.
    */
-  public OpenMMState(OpenMMContext openMMContext, int mask, Atom[] atoms, int dof) {
+  protected OpenMMState(PointerByReference statePointer, int mask, Atom[] atoms, int dof) {
+    this.statePointer = statePointer;
     this.mask = mask;
     this.atoms = atoms;
     this.n = dof;
     nAtoms = atoms.length;
 
-    // Retrieve the state.
-    state = openMMContext.getState(mask);
-
     if (stateContains(OpenMM_State_Energy)) {
-      potentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
-      kineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
+      potentialEnergy = OpenMM_State_getPotentialEnergy(statePointer) * OpenMM_KcalPerKJ;
+      kineticEnergy = OpenMM_State_getKineticEnergy(statePointer) * OpenMM_KcalPerKJ;
       totalEnergy = potentialEnergy + kineticEnergy;
     } else {
       potentialEnergy = 0.0;
@@ -106,14 +142,6 @@ public class OpenMMState {
     return (mask & flag) == flag;
   }
 
-  public void free() {
-    if (state != null) {
-      logger.fine(" Free OpenMM State.");
-      OpenMM_State_destroy(state);
-      logger.fine(" Free OpenMM State completed.");
-    }
-  }
-
   /**
    * The force array contains the OpenMM force information for all atoms. The returned array a
    * contains accelerations for active atoms only.
@@ -130,13 +158,12 @@ public class OpenMMState {
       a = new double[n];
     }
 
-    PointerByReference forcePointer = OpenMM_State_getForces(state);
-
+    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(statePointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
         double mass = atom.getMass();
-        OpenMM_Vec3 acc = OpenMM_Vec3Array_get(forcePointer, i);
+        OpenMM_Vec3 acc = forces.get(i);
         double xx = acc.x * OpenMM_AngstromsPerNm / mass;
         double yy = acc.y * OpenMM_AngstromsPerNm / mass;
         double zz = acc.z * OpenMM_AngstromsPerNm / mass;
@@ -146,6 +173,7 @@ public class OpenMMState {
         atom.setAcceleration(xx, yy, zz);
       }
     }
+    // forces.destroy();
     return a;
   }
 
@@ -165,11 +193,11 @@ public class OpenMMState {
       g = new double[n];
     }
 
-    PointerByReference forcePointer = OpenMM_State_getForces(state);
+    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(statePointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 force = OpenMM_Vec3Array_get(forcePointer, i);
+        OpenMM_Vec3 force = forces.get(i);
         double xx = -force.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
         double yy = -force.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
         double zz = -force.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
@@ -193,6 +221,7 @@ public class OpenMMState {
         atom.setXYZGradient(xx, yy, zz);
       }
     }
+    // forces.destroy();
     return g;
   }
 
@@ -209,7 +238,7 @@ public class OpenMMState {
     OpenMM_Vec3 a = new OpenMM_Vec3();
     OpenMM_Vec3 b = new OpenMM_Vec3();
     OpenMM_Vec3 c = new OpenMM_Vec3();
-    OpenMM_State_getPeriodicBoxVectors(state, a, b, c);
+    OpenMM_State_getPeriodicBoxVectors(statePointer, a, b, c);
     double[][] latticeVectors = new double[3][3];
     latticeVectors[0][0] = a.x * OpenMM_AngstromsPerNm;
     latticeVectors[0][1] = a.y * OpenMM_AngstromsPerNm;
@@ -239,11 +268,13 @@ public class OpenMMState {
       x = new double[n];
     }
 
-    PointerByReference positionsPointer = OpenMM_State_getPositions(state);
+    OpenMMVec3Array positions = new OpenMMVec3Array(OpenMM_State_getPositions(statePointer));
+
+    PointerByReference positionsPointer = OpenMM_State_getPositions(statePointer);
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 pos = OpenMM_Vec3Array_get(positionsPointer, i);
+        OpenMM_Vec3 pos = positions.get(i);
         double xx = pos.x * OpenMM_AngstromsPerNm;
         double yy = pos.y * OpenMM_AngstromsPerNm;
         double zz = pos.z * OpenMM_AngstromsPerNm;
@@ -253,6 +284,7 @@ public class OpenMMState {
         atom.moveTo(xx, yy, zz);
       }
     }
+    // positions.destroy();
     return x;
   }
 
@@ -272,11 +304,11 @@ public class OpenMMState {
       v = new double[n];
     }
 
-    PointerByReference velocitiesPointer = OpenMM_State_getVelocities(state);
+    OpenMMVec3Array velocities = new OpenMMVec3Array(OpenMM_State_getVelocities(statePointer));
     for (int i = 0, index = 0; i < nAtoms; i++) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 vel = OpenMM_Vec3Array_get(velocitiesPointer, i);
+        OpenMM_Vec3 vel = velocities.get(i);
         double xx = vel.x * OpenMM_AngstromsPerNm;
         double yy = vel.y * OpenMM_AngstromsPerNm;
         double zz = vel.z * OpenMM_AngstromsPerNm;
@@ -286,6 +318,18 @@ public class OpenMMState {
         atom.setVelocity(xx, yy, zz);
       }
     }
+    // velocities.destroy();
     return v;
+  }
+
+  /**
+   * Free the OpenMM state.
+   */
+  public void free() {
+    if (statePointer != null) {
+      logger.fine(" Free OpenMM State.");
+      OpenMM_State_destroy(statePointer);
+      logger.fine(" Free OpenMM State completed.");
+    }
   }
 }

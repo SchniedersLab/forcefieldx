@@ -35,45 +35,83 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.ptr.PointerByReference;
+import edu.uiowa.jopenmm.OpenMM_Vec3;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.logging.Logger;
+
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_append;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * OpenMM Vec3 Array.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class OpenMMVec3Array {
 
-  private final List<Platform> supportedPlatforms;
+  private static final Logger logger = Logger.getLogger(OpenMMStringArray.class.getName());
 
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * String vec3 array pointer.
+   */
+  private PointerByReference vec3ArrayPointer;
+
+  /**
+   * OpenMM Vec3 Array constructor.
+   *
+   * @param size The size of the String Array.
+   */
+  public OpenMMVec3Array(int size) {
+    vec3ArrayPointer = OpenMM_Vec3Array_create(size);
   }
 
   /**
-   * Checks if this platform is supported
+   * OpenMM Vec3 Array constructor.
    *
-   * @param platform To check
-   * @return Supported
+   * @param vec3ArrayPointer The Vec3 Array pointer.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public OpenMMVec3Array(PointerByReference vec3ArrayPointer) {
+    this.vec3ArrayPointer = vec3ArrayPointer;
   }
+
+  /**
+   * Get the pointer to the vec3 array pointer.
+   *
+   * @return The pointer to the vec3 array.
+   */
+  public PointerByReference getPointer() {
+    return vec3ArrayPointer;
+  }
+
+  /**
+   * Append a Vec3 to the Vec3Array.
+   *
+   * @param vec3 The Vec3 to append.
+   */
+  public void append(OpenMM_Vec3.ByValue vec3) {
+    OpenMM_Vec3Array_append(vec3ArrayPointer, vec3);
+  }
+
+  /**
+   * Get a Vec3 from the Vec3Array.
+   *
+   * @return The Vec3 at index i.
+   */
+  public OpenMM_Vec3 get(int i) {
+    return OpenMM_Vec3Array_get(vec3ArrayPointer, i);
+  }
+
+  /**
+   * Destroy the Vec3Array.
+   */
+  public void destroy() {
+    if (vec3ArrayPointer != null) {
+      OpenMM_Vec3Array_destroy(vec3ArrayPointer);
+      vec3ArrayPointer = null;
+    }
+  }
+
 }

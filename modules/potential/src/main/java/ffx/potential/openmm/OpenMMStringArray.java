@@ -35,45 +35,79 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.openmm;
 
-import ffx.potential.Platform;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.logging.Logger;
 
-/**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
- */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_get;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_getSize;
 
-  private final List<Platform> supportedPlatforms;
+public class OpenMMStringArray {
 
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  private static final Logger logger = Logger.getLogger(OpenMMStringArray.class.getName());
+
+  /**
+   * String Array Platform pointer.
+   */
+  private PointerByReference stringArrayPointer;
+
+  /**
+   * OpenMM String Array constructor.
+   *
+   * @param stringArrayPointer The String Array pointer.
+   */
+  public OpenMMStringArray(PointerByReference stringArrayPointer) {
+    this.stringArrayPointer = stringArrayPointer;
   }
 
   /**
-   * Checks if this platform is supported
+   * Set the String Array pointer.
    *
-   * @param platform To check
-   * @return Supported
+   * @param stringArrayPointer The String Array pointer.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void setStringArrayPointer(PointerByReference stringArrayPointer) {
+    this.stringArrayPointer = stringArrayPointer;
   }
+
+  /**
+   * Get the number of strings in the String Array.
+   *
+   * @return The number of strings in the String Array.
+   */
+  public int getSize() {
+    return OpenMM_StringArray_getSize(stringArrayPointer);
+  }
+
+  /**
+   * Return the String at index i.
+   *
+   * @param i The index of the String to return.
+   * @return String The requested String.
+   */
+  public String get(int i) {
+    int size = getSize();
+    if (i < 0 || i >= size) {
+      return null;
+    }
+    Pointer string = OpenMM_StringArray_get(stringArrayPointer, i);
+    if (string == null) {
+      return null;
+    }
+    return string.getString(0);
+  }
+
+  /**
+   * Destroy the String Array.
+   */
+  public void destroy() {
+    if (stringArrayPointer != null) {
+      OpenMM_StringArray_destroy(stringArrayPointer);
+      stringArrayPointer = null;
+    }
+  }
+
 }
