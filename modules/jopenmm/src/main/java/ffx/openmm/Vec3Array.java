@@ -148,8 +148,7 @@ public class Vec3Array {
    * @return The Vec3Array.
    */
   public static Vec3Array toVec3Array(double[] array) {
-    int size = array.length / 3;
-    Vec3Array vec3Array = new Vec3Array(size);
+    Vec3Array vec3Array = new Vec3Array(0);
     OpenMM_Vec3.ByValue vec3 = new OpenMM_Vec3.ByValue();
     for (int i = 0; i < array.length; i += 3) {
       vec3.x = array[i];

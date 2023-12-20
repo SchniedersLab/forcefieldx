@@ -98,14 +98,15 @@ public class OpenMMState extends State {
    */
   protected OpenMMState(PointerByReference pointer, Atom[] atoms, int dof) {
     super(pointer);
-    this.dataTypes = getDataTypes();
+    // Set the data types mask using the super class method.
+    this.dataTypes = super.getDataTypes();
     this.atoms = atoms;
     this.n = dof;
     nAtoms = atoms.length;
-
     if (stateContains(OpenMM_State_Energy)) {
-      potentialEnergy = getPotentialEnergy() * OpenMM_KcalPerKJ;
-      kineticEnergy = getKineticEnergy() * OpenMM_KcalPerKJ;
+      // Set the energy fields using the super class method and convert units.
+      potentialEnergy = super.getPotentialEnergy() * OpenMM_KcalPerKJ;
+      kineticEnergy = super.getKineticEnergy() * OpenMM_KcalPerKJ;
       totalEnergy = potentialEnergy + kineticEnergy;
     } else {
       potentialEnergy = 0.0;
