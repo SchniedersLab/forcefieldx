@@ -38,12 +38,11 @@
 package ffx.potential.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
-import edu.uiowa.jopenmm.OpenMM_Vec3;
+import ffx.openmm.State;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.EnergyException;
 
 import javax.annotation.Nullable;
-import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AngstromsPerNm;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KcalPerKJ;
@@ -52,16 +51,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getDataTypes;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVectors;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVolume;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getTime;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -69,16 +58,7 @@ import static java.lang.String.format;
 /**
  * Retrieve state information from an OpenMM Simulation.
  */
-public class OpenMMState {
-  /**
-   * Logger.
-   */
-  private static final Logger logger = Logger.getLogger(OpenMMState.class.getName());
-
-  /**
-   * Pointer to an OpenMM state.
-   */
-  private final PointerByReference pointer;
+public class OpenMMState extends State {
 
   /**
    * Potential energy (kcal/mol).
@@ -117,30 +97,21 @@ public class OpenMMState {
    * @param dof     Degrees of freedom.
    */
   protected OpenMMState(PointerByReference pointer, Atom[] atoms, int dof) {
-    this.pointer = pointer;
-    this.dataTypes = OpenMM_State_getDataTypes(pointer);
+    super(pointer);
+    this.dataTypes = getDataTypes();
     this.atoms = atoms;
     this.n = dof;
     nAtoms = atoms.length;
 
     if (stateContains(OpenMM_State_Energy)) {
-      potentialEnergy = OpenMM_State_getPotentialEnergy(pointer) * OpenMM_KcalPerKJ;
-      kineticEnergy = OpenMM_State_getKineticEnergy(pointer) * OpenMM_KcalPerKJ;
+      potentialEnergy = getPotentialEnergy() * OpenMM_KcalPerKJ;
+      kineticEnergy = getKineticEnergy() * OpenMM_KcalPerKJ;
       totalEnergy = potentialEnergy + kineticEnergy;
     } else {
       potentialEnergy = 0.0;
       kineticEnergy = 0.0;
       totalEnergy = 0.0;
     }
-  }
-
-  /**
-   * Get the time for which this State was created.
-   *
-   * @return The time.
-   */
-  public double getTime() {
-    return OpenMM_State_getTime(pointer);
   }
 
   /**
@@ -159,19 +130,17 @@ public class OpenMMState {
       a = new double[n];
     }
 
-    // The returned Vec3Array is constant and should not be destroyed.
-    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(pointer));
-    for (int i = 0, index = 0; i < nAtoms; i++) {
+    double[] forces = getForces();
+    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
         double mass = atom.getMass();
-        OpenMM_Vec3 acc = forces.get(i);
-        double xx = acc.x * OpenMM_AngstromsPerNm / mass;
-        double yy = acc.y * OpenMM_AngstromsPerNm / mass;
-        double zz = acc.z * OpenMM_AngstromsPerNm / mass;
-        a[index++] = xx;
-        a[index++] = yy;
-        a[index++] = zz;
+        double xx = forces[index] * OpenMM_AngstromsPerNm / mass;
+        double yy = forces[index + 1] * OpenMM_AngstromsPerNm / mass;
+        double zz = forces[index + 2] * OpenMM_AngstromsPerNm / mass;
+        a[index] = xx;
+        a[index + 1] = yy;
+        a[index + 2] = zz;
         atom.setAcceleration(xx, yy, zz);
       }
     }
@@ -194,17 +163,14 @@ public class OpenMMState {
       g = new double[n];
     }
 
-    // The returned Vec3Array is constant and should not be destroyed.
-    OpenMMVec3Array forces = new OpenMMVec3Array(OpenMM_State_getForces(pointer));
-    for (int i = 0, index = 0; i < nAtoms; i++) {
+    double[] forces = getForces();
+    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 force = forces.get(i);
-        double xx = -force.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        double yy = -force.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        double zz = -force.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        if (isNaN(xx) || isInfinite(xx) || isNaN(yy) || isInfinite(yy) || isNaN(zz) || isInfinite(
-            zz)) {
+        double xx = -forces[index] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+        double yy = -forces[index + 1] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+        double zz = -forces[index + 2] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+        if (isNaN(xx) || isInfinite(xx) || isNaN(yy) || isInfinite(yy) || isNaN(zz) || isInfinite(zz)) {
           StringBuilder sb = new StringBuilder(
               format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", atom, xx, yy, zz));
           double[] vals = new double[3];
@@ -217,9 +183,9 @@ public class OpenMMState {
               format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
           throw new EnergyException(sb.toString());
         }
-        g[index++] = xx;
-        g[index++] = yy;
-        g[index++] = zz;
+        g[index] = xx;
+        g[index + 1] = yy;
+        g[index + 2] = zz;
         atom.setXYZGradient(xx, yy, zz);
       }
     }
@@ -236,20 +202,16 @@ public class OpenMMState {
       return null;
     }
 
-    OpenMM_Vec3 a = new OpenMM_Vec3();
-    OpenMM_Vec3 b = new OpenMM_Vec3();
-    OpenMM_Vec3 c = new OpenMM_Vec3();
-    OpenMM_State_getPeriodicBoxVectors(pointer, a, b, c);
-    double[][] latticeVectors = new double[3][3];
-    latticeVectors[0][0] = a.x * OpenMM_AngstromsPerNm;
-    latticeVectors[0][1] = a.y * OpenMM_AngstromsPerNm;
-    latticeVectors[0][2] = a.z * OpenMM_AngstromsPerNm;
-    latticeVectors[1][0] = b.x * OpenMM_AngstromsPerNm;
-    latticeVectors[1][1] = b.y * OpenMM_AngstromsPerNm;
-    latticeVectors[1][2] = b.z * OpenMM_AngstromsPerNm;
-    latticeVectors[2][0] = c.x * OpenMM_AngstromsPerNm;
-    latticeVectors[2][1] = c.y * OpenMM_AngstromsPerNm;
-    latticeVectors[2][2] = c.z * OpenMM_AngstromsPerNm;
+    double[][] latticeVectors = super.getPeriodicBoxVectors();
+    latticeVectors[0][0] *= OpenMM_AngstromsPerNm;
+    latticeVectors[0][1] *= OpenMM_AngstromsPerNm;
+    latticeVectors[0][2] *= OpenMM_AngstromsPerNm;
+    latticeVectors[1][0] *= OpenMM_AngstromsPerNm;
+    latticeVectors[1][1] *= OpenMM_AngstromsPerNm;
+    latticeVectors[1][2] *= OpenMM_AngstromsPerNm;
+    latticeVectors[2][0] *= OpenMM_AngstromsPerNm;
+    latticeVectors[2][1] *= OpenMM_AngstromsPerNm;
+    latticeVectors[2][2] *= OpenMM_AngstromsPerNm;
     return latticeVectors;
   }
 
@@ -269,18 +231,16 @@ public class OpenMMState {
       x = new double[n];
     }
 
-    // The returned Vec3Array is constant and should not be destroyed.
-    OpenMMVec3Array positions = new OpenMMVec3Array(OpenMM_State_getPositions(pointer));
-    for (int i = 0, index = 0; i < nAtoms; i++) {
+    double[] pos = getPositions();
+    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 pos = positions.get(i);
-        double xx = pos.x * OpenMM_AngstromsPerNm;
-        double yy = pos.y * OpenMM_AngstromsPerNm;
-        double zz = pos.z * OpenMM_AngstromsPerNm;
-        x[index++] = xx;
-        x[index++] = yy;
-        x[index++] = zz;
+        double xx = pos[index] * OpenMM_AngstromsPerNm;
+        double yy = pos[index + 1] * OpenMM_AngstromsPerNm;
+        double zz = pos[index + 2] * OpenMM_AngstromsPerNm;
+        x[index] = xx;
+        x[index + 1] = yy;
+        x[index + 2] = zz;
         atom.moveTo(xx, yy, zz);
       }
     }
@@ -303,21 +263,19 @@ public class OpenMMState {
       v = new double[n];
     }
 
-    OpenMMVec3Array velocities = new OpenMMVec3Array(OpenMM_State_getVelocities(pointer));
-    for (int i = 0, index = 0; i < nAtoms; i++) {
+    double[] vel = getVelocities();
+    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
       Atom atom = atoms[i];
       if (atom.isActive()) {
-        OpenMM_Vec3 vel = velocities.get(i);
-        double xx = vel.x * OpenMM_AngstromsPerNm;
-        double yy = vel.y * OpenMM_AngstromsPerNm;
-        double zz = vel.z * OpenMM_AngstromsPerNm;
-        v[index++] = xx;
-        v[index++] = yy;
-        v[index++] = zz;
+        double xx = vel[index] * OpenMM_AngstromsPerNm;
+        double yy = vel[index + 1] * OpenMM_AngstromsPerNm;
+        double zz = vel[index + 2] * OpenMM_AngstromsPerNm;
+        v[index] = xx;
+        v[index + 1] = yy;
+        v[index + 2] = zz;
         atom.setVelocity(xx, yy, zz);
       }
     }
-    // velocities.destroy();
     return v;
   }
 
@@ -326,8 +284,10 @@ public class OpenMMState {
    *
    * @return The periodic box volume.
    */
-  public double getPeridoicBoxVolume() {
-    return OpenMM_State_getPeriodicBoxVolume(pointer);
+  @Override
+  public double getPeriodicBoxVolume() {
+    return super.getPeriodicBoxVolume()
+        * OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm;
   }
 
   /**
@@ -335,6 +295,7 @@ public class OpenMMState {
    *
    * @return The potential energy.
    */
+  @Override
   public double getPotentialEnergy() {
     return potentialEnergy;
   }
@@ -344,6 +305,7 @@ public class OpenMMState {
    *
    * @return The kinetic energy.
    */
+  @Override
   public double getKineticEnergy() {
     return kineticEnergy;
   }
@@ -362,20 +324,9 @@ public class OpenMMState {
    *
    * @return The mask of information contained in the state.
    */
+  @Override
   public int getDataTypes() {
     return dataTypes;
-  }
-
-
-  /**
-   * Destroy the OpenMM state.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      logger.fine(" Free OpenMM State.");
-      OpenMM_State_destroy(pointer);
-      logger.fine(" Free OpenMM State completed.");
-    }
   }
 
   /**

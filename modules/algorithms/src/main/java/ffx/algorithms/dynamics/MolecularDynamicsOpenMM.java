@@ -201,7 +201,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     initialState = new UnmodifiableState(state);
 
     // Check that our context is using correct Integrator, time step, and target temperature.
-    openMMEnergy.createContext(integratorString, dt, targetTemperature, false);
+    openMMEnergy.updateContext(integratorString, dt, targetTemperature, false);
 
     // Pre-run operations (mostly logging) that require knowledge of system energy.
     postInitEnergies();

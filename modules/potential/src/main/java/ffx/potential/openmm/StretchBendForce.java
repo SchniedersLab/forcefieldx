@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.StretchBend;
 
 import java.util.logging.Level;
@@ -50,7 +54,7 @@ import static java.lang.String.format;
 /**
  * OpenMM Stretch-Bend Force.
  */
-public class StretchBendForce extends OpenMMCustomCompoundBondForce {
+public class StretchBendForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(StretchBendForce.class.getName());
 
@@ -72,8 +76,8 @@ public class StretchBendForce extends OpenMMCustomCompoundBondForce {
     addPerBondParameter("k2");
     setName("AmoebaStretchBend");
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (StretchBend stretchBend : stretchBends) {
       int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
       int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
@@ -109,7 +113,7 @@ public class StretchBendForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the stretch-bends.
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-bends.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     StretchBend[] stretchBends = openMMEnergy.getStretchBends();
     if (stretchBends == null || stretchBends.length < 1) {
       return null;
@@ -128,8 +132,8 @@ public class StretchBendForce extends OpenMMCustomCompoundBondForce {
       return;
     }
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (StretchBend stretchBend : stretchBends) {
       int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;

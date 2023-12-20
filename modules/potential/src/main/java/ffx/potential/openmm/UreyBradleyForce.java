@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.Force;
+import ffx.openmm.HarmonicBondForce;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.UreyBradleyType;
 
@@ -50,7 +52,7 @@ import static java.lang.String.format;
 /**
  * Urey-Bradley Force.
  */
-public class UreyBradleyForce extends OpenMMHarmonicBondForce {
+public class UreyBradleyForce extends HarmonicBondForce {
 
   private static final Logger logger = Logger.getLogger(UreyBradleyForce.class.getName());
 
@@ -89,7 +91,7 @@ public class UreyBradleyForce extends OpenMMHarmonicBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    * @return An OpenMM Urey-Bradley Force, or null if there are no Urey-Bradley.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
     if (ureyBradleys == null || ureyBradleys.length < 1) {
       return null;

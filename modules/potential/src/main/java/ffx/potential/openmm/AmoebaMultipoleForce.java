@@ -38,6 +38,10 @@
 package ffx.potential.openmm;
 
 import ffx.crystal.Crystal;
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.amoeba.MultipoleForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ReciprocalSpace;
@@ -66,31 +70,21 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Direct;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Extrapolated;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Mutual;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_addMultipole;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setAEwald;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setCovalentMap;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setCutoffDistance;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setMultipoleParameters;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setNonbondedMethod;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setPmeGridDimensions;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setPolarizationType;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-public class AmoebaMultipoleForce extends OpenMMForce {
+/**
+ * AmoebaMultipoleForce.
+ */
+public class AmoebaMultipoleForce extends MultipoleForce {
 
   private static final Logger logger = Logger.getLogger(AmoebaMultipoleForce.class.getName());
 
   public AmoebaMultipoleForce(OpenMMEnergy openMMEnergy) {
     ParticleMeshEwald pme = openMMEnergy.getPmeNode();
     if (pme == null) {
+      destroy();
       return;
     }
 
@@ -98,9 +92,6 @@ public class AmoebaMultipoleForce extends OpenMMForce {
     double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
-
-    pointer = OpenMM_AmoebaMultipoleForce_create();
-
     double polarScale = 1.0;
     SCFAlgorithm scfAlgorithm = null;
 
@@ -127,7 +118,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
          * Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
          */
         setPolarizationType(OpenMM_AmoebaMultipoleForce_Extrapolated);
-        OpenMMDoubleArray exptCoefficients = new OpenMMDoubleArray(4);
+        DoubleArray exptCoefficients = new DoubleArray(4);
         exptCoefficients.set(0, -0.154);
         exptCoefficients.set(1, 0.017);
         exptCoefficients.set(2, 0.657);
@@ -139,8 +130,8 @@ public class AmoebaMultipoleForce extends OpenMMForce {
       }
     }
 
-    OpenMMDoubleArray dipoles = new OpenMMDoubleArray(3);
-    OpenMMDoubleArray quadrupoles = new OpenMMDoubleArray(9);
+    DoubleArray dipoles = new DoubleArray(3);
+    DoubleArray quadrupoles = new DoubleArray(9);
 
     OpenMMSystem system = openMMEnergy.getSystem();
     double lambdaElec = system.getLambdaElec();
@@ -219,7 +210,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
       double ewaldTolerance = 1.0e-04;
       setEwaldErrorTolerance(ewaldTolerance);
 
-      OpenMMIntArray gridDimensions = new OpenMMIntArray(3);
+      IntArray gridDimensions = new IntArray(3);
       ReciprocalSpace recip = pme.getReciprocalSpace();
       gridDimensions.set(0, recip.getXDim());
       gridDimensions.set(1, recip.getYDim());
@@ -235,7 +226,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
 
     int[][] ip11 = pme.getPolarization11();
 
-    OpenMMIntArray covalentMap = new OpenMMIntArray(0);
+    IntArray covalentMap = new IntArray(0);
     for (int i = 0; i < nAtoms; i++) {
       Atom ai = atoms[i];
 
@@ -293,7 +284,7 @@ public class AmoebaMultipoleForce extends OpenMMForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the multipole information.
    * @return An AMOEBA Multipole Force, or null if there are no multipole interactions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     ParticleMeshEwald pme = openMMEnergy.getPmeNode();
     if (pme == null) {
       return null;
@@ -312,8 +303,8 @@ public class AmoebaMultipoleForce extends OpenMMForce {
       polarScale = 0.0;
     }
 
-    OpenMMDoubleArray dipoles = new OpenMMDoubleArray(3);
-    OpenMMDoubleArray quadrupoles = new OpenMMDoubleArray(9);
+    DoubleArray dipoles = new DoubleArray(3);
+    DoubleArray quadrupoles = new DoubleArray(9);
 
     double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
 
@@ -381,154 +372,6 @@ public class AmoebaMultipoleForce extends OpenMMForce {
     dipoles.destroy();
     quadrupoles.destroy();
     updateParametersInContext(openMMEnergy.getContext());
-  }
-
-
-  /**
-   * Set the polarization method.
-   *
-   * @param method The polarization method.
-   */
-  public void setPolarizationType(int method) {
-    OpenMM_AmoebaMultipoleForce_setPolarizationType(pointer, method);
-  }
-
-  /**
-   * Set extrapolation coefficients.
-   *
-   * @param exptCoefficients The extrapolation coefficients.
-   */
-  public void setExtrapolationCoefficients(OpenMMDoubleArray exptCoefficients) {
-    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(pointer, exptCoefficients.getPointer());
-  }
-
-  /**
-   * Add a multipole.
-   *
-   * @param charge         The charge.
-   * @param dipole         The dipole.
-   * @param quadrupole     The quadrupole.
-   * @param axisType       The axis type.
-   * @param zaxis          The z-axis.
-   * @param xaxis          The x-axis.
-   * @param yaxis          The y-axis.
-   * @param thole          The Thole parameter.
-   * @param pdamp          The damping factor.
-   * @param polarizability The polarizability.
-   */
-  public void addMultipole(double charge, OpenMMDoubleArray dipole, OpenMMDoubleArray quadrupole, int axisType,
-                           int zaxis, int xaxis, int yaxis, double thole, double pdamp, double polarizability) {
-    OpenMM_AmoebaMultipoleForce_addMultipole(pointer, charge, dipole.getPointer(), quadrupole.getPointer(),
-        axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
-  }
-
-  /**
-   * Set the multipole parameters.
-   *
-   * @param index          The atom index.
-   * @param charge         The charge.
-   * @param dipoles        The dipole.
-   * @param quadrupoles    The quadrupole.
-   * @param axisType       The axis type.
-   * @param zaxis          The z-axis.
-   * @param xaxis          The x-axis.
-   * @param yaxis          The y-axis.
-   * @param thole          The Thole parameter.
-   * @param pdamp          The damping factor.
-   * @param polarizability The polarizability.
-   */
-  public void setMultipoleParameters(int index, double charge, OpenMMDoubleArray dipoles, OpenMMDoubleArray quadrupoles,
-                                     int axisType, int zaxis, int xaxis, int yaxis,
-                                     double thole, double pdamp, double polarizability) {
-    OpenMM_AmoebaMultipoleForce_setMultipoleParameters(pointer, index, charge,
-        dipoles.getPointer(), quadrupoles.getPointer(), axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
-  }
-
-  /**
-   * Set the nonbonded method for the multipole force.
-   *
-   * @param method The nonbonded method.
-   */
-  public void setNonbondedMethod(int method) {
-    OpenMM_AmoebaMultipoleForce_setNonbondedMethod(pointer, method);
-  }
-
-  /**
-   * Set the cutoff distance for the multipole force.
-   *
-   * @param cutoff The cutoff distance.
-   */
-  public void setCutoffDistance(double cutoff) {
-    OpenMM_AmoebaMultipoleForce_setCutoffDistance(pointer, cutoff);
-  }
-
-  /**
-   * Set the Ewald coefficient for the multipole force.
-   *
-   * @param aewald The Ewald coefficient.
-   */
-  public void setAEwald(double aewald) {
-    OpenMM_AmoebaMultipoleForce_setAEwald(pointer, aewald);
-  }
-
-  /**
-   * Set the Ewald error tolerance for the multipole force.
-   *
-   * @param ewaldTolerance The Ewald error tolerance.
-   */
-  public void setEwaldErrorTolerance(double ewaldTolerance) {
-    OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(pointer, ewaldTolerance);
-  }
-
-  /**
-   * Set the PME grid dimensions for the multipole force.
-   *
-   * @param gridDimensions The PME grid dimensions.
-   */
-  public void setPmeGridDimensions(OpenMMIntArray gridDimensions) {
-    OpenMM_AmoebaMultipoleForce_setPmeGridDimensions(pointer, gridDimensions.getPointer());
-  }
-
-  //    OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(amoebaMultipoleForce, pme.getPolarEps());
-
-  /**
-   * Set the mutual induced target maximum number of iterations.
-   *
-   * @param iterations The mutual induced max iterations.
-   */
-  public void setMutualInducedMaxIterations(int iterations) {
-    OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(pointer, iterations);
-  }
-
-  /**
-   * Set the mutual induced target epsilon.
-   *
-   * @param epsilon The mutual induced target epsilon.
-   */
-  public void setMutualInducedTargetEpsilon(double epsilon) {
-    OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(pointer, epsilon);
-  }
-
-  /**
-   * Set the covalent map.
-   *
-   * @param i            The atom index.
-   * @param covalentType The covalent type.
-   * @param covalentMap  The covalent map.
-   */
-  public void setCovalentMap(int i, int covalentType, OpenMMIntArray covalentMap) {
-    OpenMM_AmoebaMultipoleForce_setCovalentMap(pointer, i, covalentType, covalentMap.getPointer());
-  }
-
-  /**
-   * Update the parameters in the context.
-   *
-   * @param openMMContext The OpenMM context.
-   */
-  public void updateParametersInContext(OpenMMContext openMMContext) {
-    if (openMMContext.hasContextPointer()) {
-      OpenMM_AmoebaMultipoleForce_updateParametersInContext(pointer, openMMContext.getPointer());
-    }
   }
 
 }

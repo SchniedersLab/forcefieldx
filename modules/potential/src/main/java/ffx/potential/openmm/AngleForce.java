@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.CustomAngleForce;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AngleType;
@@ -47,12 +50,11 @@ import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * OpenMM Angle Force.
  */
-public class AngleForce extends OpenMMCustomAngleForce {
+public class AngleForce extends CustomAngleForce {
 
   private static final Logger logger = Logger.getLogger(AngleForce.class.getName());
 
@@ -74,7 +76,7 @@ public class AngleForce extends OpenMMCustomAngleForce {
     addPerAngleParameter("k");
     setName("Angle");
 
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     Angle[] angles = openMMEnergy.getAngles();
     for (Angle angle : angles) {
       AngleType angleType = angle.getAngleType();
@@ -111,14 +113,13 @@ public class AngleForce extends OpenMMCustomAngleForce {
     }
   }
 
-
   /**
    * Convenience method to construct an OpenMM Angle Force.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    * @return An Angle Force, or null if there are no angles.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Angle[] angles = openMMEnergy.getAngles();
     if (angles == null || angles.length < 1) {
       return null;
@@ -141,7 +142,7 @@ public class AngleForce extends OpenMMCustomAngleForce {
       return;
     }
 
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (Angle angle : angles) {
       AngleType.AngleMode angleMode = angle.angleType.angleMode;

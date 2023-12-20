@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.Force;
+import ffx.openmm.amoeba.WcaDispersionForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -47,23 +49,11 @@ import ffx.potential.parameters.VDWType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_addParticle;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setAwater;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setDispoff;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setEpsh;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setEpso;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setParticleParameters;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setRminh;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setRmino;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setShctd;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setSlevy;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static java.lang.String.format;
 
-public class AmoebaWcaDispersionForce extends OpenMMForce {
+public class AmoebaWcaDispersionForce extends WcaDispersionForce {
 
   private static final Logger logger = Logger.getLogger(AmoebaGeneralizedKirkwoodForce.class.getName());
 
@@ -75,6 +65,7 @@ public class AmoebaWcaDispersionForce extends OpenMMForce {
   public AmoebaWcaDispersionForce(OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
     if (gk == null) {
+      destroy();
       return;
     }
     DispersionRegion dispersionRegion = gk.getDispersionRegion();
@@ -97,8 +88,6 @@ public class AmoebaWcaDispersionForce extends OpenMMForce {
     if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
-
-    pointer = OpenMM_AmoebaWcaDispersionForce_create();
 
     Atom[] atoms = openMMEnergy.getMolecularAssembly().getAtomArray();
     for (Atom atom : atoms) {
@@ -128,7 +117,7 @@ public class AmoebaWcaDispersionForce extends OpenMMForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the WCA information.
    * @return An AMOEBA WCA Force, or null if there are no WCA interactions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
     if (gk == null) {
       return null;
@@ -178,110 +167,5 @@ public class AmoebaWcaDispersionForce extends OpenMMForce {
     }
 
     updateParametersInContext(openMMEnergy.getContext());
-  }
-
-  /**
-   * Add a particle to the force field term.
-   *
-   * @param radius  The radius of the particle.
-   * @param epsilon The well depth of the particle.
-   */
-  public void addParticle(double radius, double epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_addParticle(pointer, radius, epsilon);
-  }
-
-  /**
-   * Set the parameters for a particle.
-   *
-   * @param index   The index of the particle to set.
-   * @param radius  The radius of the particle.
-   * @param epsilon The well depth of the particle.
-   */
-  public void setParticleParameters(int index, double radius, double epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_setParticleParameters(pointer, index, radius, epsilon);
-  }
-
-
-  /**
-   * Set the water oxygen epsilon parameter.
-   *
-   * @param epso The water oxygen epsilon parameter.
-   */
-  public void setEpso(double epso) {
-    OpenMM_AmoebaWcaDispersionForce_setEpso(pointer, epso * OpenMM_KJPerKcal);
-  }
-
-  /**
-   * Set the water hydrogen epsilon parameter.
-   *
-   * @param epsh The water hydrogen epsilon parameter.
-   */
-  public void setEpsh(double epsh) {
-    OpenMM_AmoebaWcaDispersionForce_setEpsh(pointer, epsh * OpenMM_KJPerKcal);
-  }
-
-  /**
-   * Set the water oxygen radius parameter.
-   *
-   * @param rmino The water oxygen radius parameter.
-   */
-  public void setRmino(double rmino) {
-    OpenMM_AmoebaWcaDispersionForce_setRmino(pointer, rmino * OpenMM_NmPerAngstrom);
-  }
-
-  /**
-   * Set the water hydrogen radius parameter.
-   *
-   * @param rminh The water hydrogen radius parameter.
-   */
-  public void setRminh(double rminh) {
-    OpenMM_AmoebaWcaDispersionForce_setRminh(pointer, rminh * OpenMM_NmPerAngstrom);
-  }
-
-  /**
-   * Set the dispersion offset.
-   *
-   * @param dispoff The dispersion offset.
-   */
-  public void setDispoff(double dispoff) {
-    OpenMM_AmoebaWcaDispersionForce_setDispoff(pointer, dispoff * OpenMM_NmPerAngstrom);
-  }
-
-  /**
-   * Set the water density parameter.
-   *
-   * @param awater The water density parameter.
-   */
-  public void setAwater(double awater) {
-    OpenMM_AmoebaWcaDispersionForce_setAwater(pointer, awater / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
-  }
-
-  /**
-   * Set the Levy parameter.
-   *
-   * @param slevy The Levy parameter.
-   */
-  public void setSlevy(double slevy) {
-    OpenMM_AmoebaWcaDispersionForce_setSlevy(pointer, slevy);
-  }
-
-  /**
-   * Set the overlap factor.
-   *
-   * @param shctd The overlap factor.
-   */
-  public void setShctd(double shctd) {
-    OpenMM_AmoebaWcaDispersionForce_setShctd(pointer, shctd);
-  }
-
-  /**
-   * Update the parameters in the context.
-   *
-   * @param context The OpenMM context.
-   */
-  public void updateParametersInContext(OpenMMContext context) {
-    if (context.hasContextPointer()) {
-      OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(pointer, context.getPointer());
-    }
   }
 }

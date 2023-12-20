@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.CustomGBForce;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
@@ -55,7 +58,7 @@ import static java.lang.String.format;
 /**
  * FixedChargeGBForce.
  */
-public class FixedChargeGBForce extends OpenMMCustomGBForce {
+public class FixedChargeGBForce extends CustomGBForce {
 
   private static final Logger logger = Logger.getLogger(FixedChargeGBForce.class.getName());
 
@@ -125,7 +128,7 @@ public class FixedChargeGBForce extends OpenMMCustomGBForce {
 
     double[] baseRadii = gk.getBaseRadii();
     double[] overlapScale = gk.getOverlapScale();
-    OpenMMDoubleArray doubleArray = new OpenMMDoubleArray(0);
+    DoubleArray doubleArray = new DoubleArray(0);
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
     Atom[] atoms = molecularAssembly.getAtomArray();
     int nAtoms = atoms.length;
@@ -154,7 +157,7 @@ public class FixedChargeGBForce extends OpenMMCustomGBForce {
    * @param openMMEnergy OpenMM Energy that contains the GK instance.
    * @return The GB force.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
     if (gk == null) {
       return null;
@@ -182,7 +185,7 @@ public class FixedChargeGBForce extends OpenMMCustomGBForce {
       sTens *= 100.0; // 100 square Angstroms per square nanometer.
     }
 
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;

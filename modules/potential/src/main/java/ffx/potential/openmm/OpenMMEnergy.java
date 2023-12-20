@@ -137,7 +137,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
     int enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
-    openMMContext = new OpenMMContext(forceField, requestedPlatform, atoms, enforcePBC, this);
+    openMMContext = new OpenMMContext(requestedPlatform, atoms, enforcePBC, this);
     openMMSystem = new OpenMMSystem(this);
     openMMSystem.addForces();
 
@@ -238,14 +238,14 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * <p>Context.free() must be called to free OpenMM memory.
    *
-   * @param integratorString Integrator to use.
-   * @param timeStep         Time step.
-   * @param temperature      Temperature (K).
-   * @param forceCreation    Force a new Context to be created, even if the existing one matches the
-   *                         request.
+   * @param integratorName Integrator to use.
+   * @param timeStep       Time step.
+   * @param temperature    Temperature (K).
+   * @param forceCreation  Force a new Context to be created, even if the existing one matches the
+   *                       request.
    */
-  public void createContext(String integratorString, double timeStep, double temperature, boolean forceCreation) {
-    openMMContext.create(integratorString, timeStep, temperature, forceCreation, this);
+  public void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation) {
+    openMMContext.update(integratorName, timeStep, temperature, forceCreation, this);
   }
 
   /**
@@ -289,8 +289,8 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       return 0.0;
     }
 
-    // Make sure a context has been created.
-    openMMContext.getContextPointer(true);
+    // Make sure the context has been created.
+    openMMContext.update();
 
     updateParameters(atoms);
 
@@ -345,7 +345,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     unscaleCoordinates(x);
 
     // Make sure a context has been created.
-    openMMContext.getContextPointer(true);
+    openMMContext.update();
 
     setCoordinates(x);
 

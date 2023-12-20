@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.Force;
+import ffx.openmm.PeriodicTorsionForce;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.parameters.ImproperTorsionType;
 
@@ -50,7 +52,7 @@ import static java.lang.String.format;
 /**
  * OpenMM Improper Torsion Force.
  */
-public class ImproperTorsionForce extends OpenMMPeriodicTorsionForce {
+public class ImproperTorsionForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(ImproperTorsionForce.class.getName());
 
@@ -99,7 +101,7 @@ public class ImproperTorsionForce extends OpenMMPeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the improper torsions.
    * @return An Improper Torsion Force, or null if there are no improper torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     ImproperTorsion[] improperTorsions = openMMEnergy.getImproperTorsions();
     if (improperTorsions == null || improperTorsions.length < 1) {
       return null;

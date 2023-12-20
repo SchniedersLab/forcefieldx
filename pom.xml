@@ -918,11 +918,11 @@
   <modules>
     <module>modules/algorithms</module>
     <module>modules/crystal</module>
-    <module>modules/refinement</module>
-    <module>modules/numerics</module>
     <module>modules/jopenmm</module>
+    <module>modules/numerics</module>
     <module>modules/pj</module>
     <module>modules/potential</module>
+    <module>modules/refinement</module>
     <module>modules/ui</module>
     <module>modules/utilities</module>
   </modules>

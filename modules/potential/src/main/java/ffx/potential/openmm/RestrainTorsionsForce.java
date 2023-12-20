@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.Force;
+import ffx.openmm.PeriodicTorsionForce;
 import ffx.potential.bonded.RestraintTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.TorsionType;
@@ -52,7 +54,7 @@ import static java.lang.String.format;
 /**
  * Restrain Torsions Force.
  */
-public class RestrainTorsionsForce extends OpenMMPeriodicTorsionForce {
+public class RestrainTorsionsForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(RestrainTorsionsForce.class.getName());
 
@@ -92,7 +94,7 @@ public class RestrainTorsionsForce extends OpenMMPeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the torsions.
    * @return A Torsion Force, or null if there are no torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Torsion[] torsions = openMMEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return null;

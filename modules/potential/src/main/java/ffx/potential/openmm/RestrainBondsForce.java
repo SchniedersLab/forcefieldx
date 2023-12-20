@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.CustomBondForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.RestraintBond;
 import ffx.potential.parameters.BondType;
@@ -52,7 +55,7 @@ import static java.lang.String.format;
 /**
  * Restrain Bonds Force.
  */
-public class RestrainBondsForce extends OpenMMCustomBondForce {
+public class RestrainBondsForce extends CustomBondForce {
 
   private static final Logger logger = Logger.getLogger(RestrainBondsForce.class.getName());
 
@@ -87,7 +90,7 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
 
     // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
     double forceConvert = 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (RestraintBond restraintBond : restraintBonds) {
       bondType = restraintBond.bondType;
       double forceConstant = bondType.forceConstant * bondType.bondUnit * forceConvert;
@@ -116,7 +119,7 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
    * @param bondFunction The bond function.
    * @param openMMEnergy The OpenMM Energy.
    */
-  public static OpenMMForce constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
     List<RestraintBond> restraintBonds = openMMEnergy.getRestraintBonds(bondFunction);
     if (restraintBonds == null || restraintBonds.isEmpty()) {
       return null;
