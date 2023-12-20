@@ -31,5 +31,5 @@ jobs:
       run: mvn -DskipTests=false -B package --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@v3
+    # - name: Update dependency graph
+    #  uses: advanced-security/maven-dependency-submission-action@v3
