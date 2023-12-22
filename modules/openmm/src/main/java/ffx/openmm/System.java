@@ -51,7 +51,25 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBo
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setParticleMass;
 
 /**
- * OpenMM System.
+ * This class represents a molecular system.  The definition of a System involves
+ * four elements:
+ *
+ * <ul>
+ * <li>The set of particles in the system</li>
+ * <li>The forces acting on them</li>
+ * <li>Pairs of particles whose separation should be constrained to a fixed value</li>
+ * <li>For periodic systems, the dimensions of the periodic box</li>
+ * </ul>
+ *
+ * The particles and constraints are defined directly by the System object, while
+ * forces are defined by objects that extend the Force class.  After creating a
+ * System, call addParticle() once for each particle, addConstraint() for each constraint,
+ * and addForce() for each Force.
+ *
+ * In addition, particles may be designated as "virtual sites".  These are particles
+ * whose positions are computed automatically based on the positions of other particles.
+ * To define a virtual site, call setVirtualSite(), passing in a VirtualSite object
+ * that defines the rules for computing its position.
  */
 public class System {
 

@@ -37,74 +37,51 @@
 // ******************************************************************************
 package ffx.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
-
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setConstraintTolerance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultCollisionFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultTemperature;
 
 /**
- * OpenMM Integrator.
+ * This class uses the Andersen method to maintain constant temperature.
  */
-public abstract class Integrator {
+public class AndersenThermostat extends Force {
 
   /**
-   * OpenMM Integrator pointer.
-   */
-  protected PointerByReference pointer;
-
-  /**
-   * Constructor.
-   */
-  public Integrator() {
-    pointer = null;
-  }
-
-  /**
-   * Set the OpenMM Integrator pointer.
+   * OpenMM AndersenThermostat constructor.
    *
-   * @param pointer The OpenMM Integrator pointer.
+   * @param temperature The temperature.
+   * @param frequency   The collision frequency.
    */
-  public void setPointer(PointerByReference pointer) {
-    this.pointer = pointer;
+  public AndersenThermostat(double temperature, double frequency) {
+    pointer = OpenMM_AndersenThermostat_create(temperature, frequency);
   }
 
   /**
-   * Get the OpenMM Integrator pointer.
+   * Set the default temperature.
    *
-   * @return The OpenMM Integrator pointer.
+   * @param temperature The temperature.
    */
-  public PointerByReference getPointer() {
-    return pointer;
+  public void setDefaultTemperature(double temperature) {
+    OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
   }
 
   /**
-   * Integrate the system forward in time by the specified number of time steps.
+   * Set the default collision frequency.
    *
-   * @param steps The number of steps to take.
+   * @param frequency The collision frequency.
    */
-  public void step(int steps) {
-    OpenMM_Integrator_step(pointer, steps);
+  public void setDefaultCollisionFrequency(double frequency) {
+    OpenMM_AndersenThermostat_setDefaultCollisionFrequency(pointer, frequency);
   }
 
   /**
-   * Set the tolerance within which constraints must be satisfied during the
-   * simulation. The default value is 1e-5 nm.
-   *
-   * @param tolerance The tolerance within which constraints must be satisfied.
-   */
-  public void setConstraintTolerance(double tolerance) {
-    OpenMM_Integrator_setConstraintTolerance(pointer, tolerance);
-  }
-
-  /**
-   * This method will be called by subclasses when the integrator is destroyed.
+   * Destroy the force.
    */
   public void destroy() {
     if (pointer != null) {
-      OpenMM_Integrator_destroy(pointer);
+      OpenMM_AndersenThermostat_destroy(pointer);
       pointer = null;
     }
   }
-
 }

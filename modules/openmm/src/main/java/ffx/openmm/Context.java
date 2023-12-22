@@ -52,7 +52,19 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
 import static ffx.openmm.Vec3Array.toVec3Array;
 
 /**
- * OpenMM Context.
+ * A Context stores the complete state of a simulation.  More specifically, it includes:
+ *
+ * <ul>
+ * <li>The current time</li>
+ * <li>The position of each particle</li>
+ * <li>The velocity of each particle</li>
+ * <li>The values of configurable parameters defined by Force objects in the System</li>
+ * </ul>
+ *
+ * You can retrieve a snapshot of the current state at any time by calling getState().  This
+ * allows you to record the state of the simulation at various points, either for analysis
+ * or for checkpointing.  getState() can also be used to retrieve the current forces on each
+ * particle and the current energy of the System.
  */
 public class Context {
 

@@ -52,7 +52,10 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getSpeed;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
 
 /**
- * OpenMM Platform.
+ * A Platform defines an implementation of all the kernels needed to perform some calculation.
+ * More precisely, a Platform object acts as a registry for a set of KernelFactory
+ * objects which together implement the kernels.  The Platform class, in turn, provides a
+ * static registry of all available Platform objects.
  */
 public class Platform {
 

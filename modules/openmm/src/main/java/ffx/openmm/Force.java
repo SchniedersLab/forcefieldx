@@ -48,7 +48,25 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_usesPeriodicBoundaryConditions;
 
 /**
- * OpenMM Force.
+ * Force objects apply forces to the particles in a System, or alter their behavior in other
+ * ways. This is an abstract class. Subclasses define particular forces.
+ * <p>
+ * More specifically, a Force object can do any or all of the following:
+ *
+ * <ul>
+ * <li>Add a contribution to the force on each particle</li>
+ * <li>Add a contribution to the potential energy of the System</li>
+ * <li>Modify the positions and velocities of particles at the start of each time step</li>
+ * <li>Define parameters which are stored in the Context and can be modified by the user</li>
+ * <li>Change the values of parameters defined by other Force objects at the start of each time step</li>
+ * </ul>
+ * <p>
+ * Forces may be organized into "force groups". This is used for multiple time step integration,
+ * and allows subsets of the Forces in a System to be evaluated at different times. By default,
+ * all Forces are in group 0. Call setForceGroup() to change this. Some Force subclasses may
+ * provide additional methods to further split their computations into multiple groups.  Be aware
+ * that particular Platforms may place restrictions on the use of force groups, such as requiring
+ * all nonbonded forces to be in the same group.
  */
 public abstract class Force {
 
