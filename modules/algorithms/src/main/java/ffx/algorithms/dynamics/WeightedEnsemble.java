@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.algorithms.dynamics.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
@@ -50,7 +52,7 @@ public class WeightedEnsemble {
     private OneDimMetric metric;
 
 
-    public enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL_MIN, POTENTIAL_MAX};
+    public static enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL_MIN, POTENTIAL_MAX};
 
 
     public WeightedEnsemble(OneDimMetric metric, int optNumPerBin,
