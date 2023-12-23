@@ -9,14 +9,13 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import ffx.algorithms.dynamics.integrators.IntegratorEnum;
-import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.potential.utils.Superpose;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+import org.codehaus.groovy.runtime.ArrayUtil;
 
 /**
  * This class implements the Weighted Ensemble algorithm. Simulations are ran in parallel with weights
@@ -29,8 +28,8 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  * configurations in the same bin. The configurations with the highest weights are split into two
  * configurations with half the weight of the parent.
  */
-public class WeightedEnsemble {
-    private static final Logger logger = Logger.getLogger(WeightedEnsemble.class.getName());
+public class WeightedEnsembleManager {
+    private static final Logger logger = Logger.getLogger(WeightedEnsembleManager.class.getName());
 
 
     private final int rank, worldSize;
@@ -43,26 +42,27 @@ public class WeightedEnsemble {
     private boolean restart, staticBins;
     private boolean[] enteredNewBins;
     private int numBins, optNumPerBin;
-    private long totalSteps, numStepsPerResample;
+    private long totalSteps, numStepsPerResample, cycle;
     private double weight, dt, temp, trajInterval;
     private double[] refCoords, binBounds, x;
     private File dynFile, dynTemp, trajFile, trajTemp, currentDir, refStructureFile;
+    private Random random;
     private MolecularDynamics molecularDynamics;
     private Potential potential;
-    private OneDimMetric metric;
+    private final OneDimMetric metric;
 
 
-    public static enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL_MIN, POTENTIAL_MAX};
+    public enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL_MIN, POTENTIAL_MAX}
 
-
-    public WeightedEnsemble(OneDimMetric metric, int optNumPerBin,
-                            MolecularDynamics md,
-                            File refStructureFile) {
+    public WeightedEnsembleManager(OneDimMetric metric, int optNumPerBin,
+                                   MolecularDynamics md,
+                                   File refStructureFile) {
         // Init MPI stuff
         this.world = Comm.world();
         this.rank = world.rank();
         this.worldSize = world.size();
-        /* Check if world size is valid
+        // Check if world size is valid
+        /*
         if (worldSize < 2){
             logger.severe(" Weighted Ensemble requires at least 2 ranks.");
             System.exit(1);
@@ -71,24 +71,28 @@ public class WeightedEnsemble {
         }
          */
 
-        // Init FFX stuff
+        // Init FFX & file stuff
         this.refStructureFile = refStructureFile;
-        getRefCoords(refStructureFile, refCoords);
+        refCoords = getRefCoords(refStructureFile);
+        if(refCoords == null){
+            logger.severe(" Failed to get reference coordinates.");
+            System.exit(1);
+        }
         this.dynFile = md.getDynFile();
         this.molecularDynamics = md;
         this.potential = null;
         if(molecularDynamics.molecularAssembly != null){
             this.potential = molecularDynamics.molecularAssembly[0].getPotentialEnergy();
+            this.x = potential.getCoordinates(new double[potential.getNumberOfVariables()]);
         } else {
             logger.severe(" Molecular Assembly not set for Molecular Dynamics.");
             System.exit(1);
         }
+
+        logger.info("\n\n ----------------------------- Initializing Weighted Ensemble Run -----------------------------");
         if (initFilesOrPrepRestart()){
             if (restart) {
                 logger.info(" Restarting from previous Weighted Ensemble run.");
-            } else {
-                logger.info(" Initializing Weighted Ensemble run.");
-
             }
         } else {
             logger.severe(" Failed to initialize Weighted Ensemble run.");
@@ -97,13 +101,22 @@ public class WeightedEnsemble {
 
         // Init Weighted Ensemble stuff
         CompositeConfiguration properties = molecularDynamics.molecularAssembly[0].getProperties();
+        this.random = new Random();
+        random.setSeed(44); // TODO: Seed in a better way so that its the same for each rank but different each run
         this.binBounds = getPropertyList(properties, "WE.BinBounds");
+        logger.info(" Bin bounds: " + Arrays.toString(binBounds));
         this.numBins = binBounds.length + 1;
         this.staticBins = binBounds.length > 0;
+        if (staticBins){
+            logger.info(" Using static binning with " + numBins + " bins.");
+        } else {
+            logger.info(" Using dynamic binning.");
+        }
         this.numBins = staticBins ? numBins : 500; // TODO: Implement dynamic binning & fix this hack for buffer size
         this.optNumPerBin = optNumPerBin;
         this.metric = metric;
         this.weight = 1.0 / worldSize;
+        this.cycle = 0;
         this.enteredNewBins = new boolean[worldSize];
         this.globalValues = new double[worldSize][1]; // [[globalValue (i.e. rmsd)] for each rank]
         this.weightsBins = new double[worldSize][2]; // [[weight, bin] for each rank]
@@ -119,8 +132,7 @@ public class WeightedEnsemble {
         myWeightBin = weightsBins[rank];
         myWeightBin[0] = weight;
         myGlobalValue = globalValues[rank];
-
-        this.staticBins = false;
+        comms(); // Comm check
     }
 
     private double[] getPropertyList(CompositeConfiguration properties, String propertyName) {
@@ -142,23 +154,31 @@ public class WeightedEnsemble {
         return list.stream().sorted().mapToDouble(Double::doubleValue).toArray();
     }
 
-    private static void getRefCoords(File refStructureFile, double[] refCoords){
+    private static double[] getRefCoords(File refStructureFile){
         PotentialsUtils utils = new PotentialsUtils();
         MolecularAssembly assembly = utils.open(refStructureFile);
-        assembly.getPotentialEnergy().getCoordinates(refCoords);
+        return assembly.getPotentialEnergy().getCoordinates(new double[0]);
     }
 
     private boolean initFilesOrPrepRestart() {
         // My directory info
+        logger.info("\n Rank " + rank + " structure is based on: " + refStructureFile.getAbsolutePath());
         File parent = refStructureFile.getParentFile();
+        logger.info(" Rank " + rank + " is using parent directory: " + parent.getAbsolutePath());
         currentDir = new File(parent + File.separator + rank);
-        trajFile = new File(currentDir + File.separator + refStructureFile.getName() + ".arc");
+        logger.info(" Rank " + rank + " is using directory: " + currentDir.getAbsolutePath());
+        trajFile = new File(currentDir + File.separator +
+                FilenameUtils.getBaseName(refStructureFile.getName()) + ".arc");
+        logger.info(" Rank " + rank + " is using trajectory file: " + trajFile.getAbsolutePath());
         molecularDynamics.setArchiveFiles(new File[]{trajFile});
-        dynFile = new File(currentDir + File.separator + refStructureFile.getName() + ".dyn");
+        dynFile = new File(currentDir + File.separator +
+                FilenameUtils.getBaseName(refStructureFile.getName()) + ".dyn");
+        logger.info(" Rank " + rank + " is using dyn restart file: " + dynFile.getAbsolutePath());
         molecularDynamics.setFallbackDynFile(dynFile);
+
         restart = !currentDir.mkdir() && checkRestartFiles();
-        molecularDynamics.setAutomaticWriteouts(false);
-        return false;
+        logger.info(" \n");
+        return currentDir.exists();
     }
 
     private boolean checkRestartFiles(){
@@ -181,29 +201,45 @@ public class WeightedEnsemble {
         if (!staticBins) {
             dynamics(numStepsPerResample * 3L);
         }
-
-        int numCycles = (int) Math.ceil((double) totalSteps / numStepsPerResample);
-        for (int i = 0; i < numCycles; i++) {
-            dynamics(numStepsPerResample);
-            molecularDynamics.writeRestart();
-            calculateMyMetric();
-            comms(); // Separate comms for dynamic binning
-            binAssignment();
-            comms();
-            resample();
-            commsSanityCheckAndFileMigration();
-            logger.info(" Resampling cycle " + i + " complete.");
+        if(restart) {
+            long restartFrom = getRestartTime(dynFile);
+            logger.info(" Restarting from " + restartFrom + " femtoseconds.");
+            totalSteps -= restartFrom;
+            logger.info(" Remaining cycles: " + (int) Math.ceil((double) totalSteps / numStepsPerResample));
         }
+
+        // Initial information logging
+        logger.info("\n ----------------------------- Start Weighted Ensemble Run -----------------------------");
+        int numCycles = (int) Math.ceil((double) totalSteps / numStepsPerResample);
+
+        for (int i = 0; i < numCycles; i++) {
+            cycle = i;
+            dynamics(numStepsPerResample);
+            calculateMyMetric();
+            comms(); // Separate comms for dynamic binning & metric communication
+            binAssignment();
+            resample();
+            commsSanityCheckAndFileMigration(); // 2 comms in here
+            logger.info("\n ----------------------------- Resampling cycle #" + (i+1) +
+                    " complete ----------------------------- ");
+        }
+        logger.info("\n\n\n ----------------------------- End Weighted Ensemble Run -----------------------------");
+    }
+
+    private long getRestartTime(File dynFile) {
+        // TODO: Implement this (Time: in dyn file doesn't work)
+        return 0;
     }
 
     private void dynamics(long numSteps){
         // Convert numStepsPerResample to picoseconds using dt (in femtoseconds)
-        double dynamicTotalTime =  (long) (numSteps * dt / 1000.0);
+        double dynamicTotalTime = (numSteps * dt / 1000.0);
         molecularDynamics.setCoordinates(x);
         potential.energy(x, false);
         molecularDynamics.dynamic(numSteps, dt, dynamicTotalTime/3.0,
                 dynamicTotalTime/3.0, temp, true, dynFile);
         x = molecularDynamics.getCoordinates();
+        molecularDynamics.writeRestart();
     }
 
     /**
@@ -228,6 +264,7 @@ public class WeightedEnsemble {
      *  <p>
      */
     private void resample(){
+        logger.info("\n\n ----------------------------- Resampling ----------------------------- ");
         // Initialize
         ArrayList<Integer>[] binRank = new ArrayList[numBins];
         PriorityQueue<Decision> merges = new PriorityQueue<>(); // Head is the lowest weight for priority queues
@@ -250,13 +287,18 @@ public class WeightedEnsemble {
                     .sorted((a, b) -> Double.compare(weightsBins[a][0], weightsBins[b][0]))
                     .toList();
             if (ranks.isEmpty()){ continue; }
-            double idealWeight = ranks.stream().mapToDouble(a -> weightsBins[a][0]).sum() / ranks.size();
+            double idealWeight = ranks.stream().mapToDouble(a -> weightsBins[a][0]).sum() / optNumPerBin;
+            logger.info(" Ranks: " + ranks);
+            logger.info(" Weights: " + Arrays.toString(ranks.stream().mapToDouble(a -> weightsBins[a][0]).toArray()));
+            logger.info("\n Bin #" + i + " has " + ranks.size() + " ranks with ideal weight " + idealWeight + ".");
 
             // Split Decisions
+            ArrayList<Integer> splitRanks = new ArrayList<>();
             for (int rank : ranks) {
                 double weight = weightsBins[rank][0];
-                if (weightsBins[rank][0] > 2.0 * idealWeight / m || enteredNewBins[rank]) {
+                if (weightsBins[rank][0] > 2.0 * idealWeight || enteredNewBins[rank]) {
                     splits.add(new Decision(new ArrayList<>(List.of(rank)), new ArrayList<>(List.of(weight))));
+                    splitRanks.add(rank);
                 }
             }
 
@@ -267,9 +309,19 @@ public class WeightedEnsemble {
             double combinedWeight = 0.0;
             ArrayList<Decision> binMergeList = new ArrayList<>();
             binMergeList.add(new Decision(new ArrayList<>(), new ArrayList<>()));
-            while(weight < idealWeight/2){
-                if (!enteredNewBins[rank]) { // Don't merge if the rank just entered the bin?
-                    if (combinedWeight + weight < idealWeight) { // Noraml case
+            while(weight < idealWeight/2){ // Don't merge if the rank just entered the bin?
+                boolean split = false;
+                if (splitRanks.contains(rank) && ranks.size() > optNumPerBin){ // If the rank wants to split & merge, flip a coin
+                    double choice = random.nextDouble();
+                    if (choice < .5) {
+                        int finalRank = rank;
+                        splits.removeIf(decision -> decision.ranks.contains(finalRank));
+                    } else {
+                        split = true;
+                    }
+                }
+                if (!split){
+                    if (combinedWeight + weight < idealWeight) { // Normal case
                         binMergeList.getLast().ranks.add(rank);
                         binMergeList.getLast().weights.add(weight);
                         combinedWeight += weight;
@@ -284,7 +336,6 @@ public class WeightedEnsemble {
                         continue;
                     }
                 }
-
                 if (ranksIterator.hasNext()){
                     rank = ranksIterator.next();
                     weight = weightsBins[rank][0];
@@ -300,6 +351,7 @@ public class WeightedEnsemble {
         }
 
         // Apply decisions to ranks
+        StringBuilder mergeString = new StringBuilder();
         for (int i = 0; i < worldSize; i++){
             weightsBinsCopyRank[i][0] = weightsBins[i][0];
             weightsBinsCopyRank[i][1] = weightsBins[i][1];
@@ -307,12 +359,19 @@ public class WeightedEnsemble {
         }
         // Merges
         ArrayList<Integer> freedRanks = new ArrayList<>();
-        while (!merges.isEmpty()){
+        int desiredFreeRanks = splits.size()*m - splits.size();
+        while (!merges.isEmpty() && desiredFreeRanks > 0){
             Decision decision = merges.poll();
+            if(decision.ranks.size()-1 > desiredFreeRanks){
+                decision.ranks.subList(desiredFreeRanks+1, decision.ranks.size()).clear();
+                decision.weights.subList(desiredFreeRanks+1, decision.weights.size()).clear();
+            }
+            desiredFreeRanks -= decision.ranks.size()-1;
             // Sample a rank to merge into from all ranks in the decision to find target
-            ArrayList<Double> weights = decision.weights;
-            weights.replaceAll(a -> a / weights.stream().mapToDouble(Double::doubleValue).sum());
-            double rand = Math.random();
+            ArrayList<Double> weights = (ArrayList<Double>) decision.weights.clone();
+            double totalWeight = weights.stream().mapToDouble(Double::doubleValue).sum();
+            weights.replaceAll(a -> a /totalWeight);
+            double rand = random.nextDouble();
             double cumulativeWeight = 0.0;
             int rankToMergeInto = -1;
             for (int i = 0; i < weights.size(); i++){
@@ -322,6 +381,7 @@ public class WeightedEnsemble {
                     break;
                 }
             }
+            mergeString.append("\t Ranks ").append(decision.ranks).append(" --> ").append(rankToMergeInto).append("\n");
             // Add non-target ranks to the freed ranks list & update the target rank
             for (int rank : decision.ranks){
                 if (rank != rankToMergeInto){
@@ -332,6 +392,7 @@ public class WeightedEnsemble {
             }
         }
         // Splits
+        StringBuilder splitString = new StringBuilder();
         while(!splits.isEmpty() && !freedRanks.isEmpty()){
             if (freedRanks.size() < m-1){ // M will change from 2 eventually maybe
                 m = freedRanks.size() + 1;
@@ -339,18 +400,39 @@ public class WeightedEnsemble {
             Decision decision = splits.poll();
             int parent = decision.ranks.getFirst();
             double weightToEach = decision.getTotalWeight() / m;
+            ArrayList<Integer> ranksUsed = new ArrayList<>();
+            ranksUsed.add(parent);
             for (int i = 0; i < m-1; i++){
                 int childRank = freedRanks.removeFirst();
+                ranksUsed.add(childRank);
                 weightsBinsCopyRank[parent][0] = weightToEach; // Update parent weight
                 weightsBinsCopyRank[childRank][0] = weightToEach; // Update child weight
                 weightsBinsCopyRank[childRank][1] = weightsBinsCopyRank[parent][1]; // Update child bin
                 weightsBinsCopyRank[childRank][2] = parent; // Update where child needs to copy from
             }
+            splitString.append("\t Rank ").append(parent).append(" --> ").append(ranksUsed).append("\n");
         }
 
         // Apply my own decisions
         myWeightBin[0] = weightsBinsCopyRank[rank][0];
         myWeightBin[1] = weightsBinsCopyRank[rank][1];
+
+        // Log decisions
+        logger.info("\n ----------------------------- Resampling Decisions ----------------------------- ");
+        double[] weights = new double[worldSize];
+        int[] bins = new int[worldSize];
+        for (int i = 0; i < worldSize; i++) {
+            weights[i] = weightsBinsCopyRank[i][0];
+            bins[i] = (int) Math.round(weightsBinsCopyRank[i][1]);
+        }
+        logger.info("\n Rank bin numbers: " + Arrays.toString(bins));
+        logger.info(" Rank weights:     " + Arrays.toString(weights));
+        logger.info(" Weight sum:      " + Arrays.stream(weights).sum());
+        logger.info(" Merges: \n" + mergeString + "\n");
+        logger.info(" Splits: \n" + splitString + "\n");
+        if ((Arrays.stream(weights).sum()-1) > 1e-6){
+            logger.severe(" Weights do not sum to 1.0.");
+        }
     }
 
     private record Decision(ArrayList<Integer> ranks, ArrayList<Double> weights)
@@ -364,37 +446,54 @@ public class WeightedEnsemble {
         public int compareTo(Decision decision) {
             return Double.compare(this.getTotalWeight(), decision.getTotalWeight());
         }
-
     }
 
     private void binAssignment() {
         double[] global = new double[worldSize];
         for (int i = 0; i < worldSize; i++){
-            global[i] = globalValues[i][0];
+            global[i] = globalValues[i][0]; // get global values from the comm() call
         }
         double[] binBounds = getOneDimBinBounds(global);
-        // TODO: Implement another communication to get global values to make bins dynamically
+        numBins = binBounds.length + 1;
         // binBounds.length+1 is number of binds because we need to account for the two extra bins at the ends
         // 0 is the bin for < binBounds[0]
         // binBounds.length is the bin for >= binBounds[binBounds.length-1]
         for (int j = 0; j < worldSize; j++) {
             int oldBin = (int) Math.round(weightsBins[j][1]);
-            for (int i = 0; i < numBins - 1; i++) {
-                if (i == 0 && global[j] < binBounds[i]) {
+            for (int i = 0; i < numBins - 2; i++) { // -2 because there are 2 bins at the ends that get checked at same time
+                if (i == 0 && global[j] < binBounds[i]) { // Lower than first bound
                     weightsBins[j][1] = i;
+                    enteredNewBins[j] = oldBin != i;
                     break;
                 }
-                if (global[j] >= binBounds[i] && global[j] < binBounds[i + 1]) {
-                    weightsBins[j][1] = i;
+                if (global[j] >= binBounds[i] && global[j] < binBounds[i + 1]) { // Between bounds
+                    weightsBins[j][1] = i + 1;
+                    enteredNewBins[j] = oldBin != i + 1;
                     break;
                 }
-                if (i == numBins - 2 && global[j] >= binBounds[i + 1]) {
-                    weightsBins[j][1] = i;
+                if (i == numBins - 3 && global[j] >= binBounds[i + 1]) { // Higher than last bound
+                    weightsBins[j][1] = i + 2;
+                    enteredNewBins[j] = oldBin != i + 2;
                     break;
                 }
             }
-            enteredNewBins[j] = oldBin != weightsBins[j][1];
         }
+
+        logger.info("\n Bin bounds:        " + Arrays.toString(binBounds));
+        logger.info(" Rank global values with metric \"" + metricToString(metric) + "\": " + Arrays.toString(global));
+        logger.info(" Entered new bins: " + Arrays.toString(enteredNewBins));
+    }
+
+    private String metricToString(OneDimMetric metric) {
+        return switch (metric) {
+            case RMSD -> "RMSD";
+            case RESIDUE_DISTANCE -> "Residue Distance";
+            case COM_DISTANCE -> "COM Distance";
+            case ATOM_DISTANCE -> "Atom Distance";
+            case POTENTIAL_MIN -> "Potential Min";
+            case POTENTIAL_MAX -> "Potential Max";
+            default -> "Invalid Metric";
+        };
     }
 
     private void calculateMyMetric(){
@@ -423,29 +522,6 @@ public class WeightedEnsemble {
         }
         //TODO: Implement Voronoi binning for dynamic binning
         logger.severe(" Automatic binning not implemented yet.");
-        switch (metric){
-            case RMSD:
-                logger.severe(" RMSD binning not implemented yet.");
-                break;
-            case RESIDUE_DISTANCE:
-                logger.severe(" Residue distance binning not implemented yet.");
-                break;
-            case COM_DISTANCE:
-                logger.severe(" COM distance binning not implemented yet.");
-                break;
-            case ATOM_DISTANCE:
-                logger.severe(" Atom distance binning not implemented yet.");
-                break;
-            case POTENTIAL_MIN:
-                logger.severe(" Potential min binning not implemented yet.");
-                break;
-            case POTENTIAL_MAX:
-                logger.severe(" Potential max binning not implemented yet.");
-                break;
-            default:
-                logger.severe(" Invalid metric for binning.");
-                break;
-        }
         return new double[0];
     }
 
@@ -455,24 +531,33 @@ public class WeightedEnsemble {
     private void comms(){
         try{
             world.allGather(myWeightBinBuf, weightsBinsBuf);
+        } catch (IOException e) {
+            String message = " WeightedEnsemble allGather for weightsbins failed.";
+            logger.severe(message);
+        }
+        try{
             world.allGather(myGlobalValueBuf, globalValuesBuf);
         } catch (IOException e) {
-            String message = " WeightedEnsemble allGather failed.";
-            logger.log(Level.SEVERE, message, e);
+            String message = " WeightedEnsemble allGather for global failed.";
+            logger.severe(message);
         }
     }
 
     private void commsSanityCheckAndFileMigration() {
         comms();
-        // Check if the weightsBinsCopyRank & weightsBins are the same
+
+        // Sanity check if the weightsBinsCopyRank & weightsBins are the same
         for (int i = 0; i < worldSize; i++) {
             if (weightsBins[i][0] != weightsBinsCopyRank[i][0] ||
                     weightsBins[i][1] != weightsBinsCopyRank[i][1]) {
                 String message = " Rank " + i + " has mismatched weightsBins and weightsBinsCopyRank.";
+                logger.info(" WeightsBins: " + Arrays.deepToString(weightsBins));
+                logger.info(" WeightsBinsCopyRank: " + Arrays.deepToString(weightsBinsCopyRank));
                 logger.severe(message);
                 System.exit(1);
             }
         }
+
         // Get the files I need to copy into temp files then override my files
         if (weightsBinsCopyRank[rank][2] != -1 && weightsBinsCopyRank[rank][2] != rank){ // Second not strictly necessary
             copyOver((int) weightsBinsCopyRank[rank][2]);
@@ -509,16 +594,20 @@ public class WeightedEnsemble {
 
     private void moveOnto(){
         try {
-            Files.move(dynTemp.toPath(), dynFile.toPath());
+            Files.move(dynTemp.toPath(), dynFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             String message = " Failed to move dyn file from rank " + rank + " to rank " + this.rank;
             logger.log(Level.SEVERE, message, e);
         }
         try {
-            Files.move(trajTemp.toPath(), trajFile.toPath());
+            Files.move(trajTemp.toPath(), trajFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             String message = " Failed to move traj file from rank " + rank + " to rank " + this.rank;
             logger.log(Level.SEVERE, message, e);
         }
     }
 }
+
+/*
+
+ */

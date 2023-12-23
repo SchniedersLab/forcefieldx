@@ -35,13 +35,15 @@
 // exception statement from your version.
 //
 //******************************************************************************
-
+package ffx.algorithms.groovy.test
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.algorithms.dynamics.WeightedEnsembleManager
+import static ffx.algorithms.dynamics.WeightedEnsembleManager.OneDimMetric
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -86,9 +88,13 @@ class WeightedEnsemble extends AlgorithmsScript {
             return this
         }
 
-        System.setProperty("WE.BinBounds", "[.01, .02, .03, .04, .05, .06, .07, .08, .09, .1]");
-
         MolecularAssembly assembly = getActiveAssembly(filename)
+        File file = assembly.getFile()
+        if (file == null) {
+            logger.severe(" No file found for assembly: " + assembly)
+        } else{
+            logger.info(" Running Weighted Ensemble on " + file)
+        }
         Potential potential = assembly.getPotentialEnergy();
         double[] x = new double[potential.getNumberOfVariables()];
         potential.getCoordinates(x);
@@ -97,10 +103,10 @@ class WeightedEnsemble extends AlgorithmsScript {
                 ThermostatEnum.ADIABATIC,
                 IntegratorEnum.LANGEVIN);
 
-        WeightedEnsemble weightedEnsemble = new WeightedEnsemble(ffx.algorithms.dynamics.WeightedEnsemble.OneDimMetric.RMSD, 10, md, filename);
+        WeightedEnsembleManager weightedEnsemble = new WeightedEnsembleManager(OneDimMetric.RMSD, 2, md, file);
         double temp = 298.15;
         double dt = 1.0;
 
-        weightedEnsemble.run(100000, 1000, temp, dt);
+        weightedEnsemble.run(10000, 100, temp, dt);
     }
 }
