@@ -51,7 +51,8 @@ public class WeightedEnsembleManager {
     private final OneDimMetric metric;
 
 
-    public enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL_MIN, POTENTIAL_MAX}
+
+    public enum OneDimMetric {RMSD, RESIDUE_DISTANCE, COM_DISTANCE, ATOM_DISTANCE, POTENTIAL, RADIUS_OF_GYRATION}
 
     public WeightedEnsembleManager(OneDimMetric metric, int optNumPerBin,
                                    MolecularDynamics md,
@@ -253,9 +254,7 @@ public class WeightedEnsembleManager {
                 break;
             case ATOM_DISTANCE:
                 break;
-            case POTENTIAL_MIN:
-                break;
-            case POTENTIAL_MAX:
+            case POTENTIAL:
                 break;
             default:
                 break;
@@ -302,8 +301,7 @@ public class WeightedEnsembleManager {
             case RESIDUE_DISTANCE -> "Residue Distance";
             case COM_DISTANCE -> "COM Distance";
             case ATOM_DISTANCE -> "Atom Distance";
-            case POTENTIAL_MIN -> "Potential Min";
-            case POTENTIAL_MAX -> "Potential Max";
+            case POTENTIAL -> "Potential";
             default -> "Invalid Metric";
         };
     }
