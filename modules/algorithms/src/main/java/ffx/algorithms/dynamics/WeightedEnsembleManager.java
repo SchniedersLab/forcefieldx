@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.utils.ProgressiveAlignmentOfCrystals;
+import ffx.potential.utils.StructureMetrics;
 import ffx.potential.utils.Superpose;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -20,12 +22,21 @@ import org.apache.commons.io.FilenameUtils;
  * This class implements the Weighted Ensemble algorithm. Simulations are ran in parallel with weights
  * assigned evenly to all simulations at the start. After a specified number of stochastic dynamics,
  * the parallel configurations are resampled (merged or split) and their weights are updated accordingly.
- *
+ * <p>
  * Resampling is done by assigning each configuration a bin number. The bin number is determined by some
  * predetermined metric (e.g. RMSD, distance between residues, distance between complexes). The configurations
  * are then sorted by bin number and the configurations with the lowest weights are merged with other
  * configurations in the same bin. The configurations with the highest weights are split into two
  * configurations with half the weight of the parent.
+ * <p>
+ * The algorithm is based on the Huber & Kim original paper and a following theory paper by Zuckerman:
+ * <p>
+ * Huber, G. A., & Kim, S. (1996). Weighted-ensemble Brownian dynamics simulations for protein association reactions.
+ * Biophysical journal, 70, 97-110.
+ * <p>
+ * Zuckerman, D. M. (2010). The "Weighted Ensemble" path sampling method is statistically exact for a broad class of
+ * stochastic processes and binning procedures. The Journal of Chemical Physics, 132.
+ *
  */
 public class WeightedEnsembleManager {
     private static final Logger logger = Logger.getLogger(WeightedEnsembleManager.class.getName());
@@ -39,14 +50,14 @@ public class WeightedEnsembleManager {
     private final DoubleBuf myWeightBinBuf, myGlobalValueBuf;
 
     private boolean restart, staticBins;
-    private boolean[] enteredNewBins;
+    private final boolean[] enteredNewBins;
     private int numBins, optNumPerBin;
     private long totalSteps, numStepsPerResample, cycle;
     private double weight, dt, temp, trajInterval;
     private double[] refCoords, binBounds, x;
     private File dynFile, dynTemp, trajFile, trajTemp, currentDir, refStructureFile;
-    private Random random;
-    private MolecularDynamics molecularDynamics;
+    private final Random random;
+    private final MolecularDynamics molecularDynamics;
     private Potential potential;
     private final OneDimMetric metric;
 
@@ -62,14 +73,12 @@ public class WeightedEnsembleManager {
         this.rank = world.rank();
         this.worldSize = world.size();
         // Check if world size is valid
-        /*
         if (worldSize < 2){
             logger.severe(" Weighted Ensemble requires at least 2 ranks.");
             System.exit(1);
         } else if (worldSize < 10){
-            logger.warning(" Weighted Ensemble is not recommended for less than 10 parallel simulations.");
+            logger.warning(" Weighted Ensemble is not recommended for small scale parallel simulations.");
         }
-         */
 
         // Init FFX & file stuff
         this.refStructureFile = refStructureFile;
@@ -112,7 +121,7 @@ public class WeightedEnsembleManager {
         } else {
             logger.info(" Using dynamic binning.");
         }
-        this.numBins = staticBins ? numBins : 500; // TODO: Implement dynamic binning & fix this hack for buffer size
+        this.numBins = staticBins ? numBins : worldSize / optNumPerBin;
         this.optNumPerBin = optNumPerBin;
         this.metric = metric;
         this.weight = 1.0 / worldSize;
@@ -185,8 +194,7 @@ public class WeightedEnsembleManager {
         // Check if restart files exist
         Path dynPath = dynFile.toPath();
         Path trajPath = trajFile.toPath();
-        // TODO: Restart in place of where previous run left off instead of starting over
-        // This could potentially be done by reading the number of traj frames
+        //TODO: Read in ESV file counts
         return dynPath.toFile().exists() && trajPath.toFile().exists();
     }
 
@@ -229,6 +237,7 @@ public class WeightedEnsembleManager {
 
     private long getRestartTime(File dynFile) {
         // TODO: Implement this (Time: in dyn file doesn't work)
+        //done by reading in traj file (count num models)
         return 0;
     }
 
@@ -255,6 +264,12 @@ public class WeightedEnsembleManager {
             case ATOM_DISTANCE:
                 break;
             case POTENTIAL:
+                double refEnergy = potential.energy(refCoords, false);
+                double myEnergy = potential.energy(x, false);
+                globalValues[rank][0] = myEnergy - refEnergy;
+                break;
+            case RADIUS_OF_GYRATION:
+                StructureMetrics.radiusOfGyration(x, potential.getMass());
                 break;
             default:
                 break;

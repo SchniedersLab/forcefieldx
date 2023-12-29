@@ -61,11 +61,8 @@ import static ffx.algorithms.dynamics.WeightedEnsembleManager.OneDimMetric
  * <br>
  * ffxc test.WeightedEnsemble [options] &lt;filename&gt [file2...];
  */
-@Command(description = " Runs parallel simulations with intermittent resampling.", name = "test.WeightedEnsemble")
+@Command(description = " Runs parallel simulations with intermittent resampling. This is a simple script as an example of how it can be used.", name = "test.WeightedEnsemble")
 class WeightedEnsemble extends AlgorithmsScript {
-
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
 
     @Mixin
     DynamicsOptions dynamicsOptions
@@ -88,6 +85,16 @@ class WeightedEnsemble extends AlgorithmsScript {
     @Option(names = ['--oneDimensionalMetric'], paramLabel = 'RMSD',
             description = 'Bin across this metric. Options: RMSD, POTENTIAL, RESIDUE_DISTANCE, ATOM_DISTANCE, COM_DISTANCE, RAD_GYRATION')
     String oneDimensionalMetric = "RMSD"
+
+    @Option(names = ['--atomOne'], paramLabel = '0',
+            description = 'For ATOM_DISTANCE. Atom which is part of molecule one for COM_DISTANCE and part of residue one for RESIDUE_DISTANCE.')
+    int atomOne = 0
+
+    @Option(names = ['--atomTwo'], paramLabel = '0',
+            description = 'For ATOM_DISTANCE. Atom which is part of molecule two for COM_DISTANCE and part of residue two for RESIDUE_DISTANCE.')
+    int atomTwo = 0
+
+
 
     /**
      * One or more filenames.
