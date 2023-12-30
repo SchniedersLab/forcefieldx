@@ -37,6 +37,9 @@ import org.apache.commons.io.FilenameUtils;
  * Zuckerman, D. M. (2010). The "Weighted Ensemble" path sampling method is statistically exact for a broad class of
  * stochastic processes and binning procedures. The Journal of Chemical Physics, 132.
  *
+ *
+ * @author Matthew Speranza
+ * @since 1.0
  */
 public class WeightedEnsembleManager {
     private static final Logger logger = Logger.getLogger(WeightedEnsembleManager.class.getName());
