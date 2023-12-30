@@ -42,6 +42,7 @@ import ffx.utilities.Constants;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
@@ -450,10 +451,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static void main(String[] args) {
+        long barTime = 0;
+        long mbarTime = 0;
         for (int k = 0; k < 10; k++) {
             double[] lambdaValues = new double[]{0.0, 0.1};
             double[] temperatures = new double[]{298.0, 298.0};
-            double[][][] energiesAll = new double[2][2][4999]; // TODO: Change here
+            double[][][] energiesAll = new double[2][2][4999]; // TODO: Change here to max num snaps in BAR file
             logger.info("\nk: " + k);
             try (FileReader fr1 = new FileReader("testing/barFiles/energy_" + k + ".bar"); // TODO: Change here
                  BufferedReader br1 = new BufferedReader(fr1);) {
@@ -497,7 +500,16 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            long start = System.nanoTime();
             SequentialEstimator mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
+            mbarTime += System.nanoTime() - start;
+
+            start = System.nanoTime();
+            SequentialEstimator bar = new BennettAcceptanceRatio(lambdaValues, mbar.eLow, mbar.eAt, mbar.eHigh, temperatures);
+            barTime += System.nanoTime() - start;
         }
+
+        logger.info("BAR time in seconds: " + barTime / 1.0E9);
+        logger.info("MBAR time in seconds: " + mbarTime / 1.0E9);
     }
 }
