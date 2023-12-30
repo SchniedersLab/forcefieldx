@@ -61,12 +61,15 @@ import static org.apache.commons.math3.util.FastMath.exp;
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
  * to the Bennett Acceptance Ratio (BAR) method for multiple lambda windows. It requires an input of
- * K X N array of energies (every window at every snap at every lambda value). Loosely based on pymbar code.
+ * K X N array of energies (every window at every snap at every lambda value). Two implementations exist
+ * and one is commented out. The first is slower and the second is based on pymbar code.
  *
  * This class implements the method discussed in:
  *      Shirts, M. R. and Chodera, J. D. (2008) Statistically optimal analysis of samples from multiple equilibrium
  *      states. J. Chem. Phys. 129, 124105. doi:10.1063/1.2978177
  *
+ * @author Matthew Speranza
+ * @since 1.0
  */
 public class MultistateBennettAcceptanceRatio extends SequentialEstimator implements BootstrappableEstimator {
     private static final Logger logger = Logger.getLogger(MultistateBennettAcceptanceRatio.class.getName());
@@ -115,7 +118,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     /**
      * MBAR free-energy estimates at each lambda value.
      */
-    private final double[] mbarFreeEnergies;
+    private double[] mbarFreeEnergies;
     /**
      * Total MBAR free-energy difference estimate.
      */
@@ -159,7 +162,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         random = new Random();
 
         seedEnergies();
-        estimateDG(true);
+        estimateDG();
     }
 
     private void seedEnergies() {
@@ -194,6 +197,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         estimateDG(false);
     }
 
+    // Slow implementation
+    /*
     @Override
     public void estimateDG(boolean randomSamples) {
         double[] prevMBAR;
@@ -206,14 +211,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             rtValues[i] = Constants.R * temperatures[i];
             invRTValues[i] = 1.0 / rtValues[i];
         }
-        // Find the smallest length of eAllFlat array
-        int minSnaps = Integer.MAX_VALUE;
-        for (double[] doubles : eAllFlat) {
-            if (doubles.length < minSnaps) {
-                minSnaps = doubles.length;
-            }
-        }
-        logger.info("Using " + minSnaps + " snapshots for MBAR calculations.");
+        // Find the smallest length of eAllFlat array (look for INF values)
+        int minSnaps = eAllFlat[0].length;
+
+        logger.info("Using " + minSnaps + " snapshots for MBAR calculations. This is K (runs) * N (min(NumSnaps)).");
         int numSnaps = min(eAllFlat[0].length, minSnaps);
         int totalSnaps = numSnaps * nWindows;
 
@@ -241,7 +242,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                     double[] tempB = new double[lamValues.length];
                     for (int k = 0; k < lamValues.length; k++) { // Denominator sum over K different lambda evaluations
                         temp[k] = prevMBAR[k] + (-eAllFlat[k][indices[n]] * invRTValues[k]);
-                        tempB[k] = ((double) numSnaps) / totalSnaps;
+                        tempB[k] = numSnaps;
                     }
                     denominatorTerms[n] = logSumExp(temp, tempB);
                 }
@@ -252,7 +253,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                     temp[i] =  -denominatorTerms[i] + numeratorTerms[i];
                 }
                 double sum = -1.0 * logSumExp(temp);
-                tempMBAR[state] = sum * rtValues[state];
+                tempMBAR[state] = sum;
             }
             // Constrain f1=0 over the course of iterations to prevent uncontrolled growth in magnitude
             double f1 = tempMBAR[0];
@@ -262,6 +263,72 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             iter++;
         } while(!converged(prevMBAR));
 
+        for(int i = 0; i < mbarFreeEnergies.length; i++){
+            mbarFreeEnergies[i] = mbarFreeEnergies[i] * rtValues[i];
+        }
+
+        logger.info(" MBAR converged after " + iter + " iterations.");
+        for(int i = 0; i < nWindows; i++){
+            mbarEstimates[i] = mbarFreeEnergies[i+1] - mbarFreeEnergies[i];
+            logger.info(" MBAR free energy difference estimate for window " + i + " -> " + (i+1) + ": " + mbarEstimates[i]);
+        }
+        totalMBAREstimate = stream(mbarEstimates).sum();
+        logger.info(" Total MBAR free energy difference estimate: " + totalMBAREstimate);
+    }
+     */
+
+    /**
+     * Implementation based on pymbar code. Precomputes values for faster calculations.
+     */
+    @Override
+    public void estimateDG(boolean randomSamples) {
+        double[] prevMBAR;
+        int iter = 0;
+
+        // Precompute values for each lambda window
+        double[] rtValues = new double[temperatures.length];
+        double[] invRTValues = new double[temperatures.length];
+        for(int i = 0; i < temperatures.length; i++){
+            rtValues[i] = Constants.R * temperatures[i];
+            invRTValues[i] = 1.0 / rtValues[i];
+        }
+        // Find the smallest length of eAllFlat array (look for INF values)
+        int minSnaps = eAllFlat[0].length;
+
+        logger.info("Using " + minSnaps + " snapshots for MBAR calculations. This is K (runs) * N (min(NumSnaps)).");
+        int numSnaps = min(eAllFlat[0].length, minSnaps);
+        int totalSnaps = numSnaps * eAllFlat.length;
+
+        // Sample random snapshots from each window
+        int[] indices = new int[numSnaps];
+        if(randomSamples){
+            indices = getBootstrapIndices(numSnaps, random);
+        } else {
+            for(int i = 0; i < numSnaps; i++){
+                indices[i] = i;
+            }
+        }
+
+        // Self-consistent iteration is used over Newton-Raphson because it is more stable & simpler to implement
+        // Calculate new MBAR free energy estimates. Based on pymbar code.
+        double[][] u_kn = new double[mbarFreeEnergies.length][numSnaps];
+        double[] N_k = new double[mbarFreeEnergies.length];
+        for(int state = 0; state < mbarFreeEnergies.length; state++) { // For each lambda value
+            for (int n = 0; n < numSnaps; n++) {
+                u_kn[state][indices[n]] = eAllFlat[state][indices[n]] * invRTValues[state];
+                N_k[state] = ((double) numSnaps) / totalSnaps;
+            }
+        }
+        do {
+            prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
+            mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
+            iter++;
+        } while(!converged(prevMBAR));
+
+        for(int i = 0; i < mbarFreeEnergies.length; i++){
+            mbarFreeEnergies[i] = mbarFreeEnergies[i] * rtValues[i];
+        }
+
         logger.info(" MBAR converged after " + iter + " iterations.");
         for(int i = 0; i < nWindows; i++){
             mbarEstimates[i] = mbarFreeEnergies[i+1] - mbarFreeEnergies[i];
@@ -270,56 +337,69 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         totalMBAREstimate = stream(mbarEstimates).sum();
         logger.info(" Total MBAR free energy difference estimate: " + totalMBAREstimate);
 
-        // TODO: Uncertainty calculations --> this is the hard part
+        // TODO: Uncertainty calculations
     }
 
-    /**
-     * Calculates the log of the sum of the exponentials of the given values.
-     * @param values
-     * @return the sum
-     */
-    private static double logSumExp(double[] values){
-        double[] b = fill(new double[values.length], 1.0);
-        return logSumExp(values, b);
-    }
-
-    /**
-     * Calculates the log of the sum of the exponentials of the given values.
-     * @param values
-     * @return the sum
-     */
-    private static double logSumExp(double[] values, double[] b) {
-        // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's logsumexp implementation
-        // Find the maximum value in the array.
-        double max = Double.NEGATIVE_INFINITY;
-        assert values.length == b.length: "values and b must be the same length";
-        // Create an array of indices
-        Integer[] indices = new Integer[values.length];
-        for (int i = 0; i < values.length; i++) {
-            indices[i] = i;
-        }
-
-        // Sort the array of indices based on the values in the 'values' array
-        Arrays.sort(indices, Comparator.comparingDouble(i -> values[i]));
-
-        // Create new arrays for 'values' and 'b' and fill them in the order defined by 'indices'
-        double[] sortedValues = new double[values.length];
-        double[] sortedB = new double[b.length];
-        for (int i = 0; i < values.length; i++) {
-            sortedValues[i] = values[indices[i]];
-            sortedB[i] = b[indices[i]];
-        }
-
-        for (double value : values) {
-            if (value > max) {
-                max = value;
+    public static double[] selfConsistentUpdate(double[][] u_kn, double[] N_k, double[] f_k) {
+        int nStates = f_k.length;
+        double[] updatedF_k = new double[nStates];
+        double[] log_denom_n = new double[u_kn[0].length];
+        double[][] logDiff = new double[u_kn.length][u_kn[0].length];
+        double maxLogDiff = Double.NEGATIVE_INFINITY;
+        for(int i = 0; i < u_kn[0].length; i++){
+            double[] temp = new double[nStates];
+            double maxTemp = Double.NEGATIVE_INFINITY;
+            for(int j = 0; j < nStates; j++){
+                temp[j] = f_k[j] - u_kn[j][i];
+                if (temp[j] > maxTemp) {
+                    maxTemp = temp[j];
+                }
+            }
+            log_denom_n[i] = logSumExp(temp, N_k, maxTemp);
+            for(int j = 0; j < nStates; j++){
+                logDiff[j][i] =  - log_denom_n[i] - u_kn[j][i];
+                if (logDiff[j][i] > maxLogDiff) {
+                    maxLogDiff = logDiff[j][i];
+                }
             }
         }
 
+        for(int i = 0; i < nStates; i++){
+            updatedF_k[i] = -1.0 * logSumExp(logDiff[i], maxLogDiff);
+        }
+
+        // Constrain f1=0 over the course of iterations to prevent uncontrolled growth in magnitude
+        double norm = updatedF_k[0];
+        for(int i = 0; i < nStates; i++){
+            updatedF_k[i] = updatedF_k[i] - norm;
+        }
+
+        return updatedF_k;
+    }
+    /**
+     * Calculates the log of the sum of the exponentials of the given values.
+     * @param values
+     * @return the sum
+     */
+    private static double logSumExp(double[] values, double max){
+        double[] b = fill(new double[values.length], 1.0);
+        return logSumExp(values, b, max);
+    }
+
+    /**
+     * Calculates the log of the sum of the exponentials of the given values.
+     * @param values
+     * @return the sum
+     */
+    private static double logSumExp(double[] values, double[] b, double max) {
+        // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's logsumexp implementation
+        // Find the maximum value in the array.
+        assert values.length == b.length: "values and b must be the same length";
+
         // Subtract the maximum value from each value in the array, exponentiate the result, and add up these values.
         double sum = 0.0;
-        for (int i = 0; i < sortedValues.length; i++) {
-            sum += sortedB[i] * exp(sortedValues[i] - max);
+        for (int i = 0; i < values.length; i++) {
+            sum += b[i] * exp(values[i] - max);
         }
 
         // Take the natural logarithm of the sum and add the maximum value back in.
@@ -370,36 +450,54 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static void main(String[] args) {
-        double[] lambdaValues = new double[]{0.0, 0.1};
-        double[] temperatures = new double[]{298.0, 298.0};
-        double[][][] energiesAll = new double[2][2][4999];
-        try(FileReader fr1 = new FileReader("testing/barFiles/energy_0.bar");
-            BufferedReader br1 = new BufferedReader(fr1);){
-            String line = br1.readLine();
-            String[] tokens = line.trim().split(" +");
-            int numSnaps = Integer.parseInt(tokens[0]);
-            double temp = Double.parseDouble(tokens[1]);
-            for(int i = 0; i < numSnaps; i++){
-                line = br1.readLine();
-                tokens = line.trim().split(" +");
-                for(int j = 0; j < lambdaValues.length; j++){
-                    energiesAll[0][j][i] = Double.parseDouble(tokens[j+1]);
+        for (int k = 0; k < 10; k++) {
+            double[] lambdaValues = new double[]{0.0, 0.1};
+            double[] temperatures = new double[]{298.0, 298.0};
+            double[][][] energiesAll = new double[2][2][4999]; // TODO: Change here
+            logger.info("\nk: " + k);
+            try (FileReader fr1 = new FileReader("testing/barFiles/energy_" + k + ".bar"); // TODO: Change here
+                 BufferedReader br1 = new BufferedReader(fr1);) {
+                String line = br1.readLine();
+                String[] tokens = line.trim().split(" +");
+                int numSnaps = Integer.parseInt(tokens[0]);
+                double temperature = Double.parseDouble(tokens[1]);
+                for (int i = 0; i < numSnaps; i++) {
+                    line = br1.readLine();
+                    tokens = line.trim().split(" +");
+                    for (int j = 0; j < lambdaValues.length; j++) {
+                        energiesAll[0][j][i] = Double.parseDouble(tokens[j + 1]);
+                    }
                 }
-            }
-            line = br1.readLine();
-            if (!line.contains("this.xyz")) {
-                throw new RuntimeException("Failed to read BAR file!");
-            }
-            for(int i = 0; i < numSnaps; i++){
                 line = br1.readLine();
-                tokens = line.trim().split(" +");
-                for(int j = 0; j < lambdaValues.length; j++){
-                    energiesAll[1][j][i] = Double.parseDouble(tokens[j+1]);
+                if (!line.contains("this.xyz")) {
+                    throw new RuntimeException("Failed to read BAR file!");
                 }
+                int newSnaps = Integer.parseInt(line.trim().split(" +")[0]);
+                if (newSnaps != numSnaps) {
+                    logger.info("Second ensemble is shorter than first ensemble. Removing samples from first ensemble.");
+                }
+                for (int i = 0; i < numSnaps; i++) {
+                    line = br1.readLine();
+                    if (line == null) {
+                        double[][][] temp = new double[2][2][newSnaps];
+                        for (int j = 0; j < newSnaps; j++) {
+                            temp[0][0][j] = energiesAll[0][0][j];
+                            temp[0][1][j] = energiesAll[0][1][j];
+                            temp[1][0][j] = energiesAll[1][0][j];
+                            temp[1][1][j] = energiesAll[1][1][j];
+                        }
+                        energiesAll = temp;
+                        break;
+                    }
+                    tokens = line.trim().split(" +");
+                    for (int j = 0; j < lambdaValues.length; j++) {
+                        energiesAll[1][j][i] = Double.parseDouble(tokens[j + 1]);
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            SequentialEstimator mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
         }
-        SequentialEstimator mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZWANZIG);
     }
 }
