@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
+import ffx.numerics.math.SummaryStatistics;
 import ffx.utilities.Constants;
 
 import java.io.BufferedReader;
@@ -58,6 +59,7 @@ import static org.apache.commons.lang3.math.NumberUtils.min;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
@@ -161,8 +163,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         mbarUncertainties = new double[nWindows];
         mbarEnthalpy = new double[nWindows];
         random = new Random();
-
-        seedEnergies();
         estimateDG();
     }
 
@@ -191,6 +191,27 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             default:
                 throw new IllegalArgumentException("Seed type not supported");
         }
+    }
+
+    public void bootstrapDG(int numTrials){
+        double[][] bootstrapEnergies = new double[nWindows][numTrials];
+        for(int i = 0; i < numTrials; i++){
+            estimateDG(true);
+            double[] binEnergies = getBinEnergies();
+            for(int j = 0; j < nWindows; j++){
+                bootstrapEnergies[j][i] = binEnergies[j];
+            }
+        }
+        SummaryStatistics[] stats = new SummaryStatistics[nWindows];
+        for(int i = 0; i < nWindows; i++){
+            stats[i] = new SummaryStatistics(bootstrapEnergies[i]);
+        }
+        for(int i = 0; i < nWindows; i++){
+            mbarEstimates[i] = stats[i].getMean();
+            mbarUncertainties[i] = stats[i].getSd();
+        }
+        totalMBAREstimate = stream(mbarEstimates).sum();
+        totalMBARUncertainty = sqrt(stream(mbarUncertainties).map(d -> d * d).sum());
     }
 
     @Override
@@ -283,6 +304,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      */
     @Override
     public void estimateDG(boolean randomSamples) {
+        seedEnergies();
         double[] prevMBAR;
         int iter = 0;
 
@@ -296,30 +318,34 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Find the smallest length of eAllFlat array (look for INF values)
         int minSnaps = eAllFlat[0].length;
 
-        logger.info("Using " + minSnaps + " snapshots for MBAR calculations. This is K (runs) * N (min(NumSnaps)).");
+        //logger.info("Using " + minSnaps + " snapshots for MBAR calculations. This is K (runs) * N (min(NumSnaps)).");
         int numSnaps = min(eAllFlat[0].length, minSnaps);
         int totalSnaps = numSnaps * eAllFlat.length;
 
         // Sample random snapshots from each window
-        int[] indices = new int[numSnaps];
+        int[][] indices = new int[mbarFreeEnergies.length][numSnaps];
         if(randomSamples){
-            indices = getBootstrapIndices(numSnaps, random);
+            for(int i = 0; i < mbarFreeEnergies.length; i++){
+                indices[i] = getBootstrapIndices(numSnaps, random);
+            }
         } else {
             for(int i = 0; i < numSnaps; i++){
-                indices[i] = i;
+                for(int j = 0; j < mbarFreeEnergies.length; j++) {
+                    indices[j][i] = i;
+                }
             }
         }
 
-        // Self-consistent iteration is used over Newton-Raphson because it is more stable & simpler to implement
-        // Calculate new MBAR free energy estimates. Based on pymbar code.
         double[][] u_kn = new double[mbarFreeEnergies.length][numSnaps];
         double[] N_k = new double[mbarFreeEnergies.length];
         for(int state = 0; state < mbarFreeEnergies.length; state++) { // For each lambda value
             for (int n = 0; n < numSnaps; n++) {
-                u_kn[state][indices[n]] = eAllFlat[state][indices[n]] * invRTValues[state];
+                u_kn[state][indices[state][n]] = eAllFlat[state][indices[state][n]] * invRTValues[state];
                 N_k[state] = ((double) numSnaps) / totalSnaps;
             }
         }
+        // Self-consistent iteration is used over Newton-Raphson because it is more stable & simpler to implement
+        // Calculate new MBAR free energy estimates. Based on pymbar code.
         do {
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
@@ -330,15 +356,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             mbarFreeEnergies[i] = mbarFreeEnergies[i] * rtValues[i];
         }
 
-        logger.info(" MBAR converged after " + iter + " iterations.");
+        //logger.info(" MBAR converged after " + iter + " iterations.");
         for(int i = 0; i < nWindows; i++){
             mbarEstimates[i] = mbarFreeEnergies[i+1] - mbarFreeEnergies[i];
-            logger.info(" MBAR free energy difference estimate for window " + i + " -> " + (i+1) + ": " + mbarEstimates[i]);
+            //logger.info(" MBAR free energy difference estimate for window " + i + " -> " + (i+1) + ": " + mbarEstimates[i]);
         }
         totalMBAREstimate = stream(mbarEstimates).sum();
-        logger.info(" Total MBAR free energy difference estimate: " + totalMBAREstimate);
-
-        // TODO: Uncertainty calculations
+        //logger.info(" Total MBAR free energy difference estimate: " + totalMBAREstimate);
     }
 
     public static double[] selfConsistentUpdate(double[][] u_kn, double[] N_k, double[] f_k) {
@@ -447,23 +471,36 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     @Override
     public double[] getBinEnthalpies() {
-        return new double[0];
+        return mbarEnthalpy;
     }
 
     public static void main(String[] args) {
         long barTime = 0;
+        long start;
         long mbarTime = 0;
-        for (int k = 0; k < 10; k++) {
-            double[] lambdaValues = new double[]{0.0, 0.1};
-            double[] temperatures = new double[]{298.0, 298.0};
-            double[][][] energiesAll = new double[2][2][4999]; // TODO: Change here to max num snaps in BAR file
-            logger.info("\nk: " + k);
-            try (FileReader fr1 = new FileReader("testing/barFiles/energy_" + k + ".bar"); // TODO: Change here
+        int numSnapsIdeal = 4999;
+        int runs = 10 + 1; // 10 is an index
+        double[][][] energiesAll;
+        double[] lambdaValues;
+        double[] temperatures;
+
+        // BAR FILES
+        logger.info(" MBAR & BAR 2 state calculations.");
+        double[] freeE = new double[10];
+        double[] freeE2 = new double[10];
+        for(int k = 0; k < 10; k++) {
+            energiesAll = new double[2][2][numSnapsIdeal];
+            lambdaValues = new double[energiesAll.length];
+            temperatures = new double[energiesAll.length];
+            for(int i = 0; i < lambdaValues.length; i++){
+                lambdaValues[i] = i * 0.1;
+                temperatures[i] = 298.0;
+            }
+            try (FileReader fr1 = new FileReader("testing/barFiles/energy_" + k + ".bar"); // TODO: Change here maybe
                  BufferedReader br1 = new BufferedReader(fr1);) {
                 String line = br1.readLine();
                 String[] tokens = line.trim().split(" +");
                 int numSnaps = Integer.parseInt(tokens[0]);
-                double temperature = Double.parseDouble(tokens[1]);
                 for (int i = 0; i < numSnaps; i++) {
                     line = br1.readLine();
                     tokens = line.trim().split(" +");
@@ -476,9 +513,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                     throw new RuntimeException("Failed to read BAR file!");
                 }
                 int newSnaps = Integer.parseInt(line.trim().split(" +")[0]);
-                if (newSnaps != numSnaps) {
-                    logger.info("Second ensemble is shorter than first ensemble. Removing samples from first ensemble.");
-                }
                 for (int i = 0; i < numSnaps; i++) {
                     line = br1.readLine();
                     if (line == null) {
@@ -500,16 +534,110 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            long start = System.nanoTime();
+            start = System.nanoTime();
             SequentialEstimator mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
+            EstimateBootstrapper bootstrapper = new EstimateBootstrapper((BootstrappableEstimator) mbar);
+            bootstrapper.bootstrap(100);
             mbarTime += System.nanoTime() - start;
-
+            freeE[k] = bootstrapper.getTotalFE();
+            //logger.info(" MBAR Diff " + k + ": " + mbar.getFreeEnergy());
             start = System.nanoTime();
             SequentialEstimator bar = new BennettAcceptanceRatio(lambdaValues, mbar.eLow, mbar.eAt, mbar.eHigh, temperatures);
+            bootstrapper = new EstimateBootstrapper((BootstrappableEstimator) bar);
+            bootstrapper.bootstrap(100);
             barTime += System.nanoTime() - start;
+            freeE2[k] = bootstrapper.getTotalFE();
+            //logger.info(" BAR Diff " + k + ": " + bar.getFreeEnergy());
+        }
+        logger.info(" MBAR Differences: " + Arrays.toString(freeE));
+        for(int i = 0; i < freeE.length-1; i++){
+            freeE[i+1] += freeE[i];
+        }
+        logger.info(" MBAR Free Energies Sum: " + Arrays.toString(freeE));
+        logger.info(" BAR Bootstrap Differences: " + Arrays.toString(freeE2));
+        for(int i = 0; i < freeE2.length-1; i++){
+            freeE2[i+1] += freeE2[i];
+        }
+        logger.info(" BAR Free Energies Sum: " + Arrays.toString(freeE2));
+        // logger.info("BAR time in seconds: " + barTime / 1.0E9);
+        // logger.info("MBAR time in seconds: " + mbarTime / 1.0E9);
+        mbarTime = 0;
+
+        logger.info("\n\n\n MBAR " + runs + " state calculations.");
+        energiesAll = new double[runs][runs][numSnapsIdeal]; // TODO: Change here to max num snaps in BAR file
+        lambdaValues = new double[energiesAll.length];
+        temperatures = new double[energiesAll.length];
+        for(int i = 0; i < lambdaValues.length; i++){
+            lambdaValues[i] = i * 0.1;
         }
 
-        logger.info("BAR time in seconds: " + barTime / 1.0E9);
+        // MBAR Files
+        boolean snapMismatch = false;
+        for (int k = 0; k < runs; k++) {
+            try (FileReader fr1 = new FileReader("testing/mbarFiles/energy_" + k + ".bar"); // TODO: Change here
+                 BufferedReader br1 = new BufferedReader(fr1);) {
+                String line = br1.readLine();
+                // Split on tabs or spaces
+                String[] tokens = line.trim().split("\\t *| +");
+                int numSnaps = Integer.parseInt(tokens[0]);
+                if (numSnaps != numSnapsIdeal) {
+                    //logger.info("Number of snapshots in MBAR file is not ideal. Using " + numSnaps + " snapshots.");
+                    snapMismatch = true;
+                    numSnapsIdeal = min(numSnaps, numSnapsIdeal);
+                }
+                temperatures[k] = Double.parseDouble(tokens[1]);
+                for (int i = 0; i < numSnapsIdeal; i++) {
+                    line = br1.readLine();
+                    tokens = line.trim().split("\\t *| +");
+                    for (int j = 0; j < energiesAll.length; j++) {
+                        energiesAll[k][j][i] = Double.parseDouble(tokens[j + 1]);
+                    }
+                }
+            } catch(IOException e){
+                logger.info("Failed to read MBAR file: " + "energy_" + k + ".bar");
+                throw new RuntimeException(e);
+            }
+        }
+        if (snapMismatch){
+            double[][][] temp = new double[energiesAll.length][energiesAll[0].length][numSnapsIdeal];
+            for(int i = 0; i < energiesAll.length; i++){
+                for(int j = 0; j < energiesAll[0].length; j++){
+                    System.arraycopy(energiesAll[i][j], 0, temp[i][j], 0, numSnapsIdeal);
+                }
+            }
+            energiesAll = temp;
+        }
+
+        start = System.nanoTime();
+        MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
+        mbarTime += System.nanoTime() - start;
+        logger.info(" MBAR Normal Diff: " + mbar.getFreeEnergy());
+        double[] binEnergies = mbar.getBinEnergies();
+        logger.info(" MBAR Normal Differences: " + Arrays.toString(binEnergies));
+        for(int i = 0; i < mbar.getBinEnergies().length-1; i++){
+            binEnergies[i+1] += binEnergies[i];
+        }
+        logger.info(" MBAR Free Energies Sum: " + Arrays.toString(binEnergies));
         logger.info("MBAR time in seconds: " + mbarTime / 1.0E9);
+        logger.info("\n\n\n");
+
+
+        logger.info(" MBAR Bootstrap EstimateBootstrapper.");
+        mbarTime = 0;
+        start = System.nanoTime();
+        EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
+        bootstrapper.bootstrap(100);
+        mbarTime += System.nanoTime() - start;
+        logger.info(" MBAR Bootstrap EstimateBootstrapper Diff: " + bootstrapper.getTotalFE());
+        logger.info(" MBAR Bootstrap Uncertainty: " + bootstrapper.getTotalUncertainty());
+        binEnergies = bootstrapper.getFE();
+        logger.info(" MBAR Bootstrap Differences: " + Arrays.toString(binEnergies));
+        logger.info(" MBAR Bootstrap Uncertainties: " + Arrays.toString(bootstrapper.getUncertainty()));
+        for(int i = 0; i < mbar.getBinEnergies().length-1; i++){
+            binEnergies[i+1] += binEnergies[i];
+        }
+        logger.info(" MBAR Free Energies Sum: " + Arrays.toString(binEnergies));
+        logger.info("MBAR bootstrap EstimateBootstrapper time in seconds: " + mbarTime / 1.0E9);
+        logger.info("\n\n\n");
     }
 }
