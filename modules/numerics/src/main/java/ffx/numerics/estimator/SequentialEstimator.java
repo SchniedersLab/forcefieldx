@@ -126,6 +126,11 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * of all the snapshots from the 3rd lambda window evaluated at all lambda values. energiesAll[2][3] is a
    * list of all snapshots from lambda 3 evaluated with the potential of lambda 4. energiesAll[2][3][4] is
    * the 5th snapshot from lambda 3 evaluated with the potential of lambda 4.
+   * <p>
+   * This constructor also breaks energiesAll into a flattened array (across the second dimension) such that
+   * the first dimension is the lambda window where the energy was evaluated and the second dimension is the
+   * samples. energiesAll is also broken down into eAt, eLow, and eHigh arrays for convenience & so that BAR
+   * calculations can be performed and compared.
    *
    * @param lambdaValues Values of lambda dynamics was run at.
    * @param energiesAll Potential energies of trajectory L at all other lambdas.
@@ -164,7 +169,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
       int counter = 0;
         for (int j = 0; j < energiesAll[i].length; j++) {
             for(int k = 0; k < energiesAll[i][j].length; k++) {
-              eAllFlat[i][counter] = energiesAll[j][i][k];
+              eAllFlat[i][counter] = energiesAll[j][i][k]; // eAllFlat[lambdaEvaluationState][sample]
               counter++;
             }
         }

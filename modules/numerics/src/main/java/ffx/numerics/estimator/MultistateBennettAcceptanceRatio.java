@@ -478,13 +478,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         long barTime = 0;
         long start;
         long mbarTime = 0;
-        int numSnapsIdeal = 4999;
+        int bootstrapRuns = 100;
+        int numSnapsIdeal = 5000;
         int runs = 10 + 1; // 10 is an index
         double[][][] energiesAll;
         double[] lambdaValues;
         double[] temperatures;
 
         // BAR FILES
+        /*
         logger.info(" MBAR & BAR 2 state calculations.");
         double[] freeE = new double[10];
         double[] freeE2 = new double[10];
@@ -496,7 +498,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                 lambdaValues[i] = i * 0.1;
                 temperatures[i] = 298.0;
             }
-            try (FileReader fr1 = new FileReader("testing/barFiles/energy_" + k + ".bar"); // TODO: Change here maybe
+            try (FileReader fr1 = new FileReader("testing/mbar/ASP_Umod/ASD/barFiles/energy_" + k + ".bar"); // TODO: Change here maybe
                  BufferedReader br1 = new BufferedReader(fr1);) {
                 String line = br1.readLine();
                 String[] tokens = line.trim().split(" +");
@@ -537,14 +539,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             start = System.nanoTime();
             SequentialEstimator mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
             EstimateBootstrapper bootstrapper = new EstimateBootstrapper((BootstrappableEstimator) mbar);
-            bootstrapper.bootstrap(100);
+            bootstrapper.bootstrap(bootstrapRuns);
             mbarTime += System.nanoTime() - start;
             freeE[k] = bootstrapper.getTotalFE();
             //logger.info(" MBAR Diff " + k + ": " + mbar.getFreeEnergy());
             start = System.nanoTime();
             SequentialEstimator bar = new BennettAcceptanceRatio(lambdaValues, mbar.eLow, mbar.eAt, mbar.eHigh, temperatures);
             bootstrapper = new EstimateBootstrapper((BootstrappableEstimator) bar);
-            bootstrapper.bootstrap(100);
+            bootstrapper.bootstrap(bootstrapRuns);
             barTime += System.nanoTime() - start;
             freeE2[k] = bootstrapper.getTotalFE();
             //logger.info(" BAR Diff " + k + ": " + bar.getFreeEnergy());
@@ -562,8 +564,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // logger.info("BAR time in seconds: " + barTime / 1.0E9);
         // logger.info("MBAR time in seconds: " + mbarTime / 1.0E9);
         mbarTime = 0;
+         */
 
-        logger.info("\n\n\n MBAR " + runs + " state calculations.");
+        logger.info("\n\n\n MBAR & BAR " + runs + " state calculations.");
         energiesAll = new double[runs][runs][numSnapsIdeal]; // TODO: Change here to max num snaps in BAR file
         lambdaValues = new double[energiesAll.length];
         temperatures = new double[energiesAll.length];
@@ -574,7 +577,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // MBAR Files
         boolean snapMismatch = false;
         for (int k = 0; k < runs; k++) {
-            try (FileReader fr1 = new FileReader("testing/mbarFiles/energy_" + k + ".bar"); // TODO: Change here
+            try (FileReader fr1 = new FileReader("testing/mbar/ASP_Umod/ASE/mbarFiles/energy_" + k + ".bar"); // TODO: Change here
                  BufferedReader br1 = new BufferedReader(fr1);) {
                 String line = br1.readLine();
                 // Split on tabs or spaces
@@ -611,7 +614,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         start = System.nanoTime();
         MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(lambdaValues, energiesAll, temperatures, 1.0E-7, SeedType.ZEROS);
         mbarTime += System.nanoTime() - start;
-        logger.info(" MBAR Normal Diff: " + mbar.getFreeEnergy());
+        BennettAcceptanceRatio bar = new BennettAcceptanceRatio(lambdaValues, mbar.eLow, mbar.eAt, mbar.eHigh, temperatures);
+        logger.info("\n BAR Total: " + bar.getFreeEnergy());
+        logger.info(" BAR Normal Differences: " + Arrays.toString(bar.getBinEnergies()));
+        logger.info("\n\n MBAR Total: " + mbar.getFreeEnergy());
         double[] binEnergies = mbar.getBinEnergies();
         logger.info(" MBAR Normal Differences: " + Arrays.toString(binEnergies));
         for(int i = 0; i < mbar.getBinEnergies().length-1; i++){
@@ -621,16 +627,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         logger.info("MBAR time in seconds: " + mbarTime / 1.0E9);
         logger.info("\n\n\n");
 
+        logger.info(" BAR Bootstrap EstimateBootstrapper.");
+        EstimateBootstrapper barBootstrapper = new EstimateBootstrapper(bar);
+        barBootstrapper.bootstrap(bootstrapRuns);
+        logger.info(" BAR Bootstrap EstimateBootstrapper Diff: " + barBootstrapper.getTotalFE());
+        logger.info(" BAR Bootstrap Uncertainty: " + barBootstrapper.getTotalUncertainty());
+        logger.info(" BAR Bootstrap EstimateBootstrapper Differences: " + Arrays.toString(barBootstrapper.getFE()));
+        logger.info(" BAR Bootstrap EstimateBootstrapper Uncertainties: " + Arrays.toString(barBootstrapper.getUncertainty()));
 
-        logger.info(" MBAR Bootstrap EstimateBootstrapper.");
+        logger.info("\n\n MBAR Bootstrap EstimateBootstrapper.");
         mbarTime = 0;
         start = System.nanoTime();
         EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-        bootstrapper.bootstrap(100);
+        bootstrapper.bootstrap(bootstrapRuns);
         mbarTime += System.nanoTime() - start;
+        binEnergies = bootstrapper.getFE();
         logger.info(" MBAR Bootstrap EstimateBootstrapper Diff: " + bootstrapper.getTotalFE());
         logger.info(" MBAR Bootstrap Uncertainty: " + bootstrapper.getTotalUncertainty());
-        binEnergies = bootstrapper.getFE();
         logger.info(" MBAR Bootstrap Differences: " + Arrays.toString(binEnergies));
         logger.info(" MBAR Bootstrap Uncertainties: " + Arrays.toString(bootstrapper.getUncertainty()));
         for(int i = 0; i < mbar.getBinEnergies().length-1; i++){
