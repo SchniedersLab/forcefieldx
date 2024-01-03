@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
-import static java.util.Arrays.stream;
+
+import static org.apache.commons.lang3.math.NumberUtils.max;
 import static org.apache.commons.lang3.math.NumberUtils.min;
 
 /**
@@ -47,6 +49,12 @@ public class MBARFilter {
                             fileLocation.getAbsolutePath() + ". At least two are required.";
             logger.severe(message);
         }
+        // Sort files by state number
+        Arrays.sort(barFiles, (f1, f2) -> {
+            int state1 = Integer.parseInt(f1.getName().split("\\.")[0].split("_")[1]);
+            int state2 = Integer.parseInt(f2.getName().split("\\.")[0].split("_")[1]);
+            return Integer.compare(state1, state2);
+        });
         windows = barFiles.length;
         temperatures = new double[windows];
         snaps = new int[windows];
@@ -68,6 +76,23 @@ public class MBARFilter {
         eAll = new double[windows][][];
         for (int i = 0; i < windows; i++) {
             eAll[i] = readFile(barFiles[i].getName());
+        }
+        int minSnaps = min(snaps);
+        int maxSnaps = max(snaps);
+
+        boolean warn = minSnaps != maxSnaps;
+        if (warn) {
+            logger.warning("MINIMUM NUMBER OF SNAPS ACROSS WINDOWS: " + minSnaps);
+            logger.warning("MAXIMUM NUMBER OF SNAPS ACROSS WINDOWS: " + maxSnaps);
+            logger.warning("NOT ALL FILES CONTAINED THE SAME NUMBER OF SNAPSHOTS. " +
+                    "EXTRA SNAPSHOTS WERE REMOVED FROM OTHER SAMPLES TO COMPENSATE!");
+            double[][][] temp = new double[eAll.length][eAll[0].length][minSnaps];
+            for(int j = 0; j < eAll.length; j++){
+                for(int k = 0; k < eAll[0].length; k++){
+                    System.arraycopy(eAll[j][k], 0, temp[j][k], 0, minSnaps);
+                }
+            }
+            eAll = temp;
         }
         if (windowsRead != windows) {
             logger.severe("Failed to read all files in " + fileLocation.getAbsolutePath());
@@ -96,15 +121,16 @@ public class MBARFilter {
             int numSnaps = Integer.parseInt(tokens[0]);
             temperatures[state] = Double.parseDouble(tokens[1]);
             int count = 0;
+            line = br1.readLine();
             while (line != null) {
                 tokens = line.trim().split("\\t *| +");
                 for (int i = 1; i < tokens.length; i++) {
-                    tempFileEnergies.get(i).add(Double.parseDouble(tokens[i + 1]));
+                    tempFileEnergies.get(i-1).add(Double.parseDouble(tokens[i]));
                 }
                 count++;
                 line = br1.readLine();
             }
-            snaps[state] = min(numSnaps, count);
+            snaps[state] = count;
         } catch(IOException e){
             logger.info("Failed to read MBAR file: " + tempBarFile.getAbsolutePath());
             throw new RuntimeException(e);

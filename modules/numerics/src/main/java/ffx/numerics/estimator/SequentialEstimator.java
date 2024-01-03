@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
+import java.util.ArrayList;
+
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -165,14 +167,13 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
 
     eAllFlat = new double[nTrajectories][];
     for (int i = 0; i < nTrajectories; i++) {
-      eAllFlat[i] = new double[energiesAll.length*energiesAll[i][0].length];
-      int counter = 0;
-        for (int j = 0; j < energiesAll[i].length; j++) {
-            for(int k = 0; k < energiesAll[i][j].length; k++) {
-              eAllFlat[i][counter] = energiesAll[j][i][k]; // eAllFlat[lambdaEvaluationState][sample]
-              counter++;
-            }
+        ArrayList<Double> temp = new ArrayList<>();
+        for(int j = 0; j < nTrajectories; j++) {
+          for(int k = 0; k < eAll[j][i].length; k++) {
+            temp.add(eAll[j][i][k]);
+          }
         }
+        eAllFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
     }
 
     // Assert that lengths of the energiesAll arrays are correct.

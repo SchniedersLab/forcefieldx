@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
+import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
 import ffx.potential.parsers.MBARFilter
 import picocli.CommandLine.Command
@@ -61,9 +62,9 @@ class MBAR extends AlgorithmsScript {
             description = "Run BAR calculation as well.")
     boolean bar = false
 
-    @Option(names = ["--numBootstrap", "--nb"], paramLabel = "100",
+    @Option(names = ["--numBootstrap", "--nb"], paramLabel = "50",
             description = "Number of bootstrap samples to use.")
-    int numBootstrap = 100
+    int numBootstrap = 50
 
     @Option(names = ["--seed"], paramLabel = "BAR",
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR.")
@@ -73,7 +74,7 @@ class MBAR extends AlgorithmsScript {
      * The path to MBAR/BAR files.
      */
     @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'Absolute path to MBAR/BAR files.')
+            description = 'Path to MBAR/BAR files.')
     String path = null
 
     /**
@@ -121,33 +122,64 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Invalid seed type: " + seedWith)
             return this
         }
+
         MultistateBennettAcceptanceRatio mbar = filter.getMBAR(seed)
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
             return this
         }
-
-        EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
-        bootstrapper.bootstrap(numBootstrap)
         logger.info("\n MBAR Results:")
-        logger.info(String.format("Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-        bootstrapper.getTotalUncertainty()))
-        double[] dGs = bootstrapper.getFE()
-        double[] uncertainties = bootstrapper.getUncertainty()
-        for(int i = 0; i < dGs.length; i++) {
-            logger.info(String.format(" \tdG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+        logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", mbar.getFreeEnergy(),
+                mbar.getUncertainty()))
+        double[] dGs = mbar.getBinEnergies()
+        double[] uncertainties = mbar.getBinUncertainties()
+        for (int i = 0; i < dGs.length; i++) {
+            logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }
-
-        if (bar){
-            logger.info("\n BAR Results:")
-            bootstrapper = new EstimateBootstrapper(mbar.getBAR())
+        logger.info("\n")
+        if(bar){
+            try {
+                logger.info("\n BAR Results:")
+                BennettAcceptanceRatio bar = mbar.getBAR()
+                logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bar.getFreeEnergy(),
+                        bar.getUncertainty()))
+                dGs = bar.getBinEnergies()
+                uncertainties = bar.getBinUncertainties()
+                for (int i = 0; i < dGs.length; i++) {
+                    logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                }
+            } catch (Exception e) {
+                logger.warning(" BAR calculation failed to converge.")
+            }
+        }
+        logger.info("\n")
+        if(numBootstrap != 0) {
+            EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
             bootstrapper.bootstrap(numBootstrap)
-            logger.info(String.format("Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-            bootstrapper.getTotalUncertainty()))
+            logger.info("\n MBAR Bootstrap Results from " + numBootstrap + " Samples:")
+            logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
+                    bootstrapper.getTotalUncertainty()))
             dGs = bootstrapper.getFE()
             uncertainties = bootstrapper.getUncertainty()
-            for(int i = 0; i < dGs.length; i++) {
-                logger.info(String.format(" \tdG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+            for (int i = 0; i < dGs.length; i++) {
+                logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+            }
+            logger.info("\n")
+            if (bar) {
+                try {
+                    logger.info("\n BAR Bootstrap Results:")
+                    bootstrapper = new EstimateBootstrapper(mbar.getBAR())
+                    bootstrapper.bootstrap(numBootstrap)
+                    logger.info(String.format("Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
+                            bootstrapper.getTotalUncertainty()))
+                    dGs = bootstrapper.getFE()
+                    uncertainties = bootstrapper.getUncertainty()
+                    for (int i = 0; i < dGs.length; i++) {
+                        logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                    }
+                } catch (Exception e) {
+                    logger.warning(" BAR calculation failed to converge.")
+                }
             }
         }
         return this
