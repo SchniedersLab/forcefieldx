@@ -94,6 +94,9 @@ class WeightedEnsemble extends AlgorithmsScript {
             description = 'For ATOM_DISTANCE. Atom which is part of molecule two for COM_DISTANCE and part of residue two for RESIDUE_DISTANCE.')
     int atomTwo = 0
 
+    @Option(names = ['--noResample'], paramLabel = 'false',
+            description = 'Skip resampling.')
+    boolean noResample = false
 
 
     /**
@@ -150,7 +153,7 @@ class WeightedEnsemble extends AlgorithmsScript {
             logger.severe(" Invalid oneDimensionalMetric: " + oneDimensionalMetric);
             return this;
         }
-        WeightedEnsembleManager weightedEnsemble = new WeightedEnsembleManager(metric, numPerBin, md, file);
+        WeightedEnsembleManager weightedEnsemble = new WeightedEnsembleManager(metric, numPerBin, md, file, !noResample);
         weightedEnsemble.run(dynamicsOptions.numSteps, stepsPer, dynamicsOptions.temperature, dynamicsOptions.dt);
 
         return this;

@@ -52,7 +52,7 @@ public class WeightedEnsembleManager {
     private final DoubleBuf[] weightsBinsBuf, globalValuesBuf; // World storage of weights & bin numbers
     private final DoubleBuf myWeightBinBuf, myGlobalValueBuf;
 
-    private boolean restart, staticBins;
+    private boolean restart, staticBins, resample;
     private final boolean[] enteredNewBins;
     private int numBins, optNumPerBin;
     private long totalSteps, numStepsPerResample, cycle;
@@ -70,7 +70,8 @@ public class WeightedEnsembleManager {
 
     public WeightedEnsembleManager(OneDimMetric metric, int optNumPerBin,
                                    MolecularDynamics md,
-                                   File refStructureFile) {
+                                   File refStructureFile,
+                                   boolean resample) {
         // Init MPI stuff
         this.world = Comm.world();
         this.rank = world.rank();
@@ -124,6 +125,7 @@ public class WeightedEnsembleManager {
         } else {
             logger.info(" Using dynamic binning.");
         }
+        this.resample = resample;
         this.numBins = staticBins ? numBins : worldSize / optNumPerBin;
         this.optNumPerBin = optNumPerBin;
         this.metric = metric;
@@ -229,11 +231,15 @@ public class WeightedEnsembleManager {
             calculateMyMetric();
             comms(); // Prior comm call here for dynamic binning
             binAssignment();
-            resample();
+            if (resample) {
+                resample();
+            }
             comms();
-            sanityCheckAndFileMigration(); // 1 comm call in here
-            logger.info("\n ----------------------------- Resampling cycle #" + (i+1) +
-                    " complete ----------------------------- ");
+            if (resample) {
+                sanityCheckAndFileMigration(); // 1 comm call in here
+                logger.info("\n ----------------------------- Resampling cycle #" + (i + 1) +
+                        " complete ----------------------------- ");
+            }
         }
         logger.info("\n\n\n ----------------------------- End Weighted Ensemble Run -----------------------------");
     }
