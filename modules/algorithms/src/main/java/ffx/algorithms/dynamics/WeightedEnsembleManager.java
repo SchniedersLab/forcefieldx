@@ -518,6 +518,7 @@ public class WeightedEnsembleManager {
             bins[i] = (int) Math.round(weightsBinsCopyRank[i][1]);
         }
         logger.info("\n Rank bin numbers: " + Arrays.toString(bins));
+        logger.info(" Bin bounds:     " + Arrays.toString(binBounds));
         logger.info(" Rank weights:     " + Arrays.toString(weights));
         logger.info(" Weight sum:      " + Arrays.stream(weights).sum());
         logger.info(" Merges: \n" + mergeString + "\n");
