@@ -40,7 +40,7 @@ package ffx.algorithms.optimize;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
@@ -123,9 +123,9 @@ public class TitrationManyBody {
         }
       }
     }
-    if (potentialEnergy instanceof ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
+    if (potentialEnergy instanceof OpenMMEnergy openMMEnergy) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
-      forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
+      openMMEnergy.getSystem().setUpdateBondedTerms(updateBondedTerms);
     }
     potentialEnergy.energy();
     return protonatedAssembly;

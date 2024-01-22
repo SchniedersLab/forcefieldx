@@ -50,5 +50,6 @@ bin/META-INF
 
 src/site/asciidoc/commands
 src/site/asciidoc/keywords
+src/site/asciidoc/properties
 
 ffx_venv/

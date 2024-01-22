@@ -38,6 +38,7 @@
 package ffx.xray.cli;
 
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.FFXProperty;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static ffx.utilities.PropertyGroup.StructuralRefinement;
 import static java.lang.String.format;
 
 /**
@@ -183,33 +185,33 @@ public class XrayOptions extends DataRefinementOptions {
   public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
     // wA
     if (!parseResult.hasMatchedOption("wA")) {
-      wA = properties.getDouble("xweight", wA);
+      wA = properties.getDouble("data-weight", wA);
     }
-    properties.setProperty("xweight", wA);
+    properties.setProperty("data-weight", wA);
 
     // bSimWeight
     if (!parseResult.hasMatchedOption("bSimWeight")) {
-      bfactorGroup.bSimWeight = properties.getDouble("bsimweight", bfactorGroup.bSimWeight);
+      bfactorGroup.bSimWeight = properties.getDouble("b-sim-weight", bfactorGroup.bSimWeight);
     }
-    properties.setProperty("bsimweight", bfactorGroup.bSimWeight);
+    properties.setProperty("b-sim-weight", bfactorGroup.bSimWeight);
 
     // F/SigF Cutoff
-    if (!parseResult.hasMatchedOption("fsigfcutoff")) {
-      reflectionGroup.fSigFCutoff = properties.getDouble("fsigfcutoff", reflectionGroup.fSigFCutoff);
+    if (!parseResult.hasMatchedOption("fSigFCutoff")) {
+      reflectionGroup.fSigFCutoff = properties.getDouble("f-sigf-cutoff", reflectionGroup.fSigFCutoff);
     }
-    properties.setProperty("fsigfcutoff", reflectionGroup.fSigFCutoff);
+    properties.setProperty("f-sigf-cutoff", reflectionGroup.fSigFCutoff);
 
     // Solvent Grid Search
     if (!parseResult.hasMatchedOption("gridSearch")) {
-      solventGroup.gridSearch = properties.getBoolean("gridsearch", solventGroup.gridSearch);
+      solventGroup.gridSearch = properties.getBoolean("solvent-grid-search", solventGroup.gridSearch);
     }
-    properties.setProperty("gridsearch", solventGroup.gridSearch);
+    properties.setProperty("solvent-grid-search", solventGroup.gridSearch);
 
     // Number of Bins
     if (!parseResult.hasMatchedOption("nBins")) {
-      reflectionGroup.nBins = properties.getInt("nbins", reflectionGroup.nBins);
+      reflectionGroup.nBins = properties.getInt("reflection-bins", reflectionGroup.nBins);
     }
-    properties.setProperty("nbins", reflectionGroup.nBins);
+    properties.setProperty("reflection-bins", reflectionGroup.nBins);
 
     // Grid Sampling
     if (!parseResult.hasMatchedOption("sampling")) {
@@ -219,61 +221,61 @@ public class XrayOptions extends DataRefinementOptions {
 
     // Atomic Radius Buffer
     if (!parseResult.hasMatchedOption("aRadBuffer")) {
-      targetGroup.aRadBuffer = properties.getDouble("aradbuff", targetGroup.aRadBuffer);
+      targetGroup.aRadBuffer = properties.getDouble("scattering-buffer", targetGroup.aRadBuffer);
     }
-    properties.setProperty("aradbuff", targetGroup.aRadBuffer);
+    properties.setProperty("scattering-buffer", targetGroup.aRadBuffer);
 
     // RFreeFlag
     if (!parseResult.hasMatchedOption("rFreeFlag")) {
-      reflectionGroup.rFreeFlag = properties.getInt("rrfreeflag", reflectionGroup.rFreeFlag);
+      reflectionGroup.rFreeFlag = properties.getInt("rfree-flag", reflectionGroup.rFreeFlag);
     }
-    properties.setProperty("rrfreeflag", reflectionGroup.rFreeFlag);
+    properties.setProperty("rfree-flag", reflectionGroup.rFreeFlag);
 
     // Spline Fit
     if (!parseResult.hasMatchedOption("splineFit")) {
-      targetGroup.splineFit = properties.getBoolean("splinefit", targetGroup.splineFit);
+      targetGroup.splineFit = properties.getBoolean("spline-fit", targetGroup.splineFit);
     }
-    properties.setProperty("splinefit", targetGroup.splineFit);
+    properties.setProperty("spline-fit", targetGroup.splineFit);
 
     // Use All Gaussians
     if (!parseResult.hasMatchedOption("allGaussians")) {
-      targetGroup.allGaussians = properties.getBoolean("use_3g", targetGroup.allGaussians);
+      targetGroup.allGaussians = properties.getBoolean("use-3g", targetGroup.allGaussians);
     }
-    properties.setProperty("use_3g", !targetGroup.allGaussians);
+    properties.setProperty("use-3g", !targetGroup.allGaussians);
 
     // X-ray Scale Tolerance
     if (!parseResult.hasMatchedOption("xrayScaleTol")) {
-      targetGroup.xrayScaleTol = properties.getDouble("xrayscaletol", targetGroup.xrayScaleTol);
+      targetGroup.xrayScaleTol = properties.getDouble("xray-scale-tol", targetGroup.xrayScaleTol);
     }
-    properties.setProperty("xrayscaletol", targetGroup.xrayScaleTol);
+    properties.setProperty("xray-scale-tol", targetGroup.xrayScaleTol);
 
     // Sigma A Tolerance
     if (!parseResult.hasMatchedOption("sigmaATol")) {
-      targetGroup.sigmaATol = properties.getDouble("sigmaatol", targetGroup.sigmaATol);
+      targetGroup.sigmaATol = properties.getDouble("sigmaa-tol", targetGroup.sigmaATol);
     }
-    properties.setProperty("sigmaatol", targetGroup.sigmaATol);
+    properties.setProperty("sigmaa-tol", targetGroup.sigmaATol);
 
     // Number of Residues per B-Factor
     if (!parseResult.hasMatchedOption("nResidueBFactor")) {
       bfactorGroup.nResidueBFactor = properties
-          .getInt("nresiduebfactor", bfactorGroup.nResidueBFactor);
+          .getInt("n-residue-bfactor", bfactorGroup.nResidueBFactor);
     }
-    properties.setProperty("nresiduebfactor", Integer.toString(bfactorGroup.nResidueBFactor));
+    properties.setProperty("n-residue-bfactor", Integer.toString(bfactorGroup.nResidueBFactor));
     if (bfactorGroup.nResidueBFactor > 0) {
-      properties.setProperty("residuebfactor", "true");
+      properties.setProperty("residue-bfactor", "true");
     }
 
     // Add AnisoU B-Factors to the Refinement
     if (!parseResult.hasMatchedOption("anisoU")) {
-      bfactorGroup.anisoU = properties.getBoolean("addanisou", bfactorGroup.anisoU);
+      bfactorGroup.anisoU = properties.getBoolean("add-anisou", bfactorGroup.anisoU);
     }
-    properties.setProperty("addanisou", bfactorGroup.anisoU);
+    properties.setProperty("add-anisou", bfactorGroup.anisoU);
 
     // Refine Molecular Occupancies
     if (!parseResult.hasMatchedOption("refineMolOcc")) {
-      group.refineMolOcc = properties.getBoolean("refinemolocc", group.refineMolOcc);
+      group.refineMolOcc = properties.getBoolean("refine-mol-occ", group.refineMolOcc);
     }
-    properties.setProperty("refinemolocc", group.refineMolOcc);
+    properties.setProperty("refine-mol-occ", group.refineMolOcc);
   }
 
   /**
@@ -306,7 +308,9 @@ public class XrayOptions extends DataRefinementOptions {
      * --rmo or --refineMolOcc
      */
     @Option(names = {"--rmo", "--refineMolOcc"}, paramLabel = "false", defaultValue = "false",
-        description = "Refine on molecules.")
+        description = "Refine molecular occupancy.")
+    @FFXProperty(name = "refine-mol-occ", propertyGroup = StructuralRefinement, defaultValue = "false",
+        description = "Refine molecular occupancy.")
     boolean refineMolOcc = false;
 
     /**
@@ -329,6 +333,8 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"--nBins"}, paramLabel = "10", defaultValue = "10",
         description = "The number of refection bins.")
+    @FFXProperty(name = "reflection-bins", propertyGroup = StructuralRefinement, defaultValue = "10",
+        description = "The number of refection bins.")
     int nBins = 10;
 
     /**
@@ -336,6 +342,9 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"--FSigFCutoff"}, paramLabel = "-1.0", defaultValue = "-1.0",
         description = "F / SigF cutoff (-1.0 is no cutoff).")
+    @FFXProperty(name = "f-sigf-cutoff", propertyGroup = StructuralRefinement, defaultValue = "-1.0",
+        description = "F / SigF cutoff (-1.0 is no cutoff)."
+    )
     double fSigFCutoff = -1.0;
 
     /**
@@ -343,6 +352,9 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"-R", "--rFreeFlag"}, paramLabel = "-1", defaultValue = "-1",
         description = "R-Free Flag value (-1 attempts to auto-determine from the data).")
+    @FFXProperty(name = "rfree-flag", propertyGroup = StructuralRefinement, defaultValue = "-1",
+        description = "R-Free Flag value (-1 attempts to auto-determine from the data)."
+    )
     int rFreeFlag = -1;
 
     /**
@@ -364,6 +376,10 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"-B", "--bSimWeight"}, paramLabel = "1.0", defaultValue = "1.0",
         description = "B-Factor similarity weight.")
+    @FFXProperty(name = "b-sim-weight", propertyGroup = StructuralRefinement, defaultValue = "1.0", description = """
+        B-factor harmonic restraint weight between bonded atoms.
+        This can be increased for low resolution structures to ~5-10.
+        """)
     double bSimWeight = 1.0;
 
     /**
@@ -371,12 +387,16 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"--nResidueBFactor"}, paramLabel = "0", defaultValue = "0",
         description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
+    @FFXProperty(name = "n-residue-bfactor", propertyGroup = StructuralRefinement, defaultValue = "0",
+        description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
     int nResidueBFactor = 0;
 
     /**
      * -u or --addAnisoU
      */
     @Option(names = {"-U", "--addAnisoU"}, paramLabel = "false", defaultValue = "false",
+        description = "Add Anisotropic B-Factors to refinement.")
+    @FFXProperty(name = "add-anisou", propertyGroup = StructuralRefinement, defaultValue = "false",
         description = "Add Anisotropic B-Factors to refinement.")
     boolean anisoU = false;
   }
@@ -390,13 +410,17 @@ public class XrayOptions extends DataRefinementOptions {
      * --aRadBuffer
      */
     @Option(names = {"--aRadBuffer"}, paramLabel = "0.75", defaultValue = "0.75",
-        description = "Set the distance beyond the atomic radius to evaluate scattering (A).")
+        description = "Scattering is evaluated within the atomic radius plus this buffer (Å).")
+    @FFXProperty(name = "scattering-buffer", propertyGroup = StructuralRefinement, defaultValue = "0.6",
+        description = "Scattering is evaluated within the atomic radius plus this buffer (Å).")
     double aRadBuffer = 0.75;
 
     /**
      * -G or --sampling
      */
     @Option(names = {"-G", "--sampling"}, paramLabel = "0.6", defaultValue = "0.6",
+        description = "The number of grid spaces per Angstrom for the scattering FFT grid.")
+    @FFXProperty(name = "sampling", propertyGroup = StructuralRefinement, defaultValue = "0.6",
         description = "The number of grid spaces per Angstrom for the scattering FFT grid.")
     double sampling = 0.6;
 
@@ -405,6 +429,8 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"--sf", "--splineFit"}, paramLabel = "true", defaultValue = "true",
         description = "Use a resolution dependent spline scale.")
+    @FFXProperty(name = "spline-fit", propertyGroup = StructuralRefinement, defaultValue = "true",
+        description = "Use a resolution dependent spline scale factor.")
     boolean splineFit = true;
 
     /**
@@ -412,6 +438,8 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"-A", "--allGaussians"}, paramLabel = "false", defaultValue = "false",
         description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
+    @FFXProperty(name = "use-3g", propertyGroup = StructuralRefinement, defaultValue = "true",
+        description = "The three Gaussians with the largest amplitudes define the atomic scattering density.")
     boolean allGaussians = false;
 
     /**
@@ -419,12 +447,16 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"--xrayScaleTol"}, paramLabel = "1.0e-4", defaultValue = "1.0e-4",
         description = "X-ray scale optimization tolerance.")
+    @FFXProperty(name = "xray-scale-tol", propertyGroup = StructuralRefinement, defaultValue = "1.0e-4",
+        description = "X-ray scale optimization tolerance.")
     double xrayScaleTol = 1.0e-4;
 
     /**
      * --sigmaATol
      */
     @Option(names = {"--sigmaATol"}, paramLabel = "0.05", defaultValue = "0.05",
+        description = "Sigma A optimization tolerance.")
+    @FFXProperty(name = "sigmaa-tol", propertyGroup = StructuralRefinement, defaultValue = "0.05",
         description = "Sigma A optimization tolerance.")
     double sigmaATol = 0.05;
   }
@@ -438,6 +470,8 @@ public class XrayOptions extends DataRefinementOptions {
      * -S or --solventGridSearch
      */
     @Option(names = {"-S", "--solventGridSearch"}, paramLabel = "false", defaultValue = "false",
+        description = "Perform a grid search for optimal bulk solvent parameters.")
+    @FFXProperty(name = "solvent-grid-search", propertyGroup = StructuralRefinement, defaultValue = "false",
         description = "Perform a grid search for optimal bulk solvent parameters.")
     boolean gridSearch = false;
 

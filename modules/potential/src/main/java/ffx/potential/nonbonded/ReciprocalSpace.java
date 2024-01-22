@@ -46,8 +46,8 @@ import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
-import ffx.utilities.FFXKeyword;
-import ffx.utilities.KeywordGroup;
+import ffx.utilities.FFXProperty;
+import ffx.utilities.PropertyGroup;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.nio.DoubleBuffer;
@@ -143,11 +143,11 @@ public class ReciprocalSpace {
   /**
    * The b-Spline order to use for discretization to/from the reciprocal grid.
    */
-  @FFXKeyword(name = "pme-order", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "5",
-      description =
-          "Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge or atomic multipole electrostatics. "
-              + "A default value of 5 is used in the absence of the pme-order keyword.")
+  @FFXProperty(name = "pme-order", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "5", description = """
+      Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge
+      or atomic multipole electrostatics. A default value of 5 is used in the absence of the pme-order keyword.
+      """)
   private final int bSplineOrder;
   /**
    * Three derivatives of the potential are needed for AMOEBA. Specifically, the field gradient is
@@ -211,46 +211,47 @@ public class ReciprocalSpace {
   private static final double DEFAULT_PME_MESH_DENSITY = 1.2;
   private static final double oneThird = 1.0 / 3.0;
 
-  @FFXKeyword(name = "pme-mesh-density", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "1.2",
-      description =
-          "The default in the absence of the pme-grid keyword is to set the grid size along each "
-              + " axis to the smallest factor of 2, 3 and/or 5 that is at least as large as "
-              + "pme-mesh-density times the axis length in Angstroms.")
+  @FFXProperty(name = "pme-mesh-density", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "1.2", description = """
+      The default in the absence of the pme-grid keyword is to set the grid size along each
+      axis to the smallest factor of 2, 3 and/or 5 that is at least as large as
+      pme-mesh-density times the axis length in Angstroms.
+      """)
   private double density;
 
   /**
    * The X-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-x", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
-      description = "Specifies the PME grid dimension along the x-axis and takes precedence over the pme-grid keyword.")
-  @FFXKeyword(name = "pme-grid", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
-      description = "[3 integers] "
-          + "Sets the dimensions of the reciprocal space grid used during particle mesh Ewald "
-          + "summation for electrostatics. The three modifiers give the size along the X-, Y- and Z- axes, "
-          + "respectively. If either the Y- or Z-axis dimensions are omitted, then they are set equal "
-          + "to the X-axis dimension. The default in the absence of the pme-grid keyword is to set the "
-          + "grid size along each axis to the smallest value that can be factored by 2, 3, 4 and/or 5 "
-          + "and is at least as large as 1.2 times the axis length in Angstroms. "
-          + "The value 1.2 can be changed using the pme-mesh-density property.")
+  @FFXProperty(name = "pme-grid-x", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "NONE", description =
+      "Specifies the PME grid dimension along the x-axis and takes precedence over the pme-grid keyword.")
+  @FFXProperty(name = "pme-grid", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "NONE", description = """
+      [3 integers]
+      Sets the dimensions of the reciprocal space grid used during particle mesh Ewald
+      summation for electrostatics. The three modifiers give the size along the X-, Y- and Z- axes,
+      respectively. If either the Y- or Z-axis dimensions are omitted, then they are set equal
+      to the X-axis dimension. The default in the absence of the pme-grid keyword is to set the
+      grid size along each axis to the smallest value that can be factored by 2, 3, 4 and/or 5
+      and is at least as large as 1.2 times the axis length in Angstroms.
+      The value 1.2 can be changed using the pme-mesh-density property.
+      """)
   private int fftX;
 
   /**
    * The Y-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-y", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
-      description = "Specifies the PME grid dimension along the y-axis and takes precedence over the pme-grid keyword.")
+  @FFXProperty(name = "pme-grid-y", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "NONE", description =
+      "Specifies the PME grid dimension along the y-axis and takes precedence over the pme-grid keyword.")
   private int fftY;
 
   /**
    * The Z-dimension of the FFT grid.
    */
-  @FFXKeyword(name = "pme-grid-z", clazz = Integer.class,
-      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
-      description = "Specifies the PME grid dimension along the z-axis and takes precedence over the pme-grid keyword.")
+  @FFXProperty(name = "pme-grid-z", clazz = Integer.class, propertyGroup = PropertyGroup.ParticleMeshEwald,
+      defaultValue = "NONE", description =
+      "Specifies the PME grid dimension along the z-axis and takes precedence over the pme-grid keyword.")
   private int fftZ;
 
   /**

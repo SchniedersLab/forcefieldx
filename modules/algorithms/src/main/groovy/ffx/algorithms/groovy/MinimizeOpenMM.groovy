@@ -41,8 +41,8 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.ForceFieldEnergyOpenMM
-import ffx.potential.MolecularAssembly
+import ffx.potential.Platform
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
@@ -124,14 +124,14 @@ class MinimizeOpenMM extends AlgorithmsScript {
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
     switch (forceFieldEnergy.getPlatform()) {
-      case ForceFieldEnergy.Platform.OMM:
-      case ForceFieldEnergy.Platform.OMM_CUDA:
-      case ForceFieldEnergy.Platform.OMM_OPENCL:
-      case ForceFieldEnergy.Platform.OMM_OPTCPU:
-      case ForceFieldEnergy.Platform.OMM_REF:
+      case Platform.OMM:
+      case Platform.OMM_CUDA:
+      case Platform.OMM_OPENCL:
+      case Platform.OMM_OPTCPU:
+      case Platform.OMM_REF:
         logger.fine(" Platform is appropriate for OpenMM Minimization.")
         break
-      case ForceFieldEnergy.Platform.FFX:
+      case Platform.FFX:
       default:
         logger.severe(String.format(
             " Platform %s is inappropriate for OpenMM minimization. Please explicitly specify an OpenMM platform.",
@@ -139,7 +139,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
         break
     }
 
-    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+    if (forceFieldEnergy instanceof OpenMMEnergy) {
       ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(
           activeAssembly)
       minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)

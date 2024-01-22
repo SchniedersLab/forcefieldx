@@ -50,9 +50,8 @@ import ffx.algorithms.mc.BoltzmannMC;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.utilities.Constants;
-import java.io.BufferedReader;
+
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -344,17 +343,6 @@ public class RepExOST {
     logIfMaster(message);
   }
 
-  /**
-   * Logs a message if it is the lowest-ranked process computing a given swap. Currently, this just
-   * wraps logIfMaster, as all processes compute all swaps.
-   *
-   * @param message Message to log
-   * @param level Logging level to log at
-   */
-  private void logIfSwapping(Level level, String message) {
-    logIfMaster(level, message);
-  }
-
   private void setFiles() {
     File[] trajFiles = Arrays.stream(allFilenames).map(
         (String fn) -> format("%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn,
@@ -437,7 +425,7 @@ public class RepExOST {
    * @param numSteps Number of MD steps (not MC cycles) to run.
    */
   private void runMCOneStep(long numSteps) {
-    monteCarloOST.setRunLength(numSteps);
+    monteCarloOST.setTotalSteps(numSteps);
     monteCarloOST.sampleOneStep();
   }
 
@@ -447,7 +435,7 @@ public class RepExOST {
    * @param numSteps Number of MD steps (not MC cycles) to run.
    */
   private void runMCTwoStep(long numSteps) {
-    monteCarloOST.setRunLength(numSteps);
+    monteCarloOST.setTotalSteps(numSteps);
     monteCarloOST.sampleTwoStep();
   }
 

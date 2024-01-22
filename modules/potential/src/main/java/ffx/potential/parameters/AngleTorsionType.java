@@ -39,14 +39,15 @@ package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGTORS;
 import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -59,20 +60,23 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "angtors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[4 integers and 6 reals] "
-        + "Provides the values for a single bond angle bending-torsional angle parameter. "
-        + "The integer modifiers give the atom class numbers for the four kinds of atoms involved in the torsion and its contained angles. "
-        + "The real number modifiers give the force constant values for both angles coupled with 1-, 2- and 3-fold torsional terms."
-        + "The default units for the force constants are kcal/mole/radian, but this can be controlled via the angtorunit keyword.")
+@FFXProperty(name = "angtors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [4 integers and 6 reals]
+    Provides the values for a single bond angle bending-torsional angle parameter.
+    The integer modifiers give the atom class numbers for the four kinds of atoms involved in the torsion and its contained angles.
+    The real number modifiers give the force constant values for both angles coupled with 1-, 2- and 3-fold torsional terms.
+    The default units for the force constants are kcal/mole/radian, but this can be controlled via the angtorunit keyword.
+    """)
 public final class AngleTorsionType extends BaseType implements Comparator<String> {
 
   public static final double DEFAULT_ANGTOR_UNIT = 1.0 / DEGREES_PER_RADIAN;
 
   /** Convert angle-torsion to kcal/mole. */
-  @FFXKeyword(name = "angtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "Pi/180", description =
-      "Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle cross term into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXProperty(name = "angtorunit", propertyGroup = EnergyUnitConversion, defaultValue = "Pi/180", description = """
+      Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle
+      cross term into units of kcal/mole. The correct value is force field dependent and typically provided in the
+      header of the master force field parameter file.
+      """)
   public double angtorunit = DEFAULT_ANGTOR_UNIT;
 
   /** A Logger for the AngleTorsionType class. */

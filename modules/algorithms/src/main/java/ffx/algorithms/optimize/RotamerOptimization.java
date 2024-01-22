@@ -70,7 +70,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
@@ -910,7 +910,7 @@ public class RotamerOptimization implements Terminatable {
       x = new double[n];
     }
     potential.getCoordinates(x);
-    return ((ForceFieldEnergyOpenMM) potential).energyFFX(x, false);
+    return ((OpenMMEnergy) potential).energyFFX(x, false);
   }
 
   /**

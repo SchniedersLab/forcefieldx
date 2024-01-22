@@ -62,7 +62,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.SystemState;
 import ffx.potential.UnmodifiableState;
@@ -278,7 +278,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       }
     }
 
-    boolean oMMLogging = potential instanceof ForceFieldEnergyOpenMM;
+    boolean oMMLogging = potential instanceof OpenMMEnergy;
     List<Constraint> constraints = potentialEnergy.getConstraints();
 
     // Set the integrator.
@@ -400,8 +400,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // implementing Collection.
         // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
         boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream()
-            .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
-        ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
+            .anyMatch((Potential p) -> p instanceof OpenMMEnergy);
+        ommLeaves = ommLeaves || potentialEnergy instanceof OpenMMEnergy;
         if (ommLeaves) {
           return new MolecularDynamicsOpenMM(assembly, potentialEnergy, listener,
               requestedThermostat, requestedIntegrator);
@@ -433,8 +433,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     } else {
       // TODO: Replace this with a better check.
       boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream()
-          .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
-      ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
+          .anyMatch((Potential p) -> p instanceof OpenMMEnergy);
+      ommLeaves = ommLeaves || potentialEnergy instanceof OpenMMEnergy;
       if (ommLeaves) {
         return MDEngine.OPENMM;
       } else {
@@ -1171,8 +1171,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       orthogonalSpaceTempering.setPropagateLambda(false);
     }
 
-    if (esvSystem != null && potential instanceof ForceFieldEnergyOpenMM) {
-      state.setPotentialEnergy(((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient));
+    if (esvSystem != null && potential instanceof OpenMMEnergy) {
+      state.setPotentialEnergy(((OpenMMEnergy) potential).energyAndGradientFFX(x, gradient));
     } else {
       state.setPotentialEnergy(potential.energyAndGradient(x, gradient));
     }
@@ -1355,8 +1355,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       }
 
       // Compute the potential energy and gradients.
-      if (esvSystem != null && potential instanceof ForceFieldEnergyOpenMM) {
-        state.setPotentialEnergy(((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(state.x(), state.gradient()));
+      if (esvSystem != null && potential instanceof OpenMMEnergy) {
+        state.setPotentialEnergy(((OpenMMEnergy) potential).energyAndGradientFFX(state.x(), state.gradient()));
       } else {
         state.setPotentialEnergy(potential.energyAndGradient(state.x(), state.gradient()));
       }

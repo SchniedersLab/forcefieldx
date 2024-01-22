@@ -37,21 +37,25 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LineSearch;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
-import ffx.potential.ForceFieldEnergyOpenMM.Context;
-import ffx.potential.ForceFieldEnergyOpenMM.State;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.openmm.OpenMMContext;
+import ffx.potential.openmm.OpenMMState;
 import ffx.potential.bonded.Atom;
+
 import java.util.logging.Logger;
+
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * OpenMM accelerated L-BFGS minimization.
@@ -68,21 +72,21 @@ public class MinimizeOpenMM extends Minimize {
   }
 
   public MinimizeOpenMM(MolecularAssembly molecularAssembly,
-      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
-    super(molecularAssembly, forceFieldEnergyOpenMM, null);
+                        OpenMMEnergy openMMEnergy) {
+    super(molecularAssembly, openMMEnergy, null);
   }
 
   public MinimizeOpenMM(MolecularAssembly molecularAssembly,
-      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM, AlgorithmListener algorithmListener) {
-    super(molecularAssembly, forceFieldEnergyOpenMM, algorithmListener);
+                        OpenMMEnergy openMMEnergy, AlgorithmListener algorithmListener) {
+    super(molecularAssembly, openMMEnergy, algorithmListener);
   }
 
   /**
    * Note the OpenMM L-BFGS minimizer does not accept the parameter "m" for the number of previous
    * steps used to estimate the Hessian.
    *
-   * @param m The number of previous steps used to estimate the Hessian (ignored).
-   * @param eps The convergence criteria.
+   * @param m             The number of previous steps used to estimate the Hessian (ignored).
+   * @param eps           The convergence criteria.
    * @param maxIterations The maximum number of iterations.
    * @return The potential.
    */
@@ -94,7 +98,7 @@ public class MinimizeOpenMM extends Minimize {
   /**
    * minimize
    *
-   * @param eps The convergence criteria.
+   * @param eps           The convergence criteria.
    * @param maxIterations The maximum number of iterations.
    * @return a {@link ffx.numerics.Potential} object.
    */
@@ -103,33 +107,34 @@ public class MinimizeOpenMM extends Minimize {
 
     ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
 
-    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM openMM) {
+    if (forceFieldEnergy instanceof OpenMMEnergy openMMEnergy) {
       time = -System.nanoTime();
 
       // Respect the use flag, and lambda state.
       Atom[] atoms = molecularAssembly.getAtomArray();
-      openMM.updateParameters(atoms);
+      openMMEnergy.updateParameters(atoms);
 
       // Respect (in)active atoms.
-      openMM.setActiveAtoms();
+      openMMEnergy.setActiveAtoms();
 
       // Get the coordinates to start from.
-      openMM.getCoordinates(x);
+      openMMEnergy.getCoordinates(x);
 
       // Calculate the starting energy before optimization.
-      double e = openMM.energy(x);
+      double e = openMMEnergy.energy(x);
       logger.info(format("\n Initial energy:                 %12.6f (kcal/mol)", e));
 
       // Run the minimization in the current OpenMM Context.
-      Context context = openMM.getContext();
-      context.optimize(eps, maxIterations);
+      OpenMMContext openMMContext = openMMEnergy.getContext();
+      openMMContext.optimize(eps, maxIterations);
 
       // Get the minimized coordinates, forces and potential energy back from OpenMM.
-      State state = openMM.createState(true, true, true, false);
-      energy = state.potentialEnergy;
-      state.getPositions(x);
-      state.getGradient(grad);
-      state.free();
+      int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Forces;
+      OpenMMState openMMState = openMMContext.getOpenMMState(mask);
+      energy = openMMState.potentialEnergy;
+      openMMState.getPositions(x);
+      openMMState.getGradient(grad);
+      openMMState.destroy();
 
       // Compute the RMS gradient.
       int index = 0;
@@ -145,8 +150,8 @@ public class MinimizeOpenMM extends Minimize {
       rmsGradient = sqrt(grad2 / n);
 
       double[] ffxGrad = new double[n];
-      openMM.getCoordinates(x);
-      double ffxEnergy = openMM.energyAndGradientFFX(x, ffxGrad);
+      openMMEnergy.getCoordinates(x);
+      double ffxEnergy = openMMEnergy.energyAndGradientFFX(x, ffxGrad);
       double grmsFFX = 0.0;
       for (int i = 0; i < n; i++) {
         double gi = ffxGrad[i];
@@ -159,12 +164,8 @@ public class MinimizeOpenMM extends Minimize {
       grmsFFX = sqrt(grmsFFX / n);
 
       time += System.nanoTime();
-      logger.info(
-          format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).", energy,
-              ffxEnergy, time * 1.0e-9));
-      logger.info(
-          format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).", rmsGradient,
-              grmsFFX));
+      logger.info(format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).", energy, ffxEnergy, time * 1.0e-9));
+      logger.info(format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).", rmsGradient, grmsFFX));
     }
 
     if (algorithmListener != null) {
@@ -181,8 +182,8 @@ public class MinimizeOpenMM extends Minimize {
    */
   @Override
   public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
-      double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
-      double angle, LineSearch.LineSearchResult lineSearchResult) {
+                                    double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
+                                    double angle, LineSearch.LineSearchResult lineSearchResult) {
     logger.warning(" MinimizeOpenMM does not support updates at each optimization step.");
     return false;
   }

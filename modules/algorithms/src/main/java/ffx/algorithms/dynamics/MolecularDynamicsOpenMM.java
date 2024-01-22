@@ -37,23 +37,29 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import static ffx.utilities.Constants.NS2SEC;
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
+import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergyOpenMM;
-import ffx.potential.ForceFieldEnergyOpenMM.Context;
-import ffx.potential.ForceFieldEnergyOpenMM.State;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
-
+import ffx.potential.openmm.OpenMMContext;
+import ffx.potential.openmm.OpenMMState;
+import ffx.potential.openmm.OpenMMSystem;
 import ffx.potential.UnmodifiableState;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
+import static ffx.utilities.Constants.NS2SEC;
+import static java.lang.String.format;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -63,21 +69,37 @@ import java.util.logging.Logger;
 public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
   private static final Logger logger = Logger.getLogger(MolecularDynamicsOpenMM.class.getName());
-  /** Integrator Type. */
+  /**
+   * Integrator Type.
+   */
   private final IntegratorEnum integratorType;
-  /** Thermostat Type. */
+  /**
+   * Thermostat Type.
+   */
   private final ThermostatEnum thermostatType;
-  /** OpenMM ForceFieldEnergy. */
-  private final ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
-  /** Integrator String. */
+  /**
+   * OpenMM ForceFieldEnergy.
+   */
+  private final OpenMMEnergy openMMEnergy;
+  /**
+   * Integrator String.
+   */
   private String integratorString;
-  /** Number of OpenMM MD steps per iteration. */
+  /**
+   * Number of OpenMM MD steps per iteration.
+   */
   private int intervalSteps;
-  /** Flag to indicate OpenMM MD interactions are running. */
+  /**
+   * Flag to indicate OpenMM MD interactions are running.
+   */
   private boolean running;
-  /** Run time. */
+  /**
+   * Run time.
+   */
   private long time;
-  /** Obtain all variables with each update (i.e., include velocities, gradients). */
+  /**
+   * Obtain all variables with each update (i.e., include velocities, gradients).
+   */
   private boolean getAllVars = true;
   /**
    * Method to run on update for obtaining variables. Will either grab everything (default) or
@@ -90,14 +112,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * routines, avoiding the cost of communicating coordinates, gradients, and energies back and forth
    * across the PCI bus.
    *
-   * @param assembly MolecularAssembly to operate on
-   * @param potential Either a ForceFieldEnergyOpenMM, or a Barostat.
-   * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+   * @param assembly   MolecularAssembly to operate on
+   * @param potential  Either a ForceFieldEnergyOpenMM, or a Barostat.
+   * @param listener   a {@link ffx.algorithms.AlgorithmListener} object.
    * @param thermostat May have to be slightly modified for native OpenMM routines
    * @param integrator May have to be slightly modified for native OpenMM routines
    */
   public MolecularDynamicsOpenMM(MolecularAssembly assembly, Potential potential,
-      AlgorithmListener listener, ThermostatEnum thermostat, IntegratorEnum integrator) {
+                                 AlgorithmListener listener, ThermostatEnum thermostat, IntegratorEnum integrator) {
     super(assembly, potential, listener, thermostat, integrator);
 
     logger.info("\n Initializing OpenMM molecular dynamics.");
@@ -107,15 +129,15 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     List<Potential> potentialStack = new ArrayList<>(potential.getUnderlyingPotentials());
     potentialStack.add(potential);
 
-    List<ForceFieldEnergyOpenMM> energyList = potentialStack.stream()
-        .filter((Potential p) -> p instanceof ForceFieldEnergyOpenMM)
-        .map((Potential p) -> (ForceFieldEnergyOpenMM) p).toList();
+    List<OpenMMEnergy> energyList = potentialStack.stream()
+        .filter((Potential p) -> p instanceof OpenMMEnergy)
+        .map((Potential p) -> (OpenMMEnergy) p).toList();
     if (energyList.size() != 1) {
       logger.severe(format(
           " Attempted to create a MolecularDynamicsOpenMM with %d ForceFieldEnergyOpenMM instances.",
           energyList.size()));
     }
-    forceFieldEnergyOpenMM = energyList.get(0);
+    openMMEnergy = energyList.get(0);
 
     List<Barostat> barostatList = potentialStack.stream()
         .filter((Potential p) -> p instanceof Barostat).map((Potential p) -> (Barostat) p).toList();
@@ -131,7 +153,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     // Update the set of active and inactive atoms.
-    forceFieldEnergyOpenMM.setActiveAtoms();
+    openMMEnergy.setActiveAtoms();
 
     thermostatType = thermostat;
     integratorType = integrator;
@@ -150,7 +172,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   @Override
   public void dynamic(long numSteps, double timeStep, double printInterval, double saveInterval,
-      double temperature, boolean initVelocities, File dyn) {
+                      double temperature, boolean initVelocities, File dyn) {
     // Return if already running and a second thread calls the dynamic method.
     if (!done) {
       logger.warning(" Programming error - a thread invoked dynamic when it was already running.");
@@ -179,7 +201,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     initialState = new UnmodifiableState(state);
 
     // Check that our context is using correct Integrator, time step, and target temperature.
-    forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature, false);
+    openMMEnergy.updateContext(integratorString, dt, targetTemperature, false);
 
     // Pre-run operations (mostly logging) that require knowledge of system energy.
     postInitEnergies();
@@ -191,7 +213,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     postRun();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getIntervalSteps() {
     return intervalSteps;
@@ -207,27 +231,31 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     this.intervalSteps = intervalSteps;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTimeStep() {
     return dt;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void init(long numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
-      String fileType, double restartInterval, double temperature, boolean initVelocities,
-      File dyn) {
+                   String fileType, double restartInterval, double temperature, boolean initVelocities,
+                   File dyn) {
 
     super.init(numSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartInterval,
         temperature, initVelocities, dyn);
 
     boolean isLangevin = IntegratorEnum.isStochastic(integratorType);
 
-    ForceFieldEnergyOpenMM.System system = forceFieldEnergyOpenMM.getSystem();
+    OpenMMSystem openMMSystem = openMMEnergy.getSystem();
     if (!isLangevin && !thermostatType.equals(ThermostatEnum.ADIABATIC)) {
       // Add Andersen thermostat, or if already present update its target temperature.
-      system.addAndersenThermostatForce(targetTemperature);
+      openMMSystem.addAndersenThermostatForce(targetTemperature);
     }
 
     if (constantPressure) {
@@ -235,17 +263,17 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       // If it is already present, update its target temperature, pressure and frequency.
       double pressure = barostat.getPressure();
       int frequency = barostat.getMeanBarostatInterval();
-      system.addMonteCarloBarostatForce(pressure, targetTemperature, frequency);
+      openMMSystem.addMonteCarloBarostatForce(pressure, targetTemperature, frequency);
     }
 
     // For Langevin/Stochastic dynamics, center of mass motion will not be removed.
     if (!isLangevin) {
       // No action is taken if a COMMRemover is already present.
-      system.addCOMMRemoverForce();
+      openMMSystem.addCOMMRemoverForce();
     }
 
     // Set the current value of lambda.
-    forceFieldEnergyOpenMM.setLambda(forceFieldEnergyOpenMM.getLambda());
+    openMMEnergy.setLambda(openMMEnergy.getLambda());
   }
 
   @Override
@@ -254,7 +282,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     setOpenMMState();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setFileType(String fileType) {
     this.fileType = fileType;
@@ -297,28 +327,34 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * @param intervalSteps Number of MD steps to take.
    */
   private void takeOpenMMSteps(int intervalSteps) {
-    Context context = forceFieldEnergyOpenMM.getContext();
-    context.integrate(intervalSteps);
+    OpenMMContext openMMContext = openMMEnergy.getContext();
+    openMMContext.integrate(intervalSteps);
   }
 
-  /** Load coordinates, box vectors and velocities. */
+  /**
+   * Load coordinates, box vectors and velocities.
+   */
   private void setOpenMMState() {
-    Context context = forceFieldEnergyOpenMM.getContext();
-    context.setOpenMMPositions(state.x());
-    context.setPeriodicBoxVectors();
-    context.setOpenMMVelocities(state.v());
+    OpenMMContext openMMContext = openMMEnergy.getContext();
+    openMMContext.setPositions(state.x());
+    openMMContext.setPeriodicBoxVectors(openMMEnergy.getCrystal());
+    openMMContext.setVelocities(state.v());
   }
 
-  /** Get OpenMM Energies. */
+  /**
+   * Get OpenMM Energies.
+   */
   private void getOpenMMEnergies() {
-    State ommState = forceFieldEnergyOpenMM.createState(false, true, false, false);
-    state.setKineticEnergy(ommState.kineticEnergy);
-    state.setPotentialEnergy(ommState.potentialEnergy);
-    state.setTemperature(ommState.temperature);
-    ommState.free();
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(OpenMM_State_Energy);
+    state.setKineticEnergy(openMMState.kineticEnergy);
+    state.setPotentialEnergy(openMMState.potentialEnergy);
+    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    openMMState.destroy();
   }
 
-  /** Do some logging of the beginning energy values. */
+  /**
+   * Do some logging of the beginning energy values.
+   */
   void postInitEnergies() {
     super.postInitEnergies();
     running = true;
@@ -348,35 +384,51 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
   }
 
-  /** Get OpenMM Energies and Positions. */
+  /**
+   * Get OpenMM Energies and Positions.
+   */
   private void getOpenMMEnergiesAndPositions() {
-    State ommState = forceFieldEnergyOpenMM.createState(true, true, false, false);
-    state.setPotentialEnergy(ommState.potentialEnergy);
-    state.setKineticEnergy(ommState.kineticEnergy);
-    state.setTemperature(ommState.temperature);
-    ommState.getPositions(state.x());
-    ommState.getPeriodicBoxVectors();
-    ommState.free();
+    int mask = OpenMM_State_Energy | OpenMM_State_Positions;
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
+    state.setPotentialEnergy(openMMState.potentialEnergy);
+    state.setKineticEnergy(openMMState.kineticEnergy);
+    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    openMMState.getPositions(state.x());
+    Crystal crystal = openMMEnergy.getCrystal();
+    if (!crystal.aperiodic()) {
+      double[][] cellVectors = openMMState.getPeriodicBoxVectors();
+      crystal.setCellVectors(cellVectors);
+      openMMEnergy.setCrystal(crystal);
+    }
+    openMMState.destroy();
   }
 
-  /** Get OpenMM energies, positions, velocities, and accelerations. */
+  /**
+   * Get OpenMM energies, positions, velocities, and accelerations.
+   */
   private void getAllOpenMMVariables() {
-    State ommState = forceFieldEnergyOpenMM.createState(true, true, true, true);
-    state.setPotentialEnergy(ommState.potentialEnergy);
-    state.setKineticEnergy(ommState.kineticEnergy);
-    state.setTemperature(ommState.temperature);
-    ommState.getPositions(state.x());
-    ommState.getPeriodicBoxVectors();
-    ommState.getVelocities(state.v());
-    ommState.getAccelerations(state.a());
-    ommState.free();
+    int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Velocities | OpenMM_State_Forces;
+    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
+    state.setPotentialEnergy(openMMState.potentialEnergy);
+    state.setKineticEnergy(openMMState.kineticEnergy);
+    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    openMMState.getPositions(state.x());
+    Crystal crystal = openMMEnergy.getCrystal();
+    if (!crystal.aperiodic()) {
+      double[][] cellVectors = openMMState.getPeriodicBoxVectors();
+      crystal.setCellVectors(cellVectors);
+      openMMEnergy.setCrystal(crystal);
+    }
+    openMMState.getVelocities(state.v());
+    openMMState.getAccelerations(state.a());
+    openMMState.destroy();
   }
 
   /**
    * updateFromOpenMM obtains the state of the simulation from OpenMM, completes some logging, and
    * saves restart files.
    *
-   * @param i Number of OpenMM MD rounds.
+   * @param i       Number of OpenMM MD rounds.
    * @param running True if OpenMM MD rounds have begun running.
    */
   private void updateFromOpenMM(long i, boolean running) {

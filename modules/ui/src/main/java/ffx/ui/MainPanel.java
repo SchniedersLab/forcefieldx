@@ -293,13 +293,13 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
                   Mallory R. Tollefson 2019-2023
                   Aaron J. Nessler     2021-2023
                   Andrew C. Thiel      2021-2023
-                                  
+        
                 All Rights Reserved
-                
+        
                 Force Field X is distributed under the GPL v. 3 license
                 with linking exception and is hosted by the Schnieders Lab
                 at The University of Iowa.
-                  
+        
                 User Manual:   https://ffx.biochem.uiowa.edu/manual.html
                 Publications:  https://ffx.biochem.uiowa.edu/publications.html
                 License:       https://ffx.biochem.uiowa.edu/licenses.html

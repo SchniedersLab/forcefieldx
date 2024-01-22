@@ -45,7 +45,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
-import ffx.potential.ForceFieldEnergy.Platform;
+import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
@@ -59,7 +59,7 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 
@@ -75,8 +75,8 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.*;
 import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 import static ffx.utilities.Constants.NS2SEC;
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
-import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
+import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -134,12 +134,13 @@ public class ParticleMeshEwald implements LambdaInterface {
    */
   private final ForceField forceField;
   private static final double DEFAULT_POLAR_EPS = 1.0e-6;
-  @FFXKeyword(name = "polar-eps", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0e-6",
-      description =
-          "Sets the convergence criterion applied during computation of self-consistent induced dipoles. "
-              + "The calculation is deemed to have converged when the rms change in Debyes in "
-              + "the induced dipole at all polarizable sites is less than the value specified with this property. "
-              + "The default value in the absence of the keyword is 0.000001 Debyes")
+  @FFXProperty(name = "polar-eps", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0e-6",
+      description = """
+          Sets the convergence criterion applied during computation of self-consistent induced dipoles.
+          The calculation is deemed to have converged when the rms change in Debyes in
+          the induced dipole at all polarizable sites is less than the value specified with this property.
+          The default value in the absence of the keyword is 1.0e-6 Debyes.
+          """)
   private final double poleps;
   private final boolean directFallback;
   /**
@@ -246,11 +247,13 @@ public class ParticleMeshEwald implements LambdaInterface {
   /**
    * Coulomb constant in units of kcal*Ang/(mol*electron^2)
    */
-  @FFXKeyword(name = "electric", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "332.063713",
-      description =
-          "Specifies a value for the so-called \"electric constant\" allowing conversion unit of electrostatic potential energy values from electrons^2/Angstrom to kcal/mol. "
-              + "Internally, FFX stores a default value for this constant as 332.063713 based on CODATA reference values. "
-              + "Since different force fields are intended for use with slightly different values, this keyword allows overriding the default value.")
+  @FFXProperty(name = "electric", propertyGroup = LocalGeometryFunctionalForm, defaultValue = "332.063713",
+      description = """
+          Specifies a value for the so-called "electric constant" allowing conversion unit of electrostatic
+          potential energy values from electrons^2/Angstrom to kcal/mol. Internally, FFX stores a default value
+          for this constant as 332.063713 based on CODATA reference values. Since different force fields are
+          intended for use with slightly different values, this keyword allows overriding the default value.
+          """)
   public double electric;
   /**
    * The requested permittivity for the solute.
@@ -525,8 +528,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     if (!scfAlgorithm.isSupported(Platform.FFX)) {
       // Can't know a-priori whether this is being constructed under an FFX or OpenMM
       // ForceFieldEnergy, so fine logging.
-      logger.fine(
-          format(
+      logger.fine(format(
               " SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!",
               scfAlgorithm));
       scfAlgorithm = SCFAlgorithm.CG;
@@ -1526,9 +1528,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   /**
    * Total system under PBC.
-   *  A. Softcore real space for Ligand-Protein and Ligand-Ligand.
-   *  B. Reciprocal space scaled by lambda.
-   *  C. Polarization scaled by lambda.
+   * A. Softcore real space for Ligand-Protein and Ligand-Ligand.
+   * B. Reciprocal space scaled by lambda.
+   * C. Polarization scaled by lambda.
    */
   private double condensedEnergy() {
     if (lambda < alchemicalParameters.polLambdaStart) {
@@ -1555,9 +1557,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   /**
    * Condensed phase system without the ligand.
-   *  A. No permanent real space electrostatics needs to be calculated because this was handled analytically in step 1.
-   *  B. Permanent reciprocal space scaled by (1 - lambda).
-   *  C. Polarization scaled by (1 - lambda).
+   * A. No permanent real space electrostatics needs to be calculated because this was handled analytically in step 1.
+   * B. Permanent reciprocal space scaled by (1 - lambda).
+   * C. Polarization scaled by (1 - lambda).
    */
   private double condensedNoLigandSCF() {
     // Turn off the ligand.
@@ -1610,8 +1612,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   /**
    * Aperiodic ligand electrostatics.
-   *  A. Real space with an Ewald coefficient of 0.0 (no reciprocal space).
-   *  B. Polarization scaled as in Step 2 by (1 - lambda).
+   * A. Real space with an Ewald coefficient of 0.0 (no reciprocal space).
+   * B. Polarization scaled as in Step 2 by (1 - lambda).
    */
   private double ligandElec() {
     for (int i = 0; i < nAtoms; i++) {
@@ -1703,8 +1705,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   /**
    * Aperiodic electrostatics when using neural networks.
-   *  A. Real space with an Ewald coefficient of 0.0 (no reciprocal space).
-   *  B. Permanent and Polarization scaled by -1.
+   * A. Real space with an Ewald coefficient of 0.0 (no reciprocal space).
+   * B. Permanent and Polarization scaled by -1.
    */
   private double nnElec() {
     for (int i = 0; i < nAtoms; i++) {
@@ -2218,8 +2220,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         case SOR -> scfBySOR(print, startTime);
         case EPT -> scfByEPT(print, startTime);
         default -> {
-            // PCG
-            pcgSolver.init(atoms, coordinates, polarizability, ipdamp, thole,
+          // PCG
+          pcgSolver.init(atoms, coordinates, polarizability, ipdamp, thole,
               use, crystal, inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
               field, fieldCR, ewaldParameters, soluteDielectric, parallelTeam,
               realSpaceNeighborParameters.realSpaceSchedule,

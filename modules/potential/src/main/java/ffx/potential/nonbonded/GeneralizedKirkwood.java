@@ -42,7 +42,7 @@ import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSI
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.SoluteType.setSoluteRadii;
 import static ffx.utilities.Constants.dWater;
-import static ffx.utilities.KeywordGroup.ImplicitSolvent;
+import static ffx.utilities.PropertyGroup.ImplicitSolvent;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -72,7 +72,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -84,10 +84,10 @@ import java.util.logging.Logger;
  * field in parallel using a {@link ffx.potential.nonbonded.NeighborList}.
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Michael J. Schnieders and Jay
- *     W. Ponder<br>
+ * W. Ponder<br>
  * @see <a href="http://dx.doi.org/10.1021/ct7001336" target="_blank">M. J. Schnieders and J. W.
- *     Ponder, Polarizable atomic multipole solutes in a generalized Kirkwood continuum, Journal of
- *     Chemical Theory and Computation 2007, 3, (6), 2083-2097.</a><br>
+ * Ponder, Polarizable atomic multipole solutes in a generalized Kirkwood continuum, Journal of
+ * Chemical Theory and Computation 2007, 3, (6), 2083-2097.</a><br>
  * @since 1.0
  */
 public class GeneralizedKirkwood implements LambdaInterface {
@@ -219,17 +219,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * The requested permittivity for the solvent.
    */
-  @FFXKeyword(name = "solvent-dielectric", keywordGroup = ImplicitSolvent, defaultValue = "78.3",
-      description = "The dielectric constant used for the solvent in generalized Kirkwood calculations."
-          + "The default of 78.3 corresponds to water.")
+  @FFXProperty(name = "solvent-dielectric", propertyGroup = ImplicitSolvent, defaultValue = "78.3", description = """
+      The dielectric constant used for the solvent in generalized Kirkwood calculations.
+      The default of 78.3 corresponds to water.
+      """)
   private final double solventDielectric;
   /**
    * The requested permittivity for the solute.
    */
-  @FFXKeyword(name = "solute-dielectric", keywordGroup = ImplicitSolvent, defaultValue = "1.0",
-      description = "The dielectric constant used for the solute(s) in generalized Kirkwood calculations."
-          + "The default of 1.0 is consistent with all solute dielectric response arising from either"
-          + "polarization via induced dipoles and/or permanent dipole realignment.")
+  @FFXProperty(name = "solute-dielectric", propertyGroup = ImplicitSolvent, defaultValue = "1.0", description = """
+      The dielectric constant used for the solute(s) in generalized Kirkwood calculations.
+      The default of 1.0 is consistent with all solute dielectric response arising from either
+      polarization via induced dipoles and/or permanent dipole realignment.
+      """)
   private final double soluteDielectric;
 
   /**
@@ -241,15 +243,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Base overlap HCT overlap scale factor.
    */
-  @FFXKeyword(name = "hct-scale", keywordGroup = ImplicitSolvent, defaultValue = "0.72",
-      description = "The default overlap scale factor for Hawkins-Cramer-Truhlar pairwise descreening.")
+  @FFXProperty(name = "hct-scale", propertyGroup = ImplicitSolvent, defaultValue = "0.72", description =
+      "The default overlap scale factor for Hawkins-Cramer-Truhlar pairwise descreening.")
   private final double hctScale;
 
   /**
    * If true, HCT overlap scale factors are element-specific
    */
-  @FFXKeyword(name = "element-hct-scale", clazz = Boolean.class, keywordGroup = ImplicitSolvent, defaultValue = "true",
-      description = "Flag to turn on element specific overlap scale factors for Hawkins-Cramer-Truhlar pairwise descreening.")
+  @FFXProperty(name = "element-hct-scale", clazz = Boolean.class, propertyGroup = ImplicitSolvent, defaultValue = "true",
+      description =
+          "Flag to turn on element specific overlap scale factors for Hawkins-Cramer-Truhlar pairwise descreening.")
   private final boolean elementHCTScale;
 
   /**
@@ -260,30 +263,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * If true, the descreening size of atoms is based on their force field vdW radius
    */
-  @FFXKeyword(name = "descreen-vdw", keywordGroup = ImplicitSolvent, defaultValue = "true",
-      description = "If true, the descreening size of each atom is based on its force field van der Waals radius.")
+  @FFXProperty(name = "descreen-vdw", propertyGroup = ImplicitSolvent, defaultValue = "true", description =
+      "If true, the descreening size of each atom is based on its force field van der Waals radius.")
   private final boolean descreenVDW;
 
   /**
    * If true, hydrogen atoms displace solvent during the pairwise descreening integral.
    */
-  @FFXKeyword(name = "descreen-hydrogen", keywordGroup = ImplicitSolvent, defaultValue = "false",
-      description = "If true, hydrogen atoms are contribute to the pairwise descreening integrals.")
+  @FFXProperty(name = "descreen-hydrogen", propertyGroup = ImplicitSolvent, defaultValue = "false", description =
+      "If true, hydrogen atoms are contribute to the pairwise descreening integrals.")
   private final boolean descreenHydrogen;
 
   private static final double DEFAULT_DESCREEN_OFFSET = 0.3;
   /**
    * Offset applied to the pairwise descreening integral to improve stability at small separation.
    */
-  @FFXKeyword(name = "descreen-offset", keywordGroup = ImplicitSolvent, defaultValue = "0.3",
-      description = "Offset applied to the pairwise descreening integral to improve stability at small separation.")
+  @FFXProperty(name = "descreen-offset", propertyGroup = ImplicitSolvent, defaultValue = "0.3", description =
+      "Offset applied to the pairwise descreening integral to improve stability at small separation.")
   private final double descreenOffset;
 
   /**
    * Apply a neck correction during descreening.
    */
-  @FFXKeyword(name = "neck-correction", keywordGroup = ImplicitSolvent, defaultValue = "true",
-      description = "Apply a neck correction during descreening.")
+  @FFXProperty(name = "neck-correction", propertyGroup = ImplicitSolvent, defaultValue = "true", description =
+      "Apply a neck correction during descreening.")
   private final boolean neckCorrection;
 
   /**
@@ -293,26 +296,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Maximum Sneck scaling parameter value
    */
-  @FFXKeyword(name = "neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "0.1350",
-      description = "The overlap scale factor to use during the descreening neck correction.")
+  @FFXProperty(name = "neck-scale", propertyGroup = ImplicitSolvent, defaultValue = "0.1350", description =
+      "The overlap scale factor to use during the descreening neck correction.")
   private double sneck;
 
   /**
    * Use the Corrigan et al. chemically aware neck correction; atoms with more heavy atom bonds are
    * less capable of forming interstitial necks.
    */
-  @FFXKeyword(name = "chemically-aware-neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "true",
-      description = "If the neck descreening correction is being used, apply a smaller overlap scale"
-          + "factors as the number of bonded heavy atoms increases.")
+  @FFXProperty(name = "chemically-aware-neck-scale", propertyGroup = ImplicitSolvent, defaultValue = "true",
+      description = """
+          If the neck descreening correction is being used, apply a smaller overlap scale
+          factors as the number of bonded heavy atoms increases.
+          """)
   private final boolean chemicallyAwareSneck;
 
   /**
    * If true, the descreening integral includes the tanh correction to better approximate molecular
    * surface
    */
-  @FFXKeyword(name = "tanh-correction", keywordGroup = ImplicitSolvent, defaultValue = "true",
-      description = "If the neck descreening correction is being used, apply a smaller overlap scale"
-          + "factors as the number of bonded heavy atoms increases.")
+  @FFXProperty(name = "tanh-correction", propertyGroup = ImplicitSolvent, defaultValue = "true", description = """
+      If the neck descreening correction is being used, apply a smaller overlap scale
+      factors as the number of bonded heavy atoms increases.
+      """)
   private final boolean tanhCorrection;
 
   /**
@@ -331,22 +337,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * The coefficient beta0 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta0", keywordGroup = ImplicitSolvent, defaultValue = "0.9563",
-      description = "The coefficient beta0 for tanh rescaling of descreening integrals.")
+  @FFXProperty(name = "tanh-beta0", propertyGroup = ImplicitSolvent, defaultValue = "0.9563", description =
+      "The coefficient beta0 for tanh rescaling of descreening integrals.")
   private double beta0;
 
   /**
    * The coefficient beta1 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta1", keywordGroup = ImplicitSolvent, defaultValue = "0.2578",
-      description = "The coefficient beta1 for tanh rescaling of descreening integrals.")
+  @FFXProperty(name = "tanh-beta1", propertyGroup = ImplicitSolvent, defaultValue = "0.2578", description =
+      "The coefficient beta1 for tanh rescaling of descreening integrals.")
   private double beta1;
 
   /**
    * The coefficient beta2 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta2", keywordGroup = ImplicitSolvent, defaultValue = "0.0810",
-      description = "The coefficient beta2 for tanh rescaling of descreening integrals.")
+  @FFXProperty(name = "tanh-beta2", propertyGroup = ImplicitSolvent, defaultValue = "0.0810", description =
+      "The coefficient beta2 for tanh rescaling of descreening integrals.")
   private double beta2;
 
   /**
@@ -356,8 +362,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * The Generalized Kirkwood cross-term parameter.
    */
-  @FFXKeyword(name = "gkc", keywordGroup = ImplicitSolvent, defaultValue = "2.455",
-      description = "The Generalized Kirkwood cross-term parameter.")
+  @FFXProperty(name = "gkc", propertyGroup = ImplicitSolvent, defaultValue = "2.455", description =
+      "The Generalized Kirkwood cross-term parameter.")
   public final double gkc;
 
   private static final NonPolarModel DEFAULT_NONPOLAR_MODEL = NonPolarModel.GAUSS_DISP;
@@ -365,10 +371,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Treatment of non-polar interactions.
    */
-  @FFXKeyword(name = "nonpolar-model", clazz = String.class,
-      keywordGroup = ImplicitSolvent, defaultValue = "gauss-disp",
-      description = "[CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ] "
-          + "The non-polar contribution to the implicit solvent.")
+  @FFXProperty(name = "nonpolar-model", clazz = String.class, propertyGroup = ImplicitSolvent,
+      defaultValue = "gauss-disp", description = """ 
+      [CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ]
+      The non-polar contribution to the implicit solvent.
+      """)
   private final NonPolarModel nonPolarModel;
 
   /**
@@ -421,25 +428,27 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Cavitation surface tension coefficient (kcal/mol/A^2).
    */
-  @FFXKeyword(name = "surface-tension", keywordGroup = ImplicitSolvent, defaultValue = "0.080",
-      description = "The cavitation surface tension coefficient (kcal/mol/A^2).")
+  @FFXProperty(name = "surface-tension", propertyGroup = ImplicitSolvent, defaultValue = "0.080", description =
+      "The cavitation surface tension coefficient (kcal/mol/A^2).")
   private final double surfaceTension;
 
   /**
    * Cavitation solvent pressure coefficient (kcal/mol/A^3).
    */
-  @FFXKeyword(name = "solvent-pressure", keywordGroup = ImplicitSolvent, defaultValue = "0.0334",
-      description = "The solvent pressure for nonpolar models with an explicit volume term (kcal/mol/A^3).")
+  @FFXProperty(name = "solvent-pressure", propertyGroup = ImplicitSolvent, defaultValue = "0.0334", description =
+      "The solvent pressure for nonpolar models with an explicit volume term (kcal/mol/A^3).")
   private final double solventPressue;
 
   /**
    * The base radii to use for GK.
    */
-  @FFXKeyword(name = "gk-radius", clazz = String.class, keywordGroup = ImplicitSolvent, defaultValue = "solute",
-      description = "[SOLUTE / VDW / CONSENSUS] "
-          + "The base atomic radii to use for generalized Kirkwood calculations. The default is to use solute radii, "
-          + "which were fit to experimental solvation free energy differences. Alternatively, force field"
-          + "specific van der Waals radii (vdw) or consensus Bondi radii (consensus) can be chosen.")
+  @FFXProperty(name = "gk-radius", clazz = String.class, propertyGroup = ImplicitSolvent, defaultValue = "solute",
+      description = """
+          [SOLUTE / VDW / CONSENSUS]
+          The base atomic radii to use for generalized Kirkwood calculations. The default is to use solute radii,
+          which were fit to experimental solvation free energy differences. Alternatively, force field
+          specific van der Waals radii (vdw) or consensus Bondi radii (consensus) can be chosen.
+          """)
   private SOLUTE_RADII_TYPE soluteRadiiType;
 
   /**
@@ -581,11 +590,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Constructor for GeneralizedKirkwood.
    *
-   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+   * @param atoms             an array of {@link ffx.potential.bonded.Atom} objects.
    * @param particleMeshEwald a {@link ParticleMeshEwald} object.
-   * @param crystal a {@link ffx.crystal.Crystal} object.
-   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+   * @param crystal           a {@link ffx.crystal.Crystal} object.
+   * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
    */
   public GeneralizedKirkwood(ForceField forceField, Atom[] atoms, ParticleMeshEwald particleMeshEwald,
                              Crystal crystal, ParallelTeam parallelTeam, double gkCutoff) {
@@ -655,7 +664,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     beta0 = forceField.getDouble("TANH_BETA0", b0);
     beta1 = forceField.getDouble("TANH_BETA1", b1);
     beta2 = forceField.getDouble("TANH_BETA2", b2);
-    
+
     BornTanhRescaling.setBeta0(beta0);
     BornTanhRescaling.setBeta1(beta1);
     BornTanhRescaling.setBeta2(beta2);
@@ -663,12 +672,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Default overlap element specific scale factors for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
     HashMap<Integer, Double> DEFAULT_HCT_ELEMENTS = new HashMap<>();
     // Fit default values from Corrigan et. al. interstitial spaces work
-    DEFAULT_HCT_ELEMENTS.put(1,0.7200);
-    DEFAULT_HCT_ELEMENTS.put(6,0.6950);
-    DEFAULT_HCT_ELEMENTS.put(7,0.7673);
-    DEFAULT_HCT_ELEMENTS.put(8,0.7965);
-    DEFAULT_HCT_ELEMENTS.put(15,0.6117);
-    DEFAULT_HCT_ELEMENTS.put(16,0.7204);
+    DEFAULT_HCT_ELEMENTS.put(1, 0.7200);
+    DEFAULT_HCT_ELEMENTS.put(6, 0.6950);
+    DEFAULT_HCT_ELEMENTS.put(7, 0.7673);
+    DEFAULT_HCT_ELEMENTS.put(8, 0.7965);
+    DEFAULT_HCT_ELEMENTS.put(15, 0.6117);
+    DEFAULT_HCT_ELEMENTS.put(16, 0.7204);
 
     // Add default values for all elements
     elementHCTScaleFactors = new HashMap<>();
@@ -684,9 +693,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Input lines read in as "hct-element atomicNumber hctValue"
     // So "hct-element 1 0.7200" would set the HCT scaling factor value for hydrogen (atomic number 1) to 0.7200
     String[] tmpElemScaleFactors = forceField.getProperties().getStringArray("hct-element");
-    for(String elemScale : tmpElemScaleFactors){
+    for (String elemScale : tmpElemScaleFactors) {
       String[] singleScale = elemScale.trim().split(" +");
-      if(elementHCTScaleFactors.containsKey(Integer.parseInt(singleScale[0]))) {
+      if (elementHCTScaleFactors.containsKey(Integer.parseInt(singleScale[0]))) {
         elementHCTScaleFactors.replace(Integer.parseInt(singleScale[0]), Double.parseDouble(singleScale[1]));
       } else {
         elementHCTScaleFactors.put(Integer.parseInt(singleScale[0]), Double.parseDouble(singleScale[1]));
@@ -887,8 +896,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
         Integer[] elementHCTkeyset = elementHCTScaleFactors.keySet().toArray(new Integer[0]);
         Arrays.sort(elementHCTkeyset);
-        for(Integer key : elementHCTkeyset){
-          logger.info(format("    HCT-Element # %d:                   %8.4f",key,elementHCTScaleFactors.get(key)));
+        for (Integer key : elementHCTkeyset) {
+          logger.info(format("    HCT-Element # %d:                   %8.4f", key, elementHCTScaleFactors.get(key)));
         }
       }
     }
@@ -1418,7 +1427,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * solvationEnergy
    *
    * @param gradient a boolean.
-   * @param print a boolean.
+   * @param print    a boolean.
    * @return a double.
    */
   public double solvationEnergy(boolean gradient, boolean print) {
@@ -1429,8 +1438,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * solvationEnergy
    *
    * @param gkInducedCorrectionEnergy GK vacuum to SCRF polarization energy cost.
-   * @param gradient a boolean.
-   * @param print a boolean.
+   * @param gradient                  a boolean.
+   * @param print                     a boolean.
    * @return a double.
    */
   public double solvationEnergy(double gkInducedCorrectionEnergy, boolean gradient, boolean print) {

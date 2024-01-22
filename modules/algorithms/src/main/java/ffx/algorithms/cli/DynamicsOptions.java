@@ -191,6 +191,7 @@ public class DynamicsOptions {
 
   /**
    * The molecular dynamics reporting frequency in steps.
+   *
    * @param defaultFrequency The default frequency if the report interval is less than the time step.
    * @return The reporting frequency in steps.
    */
@@ -255,12 +256,21 @@ public class DynamicsOptions {
   }
 
   /**
-   * The thermostat; intended for MC-OST going to ADIABATIC.
+   * Set the thermostat.
    *
-   * @param thermo Thermostat to replace the requested one with.
+   * @param thermostat Thermostat to replace the requested one with.
    */
-  public void setThermostat(ThermostatEnum thermo) {
-    thermostat = thermo;
+  public void setThermostat(ThermostatEnum thermostat) {
+    this.thermostat = thermostat;
+  }
+
+  /**
+   * Set the integrator.
+   *
+   * @param integrator Integrator to replace the requested one with.
+   */
+  public void setIntegrator(IntegratorEnum integrator) {
+    this.integrator = integrator;
   }
 
   public void setThermostatString(String thermostatString) {
