@@ -45,6 +45,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.logging.Logger;
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
@@ -181,7 +182,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                 backwardZwanzig = backwardsFEP.getBinEnergies();
                 mbarFreeEnergies[0] = 0.0;
                 for (int i = 0; i < nWindows; i++) {
-                    mbarFreeEnergies[i + 1] = mbarFreeEnergies[i] + .5*(forwardZwanzig[i] + backwardZwanzig[i]);
+                    mbarFreeEnergies[i + 1] = mbarFreeEnergies[i] + .5 * (forwardZwanzig[i] + backwardZwanzig[i]);
                 }
                 break;
             case SeedType.ZEROS:
@@ -283,19 +284,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     @Override
     public void estimateDG(boolean randomSamples) {
         seedEnergies();
+        // Throw error if MBAR contains NaNs or Infs
+        if (stream(mbarFreeEnergies).anyMatch(Double::isInfinite) || stream(mbarFreeEnergies).anyMatch(Double::isNaN)) {
+            throw new IllegalArgumentException("MBAR contains NaNs or Infs after seeding.");
+        }
         double[] prevMBAR;
         iter = 0;
 
         // Precompute values for each lambda window
         double[] rtValues = new double[temperatures.length];
         double[] invRTValues = new double[temperatures.length];
-        for(int i = 0; i < temperatures.length; i++){
+        for (int i = 0; i < temperatures.length; i++) {
             rtValues[i] = Constants.R * temperatures[i];
             invRTValues[i] = 1.0 / rtValues[i];
         }
         // Find the smallest length of eAllFlat array (look for INF values)
         int minSnaps = Integer.MAX_VALUE;
-        for(double[] trajectory : eAllFlat){
+        for (double[] trajectory : eAllFlat) {
             minSnaps = min(minSnaps, trajectory.length);
         }
         int numSnaps = min(eAllFlat[0].length, minSnaps);
@@ -303,13 +308,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
         // Sample random snapshots from each window
         int[][] indices = new int[mbarFreeEnergies.length][numSnaps];
-        if(randomSamples){
-            for(int i = 0; i < mbarFreeEnergies.length; i++){
+        if (randomSamples) {
+            for (int i = 0; i < mbarFreeEnergies.length; i++) {
                 indices[i] = getBootstrapIndices(numSnaps, random);
             }
         } else {
-            for(int i = 0; i < numSnaps; i++){
-                for(int j = 0; j < mbarFreeEnergies.length; j++) {
+            for (int i = 0; i < numSnaps; i++) {
+                for (int j = 0; j < mbarFreeEnergies.length; j++) {
                     indices[j][i] = i;
                 }
             }
@@ -318,7 +323,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Precompute energies since they don't change
         double[][] u_kn = new double[mbarFreeEnergies.length][numSnaps];
         double[] N_k = new double[mbarFreeEnergies.length];
-        for(int state = 0; state < mbarFreeEnergies.length; state++) { // For each lambda value
+        for (int state = 0; state < mbarFreeEnergies.length; state++) { // For each lambda value
             for (int n = 0; n < numSnaps; n++) {
                 u_kn[state][indices[state][n]] = eAllFlat[state][indices[state][n]] * invRTValues[state];
                 N_k[state] = ((double) numSnaps) / totalSnaps;
@@ -328,15 +333,19 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         do {
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
+            // Throw error if MBAR contains NaNs or Infs
+            if (stream(mbarFreeEnergies).anyMatch(Double::isInfinite) || stream(mbarFreeEnergies).anyMatch(Double::isNaN)) {
+                throw new IllegalArgumentException("MBAR contains NaNs or Infs after iteration " + iter);
+            }
             iter++;
-        } while(!converged(prevMBAR));
+        } while (!converged(prevMBAR));
 
         // Convert to kcal/mol & calculate differences/sums
-        for(int i = 0; i < mbarFreeEnergies.length; i++){
+        for (int i = 0; i < mbarFreeEnergies.length; i++) {
             mbarFreeEnergies[i] = mbarFreeEnergies[i] * rtValues[i];
         }
-        for(int i = 0; i < nWindows; i++){
-            mbarEstimates[i] = mbarFreeEnergies[i+1] - mbarFreeEnergies[i];
+        for (int i = 0; i < nWindows; i++) {
+            mbarEstimates[i] = mbarFreeEnergies[i + 1] - mbarFreeEnergies[i];
         }
         totalMBAREstimate = stream(mbarEstimates).sum();
     }
@@ -347,55 +356,58 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] log_denom_n = new double[u_kn[0].length];
         double[][] logDiff = new double[u_kn.length][u_kn[0].length];
         double maxLogDiff = Double.NEGATIVE_INFINITY;
-        for(int i = 0; i < u_kn[0].length; i++){
+        for (int i = 0; i < u_kn[0].length; i++) {
             double[] temp = new double[nStates];
             double maxTemp = Double.NEGATIVE_INFINITY;
-            for(int j = 0; j < nStates; j++){
+            for (int j = 0; j < nStates; j++) {
                 temp[j] = f_k[j] - u_kn[j][i];
                 if (temp[j] > maxTemp) {
                     maxTemp = temp[j];
                 }
             }
             log_denom_n[i] = logSumExp(temp, N_k, maxTemp);
-            for(int j = 0; j < nStates; j++){
-                logDiff[j][i] =  - log_denom_n[i] - u_kn[j][i];
+            for (int j = 0; j < nStates; j++) {
+                logDiff[j][i] = -log_denom_n[i] - u_kn[j][i];
                 if (logDiff[j][i] > maxLogDiff) {
                     maxLogDiff = logDiff[j][i];
                 }
             }
         }
 
-        for(int i = 0; i < nStates; i++){
+        for (int i = 0; i < nStates; i++) {
             updatedF_k[i] = -1.0 * logSumExp(logDiff[i], maxLogDiff);
         }
 
         // Constrain f1=0 over the course of iterations to prevent uncontrolled growth in magnitude
         double norm = updatedF_k[0];
-        for(int i = 0; i < nStates; i++){
+        for (int i = 0; i < nStates; i++) {
             updatedF_k[i] = updatedF_k[i] - norm;
         }
 
         return updatedF_k;
     }
+
     /**
      * Calculates the log of the sum of the exponentials of the given values.
+     *
      * @param values
      * @return the sum
      */
-    private static double logSumExp(double[] values, double max){
+    private static double logSumExp(double[] values, double max) {
         double[] b = fill(new double[values.length], 1.0);
         return logSumExp(values, b, max);
     }
 
     /**
      * Calculates the log of the sum of the exponentials of the given values.
+     *
      * @param values
      * @return the sum
      */
     private static double logSumExp(double[] values, double[] b, double max) {
         // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's logsumexp implementation
         // Find the maximum value in the array.
-        assert values.length == b.length: "values and b must be the same length";
+        assert values.length == b.length : "values and b must be the same length";
 
         // Subtract the maximum value from each value in the array, exponentiate the result, and add up these values.
         double sum = 0.0;
@@ -409,13 +421,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     private boolean converged(double[] prevMBAR) {
         double[] differences = new double[prevMBAR.length];
-        for(int i = 0; i < prevMBAR.length; i++){
+        for (int i = 0; i < prevMBAR.length; i++) {
             differences[i] = abs(prevMBAR[i] - mbarFreeEnergies[i]);
         }
         return stream(differences).allMatch(d -> d < tolerance);
     }
 
-    public BennettAcceptanceRatio getBAR(){
+    public BennettAcceptanceRatio getBAR() {
         return new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
     }
 
@@ -452,5 +464,271 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     @Override
     public double[] getBinEnthalpies() {
         return mbarEnthalpy;
+    }
+
+
+    public static class HarmonicOscillatorsTestCase {
+
+        private double beta;
+        private double[] O_k;
+        private int n_states;
+        private double[] K_k;
+
+        /**
+         * Constructor for HarmonicOscillatorsTestCase
+         * @param O_k array of equilibrium positions
+         * @param K_k array of spring constants
+         * @param beta inverse temperature
+         */
+        public HarmonicOscillatorsTestCase(double[] O_k, double[] K_k, double beta) {
+            this.beta = beta;
+            this.O_k = O_k;
+            this.n_states = O_k.length;
+            this.K_k = K_k;
+
+            if (this.K_k.length != this.n_states) {
+                throw new IllegalArgumentException("Lengths of K_k and O_k should be equal");
+            }
+        }
+
+        public double[] analyticalMeans() {
+            return O_k;
+        }
+
+        public double[] analyticalVariances() {
+            double[] variances = new double[n_states];
+            for (int i = 0; i < n_states; i++) {
+                variances[i] = 1.0 / (beta * K_k[i]);
+            }
+            return variances;
+        }
+
+        public double[] analyticalStandardDeviations() {
+            double[] deviations = new double[n_states];
+            for (int i = 0; i < n_states; i++) {
+                deviations[i] = Math.sqrt(1.0 / (beta * K_k[i]));
+            }
+            return deviations;
+        }
+
+        public double[] analyticalObservable(String observable) {
+            double[] result = new double[n_states];
+
+            if (observable.equals("position")) {
+                return analyticalMeans();
+            } else if (observable.equals("potential energy")) {
+                for (int i = 0; i < n_states; i++) {
+                    result[i] = 0.5 / beta;
+                }
+            } else if (observable.equals("position^2")) {
+                for (int i = 0; i < n_states; i++) {
+                    result[i] = 1.0 / (beta * K_k[i]) + Math.pow(O_k[i], 2);
+                }
+            } else if (observable.equals("RMS displacement")) {
+                return analyticalStandardDeviations();
+            }
+
+            return result;
+        }
+
+        public double[] analyticalFreeEnergies() {
+            int subtractComponentIndex = 0;
+            double[] fe = new double[n_states];
+            double subtract = 0.0;
+            for (int i = 0; i < n_states; i++) {
+                fe[i] = -0.5 * Math.log(2 * Math.PI / (beta * K_k[i]));
+                if(i == 0){
+                    subtract = fe[subtractComponentIndex];
+                }
+                fe[i] -= subtract;
+            }
+            return fe;
+        }
+
+        public double[] analyticalEntropies(int subtractComponent) {
+            double[] entropies = new double[n_states];
+            double[] potentialEnergy = analyticalObservable("potential energy");
+            double[] freeEnergies = analyticalFreeEnergies();
+
+            for (int i = 0; i < n_states; i++) {
+                entropies[i] = potentialEnergy[i] - freeEnergies[i];
+            }
+
+            return entropies;
+        }
+
+        /**
+         * Sample from harmonic oscillator w/ gaussian & std
+         * @param N_k number of samples per state
+         * @param mode only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k
+         * @param seed random seed
+         * @return u_kn[k,n] is reduced potential of sample n evaluated at state k
+         */
+        public Object[] sample(int[] N_k, String mode, Long seed) {
+            Random random = new Random(seed);
+
+            int N_max = 0;
+            for (int N : N_k) {
+                if (N > N_max) {
+                    N_max = N;
+                }
+            }
+
+            int N_tot = 0;
+            for (int N : N_k) {
+                N_tot += N;
+            }
+
+            double[][] x_kn = new double[n_states][N_max];
+            double[][] u_kn = new double[n_states][N_tot];
+            double[][][] u_kln = new double[n_states][n_states][N_max];
+            double[] x_n = new double[N_tot];
+            int[] s_n = new int[N_tot];
+
+            // Sample harmonic oscillators
+            int index = 0;
+            for (int k = 0; k < n_states; k++) {
+                double x0 = O_k[k];
+                double sigma = Math.sqrt(1.0 / (beta * K_k[k]));
+
+                // Number of samples
+                for (int n = 0; n < N_k[k]; n++) {
+                    double x = x0 + random.nextGaussian() * sigma;
+
+                    x_kn[k][n] = x;
+                    x_n[index] = x;
+                    s_n[index] = k;
+
+                    // Potential energy evaluations
+                    for (int l = 0; l < n_states; l++) {
+                        double u = beta * 0.5 * K_k[l] * Math.pow(x - O_k[l], 2.0);
+                        u_kln[k][l][n] = u;
+                        u_kn[l][index] = u;
+                    }
+
+                    index++;
+                }
+            }
+
+            // Setting corrections
+            if ("u_kn".equals(mode)) {
+                return new Object[]{x_n, u_kn, N_k, s_n};
+            } else if ("u_kln".equals(mode)) {
+                return new Object[]{x_n, u_kln, N_k, s_n};
+            } else {
+                throw new IllegalArgumentException("Unknown mode: " + mode);
+            }
+        }
+
+        public static Object[] evenlySpacedOscillators(
+                int n_states, int n_samplesPerState, double lower_O_k, double upper_O_k,
+                double lower_K_k, double upper_K_k, Long seed) {
+            Random random = new Random(seed);
+
+            double[] O_k = new double[n_states];
+            double[] K_k = new double[n_states];
+            int[] N_k = new int[n_states];
+
+            double stepO_k = (upper_O_k - lower_O_k) / (n_states - 1);
+            double stepK_k = (upper_K_k - lower_K_k) / (n_states - 1);
+
+            for (int i = 0; i < n_states; i++) {
+                O_k[i] = lower_O_k + i * stepO_k;
+                K_k[i] = lower_K_k + i * stepK_k;
+                N_k[i] = n_samplesPerState;
+            }
+
+            HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, 1.0);
+            Object[] result = testCase.sample(N_k, "u_kn", seed);
+
+            return new Object[]{testCase, result[0], result[1], result[2], result[3]};
+        }
+
+        public static void main(String[] args) {
+            // Example parameters
+            double[] O_k = {0, 1, 2, 3, 4};
+            double[] K_k = {1, 2, 4, 8, 16};
+            double beta = 1.0;
+            System.out.println("Beta: " + beta);
+
+            // Create an instance of HarmonicOscillatorsTestCase
+            HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, beta);
+
+            // Print results of various functions
+            System.out.println("Analytical Means: " + Arrays.toString(testCase.analyticalMeans()));
+            System.out.println("Analytical Variances: " + Arrays.toString(testCase.analyticalVariances()));
+            System.out.println("Analytical Standard Deviations: " + Arrays.toString(testCase.analyticalStandardDeviations()));
+            System.out.println("Analytical Free Energies: " + Arrays.toString(testCase.analyticalFreeEnergies()));
+
+            // Example usage of sample function with u_kn mode
+            int[] N_k = {10, 20, 30, 40, 50};
+            String setting = "u_kln";
+            Object[] sampleResult = testCase.sample(N_k, setting, 44L);
+
+            System.out.println("Sample x_n: " + Arrays.toString((double[]) sampleResult[0]));
+            if ("u_kn".equals(setting)) {
+                System.out.println("Sample u_kn: " + Arrays.deepToString((double[][]) sampleResult[1]));
+            } else {
+                System.out.println("Sample u_kln: " + Arrays.deepToString((double[][][]) sampleResult[1]));
+            }
+            System.out.println("Sample N_k: " + Arrays.toString((int[]) sampleResult[2]));
+            System.out.println("Sample s_n: " + Arrays.toString((int[]) sampleResult[3]));
+        }
+    }
+
+    public static void main(String[] args) {
+        // Define parameters for the harmonic oscillators
+        //double[] O_k = {0, .1, .2, .3, .4, .5};
+        // double[] O_k = {0, 1, 2, 3, 4};
+        // double[] K_k = {1, 2, 4, 8, 16};
+        // int[] N_k = {10, 20, 30, 40, 50};
+
+        double[] O_k = {0, 1};
+        double[] K_k = {10, 100};
+        int[] N_k = {1000, 1000};
+        double beta = 1.0;
+
+        Long seed = 44L;
+
+        // Create an instance of HarmonicOscillatorsTestCase
+        HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, beta);
+
+        // Generate sample data
+        String setting = "u_kln";
+        System.out.print("Generating sample data... ");
+        Object[] sampleResult = testCase.sample(N_k, setting, seed);
+        System.out.println("done. \n");
+        double[][][] u_kln = (double[][][]) sampleResult[1];
+        double[] temps = {1/Constants.R};
+
+        // Create an instance of MultistateBennettAcceptanceRatio
+        System.out.print("Creating MBAR instance and estimateDG() with standard tol & ZERO seeding to reduce dependancy issues... ");
+        MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, SeedType.BAR);
+        System.out.println("done. \n");
+
+        // Get the calculated free energy differences
+        double[] mbarEstimates = mbar.getBinEnergies();
+
+        // Get the analytical free energy differences
+        double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
+
+        // Compare the calculated free energy differences with the analytical ones
+        System.out.println("MBAR Totals: " + Arrays.toString(mbar.mbarFreeEnergies));
+        System.out.println("MBAR Estimates: " + Arrays.toString(mbarEstimates));
+
+        // Calculate the free energy differences from analyticalFreeEnergies & log
+        double[] analyticalEstimates = new double[analyticalFreeEnergies.length - 1];
+        for (int i = 0; i < analyticalEstimates.length; i++) {
+            analyticalEstimates[i] = analyticalFreeEnergies[i + 1] - analyticalFreeEnergies[i];
+        }
+        System.out.println("Analytical Free Energy Differences: " + Arrays.toString(analyticalEstimates));
+        System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
+
+        // Calculate the error
+        double[] error = new double[analyticalFreeEnergies.length];
+        for (int i = 0; i < error.length; i++) {
+            error[i] = - mbar.mbarFreeEnergies[i] + analyticalFreeEnergies[i];
+        }
+        System.out.println("Error: " + Arrays.toString(error));
     }
 }
