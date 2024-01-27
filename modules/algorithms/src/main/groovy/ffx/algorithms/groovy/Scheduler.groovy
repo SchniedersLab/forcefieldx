@@ -61,7 +61,7 @@ class Scheduler extends AlgorithmsScript {
    * -v or --verbose Turn on verbose logging during backend Parallel Java startup.
    */
   @Option(names = ['-v', '--verbose'], paramLabel = '', defaultValue = 'false',
-      description = 'Turn on verbose logging during backend Parallel Java startup.')
+          description = 'Turn on verbose logging during backend Parallel Java startup.')
   boolean v = false
 
   /**
@@ -69,42 +69,42 @@ class Scheduler extends AlgorithmsScript {
    * The default is all available cores.
    */
   @Option(names = ['-p', '--threadsPerProcess'], paramLabel = 'all', defaultValue = '-1',
-      description = 'The number of cores (threads) per process (requires -Dpj.nt=X satisfies X <= p).')
+          description = 'The number of cores (threads) per process (requires -Dpj.nt=X satisfies X <= p).')
   int p = -1
 
   /**
    * -P or --port to define the port the Server will use.
    */
   @Option(names = ['-P', '--port'], paramLabel = '20617', defaultValue = '20617',
-      description = 'Set the port the front end server will listen on.')
+          description = 'Set the port the front end server will listen on.')
   int port = 20617
 
   /**
    * -W or --webPort to define the port the Server will serve a webpage to (generally not used).
    */
   @Option(names = ['-W', '--webPort'], paramLabel = '8080',
-      description = 'Set the port the server will serve a webpage to.')
+          description = 'Set the port the server will serve a webpage to.')
   int webPort = 8080
 
   /**
    * --ib or --infiniband Replace the "hpc" domain with the "ipoib" domain to use the Argon high-speed network.
    */
   @Option(names = ['--ib', '--ipoib'],
-      description = 'Replace the "hpc" domain with the "ipoib" domain to use the Argon high-speed network.')
+          description = 'Replace the "hpc" domain with the "ipoib" domain to use the Argon high-speed network.')
   boolean ipoib = false
 
   /**
    * -e or --hostfile to define the environment variable that points to the host file (default is PE_HOSTFILE).
    */
   @Option(names = ['-e', '--hostfile'], paramLabel = 'PE_HOSTFILE',
-      description = 'Environment variable that points to the host file.')
+          description = 'Environment variable that points to the host file.')
   String hostfileName = "PE_HOSTFILE"
 
   /**
    * -m or --memory to define the string value of -Xmx to pass to worker nodes (default is '2G').
    */
   @Option(names = ['-m', '--memory'], paramLabel = '2G',
-      description = 'String value of -Xmx to pass to worker nodes.')
+          description = 'String value of -Xmx to pass to worker nodes.')
   String memory = "2G"
 
   /**
@@ -160,9 +160,9 @@ class Scheduler extends AlgorithmsScript {
       // Check that the supplied file exists and is readable.
       File host = new File(hostsFile)
       if (
-      !host.exists() || !host.canRead()) {
+              !host.exists() || !host.canRead()) {
         logger.info(" The file path specified by the " + hostfileName
-            + " environment variable does not exist or cannot be read.")
+                + " environment variable does not exist or cannot be read.")
         logger.info(" Only localhost will be used.\n")
       } else {
         // Read in the hosts.
@@ -216,13 +216,12 @@ class Scheduler extends AlgorithmsScript {
     sb.append(format("schedulerport %d\n", port))
     sb.append(format("frontendhost %s\n", frontend))
 
-    // Locate the JRE being used.
+    // Locate the Java executable being used.
     String javaHome = System.getProperty("java.home")
-    // Locate the version of FFX being used.
-    String ffxHome = System.getProperty("basedir")
-
     String java = javaHome + "/bin/java"
-    String ffx = ffxHome + "/bin/ffx-all-1.0.0-beta.jar"
+
+    // Set the classpath.
+    String classpath = System.getProperty("java.class.path")
 
     // args = "-Xmx" + memory
     String arg = "-Xmx" + memory
@@ -235,11 +234,11 @@ class Scheduler extends AlgorithmsScript {
     for (p = 0; p < processes; p++) {
       for (node in hostnames) {
         sb.append("backend node" + i + " "
-            + CPUs + " "
-            + node + " "
-            + java + " "
-            + ffx + " "
-            + arg + "\n")
+                + CPUs + " "
+                + node + " "
+                + java + " "
+                + classpath + " "
+                + arg + "\n")
         i++
       }
     }
@@ -249,6 +248,8 @@ class Scheduler extends AlgorithmsScript {
     File config = new File(pjConfig)
     config.write(sb.toString())
 
+    // Locate the version of FFX being used.
+    String ffxHome = System.getProperty("basedir")
     // Run the Parallel Java Scheduler.
     String command = ffxHome + "/bin/scheduler " + pjConfig
     def process = command.execute()

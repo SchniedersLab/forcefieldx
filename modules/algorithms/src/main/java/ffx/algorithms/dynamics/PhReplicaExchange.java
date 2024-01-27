@@ -168,7 +168,7 @@ public class PhReplicaExchange implements Terminatable {
     random.setSeed(0);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][4];
+    parameters = new double[nReplicas][pHLadder.length + 1];
     parametersHis = new int[nReplicas][extendedSystem.getTitratingResidueList().size()][100];
     parametersBuf = new DoubleBuf[nReplicas];
     parametersHisBuf = new IntegerMatrixBuf_1[nReplicas];
@@ -388,7 +388,6 @@ public class PhReplicaExchange implements Terminatable {
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
     extendedSystem.reGuessLambdas();
     replica.setCoordinates(x);
-
     int startCycle = 0;
     if (initDynamics > 0 && !restart) {
       extendedSystem.reGuessLambdas();
@@ -582,6 +581,7 @@ public class PhReplicaExchange implements Terminatable {
     // Load pH, beta and energy for each rank.
     double pHA;
     double pHB;
+
     double beta;
     double acidostatA;
     double acidostatB;
@@ -590,17 +590,19 @@ public class PhReplicaExchange implements Terminatable {
 
     rankA = pH2Rank[pH];
     rankB = pH2Rank[pH + 1];
+    int acidAIndex = rank2Ph[rankA] + 1;
+    int acidBIndex = rank2Ph[rankB] + 1;
 
     pHA = parameters[rankA][0];
     pHB = parameters[rankB][0];
 
     beta = KCAL_TO_GRAM_ANG2_PER_PS2 / (temp * kB);
 
-    acidostatA = parameters[rankA][2];
-    acidostatB = parameters[rankB][2];
+    acidostatA = parameters[rankA][acidAIndex];
+    acidostatB = parameters[rankB][acidBIndex];
 
-    acidostatAatB = parameters[rankA][3]; // acidostat of rankA evaluated at the pH of rankB
-    acidostatBatA = parameters[rankB][1];
+    acidostatAatB = parameters[rankA][acidBIndex]; // acidostat of rankA evaluated at the pH of rankB
+    acidostatBatA = parameters[rankB][acidAIndex];
 
     logger.info(" ");
     logger.info(
@@ -609,6 +611,9 @@ public class PhReplicaExchange implements Terminatable {
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
+    logger.info("pHA = " + pHA + " " + acidostatA + " " + acidostatAatB);
+    logger.info("pHB = " + pHB + " " + acidostatB + " " + acidostatBatA);
+    logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
@@ -623,9 +628,12 @@ public class PhReplicaExchange implements Terminatable {
                 parametersHis[rankA][i].length);
         System.arraycopy(tempHis[i], 0, parametersHis[rankB][i], 0, parametersHis[rankB][i].length);
       }
-      // Swap pH and energy values.
       parameters[rankA][0] = pHB;
       parameters[rankB][0] = pHA;
+
+      //Log the new parameters
+      logger.info(" pH After swap " + parameters[rankA][0] + " rankA " + rankA + " acidostat: " + Arrays.toString(parameters[rankA]));
+      logger.info(" pH After swap " + parameters[rankB][0] + " rankB " + rankB + " acidostat: " + Arrays.toString(parameters[rankB]));
 
       // Map pH to process ranks.
       pH2Rank[pH] = rankB;
@@ -671,7 +679,9 @@ public class PhReplicaExchange implements Terminatable {
                               final double printInterval, final double saveInterval) {
 
     int i = rank2Ph[rank];
-    extendedSystem.setConstantPh(pHScale[i]);
+    // Update this ranks' parameter array to be consistent with the dynamics.
+    myParameters[0] = pHScale[i];
+    extendedSystem.setConstantPh(myParameters[0]);
     extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
@@ -689,32 +699,8 @@ public class PhReplicaExchange implements Terminatable {
     double forceWriteInterval = titrSteps * .001;
     replica.dynamic(titrSteps, timeStep, printInterval, forceWriteInterval, temp, initVelocities, dyn);
 
-    // Update this ranks' parameter array to be consistent with the dynamics.lea
-    myParameters[0] = pHScale[i];
-    myParameters[2] = extendedSystem.getBiasEnergy();
+    reEvaulateAcidostats();
 
-    double lowPh;
-    double highPh;
-    try {
-      lowPh = pHScale[i - 1];
-    } catch (IndexOutOfBoundsException e) {
-      lowPh = 0;
-    }
-
-    try {
-      highPh = pHScale[i + 1];
-    } catch (IndexOutOfBoundsException e) {
-      highPh = 0;
-    }
-
-    // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(lowPh);
-    myParameters[1] = extendedSystem.getBiasEnergy();
-
-    extendedSystem.setConstantPh(highPh);
-    myParameters[3] = extendedSystem.getBiasEnergy();
-
-    extendedSystem.setConstantPh(myParameters[0]);
     extendedSystem.getESVHistogram(parametersHis[rank]);
 
     // Gather all parameters from the other processes.
@@ -731,7 +717,9 @@ public class PhReplicaExchange implements Terminatable {
   private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
     int i = rank2Ph[rank];
 
-    extendedSystem.setConstantPh(pHScale[i]);
+    // Update this ranks' parameter array to be consistent with the dynamics.
+    myParameters[0] = pHScale[i];
+    extendedSystem.setConstantPh(myParameters[0]);
 
     extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
@@ -740,32 +728,7 @@ public class PhReplicaExchange implements Terminatable {
 
     replica.dynamic(nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
-    // Update this ranks' parameter array to be consistent with the dynamics.
-    myParameters[0] = pHScale[i];
-    myParameters[2] = extendedSystem.getBiasEnergy();
-
-    // Evaluate acidostat of ES at different pHs
-    double lowPh;
-    double highPh;
-    try {
-      lowPh = pHScale[i - 1];
-    } catch (IndexOutOfBoundsException e) {
-      lowPh = 0;
-    }
-
-    try {
-      highPh = pHScale[i + 1];
-    } catch (IndexOutOfBoundsException e) {
-      highPh = 0;
-    }
-
-    extendedSystem.setConstantPh(lowPh); // B at A-gap
-    myParameters[1] = extendedSystem.getBiasEnergy();
-
-    extendedSystem.setConstantPh(highPh); // A at A+gap(B)
-    myParameters[3] = extendedSystem.getBiasEnergy();
-
-    extendedSystem.setConstantPh(myParameters[0]);
+    reEvaulateAcidostats();
 
     extendedSystem.getESVHistogram(parametersHis[rank]);
 
@@ -777,6 +740,15 @@ public class PhReplicaExchange implements Terminatable {
       String message = " Replica Exchange allGather failed.";
       logger.log(Level.SEVERE, message, ex);
     }
+  }
+
+  private void reEvaulateAcidostats() {
+    for(int j = 0; j < pHScale.length; j++){
+      extendedSystem.setConstantPh(pHScale[j]); // A at A+gap(B)
+      myParameters[1+j] = extendedSystem.getBiasEnergy();
+    }
+
+    extendedSystem.setConstantPh(myParameters[0]);
   }
 
   private void copyToBackups() {

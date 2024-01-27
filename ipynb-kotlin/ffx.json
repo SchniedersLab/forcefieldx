@@ -15,6 +15,9 @@
    "System.setProperty(\"j3d.rend\",\"noop\")"
   ],
   "dependencies": [
+    ".nfs00000000120ae6e600002228",
+    ".nfs000000001381852400002229",
+    ".nfs00000000138185280000222a",
     "MRJToolkitStubs-1.0.jar",
     "ST4-4.3.4.jar",
     "ant-1.10.14.jar",
