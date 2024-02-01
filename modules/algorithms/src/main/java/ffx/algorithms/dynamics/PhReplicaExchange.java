@@ -613,7 +613,7 @@ public class PhReplicaExchange implements Terminatable {
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
     logger.info("pHA = " + pHA + " " + acidostatA + " " + acidostatAatB);
     logger.info("pHB = " + pHB + " " + acidostatB + " " + acidostatBatA);
-    logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
+    logger.info("exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
