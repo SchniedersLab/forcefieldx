@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * The DistanceMatrixFilter class parses a Distance Matrix (*.TXT) files.
+ * The DistanceMatrixFilter class parses a Distance Matrix (*.DST) files.
  *
  * @author Michael J. Schnieders
  * @since 1.0

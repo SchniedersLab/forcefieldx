@@ -99,6 +99,11 @@ class MinimizeCrystals extends AlgorithmsScript {
           description = "End minimization if new energy deviates less than this tolerance.")
   private double tolerance;
 
+  /** --mi or --minimumIterations End minimization if fewer iterations were taken for both coordinate and lattice minimization. */
+  @Option(names = ["--mi", "--minimumIterations"], paramLabel = "-1", defaultValue = "-1",
+          description = "End minimization if it starts to cycle between small coordinate and lattice parameter fluctuations.")
+  private int minIterations;
+
   /**
    * The final argument(s) should be an XYZ or PDB filename.
    */
@@ -229,7 +234,6 @@ class MinimizeCrystals extends AlgorithmsScript {
   }
 
   void runMinimize() {
-    int MIN_ITERATIONS = 4;
     crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
     crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
     double energy = crystalMinimize.getEnergy()
@@ -263,7 +267,7 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
-        if(minimize.getIterations() < MIN_ITERATIONS && crystalMinimize.getIterations() < MIN_ITERATIONS){
+        if(minIterations > 0 && minimize.getIterations() < minIterations && crystalMinimize.getIterations() < minIterations){
           //Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
           break;
         }
