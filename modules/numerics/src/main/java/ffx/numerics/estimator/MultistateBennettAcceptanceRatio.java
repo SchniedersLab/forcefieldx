@@ -330,15 +330,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
         }
         // Self-consistent iteration is used  because it is more stable & simpler to implement than grad descent
+        double omega = 1.5;
         do {
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
+            // Apply SOR
+            for (int i = 0; i < mbarFreeEnergies.length; i++) {
+                mbarFreeEnergies[i] = omega * mbarFreeEnergies[i] + (1-omega) * prevMBAR[i];
+            }
             // Throw error if MBAR contains NaNs or Infs
             if (stream(mbarFreeEnergies).anyMatch(Double::isInfinite) || stream(mbarFreeEnergies).anyMatch(Double::isNaN)) {
                 throw new IllegalArgumentException("MBAR contains NaNs or Infs after iteration " + iter);
             }
             iter++;
         } while (!converged(prevMBAR));
+        logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
 
         // Convert to kcal/mol & calculate differences/sums
         for (int i = 0; i < mbarFreeEnergies.length; i++) {
@@ -684,8 +690,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // int[] N_k = {10, 20, 30, 40, 50};
 
         double[] O_k = {0, 1};
-        double[] K_k = {10, 100};
-        int[] N_k = {1000, 1000};
+        double[] K_k = {1, 10};
+        int[] N_k = {10000, 10000};
         double beta = 1.0;
 
         Long seed = 44L;
@@ -703,32 +709,36 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
         // Create an instance of MultistateBennettAcceptanceRatio
         System.out.print("Creating MBAR instance and estimateDG() with standard tol & ZERO seeding to reduce dependancy issues... ");
-        MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, SeedType.BAR);
+        MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, SeedType.ZEROS);
+        double[] mbarDiffEstimates = Arrays.copyOf(mbar.getBinEnergies(), mbar.getBinEnergies().length);
+        double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
+
+        EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
+        //bootstrapper.bootstrap(1000);
         System.out.println("done. \n");
 
         // Get the calculated free energy differences
-        double[] mbarEstimates = mbar.getBinEnergies();
+        //double[] mbarBootstrappedEstimates = bootstrapper.getFE();
 
         // Get the analytical free energy differences
         double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
-
-        // Compare the calculated free energy differences with the analytical ones
-        System.out.println("MBAR Totals: " + Arrays.toString(mbar.mbarFreeEnergies));
-        System.out.println("MBAR Estimates: " + Arrays.toString(mbarEstimates));
-
         // Calculate the free energy differences from analyticalFreeEnergies & log
         double[] analyticalEstimates = new double[analyticalFreeEnergies.length - 1];
         for (int i = 0; i < analyticalEstimates.length; i++) {
             analyticalEstimates[i] = analyticalFreeEnergies[i + 1] - analyticalFreeEnergies[i];
         }
-        System.out.println("Analytical Free Energy Differences: " + Arrays.toString(analyticalEstimates));
-        System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
-
         // Calculate the error
         double[] error = new double[analyticalFreeEnergies.length];
         for (int i = 0; i < error.length; i++) {
             error[i] = - mbar.mbarFreeEnergies[i] + analyticalFreeEnergies[i];
         }
-        System.out.println("Error: " + Arrays.toString(error));
+
+        // Compare the calculated free energy differences with the analytical ones
+        System.out.println("MBAR Free Energies:       " + Arrays.toString(mbarFEEstimates));
+        System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
+        System.out.println("Free Energy Error:        " + Arrays.toString(error));
+        System.out.println();
+        System.out.println("MBAR Free Energy Differences:       " + Arrays.toString(mbarDiffEstimates));
+        System.out.println("Analytical Free Energy Differences: " + Arrays.toString(analyticalEstimates));
     }
 }
