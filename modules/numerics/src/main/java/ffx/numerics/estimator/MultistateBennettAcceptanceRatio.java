@@ -37,15 +37,9 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
-import ffx.numerics.math.SummaryStatistics;
+import java.util.Timer;
 import ffx.utilities.Constants;
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Random;
 import java.util.logging.Logger;
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
@@ -58,7 +52,6 @@ import static org.apache.commons.lang3.math.NumberUtils.min;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
@@ -116,7 +109,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      * Backward Zwanzig instance.
      */
     private Zwanzig backwardsFEP;
-    private final Random random;
+    private Random random;
     /**
      * MBAR free-energy estimates at each lambda value.
      */
@@ -283,6 +276,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      */
     @Override
     public void estimateDG(boolean randomSamples) {
+        Arrays.fill(mbarFreeEnergies, 0.0); // Bootstrap needs resetting
         seedEnergies();
         // Throw error if MBAR contains NaNs or Infs
         if (stream(mbarFreeEnergies).anyMatch(Double::isInfinite) || stream(mbarFreeEnergies).anyMatch(Double::isNaN)) {
@@ -309,8 +303,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Sample random snapshots from each window
         int[][] indices = new int[mbarFreeEnergies.length][numSnaps];
         if (randomSamples) {
+            int[] randomIndices = getBootstrapIndices(numSnaps, random);
             for (int i = 0; i < mbarFreeEnergies.length; i++) {
-                indices[i] = getBootstrapIndices(numSnaps, random);
+                indices[i] = randomIndices; // Use the same snapshots in each lambda window
             }
         } else {
             for (int i = 0; i < numSnaps; i++) {
@@ -325,9 +320,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] N_k = new double[mbarFreeEnergies.length];
         for (int state = 0; state < mbarFreeEnergies.length; state++) { // For each lambda value
             for (int n = 0; n < numSnaps; n++) {
-                u_kn[state][indices[state][n]] = eAllFlat[state][indices[state][n]] * invRTValues[state];
-                N_k[state] = ((double) numSnaps) / totalSnaps;
+                u_kn[state][n] = eAllFlat[state][indices[state][n]] * invRTValues[state];
             }
+            N_k[state] = ((double) numSnaps) / totalSnaps;
         }
         // Self-consistent iteration is used  because it is more stable & simpler to implement than grad descent
         double omega = 1.5;
@@ -350,6 +345,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < mbarFreeEnergies.length; i++) {
             mbarFreeEnergies[i] = mbarFreeEnergies[i] * rtValues[i];
         }
+
         for (int i = 0; i < nWindows; i++) {
             mbarEstimates[i] = mbarFreeEnergies[i + 1] - mbarFreeEnergies[i];
         }
@@ -567,11 +563,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
          * Sample from harmonic oscillator w/ gaussian & std
          * @param N_k number of samples per state
          * @param mode only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k
-         * @param seed random seed
          * @return u_kn[k,n] is reduced potential of sample n evaluated at state k
          */
-        public Object[] sample(int[] N_k, String mode, Long seed) {
-            Random random = new Random(seed);
+        public Object[] sample(int[] N_k, String mode) {
+            Random random = new Random();
 
             int N_max = 0;
             for (int N : N_k) {
@@ -645,7 +640,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
 
             HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, 1.0);
-            Object[] result = testCase.sample(N_k, "u_kn", seed);
+            Object[] result = testCase.sample(N_k, "u_kn");
 
             return new Object[]{testCase, result[0], result[1], result[2], result[3]};
         }
@@ -669,7 +664,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             // Example usage of sample function with u_kn mode
             int[] N_k = {10, 20, 30, 40, 50};
             String setting = "u_kln";
-            Object[] sampleResult = testCase.sample(N_k, setting, 44L);
+            Object[] sampleResult = testCase.sample(N_k, setting);
 
             System.out.println("Sample x_n: " + Arrays.toString((double[]) sampleResult[0]));
             if ("u_kn".equals(setting)) {
@@ -689,12 +684,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // double[] K_k = {1, 2, 4, 8, 16};
         // int[] N_k = {10, 20, 30, 40, 50};
 
-        double[] O_k = {0, 1};
-        double[] K_k = {1, 10};
-        int[] N_k = {10000, 10000};
+        double[] O_k = {0, 1, 2, 3, 4};
+        double[] K_k = {1, 5, 10, 20, 50};
+        int[] N_k = {10000, 10000, 10000, 10000, 10000};
         double beta = 1.0;
 
-        Long seed = 44L;
+        Long seed = System.currentTimeMillis();
 
         // Create an instance of HarmonicOscillatorsTestCase
         HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, beta);
@@ -702,23 +697,19 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Generate sample data
         String setting = "u_kln";
         System.out.print("Generating sample data... ");
-        Object[] sampleResult = testCase.sample(N_k, setting, seed);
+        Object[] sampleResult = testCase.sample(N_k, setting);
         System.out.println("done. \n");
         double[][][] u_kln = (double[][][]) sampleResult[1];
-        double[] temps = {1/Constants.R};
+        double[] temps = {1 / Constants.R};
 
         // Create an instance of MultistateBennettAcceptanceRatio
         System.out.print("Creating MBAR instance and estimateDG() with standard tol & ZERO seeding to reduce dependancy issues... ");
         MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, SeedType.ZEROS);
-        double[] mbarDiffEstimates = Arrays.copyOf(mbar.getBinEnergies(), mbar.getBinEnergies().length);
         double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
 
         EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-        //bootstrapper.bootstrap(1000);
+        bootstrapper.bootstrap(10);
         System.out.println("done. \n");
-
-        // Get the calculated free energy differences
-        //double[] mbarBootstrappedEstimates = bootstrapper.getFE();
 
         // Get the analytical free energy differences
         double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
@@ -730,7 +721,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Calculate the error
         double[] error = new double[analyticalFreeEnergies.length];
         for (int i = 0; i < error.length; i++) {
-            error[i] = - mbar.mbarFreeEnergies[i] + analyticalFreeEnergies[i];
+            error[i] = - mbarFEEstimates[i] + analyticalFreeEnergies[i];
         }
 
         // Compare the calculated free energy differences with the analytical ones
@@ -738,7 +729,17 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
         System.out.println("Free Energy Error:        " + Arrays.toString(error));
         System.out.println();
-        System.out.println("MBAR Free Energy Differences:       " + Arrays.toString(mbarDiffEstimates));
-        System.out.println("Analytical Free Energy Differences: " + Arrays.toString(analyticalEstimates));
+
+        // Get the calculated free energy differences
+        double[] mbarBootstrappedEstimates = bootstrapper.getFE();
+        // Calculate the error
+        double[] errors = new double[mbarBootstrappedEstimates.length];
+        for (int i = 0; i < errors.length; i++) {
+            errors[i] = - mbarBootstrappedEstimates[i] + analyticalEstimates[i];
+        }
+
+        System.out.println("MBAR Bootstrapped Estimates: " + Arrays.toString(mbarBootstrappedEstimates));
+        System.out.println("Analytical Estimates:        " + Arrays.toString(analyticalEstimates));
+        System.out.println("Free Energy Error:           " + Arrays.toString(errors));
     }
 }
