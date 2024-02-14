@@ -1626,7 +1626,7 @@ public class TitrationUtils {
 
   /**
    * Predict pKa from a set of residue fractions (deprotonated / (deprotonated + protonated)). This method minimizes
-   * the L2 loss between the the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
+   * the L2 loss between the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
    * coefficient predictions.
    *
    * @param pHScale pH values at which the residue fractions were measured
