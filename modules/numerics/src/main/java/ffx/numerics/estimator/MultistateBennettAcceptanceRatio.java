@@ -52,7 +52,6 @@ import static ffx.numerics.estimator.Zwanzig.Directionality.FORWARDS;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.stream;
 import static org.apache.commons.lang3.ArrayFill.fill;
-import static org.apache.commons.lang3.math.NumberUtils.min;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -60,7 +59,9 @@ import static org.apache.commons.math3.util.FastMath.exp;
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
  * to the Bennett Acceptance Ratio (BAR) method for multiple lambda windows. It requires an input of
- * K X N array of energies (every window at every snap at every lambda value).
+ * K X N array of energies (every window at every snap at every lambda value). No support for different
+ * number of snapshots at each window. This will be caught by the filter, but not by the Harmonic Oscillators
+ * testcase.
  * <p>
  * This class implements the method discussed in:
  *      Shirts, M. R. and Chodera, J. D. (2008) Statistically optimal analysis of samples from multiple equilibrium
@@ -137,11 +138,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     @Override
     public double energy(double[] x) {
+        double tempO = x[0];
+        x[0] = 0.0;
+        for(int i = 1; i < x.length; i++){
+            x[i] -= tempO;
+        }
         return mbarObjectiveFunction(u_kn, N_k, x);
     }
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        double tempO = x[0];
+        x[0] = 0.0;
+        for(int i = 1; i < x.length; i++){
+            x[i] -= tempO;
+        }
         double[] tempG = mbar_gradient(u_kn, N_k, x);
         System.arraycopy(tempG, 0, g, 0, g.length);
         return mbarObjectiveFunction(u_kn, N_k, x);
@@ -250,14 +261,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             rtValues[i] = Constants.R * temperatures[i];
             invRTValues[i] = 1.0 / rtValues[i];
         }
-
-        // Find the smallest length of eAllFlat array and use this many snaps
-        int minSnaps = Integer.MAX_VALUE;
-        for (double[] trajectory : eAllFlat) {
-            minSnaps = min(minSnaps, trajectory.length);
-        }
-        int numSnaps = min(eAllFlat[0].length, minSnaps);
-        int totalSnaps = numSnaps * eAllFlat.length;
+        int numSnaps = eAllFlat[0].length;
 
         // Sample random snapshots from each window
         int[][] indices = new int[mbarFreeEnergies.length][numSnaps];
@@ -282,43 +286,47 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             for (int n = 0; n < numSnaps; n++) {
                 u_kn[state][n] = eAllFlat[state][indices[state][n]] * invRTValues[state];
             }
-            N_k[state] =  numSnaps / mbarFreeEnergies.length;
+            N_k[state] =  (double) numSnaps / mbarFreeEnergies.length;
         }
 
         // Few SCI iterations used to start optimization of MBAR objective function.
         // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
         double omega = 1.5;
-        for(int i = 0; i < 10; i++){
+        double numInit = randomSamples ? 50 : 10;
+        for(int i = 0; i < numInit; i++){
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
             // Apply SOR
             for (int j = 0; j < mbarFreeEnergies.length; j++) {
                 mbarFreeEnergies[j] = omega * mbarFreeEnergies[j] + (1-omega) * prevMBAR[j];
             }
+            // Throw error if MBAR contains NaNs or Infs
+            if (stream(mbarFreeEnergies).anyMatch(Double::isInfinite) || stream(mbarFreeEnergies).anyMatch(Double::isNaN)) {
+                throw new IllegalArgumentException("MBAR contains NaNs or Infs after iteration " + iter);
+            }
         }
 
-        // L-BFGS optimization of MBAR objective function but don't include 0th term since defined as zero
-        int mCorrections = 5;
-        double[] x = new double[mbarFreeEnergies.length];
-        System.arraycopy(mbarFreeEnergies, 0, x, 0, mbarFreeEnergies.length);
-        double[] grad = mbar_gradient(u_kn, N_k, mbarFreeEnergies);
-        double eps = 1.0E-7;
-        OptimizationListener listener = getOptimizationListener();
         try {
+            // L-BFGS optimization of MBAR objective function but don't include 0th term since defined as zero
+            int mCorrections = 5;
+            double[] x = new double[mbarFreeEnergies.length];
+            System.arraycopy(mbarFreeEnergies, 0, x, 0, mbarFreeEnergies.length);
+            double[] grad = mbar_gradient(u_kn, N_k, mbarFreeEnergies);
+            double eps = 1.0E-4;
+            OptimizationListener listener = getOptimizationListener();
             LBFGS.minimize(mbarFreeEnergies.length, mCorrections, x,
                     mbarObjectiveFunction(u_kn, N_k, mbarFreeEnergies),
                     grad,
                     eps,
-                    40,
+                    1000,
                     this,
                     listener);
+            System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
         } catch (Exception e) {
             logger.warning(" L-BFGS failed to converge. Finishing w/ self-consistent iteration.");
         }
-        System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
 
         // Self-consistent iteration is used to finish off optimization of MBAR objective function
-        /*
         do {
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
@@ -332,7 +340,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
             iter++;
         } while (!converged(prevMBAR));
-         */
         logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
 
         // Convert to kcal/mol & calculate differences/sums
@@ -365,6 +372,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      * @return objective function value
      */
     public static double mbarObjectiveFunction(double[][] u_kn, double[] N_k, double[] f_k) {
+        if (stream(f_k).anyMatch(Double::isInfinite) || stream(f_k).anyMatch(Double::isNaN)) {
+            throw new IllegalArgumentException("MBAR contains NaNs or Infs.");
+        }
         int nStates = f_k.length;
         double[] log_denom_n = new double[u_kn[0].length];
         for (int i = 0; i < u_kn[0].length; i++) {
@@ -437,7 +447,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] updatedF_k = new double[nStates];
         double[] log_denom_n = new double[u_kn[0].length];
         double[][] logDiff = new double[u_kn.length][u_kn[0].length];
-        double maxLogDiff = Double.NEGATIVE_INFINITY;
+        double[] maxLogDiff = new double[nStates];
+        for(int i = 0; i < nStates; i++){
+            maxLogDiff[i] = Double.NEGATIVE_INFINITY;
+        }
         for (int i = 0; i < u_kn[0].length; i++) {
             double[] temp = new double[nStates];
             double maxTemp = Double.NEGATIVE_INFINITY;
@@ -450,14 +463,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             log_denom_n[i] = logSumExp(temp, N_k, maxTemp);
             for (int j = 0; j < nStates; j++) {
                 logDiff[j][i] = -log_denom_n[i] - u_kn[j][i];
-                if (logDiff[j][i] > maxLogDiff) {
-                    maxLogDiff = logDiff[j][i];
+                if (logDiff[j][i] > maxLogDiff[j]) {
+                    maxLogDiff[j] = logDiff[j][i];
                 }
             }
         }
 
         for (int i = 0; i < nStates; i++) {
-            updatedF_k[i] = -1.0 * logSumExp(logDiff[i], maxLogDiff);
+            updatedF_k[i] = -1.0 * logSumExp(logDiff[i], maxLogDiff[i]);
         }
 
         // Constrain f1=0 over the course of iterations to prevent uncontrolled growth in magnitude
@@ -772,12 +785,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // double[] K_k = {1, 2, 4, 8, 16};
         // int[] N_k = {10, 20, 30, 40, 50};
 
-        double[] O_k = {0, 1, 2, 3, 4};
-        double[] K_k = {1, 5, 10, 20, 50};
-        int[] N_k = {10000, 10000, 10000, 10000, 10000};
+        double[] O_k = {1, 2, 3, 4};
+        double[] K_k = {.5, 1.0, 1.5, 2};
+        int[] N_k = {10000, 10000, 10000, 10000}; // No support for different number of snapshots
         double beta = 1.0;
-
-        Long seed = System.currentTimeMillis();
 
         // Create an instance of HarmonicOscillatorsTestCase
         HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, beta);
@@ -801,11 +812,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
         // Get the analytical free energy differences
         double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
-        // Calculate the free energy differences from analyticalFreeEnergies & log
-        double[] analyticalEstimates = new double[analyticalFreeEnergies.length - 1];
-        for (int i = 0; i < analyticalEstimates.length; i++) {
-            analyticalEstimates[i] = analyticalFreeEnergies[i + 1] - analyticalFreeEnergies[i];
-        }
         // Calculate the error
         double[] error = new double[analyticalFreeEnergies.length];
         for (int i = 0; i < error.length; i++) {
@@ -820,14 +826,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
         // Get the calculated free energy differences
         double[] mbarBootstrappedEstimates = bootstrapper.getFE();
+        double[] mbarBootstrappedFE = new double[mbarBootstrappedEstimates.length+1];
+        for(int i = 0; i < mbarBootstrappedEstimates.length; i++){
+            mbarBootstrappedFE[i+1] = mbarBootstrappedEstimates[i] + mbarBootstrappedFE[i];
+        }
+        double[] mbarUncertainties = bootstrapper.getUncertainty();
         // Calculate the error
-        double[] errors = new double[mbarBootstrappedEstimates.length];
+        double[] errors = new double[mbarBootstrappedFE.length];
         for (int i = 0; i < errors.length; i++) {
-            errors[i] = - mbarBootstrappedEstimates[i] + analyticalEstimates[i];
+            errors[i] = - mbarBootstrappedFE[i] + analyticalFreeEnergies[i];
         }
 
-        System.out.println("MBAR Bootstrapped Estimates: " + Arrays.toString(mbarBootstrappedEstimates));
-        System.out.println("Analytical Estimates:        " + Arrays.toString(analyticalEstimates));
+        System.out.println("MBAR Bootstrapped Estimates: " + Arrays.toString(mbarBootstrappedFE));
+        System.out.println("Analytical Estimates:        " + Arrays.toString(analyticalFreeEnergies));
+        System.out.println("MBAR Bootstrap Uncertainties: " + Arrays.toString(mbarUncertainties));
         System.out.println("Free Energy Error:           " + Arrays.toString(errors));
     }
 }
