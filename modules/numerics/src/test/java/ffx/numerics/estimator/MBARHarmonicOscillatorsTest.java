@@ -35,9 +35,43 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.numerics.estimator;
+import ffx.utilities.Constants;
+import ffx.utilities.FFXTest;
+import org.junit.Assert;
+import org.junit.Test;
+import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
 
-import ffx.algorithms.misc.AlgorithmsTest;
+import java.util.Arrays;
 
-public class MBARFilesTest extends AlgorithmsTest {
+public class MBARHarmonicOscillatorsTest extends FFXTest {
+
+    @Test
+    public void testMBAROscillators() {
+        double[] O_k = {1, 2, 3, 4};
+        double[] K_k = {.5, 1.0, 1.5, 2};
+        int[] N_k = {10000, 10000, 10000, 10000}; // No support for different number of snapshots
+        double beta = 1.0;
+
+        // Create an instance of HarmonicOscillatorsTestCase
+        MultistateBennettAcceptanceRatio.HarmonicOscillatorsTestCase testCase = new MultistateBennettAcceptanceRatio.HarmonicOscillatorsTestCase(O_k, K_k, beta);
+
+        // Generate sample data
+        String setting = "u_kln";
+        Object[] sampleResult = testCase.sample(N_k, setting);
+        double[][][] u_kln = (double[][][]) sampleResult[1];
+        double[] temps = {1 / Constants.R};
+
+        MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, MultistateBennettAcceptanceRatio.SeedType.ZEROS);
+        double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
+
+        // Get the analytical free energy differences
+        double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
+        // Calculate the error
+        double[] error = new double[analyticalFreeEnergies.length];
+        for (int i = 0; i < error.length; i++) {
+            error[i] = - mbarFEEstimates[i] + analyticalFreeEnergies[i];
+            Assert.assertEquals(0.0, error[i], 1.0E-1); // First decimal is fine for this (compare to MBAR)
+        }
+    }
 }

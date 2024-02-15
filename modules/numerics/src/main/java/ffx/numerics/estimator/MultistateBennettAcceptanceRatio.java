@@ -116,7 +116,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     /**
      * MBAR free-energy estimates at each lambda value.
      */
-    private double[] mbarFreeEnergies;
+    double[] mbarFreeEnergies;
     /**
      * Total MBAR free-energy difference estimate.
      */
@@ -779,14 +779,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static void main(String[] args) {
-        // Define parameters for the harmonic oscillators
-        //double[] O_k = {0, .1, .2, .3, .4, .5};
-        // double[] O_k = {0, 1, 2, 3, 4};
-        // double[] K_k = {1, 2, 4, 8, 16};
-        // int[] N_k = {10, 20, 30, 40, 50};
-
-        double[] O_k = {1, 2, 3, 4};
-        double[] K_k = {.5, 1.0, 1.5, 2};
+        double[] O_k = {1, 2, 3, 4}; // Equilibrium positions
+        double[] K_k = {.5, 1.0, 1.5, 2}; // Spring constants
         int[] N_k = {10000, 10000, 10000, 10000}; // No support for different number of snapshots
         double beta = 1.0;
 
@@ -807,7 +801,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
 
         EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-        bootstrapper.bootstrap(10);
+        bootstrapper.bootstrap(1);
         System.out.println("done. \n");
 
         // Get the analytical free energy differences
