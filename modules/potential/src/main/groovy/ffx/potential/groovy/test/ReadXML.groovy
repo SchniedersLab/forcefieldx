@@ -123,30 +123,6 @@ class ReadXML extends PotentialScript {
         NodeList childNodes = node.getChildNodes()
         logger.info(" Child Size:" + childNodes.length)
 
-//        int counter = 0
-//        NodeList atomNodes
-//        for (Node child : childNodes) {
-//            if (child.getNodeName() == "AtomTypes") {
-//                atomNodes = child.getChildNodes()
-//            } else if (child.getNodeName() == "Residues") {
-//                NodeList residueNodes = child.getChildNodes()
-//            } else if (child.getNodeName() == "HarmonicBondForce") {
-//                NodeList hBondForceNodes = child.getChildNodes()
-//            } else if (child.getNodeName() == "HarmonicAngleForce") {
-//                NodeList hAngleForceNodes = child.getChildNodes()
-//            } else if (child.getNodeName() == "PeriodicTorsionForce") {
-//                NodeList pTorsionForceNodes = child.getChildNodes()
-//            } else if (child.getNodeName() == "NonbondedForce") {
-//                NodeList nbForce = child.getChildNodes()
-//            }
-//        }
-//
-//        for (Node child : atomNodes) {
-//            if (child.hasAttributes()) {
-//                logger.info(format("AtomTypes %d: %s %s",counter,child.getNodeName(),child.attributes.length)) // does not have child nodes
-//                counter++
-//            }
-//        }
         for (Node child : childNodes) {
             if (child.hasChildNodes()) {
                 switch (child.getNodeName()) {
@@ -185,8 +161,6 @@ class ReadXML extends PotentialScript {
                                 }
                             }
                         }
-//                        logger.info(format("Residue0: %s",residues.item(0).getNodeName))
-                        //residues have children
                         break
 
                     case "HarmonicBondForce":
@@ -205,16 +179,35 @@ class ReadXML extends PotentialScript {
                     case "HarmonicAngleForce":
                         NodeList angles = child.getChildNodes()
                         logger.info(format("HarmonicAngleForce nodes: %d",angles.length))
+
+                        for (Node angle : angles) {
+                            if (angle.getNodeName() == "Angle") {
+                                logger.info(format("%s %s %s %s %s",angle.getAttribute("class1"),angle.getAttribute("class2"),angle.getAttribute("class3"),angle.getAttribute("angle"),angle.getAttribute("k")))
+                            } else if (angle.hasAttributes()) {
+                                logger.info("CHECK")
+                            }
+                        }
                         break
 
                     case "PeriodicTorsionForce":
                         NodeList torsions = child.getChildNodes()
                         logger.info(format("PeriodicTorsionForce nodes: %d",torsions.length))
+
+                        // TODO: Has some with periodicity 1 and 2 -> test for this
+                        // TODO: also Node names: Proper & Improper
                         break
 
                     case "NonbondedForce":
                         NodeList nbForces = child.getChildNodes()
                         logger.info(format("NonbondedForce nodes: %d",nbForces.length))
+
+                        for (Node nbF : nbForces) {
+                            if (nbF.getNodeName() == "Atom") {
+                                logger.info(format("%s %s %s %s",nbF.getAttribute("type"),nbF.getAttribute("charge"),nbF.getAttribute("sigma"),nbF.getAttribute("epsilon")))
+                            } else if (nbF.hasAttributes()) {
+                                logger.info("CHECK")
+                            }
+                        }
                         break
                 }
             }
