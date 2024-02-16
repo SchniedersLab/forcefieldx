@@ -510,6 +510,7 @@ public class Octree {
         }
     }
 
+    // from GKEnergyRegion
     /**
      * Compute interactions between two atoms.
      *

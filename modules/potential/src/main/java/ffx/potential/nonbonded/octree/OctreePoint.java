@@ -49,7 +49,6 @@ public class OctreePoint {
 
   /** Coordinates of the point */
   private double x;
-
   private double y;
   private double z;
 

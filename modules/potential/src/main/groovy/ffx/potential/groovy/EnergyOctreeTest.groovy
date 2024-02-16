@@ -153,7 +153,7 @@ class EnergyOctreeTest extends PotentialScript {
 
     public double energy = 0.0
     public ForceFieldEnergy forceFieldEnergy = null
-//    public NeighborList.DomainDecomposition domainDecomposition = null
+//    public NeighborList.DomainDecomposition domainDecomposition = null todo
     private AssemblyState assemblyState = null
 
     // Parallel Team Set-up
@@ -205,7 +205,7 @@ class EnergyOctreeTest extends PotentialScript {
             atomSelectionOptions.setUsed(activeAssembly)
         }
 
-        // Get Radius of Gyration
+        // Get Radius of Gyration todo
 //        double radgy = radiusOfGyration(activeAssembly.getAtomArray())
         // Define Crystal
 //        Crystal octreeCrystal = new Crystal(3 * radgy, 3 * radgy, 3 * radgy, 90.0, 90.0, 90.0, "P1")
@@ -252,7 +252,7 @@ class EnergyOctreeTest extends PotentialScript {
             energy = forceFieldEnergy.energy(x, true)
         }
 
-        // Add Octree building
+        // Add Octree building todo
         // Use Convex Hull method to determine the maximum pairwise distance between any atoms
 //        QuickHull3D quickHull3D = ConvexHullOps.constructHull(activeAssembly.getAtomArray())
 //        double maxDist = ConvexHullOps.maxDist(quickHull3D)
@@ -320,7 +320,8 @@ class EnergyOctreeTest extends PotentialScript {
         // Calculate the Potential at each atom
         octree.evalPotential()
 //        octree.printPhi()
-/*
+
+/* todo
         if (moments) {
             logger.info("** Moments being calculated")
             NeighborList.Cell[][][] cells = neighborList.getCells()
