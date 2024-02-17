@@ -42,7 +42,7 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The DistanceMatrixFileFilter class is used to choose a Distance Matrix (*.TXT) file.
+ * The DistanceMatrixFileFilter class is used to choose a Distance Matrix (*.DST) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -56,7 +56,7 @@ public final class DistanceMatrixFileFilter extends FileFilter {
   /**
    * {@inheritDoc}
    *
-   * <p>This method returns <code>true</code> if the file is a directory or DistanceMatrix (*.TXT).
+   * <p>This method returns <code>true</code> if the file is a directory or DistanceMatrix (*.DST).
    */
   @Override
   public boolean accept(File file) {
@@ -64,7 +64,7 @@ public final class DistanceMatrixFileFilter extends FileFilter {
       return true;
     }
     String ext = FilenameUtils.getExtension(file.getName());
-    return ext.toUpperCase().startsWith("TXT");
+    return ext.toUpperCase().startsWith("DST");
   }
 
   /**
@@ -74,6 +74,6 @@ public final class DistanceMatrixFileFilter extends FileFilter {
    */
   @Override
   public String getDescription() {
-    return "Distance Matrix (*.TXT)";
+    return "Distance Matrix (*.DST)";
   }
 }

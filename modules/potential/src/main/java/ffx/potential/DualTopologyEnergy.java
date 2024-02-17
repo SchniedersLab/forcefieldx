@@ -394,13 +394,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Apply SymOps to data on entity by entity basis.
-   */
-  private void applySymOp(double[] data, boolean invert){
-
-  }
-
-  /**
    * Temporary method to be used as a benchmark. Move to SymOp?
    *
    * @param symOpString String containing sym op.
@@ -505,21 +498,20 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
         logger.info("\n SymOp between topologies:\n" + symOp[i]);
         logger.info("\n Inverse SymOp:\n" + inverse[i]);
-
-//        int numShared1 = sharedAtoms1.length;
-//        int numShared2 = sharedAtoms2.length;
-//        logger.info(format(" ShareSize1: %2d ShareSize2: %2d Active1: %2d Active2: %2d", numShared1, numShared2, nActive1, nActive2));
-//        index = 0;
-//        for(int j = 0; j < sharedAtoms1.length; j++){
-//          logger.info(format(" Atom Index: %2d S1: %b S2: %b", j, sharedAtoms1[j], sharedAtoms2[j]));
-//          if(sharedAtoms1[j]){
-//            logger.info(format(" Mask: %b", mask[index++]));
-//          }
-//        }
       }
       double symOpRMSD = rmsd(origX1, origX2, m);
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
       logger.info(format(" RMSD: %12.3f", symOpRMSD));
+
+      if(logger.isLoggable(Level.FINE)){
+        for(int i = 0; i < nShared; i++){
+          int i3 = i * 3;
+          double rmsd = rmsd(new double[]{origX1[i3 + 0], origX1[i3 + 1], origX1[i3 + 2]},new double[]{origX2[i3 + 0], origX2[i3 + 1], origX2[i3 + 2]},new double[]{1.0});
+          if(rmsd > 0.5){
+            logger.fine(format(" Atom %3d has an RMSD of %8.3f", i + 1, rmsd));
+          }
+        }
+      }
     } catch (Exception ex) {
       logger.warning(ex.toString());
       logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symOpString + ")");
