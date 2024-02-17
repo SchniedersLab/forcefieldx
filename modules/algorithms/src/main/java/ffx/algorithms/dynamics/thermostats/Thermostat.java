@@ -37,19 +37,21 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import ffx.potential.SystemState;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats for initializing
@@ -63,51 +65,76 @@ import java.util.logging.Logger;
 public abstract class Thermostat {
 
   private static final Logger logger = Logger.getLogger(Thermostat.class.getName());
-  /** The center of mass coordinates. */
+  /**
+   * The center of mass coordinates.
+   */
   private final double[] centerOfMass = new double[3];
-  /** The linear momentum. */
+  /**
+   * The linear momentum.
+   */
   private final double[] linearMomentum = new double[3];
-  /** The angular momentum. */
+  /**
+   * The angular momentum.
+   */
   private final double[] angularMomentum = new double[3];
-  /** Number of degrees of freedom removed by constraints. */
+  /**
+   * Number of degrees of freedom removed by constraints.
+   */
   private final int constrainedDoF;
-  /** The identity of this Thermostat. */
+  /**
+   * The identity of this Thermostat.
+   */
   protected ThermostatEnum name;
-  /** The value of kT in kcal/mol at the target temperature. */
+  /**
+   * The value of kT in kcal/mol at the target temperature.
+   */
   protected double kT;
   /**
    * Number of degrees of freedom, which can be less than the number of variables. For example,
    * removing translational motion removes 3 degrees of freedom.
    */
   protected int degreesOfFreedom;
-  /** The molecular dynamics state to be used. */
+  /**
+   * The molecular dynamics state to be used.
+   */
   protected final SystemState state;
-  /** The type of each variable. */
+  /**
+   * The type of each variable.
+   */
   protected VARIABLE_TYPE[] type;
-  /** The random number generator that the Thermostat will use to initialize velocities. */
+  /**
+   * The random number generator that the Thermostat will use to initialize velocities.
+   */
   protected Random random;
-  /** Any geometric constraints to apply during integration. */
+  /**
+   * Any geometric constraints to apply during integration.
+   */
   protected List<Constraint> constraints;
-  /** The target temperature that this thermostat should maintain. */
+  /**
+   * The target temperature that this thermostat should maintain.
+   */
   double targetTemperature;
-  /** Flag to indicate that center of mass motion should be removed. */
+  /**
+   * Flag to indicate that center of mass motion should be removed.
+   */
   private boolean removeCenterOfMassMotion;
-  /** Reduce logging. */
+  /**
+   * Reduce logging.
+   */
   private boolean quiet = false;
 
   /**
    * Constructor for Thermostat.
    *
-   * @param state The molecular dynamics state to be used.
-   * @param type the VARIABLE_TYPE of each variable.
+   * @param state             The molecular dynamics state to be used.
+   * @param type              the VARIABLE_TYPE of each variable.
    * @param targetTemperature a double.
    */
   public Thermostat(SystemState state, VARIABLE_TYPE[] type, double targetTemperature) {
     this(state, type, targetTemperature, new ArrayList<>());
   }
 
-  public Thermostat(SystemState state, VARIABLE_TYPE[] type, double targetTemperature,
-      List<Constraint> constraints) {
+  public Thermostat(SystemState state, VARIABLE_TYPE[] type, double targetTemperature, List<Constraint> constraints) {
     this.state = state;
     this.type = type;
     int n = state.getNumberOfVariables();
@@ -119,11 +146,24 @@ public abstract class Thermostat {
     this.constraints = new ArrayList<>(constraints);
     // Not every type of constraint constrains just one DoF.
     // SETTLE constraints, for example, constrain three.
-    constrainedDoF = constraints.stream().mapToInt(Constraint::getNumDegreesFrozen).sum();
+    double nConstrained = constraints.stream().mapToInt(Constraint::getNumDegreesFrozen).sum();
 
-    // Set the degrees of freedom to nVariables - 3 because we will remove center of mass motion.
+    double[] mass = state.getMass();
+    int massConstrained = 0;
+    for (int i = 0; i < n; i++) {
+      if (mass[i] <= 0.0) {
+        massConstrained++;
+      }
+    }
+
+    if (massConstrained > 0 && nConstrained > 0) {
+      logger.severe("Mass-constraints with other constraints are not supported.");
+    }
+    constrainedDoF = (int) max(nConstrained, massConstrained);
+
     removeCenterOfMassMotion = true;
 
+    // Remove center of mass motion degrees of freedom.
     degreesOfFreedom = n - 3 - constrainedDoF;
 
     // Update the kinetic energy.
@@ -149,7 +189,7 @@ public abstract class Thermostat {
    * Compute the center of mass, linear momentum and angular momentum.
    *
    * @param remove If true, the center of mass motion will be removed.
-   * @param print If true, the center of mass and momenta will be printed.
+   * @param print  If true, the center of mass and momenta will be printed.
    */
   public void centerOfMassMotion(boolean remove, boolean print) {
     double totalMass = 0.0;
@@ -166,12 +206,12 @@ public abstract class Thermostat {
 
     int index = 0;
     while (index < nVariables) {
-      if (type[index] == VARIABLE_TYPE.OTHER) {
+      double m = mass[index];
+      if (m <= 0.0 || type[index] == VARIABLE_TYPE.OTHER) {
         index++;
         continue;
       }
       assert (type[index] == VARIABLE_TYPE.X);
-      double m = mass[index];
       double xx = x[index];
       double vx = v[index++];
       assert (type[index] == VARIABLE_TYPE.Y);
@@ -192,12 +232,9 @@ public abstract class Thermostat {
       angularMomentum[2] += (xx * vy - yy * vx) * m;
     }
 
-    angularMomentum[0] -=
-        (centerOfMass[1] * linearMomentum[2] - centerOfMass[2] * linearMomentum[1]) / totalMass;
-    angularMomentum[1] -=
-        (centerOfMass[2] * linearMomentum[0] - centerOfMass[0] * linearMomentum[2]) / totalMass;
-    angularMomentum[2] -=
-        (centerOfMass[0] * linearMomentum[1] - centerOfMass[1] * linearMomentum[0]) / totalMass;
+    angularMomentum[0] -= (centerOfMass[1] * linearMomentum[2] - centerOfMass[2] * linearMomentum[1]) / totalMass;
+    angularMomentum[1] -= (centerOfMass[2] * linearMomentum[0] - centerOfMass[0] * linearMomentum[2]) / totalMass;
+    angularMomentum[2] -= (centerOfMass[0] * linearMomentum[1] - centerOfMass[1] * linearMomentum[0]) / totalMass;
     centerOfMass[0] /= totalMass;
     centerOfMass[1] /= totalMass;
     centerOfMass[2] /= totalMass;
@@ -219,15 +256,20 @@ public abstract class Thermostat {
     }
   }
 
-  /** Compute the current temperature and kinetic energy of the system. */
+  /**
+   * Compute the current temperature and kinetic energy of the system.
+   */
   public final void computeKineticEnergy() {
     double e = 0.0;
     double[] v = state.v();
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      double velocity = v[i];
-      double v2 = velocity * velocity;
-      e += mass[i] * v2;
+      double m = mass[i];
+      if (m > 0.0) {
+        double velocity = v[i];
+        double v2 = velocity * velocity;
+        e += m * v2;
+      }
     }
     state.setTemperature(e / (kB * degreesOfFreedom));
     e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
@@ -343,7 +385,9 @@ public abstract class Thermostat {
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       double m = mass[i];
-      v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
+      if (m > 0.0) {
+        v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
+      }
     }
 
     // Remove the center of mass motion.
@@ -363,7 +407,10 @@ public abstract class Thermostat {
     */
     double scale = sqrt(targetTemperature / state.getTemperature());
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      v[i] *= scale;
+      double m = mass[i];
+      if (m > 0.0) {
+        v[i] *= scale;
+      }
     }
 
     // Update the kinetic energy and current temperature.
@@ -389,8 +436,10 @@ public abstract class Thermostat {
    */
   public double[] maxwellIndividual(double mass) {
     double[] vv = new double[3];
-    for (int i = 0; i < 3; i++) {
-      vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
+    if (mass > 0.0) {
+      for (int i = 0; i < 3; i++) {
+        vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
+      }
     }
     return vv;
   }
@@ -414,7 +463,9 @@ public abstract class Thermostat {
     random.setSeed(seed);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return logTemp();
@@ -512,9 +563,14 @@ public abstract class Thermostat {
         index++;
         continue;
       }
-      v[index++] -= linearMomentum[0];
-      v[index++] -= linearMomentum[1];
-      v[index++] -= linearMomentum[2];
+      double m = mass[index];
+      if (m > 0.0) {
+        v[index++] -= linearMomentum[0] / m;
+        v[index++] -= linearMomentum[1] / m;
+        v[index++] -= linearMomentum[2] / m;
+      } else {
+        index += 3;
+      }
     }
 
     // Only remove center of mass rotational momentum for non-periodic systems.

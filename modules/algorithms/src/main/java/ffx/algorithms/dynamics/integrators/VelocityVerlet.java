@@ -73,15 +73,18 @@ public class VelocityVerlet extends Integrator {
   public void postForce(double[] gradient) {
     copyAccelerationToPrevious();
     double[] a = state.a();
+    // double[] aPrevious = state.aPrevious();
     double[] v = state.v();
     double[] x = state.x();
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-      v[i] = v[i] + a[i] * dt_2;
+      double m = mass[i];
+      if (m > 0.0) {
+        a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+        v[i] = v[i] + a[i] * dt_2;
+      }
     }
-    constraints.forEach(
-        (Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
+    constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
   }
 
   /**
@@ -104,15 +107,20 @@ public class VelocityVerlet extends Integrator {
       }
     }
     for (int i = 0; i < nVariables; i++) {
-      v[i] = v[i] + a[i] * dt_2;
-      x[i] = x[i] + v[i] * dt;
+      double m = mass[i];
+      if (m > 0.0) {
+        v[i] = v[i] + a[i] * dt_2;
+        x[i] = x[i] + v[i] * dt;
+      }
     }
     if (useConstraints) {
-      constraints.forEach(
-          (Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
+      constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
       double velScale = 1.0 / dt;
       for (int i = 0; i < nVariables; i++) {
-        v[i] = velScale * (x[i] - xPrior[i]);
+        double m = mass[i];
+        if (m > 0.0) {
+          v[i] = velScale * (x[i] - xPrior[i]);
+        }
       }
     }
   }

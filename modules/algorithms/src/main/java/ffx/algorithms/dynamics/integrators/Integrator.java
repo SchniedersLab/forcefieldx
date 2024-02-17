@@ -159,15 +159,4 @@ public abstract class Integrator {
    */
   public abstract void preForce(Potential potential);
 
-  public void removeConstraint(Constraint constraint) {
-    constraints.remove(constraint);
-    useConstraints = !constraints.isEmpty();
-  }
-
-  public void removeConstraints(Collection<Constraint> toRemove) {
-    constraints = constraints.stream().filter((Constraint c) -> !toRemove.contains(c))
-        .collect(Collectors.toList());
-    useConstraints = !constraints.isEmpty();
-  }
-
 }

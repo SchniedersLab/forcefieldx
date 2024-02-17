@@ -79,8 +79,11 @@ public class BetterBeeman extends Integrator {
     double[] mass = state.getMass();
     double[] aPrevious = state.aPrevious();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-      v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
+      double m = mass[i];
+      if (m > 0.0) {
+        a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / m;
+        v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
+      }
     }
   }
 
@@ -95,11 +98,15 @@ public class BetterBeeman extends Integrator {
     double[] x = state.x();
     double[] a = state.a();
     double[] v = state.v();
+    double[] mass = state.getMass();
     double[] aPrevious = state.aPrevious();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      double temp = 5.0 * a[i] - aPrevious[i];
-      x[i] += v[i] * dt + temp * dt2_8;
-      v[i] += temp * dt_8;
+      double m = mass[i];
+      if (m > 0.0) {
+        double temp = 5.0 * a[i] - aPrevious[i];
+        x[i] += v[i] * dt + temp * dt2_8;
+        v[i] += temp * dt_8;
+      }
     }
   }
 

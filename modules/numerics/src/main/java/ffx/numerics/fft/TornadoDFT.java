@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.cos;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.floatPI;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sin;
 import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.numerics.tornado.FFXTornado;
