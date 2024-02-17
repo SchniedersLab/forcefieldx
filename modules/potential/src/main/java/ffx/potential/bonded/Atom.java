@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
@@ -51,6 +53,7 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.VDWType;
+import ffx.potential.utils.EnergyException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -614,6 +617,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void addToXYZGradient(double x, double y, double z) {
     if (active) {
+      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(
+              z)) {
+        StringBuilder sb = new StringBuilder(
+                format("Adding gradient of atom %s to (%8.3f,%8.3f,%8.3f) is not permitted.", this, x, y, z));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+                format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[0] += x;
       xyzGradient[1] += y;
       xyzGradient[2] += z;
@@ -628,6 +645,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void addToXYZGradient(int axis, double value) {
     if (active) {
+      if (isNaN(value) || isInfinite(value)) {
+        StringBuilder sb = new StringBuilder(
+                format("Adding gradient of atom %s of value %8.3f to axis %2d is not permitted.", this, value, axis));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+                format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[axis] += value;
     }
   }
@@ -3017,6 +3048,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void setXYZGradient(double x, double y, double z) {
     if (active) {
+      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(
+              z)) {
+        StringBuilder sb = new StringBuilder(
+                format("Setting gradient of atom %s to (%8.3f,%8.3f,%8.3f) is not permitted.", this, x, y, z));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+                format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[0] = x;
       xyzGradient[1] = y;
       xyzGradient[2] = z;
