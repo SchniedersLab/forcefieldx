@@ -340,7 +340,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
             iter++;
         } while (!converged(prevMBAR));
-        logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
+        //logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
 
         // Convert to kcal/mol & calculate differences/sums
         for (int i = 0; i < mbarFreeEnergies.length; i++) {

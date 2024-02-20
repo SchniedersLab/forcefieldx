@@ -38,6 +38,33 @@
 package ffx.algorithms.groovy;
 
 import ffx.algorithms.misc.AlgorithmsTest;
+import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
+import org.junit.Assert;
+import org.junit.Test;
+
 
 public class MBARFilesTest extends AlgorithmsTest {
+
+    /**
+     * Tests MBAR groovy script that reads in MBAR files.
+     */
+    @Test
+    public void testMBARFiles() {
+        if (!ffxOpenMM) {
+            return;
+        }
+        String filepath = getResourcePath("testBar/mbarFiles");
+        String[] args = {"--seed", "zeros", "--nb", "0", "--bar", filepath};
+        binding.setVariable("args", args);
+
+        MBAR mbar = new MBAR(binding).run();
+        Assert.assertNotNull(mbar);
+
+        // Check the results
+        MultistateBennettAcceptanceRatio mbarEstimator = mbar.mbar;
+        Assert.assertNotNull(mbarEstimator);
+
+        double sum = mbarEstimator.getFreeEnergy();
+        Assert.assertEquals(71.8016, sum, 1e-2);
+    }
 }

@@ -77,6 +77,8 @@ class MBAR extends AlgorithmsScript {
             description = 'Path to MBAR/BAR files.')
     String path = null
 
+    public MultistateBennettAcceptanceRatio mbar = null
+
     /**
      * MBAR Constructor.
      */
@@ -124,6 +126,7 @@ class MBAR extends AlgorithmsScript {
         }
 
         MultistateBennettAcceptanceRatio mbar = filter.getMBAR(seed)
+        this.mbar = mbar
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
             return this
@@ -183,5 +186,9 @@ class MBAR extends AlgorithmsScript {
             }
         }
         return this
+    }
+
+    MultistateBennettAcceptanceRatio getMBAR() {
+        return
     }
 }

@@ -40,12 +40,16 @@ import ffx.utilities.Constants;
 import ffx.utilities.FFXTest;
 import org.junit.Assert;
 import org.junit.Test;
-import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
 
 import java.util.Arrays;
 
 public class MBARHarmonicOscillatorsTest extends FFXTest {
 
+    /**
+     * Test the MBAR estimator numerics with harmonic oscillators. This test uses L-BFGS, so it
+     * isn't exactly deterministic. The error is set to 1.0E-1, so the first decimal is fine for this.
+     * Pymbar does the same thing.
+     */
     @Test
     public void testMBAROscillators() {
         double[] O_k = {1, 2, 3, 4};
@@ -71,7 +75,7 @@ public class MBARHarmonicOscillatorsTest extends FFXTest {
         double[] error = new double[analyticalFreeEnergies.length];
         for (int i = 0; i < error.length; i++) {
             error[i] = - mbarFEEstimates[i] + analyticalFreeEnergies[i];
-            Assert.assertEquals(0.0, error[i], 1.0E-1); // First decimal is fine for this (compare to MBAR)
+            Assert.assertEquals(0.0, error[i], 1.0E-1); // First decimal is fine for this (compare to pymbar)
         }
     }
 }
