@@ -42,6 +42,11 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.util.MathArrays;
+
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -307,6 +312,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
 
         try {
+            mbarFreeEnergies = newton(mbarFreeEnergies, u_kn, N_k, 1.0, 100, 1.0E-5);
+            /*
             // L-BFGS optimization of MBAR objective function but don't include 0th term since defined as zero
             int mCorrections = 5;
             double[] x = new double[mbarFreeEnergies.length];
@@ -322,8 +329,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                     this,
                     listener);
             System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
+
+             */
         } catch (Exception e) {
-            logger.warning(" L-BFGS failed to converge. Finishing w/ self-consistent iteration.");
+            logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
         }
 
         // Self-consistent iteration is used to finish off optimization of MBAR objective function
@@ -340,7 +349,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
             iter++;
         } while (!converged(prevMBAR));
-        //logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
+        logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
+
+        // Zero out the first term
+        double f0 = mbarFreeEnergies[0];
+        for(int i = 0; i < mbarFreeEnergies.length; i++){
+            mbarFreeEnergies[i] -= f0;
+        }
 
         // Convert to kcal/mol & calculate differences/sums
         for (int i = 0; i < mbarFreeEnergies.length; i++) {
@@ -435,6 +450,96 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return grad;
     }
 
+    public static double[][] mbarHessian(double[][] u_kn, double[] N_k, double[] f_k){
+        int nStates = f_k.length;
+        double[][] W = mbar_W(u_kn, N_k, f_k);
+        // h = dot(W.T, W) * N_k * N_k[:, newaxis] - diag(W.sum(0) * N_k)
+        double[][] hessian = new double[nStates][nStates];
+        for (int i = 0; i < nStates; i++) {
+            for (int j = 0; j < nStates; j++) {
+                double sum = 0.0;
+                for (int k = 0; k < u_kn[0].length; k++) {
+                    sum += W[i][k] * W[j][k];
+                }
+                hessian[i][j] = sum * N_k[i] * N_k[j];
+            }
+            hessian[i][i] -= W[i].length * N_k[i];
+        }
+        // h = -h
+        for(int i = 0; i < nStates; i++){
+            for(int j = 0; j < nStates; j++){
+                hessian[i][j] = -hessian[i][j];
+            }
+        }
+        return hessian;
+    }
+
+    public static double[][] mbar_W(double[][] u_kn, double[] N_k, double[] f_k){
+        int nStates = f_k.length;
+        double[] log_num_k = new double[nStates];
+        double[] log_denom_n = new double[u_kn[0].length];
+        double[][] logDiff = new double[u_kn.length][u_kn[0].length];
+        double maxLogDiff = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < u_kn[0].length; i++) {
+            double[] temp = new double[nStates];
+            double maxTemp = Double.NEGATIVE_INFINITY;
+            for (int j = 0; j < nStates; j++) {
+                temp[j] = f_k[j] - u_kn[j][i];
+                if (temp[j] > maxTemp) {
+                    maxTemp = temp[j];
+                }
+            }
+            log_denom_n[i] = logSumExp(temp, N_k, maxTemp);
+            for (int j = 0; j < nStates; j++) {
+                logDiff[j][i] = - log_denom_n[i] - u_kn[j][i];
+                if (logDiff[j][i] > maxLogDiff) {
+                    maxLogDiff = logDiff[j][i];
+                }
+            }
+        }
+        // logW = f_k - u_kn.T - log_denominator_n[:, newaxis]
+        double[][] W = new double[nStates][u_kn[0].length];
+        for (int i = 0; i < nStates; i++) {
+            for (int j = 0; j < u_kn[0].length; j++) {
+                W[i][j] = exp(f_k[i] - u_kn[i][j] - log_denom_n[j]);
+            }
+        }
+        return W;
+    }
+
+    public static double[][] mbar_logW(double[][] u_kn, double[] N_k, double[] f_k){
+        int nStates = f_k.length;
+        double[] log_num_k = new double[nStates];
+        double[] log_denom_n = new double[u_kn[0].length];
+        double[][] logDiff = new double[u_kn.length][u_kn[0].length];
+        double maxLogDiff = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < u_kn[0].length; i++) {
+            double[] temp = new double[nStates];
+            double maxTemp = Double.NEGATIVE_INFINITY;
+            for (int j = 0; j < nStates; j++) {
+                temp[j] = f_k[j] - u_kn[j][i];
+                if (temp[j] > maxTemp) {
+                    maxTemp = temp[j];
+                }
+            }
+            log_denom_n[i] = logSumExp(temp, N_k, maxTemp);
+            for (int j = 0; j < nStates; j++) {
+                logDiff[j][i] = - log_denom_n[i] - u_kn[j][i];
+                if (logDiff[j][i] > maxLogDiff) {
+                    maxLogDiff = logDiff[j][i];
+                }
+            }
+        }
+        // logW = f_k - u_kn.T - log_denominator_n[:, newaxis]
+        double[][] logW = new double[nStates][u_kn[0].length];
+        for (int i = 0; i < nStates; i++) {
+            for (int j = 0; j < u_kn[0].length; j++) {
+                logW[i][j] = f_k[i] - u_kn[i][j] - log_denom_n[j];
+            }
+        }
+        return logW;
+    }
+
     /**
      * Self-consistent iteration to update free energies.
      * @param u_kn energies
@@ -480,6 +585,36 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
 
         return updatedF_k;
+    }
+
+    public static double[] newtonStep(double[] n, double[] grad, double[][] hessian, double stepSize){
+        double[] nPlusOne = new double[n.length];
+        RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
+        double[] step = hessianInverse.preMultiply(grad);
+        for(int i = 0; i < n.length; i++){
+            nPlusOne[i] = n[i] - step[i] * stepSize;
+        }
+        return nPlusOne;
+    }
+
+    public static double[] newton(double[] f_k, double[][] u_kn, double[] N_k, double stepSize, int maxIter, double tolerance){
+        double[] grad = mbar_gradient(u_kn, N_k, f_k);
+        double[][] hessian = mbarHessian(u_kn, N_k, f_k);
+        double[] f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
+        int iter = 0;
+        while(iter < maxIter && MathArrays.distance(f_k, f_kPlusOne) > tolerance){
+            f_k = f_kPlusOne;
+            grad = mbar_gradient(u_kn, N_k, f_k);
+            hessian = mbarHessian(u_kn, N_k, f_k);
+            f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
+            // Zero out the first term
+            double f0 = f_kPlusOne[0];
+            for(int i = 0; i < f_kPlusOne.length; i++){
+                f_kPlusOne[i] -= f0;
+            }
+            iter++;
+        }
+        return f_kPlusOne;
     }
 
     /**
@@ -801,7 +936,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
 
         EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-        bootstrapper.bootstrap(1);
+        bootstrapper.bootstrap(50);
         System.out.println("done. \n");
 
         // Get the analytical free energy differences
