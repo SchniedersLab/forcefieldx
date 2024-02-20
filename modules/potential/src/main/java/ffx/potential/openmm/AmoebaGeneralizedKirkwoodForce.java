@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.Force;
+import ffx.openmm.amoeba.GeneralizedKirkwoodForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.parameters.ForceField;
@@ -45,18 +47,6 @@ import ffx.potential.parameters.MultipoleType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AngstromsPerNm;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
@@ -64,17 +54,17 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static java.lang.String.format;
 
-public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
+public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
 
   private static final Logger logger = Logger.getLogger(AmoebaGeneralizedKirkwoodForce.class.getName());
 
   public AmoebaGeneralizedKirkwoodForce(OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
     if (gk == null) {
+      destroy();
       return;
     }
 
-    forcePointer = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
     setSolventDielectric(gk.getSolventPermittivity());
     setSoluteDielectric(1.0);
     setDielectricOffset(gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
@@ -148,7 +138,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the GK information.
    * @return An AMOEBA GK Force, or null if there are no GK interactions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
     if (gk == null) {
       return null;
@@ -165,7 +155,7 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
    */
   public void updateForce(Atom[] atoms, OpenMMEnergy openMMEnergy) {
     GeneralizedKirkwood gk = openMMEnergy.getGK();
-    if (gk == null || forcePointer == null) {
+    if (gk == null || pointer == null) {
       return;
     }
 
@@ -230,117 +220,4 @@ public class AmoebaGeneralizedKirkwoodForce extends OpenMMForce {
 
     updateParametersInContext(openMMEnergy.getContext());
   }
-
-  /**
-   * Set the solvent dielectric constant.
-   *
-   * @param dielectric The solvent dielectric constant.
-   */
-  public void setSolventDielectric(double dielectric) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(forcePointer, dielectric);
-  }
-
-  /**
-   * Set the solute dielectric constant.
-   *
-   * @param dielectric The solute dielectric constant.
-   */
-  public void setSoluteDielectric(double dielectric) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(forcePointer, dielectric);
-  }
-
-  /**
-   * Set the dielectric offset.
-   *
-   * @param offset The dielectric offset.
-   */
-  public void setDielectricOffset(double offset) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(forcePointer, offset);
-  }
-
-  /**
-   * Set the tanh rescaling.
-   *
-   * @param tanhRescale The tanh rescaling.
-   */
-  public void setTanhRescaling(int tanhRescale) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(forcePointer, tanhRescale);
-  }
-
-  /**
-   * Set the tanh parameters.
-   *
-   * @param beta0 The tanh parameter beta0.
-   * @param beta1 The tanh parameter beta1.
-   * @param beta2 The tanh parameter beta2.
-   */
-  public void setTanhParameters(double beta0, double beta1, double beta2) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(forcePointer, beta0, beta1, beta2);
-  }
-
-  /**
-   * Set the probe radius.
-   *
-   * @param radius The probe radius.
-   */
-  public void setProbeRadius(double radius) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(forcePointer, radius);
-  }
-
-  /**
-   * Set the include cavity term.
-   *
-   * @param includeCavityTerm The include cavity term.
-   */
-  public void setIncludeCavityTerm(int includeCavityTerm) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(forcePointer, includeCavityTerm);
-  }
-
-  /**
-   * Set the surface area factor.
-   *
-   * @param surfaceAreaFactor The surface area factor.
-   */
-  public void setSurfaceAreaFactor(double surfaceAreaFactor) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(forcePointer, surfaceAreaFactor);
-  }
-
-  /**
-   * Add a particle to the force.
-   *
-   * @param charge   The charge of the particle.
-   * @param radius   The radius of the particle.
-   * @param hctScale The hctScale of the particle.
-   * @param descreen The descreen of the particle.
-   * @param neck     The neck of the particle.
-   */
-  public void addParticle_1(double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(forcePointer, charge, radius, hctScale, descreen, neck);
-  }
-
-  /**
-   * Set the particle parameters.
-   *
-   * @param index    The index of the particle.
-   * @param charge   The charge of the particle.
-   * @param radius   The radius of the particle.
-   * @param hctScale The hctScale of the particle.
-   * @param descreen The descreen of the particle.
-   * @param neck     The neck of the particle.
-   */
-  public void setParticleParameters_1(int index, double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(forcePointer, index, charge, radius, hctScale, descreen, neck);
-  }
-
-  /**
-   * Update the parameters in the context.
-   *
-   * @param openMMContext The OpenMM context.
-   */
-  public void updateParametersInContext(OpenMMContext openMMContext) {
-    if (openMMContext.hasContextPointer()) {
-      OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(forcePointer, openMMContext.getContextPointer());
-    }
-  }
-
 }

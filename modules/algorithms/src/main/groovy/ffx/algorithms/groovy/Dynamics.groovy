@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -64,164 +64,163 @@ import picocli.CommandLine.Parameters
 @Command(description = " Run dynamics on a system.", name = "Dynamics")
 class Dynamics extends AlgorithmsScript {
 
-    @Mixin
-    AtomSelectionOptions atomSelectionOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Mixin
-    BarostatOptions barostatOptions
+  @Mixin
+  BarostatOptions barostatOptions
 
-    @Mixin
-    WriteoutOptions writeOut
+  @Mixin
+  WriteoutOptions writeOut
 
-    @Mixin
-    RepExOptions repEx
+  @Mixin
+  RepExOptions repEx
 
-    /**
-     * A PDB or XYZ filename.
-     */
-    @Parameters(arity = "1", paramLabel = "file",
-            description = "XYZ or PDB input file.")
-    private String filename
+  /**
+   * A PDB or XYZ filename.
+   */
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
-    /**
-     * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
-     * Originally it is declared in the run method
-     */
-    public Potential potential = null
-    public MolecularDynamics molDyn = null
+  /**
+   * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
+   * Originally it is declared in the run method.
+   */
+  public Potential potential = null
+  public MolecularDynamics molDyn = null
 
-    MolecularDynamics getMolecularDynamics() {
-        return molDyn
+  MolecularDynamics getMolecularDynamics() {
+    return molDyn
+  }
+
+  Potential getPotentialObject() {
+    return potential
+  }
+
+  /**
+   * Dynamics Constructor.
+   */
+  Dynamics() {
+    this(new Binding())
+  }
+
+  /**
+   * Dynamics Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  Dynamics(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  Dynamics run() {
+
+    // Init the context and bind variables.
+    if (!init()) {
+      return this
     }
 
-    Potential getPotentialObject() {
-        return potential
+    // Init DynamicsOptions (e.g., the thermostat and barostat flags).
+    dynamicsOptions.init()
+
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
     }
 
-    /**
-     * Dynamics Constructor.
-     */
-    Dynamics() {
-        this(new Binding())
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    // Set active atoms.
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    potential = activeAssembly.getPotentialEnergy()
+    double[] x = new double[potential.getNumberOfVariables()]
+    potential.getCoordinates(x)
+    potential.energy(x, true)
+
+    if (barostatOptions.pressure > 0) {
+      CrystalPotential crystalPotential = (CrystalPotential) potential
+      Barostat barostat = barostatOptions.createBarostat(activeAssembly, crystalPotential)
+      potential = barostat
     }
 
-    /**
-     * Dynamics Constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    Dynamics(Binding binding) {
-        super(binding)
+    Comm world = Comm.world()
+    int size = world.size()
+
+    if (!repEx.repEx || size < 2) {
+      logger.info("\n Running molecular dynamics on " + filename)
+      // Restart File
+      File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+      if (!dyn.exists()) {
+        dyn = null
+      }
+
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
+
+      molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+
+    } else {
+      logger.info("\n Running replica exchange molecular dynamics on " + filename)
+      int rank = (size > 1) ? world.rank() : 0
+      logger.info("Rank:" + rank.toString())
+
+      File structureFile = new File(filename)
+      String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+      File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
+      if (!rankDirectory.exists()) {
+        rankDirectory.mkdir()
+      }
+
+      // TODO: Finish setting up restart support.
+      String withRankName = rankDirectory.getPath() + File.separator + baseFilename
+      File dyn = new File(withRankName + ".dyn")
+      if (!dyn.exists()) {
+        dyn = null
+      }
+
+      final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+      logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
+      activeAssembly.setFile(new File(newMolAssemblyFile))
+      molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
+      ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
+          dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)
+
+      long totalSteps = dynamicsOptions.steps
+      int nSteps = repEx.replicaSteps
+      int cycles = (int) (totalSteps / nSteps)
+      if (cycles <= 0) {
+        cycles = 1
+      }
+
+      replicaExchange.sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    Dynamics run() {
+    return this
+  }
 
-        // Init the context and bind variables.
-        if (!init()) {
-            return this
-        }
-
-        // Init DynamicsOptions (e.g. the thermostat and barostat flags).
-        dynamicsOptions.init()
-
-        // Load the MolecularAssembly.
-        activeAssembly = getActiveAssembly(filename)
-        if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        }
-
-        // Set the filename.
-        filename = activeAssembly.getFile().getAbsolutePath()
-
-        // Set active atoms.
-        atomSelectionOptions.setActiveAtoms(activeAssembly)
-
-        potential = activeAssembly.getPotentialEnergy()
-        double[] x = new double[potential.getNumberOfVariables()]
-        potential.getCoordinates(x)
-        potential.energy(x, true)
-
-        if (barostatOptions.pressure > 0) {
-            CrystalPotential crystalPotential = (CrystalPotential) potential
-            Barostat barostat = barostatOptions.createBarostat(activeAssembly, crystalPotential)
-            potential = barostat
-        }
-
-        Comm world = Comm.world()
-        int size = world.size()
-
-        if (!repEx.repEx || size < 2) {
-            logger.info("\n Running molecular dynamics on " + filename)
-            // Restart File
-            File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
-            if (!dyn.exists()) {
-                dyn = null
-            }
-
-            molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-
-            molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-                    dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
-
-        } else {
-            logger.info("\n Running replica exchange molecular dynamics on " + filename)
-            int rank = (size > 1) ? world.rank() : 0
-            logger.info("Rank:" + rank.toString())
-
-            File structureFile = new File(filename)
-            String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
-            File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-            if (!rankDirectory.exists()) {
-                rankDirectory.mkdir()
-            }
-
-            // TODO: finish setting up restart support.
-            String withRankName = rankDirectory.getPath() + File.separator + baseFilename
-            File dyn = new File(withRankName + ".dyn")
-            if (!dyn.exists()) {
-                dyn = null
-            }
-
-            final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
-            logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
-            activeAssembly.setFile(new File(newMolAssemblyFile))
-            molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-            ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-                    dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)
-
-            long totalSteps = dynamicsOptions.steps
-            int nSteps = repEx.replicaSteps
-            int cycles = (int) (totalSteps / nSteps)
-            if (cycles <= 0) {
-                cycles = 1
-            }
-
-            replicaExchange.
-                    sample(cycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
-        }
-
-        return this
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  List<Potential> getPotentials() {
+    List<Potential> potentials
+    if (potential == null) {
+      potentials = Collections.emptyList()
+    } else {
+      potentials = Collections.singletonList(potential)
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    List<Potential> getPotentials() {
-        List<Potential> potentials
-        if (potential == null) {
-            potentials = Collections.emptyList()
-        } else {
-            potentials = Collections.singletonList(potential)
-        }
-        return potentials
-    }
+    return potentials
+  }
 
 }

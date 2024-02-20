@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import ffx.potential.bonded.Angle;
+import ffx.openmm.Force;
+import ffx.openmm.PeriodicTorsionForce;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
@@ -49,7 +50,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
 import static java.lang.String.format;
 
-public class TorsionForce extends OpenMMPeriodicTorsionForce {
+public class TorsionForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(TorsionForce.class.getName());
 
@@ -106,7 +107,7 @@ public class TorsionForce extends OpenMMPeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the torsions.
    * @return A Torsion Force, or null if there are no torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Torsion[] torsions = openMMEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return null;

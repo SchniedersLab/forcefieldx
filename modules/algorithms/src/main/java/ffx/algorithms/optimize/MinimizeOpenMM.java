@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -134,7 +134,7 @@ public class MinimizeOpenMM extends Minimize {
       energy = openMMState.potentialEnergy;
       openMMState.getPositions(x);
       openMMState.getGradient(grad);
-      openMMState.free();
+      openMMState.destroy();
 
       // Compute the RMS gradient.
       int index = 0;

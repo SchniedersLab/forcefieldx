@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -50,8 +50,7 @@ import java.util.List;
  * Thermostat a molecular dynamics trajectory to an external bath using the Berendsen weak-coupling
  * thermostat.
  *
- * @author Michael J. Schnieders derived from TINKER temperature control by Alan Grossfield and Jay
- *     Ponder
+ * @author Michael J. Schnieders
  * @see <a href="http://link.aip.org/link/?JCP/81/3684">H. J. C. Berendsen, J. P. M. Postma, W. F.
  *     van Gunsteren, A. DiNola and J. R. Hauk, "Molecular Dynamics with Coupling to an External
  *     Bath", Journal of Chemical Physics, 81, 3684-3690 (1984)</a>
@@ -100,8 +99,11 @@ public class Berendsen extends Thermostat {
     double ratio = targetTemperature / state.getTemperature();
     double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
     double[] v = state.v();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      v[i] *= scale;
+      if (mass[i] > 0.0) {
+        v[i] *= scale;
+      }
     }
   }
 

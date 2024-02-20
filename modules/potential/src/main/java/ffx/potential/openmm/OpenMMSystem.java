@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,9 +37,12 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.openmm.AndersenThermostat;
+import ffx.openmm.CMMotionRemover;
+import ffx.openmm.Force;
+import ffx.openmm.MonteCarloBarostat;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -59,15 +62,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addConstraint;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addForce;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_removeForce;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setParticleMass;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
@@ -91,7 +86,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * virtual site, call setVirtualSite(), passing in a VirtualSite object that defines the rules for
  * computing its position.
  */
-public class OpenMMSystem {
+public class OpenMMSystem extends ffx.openmm.System {
 
   private static final Logger logger = Logger.getLogger(OpenMMSystem.class.getName());
 
@@ -118,10 +113,6 @@ public class OpenMMSystem {
    * Array of atoms in the system.
    */
   private final Atom[] atoms;
-  /**
-   * OpenMM System.
-   */
-  private PointerByReference systemPointer;
   /**
    * This flag indicates bonded force constants and equilibria are updated (e.g. during ManyBody
    * titration).
@@ -187,11 +178,10 @@ public class OpenMMSystem {
    * OpenMM Restrain-Groups Force.
    */
   private RestrainGroupsForce restrainGroupsForce = null;
-
   /**
    * OpenMM AMOEBA van der Waals Force.
    */
-  private AmoebaVDWForce amoebaVDWForce = null;
+  private AmoebaVdwForce amoebaVDWForce = null;
   /**
    * OpenMM AMOEBA Multipole Force.
    */
@@ -207,7 +197,7 @@ public class OpenMMSystem {
   /**
    * OpenMM AMOEBA WCA Cavitation Force.
    */
-  private AmoebaCavitationForce amoebaCavitationForce = null;
+  private AmoebaGKCavitationForce amoebaGKCavitationForce = null;
   /**
    * OpenMM Custom GB Force.
    */
@@ -223,15 +213,15 @@ public class OpenMMSystem {
   /**
    * OpenMM thermostat. Currently, an Andersen thermostat is supported.
    */
-  private OpenMMAndersenThermostat andersenThermostat = null;
+  private AndersenThermostat andersenThermostat = null;
   /**
    * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
    */
-  private OpenMMMonteCarloBarostat monteCarloBarostat = null;
+  private MonteCarloBarostat monteCarloBarostat = null;
   /**
    * OpenMM center-of-mass motion remover.
    */
-  private OpenMMCMMotionRemover cmMotionRemover = null;
+  private CMMotionRemover cmMotionRemover = null;
   /**
    * Fixed charge softcore vdW force boolean.
    */
@@ -297,8 +287,6 @@ public class OpenMMSystem {
     this.openMMEnergy = openMMEnergy;
     this.openMMContext = openMMEnergy.getContext();
 
-    // Create the OpenMM System
-    systemPointer = OpenMM_System_create();
     logger.info("\n System created");
 
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
@@ -479,7 +467,7 @@ public class OpenMMSystem {
         }
       } else {
         // Add vdW Force.
-        amoebaVDWForce = (AmoebaVDWForce) AmoebaVDWForce.constructForce(openMMEnergy);
+        amoebaVDWForce = (AmoebaVdwForce) AmoebaVdwForce.constructForce(openMMEnergy);
         addForce(amoebaVDWForce);
 
         // Add Multipole Force.
@@ -502,8 +490,8 @@ public class OpenMMSystem {
           // Add a GaussVol Cavitation Force.
           ChandlerCavitation chandlerCavitation = gk.getChandlerCavitation();
           if (chandlerCavitation != null && chandlerCavitation.getGaussVol() != null) {
-            amoebaCavitationForce = (AmoebaCavitationForce) AmoebaCavitationForce.constructForce(openMMEnergy);
-            addForce(amoebaCavitationForce);
+            amoebaGKCavitationForce = (AmoebaGKCavitationForce) AmoebaGKCavitationForce.constructForce(openMMEnergy);
+            addForce(amoebaGKCavitationForce);
           }
         }
       }
@@ -534,21 +522,12 @@ public class OpenMMSystem {
   }
 
   /**
-   * Add a force to the system.
-   */
-  public void addForce(OpenMMForce force) {
-    if (force != null) {
-      force.setForceIndex(OpenMM_System_addForce(systemPointer, force.forcePointer));
-    }
-  }
-
-  /**
    * Remove a force from the OpenMM System.
    * The OpenMM memory associated with the removed Force object is deleted.
    */
-  public void removeForce(OpenMMForce force) {
+  public void removeForce(Force force) {
     if (force != null) {
-      OpenMM_System_removeForce(systemPointer, force.getForceIndex());
+      removeForce(force.getForceIndex());
     }
   }
 
@@ -573,7 +552,7 @@ public class OpenMMSystem {
       removeForce(andersenThermostat);
       andersenThermostat = null;
     }
-    andersenThermostat = new OpenMMAndersenThermostat(targetTemp, collisionFreq);
+    andersenThermostat = new AndersenThermostat(targetTemp, collisionFreq);
     addForce(andersenThermostat);
     logger.info("\n Adding an Andersen thermostat");
     logger.info(format("  Target Temperature:   %6.2f (K)", targetTemp));
@@ -589,7 +568,7 @@ public class OpenMMSystem {
       cmMotionRemover = null;
     }
     int frequency = 100;
-    cmMotionRemover = new OpenMMCMMotionRemover(frequency);
+    cmMotionRemover = new CMMotionRemover(frequency);
     addForce(cmMotionRemover);
     logger.info("\n Added a Center of Mass Motion Remover");
     logger.info(format("  Frequency:            %6d", frequency));
@@ -608,7 +587,7 @@ public class OpenMMSystem {
       monteCarloBarostat = null;
     }
     double pressureInBar = targetPressure * Constants.ATM_TO_BAR;
-    monteCarloBarostat = new OpenMMMonteCarloBarostat(pressureInBar, targetTemp, frequency);
+    monteCarloBarostat = new MonteCarloBarostat(pressureInBar, targetTemp, frequency);
     CompositeConfiguration properties = openMMEnergy.getMolecularAssembly().getProperties();
     if (properties.containsKey("barostat-seed")) {
       int randomSeed = properties.getInt("barostat-seed", 0);
@@ -631,7 +610,7 @@ public class OpenMMSystem {
     // Begin from the 3 times the number of active atoms.
     int dof = openMMEnergy.getNumberOfVariables();
     // Remove OpenMM constraints.
-    dof = dof - OpenMM_System_getNumConstraints(systemPointer);
+    dof = dof - getNumConstraints();
     // Remove center of mass motion.
     if (cmMotionRemover != null) {
       dof -= 3;
@@ -657,11 +636,10 @@ public class OpenMMSystem {
    * Destroy the system.
    */
   public void free() {
-    if (systemPointer != null) {
+    if (getPointer() != null) {
       logger.fine(" Free OpenMM system.");
-      OpenMM_System_destroy(systemPointer);
+      destroy();
       logger.fine(" Free OpenMM system completed.");
-      systemPointer = null;
     }
   }
 
@@ -732,6 +710,7 @@ public class OpenMMSystem {
 
   /**
    * Get the value of the vdW lambda term flag.
+   *
    * @return the vdW lambda term flag.
    */
   public boolean getVdwLambdaTerm() {
@@ -740,6 +719,7 @@ public class OpenMMSystem {
 
   /**
    * Set the vdW softcore alpha value.
+   *
    * @return the vdW softcore alpha value.
    */
   public double getVdWSoftcoreAlpha() {
@@ -748,6 +728,7 @@ public class OpenMMSystem {
 
   /**
    * Set the vdW softcore power.
+   *
    * @return the vdW softcore power.
    */
   public double getVdwSoftcorePower() {
@@ -756,15 +737,6 @@ public class OpenMMSystem {
 
   public void setUpdateBondedTerms(boolean updateBondedTerms) {
     this.updateBondedTerms = updateBondedTerms;
-  }
-
-  /**
-   * Return a reference to the System.
-   *
-   * @return System referenece.
-   */
-  PointerByReference getSystemPointer() {
-    return systemPointer;
   }
 
   /**
@@ -793,7 +765,7 @@ public class OpenMMSystem {
       c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
       c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
       c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
-      OpenMM_System_setDefaultPeriodicBoxVectors(systemPointer, a, b, c);
+      setDefaultPeriodicBoxVectors(a, b, c);
     }
   }
 
@@ -815,7 +787,7 @@ public class OpenMMSystem {
           addForce(fixedChargeAlchemicalForces.getAlchemicalAlchemicalStericsForce());
           addForce(fixedChargeAlchemicalForces.getNonAlchemicalAlchemicalStericsForce());
           // Re-initialize the context.
-          openMMContext.reinitialize();
+          openMMContext.reinitialize(OpenMM_True);
           softcoreCreated = true;
         }
         openMMContext.setParameter("vdw_lambda", lambdaVDW);
@@ -908,8 +880,8 @@ public class OpenMMSystem {
     }
 
     // Update WCA Force.
-    if (amoebaCavitationForce != null) {
-      amoebaCavitationForce.updateForce(atoms, openMMEnergy);
+    if (amoebaGKCavitationForce != null) {
+      amoebaGKCavitationForce.updateForce(atoms, openMMEnergy);
     }
   }
 
@@ -928,7 +900,7 @@ public class OpenMMSystem {
       if (mass == 0.0) {
         logger.info(format(" Atom %s has zero mass.", atom));
       }
-      OpenMM_System_addParticle(systemPointer, mass);
+      addParticle(mass);
     }
     logger.log(Level.INFO, format("  Atoms \t\t%6d", atoms.length));
     logger.log(Level.INFO, format("  Mass  \t\t%12.3f", totalMass));
@@ -944,12 +916,12 @@ public class OpenMMSystem {
       if (atom.isActive()) {
         mass = atom.getMass();
       }
-      OpenMM_System_setParticleMass(systemPointer, index++, mass);
+      setParticleMass(index++, mass);
     }
   }
 
   public boolean hasAmoebaCavitationForce() {
-    return amoebaCavitationForce != null;
+    return amoebaGKCavitationForce != null;
   }
 
   /**
@@ -967,8 +939,7 @@ public class OpenMMSystem {
       Atom atom2 = bond.getAtom(1);
       int iAtom1 = atom1.getXyzIndex() - 1;
       int iAtom2 = atom2.getXyzIndex() - 1;
-      OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom2,
-          bond.bondType.distance * OpenMM_NmPerAngstrom);
+      addConstraint(iAtom1, iAtom2, bond.bondType.distance * OpenMM_NmPerAngstrom);
     }
   }
 
@@ -989,8 +960,7 @@ public class OpenMMSystem {
         BondType bondType = bond.bondType;
         int iAtom1 = atom1.getXyzIndex() - 1;
         int iAtom2 = atom2.getXyzIndex() - 1;
-        OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom2,
-            bondType.distance * OpenMM_NmPerAngstrom);
+        addConstraint(iAtom1, iAtom2, bondType.distance * OpenMM_NmPerAngstrom);
       }
     }
   }
@@ -1029,8 +999,7 @@ public class OpenMMSystem {
 
         int iAtom1 = atom1.getXyzIndex() - 1;
         int iAtom3 = atom3.getXyzIndex() - 1;
-        OpenMM_System_addConstraint(systemPointer, iAtom1, iAtom3,
-            falseBondLength * OpenMM_NmPerAngstrom);
+        addConstraint(iAtom1, iAtom3, falseBondLength * OpenMM_NmPerAngstrom);
       }
     }
   }

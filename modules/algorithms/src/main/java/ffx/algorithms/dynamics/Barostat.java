@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -44,7 +44,10 @@ import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.parsers.XYZFilter;
+import org.apache.commons.io.FilenameUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -609,6 +612,14 @@ public class Barostat implements CrystalPotential {
 
     // Enforce minimum & maximum density constraints.
     double den = density();
+    if(Double.isNaN(den) || Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c) || Double.isNaN(alpha) || Double.isNaN(beta) || Double.isNaN(gamma)){
+      logger.warning(format(" Found value of NaN: density: %7.4f a: %7.4f b: %7.4f c: %7.4f alpha: %7.4f beta: %7.4f gamma: %7.4f",
+              den, a, b, c, alpha, beta, gamma));
+      File errorFile = new File(FilenameUtils.removeExtension(molecularAssembly.getFile().getName()) + "_err.xyz");
+      XYZFilter.version(errorFile);
+      XYZFilter writeFilter = new XYZFilter(errorFile, molecularAssembly, molecularAssembly.getForceField(), molecularAssembly.getProperties());
+      writeFilter.writeFile(errorFile, true, null);
+    }
     if (den < minDensity || den > maxDensity) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(
@@ -1050,6 +1061,12 @@ public class Barostat implements CrystalPotential {
   private void collectStats() {
     // Collect statistics.
     barostatCount++;
+
+    // Sanity check for values.
+    if(Double.isNaN(currentDensity)||Double.isNaN(a)||Double.isNaN(b)||Double.isNaN(c)||Double.isNaN(alpha)||Double.isNaN(beta)||Double.isNaN(gamma)){
+      logger.warning(format(" Statistic Value was NaN: Density: %5.3f A: %5.3f B: %5.3f C: %5.3f Alpha: %5.3f Beta: %5.3f Gamma: %5.3f",
+              currentDensity, a, b, c, alpha, beta, gamma));
+    }
     densityStats.addValue(currentDensity);
     aStats.addValue(a);
     bStats.addValue(b);

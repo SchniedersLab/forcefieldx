@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static java.lang.String.format;
-
-import ffx.potential.SystemState;
 import ffx.numerics.Potential;
+import ffx.potential.SystemState;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static java.lang.String.format;
 
 /**
  * Respa performs multiple time step molecular dynamics using the reversible reference system
@@ -66,13 +67,19 @@ public class Respa extends Integrator {
 
   private static final Logger logger = Logger.getLogger(Respa.class.getName());
 
-  /** Number of inner time steps. */
+  /**
+   * Number of inner time steps.
+   */
   private int innerSteps;
 
-  /** Inner time step in psec. */
+  /**
+   * Inner time step in psec.
+   */
   private double innerTimeStep;
 
-  /** Half the inner time step. */
+  /**
+   * Half the inner time step.
+   */
   private double halfInnerTimeStep;
 
   private double halfStepEnergy = 0;
@@ -112,8 +119,11 @@ public class Respa extends Integrator {
     double[] v = state.v();
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-      v[i] += a[i] * dt_2;
+      double m = mass[i];
+      if (m > 0.0) {
+        a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / m;
+        v[i] += a[i] * dt_2;
+      }
     }
   }
 
@@ -133,14 +143,18 @@ public class Respa extends Integrator {
 
     // Find half-step velocities via velocity Verlet recursion
     for (int i = 0; i < nVariables; i++) {
-      v[i] += a[i] * dt_2;
+      if (mass[i] > 0.0) {
+        v[i] += a[i] * dt_2;
+      }
     }
 
     // Initialize accelerations due to fast-evolving forces.
     potential.setEnergyTermState(Potential.STATE.FAST);
     halfStepEnergy = potential.energyAndGradient(x, innerGradient);
     for (int i = 0; i < nVariables; i++) {
-      aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / mass[i];
+      if (mass[i] > 0.0) {
+        aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / mass[i];
+      }
     }
 
     // Complete the inner RESPA loop.
@@ -148,8 +162,10 @@ public class Respa extends Integrator {
 
       // Find fast-evolving velocities and positions via Verlet recursion.
       for (int i = 0; i < nVariables; i++) {
-        v[i] += aPrevious[i] * halfInnerTimeStep;
-        x[i] += v[i] * innerTimeStep;
+        if (mass[i] > 0.0) {
+          v[i] += aPrevious[i] * halfInnerTimeStep;
+          x[i] += v[i] * innerTimeStep;
+        }
       }
 
       // Update accelerations from fast varying forces.
@@ -159,8 +175,11 @@ public class Respa extends Integrator {
          Use Newton's second law to get fast-evolving accelerations.
          Update fast-evolving velocities using the Verlet recursion.
         */
-        aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / mass[i];
-        v[i] += aPrevious[i] * halfInnerTimeStep;
+        double m = mass[i];
+        if (m > 0.0) {
+          aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / m;
+          v[i] += aPrevious[i] * halfInnerTimeStep;
+        }
       }
     }
 
@@ -207,7 +226,9 @@ public class Respa extends Integrator {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "Respa";

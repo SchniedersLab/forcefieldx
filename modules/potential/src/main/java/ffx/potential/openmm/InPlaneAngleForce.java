@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AngleType;
@@ -47,12 +51,11 @@ import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * OpenMM In-Plane Angle Force.
  */
-public class InPlaneAngleForce extends OpenMMCustomCompoundBondForce {
+public class InPlaneAngleForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(InPlaneAngleForce.class.getName());
 
@@ -78,8 +81,8 @@ public class InPlaneAngleForce extends OpenMMCustomCompoundBondForce {
     addPerBondParameter("k");
     setName("InPlaneAngle");
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (Angle angle : angles) {
       AngleType.AngleMode angleMode = angle.angleType.angleMode;
 
@@ -135,7 +138,7 @@ public class InPlaneAngleForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    * @return An OpenMM Angle Force, or null if there are no angles.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Angle[] angles = openMMEnergy.getAngles();
     if (angles == null || angles.length < 1) {
       return null;
@@ -157,8 +160,8 @@ public class InPlaneAngleForce extends OpenMMCustomCompoundBondForce {
     if (angles == null || angles.length < 1) {
       return;
     }
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (Angle angle : angles) {
       AngleType.AngleMode angleMode = angle.angleType.angleMode;

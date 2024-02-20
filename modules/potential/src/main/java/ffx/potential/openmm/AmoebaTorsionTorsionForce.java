@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,8 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
-import edu.uiowa.jopenmm.OpenMMAmoebaLibrary;
+import ffx.openmm.DoubleArray;
+import ffx.openmm.DoubleArray3D;
+import ffx.openmm.Force;
+import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
@@ -47,16 +49,13 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static java.lang.String.format;
 
 /**
  * OpenMM TorsionTorsion Force.
  */
-public class AmoebaTorsionTorsionForce extends OpenMMForce {
+public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
 
   private static final Logger logger = Logger.getLogger(AmoebaTorsionTorsionForce.class.getName());
 
@@ -68,10 +67,9 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
   public AmoebaTorsionTorsionForce(OpenMMEnergy openMMEnergy) {
     TorsionTorsion[] torsionTorsions = openMMEnergy.getTorsionTorsions();
     if (torsionTorsions == null || torsionTorsions.length < 1) {
+      destroy();
       return;
     }
-
-    forcePointer = OpenMM_AmoebaTorsionTorsionForce_create();
 
     // Load the torsion-torsions.
     int nTypes = 0;
@@ -117,7 +115,7 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
     }
 
     // Load the Torsion-Torsion parameters.
-    OpenMMDoubleArray values = new OpenMMDoubleArray(6);
+    DoubleArray values = new DoubleArray(6);
     int gridIndex = 0;
     for (String key : torTorTypes.keySet()) {
       TorsionTorsionType torTorType = torTorTypes.get(key);
@@ -131,7 +129,7 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
       double[] dxy = torTorType.dxy;
 
       // Create the 3D grid.
-      OpenMMDoubleArray3D grid3D = new OpenMMDoubleArray3D(nx, ny, 6);
+      DoubleArray3D grid3D = new DoubleArray3D(nx, ny, 6);
       int xIndex = 0;
       int yIndex = 0;
       for (int j = 0; j < nx * ny; j++) {
@@ -165,47 +163,11 @@ public class AmoebaTorsionTorsionForce extends OpenMMForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the torsion-torsions.
    * @return A Torsion-Torsion Force, or null if there are no torsion-torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     TorsionTorsion[] torsionTorsion = openMMEnergy.getTorsionTorsions();
     if (torsionTorsion == null || torsionTorsion.length < 1) {
       return null;
     }
     return new AmoebaTorsionTorsionForce(openMMEnergy);
   }
-
-  /**
-   * Add a torsion to the TorsionTorsionForce.
-   *
-   * @param atom1           The index of the first atom.
-   * @param atom2           The index of the second atom.
-   * @param atom3           The index of the third atom.
-   * @param atom4           The index of the fourth atom.
-   * @param atom5           The index of the fifth atom.
-   * @param chiralCheckAtom The index of the chiral check atom.
-   * @param gridIndex       The index of the grid.
-   */
-  public void addTorsionTorsion(int atom1, int atom2, int atom3, int atom4, int atom5, int chiralCheckAtom, int gridIndex) {
-    OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(forcePointer, atom1, atom2, atom3, atom4, atom5, chiralCheckAtom, gridIndex);
-  }
-
-  /**
-   * Set the grid for a torsion-torsion.
-   *
-   * @param gridIndex The index of the grid.
-   * @param grid      The grid.
-   */
-  public void setTorsionTorsionGrid(int gridIndex, PointerByReference grid) {
-    OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid(forcePointer, gridIndex, grid);
-  }
-
-  /**
-   * Destroy the Amoeba Torsion-Torsion Force.
-   */
-  public void destroy() {
-    if (forcePointer != null) {
-      OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_destroy(forcePointer);
-      forcePointer = null;
-    }
-  }
-
 }

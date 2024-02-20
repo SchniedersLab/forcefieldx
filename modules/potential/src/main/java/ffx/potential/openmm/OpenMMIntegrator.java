@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,31 +37,16 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
+import ffx.openmm.Integrator;
+import ffx.openmm.LangevinIntegrator;
+import ffx.openmm.VerletIntegrator;
 import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addComputePerDof;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addConstrainPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addConstrainVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addGlobalVariable;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addPerDofVariable;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addUpdateContextState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setConstraintTolerance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_setRandomNumberSeed;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
-import static ffx.utilities.Constants.KCAL_TO_KJ;
-import static ffx.utilities.Constants.R;
-import static java.lang.Math.exp;
+import static ffx.potential.ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
 import static java.lang.String.format;
-import static java.util.Arrays.copyOfRange;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Create and manage an OpenMM Integrator.
@@ -72,97 +57,70 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <p>Each Integrator object is bound to a particular Context which it integrates. This connection
  * is specified by passing the Integrator as an argument to the constructor of the Context.
  */
-class OpenMMIntegrator {
+public class OpenMMIntegrator {
 
   private static final Logger logger = Logger.getLogger(OpenMMIntegrator.class.getName());
 
   /**
    * Constraint tolerance as a fraction of the constrained bond length.
    */
-  private final double constraintTolerance;
-  /**
-   * Langevin friction coefficient.
-   */
-  private final double frictionCoefficient;
-  /**
-   * OpenMM Integrator pointer.
-   */
-  private PointerByReference integratorPointer = null;
+  private final static double constraintTolerance = DEFAULT_CONSTRAINT_TOLERANCE;
 
   /**
-   * Create an Integrator instance.
-   *
-   * @param forceField          the ForceField instance containing integrator parameters.
-   * @param constraintTolerance The integrator constraint tolerance.
+   * Prevent instantiation.
    */
-  public OpenMMIntegrator(ForceField forceField, double constraintTolerance) {
-    this.constraintTolerance = constraintTolerance;
-    frictionCoefficient = forceField.getDouble("FRICTION_COEFF", 91.0);
-  }
+  private OpenMMIntegrator() {
 
-  /**
-   * Use the integrator to step forward.
-   *
-   * @param steps The number of steps to take.
-   */
-  public void step(int steps) {
-    OpenMM_Integrator_step(integratorPointer, steps);
-  }
-
-  /**
-   * Return a reference to the integrator.
-   *
-   * @return Integrator reference.
-   */
-  public PointerByReference getIntegratorPointer() {
-    return integratorPointer;
   }
 
   /**
    * Create a integrator.
    *
-   * @param integratorString Name of the integrator to use.
+   * @param name Name of the integrator to use.
    * @param timeStep         Time step (psec).
    * @param temperature      Target temperature (kelvin).
    * @param openMMSystem     OpenMM System.
    * @return Integrator reference.
    */
-  public PointerByReference createIntegrator(String integratorString, double timeStep, double temperature, OpenMMSystem openMMSystem) {
-    switch (integratorString) {
-      default -> createVerletIntegrator(timeStep);
-      case "LANGEVIN" -> {
-        CompositeConfiguration properties = openMMSystem.getForceField().getProperties();
-        int seed = 0;
-        if (properties.containsKey("integrator-seed")) {
-          seed = properties.getInt("integrator-seed", 0);
-        }
-        createLangevinIntegrator(timeStep, temperature, frictionCoefficient, seed);
+  public static Integrator createIntegrator(String name, double timeStep, double temperature, OpenMMSystem openMMSystem) {
+    switch (name) {
+      default -> {
+        return createVerletIntegrator(timeStep);
       }
-      case "MTS" -> createCustomMTSIntegrator(timeStep, openMMSystem);
-      case "LANGEVIN-MTS" ->
-          createCustomMTSLangevinIntegrator(timeStep, temperature, frictionCoefficient, openMMSystem);
+      case "LANGEVIN" -> {
+        return createLangevinIntegrator(timeStep, temperature, openMMSystem.getForceField());
+      }
+      case "MTS" -> {
+        return createCustomMTSIntegrator(timeStep, openMMSystem);
+      }
+      case "LANGEVIN-MTS" -> {
+        return createCustomMTSLangevinIntegrator(timeStep, temperature, openMMSystem);
+      }
     }
-
-    return integratorPointer;
   }
 
   /**
    * Create a Langevin integrator.
    *
-   * @param dt            Time step (psec).
-   * @param temperature   Temperature (K).
-   * @param frictionCoeff Frictional coefficient.
-   * @param seed          Random number seed.
+   * @param dt          Time step (psec).
+   * @param temperature Temperature (K).
+   * @param forceField  Force field.
    */
-  public void createLangevinIntegrator(double dt, double temperature, double frictionCoeff, int seed) {
-    free();
-    integratorPointer = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
-    OpenMM_LangevinIntegrator_setRandomNumberSeed(integratorPointer, seed);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
+  public static LangevinIntegrator createLangevinIntegrator(double dt, double temperature, ForceField forceField) {
+    CompositeConfiguration properties = forceField.getProperties();
+    int seed = 0;
+    if (properties.containsKey("integrator-seed")) {
+      seed = properties.getInt("integrator-seed", 0);
+    }
+    double frictionCoeff = forceField.getDouble("FRICTION_COEFF", 91.0);
+    LangevinIntegrator langevinIntegrator = new LangevinIntegrator(dt, temperature, frictionCoeff);
+    langevinIntegrator.setRandomNumberSeed(seed);
+    langevinIntegrator.setConstraintTolerance(constraintTolerance);
     logger.info("  Langevin Integrator");
     logger.info(format("  Target Temperature:   %6.2f (K)", temperature));
     logger.info(format("  Friction Coefficient: %6.2f (1/psec)", frictionCoeff));
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
+    return langevinIntegrator;
   }
 
   /**
@@ -170,181 +128,25 @@ class OpenMMIntegrator {
    *
    * @param dt The outer time step (psec).
    */
-  public void createCustomMTSIntegrator(double dt, OpenMMSystem openMMSystem) {
-    createCustomIntegrator(dt);
-
-    int n = 4;
-    // Force group 1 contains slowly varying forces.
-    // Force group 0 contains the fast varying forces.
-    int[] forceGroups = {1, 0};
-    // There will be 1 force evaluation per outer step, and 4 per inner step.
-    int[] subSteps = {1, 4};
-    if (openMMSystem.hasAmoebaCavitationForce()) {
-      n = 8;
-      // Force group 2 contains the cavitation force.
-      // Force group 1 contains slowly varying forces.
-      // Force group 0 contains the fast varying forces.
-      forceGroups = new int[]{2, 1, 0};
-      // There will be 1 force evaluation per outer step.
-      // There will be 2 force evaluations per middle step.
-      // There will be 8 force evaluations per inner step.
-      subSteps = new int[]{1, 2, 8};
-    }
-
-    OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
-    OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
-    createMTSSubStep(1, forceGroups, subSteps);
-    OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
-    logger.info("  Custom MTS Integrator");
-    logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
-    logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
-    logger.info(format("  Friction Coefficient: %6.2f", frictionCoefficient));
+  public static CustomMTSIntegrator createCustomMTSIntegrator(double dt, OpenMMSystem openMMSystem) {
+    return new CustomMTSIntegrator(dt, constraintTolerance, openMMSystem.hasAmoebaCavitationForce());
   }
 
-  /**
-   * Create substeps for the MTS CustomIntegrator.
-   *
-   * @param parentSubsteps The number of substeps for the previous force group.
-   * @param forceGroups    The force groups to be evaluated.
-   * @param subSteps       The number of substeps for each force group.
-   */
-  public void createMTSSubStep(int parentSubsteps, int[] forceGroups, int[] subSteps) {
-    int forceGroup = forceGroups[0];
-    int steps = subSteps[0];
-    int stepsPerParentStep = steps / parentSubsteps;
-    if (stepsPerParentStep < 1 || steps % parentSubsteps != 0) {
-      throw new IllegalArgumentException(
-          "The number for substeps for each group must be a multiple of the number for the previous group");
-    }
-    if (forceGroup < 0 || forceGroup > 31) {
-      throw new IllegalArgumentException("Force group must be between 0 and 31");
-    }
-    for (int i = 0; i < stepsPerParentStep; i++) {
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
-          "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m");
-      if (forceGroups.length == 1) {
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", "x+(dt/" + steps + ")*v");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x1", "x");
-        OpenMM_CustomIntegrator_addConstrainPositions(integratorPointer);
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
-            "v+(x-x1)/(dt/" + steps + ")");
-        OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
-      } else {
-        createMTSSubStep(steps, copyOfRange(forceGroups, 1, forceGroups.length),
-            copyOfRange(subSteps, 1, subSteps.length));
-      }
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v",
-          "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m");
-    }
-  }
 
   /**
    * Create a Custom MTS Langevin integrator.
    *
-   * @param dt            The outer time step (psec).
-   * @param temperature   The target temperature (K).
-   * @param frictionCoeff The friction coefficient (1/psec).
+   * @param dt           The outer time step (psec).
+   * @param temperature  The target temperature (K).
+   * @param openMMSystem OpenMM System.
    */
-  public void createCustomMTSLangevinIntegrator(double dt, double temperature,
-                                                double frictionCoeff, OpenMMSystem openMMSystem) {
-    createCustomIntegrator(dt);
+  public static CustomMTSLangevinIntegrator createCustomMTSLangevinIntegrator(double dt, double temperature, OpenMMSystem openMMSystem) {
 
-    int n = 4;
-    // Force group 1 contains slowly varying forces.
-    // Force group 0 contains the fast varying forces.
-    int[] forceGroups = {1, 0};
-    // There will be 1 force evaluation per outer step, and 4 per inner step.
-    int[] subSteps = {1, 4};
-    if (openMMSystem.hasAmoebaCavitationForce()) {
-      n = 8;
-      // Force group 2 contains the cavitation force.
-      // Force group 1 contains slowly varying forces.
-      // Force group 0 contains the fast varying forces.
-      forceGroups = new int[]{2, 1, 0};
-      // There will be 1 force evaluation per outer step.
-      // There will be 2 force evaluations per middle step.
-      // There will be 8 force evaluations per inner step.
-      subSteps = new int[]{1, 2, 8};
-    }
-
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "a",
-        exp(-frictionCoeff * dt / n));
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "b",
-        sqrt(1.0 - exp(-2.0 * frictionCoeff * dt / n)));
-    OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "kT",
-        R * temperature * KCAL_TO_KJ);
-    OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
-    StringBuilder sb = new StringBuilder(" Update Context State\n");
-    OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
-
-    createMTSLangevinSubStep(1, forceGroups, subSteps, sb);
-    // Log the substeps.
-    logger.finest(" Langevin-MTS steps:" + sb);
-    OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
-    logger.info("  Custom MTS Langevin Integrator");
-    logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
-    logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
-    logger.info(format("  Friction Coefficient: %6.2f (1/psec)", frictionCoeff));
-  }
-
-  /**
-   * Create substeps for the MTS Langevin CustomIntegrator.
-   *
-   * @param parentSubsteps The number of substeps for the previous force group.
-   * @param forceGroups    The force groups to be evaluated.
-   * @param subSteps       The number of substeps for each force group.
-   */
-  public void createMTSLangevinSubStep(int parentSubsteps, int[] forceGroups, int[] subSteps,
-                                       StringBuilder sb) {
-    int forceGroup = forceGroups[0];
-    int steps = subSteps[0];
-    int stepsPerParentStep = steps / parentSubsteps;
-    if (stepsPerParentStep < 1 || steps % parentSubsteps != 0) {
-      throw new IllegalArgumentException(
-          "The number for substeps for each group must be a multiple of the number for the previous group");
-    }
-    if (forceGroup < 0 || forceGroup > 31) {
-      throw new IllegalArgumentException("Force group must be between 0 and 31");
-    }
-
-    sb.append(" Force Group: ").append(forceGroup).append(" ForceGroup length: ")
-        .append(forceGroups.length).append(" Steps: ").append(steps)
-        .append(" Step Per Parent Step: ").append(stepsPerParentStep).append(" Parent Sub Steps: ")
-        .append(parentSubsteps).append("\n");
-
-    for (int i = 0; i < stepsPerParentStep; i++) {
-      String step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
-      sb.append(" v = ").append(step).append("\n");
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
-      // String step;
-      if (forceGroups.length == 1) {
-        step = "x+(dt/" + 2 * steps + ")*v";
-        sb.append(" x = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
-        step = "a*v + b*sqrt(kT/m)*gaussian";
-        sb.append(" v = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
-        step = "x+(dt/" + 2 * steps + ")*v";
-        sb.append(" x = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
-        step = "x";
-        sb.append(" x1 = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x1", step);
-        sb.append(" Constrain Positions\n");
-        OpenMM_CustomIntegrator_addConstrainPositions(integratorPointer);
-        step = "v+(x-x1)/(dt/" + steps + ")";
-        sb.append(" v = ").append(step).append("\n");
-        OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
-        sb.append(" Constrain Velocities\n");
-        OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
-      } else {
-        createMTSLangevinSubStep(steps, copyOfRange(forceGroups, 1, forceGroups.length),
-            copyOfRange(subSteps, 1, subSteps.length), sb);
-      }
-      step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
-      sb.append(" v = ").append(step).append("\n");
-      OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
-    }
+    ForceField forceField = openMMSystem.getForceField();
+    double frictionCoeff = forceField.getDouble("FRICTION_COEFF", 91.0);
+    CustomMTSLangevinIntegrator customMTSLangevinIntegrator =
+        new CustomMTSLangevinIntegrator(dt, temperature, frictionCoeff, openMMSystem.hasAmoebaCavitationForce());
+    return customMTSLangevinIntegrator;
   }
 
   /**
@@ -352,34 +154,12 @@ class OpenMMIntegrator {
    *
    * @param dt Time step (psec).
    */
-  public void createVerletIntegrator(double dt) {
-    free();
-    integratorPointer = OpenMM_VerletIntegrator_create(dt);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
+  public static VerletIntegrator createVerletIntegrator(double dt) {
+    VerletIntegrator verletIntegrator = new VerletIntegrator(dt);
+    verletIntegrator.setConstraintTolerance(constraintTolerance);
     logger.info("  Verlet Integrator");
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
+    return verletIntegrator;
   }
 
-  /**
-   * Create a Custom integrator.
-   *
-   * @param dt Time step (psec).
-   */
-  public void createCustomIntegrator(double dt) {
-    free();
-    integratorPointer = OpenMM_CustomIntegrator_create(dt);
-    OpenMM_Integrator_setConstraintTolerance(integratorPointer, constraintTolerance);
-  }
-
-  /**
-   * Destroy the integrator instance.
-   */
-  public void free() {
-    if (integratorPointer != null) {
-      logger.fine(" Free OpenMM Integrator.");
-      OpenMM_Integrator_destroy(integratorPointer);
-      logger.fine(" Free OpenMM Integrator completed.");
-      integratorPointer = null;
-    }
-  }
 }

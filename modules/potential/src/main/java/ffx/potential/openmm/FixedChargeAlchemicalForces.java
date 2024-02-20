@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -40,6 +40,10 @@ package ffx.potential.openmm;
 import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import ffx.crystal.Crystal;
+import ffx.openmm.CustomBondForce;
+import ffx.openmm.CustomNonbondedForce;
+import ffx.openmm.DoubleArray;
+import ffx.openmm.IntSet;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -71,11 +75,11 @@ public class FixedChargeAlchemicalForces {
 
   private static final Logger logger = Logger.getLogger(RestrainPositionsForce.class.getName());
 
-  private OpenMMCustomNonbondedForce fixedChargeSoftcoreForce;
+  private CustomNonbondedForce fixedChargeSoftcoreForce;
 
-  private OpenMMCustomBondForce alchemicalAlchemicalStericsForce;
+  private CustomBondForce alchemicalAlchemicalStericsForce;
 
-  private OpenMMCustomBondForce nonAlchemicalAlchemicalStericsForce;
+  private CustomBondForce nonAlchemicalAlchemicalStericsForce;
 
   public FixedChargeAlchemicalForces(OpenMMEnergy openMMEnergy,
                                      FixedChargeNonbondedForce fixedChargeNonBondedForce) {
@@ -110,7 +114,7 @@ public class FixedChargeAlchemicalForces {
     // Define energy expression for sterics.
     String energyExpression = stericsEnergyExpression + stericsMixingRules;
 
-    fixedChargeSoftcoreForce = new OpenMMCustomNonbondedForce(energyExpression);
+    fixedChargeSoftcoreForce = new CustomNonbondedForce(energyExpression);
 
     // Get the Alpha and Beta constants from the VanDerWaals instance.
     OpenMMSystem openMMSystem = openMMEnergy.getSystem();
@@ -125,14 +129,14 @@ public class FixedChargeAlchemicalForces {
     fixedChargeSoftcoreForce.addPerParticleParameter("epsilon");
 
     // Add particles.
-    OpenMMIntSet alchemicalGroup = new OpenMMIntSet();
-    OpenMMIntSet nonAlchemicalGroup = new OpenMMIntSet();
+    IntSet alchemicalGroup = new IntSet();
+    IntSet nonAlchemicalGroup = new IntSet();
     DoubleByReference charge = new DoubleByReference();
     DoubleByReference sigma = new DoubleByReference();
     DoubleByReference eps = new DoubleByReference();
 
     int index = 0;
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     Atom[] atoms = openMMEnergy.getMolecularAssembly().getAtomArray();
     for (Atom atom : atoms) {
       if (atom.applyLambda()) {
@@ -192,10 +196,10 @@ public class FixedChargeAlchemicalForces {
     fixedChargeSoftcoreForce.setForceGroup(forceGroup);
 
     // Alchemical with Alchemical could be either softcore or normal interactions (softcore here).
-    alchemicalAlchemicalStericsForce = new OpenMMCustomBondForce(stericsEnergyExpression);
+    alchemicalAlchemicalStericsForce = new CustomBondForce(stericsEnergyExpression);
 
     // Non-Alchemical with Alchemical is essentially always softcore.
-    nonAlchemicalAlchemicalStericsForce = new OpenMMCustomBondForce(stericsEnergyExpression);
+    nonAlchemicalAlchemicalStericsForce = new CustomBondForce(stericsEnergyExpression);
 
     // Currently both are treated the same (so we could condense the code below).
     alchemicalAlchemicalStericsForce.addPerBondParameter("rmin");
@@ -246,7 +250,7 @@ public class FixedChargeAlchemicalForces {
           oneAlchemical = true;
         }
         if (bothAlchemical || oneAlchemical) {
-          OpenMMDoubleArray bondParameters = new OpenMMDoubleArray(0);
+          DoubleArray bondParameters = new DoubleArray(0);
           bondParameters.append(sigma.getValue() * 1.122462048309372981);
           bondParameters.append(eps.getValue());
           if (bothAlchemical) {
@@ -264,15 +268,15 @@ public class FixedChargeAlchemicalForces {
     logger.log(Level.INFO, format("   Alpha = %8.6f and beta = %8.6f", alpha, beta));
   }
 
-  public OpenMMCustomNonbondedForce getFixedChargeSoftcoreForce() {
+  public CustomNonbondedForce getFixedChargeSoftcoreForce() {
     return fixedChargeSoftcoreForce;
   }
 
-  public OpenMMCustomBondForce getAlchemicalAlchemicalStericsForce() {
+  public CustomBondForce getAlchemicalAlchemicalStericsForce() {
     return alchemicalAlchemicalStericsForce;
   }
 
-  public OpenMMCustomBondForce getNonAlchemicalAlchemicalStericsForce() {
+  public CustomBondForce getNonAlchemicalAlchemicalStericsForce() {
     return nonAlchemicalAlchemicalStericsForce;
   }
 

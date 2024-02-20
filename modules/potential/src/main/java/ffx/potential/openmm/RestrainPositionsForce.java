@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.CustomExternalForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.RestrainPosition;
 
@@ -51,7 +54,7 @@ import static java.lang.String.format;
 /**
  * Restrain Positions Force.
  */
-public class RestrainPositionsForce extends OpenMMCustomExternalForce {
+public class RestrainPositionsForce extends CustomExternalForce {
 
   private static final Logger logger = Logger.getLogger(RestrainPositionsForce.class.getName());
 
@@ -89,7 +92,7 @@ public class RestrainPositionsForce extends OpenMMCustomExternalForce {
         equilibriumCoordinates[i][2] *= OpenMM_NmPerAngstrom;
       }
 
-      OpenMMDoubleArray parameters = new OpenMMDoubleArray(4);
+      DoubleArray parameters = new DoubleArray(4);
       for (int i = 0; i < numAtoms; i++) {
         int index = restrainPositionAtoms[i].getXyzIndex() - 1;
         parameters.set(0, forceConstant);
@@ -109,7 +112,7 @@ public class RestrainPositionsForce extends OpenMMCustomExternalForce {
   /**
    * Add a Restrain-Position force to the OpenMM System.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     List<RestrainPosition> restrainPositionList = openMMEnergy.getRestrainPositions();
     if (restrainPositionList == null || restrainPositionList.isEmpty()) {
       return null;

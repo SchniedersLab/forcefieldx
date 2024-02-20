@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -134,8 +134,11 @@ public class Stochastic extends Integrator {
     double[] v = state.v();
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-      v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
+      double m = mass[i];
+      if (m > 0.0) {
+        a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / m;
+        v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
+      }
     }
   }
 
@@ -168,6 +171,9 @@ public class Stochastic extends Integrator {
       iter++;
       for (int i = 0; i < state.getNumberOfVariables(); i++) {
         double m = mass[i];
+        if (m <= 0.0) {
+          continue;
+        }
         double pfric;
         double afric;
         double prand;

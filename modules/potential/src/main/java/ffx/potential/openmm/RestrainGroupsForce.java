@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CentroidBondForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.RestrainGroups;
 
@@ -52,7 +56,7 @@ import static java.lang.String.format;
 /**
  * Restrain Groups Force.
  */
-public class RestrainGroupsForce extends OpenMMCustomCentroidBondForce {
+public class RestrainGroupsForce extends CentroidBondForce {
 
   private static final Logger logger = Logger.getLogger(RestrainGroupsForce.class.getName());
 
@@ -79,8 +83,8 @@ public class RestrainGroupsForce extends OpenMMCustomCentroidBondForce {
 
     // Create the Restrain Groups.
     int nGroups = restrainGroups.getNumberOfGroups();
-    OpenMMIntArray group = new OpenMMIntArray(0);
-    OpenMMDoubleArray weight = new OpenMMDoubleArray(0);
+    IntArray group = new IntArray(0);
+    DoubleArray weight = new DoubleArray(0);
     for (int j = 0; j < nGroups; j++) {
       int[] groupMembers = restrainGroups.getGroupMembers(j);
       for (int i : groupMembers) {
@@ -102,8 +106,8 @@ public class RestrainGroupsForce extends OpenMMCustomCentroidBondForce {
     double[] forceConstants = restrainGroups.getForceConstants();
     double[] smallerDistance = restrainGroups.getSmallerDistance();
     double[] largerDistance = restrainGroups.getLargerDistance();
-    group = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    group = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (int i = 0; i < nRestraints; i++) {
       group.append(group1[i]);
       group.append(group2[i]);
@@ -132,7 +136,7 @@ public class RestrainGroupsForce extends OpenMMCustomCentroidBondForce {
   /**
    * Add a Restrain-Groups force to the OpenMM System.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     RestrainGroups restrainGroups = openMMEnergy.getRestrainGroups();
     if (restrainGroups == null) {
       return null;

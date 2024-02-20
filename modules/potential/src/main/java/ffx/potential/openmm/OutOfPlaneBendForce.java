@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.parameters.OutOfPlaneBendType;
 
@@ -45,12 +49,11 @@ import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * OpenMM Out-of-Plane Bend Force.
  */
-public class OutOfPlaneBendForce extends OpenMMCustomCompoundBondForce {
+public class OutOfPlaneBendForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(OutOfPlaneBendForce.class.getName());
 
@@ -69,8 +72,8 @@ public class OutOfPlaneBendForce extends OpenMMCustomCompoundBondForce {
     addPerBondParameter("k");
     setName("OutOfPlaneBend");
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
       OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
       int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
@@ -100,7 +103,7 @@ public class OutOfPlaneBendForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the out-of-plane bends.
    * @return An OpenMM Out-of-Plane Bend Force, or null if there are no out-of-plane bends.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
     if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
       return null;
@@ -119,8 +122,8 @@ public class OutOfPlaneBendForce extends OpenMMCustomCompoundBondForce {
       return;
     }
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
       OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;

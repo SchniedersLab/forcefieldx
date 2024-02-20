@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -201,7 +201,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     initialState = new UnmodifiableState(state);
 
     // Check that our context is using correct Integrator, time step, and target temperature.
-    openMMEnergy.createContext(integratorString, dt, targetTemperature, false);
+    openMMEnergy.updateContext(integratorString, dt, targetTemperature, false);
 
     // Pre-run operations (mostly logging) that require knowledge of system energy.
     postInitEnergies();
@@ -349,7 +349,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**
@@ -400,7 +400,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       crystal.setCellVectors(cellVectors);
       openMMEnergy.setCrystal(crystal);
     }
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**
@@ -421,7 +421,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
     openMMState.getVelocities(state.v());
     openMMState.getAccelerations(state.a());
-    openMMState.free();
+    openMMState.destroy();
   }
 
   /**
