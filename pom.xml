@@ -1000,7 +1000,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.1</deploy.version>
     <enforcer.version>3.4.1</enforcer.version>
-    <exec.version>3.1.1</exec.version>
+    <exec.version>3.2.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1027,7 +1027,7 @@
     <jxr.version>3.3.2</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.22.1</log4j.version>
+    <log4j.version>2.23.0</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>

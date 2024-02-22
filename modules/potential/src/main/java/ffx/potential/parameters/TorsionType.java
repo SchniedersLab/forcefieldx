@@ -487,17 +487,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * setScaleFactor.
-   *
-   * @param scale a double.
-   */
-  void setScaleFactor(double scale) {
-    for (int i = 0; i < amplitude.length; i++) {
-      amplitude[i] *= scale;
-    }
-  }
-
-  /**
    * Torsion modes include Normal or In-Plane
    */
   public enum TorsionMode {

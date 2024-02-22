@@ -1043,7 +1043,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       } else {
         try {
           maxR = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
-        }catch(Exception ignored){
+        } catch (Exception ignored) {
           // If Convex Hull approach fails (e.g., coplanar input, brute force...
           for (int i = 0; i < nAtoms - 1; i++) {
             Double3 xi = atoms[i].getXYZ();
@@ -1287,11 +1287,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       outOfPlaneBends = null;
     }
 
-    double torsionScale = forceField.getDouble("TORSION_SCALE", 1.0);
-    if (torsionScale != 1.0) {
-      forceField.setTorsionScale(torsionScale);
-    }
-
     // Collect, count and pack torsions.
     if (torsionTerm) {
       List<Torsion> torsionList = molecularAssembly.getTorsionList();
@@ -1301,11 +1296,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       nTorsions = torsionList.size();
       torsions = torsionList.toArray(new Torsion[0]);
       if (nTorsions > 0) {
-        if (torsionScale == 1.0) {
-          logger.info(format("  Torsions:                          %10d", nTorsions));
-        } else {
-          logger.info(format("  Torsions (%5.2f):                  %10d", torsionScale, nTorsions));
-        }
+        logger.info(format("  Torsions:                          %10d", nTorsions));
       }
     } else {
       nTorsions = 0;
@@ -1321,12 +1312,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       nStretchTorsions = stretchTorsionList.size();
       stretchTorsions = stretchTorsionList.toArray(new StretchTorsion[0]);
       if (nStretchTorsions > 0) {
-        if (torsionScale == 1.0) {
-          logger.info(format("  Stretch-Torsions:                  %10d", nStretchTorsions));
-        } else {
-          logger.info(
-              format("  Stretch-Torsions (%5.2f):          %10d", torsionScale, nStretchTorsions));
-        }
+        logger.info(format("  Stretch-Torsions:                  %10d", nStretchTorsions));
       }
     } else {
       nStretchTorsions = 0;
@@ -1342,12 +1328,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       nAngleTorsions = angleTorsionList.size();
       angleTorsions = angleTorsionList.toArray(new AngleTorsion[0]);
       if (nAngleTorsions > 0) {
-        if (torsionScale == 1.0) {
-          logger.info(format("  Angle-Torsions:                    %10d", nAngleTorsions));
-        } else {
-          logger.info(
-              format("  Angle-Torsions (%5.2f):            %10d", torsionScale, nAngleTorsions));
-        }
+        logger.info(format("  Angle-Torsions:                    %10d", nAngleTorsions));
       }
     } else {
       nAngleTorsions = 0;
@@ -1363,12 +1344,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       nPiOrbitalTorsions = piOrbitalTorsionList.size();
       piOrbitalTorsions = piOrbitalTorsionList.toArray(new PiOrbitalTorsion[0]);
       if (nPiOrbitalTorsions > 0) {
-        if (torsionScale == 1.0) {
-          logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
-        } else {
-          logger.info(
-              format("  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
-        }
+        logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
       }
     } else {
       nPiOrbitalTorsions = 0;

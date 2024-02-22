@@ -1377,20 +1377,6 @@ public class ForceField {
   }
 
   /**
-   * setTorsionScale.
-   *
-   * @param scaleFactor a double.
-   */
-  public void setTorsionScale(double scaleFactor) {
-    for (TorsionType type : torsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
-    }
-    for (PiOrbitalTorsionType type : piOrbitalTorsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
-    }
-  }
-
-  /**
    * Return a String for any Force Field keyword.
    *
    * @param type ForceFieldType

@@ -37,14 +37,16 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-/** Unit tests for the Torsion class. */
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Unit tests for the Torsion class.
+ */
 public class TorsionTest {
 
   private final double[] a1d = {0.0, 0.0, 0.0};
@@ -58,20 +60,11 @@ public class TorsionTest {
   private Bond b1;
   private Bond b2;
   private Bond b3;
-  private Angle an1;
-  private Angle an2;
   private Torsion torsion = null;
 
   @Test(timeout = 500)
   public void Torsion_constructor() {
-    torsion = new Torsion(an1, b3);
-    assertNotNull(torsion);
-  }
-
-  @Test(timeout = 500)
-  public void Torsion_constructor2() {
-    String n = "Empty Dihedral";
-    torsion = new Torsion(n);
+    torsion = new Torsion(b1, b2, b3);
     assertNotNull(torsion);
   }
 
@@ -95,12 +88,6 @@ public class TorsionTest {
     assertNotNull(b1);
     assertNotNull(b2);
     assertNotNull(b3);
-    an1 = new Angle(b1, b2);
-    an2 = new Angle(b2, b3);
-    assertNotNull(an1);
-    assertNotNull(an2);
-    torsion = new Torsion(an1, an2);
-    assertNotNull(torsion);
   }
 
   @After
@@ -112,8 +99,6 @@ public class TorsionTest {
     assertTrue(b1.destroy());
     assertTrue(b2.destroy());
     assertTrue(b3.destroy());
-    assertTrue(an1.destroy());
-    assertTrue(an2.destroy());
     assertTrue(torsion.destroy());
     a1 = null;
     a2 = null;
@@ -122,8 +107,6 @@ public class TorsionTest {
     b1 = null;
     b2 = null;
     b3 = null;
-    an1 = null;
-    an2 = null;
     torsion = null;
   }
 }
