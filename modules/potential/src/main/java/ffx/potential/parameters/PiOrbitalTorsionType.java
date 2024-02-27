@@ -272,12 +272,4 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     return format("pitors  %5d  %5d  %4.2f", atomClasses[0], atomClasses[1], forceConstant);
   }
 
-  /**
-   * setScaleFactor.
-   *
-   * @param scale a double.
-   */
-  void setScaleFactor(double scale) {
-    forceConstant *= scale;
-  }
 }
