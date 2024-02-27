@@ -45,6 +45,7 @@ import ffx.utilities.Constants;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.util.MathArrays;
 
 import java.util.Arrays;
@@ -104,7 +105,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     /**
      * MBAR free-energy difference uncertainties.
      */
-    private final double[] mbarUncertainties;
+    private double[] mbarUncertainties;
     /**
      * BAR convergence tolerance.
      */
@@ -297,7 +298,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Few SCI iterations used to start optimization of MBAR objective function.
         // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
         double omega = 1.5;
-        for(int i = 0; i < 20; i++){
+        for(int i = 0; i < 5; i++){
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
             // Apply SOR
@@ -328,11 +329,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                         listener);
                 System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
             } else { // Newton optimization if hessian inversion isn't too expensive
-                mbarFreeEnergies = newton(mbarFreeEnergies, u_kn, N_k, 1.0, 100, 1.0E-5);
+                mbarFreeEnergies = newton(mbarFreeEnergies, u_kn, N_k, 1.0, 100, 1.0E-7);
             }
-
         } catch (Exception e) {
             logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
+            logger.warning(e.getMessage());
         }
 
         // Self-consistent iteration is used to finish off optimization of MBAR objective function
@@ -349,13 +350,17 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
             iter++;
         } while (!converged(prevMBAR));
-        logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
+        //logger.info(" MBAR converged after " + iter + " iterations with omega " + omega + ".");
 
         // Zero out the first term
         double f0 = mbarFreeEnergies[0];
         for(int i = 0; i < mbarFreeEnergies.length; i++){
             mbarFreeEnergies[i] -= f0;
         }
+
+        // Calculate uncertainties
+        mbarUncertainties = mbarUncertaintyCalc(u_kn, N_k, mbarFreeEnergies);
+        totalMBARUncertainty = mbarTotalUncertaintyCalc(u_kn, N_k, mbarFreeEnergies);
 
         // Convert to kcal/mol & calculate differences/sums
         for (int i = 0; i < mbarFreeEnergies.length; i++) {
@@ -463,7 +468,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                 }
                 hessian[i][j] = sum * N_k[i] * N_k[j];
             }
-            hessian[i][i] -= W[i].length * N_k[i];
+            double wSum = 0.0;
+            for (int k = 0; k < W[i].length; k++) {
+                wSum += W[i][k];
+            }
+            hessian[i][i] -= wSum * N_k[i];
         }
         // h = -h
         for(int i = 0; i < nStates; i++){
@@ -539,6 +548,43 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return logW;
     }
 
+    public static double[][] mbarTheta(double[][] u_kn, double[] N_k, double[] f_k){
+        // Theta = W.T @ (I - W @ diag(N_k) @ W.T)^-1 @ W) --> requires calculation and inversion of 50k x 50k matrix
+        // D4 from supp info of MBAR paper used instead
+        // SVD of W
+        double[][] W = mbar_W(u_kn, N_k, f_k);
+        RealMatrix WMatrix = MatrixUtils.createRealMatrix(W);
+        RealMatrix I = MatrixUtils.createRealIdentityMatrix(f_k.length);
+        RealMatrix NkMatrix = MatrixUtils.createRealDiagonalMatrix(N_k);
+        SingularValueDecomposition svd = new SingularValueDecomposition(WMatrix);
+        RealMatrix V = svd.getU(); // The code in pymbar a 5x5 matrix as V, in the paper it's V.T, here (Java) it's U
+        RealMatrix S = MatrixUtils.createRealDiagonalMatrix(svd.getSingularValues());
+
+        // W.T @ (I - W @ diag(N_k) @ W.T)^-1 @ W = V @ S @ (I - S @ V.T @ diag(N_k) @ V @ S)^-1 @ S @ V.T
+        RealMatrix theta = S.multiply(V.transpose()).multiply(NkMatrix).multiply(V).multiply(S);
+        theta = I.subtract(theta);
+        theta = MatrixUtils.inverse(theta);
+        theta = V.multiply(S).multiply(theta).multiply(S).multiply(V.transpose());
+
+        return theta.getData();
+    }
+
+    public static double[] mbarUncertaintyCalc(double[][] u_kn, double[] N_k, double[] f_k){
+        double[][] theta = mbarTheta(u_kn, N_k, f_k);
+        double[] uncertainties = new double[f_k.length - 1];
+        // del(dFij) = Theta[i,i] - 2 * Theta[i,j] + Theta[j,j]
+        for(int i = 0; i < f_k.length - 1; i++){
+            uncertainties[i] = theta[i][i] - 2 * theta[i][i+1] + theta[i+1][i+1];
+        }
+        return uncertainties;
+    }
+
+    public static double mbarTotalUncertaintyCalc(double[][] u_kn, double[] N_k, double[] f_k){
+        double[][] theta = mbarTheta(u_kn, N_k, f_k);
+        int nStates = f_k.length;
+        return theta[0][0] - 2 * theta[0][nStates - 1] + theta[nStates - 1][nStates - 1];
+    }
+
     /**
      * Self-consistent iteration to update free energies.
      * @param u_kn energies
@@ -590,8 +636,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     public static double[] newtonStep(double[] n, double[] grad, double[][] hessian, double stepSize){
         double[] nPlusOne = new double[n.length];
         RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
-        double[][] hessianInverseArray = hessianInverse.getData();
         double[] step = hessianInverse.preMultiply(grad);
+        // Zero out the first term of the step
+        double temp = step[0];
+        step[0] = 0.0;
+        for(int i = 1; i < step.length; i++){
+            step[i] -= temp;
+        }
         for(int i = 0; i < n.length; i++){
             nPlusOne[i] = n[i] - step[i] * stepSize;
         }
@@ -602,25 +653,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[] grad = mbar_gradient(u_kn, N_k, f_k);
         double[][] hessian = mbarHessian(u_kn, N_k, f_k);
         double[] f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
-        int iter = 0;
-        while(iter < maxIter){
+        int iter = 1;
+        while(iter < maxIter && MathArrays.distance1(f_k, f_kPlusOne) > tolerance){
             f_k = f_kPlusOne;
             grad = mbar_gradient(u_kn, N_k, f_k);
             hessian = mbarHessian(u_kn, N_k, f_k);
             f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
-            // Zero out the first term
-            double f0 = f_kPlusOne[0];
-            f_kPlusOne[0] = 0.0;
-            for(int i = 1; i < f_kPlusOne.length; i++){
-                f_kPlusOne[i] -= f0;
-            }
             iter++;
         }
-        if (iter == maxIter) {
-            logger.warning(" Newton failed to converge after " + maxIter + " iterations.");
-        } else{
-            logger.info(" Newton converged after " + iter + " iterations.");
-        }
+        //logger.info(" Newton converged after " + iter + " iterations.");
         return f_kPlusOne;
     }
 
@@ -920,6 +961,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
     }
 
+    //
     public static void main(String[] args) {
         double[] O_k = {1, 2, 3, 4, 5}; // Equilibrium positions
         double[] K_k = {5, 7, 10, 15, 20}; // Spring constants
@@ -958,6 +1000,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         System.out.println("MBAR Free Energies:       " + Arrays.toString(mbarFEEstimates));
         System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
         System.out.println("Free Energy Error:        " + Arrays.toString(error));
+        System.out.println("MBAR Uncertainties:       " + Arrays.toString(mbar.mbarUncertainties));
+        System.out.println("MBAR Total Uncertainty:   " + mbar.totalMBARUncertainty);
         System.out.println();
 
         // Get the calculated free energy differences
