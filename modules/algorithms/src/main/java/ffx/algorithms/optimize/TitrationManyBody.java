@@ -135,16 +135,22 @@ public class TitrationManyBody {
     logger.info("Getting protonated assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
-    for (int i = 0; i < altLocs.size(); i++) {
-      if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
-        logger.info("");
-      } else {
-        altLocs.remove(altLocs.get(i));
+    int locs = 1;
+    if(altLocs!=null){
+      locs = altLocs.size();
+      for (int i = 0; i < locs; i++) {
+        if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
+          logger.info("");
+        } else {
+          altLocs.remove(altLocs.get(i));
+        }
       }
     }
-    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
+
+
+    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[locs];
     molecularAssemblies[0] = molecularAssembly;
-    for (int i = 0; i < altLocs.size(); i++) {
+    for (int i = 0; i < locs; i++) {
       if (i != 0) {
         logger.info(filename);
         MolecularAssembly newAssembly = new MolecularAssembly(filename);
