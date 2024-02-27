@@ -297,8 +297,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Few SCI iterations used to start optimization of MBAR objective function.
         // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
         double omega = 1.5;
-        double numInit = randomSamples ? 50 : 10;
-        for(int i = 0; i < numInit; i++){
+        for(int i = 0; i < 20; i++){
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
             // Apply SOR
@@ -312,25 +311,26 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
 
         try {
-            mbarFreeEnergies = newton(mbarFreeEnergies, u_kn, N_k, 1.0, 100, 1.0E-5);
-            /*
-            // L-BFGS optimization of MBAR objective function but don't include 0th term since defined as zero
-            int mCorrections = 5;
-            double[] x = new double[mbarFreeEnergies.length];
-            System.arraycopy(mbarFreeEnergies, 0, x, 0, mbarFreeEnergies.length);
-            double[] grad = mbar_gradient(u_kn, N_k, mbarFreeEnergies);
-            double eps = 1.0E-4;
-            OptimizationListener listener = getOptimizationListener();
-            LBFGS.minimize(mbarFreeEnergies.length, mCorrections, x,
-                    mbarObjectiveFunction(u_kn, N_k, mbarFreeEnergies),
-                    grad,
-                    eps,
-                    1000,
-                    this,
-                    listener);
-            System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
+            // L-BFGS optimization for high granularity windows
+            if(mbarFreeEnergies.length > 100){
+                int mCorrections = 5;
+                double[] x = new double[mbarFreeEnergies.length];
+                System.arraycopy(mbarFreeEnergies, 0, x, 0, mbarFreeEnergies.length);
+                double[] grad = mbar_gradient(u_kn, N_k, mbarFreeEnergies);
+                double eps = 1.0E-4;
+                OptimizationListener listener = getOptimizationListener();
+                LBFGS.minimize(mbarFreeEnergies.length, mCorrections, x,
+                        mbarObjectiveFunction(u_kn, N_k, mbarFreeEnergies),
+                        grad,
+                        eps,
+                        1000,
+                        this,
+                        listener);
+                System.arraycopy(x, 0, mbarFreeEnergies, 0, mbarFreeEnergies.length);
+            } else { // Newton optimization if hessian inversion isn't too expensive
+                mbarFreeEnergies = newton(mbarFreeEnergies, u_kn, N_k, 1.0, 100, 1.0E-5);
+            }
 
-             */
         } catch (Exception e) {
             logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
         }
@@ -476,7 +476,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     public static double[][] mbar_W(double[][] u_kn, double[] N_k, double[] f_k){
         int nStates = f_k.length;
-        double[] log_num_k = new double[nStates];
         double[] log_denom_n = new double[u_kn[0].length];
         double[][] logDiff = new double[u_kn.length][u_kn[0].length];
         double maxLogDiff = Double.NEGATIVE_INFINITY;
@@ -580,7 +579,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
         // Constrain f1=0 over the course of iterations to prevent uncontrolled growth in magnitude
         double norm = updatedF_k[0];
-        for (int i = 0; i < nStates; i++) {
+        updatedF_k[0] = 0.0;
+        for (int i = 1; i < nStates; i++) {
             updatedF_k[i] = updatedF_k[i] - norm;
         }
 
@@ -590,6 +590,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     public static double[] newtonStep(double[] n, double[] grad, double[][] hessian, double stepSize){
         double[] nPlusOne = new double[n.length];
         RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
+        double[][] hessianInverseArray = hessianInverse.getData();
         double[] step = hessianInverse.preMultiply(grad);
         for(int i = 0; i < n.length; i++){
             nPlusOne[i] = n[i] - step[i] * stepSize;
@@ -602,17 +603,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[][] hessian = mbarHessian(u_kn, N_k, f_k);
         double[] f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
         int iter = 0;
-        while(iter < maxIter && MathArrays.distance(f_k, f_kPlusOne) > tolerance){
+        while(iter < maxIter){
             f_k = f_kPlusOne;
             grad = mbar_gradient(u_kn, N_k, f_k);
             hessian = mbarHessian(u_kn, N_k, f_k);
             f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
             // Zero out the first term
             double f0 = f_kPlusOne[0];
-            for(int i = 0; i < f_kPlusOne.length; i++){
+            f_kPlusOne[0] = 0.0;
+            for(int i = 1; i < f_kPlusOne.length; i++){
                 f_kPlusOne[i] -= f0;
             }
             iter++;
+        }
+        if (iter == maxIter) {
+            logger.warning(" Newton failed to converge after " + maxIter + " iterations.");
+        } else{
+            logger.info(" Newton converged after " + iter + " iterations.");
         }
         return f_kPlusOne;
     }
@@ -914,9 +921,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static void main(String[] args) {
-        double[] O_k = {1, 2, 3, 4}; // Equilibrium positions
-        double[] K_k = {.5, 1.0, 1.5, 2}; // Spring constants
-        int[] N_k = {10000, 10000, 10000, 10000}; // No support for different number of snapshots
+        double[] O_k = {1, 2, 3, 4, 5}; // Equilibrium positions
+        double[] K_k = {5, 7, 10, 15, 20}; // Spring constants
+        int[] N_k = {10000, 10000, 10000, 10000, 10000}; // No support for different number of snapshots
         double beta = 1.0;
 
         // Create an instance of HarmonicOscillatorsTestCase
