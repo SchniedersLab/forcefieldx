@@ -112,7 +112,7 @@ class SaveConformerPDB extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
     algorithmFunctions.energy(molecularAssemblies)

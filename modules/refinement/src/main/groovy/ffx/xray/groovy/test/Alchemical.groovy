@@ -313,7 +313,7 @@ class Alchemical extends AlgorithmsScript {
     CompositeConfiguration properties = assemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, properties)
     RefinementEnergy refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
     double[] x = new double[refinementEnergy.getNumberOfVariables()]
