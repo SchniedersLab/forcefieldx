@@ -1,6 +1,6 @@
 package ffx.utilities;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
 import java.util.logging.Logger;
 
@@ -14,7 +14,7 @@ import static java.lang.String.format;
  * The columns are a space-separated list of weights for the dUdL bins.
  *
  * @author Michael J. Schnieders
- * @see javax.xml.bind.annotation.adapters.XmlAdapter
+ * @see jakarta.xml.bind.annotation.adapters.XmlAdapter
  * @since 1.0
  */
 public class HistogramXmlAdapter extends XmlAdapter<String, double[][]> {
