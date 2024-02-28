@@ -122,7 +122,7 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
     if (dispersionRegion == null) {
       return null;
     }
-    return new AmoebaWcaDispersionForce(openMMEnergy);
+    return new AmoebaGKCavitationForce(openMMEnergy);
   }
 
   /**
