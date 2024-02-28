@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -48,6 +48,8 @@ import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 import ffx.potential.utils.Clustering.Conformation
 import org.apache.commons.math3.ml.clustering.CentroidCluster
+import org.apache.commons.io.FilenameUtils
+import org.apache.tools.ant.util.FileUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -72,7 +74,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv
  * <br>
  * ffxc Cluster [options] &lt;filename&gt;
  */
-@Command(description = "Cluster structures using an RMSD matrix.", name = "Cluster")
+@Command(description = " Cluster structures using an RMSD matrix.", name = "Cluster")
 class Cluster extends AlgorithmsScript {
 
   /**
@@ -252,17 +254,34 @@ class Cluster extends AlgorithmsScript {
    * @param repStructs Array list for index of representative structures.
    */
   private void writeStructures(List<Integer> repStructs) {
+    String saveName
+    File structureFile
     if (filenames.size() < 2) {
-      logger.info(" Please supply an ARC or PDB file corresponding to the distance matrix.")
-      return
+      saveName = FilenameUtils.removeExtension(filenames[0])+ ".arc";
+      structureFile = new File(saveName);
+      if(structureFile.exists()){
+        structureFile = algorithmFunctions.versionFile(structureFile);
+      }else{
+        saveName = FilenameUtils.removeExtension(filenames[0])+ ".pdb";
+        structureFile = new File(saveName);
+        if(structureFile.exists()){
+          structureFile = algorithmFunctions.versionFile(structureFile);
+        }else{
+          logger.info(" Please supply an ARC or PDB file corresponding to the distance matrix.")
+          return
+        }
+      }
     }
 
     // Turn off nonbonded terms.
     System.setProperty("vdwterm", "false")
 
-    String saveName = filenames.get(1)
+    if(structureFile == null){
+      saveName = filenames.get(1)
+      structureFile = new File(algorithmFunctions.versionFile(saveName))
+    }
     File saveFile = new File(algorithmFunctions.versionFile(saveName))
-    logger.info(format("\n Saving representative cluster members to %s.", saveFile.toString()))
+    logger.info(format("\n Saving representative cluster members to %s.", structureFile.toString()))
 
     MolecularAssembly[] molecularAssemblies = algorithmFunctions.openAll(saveName)
     activeAssembly = molecularAssemblies[0]
@@ -271,10 +290,10 @@ class Cluster extends AlgorithmsScript {
     PDBFilter pdbFilter = null
     XYZFilter xyzFilter = null
     if (systemFilter instanceof PDBFilter) {
-      pdbFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      pdbFilter = new PDBFilter(structureFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
     } else if (systemFilter instanceof XYZFilter) {
-      xyzFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      xyzFilter = new XYZFilter(structureFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
     } else {
       logger.info(" Unknown file type.")
@@ -297,18 +316,18 @@ class Cluster extends AlgorithmsScript {
               crystal.getUnitCell().toShortString()))
         }
         if (systemFilter instanceof PDBFilter) {
-          pdbFilter.writeFile(saveFile, true, false, false)
+          pdbFilter.writeFile(structureFile, true, false, false)
         } else if (systemFilter instanceof XYZFilter) {
           String[] message = new String[1]
           message[0] = format(" Conformation %d, Cluster %d ", structNum + 1, clusterNum + 1)
-          xyzFilter.writeFile(saveFile, true, message)
+          xyzFilter.writeFile(structureFile, true, message)
         }
       }
       structNum++
     } while (systemFilter.readNext(false, false))
 
     if (systemFilter instanceof PDBFilter) {
-      saveFile.append("END\n")
+      structureFile.append("END\n")
     }
 
     systemFilter.closeReader()

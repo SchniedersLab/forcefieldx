@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -74,9 +74,9 @@ public class TorsionForce extends PeriodicTorsionForce {
       TorsionType torsionType = torsion.torsionType;
       int nTerms = torsionType.phase.length;
       for (int j = 0; j < nTerms; j++) {
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j];
         addTorsion(a1, a2, a3, a4, j + 1,
-            torsionType.phase[j] * OpenMM_RadiansPerDegree,
-            OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j]);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
       // Enforce 6-fold torsions since TorsionType instances can have different lengths
       // when side-chain protonation changes.
@@ -136,9 +136,9 @@ public class TorsionForce extends PeriodicTorsionForce {
       int a3 = torsion.getAtom(2).getXyzIndex() - 1;
       int a4 = torsion.getAtom(3).getXyzIndex() - 1;
       for (int j = 0; j < nTerms; j++) {
-        double forceConstant = OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
         setTorsionParameters(index++, a1, a2, a3, a4, j + 1,
-            torsionType.phase[j] * OpenMM_RadiansPerDegree, forceConstant);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
       // Enforce 6-fold torsions since TorsionType instances can have different lengths
       // when side-chain protonation changes.

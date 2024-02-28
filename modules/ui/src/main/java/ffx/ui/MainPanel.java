@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -146,9 +146,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    */
   public static final String version = "1.0.0-BETA";
   /**
-   * Constant <code>date="October 2023"</code>
+   * Constant <code>date="February 2024"</code>
    */
-  public static final String date = "October 2023";
+  public static final String date = "February 2024";
   /**
    * Constant
    */
@@ -284,15 +284,15 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         + commitSCM // Will contain its own spacing/newline, or be empty.
         + " \n"
         + """
-                Copyright (c)  Michael J. Schnieders  2001-2023
+                Copyright (c)  Michael J. Schnieders  2001-2024
                 Portions Copyright (c):
-                  Timothy D. Fenn      2009-2023
-                  Jacob M. Litman      2015-2023
-                  Rae A. Corrigan      2019-2023
-                  Guowei Qi            2019-2023
-                  Mallory R. Tollefson 2019-2023
-                  Aaron J. Nessler     2021-2023
-                  Andrew C. Thiel      2021-2023
+                  Timothy D. Fenn      2009-2024
+                  Jacob M. Litman      2015-2024
+                  Rae A. Corrigan      2019-2024
+                  Guowei Qi            2019-2024
+                  Mallory R. Tollefson 2019-2024
+                  Aaron J. Nessler     2021-2024
+                  Andrew C. Thiel      2021-2024
         
                 All Rights Reserved
         

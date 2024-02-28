@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,24 +37,25 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.DoubleMath.dihedralAngle;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
+import org.apache.commons.math3.util.FastMath;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The Torsion class represents a torsional angle formed between four bonded atoms.
@@ -72,6 +73,10 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * The force field Torsion type in use.
    */
   public TorsionType torsionType = null;
+  /**
+   * Scale up the torsional energy by this factor.
+   */
+  private double torsionScale = 1.0;
   /**
    * Value of lambda.
    */
@@ -93,44 +98,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    */
   private static final double TORSION_TOLERANCE = 1.0e-4;
 
-  /**
-   * Torsion constructor.
-   *
-   * @param an1 Angle that combines to form the Torsional Angle
-   * @param an2 Angle that combines to form the Torsional Angle
-   */
-  public Torsion(Angle an1, Angle an2) {
-    super();
-    bonds = new Bond[3];
-    bonds[1] = an1.getCommonBond(an2);
-    bonds[0] = an1.getOtherBond(bonds[1]);
-    bonds[2] = an2.getOtherBond(bonds[1]);
-    lambdaMapper = (double d) -> d;
-    initialize();
-  }
-
-  /**
-   * Torsion constructor.
-   *
-   * @param a Angle that has one Atom in common with Bond b
-   * @param b Bond that has one Atom in common with Angle A
-   */
-  public Torsion(Angle a, Bond b) {
-    super();
-    bonds = new Bond[3];
-    bonds[0] = b;
-    bonds[1] = a.getBond(0);
-    bonds[2] = a.getBond(1);
-    // See if bond 2 or bond 3 is the middle bond
-    Atom atom = bonds[1].getCommonAtom(b);
-    if (atom == null) {
-      Bond temp = bonds[1];
-      bonds[1] = bonds[2];
-      bonds[2] = temp;
-    }
-    lambdaMapper = (double d) -> d;
-    initialize();
-  }
 
   /**
    * Create a Torsion from 3 connected bonds (no error checking)
@@ -139,7 +106,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * @param b2 Bond
    * @param b3 Bond
    */
-  public Torsion(Bond b1, Bond b2, Bond b3) {
+  protected Torsion(Bond b1, Bond b2, Bond b3) {
     super();
     bonds = new Bond[3];
     bonds[0] = b1;
@@ -147,16 +114,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     bonds[2] = b3;
     lambdaMapper = (double d) -> d;
     initialize();
-  }
-
-  /**
-   * Torsion Constructor.
-   *
-   * @param n Torsion id
-   */
-  public Torsion(String n) {
-    super(n);
-    lambdaMapper = (double d) -> d;
   }
 
   /**
@@ -257,6 +214,16 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     Torsion torsion = new Torsion(bond1, middleBond, bond3);
     torsion.setTorsionType(torsionType);
+    // Scale-up torsions that do not include hydrogen or halogen atoms.
+    if (forceField.hasProperty("torsion-scale")) {
+      // Check the identity of the terminal atoms.
+      boolean isTerminal = (a0.isHydrogen() || a0.isHalogen() || a3.isHydrogen() || a3.isHalogen());
+      if (!isTerminal) {
+        double scale = forceField.getDouble("torsion-scale", 1.0);
+        torsion.setTorsionScale(scale);
+      }
+    }
+
     return torsion;
   }
 
@@ -267,6 +234,24 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    */
   public void setTorsionType(TorsionType torsionType) {
     this.torsionType = torsionType;
+  }
+
+  /**
+   * Set the torsion scale up factor.
+   *
+   * @param torsionScale The torsion scale up factor.
+   */
+  public void setTorsionScale(double torsionScale) {
+    this.torsionScale = torsionScale;
+  }
+
+  /**
+   * Get the torsion scale up factor.
+   *
+   * @return The torsion scale up factor.
+   */
+  public double getTorsionScale() {
+    return torsionScale;
   }
 
   /**
@@ -359,13 +344,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
       cosprev = cosn;
       sinprev = sinn;
     }
-    energy = torsionType.torsionUnit * energy * lambda;
-    dEdL = torsionType.torsionUnit * energy;
+
+    dEdL = torsionScale * torsionType.torsionUnit * energy;
+    energy = dEdL * lambda;
 
     // Compute the torsional gradient for this angle.
     if (gradient || lambdaTerm) {
       // Chain rule terms for first derivative components.
-      dedphi = torsionType.torsionUnit * dedphi;
+      dedphi = torsionScale * torsionType.torsionUnit * dedphi;
       var vca = vc.sub(va);
       var vdb = vd.sub(vb);
       var dedt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));
@@ -465,10 +451,10 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * Log details for this Torsional Angle energy term.
    */
   public void log() {
-    logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f", "Torsional-Angle",
+    logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f %10.4f", "Torsional-Angle",
         atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(),
         atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name,
-        atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
+        atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy, torsionScale));
   }
 
   /**
@@ -478,7 +464,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    */
   @Override
   public String toString() {
-    return format("%s  (%7.1f,%7.2f)", id, value, energy);
+    return format("%s  (%7.1f,%7.2f,%7.2f)", id, value, energy, torsionScale);
   }
 
   /**

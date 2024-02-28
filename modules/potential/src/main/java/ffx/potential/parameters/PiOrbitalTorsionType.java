@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -272,12 +272,4 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     return format("pitors  %5d  %5d  %4.2f", atomClasses[0], atomClasses[1], forceConstant);
   }
 
-  /**
-   * setScaleFactor.
-   *
-   * @param scale a double.
-   */
-  void setScaleFactor(double scale) {
-    forceConstant *= scale;
-  }
 }

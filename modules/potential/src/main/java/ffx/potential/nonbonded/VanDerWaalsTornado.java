@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -58,9 +58,9 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floor;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.floor;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 /**
