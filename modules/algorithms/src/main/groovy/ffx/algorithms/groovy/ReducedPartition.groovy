@@ -112,7 +112,7 @@ class ReducedPartition extends AlgorithmsScript {
         }
 
         double titrationPH = manyBodyOptions.getTitrationPH()
-        double distanceCutoff = manyBodyOptions.getDistanceCutoff()
+        double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
         boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
@@ -181,14 +181,14 @@ class ReducedPartition extends AlgorithmsScript {
         }
 
         String listResidues = ""
-        //Select residues with alpha carbons within the distance cutoff
-        if (mutatingResidue != -1 && distanceCutoff != -1) {
-            listResidues = manyBodyOptions.selectDistanceResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, distanceCutoff)
+        //Select residues with alpha carbons within the inclusion cutoff
+        if (mutatingResidue != -1 && inclusionCutoff != -1) {
+            listResidues = manyBodyOptions.selectInlcusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
         }
 
-        //Select only the titrating residues or the titrating residues and those within the distance cutoff
+        //Select only the titrating residues or the titrating residues and those within the inclusion cutoff
         if (onlyTitration || onlyProtons) {
-            listResidues = manyBodyOptions.selectDistanceResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, distanceCutoff)
+            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
         }
 
         String filename = filenames.get(0)
@@ -411,7 +411,7 @@ class ReducedPartition extends AlgorithmsScript {
         return potentialEnergy
     }
 
-    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff) {
+    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double inclusion) {
         residueA.setRotamers(RotamerLibrary.getDefaultLibrary())
         residueB.setRotamers(RotamerLibrary.getDefaultLibrary())
         Rotamer[] rotamersA = residueA.getRotamers()
@@ -425,7 +425,7 @@ class ReducedPartition extends AlgorithmsScript {
                 for (Atom atomA : residueA.getAtomList()) {
                     for (Atom atomB : residueB.getAtomList()) {
                         double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor))
-                        if (dist <= distanceCutoff) {
+                        if (dist <= inclusion) {
                             return true
                         }
                     }

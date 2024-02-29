@@ -422,12 +422,12 @@ public class ManyBodyOptions {
     residueGroup.interestedResidue = interestedResidue;
   }
 
-  public double getDistanceCutoff() {
-    return residueGroup.distanceCutoff;
+  public double getInclusionCutoff() {
+    return residueGroup.inclusionCutoff;
   }
 
-  public void setDistanceCutoff(double distanceCutoff) {
-    residueGroup.distanceCutoff = distanceCutoff;
+  public void setInclusionCutoff(double inclusionCutoff) {
+    residueGroup.inclusionCutoff = inclusionCutoff;
   }
 
   /**
@@ -740,10 +740,10 @@ public class ManyBodyOptions {
     return group.titration;
   }
 
-  public String selectDistanceResidues(List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
-                                       double distanceCutoff){
+  public String selectInclusionResidues(List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
+                                       double inclusionCutoff){
     String listResidues = "";
-    if (mutatingResidue != -1 && distanceCutoff != -1) {
+    if (mutatingResidue != -1 && inclusionCutoff != -1) {
       List<Integer> residueNumber = new ArrayList<>();
       for (Residue residue : residueList) {
         residueNumber.add(residue.getResidueNumber());
@@ -755,7 +755,7 @@ public class ManyBodyOptions {
         double[] currentResCoor = new double[3];
         currentResCoor = residue.getAtomByName("CA", true).getXYZ(currentResCoor);
         double dist = DoubleMath.dist(mutatingResCoor, currentResCoor);
-        if (dist < distanceCutoff) {
+        if (dist < inclusionCutoff) {
           listResidues += "," + residue.getChainID() + residue.getResidueNumber();
         }
       }
@@ -769,9 +769,9 @@ public class ManyBodyOptions {
           if(!listResidues.contains(titrateResNum)){
             listResidues += "," + residue.getChainID()+ titrateResNum;
           }
-          if (distanceCutoff != -1){
+          if (inclusionCutoff != -1){
             for (Residue residue2: residueList) {
-              boolean includeResidue = evaluateAllRotDist(residue, residue2, distanceCutoff);
+              boolean includeResidue = evaluateAllRotDist(residue, residue2, inclusionCutoff);
               if(includeResidue){
                 String residue2Number = Integer.toString(residue2.getResidueNumber());
                 if(!listResidues.contains(residue2Number)){
@@ -789,7 +789,7 @@ public class ManyBodyOptions {
     }
     return listResidues;
   }
-  private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff){
+  private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double inclusionCutoff){
     residueA.setRotamers(RotamerLibrary.getDefaultLibrary());
     residueB.setRotamers(RotamerLibrary.getDefaultLibrary());
     Rotamer[] rotamersA = residueA.getRotamers();
@@ -804,7 +804,7 @@ public class ManyBodyOptions {
           for(Atom atomA: residueA.getAtomList()){
             for(Atom atomB: residueB.getAtomList()){
               double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor));
-              if(dist <= distanceCutoff){
+              if(dist <= inclusionCutoff){
                 return true;
               }
             }
@@ -1067,10 +1067,10 @@ public class ManyBodyOptions {
             "--interestedResidue"}, paramLabel = "", defaultValue = "-1", description = "Optimize rotamers within some distance of a specific residue.")
     private int interestedResidue = -1;
 
-    /** --dC or --distanceCutoff Distance which rotamers will be included when using only protons, titratable residues, or interested residue. */
-    @Option(names = {"--dC",
-            "--distanceCutoff"}, paramLabel = "", defaultValue = "-1", description = "Distance which rotamers will be included when using only protons, titratable residues, or interested residue.")
-    private double distanceCutoff = -1;
+    /** --iC or --inclusionCutoff Distance which rotamers will be included when using only protons, titratable residues, or interested residue. */
+    @Option(names = {"--iC",
+            "--inclusionCutoff"}, paramLabel = "", defaultValue = "-1", description = "Distance which rotamers will be included when using only protons, titratable residues, or interested residue.")
+    private double inclusionCutoff = -1;
 
   }
 
