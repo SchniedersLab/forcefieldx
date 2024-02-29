@@ -37,8 +37,9 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
@@ -47,7 +48,7 @@ import static java.lang.String.format;
  * Convert a Double to a String and vice versa for use with JAXB.
  *
  * @author Michael J. Schnieders
- * @see javax.xml.bind.annotation.adapters.XmlAdapter
+ * @see jakarta.xml.bind.annotation.adapters.XmlAdapter
  * @since 1.0
  */
 public class DoubleXMLAdapter extends XmlAdapter<String, Double> {

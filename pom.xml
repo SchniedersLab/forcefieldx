@@ -1018,7 +1018,7 @@
     <javaparser.version>3.25.8</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.6.3</javadoc.version>
-    <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+    <jakarta-xml.version>4.0.1</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
