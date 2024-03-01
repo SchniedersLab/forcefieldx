@@ -2213,10 +2213,10 @@ public class RotamerOptimization implements Terminatable {
    */
   private double independent(List<Residue> residues) {
     double e = 0.0;
-    List<Residue> rList = new ArrayList<>(Collections.nCopies(1, null));
+    List<Residue> singletonResidue = new ArrayList<>(Collections.nCopies(1, null));
     for (int i = 0; i < residues.size(); i++) {
       Residue residue = residues.get(i);
-      rList.set(0, residue);
+      singletonResidue.set(0, residue);
       logger.info(format(" Optimizing %s side-chain.", residue));
       Rotamer[] rotamers = residue.getRotamers();
       e = Double.MAX_VALUE;
@@ -2230,13 +2230,13 @@ public class RotamerOptimization implements Terminatable {
         double newE = Double.NaN;
         try {
           if (rotamer.isTitrating) {
-            newE = currentEnergy(rList) + rotamer.getRotamerPhBias();
+            newE = currentEnergy(singletonResidue) + rotamer.getRotamerPhBias();
           } else {
-            newE = currentEnergy(rList);
+            newE = currentEnergy(singletonResidue);
           }
+          logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
         } catch (ArithmeticException ex) {
-          logger.fine(format(" Exception %s in energy calculations during independent for %s-%d", ex,
-              residue, j));
+          logger.info(format(" Exception %s in energy calculations during independent for %s-%d", ex, residue, j));
         }
         if (newE < e) {
           e = newE;
@@ -2247,6 +2247,7 @@ public class RotamerOptimization implements Terminatable {
         Rotamer rotamer = rotamers[bestRotamer];
         RotamerLibrary.applyRotamer(residue, rotamer);
         optimum[i] = bestRotamer;
+        logger.info(format(" Best Energy %8s %-2d: %s", residue.toString(rotamer), bestRotamer, formatEnergy(e)));
       }
       if (algorithmListener != null) {
         algorithmListener.algorithmUpdate(molecularAssembly);

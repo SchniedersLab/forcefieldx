@@ -225,18 +225,16 @@ public class XrayOptions extends DataRefinementOptions {
     properties.setProperty("rfree-flag", reflectionGroup.rFreeFlag);
 
     // Spline Fit
-    if (!parseResult.hasMatchedOption("splineFit")) {
-      targetGroup.splineFit = properties.getBoolean("spline-fit", targetGroup.splineFit);
+    if (!parseResult.hasMatchedOption("noSplineFit")) {
+      targetGroup.noSplineFit = properties.getBoolean("no-spline-fit", targetGroup.noSplineFit);
     }
-    properties.setProperty("spline-fit", targetGroup.splineFit);
+    properties.setProperty("no-spline-fit", targetGroup.noSplineFit);
 
     // Use All Gaussians
-    logger.info("CLI flag matched use-3g: " + parseResult.hasMatchedOption("allGaussians"));
     if (!parseResult.hasMatchedOption("allGaussians")) {
-      targetGroup.allGaussians = properties.getBoolean("use-3g", targetGroup.allGaussians);
+      targetGroup.useAllGaussians = !properties.getBoolean("use-3g", !targetGroup.useAllGaussians);
     }
-    logger.info("use-3g value: " + !targetGroup.allGaussians);
-    properties.setProperty("use-3g", !targetGroup.allGaussians);
+    properties.setProperty("use-3g", !targetGroup.useAllGaussians);
 
     // X-ray Scale Tolerance
     if (!parseResult.hasMatchedOption("xrayScaleTol")) {
@@ -389,6 +387,7 @@ public class XrayOptions extends DataRefinementOptions {
     @FFXProperty(name = "add-anisou", propertyGroup = StructuralRefinement, defaultValue = "false",
         description = "Add Anisotropic B-Factors to refinement.")
     boolean anisoU = false;
+
   }
 
   /**
@@ -417,11 +416,11 @@ public class XrayOptions extends DataRefinementOptions {
     /**
      * --sf or --splineFit
      */
-    @Option(names = {"--sf", "--splineFit"}, paramLabel = "true", defaultValue = "true",
-        description = "Use a resolution dependent spline scale.")
-    @FFXProperty(name = "spline-fit", propertyGroup = StructuralRefinement, defaultValue = "true",
+    @Option(names = {"--nsf", "--noSplineFit"}, paramLabel = "false", defaultValue = "false",
         description = "Use a resolution dependent spline scale factor.")
-    boolean splineFit = true;
+    @FFXProperty(name = "no-spline-fit", propertyGroup = StructuralRefinement, defaultValue = "false",
+        description = "Do not use a resolution dependent spline scale factor.")
+    boolean noSplineFit = false;
 
     /**
      * -A or --allGaussians
@@ -430,7 +429,7 @@ public class XrayOptions extends DataRefinementOptions {
         description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
     @FFXProperty(name = "use-3g", propertyGroup = StructuralRefinement, defaultValue = "true",
         description = "The three Gaussians with the largest amplitudes define the atomic scattering density.")
-    boolean allGaussians = false;
+    boolean useAllGaussians = false;
 
     /**
      * --xrayScaleTol

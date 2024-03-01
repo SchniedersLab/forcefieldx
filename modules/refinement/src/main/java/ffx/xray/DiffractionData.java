@@ -242,7 +242,7 @@ public class DiffractionData implements DataContainer {
     int rflag = properties.getInt("rfree-flag", -1);
     fsigfCutoff = properties.getDouble("f-sigf-cutoff", -1.0);
     gridSearch = properties.getBoolean("solvent-grid-search", false);
-    splineFit = properties.getBoolean("spline-fit", true);
+    splineFit = !properties.getBoolean("no-spline-fit", false);
     use_3g = properties.getBoolean("use-3g", true);
     aRadBuff = properties.getDouble("scattering-buffer", 0.75);
     double sampling = properties.getDouble("sampling", 0.6);
