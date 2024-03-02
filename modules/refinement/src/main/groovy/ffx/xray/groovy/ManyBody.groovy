@@ -41,6 +41,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
+import ffx.algorithms.optimize.manybody.EnergyExpansion
 import ffx.algorithms.optimize.TitrationManyBody
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -231,7 +232,7 @@ class ManyBody extends AlgorithmsScript {
       e = refinementEnergy.energy(x, true)
 
       if (isTitrating) {
-        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        double phBias = EnergyExpansion.getTotalRotamerPhBias(residueList, optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
         logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
       } else {
