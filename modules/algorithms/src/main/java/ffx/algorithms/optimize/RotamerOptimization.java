@@ -2243,8 +2243,7 @@ public class RotamerOptimization implements Terminatable {
           logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
           double singularityThreshold = -1000;
           if (newE < -1000) {
-            String message = format(" Rejecting energy for %s-%d as %10.5g << %10f is likely an error.",
-                residue, j, newE, singularityThreshold);
+            String message = format("   Rejecting as energy (%s << %s) is likely an error.", formatEnergy(newE), formatEnergy(singularityThreshold));
             logger.info(message);
             newE = Double.MAX_VALUE;
           } else {
