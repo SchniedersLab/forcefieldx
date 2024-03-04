@@ -45,13 +45,16 @@ import ffx.potential.bonded.Molecule
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.AngleType
 import ffx.potential.parameters.AtomType
+import ffx.potential.parameters.BioType
 import ffx.potential.parameters.BondType
 import ffx.potential.parameters.ChargeType
 import ffx.potential.parameters.ForceField
 import ffx.potential.parameters.TorsionType
 import ffx.potential.parameters.VDWType
+import ffx.potential.parsers.ForceFieldFilter
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.utilities.FFXKeyword
 import ffx.utilities.Keyword
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
@@ -131,14 +134,6 @@ class ReadXML extends PotentialScript {
         properties.addProperty("DIELECTRIC", "1.0")
         ForceField forceField = new ForceField(properties)
 
-        CompositeConfiguration props = Keyword.loadProperties(new File("/iahome/j/jm/jmiller99/forcefieldx/modules/potential/src/main/java/ffx/potential/parameters/ff/AMOEBA_BIO_2018"))
-        ForceField amoebaFF = new ForceField(props)
-        StringBuffer aFF = amoebaFF.toStringBuffer()
-        BufferedWriter o = new BufferedWriter(new FileWriter("premadeFF.txt"))
-        o.write(aFF.toString())
-        o.flush()
-        o.close()
-
         atomClassMap = new LinkedHashMap<>()
         biotypeMap = new LinkedHashMap<>()
 
@@ -156,25 +151,10 @@ class ReadXML extends PotentialScript {
         while (myReader.hasNextLine()) {
             String data = myReader.nextLine()
             String[] columnSplit = data.split("\t",-1)
-            biotypeMap.put(columnSplit[0],columnSplit[1])
+            String str = columnSplit[0].replace(',', ' ').replace('"', ' ').trim()
+            biotypeMap.put(str,columnSplit[1])
         }
         myReader.close()
-
-//        File biotypes = new File(filenames[2])
-//        Scanner myReader2 = new Scanner(biotypes)
-//        while (myReader2.hasNextLine()) {
-//            String data = myReader2.next()
-//            logger.info(data)
-////            String data = myReader2.nextLine()
-////            String[] columnSplit = data.split(" ")
-//
-////            for (int i = 0; i < columnSplit.length; i++) {
-////                logger.info(format("%s",columnSplit[i]))
-////                if (i == columnSplit.length-1) {
-////                    logger.info("\n")
-////                }
-////            }
-//        }
 
         NodeList nodeList = doc.getChildNodes()
         Node node = nodeList.item(0) // Assumed one system label for now (ForceField)
@@ -213,16 +193,10 @@ class ReadXML extends PotentialScript {
                         for (Node atom : types) {
                             if (atom.getNodeName() == "Type") {
 //                                logger.info(format("%s %s %s %s",atom.getAttribute("name"),atom.getAttribute("class"),atom.getAttribute("element"),atom.getAttribute("mass")))
-
-//                                int atomType = parseInt(atom.getAttribute("name"))
                                 atomTypes[idx] = parseInt(atom.getAttribute("name"))
                                 String className = atom.getAttribute("class")
-
-//                                atomEnvs[idx] = className
-
                                 String element = atom.getAttribute("element")
                                 atomNames[idx] = className
-//                                double mass = parseDouble(atom.getAttribute("mass"))
                                 atomicWeights[idx] = parseDouble(atom.getAttribute("mass"))
 
                                 if (!atomClassMap.containsKey(className)) {
@@ -231,9 +205,7 @@ class ReadXML extends PotentialScript {
                                     atomClassNum++
                                 }
 
-//                                int atomClass = atomClassMap.get(className)
                                 atomClasses[idx] = atomClassMap.get(className)
-//                                int atomicNumber = ElementSymbol.valueOf(element).ordinal()+1
                                 atomicNumbers[idx] = ElementSymbol.valueOf(element).ordinal()+1
 
                                 idx++
@@ -295,8 +267,11 @@ class ReadXML extends PotentialScript {
                                         atomEnvs[typeMap[j]] = resName
                                         biotypeAtomNames[typeMap[j]] = nameMap[j]
                                     } else if (atomEnvs[typeMap[j]] != resName || biotypeAtomNames[typeMap[j]] != nameMap[j]) {
-                                        logger.info(format("ALREADY FILLED ORG: AtomType: %d Res: %s Name: %s",typeMap[j],atomEnvs[typeMap[j]],biotypeAtomNames[typeMap[j]]))
-                                        logger.info(format("ALREADY FILLED NEW: AtomType: %d Res: %s Name: %s",typeMap[j],resName,nameMap[j]))
+                                        atomEnvs[typeMap[j]] = atomEnvs[typeMap[j]] + ";" + resName
+                                        biotypeAtomNames[typeMap[j]] = biotypeAtomNames[typeMap[j]] + ";" + nameMap[j]
+//                                        logger.info(format("ALREADY FILLED ORG: AtomType: %d Res: %s Name: %s",typeMap[j],atomEnvs[typeMap[j]],biotypeAtomNames[typeMap[j]]))
+//                                        logger.info(format("ALREADY FILLED NEW: AtomType: %d Res: %s Name: %s",typeMap[j],resName,nameMap[j]))
+                                        //TODO:
                                     }
                                 }
                             }
@@ -468,17 +443,18 @@ class ReadXML extends PotentialScript {
             }
         }
         for (int j = 0; j < numAtomTypes; j++) {
-            /*
-            logger.info(format("atom type: %d",atomTypes[j]))
-            logger.info(format("atom class: %d",atomClasses[j]))
-            logger.info(format("atom name: %s",atomNames[j]))
-            logger.info(format("atom environment: %s",atomEnvs[j]))
-            logger.info(format("atomic number: %d",atomicNumbers[j]))
-            logger.info(format("atomic weight: %f",atomicWeights[j]))
-            logger.info(format("valence: %d",valence[j]))
-             */
-            logger.info(format("AtomType - Res: %d - %s",atomTypes[j],atomEnvs[j]))
             forceField.addForceFieldType(new AtomType(atomTypes[j], atomClasses[j], atomNames[j], atomEnvs[j], atomicNumbers[j], atomicWeights[j], valence[j]))
+        }
+
+        CompositeConfiguration props = Keyword.loadProperties(null)
+        props.setProperty("parameters", "/iahome/j/jm/jmiller99/forcefieldx/modules/potential/src/main/java/ffx/potential/parameters/ff/AMBER_1999_SB")
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(props)
+        ForceField predefFF = forceFieldFilter.parse()
+        Map<String, BioType> biotypes = predefFF.getBioTypeMap()
+        for (BioType biotype : biotypes.values()) {
+//            logger.info(format("biotype: %d %s %s %d",biotype.index,biotype.atomName,biotype.moleculeName,biotype.atomType))
+            String resID = biotypeMap.get(biotype.moleculeName)
+            logger.info(format("MoleculeName: %s -> resName: %s",biotype.moleculeName,resID))
         }
 
         StringBuffer ffSB = forceField.toStringBuffer()
@@ -489,9 +465,5 @@ class ReadXML extends PotentialScript {
         out.close()
 
         return this
-    }
-
-    private void mapBiotypes() {
-
     }
 }
