@@ -961,7 +961,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
     }
 
-    //
     public static void main(String[] args) {
         double[] O_k = {1, 2, 3, 4, 5}; // Equilibrium positions
         double[] K_k = {5, 7, 10, 15, 20}; // Spring constants
@@ -999,9 +998,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Compare the calculated free energy differences with the analytical ones
         System.out.println("MBAR Free Energies:       " + Arrays.toString(mbarFEEstimates));
         System.out.println("Analytical Free Energies: " + Arrays.toString(analyticalFreeEnergies));
-        System.out.println("Free Energy Error:        " + Arrays.toString(error));
         System.out.println("MBAR Uncertainties:       " + Arrays.toString(mbar.mbarUncertainties));
-        System.out.println("MBAR Total Uncertainty:   " + mbar.totalMBARUncertainty);
+        System.out.println("Free Energy Error:        " + Arrays.toString(error));
         System.out.println();
 
         // Get the calculated free energy differences
