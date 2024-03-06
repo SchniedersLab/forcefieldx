@@ -136,16 +136,22 @@ class ReadXML extends PotentialScript {
         atomClassMap = new LinkedHashMap<>()
         biotypeMap = new LinkedHashMap<>()
 
-        File inputFile = new File(filenames[0])
+        File inputFile = new File(filenames[0]) //read in xml
         String fileName = FilenameUtils.removeExtension(inputFile.getName())
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance()
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder()
         Document doc = dBuilder.parse(inputFile)
 
+        File waterFile = new File(filenames[1]) //read in water model xml
+        String waterFileName = FilenameUtils.removeExtension(waterFile.getName())
+        Document waterDoc = dBuilder.parse(waterFile)
+
+        //TODO: concatenate XMLs. DOM parser? groovy script?
+
         logger.info(format(" Filename: %s%n",fileName))
         logger.info(format(" Root Element: %s", doc.getDocumentElement().getNodeName())) // "ForceField"
 
-        File biotypeClasses = new File(filenames[1])
+        File biotypeClasses = new File(filenames[2])
         Scanner myReader = new Scanner(biotypeClasses)
         while (myReader.hasNextLine()) {
             String data = myReader.nextLine()
@@ -154,11 +160,17 @@ class ReadXML extends PotentialScript {
             biotypeMap.put(str,columnSplit[1])
         }
         myReader.close()
-
+        //put forcefield xml nodes into nodeList
         NodeList nodeList = doc.getChildNodes()
         Node node = nodeList.item(0) // Assumed one system label for now (ForceField)
         NodeList childNodes = node.getChildNodes()
 //        logger.info(" Child Size:" + childNodes.length)
+
+        //write a NodeList for water
+        NodeList waterNodeList = waterDoc.getChildNodes();
+        Node waterNode = waterNodeList.item(0)//also a ForceField system label
+        NodeList waterChildNodes = waterNode.getChildNodes();
+
 
         int numAtomTypes
         int[] atomTypes
