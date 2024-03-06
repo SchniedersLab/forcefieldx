@@ -78,8 +78,6 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 
-//kj can push
-
 /**
  * The ReadXML script converts an Open Force Field XML parameter file to Patch format.
  *
@@ -452,10 +450,77 @@ class ReadXML extends PotentialScript {
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(props)
         ForceField predefFF = forceFieldFilter.parse()
         Map<String, BioType> biotypes = predefFF.getBioTypeMap()
+
         for (BioType biotype : biotypes.values()) {
-//            logger.info(format("biotype: %d %s %s %d",biotype.index,biotype.atomName,biotype.moleculeName,biotype.atomType))
             String resID = biotypeMap.get(biotype.moleculeName)
             logger.info(format("MoleculeName: %s -> resName: %s",biotype.moleculeName,resID))
+
+            String btAtomName = biotype.atomName
+            int tempFlag = 0
+            for (int idx = 0; idx < numAtomTypes; idx++) {
+                String[] diffRes = atomEnvs[idx].split(";")
+                for (int j = 0; j < diffRes.length; j++) {
+                    if (diffRes[j] == resID) {
+                        String xmlAtomName = biotypeAtomNames[idx].split(";")[j] // split string at ';' and grab element corresponding to the correct residue
+                        xmlAtomName = xmlAtomName.replace("'",'*') // biotype * = xml
+
+                        if (btAtomName == xmlAtomName) {
+                            // Add new BioType to forcefield with correct atom type corresponding to the xml
+                            logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s",biotype.moleculeName,diffRes[j],btAtomName,xmlAtomName))
+                            forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                            tempFlag = 1
+                            //add continue or break here?
+                        } else if (btAtomName + "1" == xmlAtomName || btAtomName + "2" == xmlAtomName || btAtomName + "3" == xmlAtomName) {
+                            logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s",biotype.moleculeName,diffRes[j],btAtomName,xmlAtomName))
+                            forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                            tempFlag = 1
+                            // could compare atomtypes between the ones with numbers -> not best setup
+                            // TODO: could add if statement to compare current atomType to new -> if they match fine, if not LOG
+                        } else if (btAtomName == "HN") {
+                            if (xmlAtomName == "H" || xmlAtomName == "H1" || xmlAtomName == "H2" || xmlAtomName == "H3") {
+//                                if (xmlAtomName == "H" || xmlAtomName == "HN1" || xmlAtomName == "HN2") {
+                                logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                                forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                                tempFlag = 1
+                            }
+                        } else if (biotype.moleculeName.contains(' Ion')) {
+                            if (btAtomName + "+" == xmlAtomName || btAtomName + "-" == xmlAtomName) {
+                                logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                                forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                                tempFlag = 1
+                            } else if (btAtomName.length() == 2) {
+                                String ionName = btAtomName[0] + btAtomName.toLowerCase()[1]
+                                if (ionName + "+" == xmlAtomName || ionName + "-" == xmlAtomName) {
+                                    logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                                    forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                                    tempFlag = 1
+                                }
+                            }
+                        } else if (btAtomName + "11" == xmlAtomName || btAtomName + "12" == xmlAtomName || btAtomName + "13" == xmlAtomName || btAtomName + "21" == xmlAtomName || btAtomName + "22" == xmlAtomName) {
+                            logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                            forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                            tempFlag = 1
+                        } else if (btAtomName == "H") {
+//                            if (btAtomName + "H" == xmlAtomName.substring(0, 2)) {
+                            if (btAtomName + "H31" == xmlAtomName || btAtomName + "H32" == xmlAtomName || btAtomName + "H33" == xmlAtomName) {
+                                logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                                forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                                tempFlag = 1
+                            }
+                        } else if (btAtomName == "OP") {
+                            if (xmlAtomName == "O1P" || xmlAtomName == "O2P") {
+                                logger.info(format("BT RES BTname XMLname: %s   %s      %s  %s", biotype.moleculeName, diffRes[j], btAtomName, xmlAtomName))
+                                forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, atomTypes[idx]))
+                                tempFlag = 1
+                            }
+                        }
+                    }
+                }
+            }
+            if (tempFlag == 0) {
+                logger.info(format("NOTFOUND: biotype %d %s %s %d",biotype.index,biotype.atomName,biotype.moleculeName,biotype.atomType))
+                forceField.addForceFieldType(new BioType(biotype.index, biotype.atomName, biotype.moleculeName, -1)) // not in XML FF
+            }
         }
 
         StringBuffer ffSB = forceField.toStringBuffer()
