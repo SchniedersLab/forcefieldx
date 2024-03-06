@@ -631,6 +631,7 @@ public class EnergyExpansion {
   public double computeSelfEnergy(Residue[] residues, int i, int ri) {
     rO.turnOffAllResidues(residues);
     rO.turnOnResidue(residues[i], ri);
+    double pHRestraint = rO.getPHRestraint();
     double energy;
     try {
       if (algorithmListener != null) {
@@ -662,7 +663,7 @@ public class EnergyExpansion {
         logger.fine(format(" %s Self-Energy %16.8f = FF %16.8f - BB %16.8f + Ph Bias %16.8f",
             rotamers[ri].getName(), energy + bias, energy + backboneEnergy, backboneEnergy, bias));
       }
-      energy += bias;
+      energy += bias + pHRestraint;
     }
 
     return energy;
@@ -852,7 +853,7 @@ public class EnergyExpansion {
     try {
       double totalSelf;
       if (rot.isTitrating && excludeFMod) {
-        totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias();
+        totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() - rO.getPHRestraint();
       } else {
         totalSelf = selfEnergy[i][ri];
       }

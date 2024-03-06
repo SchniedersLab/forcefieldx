@@ -4,7 +4,6 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.TitrationManyBody
-import ffx.numerics.math.DoubleMath
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -56,7 +55,7 @@ class ReducedPartition extends AlgorithmsScript {
     private boolean unfolded = false
 
     @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
-            description = "Calculating free energy change for pKa shift.")
+            description = "Calculating protonation populations for pKa shift.")
     private boolean pKa = false
 
     @CommandLine.Option(names = ["--pB", "--printBoltzmann"], paramLabel = "false",
@@ -116,6 +115,7 @@ class ReducedPartition extends AlgorithmsScript {
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
         boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
+        double pHRestraint = manyBodyOptions.getPHRestraint()
         if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
         }
@@ -151,12 +151,13 @@ class ReducedPartition extends AlgorithmsScript {
             setActiveAssembly(getActiveAssembly(unfoldedFileName))
         }
 
-        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"]
+        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
-        double[][] titrateArray
-        double[] titrateBoltzmann
+        double[][] titrateArray = new double[1][54]
+        double[][] titrateBoltzmann
+        double[] protonationBoltzmannSums
         double totalBoltzmann = 0
         List<Residue> residueList = activeAssembly.getResidueList()
 
@@ -181,13 +182,9 @@ class ReducedPartition extends AlgorithmsScript {
         }
 
         String listResidues = ""
-        //Select residues with alpha carbons within the inclusion cutoff
-        if (mutatingResidue != -1 && inclusionCutoff != -1) {
-            listResidues = manyBodyOptions.selectInlcusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
-        }
-
-        //Select only the titrating residues or the titrating residues and those within the inclusion cutoff
-        if (onlyTitration || onlyProtons) {
+        // Select residues with alpha carbons within the inclusion cutoff or
+        // Select only the titrating residues or the titrating residues and those within the inclusion cutoff
+        if (mutatingResidue != -1 && inclusionCutoff != -1 || onlyTitration || onlyProtons) {
             listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
         }
 
@@ -267,7 +264,7 @@ class ReducedPartition extends AlgorithmsScript {
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
             }
-            
+
             if (lambdaTerm) {
                 alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
                 LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
@@ -281,6 +278,7 @@ class ReducedPartition extends AlgorithmsScript {
                     potentialEnergy, algorithmListener)
             rotamerOptimization.setPrintFiles(printFiles)
             rotamerOptimization.setWriteEnergyRestart(printFiles)
+            rotamerOptimization.setPHRestraint(pHRestraint)
             rotamerOptimization.setOnlyProtons(onlyProtons)
             rotamerOptimization.setRecomputeSelf(recomputeSelf)
             rotamerOptimization.setpH(titrationPH)
@@ -300,14 +298,8 @@ class ReducedPartition extends AlgorithmsScript {
 
             int[] currentRotamers = new int[selectedResidues.size()]
 
-            //Keep track of the number of titrating residues
-            if (pKa) {
-                titrateArray = new double[selectedResidues.size()][54]
-            }
-
             //Calculate possible permutations for assembly
-            rotamerOptimization.checkPermutations(selectedResidues.toArray() as Residue[], 0, currentRotamers, titrateArray,
-                    manyBodyOptions.getAlgorithm(selectedResidues.size()))
+            rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
             //Collect the Bolztmann weights and calculated offset of each assembly
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
@@ -317,7 +309,7 @@ class ReducedPartition extends AlgorithmsScript {
             if (pKa) {
                 titrateArray = rotamerOptimization.getFraction()
                 if (printBoltzmann) {
-                    titrateBoltzmann = rotamerOptimization.getTitrateBoltzmann()
+                    titrateBoltzmann = rotamerOptimization.getPopulationBoltzmann()
                     totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
                 }
 
@@ -329,70 +321,82 @@ class ReducedPartition extends AlgorithmsScript {
             FileWriter fileWriter = new FileWriter("populations.txt")
             int titrateCount = 0
             for (Residue residue : selectedResidues) {
-                double sum1 = 0
-                double sum2 = 0
-                double sum3 = 0
+                fileWriter.write("\n")
+                protonationBoltzmannSums = new double[selectedResidues.size()]
+                // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+                double protSum = 0
+                double deprotSum = 0
+                double tautomerSum = 0
                 Rotamer[] rotamers = residue.getRotamers()
-                for(Rotamer rotamer: rotamers){
-                    String rotPop = String.format("%.6f",titrateArray[titrateCount][rotamer.getWeight()])
-                    fileWriter.write(residue.getName() + residue.getResidueNumber() +"\t" +
+                for (Rotamer rotamer : rotamers) {
+                    String rotPop = format("%.6f", titrateArray[titrateCount][rotamer.getWeight()])
+                    fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
                             rotamer.toString() + "\t" + rotPop + "\n")
-                    switch(rotamer.getName()) {
+                    switch (rotamer.getName()) {
                         case "HIS":
                         case "LYS":
-                        case "GLU":
-                        case "ASP":
-                            sum1 += titrateArray[titrateCount][rotamer.getWeight()]
+                        case "GLH":
+                        case "ASH":
+                        case "CYS":
+                            protSum += titrateArray[titrateCount][rotamer.getWeight()]
+                            if (printBoltzmann) {
+                                protonationBoltzmannSums[titrateCount] += titrateBoltzmann[titrateCount][rotamer.getWeight()]
+                            }
                             break
                         case "HIE":
                         case "LYD":
-                        case "GLH":
-                        case "ASH":
-                            sum2 += titrateArray[titrateCount][rotamer.getWeight()]
+                        case "GLU":
+                        case "ASP":
+                        case "CYD":
+                            deprotSum += titrateArray[titrateCount][rotamer.getWeight()]
                             break
                         case "HID":
-                            sum3 += titrateArray[titrateCount][rotamer.getWeight()]
+                            tautomerSum += titrateArray[titrateCount][rotamer.getWeight()]
                             break
                         default:
                             break
                     }
                 }
-                String sumOne = String.format("%.6f",sum1)
-                String sumTwo = String.format("%.6f",sum2)
-                String sumThree = String.format("%.6f",sum3)
-                switch(residue.getName()) {
+                String formatedProtSum = format("%.6f", protSum)
+                String formatedDeprotSum = format("%.6f", deprotSum)
+                String formatedTautomerSum = format("%.6f", tautomerSum)
+                switch (residue.getName()) {
                     case "HIS":
-                        logger.info(residue.getResidueNumber() +"\tHIS" +  "\t" + sumOne + "\t" +
-                                "HIE" + "\t" + sumTwo + "\t" +
-                                "HID" + "\t" + sumThree)
+                        logger.info("\n "+ residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
+                                "HIE" + "\t" + formatedDeprotSum + "\t" +
+                                "HID" + "\t" + formatedTautomerSum)
                         break
                     case "LYS":
-                        logger.info(residue.getResidueNumber() +"\tLYS" +  "\t" + sumOne + "\t" +
-                                "LYD" +  "\t" + sumTwo)
+                        logger.info("\n " + residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
+                                "LYD" + "\t" + formatedDeprotSum)
                         break
                     case "ASH":
-                        logger.info(residue.getResidueNumber() +"\tASP" +  "\t" + sumOne + "\t" +
-                                "ASH" + "\t" + sumTwo)
+                        logger.info("\n " + residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
+                                "ASH" + "\t" + formatedProtSum)
                         break
                     case "GLH":
-                        logger.info(residue.getResidueNumber() +"\tGLU" +  "\t" + sumOne + "\t" +
-                                "GLH" + "\t" + sumTwo)
+                        logger.info("\n " + residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
+                                "GLH" + "\t" + formatedProtSum)
+                        break
+                    case "CYS":
+                        logger.info("\n " + residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
+                                "CYD" + "\t" + formatedDeprotSum)
                         break
                     default:
                         break
                 }
 
                 if (printBoltzmann) {
-                    logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
-                            titrateBoltzmann[titrateCount])
-                    logger.info("Total Boltzmann: " + totalBoltzmann)
+                    logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
+                            protonationBoltzmannSums[titrateCount])
+                    logger.info("\n Total Boltzmann: " + totalBoltzmann)
                 }
 
 
                 titrateCount += 1
             }
             fileWriter.close()
-            System.out.println("Successfully wrote to the populations file.")
+            System.out.println("\n Successfully wrote to the populations file.")
         } else {
             //Calculate Gibbs free energy change of mutating residues
             double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]))
@@ -409,29 +413,5 @@ class ReducedPartition extends AlgorithmsScript {
      */
     ForceFieldEnergy getPotential() {
         return potentialEnergy
-    }
-
-    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double inclusion) {
-        residueA.setRotamers(RotamerLibrary.getDefaultLibrary())
-        residueB.setRotamers(RotamerLibrary.getDefaultLibrary())
-        Rotamer[] rotamersA = residueA.getRotamers()
-        Rotamer[] rotamersB = residueB.getRotamers()
-        double[] aCoor = new double[3]
-        double[] bCoor = new double[3]
-        for (Rotamer rotamerA : rotamersA) {
-            residueA.setRotamer(rotamerA)
-            for (Rotamer rotamerB : rotamersB) {
-                residueB.setRotamer(rotamerB)
-                for (Atom atomA : residueA.getAtomList()) {
-                    for (Atom atomB : residueB.getAtomList()) {
-                        double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor))
-                        if (dist <= inclusion) {
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
     }
 }

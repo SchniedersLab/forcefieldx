@@ -167,13 +167,14 @@ public class ManyBodyOptions {
     initRotamerLibrary(true);
 
     // First, interpret the residueGroup.listResidues flag if its set.
-    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+    if (!residueGroup.listResidues.isEmpty() && !residueGroup.listResidues.equalsIgnoreCase("none")) {
       List<String> stringList = new ArrayList<>();
       String[] tok = residueGroup.listResidues.split(",");
       Collections.addAll(stringList, tok);
       List<Residue> residueList = new ArrayList<>();
       Polymer[] polymers = activeAssembly.getChains();
       for (String s : stringList) {
+        logger.info(s);
         Character chainID = s.charAt(0);
         int i = parseInt(s.substring(1));
         for (Polymer polymer : polymers) {
@@ -732,6 +733,14 @@ public class ManyBodyOptions {
     return group.titrationPH;
   }
 
+  public void setPHRestraint(double pHRestraint) {
+    energyGroup.pHRestraint = pHRestraint;
+  }
+
+  public double getPHRestraint() {
+    return energyGroup.pHRestraint;
+  }
+
   public boolean isTitrating() {
     return group.titrationPH == 0;
   }
@@ -761,7 +770,7 @@ public class ManyBodyOptions {
       }
       listResidues = listResidues.substring(1);
     } else if (onlyTitration || onlyProtons){
-      String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
+      String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
       List<String> titratableResiudesList = Arrays.asList(titratableResidues);
       for (Residue residue : residueList) {
         if (titratableResiudesList.contains(residue.getName())) {
@@ -1020,6 +1029,12 @@ public class ManyBodyOptions {
     @Option(names = {
         "--pairClashThreshold"}, paramLabel = "25.0", defaultValue = "25.0", description = "The threshold for pruning pair clashes.")
     private double pairClashThreshold;
+
+    /** --radius The sliding window and box cutoff radius (Angstroms). */
+    @Option(names = {
+            "--kPH", "--pHRestraint"}, paramLabel = "0.0", defaultValue = "0.0", description = "Only allow titration state to change from" +
+            "standard state is self energy exceeds the restraint.")
+    private double pHRestraint = 0;
   }
 
   /**

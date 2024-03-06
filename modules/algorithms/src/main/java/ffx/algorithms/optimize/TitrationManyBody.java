@@ -108,7 +108,7 @@ public class TitrationManyBody {
       dielectric = potentialEnergy.getGK().getSolutePermittivity();
       tanh = potentialEnergy.getGK().getTanhCorrection();
     } catch (Exception e){
-      logger.info("Working in crystal structure");
+      logger.info("   Not Using Implicit Solvent");
     }
     titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(),
             dielectric, tanh);
@@ -139,9 +139,7 @@ public class TitrationManyBody {
     if(altLocs!=null){
       locs = altLocs.size();
       for (int i = 0; i < locs; i++) {
-        if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
-          logger.info("");
-        } else {
+        if (altLocs.get(i) == null) {
           altLocs.remove(altLocs.get(i));
         }
       }
