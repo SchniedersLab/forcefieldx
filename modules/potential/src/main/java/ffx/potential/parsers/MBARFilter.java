@@ -2,10 +2,8 @@ package ffx.potential.parsers;
 
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -99,6 +97,20 @@ public class MBARFilter {
         }
     }
 
+    public void writeFiles(File mbarFileLoc, double[][][] energies, double[] temperatures) {
+        if (temperatures.length != windows) {
+            double temp = temperatures[0];
+            temperatures = new double[windows];
+            for (int i = 0; i < windows; i++) {
+                temperatures[i] = temp;
+            }
+        }
+        for (int i = 0; i < windows; i++) {
+            File file = new File(mbarFileLoc, "energy_" + i + ".mbar");
+            writeFile(energies[i], file, temperatures[i]);
+        }
+    }
+
     /**
      * Parses the file matching the name given in the directory of 'fileLocation'.
      * @param fileName the name of the file to be parsed matching 'energy_\d+.mbar' or 'energy_\d+.bar'.
@@ -144,5 +156,9 @@ public class MBARFilter {
         }
         windowsRead++;
         return fileEnergies;
+    }
+
+    public void writeFile(double[][] energies, File file, double temperature) {
+        MultistateBennettAcceptanceRatio.writeFile(energies, file, temperature);
     }
 }
