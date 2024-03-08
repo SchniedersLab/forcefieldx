@@ -1312,6 +1312,19 @@ public class RotamerOptimization implements Terminatable {
         this.pHRestraint = pHRestraint;
     }
 
+    public void setpH(double pH) {
+        this.pH = pH;
+    }
+
+    public void setRecomputeSelf(boolean recomputeSelf) {
+        this.recomputeSelf = recomputeSelf;
+    }
+
+
+    public void setOnlyProtons(boolean onlyProtons) {
+        this.onlyProtons = onlyProtons;
+    }
+
     public double getPHRestraint() {
         return pHRestraint;
     }
