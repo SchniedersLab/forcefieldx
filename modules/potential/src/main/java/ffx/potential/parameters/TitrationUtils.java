@@ -37,23 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYD;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYS;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIE;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIS;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYD;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYS;
-import static ffx.potential.bonded.BondedUtils.findAtomType;
-import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.log;
-
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
@@ -76,15 +59,29 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
-import org.apache.commons.math3.fitting.leastsquares.*;
-import org.apache.commons.math3.linear.*;
-import org.apache.commons.math3.util.Pair;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYD;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIE;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYD;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYS;
+import static ffx.potential.bonded.BondedUtils.findAtomType;
+import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * Utilities for interpolating between Amino Acid protonation and tautomer states.
@@ -100,51 +97,53 @@ public class TitrationUtils {
   private static final double LOG10 = log(10.0);
 
   private static final MultipoleType aspZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 140, 139}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 140, 139}, MultipoleFrameDefinition.ZTHENX, false);
   private static final MultipoleType ashZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 144, 143}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 144, 143}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final MultipoleType gluZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 158, 157}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 158, 157}, MultipoleFrameDefinition.ZTHENX, false);
   private static final MultipoleType glhZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 164, 163}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 164, 163}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final MultipoleType hieZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 130, 129}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 130, 129}, MultipoleFrameDefinition.ZTHENX, false);
   private static final MultipoleType hidZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 126, 124}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 126, 124}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final MultipoleType lydZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 200, 198}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 200, 198}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final MultipoleType cydZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
-      new int[] {0, 49, 43}, MultipoleFrameDefinition.ZTHENX, false);
+      new int[]{0, 49, 43}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final PolarizeType zeroPolarizeType = new PolarizeType(0, 0.0, 0.39, 0.0,
-      new int[] {0});
+      new int[]{0});
 
   private static final SoluteType zeroSoluteType = new SoluteType(0, 1.0);
 
   private static final AtomType dummyHydrogenAtomType = new AtomType(0, 0, "H", "\"Dummy Hydrogen\"",
       1, 1.0080, 1);
 
-  private static final BondType zeroBondType = new BondType(new int[] {0, 0}, 0.0, 1.0);
-  private static final AngleType zeroAngleType = new AngleType(new int[] {0, 0, 0}, 0.0,
-      new double[] {0.0});
-  private static final StretchBendType zeroStretchBendType = new StretchBendType(new int[] {0, 0, 0},
-      new double[] {0.0, 0.0});
+  private static final BondType zeroBondType = new BondType(new int[]{0, 0}, 0.0, 1.0);
+  private static final AngleType zeroAngleType = new AngleType(new int[]{0, 0, 0}, 0.0,
+      new double[]{0.0});
+  private static final StretchBendType zeroStretchBendType = new StretchBendType(new int[]{0, 0, 0},
+      new double[]{0.0, 0.0});
   private static final OutOfPlaneBendType zeroOutOfPlaneBendType = new OutOfPlaneBendType(
-      new int[] {0, 0, 0, 0}, 0.0);
-  private static final TorsionType zeroTorsionType = new TorsionType(new int[] {0, 0, 0, 0},
-      new double[] {0.0}, new double[] {0.0}, new int[] {0});
+      new int[]{0, 0, 0, 0}, 0.0);
+  private static final TorsionType zeroTorsionType = new TorsionType(new int[]{0, 0, 0, 0},
+      new double[]{0.0}, new double[]{0.0}, new int[]{0});
   private static final PiOrbitalTorsionType zeroPiOrbitalTorsionType = new PiOrbitalTorsionType(
-      new int[] {0, 0}, 0.0);
+      new int[]{0, 0}, 0.0);
 
   enum AspStates {
     ASP, ASH1, ASH2
   }
 
-  /** Constant <code>AspartateAtomNames</code> */
+  /**
+   * Constant <code>AspartateAtomNames</code>
+   */
   private enum AspartateAtomNames {
     CB(0, 0, 0, 0), HB2(1, 1, 1, 0), HB3(1, 1, 1, 0), CG(2, 2, 2, 0), OD1(3, 4, 3, 0), OD2(3, 3, 4,
         0), HD1(-1, 5, -1, 1), HD2(-1, -1, 5, -1);
@@ -183,7 +182,7 @@ public class TitrationUtils {
     /**
      * Init the Histidine atom names.
      *
-     * @param offsetASP Biotype relative to the CB biotype for ASP.
+     * @param offsetASP  Biotype relative to the CB biotype for ASP.
      * @param offsetASH1 Biotype relative to the CB biotype for ASH.
      * @param offsetASH2 Biotype relative to the CB biotype for ASH.
      */
@@ -199,7 +198,9 @@ public class TitrationUtils {
     GLU, GLH1, GLH2
   }
 
-  /** Constant <code>GlutamateAtomNames</code> */
+  /**
+   * Constant <code>GlutamateAtomNames</code>
+   */
   private enum GlutamateAtomNames {
     CB(0, 0, 0, 0), HB2(1, 1, 1, 0), HB3(1, 1, 1, 0), CG(2, 2, 2, 0), HG2(3, 3, 3, 0), HG3(3, 3, 3,
         0), CD(4, 4, 4, 0), OE1(5, 6, 5, 0), OE2(5, 5, 6, 0), HE1(-1, 7, -1, 1), HE2(-1, -1, 7, -1);
@@ -240,7 +241,7 @@ public class TitrationUtils {
     /**
      * Init the Glutamate atom names.
      *
-     * @param offsetGLU Biotype relative to the CB biotype for GLU.
+     * @param offsetGLU  Biotype relative to the CB biotype for GLU.
      * @param offsetGLH1 Biotype relative to the CB biotype for GLH.
      * @param offsetGLH2 Biotype relative to the CB biotype for GLH.
      */
@@ -256,7 +257,9 @@ public class TitrationUtils {
     LYD, LYS
   }
 
-  /** Constant <code>lysineAtoms</code> */
+  /**
+   * Constant <code>lysineAtoms</code>
+   */
   public enum LysineAtomNames {
     CB(0, 0), HB2(1, 1), HB3(1, 1), CG(2, 2), HG2(3, 3), HG3(3, 3), CD(4, 4), HD2(5, 5), HD3(5,
         5), CE(6, 6), HE2(7, 7), HE3(7, 7), NZ(8, 8), HZ1(9, 9), HZ2(9, 9), HZ3(9, -1);
@@ -295,7 +298,9 @@ public class TitrationUtils {
     HIS, HID, HIE
   }
 
-  /** Constant <code>HistidineAtoms</code> */
+  /**
+   * Constant <code>HistidineAtoms</code>
+   */
   public enum HistidineAtomNames {
     // HIS, HID, HIE
     CB(0, 0, 0, 0), HB2(1, 1, 1, 0), HB3(1, 1, 1, 0), CG(2, 2, 2, 0), ND1(3, 3, 3,
@@ -356,7 +361,9 @@ public class TitrationUtils {
     CYS, CYD
   }
 
-  /** Constant <code>CysteineAtoms</code> */
+  /**
+   * Constant <code>CysteineAtoms</code>
+   */
   public enum CysteineAtomNames {
     CB(0, 0), HB2(1, 1), HB3(1, 1), SG(2, 2), HG(3, -1);
 
@@ -869,7 +876,7 @@ public class TitrationUtils {
   }
 
   public double[] getMultipole(Atom atom, double titrationLambda, double tautomerLambda,
-      double[] multipole) {
+                               double[] multipole) {
     /*
     Step 1: retrieve the atomName from atom instance.
     Step 2: retrieve the oridnal from the atom instance + residueType
@@ -953,7 +960,7 @@ public class TitrationUtils {
   }
 
   public double[] getMultipoleTitrationDeriv(Atom atom, double titrationLambda,
-      double tautomerLambda, double[] multipole) {
+                                             double tautomerLambda, double[] multipole) {
     AminoAcid3 aminoAcid3;
     try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
@@ -1012,7 +1019,7 @@ public class TitrationUtils {
   }
 
   public double[] getMultipoleTautomerDeriv(Atom atom, double titrationLambda, double tautomerLambda,
-      double[] multipole) {
+                                            double[] multipole) {
     AminoAcid3 aminoAcid3;
     try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
@@ -1057,7 +1064,7 @@ public class TitrationUtils {
   }
 
   public double getPolarizability(Atom atom, double titrationLambda, double tautomerLambda,
-      double defaultPolarizability) {
+                                  double defaultPolarizability) {
     AminoAcid3 aminoAcid3;
     try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
@@ -1103,7 +1110,7 @@ public class TitrationUtils {
   }
 
   public double getPolarizabilityTitrationDeriv(Atom atom, double titrationLambda,
-      double tautomerLambda) {
+                                                double tautomerLambda) {
     AminoAcid3 aminoAcid3;
     try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
@@ -1146,7 +1153,7 @@ public class TitrationUtils {
   }
 
   public double getPolarizabilityTautomerDeriv(Atom atom, double titrationLambda,
-      double tautomerLambda) {
+                                               double tautomerLambda) {
     AminoAcid3 aminoAcid3;
     try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
@@ -1221,7 +1228,7 @@ public class TitrationUtils {
    * and sulfur.
    *
    * @param aminoAcid3 The amino acid type.
-   * @param atom The atom to check.
+   * @param atom       The atom to check.
    * @return True if the atom is a heavy atom with changing polarizability.
    */
 
@@ -1475,7 +1482,7 @@ public class TitrationUtils {
   }
 
   private void checkParameterTypes(String label, AtomType[][] atomTypes,
-      PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes, VDWType[][] vdwTypes) {
+                                   PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes, VDWType[][] vdwTypes) {
     int states = multipoleTypes.length;
     int types = multipoleTypes[0].length;
     StringBuilder sb = new StringBuilder();
@@ -1629,7 +1636,7 @@ public class TitrationUtils {
    * the L2 loss between the the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
    * coefficient predictions.
    *
-   * @param pHScale pH values at which the residue fractions were measured
+   * @param pHScale          pH values at which the residue fractions were measured
    * @param residueFractions a sorted array of residue fractions (deprotonated / (deprotonated + protonated))
    * @return {n, pKa}
    */
@@ -1672,10 +1679,10 @@ public class TitrationUtils {
           double d = (1 + term) * (1 + term);
 
           // -sum(d(cost)/dn) across pH values
-          gradient[0] += 2*(residueFractions[i] - values[i]) * logb10 * (x[1] - pHScale[i]) * term / d;
+          gradient[0] += 2 * (residueFractions[i] - values[i]) * logb10 * (x[1] - pHScale[i]) * term / d;
 
           // -sum(d(cost)/dpKa) across pH values
-          gradient[1] += 2*(residueFractions[i] - values[i]) * x[0] * logb10 * term / d;
+          gradient[1] += 2 * (residueFractions[i] - values[i]) * x[0] * logb10 * term / d;
         }
       }
 
@@ -1689,52 +1696,71 @@ public class TitrationUtils {
       public double[] getAcceleration(double[] acceleration) {
         return new double[0];
       }
+
       @Override
       public double[] getCoordinates(double[] parameters) {
         return new double[0];
       }
+
       @Override
       public STATE getEnergyTermState() {
         return null;
       }
+
       @Override
-      public void setEnergyTermState(STATE state) {}
+      public void setEnergyTermState(STATE state) {
+      }
+
       @Override
       public double[] getMass() {
         return new double[0];
       }
+
       @Override
       public int getNumberOfVariables() {
         return 0;
       }
+
       @Override
       public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return new double[0];
       }
+
       @Override
       public double[] getScaling() {
         return null;
       }
+
       @Override
-      public void setScaling(double[] scaling) {}
+      public void setScaling(double[] scaling) {
+      }
+
       @Override
       public double getTotalEnergy() {
         return 0;
       }
+
       @Override
       public VARIABLE_TYPE[] getVariableTypes() {
         return new VARIABLE_TYPE[0];
       }
+
       @Override
       public double[] getVelocity(double[] velocity) {
         return new double[0];
       }
+
       @Override
-      public void setAcceleration(double[] acceleration) {}
+      public void setAcceleration(double[] acceleration) {
+      }
+
       @Override
-      public void setPreviousAcceleration(double[] previousAcceleration) { }
+      public void setPreviousAcceleration(double[] previousAcceleration) {
+      }
+
       @Override
-      public void setVelocity(double[] velocity) {}
+      public void setVelocity(double[] velocity) {
+      }
     };
 
     // Call L-BFGS optimizer on hendersonHasselbach least squares potential
@@ -1757,7 +1783,7 @@ public class TitrationUtils {
     };
 
     int statuspKa = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations,
-            hendersonHasselbach, listener);
+        hendersonHasselbach, listener);
 
     return new double[]{x[0], x[1]};
   }
@@ -1775,16 +1801,30 @@ public class TitrationUtils {
    * ASP value from Grimsley, Gerald R., J. Martin Scholtz, and C. Nick Pace.
    * "A summary of the measured pK values of the ionizable groups in folded proteins."
    * Protein Science 18.1 (2009): 247-251.
-   *
+   * <p>
+   * 2023 Fmod values
+   * ASP: -71.10
+   * GLU: -83.40
+   * LYS: 41.77
+   * CYS: -66.2
+   * HID: 40.20
+   * HIE: 37.44
+   * <p>
+   * March 2024 Fmod values from R. Gogal
+   * ASP: -70.35
+   * GLU: -81.90
+   * LYS: 41.45
+   * CYS: -59.5
+   * HID: 40.20
+   * HIE: 37.44
    */
   public enum Titration {
 
-
-    ASHtoASP(3.94, -71.10, 15.675, -110.470, 166.591, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.25, -83.40, 26.509, -128.030, 187.460, AminoAcid3.GLH, AminoAcid3.GLU),
-    LYStoLYD(10.40, 41.77, 6.875, -78.868, 26.703, AminoAcid3.LYS, AminoAcid3.LYD),
+    ASHtoASP(3.94, -70.35, 15.675, -110.470, 166.591, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -81.90, 26.509, -128.030, 187.460, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.45, 6.875, -78.868, 26.703, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    CYStoCYD(8.55, -66.2, 37.039, -168.470, 216.663, AminoAcid3.CYS, AminoAcid3.CYD),
+    CYStoCYD(8.55, -59.5, 37.039, -168.470, 216.663, AminoAcid3.CYS, AminoAcid3.CYD),
     //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, 13.602, -83.166, 35.615, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
@@ -1793,7 +1833,6 @@ public class TitrationUtils {
 
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
-
 
     public final double pKa;
     // Free energy differences used in rotamer optimization
@@ -1804,10 +1843,12 @@ public class TitrationUtils {
     public final AminoAcid3 protForm;
     public final AminoAcid3 deprotForm;
 
-    /** Invoked by Enum; use the factory method to obtain instances. */
+    /**
+     * Invoked by Enum; use the factory method to obtain instances.
+     */
 
     Titration(double pKa, double freeEnergyDiff, double cubic, double quadratic, double linear,
-        AminoAcid3 protForm, AminoAcid3 deprotForm) {
+              AminoAcid3 protForm, AminoAcid3 deprotForm) {
       this.pKa = pKa;
       this.freeEnergyDiff = freeEnergyDiff;
       this.cubic = cubic;

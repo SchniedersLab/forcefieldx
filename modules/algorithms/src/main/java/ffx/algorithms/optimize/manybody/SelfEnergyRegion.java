@@ -110,7 +110,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     this.printFiles = printFiles;
 
     this.selfEnergyMap = eE.getSelfEnergyMap();
-    logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+    logger.info(format("\n Number of self energies: %d", selfEnergyMap.size()));
   }
 
   @Override
@@ -192,8 +192,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     } catch (ArithmeticException ex) {
       logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
     }
-    rO.logIfRank0(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
-
+    rO.logIfRank0(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
     eE.setBackboneEnergy(backboneEnergy);
   }
 
