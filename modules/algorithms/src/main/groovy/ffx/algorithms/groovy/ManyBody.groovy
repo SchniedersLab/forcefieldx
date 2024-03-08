@@ -124,7 +124,7 @@ class ManyBody extends AlgorithmsScript {
     if (lambdaTerm) {
       // Turn on softcore van der Waals
       System.setProperty("lambdaterm", "true")
-      // Turn of alchemical electrostatics
+      // Turn off alchemical electrostatics
       System.setProperty("elec-lambdaterm", "false")
       // Turn on intra-molecular softcore
       System.setProperty("intramolecular-softcore", "true");
@@ -195,8 +195,6 @@ class ManyBody extends AlgorithmsScript {
         potentialEnergy, algorithmListener)
 
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
-    // rotamerOptimization.getResidues() returns a cached version of
-    // manyBodyOptions.collectResidues(activeAssembly)
     List<Residue> residueList = rotamerOptimization.getResidues()
 
     logger.info("\n Initial Potential Energy:")

@@ -46,9 +46,11 @@ import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
+
 import java.io.File;
 import java.util.List;
 import java.util.Set;
@@ -64,7 +66,6 @@ public class TitrationManyBody {
   private final double pH;
   private final String filename;
   private PDBFilter protonFilter;
-  private int mutatingResidue = 0;
   private ForceFieldEnergy potentialEnergy;
 
   public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
@@ -73,19 +74,6 @@ public class TitrationManyBody {
     this.forceField = forceField;
     this.resNumberList = resNumberList;
     this.pH = pH;
-  }
-
-  public TitrationManyBody(
-          String filename,
-          ForceField forceField,
-          List<Integer> resNumberList,
-          double pH,
-          int mutatingResidue) {
-    this.filename = filename;
-    this.forceField = forceField;
-    this.resNumberList = resNumberList;
-    this.pH = pH;
-    this.mutatingResidue = mutatingResidue;
   }
 
   public MolecularAssembly getProtonatedAssembly() {
@@ -102,23 +90,14 @@ public class TitrationManyBody {
     protonatedAssembly.setFile(structureFile);
 
     TitrationUtils titrationUtils;
-    double dielectric = 1;
-    boolean tanh = true;
-    try{
-      dielectric = potentialEnergy.getGK().getSolutePermittivity();
-      tanh = potentialEnergy.getGK().getTanhCorrection();
-    } catch (Exception e){
-      logger.info("   Not Using Implicit Solvent");
-    }
-    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(),
-            dielectric, tanh);
+    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
-      if (resNumberList.contains(residue.getResidueNumber()) && mutatingResidue != residue.getResidueNumber()) {
-        if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH") ||
-            resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS") ||
-                resName.equalsIgnoreCase("CYS")) {
+      if (resNumberList.contains(residue.getResidueNumber())) {
+        if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
+            || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+            || resName.equalsIgnoreCase("CYS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }
@@ -144,11 +123,9 @@ public class TitrationManyBody {
         }
       }
     }
-
-
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[locs];
     molecularAssemblies[0] = molecularAssembly;
-    for (int i = 0; i < locs; i++) {
+    for (int i = 0; i < altLocs.size(); i++) {
       if (i != 0) {
         logger.info(filename);
         MolecularAssembly newAssembly = new MolecularAssembly(filename);

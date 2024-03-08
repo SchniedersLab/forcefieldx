@@ -731,7 +731,8 @@ public final class PDBFilter extends SystemFilter {
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
                 boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
-                if (deleteAnisou) {
+                double resetBfactors = properties.getDouble("reset-bfactors", -1.0);
+                if (deleteAnisou || resetBfactors >= 0.0) {
                   break;
                 }
                 Integer serial = Hybrid36.decode(5, line.substring(6, 11));
@@ -901,8 +902,13 @@ public final class PDBFilter extends SystemFilter {
                       logger.fine(" Missing occupancy and b-factors set to 1.0.");
                     }
                   }
-                  newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
-                      tempFactor, segID);
+
+                  double bfactor = properties.getDouble("reset-bfactors", -1.0);
+                  if (bfactor >= 0.0) {
+                    tempFactor = bfactor;
+                  }
+
+                  newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
 
                   // Check if this is a modified residue.
                   if (modRes.containsKey(resName.toUpperCase())) {
@@ -1008,8 +1014,13 @@ public final class PDBFilter extends SystemFilter {
                     logger.fine(" Missing occupancy and b-factors set to 1.0.");
                   }
                 }
-                newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
-                    tempFactor, segID);
+
+                double bfactor = properties.getDouble("reset-bfactors", -1.0);
+                if (bfactor >= 0.0) {
+                  tempFactor = bfactor;
+                }
+
+                newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
                 newAtom.setHetero(true);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {

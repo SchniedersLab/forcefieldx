@@ -37,23 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYD;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYS;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIE;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIS;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYD;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYS;
-import static ffx.potential.bonded.BondedUtils.findAtomType;
-import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.log;
-
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
@@ -76,11 +59,29 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYD;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIE;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYD;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYS;
+import static ffx.potential.bonded.BondedUtils.findAtomType;
+import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * Utilities for interpolating between Amino Acid protonation and tautomer states.
@@ -168,7 +169,6 @@ public class TitrationUtils {
     private final int offsetASH2;
 
     private final int tautomerDirection;
-
 
     public int getOffset(AspStates state) {
       if (state == AspStates.ASP) {
@@ -1326,9 +1326,8 @@ public class TitrationUtils {
             hisVDWTypes[index][state]);
         if (hisMultipoleTypes[index][state] == null || hisPolarizeTypes[index][state] == null
             || hisSoluteTypes[index][state] == null) {
-          logger.severe(
-              format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n", atomName,
-                  hisAtomTypes[index][state]));
+          logger.severe(format(" Titration parameters could not be assigned for His atom %s.\n %s\n",
+              atomName, hisAtomTypes[index][state]));
         }
       }
     }
@@ -1756,46 +1755,56 @@ public class TitrationUtils {
       public double[] getAcceleration(double[] acceleration) {
         return new double[0];
       }
+
       @Override
       public double[] getCoordinates(double[] parameters) {
         return new double[0];
       }
+
       @Override
       public STATE getEnergyTermState() {
         return null;
       }
+
       @Override
       public void setEnergyTermState(STATE state) {}
       @Override
       public double[] getMass() {
         return new double[0];
       }
+
       @Override
       public int getNumberOfVariables() {
         return 0;
       }
+
       @Override
       public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return new double[0];
       }
+
       @Override
       public double[] getScaling() {
         return null;
       }
+
       @Override
       public void setScaling(double[] scaling) {}
       @Override
       public double getTotalEnergy() {
         return 0;
       }
+
       @Override
       public VARIABLE_TYPE[] getVariableTypes() {
         return new VARIABLE_TYPE[0];
       }
+
       @Override
       public double[] getVelocity(double[] velocity) {
         return new double[0];
       }
+
       @Override
       public void setAcceleration(double[] acceleration) {}
       @Override
@@ -1839,7 +1848,25 @@ public class TitrationUtils {
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
    * <p>
-   * -(quadratic * lambda^2 + linear * lambda)
+   * ASP value from Grimsley, Gerald R., J. Martin Scholtz, and C. Nick Pace.
+   * "A summary of the measured pK values of the ionizable groups in folded proteins."
+   * Protein Science 18.1 (2009): 247-251.
+   * <p>
+   * 2023 Fmod values
+   * ASP: -71.10
+   * GLU: -83.40
+   * LYS: 41.77
+   * CYS: -66.2
+   * HID: 40.20
+   * HIE: 37.44
+   * <p>
+   * March 2024 Fmod values from R. Gogal
+   * ASP: -70.35
+   * GLU: -81.90
+   * LYS: 41.45
+   * CYS: -59.5
+   * HID: 40.20
+   * HIE: 37.44
    */
   public enum Titration {
 

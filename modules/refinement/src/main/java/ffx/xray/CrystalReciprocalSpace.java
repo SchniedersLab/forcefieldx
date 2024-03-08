@@ -320,7 +320,7 @@ public class CrystalReciprocalSpace {
     nSymm = 1;
     threadCount = parallelTeam.getThreadCount();
 
-    // Necssary for the bulk-solvent expansion!
+    // Necessary for the bulk-solvent expansion!
     bulkNSymm = crystal.spaceGroup.symOps.size();
     Resolution resolution = reflectionlist.resolution;
     double gridFactor = resolution.samplingLimit() / 2.0;
