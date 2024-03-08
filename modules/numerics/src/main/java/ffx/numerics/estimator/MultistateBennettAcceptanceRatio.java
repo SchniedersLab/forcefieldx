@@ -105,6 +105,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      * MBAR free-energy difference uncertainties.
      */
     private double[] mbarUncertainties;
+
+    /**
+     * Matrix of free-energy uncertainties between all i & j
+     */
     private double[][] diffMatrix;
     /**
      * BAR convergence tolerance.
@@ -135,54 +139,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      * MBAR Enthalpy estimates
      */
     private final double[] mbarEnthalpy;
+
+    /**
+     * SCI iterations
+     */
     private int iter;
-
+    /**
+     * Potential energy evaluations
+     */
     private double[][] u_kn;
+    /**
+     * Number of samples per state (only equal numbers are allowed)
+     */
     private double[] N_k;
-
+    /**
+     * Seed MBAR calculation with another free energy estimation (BAR,ZWANZIG) or zeros
+     */
     private SeedType seedType;
-
-    @Override
-    public double energy(double[] x) {
-        double tempO = x[0];
-        x[0] = 0.0;
-        for(int i = 1; i < x.length; i++){
-            x[i] -= tempO;
-        }
-        return mbarObjectiveFunction(u_kn, N_k, x);
-    }
-
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        double tempO = x[0];
-        x[0] = 0.0;
-        for(int i = 1; i < x.length; i++){
-            x[i] -= tempO;
-        }
-        double[] tempG = mbar_gradient(u_kn, N_k, x);
-        System.arraycopy(tempG, 0, g, 0, g.length);
-        return mbarObjectiveFunction(u_kn, N_k, x);
-    }
-
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        return new double[0];
-    }
-    @Override
-    public int getNumberOfVariables() {
-        return 0;
-    }
-    @Override
-    public double[] getScaling() {
-        return null;
-    }
-    @Override
-    public void setScaling(double[] scaling) {
-    }
-    @Override
-    public double getTotalEnergy() {
-        return 0;
-    }
 
     public enum SeedType {BAR, ZWANZIG, ZEROS}
 
@@ -298,7 +271,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Few SCI iterations used to start optimization of MBAR objective function.
         // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
         double omega = 1.5;
-        for(int i = 0; i < 0; i++){
+        for(int i = 0; i < 10; i++){
             prevMBAR = copyOf(mbarFreeEnergies, mbarFreeEnergies.length);
             mbarFreeEnergies = selfConsistentUpdate(u_kn, N_k, mbarFreeEnergies);
             // Apply SOR
@@ -312,12 +285,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
 
         try {
-            // L-BFGS optimization for high granularity windows
+            // L-BFGS optimization for high granularity windows where hessian is expensive
             if(mbarFreeEnergies.length > 100){
                 int mCorrections = 5;
                 double[] x = new double[mbarFreeEnergies.length];
                 System.arraycopy(mbarFreeEnergies, 0, x, 0, mbarFreeEnergies.length);
-                double[] grad = mbar_gradient(u_kn, N_k, mbarFreeEnergies);
+                double[] grad = mbarGradient(u_kn, N_k, mbarFreeEnergies);
                 double eps = 1.0E-4;
                 OptimizationListener listener = getOptimizationListener();
                 LBFGS.minimize(mbarFreeEnergies.length, mCorrections, x,
@@ -374,17 +347,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         totalMBAREstimate = stream(mbarEstimates).sum();
     }
 
-    private OptimizationListener getOptimizationListener() {
-        return new OptimizationListener() {
-            @Override
-            public boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
-                                              double coordinateRMS, double f, double df, double angle,
-                                              LineSearch.LineSearchResult info) {
-                return true;
-            }
-        };
+    /**
+     * Checks if the MBAR free energy estimates have converged by comparing the difference
+     * between the previous and current free energies. The tolerance is set by the user.
+     * Default is 1.0E-7.
+     *
+     * @param prevMBAR
+     * @return true if converged, false otherwise
+     */
+    private boolean converged(double[] prevMBAR) {
+        double[] differences = new double[prevMBAR.length];
+        for (int i = 0; i < prevMBAR.length; i++) {
+            differences[i] = abs(prevMBAR[i] - mbarFreeEnergies[i]);
+        }
+        return stream(differences).allMatch(d -> d < tolerance);
     }
 
+    //////// Methods for calculating MBAR variables, vectors, and matrices ////////
     /**
      * MBAR objective function. This is used for L-BFGS optimization.
      * @param u_kn energies
@@ -423,7 +402,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
      * @param f_k free energies
      * @return gradient vector of mbar objective function
      */
-    public static double[] mbar_gradient(double[][] u_kn, double[] N_k, double[] f_k) {
+    public static double[] mbarGradient(double[][] u_kn, double[] N_k, double[] f_k) {
         int nStates = f_k.length;
         double[] log_num_k = new double[nStates];
         double[] log_denom_n = new double[u_kn[0].length];
@@ -458,7 +437,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     public static double[][] mbarHessian(double[][] u_kn, double[] N_k, double[] f_k){
         int nStates = f_k.length;
-        double[][] W = mbar_W(u_kn, N_k, f_k);
+        double[][] W = mbarW(u_kn, N_k, f_k);
         // h = dot(W.T, W) * N_k * N_k[:, newaxis] - diag(W.sum(0) * N_k)
         double[][] hessian = new double[nStates][nStates];
         for (int i = 0; i < nStates; i++) {
@@ -484,7 +463,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return hessian;
     }
 
-    public static double[][] mbar_W(double[][] u_kn, double[] N_k, double[] f_k){
+    public static double[][] mbarW(double[][] u_kn, double[] N_k, double[] f_k){
         int nStates = f_k.length;
         double[] log_denom_n = new double[u_kn[0].length];
         double[][] logDiff = new double[u_kn.length][u_kn[0].length];
@@ -516,7 +495,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return W;
     }
 
-    public static double[][] mbar_logW(double[][] u_kn, double[] N_k, double[] f_k){
+    public static double[][] mbarLogW(double[][] u_kn, double[] N_k, double[] f_k){
         int nStates = f_k.length;
         double[] log_num_k = new double[nStates];
         double[] log_denom_n = new double[u_kn[0].length];
@@ -553,7 +532,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Theta = W.T @ (I - W @ diag(N_k) @ W.T)^-1 @ W) --> requires calculation and inversion of 50k x 50k matrix
         // D4 from supp info of MBAR paper used instead
         // SVD of W
-        double[][] W = mbar_W(u_kn, N_k, f_k);
+        double[][] W = mbarW(u_kn, N_k, f_k);
         RealMatrix WMatrix = MatrixUtils.createRealMatrix(W).transpose();
         RealMatrix I = MatrixUtils.createRealIdentityMatrix(f_k.length);
         RealMatrix NkMatrix = MatrixUtils.createRealDiagonalMatrix(N_k);
@@ -598,6 +577,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return diffMatrix;
     }
 
+    //////// Methods for solving MBAR with self-consistent iteration, L-BFGS optimization, and Newton-Raphson ////////
     /**
      * Self-consistent iteration to update free energies.
      * @param u_kn energies
@@ -663,13 +643,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static double[] newton(double[] f_k, double[][] u_kn, double[] N_k, double stepSize, int maxIter, double tolerance){
-        double[] grad = mbar_gradient(u_kn, N_k, f_k);
+        double[] grad = mbarGradient(u_kn, N_k, f_k);
         double[][] hessian = mbarHessian(u_kn, N_k, f_k);
         double[] f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
         int iter = 1;
         while(iter < maxIter && MathArrays.distance1(f_k, f_kPlusOne) > tolerance){
             f_k = f_kPlusOne;
-            grad = mbar_gradient(u_kn, N_k, f_k);
+            grad = mbarGradient(u_kn, N_k, f_k);
             hessian = mbarHessian(u_kn, N_k, f_k);
             f_kPlusOne = newtonStep(f_k, grad, hessian, stepSize);
             iter++;
@@ -710,22 +690,72 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         return max + log(sum);
     }
 
-    /**
-     * Checks if the MBAR free energy estimates have converged by comparing the difference
-     * between the previous and current free energies. The tolerance is set by the user.
-     * Default is 1.0E-7.
-     *
-     * @param prevMBAR
-     * @return true if converged, false otherwise
-     */
-    private boolean converged(double[] prevMBAR) {
-        double[] differences = new double[prevMBAR.length];
-        for (int i = 0; i < prevMBAR.length; i++) {
-            differences[i] = abs(prevMBAR[i] - mbarFreeEnergies[i]);
-        }
-        return stream(differences).allMatch(d -> d < tolerance);
+    private OptimizationListener getOptimizationListener() {
+        return new OptimizationListener() {
+            @Override
+            public boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
+                                              double coordinateRMS, double f, double df, double angle,
+                                              LineSearch.LineSearchResult info) {
+                return true;
+            }
+        };
     }
 
+    /**
+     * MBAR objective function evaluation at a given free energy estimate for L-BFGS optimization.
+     * @param x Input parameters.
+     * @return
+     */
+    @Override
+    public double energy(double[] x) {
+        // Zero out the first term
+        double tempO = x[0];
+        x[0] = 0.0;
+        for(int i = 1; i < x.length; i++){
+            x[i] -= tempO;
+        }
+        return mbarObjectiveFunction(u_kn, N_k, x);
+    }
+
+    /**
+     * MBAR objective function evaluation and gradient at a given free energy estimate for L-BFGS optimization.
+     * @param x Input parameters.
+     * @param g Output gradients with respect to each parameter.
+     * @return
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        double tempO = x[0];
+        x[0] = 0.0;
+        for(int i = 1; i < x.length; i++){
+            x[i] -= tempO;
+        }
+        double[] tempG = mbarGradient(u_kn, N_k, x);
+        System.arraycopy(tempG, 0, g, 0, g.length);
+        return mbarObjectiveFunction(u_kn, N_k, x);
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+    }
+    @Override
+    public int getNumberOfVariables() {
+        return 0;
+    }
+    @Override
+    public double[] getScaling() {
+        return null;
+    }
+    @Override
+    public void setScaling(double[] scaling) {
+    }
+    @Override
+    public double getTotalEnergy() {
+        return 0;
+    }
+
+    //////// Getters and setters ////////
     public BennettAcceptanceRatio getBAR() {
         return new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
     }
@@ -738,6 +768,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     @Override
     public double[] getBinEnergies() {
         return mbarEstimates;
+    }
+
+    public double[] getMBARFreeEnergies() {
+        return mbarFreeEnergies;
     }
 
     @Override
@@ -770,8 +804,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
 
+    /**
+     * Harmonic oscillators test case generates data for testing the MBAR implementation
+     */
     public static class HarmonicOscillatorsTestCase {
-
         private double beta;
         private double[] O_k;
         private int n_states;
@@ -866,7 +902,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
          * @param mode only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k
          * @return u_kn[k,n] is reduced potential of sample n evaluated at state k
          */
-        public Object[] sample(int[] N_k, String mode) {
+        public Object[] sample(int[] N_k, String mode, Long seed) {
             Random random = new Random();
 
             int N_max = 0;
@@ -941,7 +977,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             }
 
             HarmonicOscillatorsTestCase testCase = new HarmonicOscillatorsTestCase(O_k, K_k, 1.0);
-            Object[] result = testCase.sample(N_k, "u_kn");
+            Object[] result = testCase.sample(N_k, "u_kn", System.currentTimeMillis());
 
             return new Object[]{testCase, result[0], result[1], result[2], result[3]};
         }
@@ -965,7 +1001,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             // Example usage of sample function with u_kn mode
             int[] N_k = {10, 20, 30, 40, 50};
             String setting = "u_kln";
-            Object[] sampleResult = testCase.sample(N_k, setting);
+            Object[] sampleResult = testCase.sample(N_k, setting, System.currentTimeMillis());
 
             System.out.println("Sample x_n: " + Arrays.toString((double[]) sampleResult[0]));
             if ("u_kn".equals(setting)) {
@@ -1002,9 +1038,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     public static void main(String[] args) {
-        double[] O_k = {1, 2, 3, 4, 5}; // Equilibrium positions
-        double[] K_k = {5, 7, 10, 15, 20}; // Spring constants
-        int[] N_k = {10000, 10000, 10000, 10000, 10000}; // No support for different number of snapshots
+        double[] O_k = {1, 2, 3, 4}; // Equilibrium positions
+        double[] K_k = {.5, 1.0, 1.5, 2}; // Spring constants
+        int[] N_k = {10000, 10000, 10000, 10000}; // No support for different number of snapshots
         double beta = 1.0;
 
         // Create an instance of HarmonicOscillatorsTestCase
@@ -1013,7 +1049,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         // Generate sample data
         String setting = "u_kln";
         System.out.print("Generating sample data... ");
-        Object[] sampleResult = testCase.sample(N_k, setting);
+        Object[] sampleResult = testCase.sample(N_k, setting, (long) 0); // Set seed to fixed value for reproducibility
         System.out.println("done. \n");
         double[][][] u_kln = (double[][][]) sampleResult[1];
         double[] temps = {1 / Constants.R};
@@ -1042,7 +1078,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
 
         EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-        bootstrapper.bootstrap(5);
+        bootstrapper.bootstrap(50);
         System.out.println("done. \n");
 
         // Get the analytical free energy differences

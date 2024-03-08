@@ -136,8 +136,19 @@ class MBAR extends AlgorithmsScript {
                 mbar.getUncertainty()))
         double[] dGs = mbar.getBinEnergies()
         double[] uncertainties = mbar.getBinUncertainties()
+        double[][] uncertaintyMatrix = mbar.getDiffMatrix()
         for (int i = 0; i < dGs.length; i++) {
             logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+        }
+        logger.info("\n MBAR uncertainty between all i & j: ")
+        for(int i = 0; i < uncertaintyMatrix.length; i++) {
+            StringBuilder sb = new StringBuilder()
+            sb.append("    [")
+            for(int j = 0; j < uncertaintyMatrix[i].length; j++) {
+                sb.append(String.format(" %6.5f ", uncertaintyMatrix[i][j]))
+            }
+            sb.append("]")
+            logger.info(sb.toString())
         }
         logger.info("\n")
         if(bar){
@@ -173,7 +184,7 @@ class MBAR extends AlgorithmsScript {
                     logger.info("\n BAR Bootstrap Results:")
                     bootstrapper = new EstimateBootstrapper(mbar.getBAR())
                     bootstrapper.bootstrap(numBootstrap)
-                    logger.info(String.format("Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
+                    logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
                             bootstrapper.getTotalUncertainty()))
                     dGs = bootstrapper.getFE()
                     uncertainties = bootstrapper.getUncertainty()
