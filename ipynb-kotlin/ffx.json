@@ -16,9 +16,12 @@
    "System.setProperty(\"j3d.rend\",\"noop\")"
   ],
   "dependencies": [
+    ".nfs00000000001a178f00003f7b",
     ".nfs00000000002a1a5700003efd",
+    ".nfs00000000002a2f4100003f83",
     ".nfs00000000002a309d00003efb",
     ".nfs00000000002a3d0300003efc",
+    ".nfs0000000000469f2b00003f7c",
     "MRJToolkitStubs-1.0.jar",
     "ST4-4.3.4.jar",
     "angus-activation-2.0.1.jar",
