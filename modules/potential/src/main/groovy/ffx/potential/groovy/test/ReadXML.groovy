@@ -96,7 +96,7 @@ class ReadXML extends PotentialScript {
         }
 
         CompositeConfiguration properties = Keyword.loadProperties(null)
-        properties.addProperty("renumberPatch", "FALSE")
+//        properties.addProperty("renumberPatch", "FALSE")
         properties.addProperty("FORCEFIELD", "AMBER_1999_SB_XML")
         properties.addProperty("VDWINDEX", "TYPE")
         properties.addProperty("VDWTYPE", "LENNARD-JONES")
@@ -106,9 +106,10 @@ class ReadXML extends PotentialScript {
         properties.addProperty("RADIUSSIZE", "RADIUS")
 //        properties.addProperty("RADIUSSIZE", "DIAMETER")
         properties.addProperty("EPSILONRULE", "GEOMETRIC")
-        properties.addProperty("VDW-14-SCALE", "2.0")
-//        properties.addProperty("VDW-14-SCALE", "0.500000")
-        properties.addProperty("CHG-14-SCALE", "1.2")
+//        properties.addProperty("VDW-14-SCALE", "2.0")
+        properties.addProperty("VDW-14-SCALE", "0.500000")
+//        properties.addProperty("CHG-14-SCALE", "1.2")
+        properties.addProperty("CHG-14-SCALE", "0.833333")
         properties.addProperty("ELECTRIC", "332.0522173") //was 332.0716
         properties.addProperty("DIELECTRIC", "1.0")
         ForceField forceField = new ForceField(properties)
@@ -156,7 +157,6 @@ class ReadXML extends PotentialScript {
         int[] valence
         String[] biotypeAtomNames
 
-        //TODO: change indices to start at 1 for TINKER format
         // Loop through all types of XML ForceField Nodes
         for (String xmlNode : xmlNodes) {
             NodeList parentNode = doc.getElementsByTagName(xmlNode) // grabs a parent node specified by the string
@@ -187,7 +187,7 @@ class ReadXML extends PotentialScript {
                             if (atom.getNodeName() == "Type") {
                                 String atomType = atom.getAttribute("name")
                                 if (!atomTypeMap.containsKey(atomType)) {
-                                    atomTypeMap.put(atomType,atomTypeMap.size())
+                                    atomTypeMap.put(atomType,atomTypeMap.size()+1)
                                 }
                                 atomTypes[idx] = atomTypeMap.get(atomType)
                                 String className = atom.getAttribute("class")
@@ -196,7 +196,7 @@ class ReadXML extends PotentialScript {
                                 atomicWeights[idx] = parseDouble(atom.getAttribute("mass"))
 
                                 if (!atomClassMap.containsKey(className)) {
-                                    atomClassMap.put(className, atomClassMap.size())
+                                    atomClassMap.put(className, atomClassMap.size()+1)
                                 }
 
                                 atomClasses[idx] = atomClassMap.get(className)
@@ -217,8 +217,8 @@ class ReadXML extends PotentialScript {
                             Node watNode = doc.importNode(watDoc.getElementsByTagName("Residue").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
-                        NodeList residues = parentNode.item(0).getChildNodes()
 
+                        NodeList residues = parentNode.item(0).getChildNodes()
                         for (Node res : residues) {
                             if (res.hasChildNodes()) {
                                 String resName = res.getAttribute("name")
@@ -233,7 +233,7 @@ class ReadXML extends PotentialScript {
                                 for (Node resProp : resProps) {
                                     if (resProp.getNodeName() == "Atom") {
                                         String atomName = resProp.getAttribute("name")
-                                        int atomType = atomTypeMap.get(resProp.getAttribute("type"))
+                                        int atomType = atomTypeMap.get(resProp.getAttribute("type")) - 1 // just used as index, so need this
                                         nameMap[i] = atomName
                                         typeMap[i] = atomType
                                         i++
@@ -291,10 +291,10 @@ class ReadXML extends PotentialScript {
                                 String bondLength = bond.getAttribute("length")
                                 String k = bond.getAttribute("k")
                                 if (!atomClassMap.containsKey(class1)) {
-                                    atomClassMap.put(class1, atomClassMap.size())
+                                    atomClassMap.put(class1, atomClassMap.size()+1)
                                 }
                                 if (!atomClassMap.containsKey(class2)) {
-                                    atomClassMap.put(class2, atomClassMap.size())
+                                    atomClassMap.put(class2, atomClassMap.size()+1)
                                 }
 
                                 int[] classes = new int[2]
@@ -330,13 +330,13 @@ class ReadXML extends PotentialScript {
                                 String k = angle.getAttribute("k")
 
                                 if (!atomClassMap.containsKey(class1)) {
-                                    atomClassMap.put(class1, atomClassMap.size())
+                                    atomClassMap.put(class1, atomClassMap.size()+1)
                                 }
                                 if (!atomClassMap.containsKey(class2)) {
-                                    atomClassMap.put(class2, atomClassMap.size())
+                                    atomClassMap.put(class2, atomClassMap.size()+1)
                                 }
                                 if (!atomClassMap.containsKey(class3)) {
-                                    atomClassMap.put(class3, atomClassMap.size())
+                                    atomClassMap.put(class3, atomClassMap.size()+1)
                                 }
 
                                 int[] classes = new int[3]
@@ -378,10 +378,15 @@ class ReadXML extends PotentialScript {
                                 double[] phases = new double[numTerms]
                                 double[] amplitudes = new double[numTerms]
                                 for (int i = 1; i <= 4; i++) {
-                                    if (!atomClassMap.containsKey(torsion.getAttribute("class"+toString(i)))) {
-                                        atomClassMap.put(torsion.getAttribute("class"+toString(i)), atomClassMap.size())
+                                    String torsClass= torsion.getAttribute("class"+toString(i))
+                                    if (!atomClassMap.containsKey(torsClass)) {
+                                        if (torsClass == "") {
+                                            atomClassMap.put(torsClass, 0)
+                                        } else {
+                                            atomClassMap.put(torsClass, atomClassMap.size()+1)
+                                        }
                                     }
-                                    classes[i-1] = atomClassMap.get(torsion.getAttribute("class"+toString(i)))
+                                    classes[i-1] = atomClassMap.get(torsClass)
 
                                     if (torsion.hasAttribute("periodicity"+toString(i))) { // could replace with i < numTerms
                                         periods[i-1] = parseInt(torsion.getAttribute("periodicity"+toString(i)))
@@ -417,7 +422,7 @@ class ReadXML extends PotentialScript {
                             if (nbF.getNodeName() == "Atom") {
                                 int atomType = atomTypeMap.get(nbF.getAttribute("type"))
                                 double q = parseDouble(nbF.getAttribute("charge")) // in proton units
-                                double sigma = parseDouble(nbF.getAttribute("sigma")) * ANGperNM  // nm to Ang
+                                double sigma = parseDouble(nbF.getAttribute("sigma")) * ANGperNM / 2 // todo nm to Ang and divide by 2 to get radius -> could also just change flag at top
                                 double eps = parseDouble(nbF.getAttribute("epsilon")) / KJperKCal  // kJ/mol? to KCal/mol
 
                                 forceField.addForceFieldType(new ChargeType(atomType, q))
@@ -431,7 +436,16 @@ class ReadXML extends PotentialScript {
             }
         }
         for (int j = 0; j < numAtomTypes; j++) {
-            forceField.addForceFieldType(new AtomType(atomTypes[j], atomClasses[j], atomNames[j], atomEnvs[j], atomicNumbers[j], atomicWeights[j], valence[j]))
+            forceField.addForceFieldType(new AtomType(atomTypes[j], atomClasses[j], atomNames[j], "\"" + atomEnvs[j] + "\"", atomicNumbers[j], atomicWeights[j], valence[j]))
+        }
+
+//        Set<String> atStrSet = atomTypeMap.keySet()
+//        for (String str : atStrSet) {
+//            logger.info(format("%s - %d",str,atomTypeMap.get(str)))
+//        }
+        Set<String> acStrSet = atomClassMap.keySet()
+        for (String str : acStrSet) {
+            logger.info(format("%s - %d",str,atomClassMap.get(str)))
         }
 
         CompositeConfiguration props = Keyword.loadProperties(null)
@@ -511,9 +525,25 @@ class ReadXML extends PotentialScript {
             }
         }
 
-        StringBuffer ffSB = forceField.toStringBuffer()
+        // build header
+        StringBuilder head = new StringBuilder()
+        head.append("forcefield\t\tAMBER-FF99SB-XML\n\n" +
+                    "vdwtype\t\t\tLENNARD-JONES\n" +
+                    "vdwindex\t\tTYPE\n" +
+                    "radiusrule\t\tARITHMETIC\n" +
+                    "radiustype\t\tR-MIN\n" + // or SIGMA
+                    "radiussize\t\tRADIUS\n" + // or DIAMETER
+                    "epsilonrule\t\tGEOMETRIC\n" +
+                    "vdw-14-scale\t\t0.500000\n" + // or 2.0
+                    "chg-14-scale\t\t0.833333\n" + // or 1.2
+                    "electric\t\t332.0522173\n" +
+                    "dielectric\t\t1.0\n")
+// TODO: can get vdw-14-scale and chg-14-scale from the xml Node NonbondedForce attributes "lj14scale" and "coulomb14scale", respectively
+        StringBuffer ffSB = forceField.toStringBuffer() // convert FF to string buffer
 
+        // write forcefield file
         BufferedWriter out = new BufferedWriter(new FileWriter("sampleFF.txt"))
+        out.write(head.toString())
         out.write(ffSB.toString())
         out.flush()
         out.close()
