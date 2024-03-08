@@ -174,7 +174,6 @@ public class ManyBodyOptions {
       List<Residue> residueList = new ArrayList<>();
       Polymer[] polymers = activeAssembly.getChains();
       for (String s : stringList) {
-        logger.info(s);
         Character chainID = s.charAt(0);
         int i = parseInt(s.substring(1));
         for (Polymer polymer : polymers) {
@@ -749,7 +748,7 @@ public class ManyBodyOptions {
     return group.titration;
   }
 
-  public String selectInclusionResidues(List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
+  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
                                        double inclusionCutoff){
     String listResidues = "";
     if (mutatingResidue != -1 && inclusionCutoff != -1) {
@@ -805,17 +804,22 @@ public class ManyBodyOptions {
     Rotamer[] rotamersB = residueB.getRotamers();
     double[] aCoor = new double[3];
     double[] bCoor = new double[3];
-    if(rotamersB != null){
-      for(Rotamer rotamerA: rotamersA){
-        residueA.setRotamer(rotamerA);
-        for(Rotamer rotamerB: rotamersB){
-          residueB.setRotamer(rotamerB);
-          for(Atom atomA: residueA.getAtomList()){
-            for(Atom atomB: residueB.getAtomList()){
-              double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor));
-              if(dist <= inclusionCutoff){
-                return true;
-              }
+    try {
+      int a = rotamersA.length;
+      int b = rotamersB.length;
+    } catch (Exception e){
+      return false;
+    }
+
+    for(Rotamer rotamerA: rotamersA){
+      residueA.setRotamer(rotamerA);
+      for(Rotamer rotamerB: rotamersB){
+        residueB.setRotamer(rotamerB);
+        for(Atom atomA: residueA.getAtomList()){
+          for(Atom atomB: residueB.getAtomList()){
+            double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor));
+            if(dist <= inclusionCutoff){
+              return true;
             }
           }
         }
