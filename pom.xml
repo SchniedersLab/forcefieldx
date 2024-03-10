@@ -977,7 +977,7 @@
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.6.0</assembly.version>
-    <biojava.version>7.1.0</biojava.version>
+    <biojava.version>7.1.1</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
@@ -1006,19 +1006,19 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>7.0.0</git-commit-id.version>
+    <git-commit-id.version>8.0.1</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>23.1.2</graal.version>
     <!-- groovy-all.version>4.0.16</groovy-all.version -->
-    <groovy-all.version>5.0.0-alpha-5</groovy-all.version>
+    <groovy-all.version>5.0.0-alpha-6</groovy-all.version>
     <guava.version>33.0.0-jre</guava.version>
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.8</javaparser.version>
+    <javaparser.version>3.25.9</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.6.3</javadoc.version>
-    <jakarta-xml.version>4.0.1</jakarta-xml.version>
+    <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
@@ -1027,7 +1027,7 @@
     <jxr.version>3.3.2</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.23.0</log4j.version>
+    <log4j.version>2.23.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>

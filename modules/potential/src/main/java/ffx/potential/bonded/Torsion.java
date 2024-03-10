@@ -159,14 +159,12 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     for (AtomType type1 : types1) {
       for (AtomType type2 : types2) {
         // Match both inner atom classes.
-        if ((type1.atomClass == c1 && type2.atomClass == c2) || (type1.atomClass == c2
-            && type2.atomClass == c1)) {
+        if ((type1.atomClass == c1 && type2.atomClass == c2) || (type1.atomClass == c2 && type2.atomClass == c1)) {
           for (AtomType type0 : types0) {
             for (AtomType type3 : types3) {
               // Match one distal atom class.
               if (strict) {
-                if ((type0.atomClass != c0) && (type0.atomClass != c3) && (type3.atomClass != c0)
-                    && (type3.atomClass != c3)) {
+                if ((type0.atomClass != c0) && (type0.atomClass != c3) && (type3.atomClass != c0) && (type3.atomClass != c3)) {
                   continue;
                 }
               }
@@ -174,7 +172,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
               if (torsionType != null && !torsionTypes.contains(torsionType)) {
                 if (!match) {
                   match = true;
-                  sb.append("\n Similar Angle Types:");
+                  sb.append("\n Similar Torsion Types:");
                 }
                 torsionTypes.add(torsionType);
                 sb.append(format("\n  %s", torsionType));
