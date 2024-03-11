@@ -2244,6 +2244,208 @@ public class RotamerOptimization implements Terminatable {
     return 0.0;
   }
 
+    /**
+     * A global optimization over side-chain rotamers using a recursive algorithm and information about
+     * eliminated rotamers, rotamer pairs and rotamer triples.
+     *
+     * @param residues        Residue array.
+     * @param i               Current number of permutations.
+     * @param currentRotamers Current rotamer list.
+     */
+    public void partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+        // This is the initialization condition.
+        double LOG10 = log(10.0);
+        double temperature = 298.15;
+        if (i == 0) {
+            totalBoltzmann = 0;
+            evaluatedPermutations = 0;
+            evaluatedPermutationsPrint = 1000;
+        }
+
+        if (evaluatedPermutations >= evaluatedPermutationsPrint) {
+            if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
+                logIfRank0(
+                        format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
+                evaluatedPermutationsPrint *= 10;
+            }
+        }
+
+        int nResidues = residues.length;
+        Residue residuei = residues[i];
+        Rotamer[] rotamersi = residuei.getRotamers();
+        int lenri = rotamersi.length;
+        if (i < nResidues - 1) {
+            for (int ri = 0; ri < lenri; ri++) {
+                if (eR.check(i, ri)) {
+                    continue;
+                }
+                boolean deadEnd = false;
+                for (int j = 0; j < i; j++) {
+                    int rj = currentRotamers[j];
+                    deadEnd = eR.check(j, rj, i, ri);
+                    if (deadEnd) {
+                        break;
+                    }
+                }
+                if (deadEnd) {
+                    continue;
+                }
+                currentRotamers[i] = ri;
+                partitionFunction(residues, i + 1, currentRotamers);
+            }
+        } else {
+            // At the end of the recursion, check each rotamer of the final residue.
+            for (int ri = 0; ri < lenri; ri++) {
+                int res = 0;
+                if (eR.check(i, ri)) {
+                    continue;
+                }
+                currentRotamers[i] = ri;
+                boolean deadEnd = false;
+                for (int j = 0; j < i; j++) {
+                    int rj = currentRotamers[j];
+                    deadEnd = eR.check(j, rj, i, ri);
+                    if (deadEnd) {
+                        break;
+                    }
+                }
+                if (!deadEnd) {
+                    evaluatedPermutations++;
+
+                    energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
+                    parallelTeam.execute(energyRegion);
+                    double selfEnergy = energyRegion.getSelf();
+                    // Recompute the self energy from a restart file run at pH 7.0
+                    if (recomputeSelf) {
+                        int count = 0;
+                        for (Residue residue : residues) {
+                            double bias7 = 0;
+                            double biasCurrent = 0;
+                            Rotamer[] rotamers = residue.getRotamers();
+                            int currentRotamer = currentRotamers[count];
+                            switch (rotamers[currentRotamer].getName()) {
+                                case "HIE" -> {
+                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
+                                            TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - pH)) -
+                                            TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                                }
+                                case "HID" -> {
+                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - 7)) -
+                                            TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - pH)) -
+                                            TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                                }
+                                case "ASP" -> {
+                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - 7)) -
+                                            TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
+                                            TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                                }
+                                case "GLU" -> {
+                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
+                                            TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - pH)) -
+                                            TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                                }
+                                case "LYD" -> {
+                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - 7)) -
+                                            TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - pH)) -
+                                            TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                                }
+                                default -> {
+                                }
+                            }
+                            selfEnergy = selfEnergy - bias7 + biasCurrent;
+                            count += 1;
+                        }
+                    }
+
+                    // Calculate the total energy of a permutation/conformation
+                    double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
+                            energyRegion.getTwoBody() + energyRegion.getThreeBody();
+
+                    // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
+                    if (evaluatedPermutations == 1) {
+                        refEnergy = totalEnergy;
+                    }
+                    double boltzmannWeight = exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
+
+                    // Collect Boltzmann weight for every rotamer for residues included in the optimization
+                    if (fraction.length > 0) {
+                        for (Residue residue : residues) {
+                            Rotamer[] rotamers = residue.getRotamers();
+                            int currentRotamer = currentRotamers[res];
+                            int count = rotamers[currentRotamer].getWeight();
+                            populationBoltzmann[res][count] += boltzmannWeight;
+                            res += 1;
+                        }
+                    }
+
+                    // Sum Boltzmann of all permutations
+                    totalBoltzmann += boltzmannWeight;
+                }
+            }
+        }
+    }
+
+    /**
+     * Get reference energy for partition function boltzmann weights
+     *
+     * @return ref energy
+     */
+    public double getRefEnergy() {
+        return refEnergy;
+    }
+
+    /**
+     * Get the total boltzmann weight for an ensemble
+     *
+     * @return total boltzmann
+     */
+    public double getTotalBoltzmann() {
+        return totalBoltzmann;
+    }
+
+    /**
+     * Get the ensemble average of protonated rotamers for all titratable sites
+     *
+     * @return fraction of protonated residues
+     */
+    public double[][] getFraction() {
+        return fraction;
+    }
+
+    /**
+     * Get the Protonated Boltzmann for all sites
+     *
+     * @return fraction of protonated residues
+     */
+    public double[][] getPopulationBoltzmann() {
+        return populationBoltzmann;
+    }
+
+    /**
+     * Calculate Populations for Residues
+     *
+     * @param residues        residue array
+     * @param i               int
+     * @param currentRotamers empty array
+     * @throws Exception too many permutations to continue
+     */
+    public void getProtonationPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+        fraction = new double[residues.length][54];
+        populationBoltzmann = new double[residues.length][54];
+        partitionFunction(residues, i, currentRotamers);
+        for (int m = 0; m < fraction.length; m++) {
+            for (int n = 0; n < 54; n++) {
+                fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+            }
+        }
+        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations);
+    }
+
   /**
    * Return an integer array of optimized rotamers following rotamer optimization.
    *
