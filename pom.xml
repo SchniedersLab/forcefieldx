@@ -346,16 +346,16 @@
           <arguments>
             <argument>-ms1G</argument>
             <argument>-mx1G</argument>
-            <argument>-Djava.awt.headless=true</argument>
             <argument>-classpath</argument>
-            <argument>bin/ffx-all.jar</argument>
+            <argument>lib/*</argument>
+            <!-- argument>-Djava.awt.headless=true</argument>
+            <argument>-Dj3d.rend=noop</argument>
             <argument>ffx.Main</argument>
-            <argument>timer</argument>
+            <argument>Timer</argument>
             <argument>-n</argument>
-            <argument>100000</argument>
-            <argument>-c</argument>
-            <argument>1</argument>
-            <argument>examples/ubiquitin.xyz</argument>
+            <argument>1000</argument>
+            <argument>examples/ubiquitin.xyz</argument -->
+            <argument>ffx.numerics.estimator.MultistateBennettAcceptanceRatio</argument>
           </arguments>
           <executable>java</executable>
         </configuration>
