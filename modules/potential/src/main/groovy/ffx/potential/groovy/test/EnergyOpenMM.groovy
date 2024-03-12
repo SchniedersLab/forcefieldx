@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,7 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import picocli.CommandLine.Command
@@ -120,7 +120,7 @@ class EnergyOpenMM extends PotentialScript {
     logger.info(" Running Energy on " + filename)
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    if (!forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+    if (!forceFieldEnergy instanceof OpenMMEnergy) {
       logger.severe(" test.EnergyOpenMM requires use of an OpenMM platform!")
     }
     Atom[] atoms = activeAssembly.getAtomArray()
@@ -149,7 +149,7 @@ class EnergyOpenMM extends PotentialScript {
     double[] gFFX = new double[nVars]
     double[] gOMM = new double[nVars]
 
-    ForceFieldEnergyOpenMM feOMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
+    OpenMMEnergy feOMM = (OpenMMEnergy) forceFieldEnergy
 
     double dE = feOMM.energyAndGradientFFX(x, gFFX, true)
     dE = dE - feOMM.energyAndGradient(x, gOMM, true)

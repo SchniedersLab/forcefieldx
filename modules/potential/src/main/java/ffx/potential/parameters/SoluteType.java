@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,13 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Comparator;
@@ -60,11 +60,16 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[integers & 3 reals] " + "Provides values for a single implicit solvation parameter. "
-        + "The integer modifier gives the atom type number for which solvation atom size parameters are to be defined. "
-        + "The three real number modifiers give the values of the atomic diameter in Angstroms, for use in Poisson-Boltzmann (APBS), ddCOSMO and Generalized Kirkwood (GK) calculations, respectively.")
-public final class SoluteType extends BaseType implements Comparator<String> {
+@FFXProperty(name = "solute", clazz = String.class, propertyGroup = PotentialFunctionParameter,
+    description = """
+        [integers and 4 reals]
+        Provides values for a single implicit solvation parameter.
+        The integer modifier gives the atom type number for which solvation atom size parameters are to be defined.
+        The first three real number modifiers give the values of the atomic diameter in Angstroms,
+        for use in Poisson-Boltzmann (APBS), ddCOSMO and Generalized Kirkwood (GK) calculations, respectively.
+        The final real number is the Sneck scaling factor for implicit solvent interstitial space corrections.
+        """)
+  public final class SoluteType extends BaseType implements Comparator<String> {
 
   /** A Logger for the SoluteType class. */
   private static final Logger logger = Logger.getLogger(SoluteType.class.getName());
@@ -132,8 +137,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
    * @param gkDiameter Diameter for GK continuum electrostatics.
    * @param sneck Sneck scaling factor for implicit solvent interstitial space corrections
    */
-  public SoluteType(int atomType, double pbDiameter, double cosDiameter, double gkDiameter,
-      double sneck) {
+  public SoluteType(int atomType, double pbDiameter, double cosDiameter, double gkDiameter, double sneck) {
     super(SOLUTE, Integer.toString(atomType));
     this.atomType = atomType;
     this.pbDiameter = pbDiameter;
@@ -152,8 +156,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
    * @param cosDiameter Diameter for ddCOSMO continuum electrostatics.
    * @param gkDiameter Diameter for GK continuum electrostatics.
    */
-  public SoluteType(int atomType, String description, double pbDiameter, double cosDiameter,
-      double gkDiameter) {
+  public SoluteType(int atomType, String description, double pbDiameter, double cosDiameter, double gkDiameter) {
     this(atomType, pbDiameter, cosDiameter, gkDiameter);
     this.description = description;
     this.sneck = DEFAULT_SNECK;

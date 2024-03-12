@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -572,10 +572,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
       try {
         team.shutdown();
       } catch (Exception e) {
-        logger.severe(
-            format(
-                " Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s",
-                e.toString()));
+        logger.severe(format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e));
       }
     }
     team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);

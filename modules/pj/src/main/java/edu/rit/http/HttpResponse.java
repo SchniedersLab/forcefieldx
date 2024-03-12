@@ -39,6 +39,7 @@
 //******************************************************************************
 package edu.rit.http;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -246,11 +247,11 @@ public class HttpResponse {
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
-    public void setContentType(String theContentType) {
+    public void setContentType(@Nullable String theContentType) {
         if (theContentType == null) {
             throw new NullPointerException("HttpResponse.setContentType(): theContentType is null");
         }
-        if (theContentType.length() == 0) {
+        if (theContentType.isEmpty()) {
             throw new IllegalArgumentException("HttpResponse.setContentType(): theContentType is zero length");
         }
         if (myPrintWriter != null) {
@@ -316,18 +317,17 @@ public class HttpResponse {
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
-    public void setHeader(String theHeaderName,
-            String theHeaderValue) {
+    public void setHeader(@Nullable String theHeaderName, @Nullable String theHeaderValue) {
         if (theHeaderName == null) {
             throw new NullPointerException("HttpResponse.setHeader(): theHeaderName is null");
         }
-        if (theHeaderName.length() == 0) {
+        if (theHeaderName.isEmpty()) {
             throw new IllegalArgumentException("HttpResponse.setHeader(): theHeaderName is zero length");
         }
         if (theHeaderValue == null) {
             throw new NullPointerException("HttpResponse.setHeader(): theHeaderValue is null");
         }
-        if (theHeaderValue.length() == 0) {
+        if (theHeaderValue.isEmpty()) {
             throw new IllegalArgumentException("HttpResponse.setHeader(): theHeaderValue is zero length");
         }
         if (myPrintWriter != null) {

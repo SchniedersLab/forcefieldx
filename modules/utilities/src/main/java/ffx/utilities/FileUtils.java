@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -55,6 +55,13 @@ import java.nio.file.Path;
  * @since 1.0
  */
 public class FileUtils {
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private FileUtils() {
+    // Empty constructor.
+  }
 
   /**
    * Returns the file name of a temporary copy of <code>input</code> content.

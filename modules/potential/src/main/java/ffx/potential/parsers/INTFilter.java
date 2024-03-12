@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -127,7 +127,7 @@ public class INTFilter extends SystemFilter {
 
       String data = br.readLine().trim();
       // Read blank lines at the top of the file
-      while (data.length() == 0) {
+      while (data.isEmpty()) {
         data = br.readLine().trim();
       }
       int numberOfAtoms;

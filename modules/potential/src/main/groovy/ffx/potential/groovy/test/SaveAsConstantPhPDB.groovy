@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AtomSelectionOptions
@@ -139,6 +140,9 @@ class SaveAsConstantPhPDB extends PotentialScript {
 
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
+    // Create Potential in same fashion as in PotentialsFileOpener since we manually create mola vs using getActiveAs()
+    ForceFieldEnergy potential = ForceFieldEnergy.energyFactory(activeAssembly, pdbFilter.getCoordRestraints())
+    activeAssembly.setPotential(potential)
     activeAssembly.finalize(true, forceField)
 
     // Configure the base directory if it has not been set.

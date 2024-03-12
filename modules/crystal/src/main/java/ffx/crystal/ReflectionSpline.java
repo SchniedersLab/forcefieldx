@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -44,9 +44,10 @@ import static org.apache.commons.math3.util.FastMath.min;
 /**
  * The ReflectionSpline class represents a reflection spline basis.
  *
- * @author Timothy D. Fenn<br>
- * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank"> K. Cowtan, J. Appl.
- *     Cryst. (2002). 35, 655-663 </a>
+ * @author Timothy D. Fenn
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank"> Cowtan, K. 2002.
+ * Generic representation and evaluation of properties as a function of position in reciprocal
+ * space. J. Appl. Cryst. 35:655-663. </a>
  * @since 1.0
  */
 public class ReflectionSpline {
@@ -61,7 +62,7 @@ public class ReflectionSpline {
    * Constructor for ReflectionSpline.
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-   * @param nParams an int.
+   * @param nParams        an int.
    */
   public ReflectionSpline(ReflectionList reflectionList, int nParams) {
     this.reflectionList = reflectionList;
@@ -110,7 +111,7 @@ public class ReflectionSpline {
    * Equations 24 and 25 in Cowtan et al.
    *
    * @param invResSq resolution of desired spline interpolation
-   * @param params current spline parameters
+   * @param params   current spline parameters
    * @return value at invResSq
    */
   public double f(double invResSq, double[] params) {

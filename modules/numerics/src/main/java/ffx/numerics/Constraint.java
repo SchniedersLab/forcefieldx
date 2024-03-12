@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -58,14 +58,13 @@ public interface Constraint {
    * be in Angstroms, not nm.
    *
    * @param xPrior Atomic coordinates prior to the time-step to be constrained.
-   * @param xNew Atomic coordinates after the time-step; updated in-place to satisfy the
-   *     constraint.
+   * @param xNew   Atomic coordinates after the time-step; updated in-place to satisfy the
+   *               constraint.
    * @param masses Masses.
-   * @param tol Acceptable constraint tolerance for numerical methods, as a fraction of bond
-   *     length.
+   * @param tol    Acceptable constraint tolerance for numerical methods, as a fraction of bond
+   *               length.
    */
-  void applyConstraintToStep(final double[] xPrior, double[] xNew, final double[] masses,
-      double tol);
+  void applyConstraintToStep(final double[] xPrior, double[] xNew, final double[] masses, double tol);
 
   /**
    * Applies this Constraint to velocities, ensuring relative velocities are perpendicular to
@@ -75,10 +74,10 @@ public interface Constraint {
    * <p>Our positions will be in Angstroms, and velocities in Angstroms/ps, compared to the OpenMM
    * nm and nm/ps.
    *
-   * @param x Atomic coordinates (unchanged).
-   * @param v Velocities (updated in-place to satisfy constraints).
+   * @param x      Atomic coordinates (unchanged).
+   * @param v      Velocities (updated in-place to satisfy constraints).
    * @param masses Masses.
-   * @param tol Acceptable constraint tolerance for numerical methods; likely in Angstroms/ps
+   * @param tol    Acceptable constraint tolerance for numerical methods; likely in Angstroms/ps
    */
   void applyConstraintToVelocities(final double[] x, double[] v, final double[] masses, double tol);
 
@@ -93,7 +92,7 @@ public interface Constraint {
   /**
    * Checks if this Constraint is satisfied.
    *
-   * @param x Input coordinates to check.
+   * @param x   Input coordinates to check.
    * @param tol Numerical tolerance as a fraction of bond stretch.
    * @return Whether this Constraint is satisfied.
    */
@@ -104,11 +103,11 @@ public interface Constraint {
    * require that relative velocity be orthogonal to the bond. If the velocities vector is null or
    * the tolerance is zero, velocity checks are skipped.
    *
-   * @param x Input coordinates to check.
-   * @param v Input velocities to check. If null, velocity check disabled.
+   * @param x    Input coordinates to check.
+   * @param v    Input velocities to check. If null, velocity check disabled.
    * @param xTol Numerical tolerance for bond lengths.
    * @param vTol Numerical tolerance for velocity checks (typically in degrees). If zero,
-   *     velocity check disabled.
+   *             velocity check disabled.
    * @return Whether this Constraint is satisfied.
    */
   boolean constraintSatisfied(final double[] x, final double[] v, double xTol, double vTol);

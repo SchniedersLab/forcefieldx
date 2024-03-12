@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -614,7 +614,7 @@ public class NamingUtils {
    *
    * @param residue Residue to fix atom names of.
    */
-  public static void renameAminoAcidToPDBStandard(Residue residue) {
+  public static boolean renameAminoAcidToPDBStandard(Residue residue) {
     if (residue.getChainID() == null) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(" Setting Chain ID to Z for " + residue);
@@ -641,7 +641,7 @@ public class NamingUtils {
           for (int i = 1; i <= 3; i++) {
             hydrogenForCA.get(i - 1).setName(format("H%d", i));
           }
-          return;
+          return true;
         }
         case GLY -> {
           hydrogenForCA.get(0).setName("HA2");
@@ -719,9 +719,12 @@ public class NamingUtils {
         hydrogen.get(i - 1).setName(format("H%d", i));
       }
     } else {
-      throw new IllegalArgumentException(
-          format(" Could not find nitrogen atom for residue %s!", residue));
+//      throw new IllegalArgumentException(
+//              format(" Could not find nitrogen atom for residue %s!", residue));
+      logger.warning(format(" Mapping of nitrogen to residue (%s) failed. Trying to remap to molecule.", residue));
+      return false;
     }
+    return true;
   }
 
   /**

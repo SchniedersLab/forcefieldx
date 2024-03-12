@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -106,7 +106,7 @@ public class NCSRestraint implements LambdaInterface {
       d2LambdaPow = 0.0;
     }
 
-    logger.info(format("\n NCS Restraint%s", crystal.toString()));
+    logger.info(format("\n NCS Restraint%s", crystal));
   }
 
   /** {@inheritDoc} */

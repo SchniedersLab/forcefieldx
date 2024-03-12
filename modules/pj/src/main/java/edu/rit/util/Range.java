@@ -43,6 +43,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serial;
 
 /**
  * Class Range provides a range of type <code>int</code>. A range object has the
@@ -88,6 +89,7 @@ public class Range
         implements Externalizable {
 
 // Hidden data members.
+    @Serial
     private static final long serialVersionUID = -155434844308312282L;
 
     int lb;

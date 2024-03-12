@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -55,10 +55,12 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NeighborList;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
 
@@ -81,10 +83,13 @@ public class DistanceMatrix {
 
   private static final Logger logger = Logger.getLogger(DistanceMatrix.class.getName());
 
-  private final RotamerOptimization rO;
-  /** MolecularAssembly to perform rotamer optimization on. */
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
   private final MolecularAssembly molecularAssembly;
-  /** AlgorithmListener who should receive updates as the optimization runs. */
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
   private final AlgorithmListener algorithmListener;
   /**
    * An array of all residues being optimized. Note that Box and Window optimizations operate on
@@ -96,15 +101,25 @@ public class DistanceMatrix {
    * subsets of this list.
    */
   private final List<Residue> allResiduesList;
-  /** Number of residues being optimized. */
+  /**
+   * Number of residues being optimized.
+   */
   private final int numResidues;
-  /** Default distance method is to find the shortest distance between residues. */
+  /**
+   * Default distance method is to find the shortest distance between residues.
+   */
   private final RotamerOptimization.DistanceMethod distanceMethod;
-  /** The distance that the distance matrix checks for. */
+  /**
+   * The distance that the distance matrix checks for.
+   */
   private final double distance;
-  /** Two-Body cutoff distance. */
+  /**
+   * Two-Body cutoff distance.
+   */
   private final double twoBodyCutoffDist;
-  /** Three-body cutoff distance. */
+  /**
+   * Three-body cutoff distance.
+   */
   private final double threeBodyCutoffDist;
   /**
    * Flag to load the distance matrix as needed; if false, matrix is prefilled at the beginning of
@@ -119,11 +134,10 @@ public class DistanceMatrix {
    */
   private double[][][][] distanceMatrix;
 
-  public DistanceMatrix(RotamerOptimization rO, MolecularAssembly molecularAssembly,
-      AlgorithmListener algorithmListener, Residue[] allResiduesArray, List<Residue> allResiduesList,
-      RotamerOptimization.DistanceMethod distanceMethod, double distance, double twoBodyCutoffDist,
-      double threeBodyCutoffDist, boolean lazyMatrix) {
-    this.rO = rO;
+  public DistanceMatrix(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener,
+                        Residue[] allResiduesArray, List<Residue> allResiduesList,
+                        RotamerOptimization.DistanceMethod distanceMethod, double distance, double twoBodyCutoffDist,
+                        double threeBodyCutoffDist, boolean lazyMatrix) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.allResiduesArray = allResiduesArray;
@@ -153,9 +167,9 @@ public class DistanceMatrix {
    * Gets the raw distance between two rotamers using lazy loading of the distance matrix. Intended
    * uses: helper method for get2BodyDistance, and for checking for superpositions.
    *
-   * @param i A residue index.
+   * @param i  A residue index.
    * @param ri A rotamer index for i.
-   * @param j A residue index j!=i.
+   * @param j  A residue index j!=i.
    * @param rj A rotamer index for j.
    * @return dist(i, ri, j, rj), ignoring distance matrix method used.
    */
@@ -179,9 +193,9 @@ public class DistanceMatrix {
   /**
    * Checks if the i,ri,j,rj pair exceeds the pair distance thresholds.
    *
-   * @param i A residue index.
+   * @param i  A residue index.
    * @param ri A rotamer index for i.
-   * @param j A residue index j!=i.
+   * @param j  A residue index j!=i.
    * @param rj A rotamer index for j.
    * @return If i,ri,j,rj is greater than the threshold distance.
    */
@@ -196,13 +210,13 @@ public class DistanceMatrix {
    * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold, or if any component exceeds
    * the pair/triple distance thresholds.
    *
-   * @param i A residue index.
+   * @param i  A residue index.
    * @param ri A rotamer index for i.
-   * @param j A residue index j!=i.
+   * @param j  A residue index j!=i.
    * @param rj A rotamer index for j.
-   * @param k A residue index k!=i, k!=j.
+   * @param k  A residue index k!=i, k!=j.
    * @param rk A rotamer index for k.
-   * @param l A residue index l!=i, l!=j, l!=k.
+   * @param l  A residue index l!=i, l!=j, l!=k.
    * @param rl A rotamer index for l.
    * @return If i,ri,j,rj,k,rk,l,rl is greater than the threshold distances.
    */
@@ -223,11 +237,11 @@ public class DistanceMatrix {
    * Checks if the i,ri,j,rj,k,rk triple exceeds the 3-body threshold, or if any component exceeds
    * the pair distance threshold.
    *
-   * @param i A residue index.
+   * @param i  A residue index.
    * @param ri A rotamer index for i.
-   * @param j A residue index j!=i.
+   * @param j  A residue index j!=i.
    * @param rj A rotamer index for j.
-   * @param k A residue index k!=i, k!=j.
+   * @param k  A residue index k!=i, k!=j.
    * @param rk A rotamer index for k.
    * @return If i,ri,j,rj,k,rk is greater than the threshold distances.
    */
@@ -248,9 +262,9 @@ public class DistanceMatrix {
    * not already filled. Default is to find the shortest distance between two residues rather than
    * between two rotamers.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
    * @return Shortest distance
    */
@@ -275,11 +289,11 @@ public class DistanceMatrix {
    * Returns the RMS separation distance for the closest rotamers of three residues' 2-body
    * distances. Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer for k
    * @return RMS separation distance
    */
@@ -298,13 +312,13 @@ public class DistanceMatrix {
    * Returns the RMS separation distance for the closest rotamers of 6 2-body distances from four
    * residues. Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer for k
-   * @param l Residue l
+   * @param l  Residue l
    * @param rl Rotamer for l
    * @return RMS separation distance
    */
@@ -360,9 +374,9 @@ public class DistanceMatrix {
    * Checks the distance matrix, finding the shortest distance between the closest rotamers of two
    * residues.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
    * @return Shortest distance
    */
@@ -390,8 +404,8 @@ public class DistanceMatrix {
   /**
    * Calculates the minimum distance between two sets of coordinates in a given symmetry operator.
    *
-   * @param resi Coordinates of i by [atom][xyz]
-   * @param resj Coordinates of j by [atom][xyz]
+   * @param resi  Coordinates of i by [atom][xyz]
+   * @param resj  Coordinates of j by [atom][xyz]
    * @param symOp Symmetry operator to apply
    * @return Minimum distance
    */
@@ -422,9 +436,7 @@ public class DistanceMatrix {
       try {
         lengthRi = residuei.getRotamers().length;
       } catch (IndexOutOfBoundsException ex) {
-        rO.logIfMaster(
-            format(" Residue i %s has null rotamers.", residuei.toFormattedString(false, true)),
-            Level.WARNING);
+        logger.warning(format(" Residue i %s has null rotamers.", residuei.toFormattedString(false, true)));
         continue;
       }
       distanceMatrix[i] = new double[lengthRi][][];
@@ -436,8 +448,7 @@ public class DistanceMatrix {
           try {
             lengthRj = residuej.getRotamers().length;
           } catch (IndexOutOfBoundsException ex) {
-            rO.logIfMaster(
-                format(" Residue j %s has null rotamers.", residuej.toFormattedString(false, true)));
+            logger.warning(format(" Residue j %s has null rotamers.", residuej.toFormattedString(false, true)));
             continue;
           }
           distanceMatrix[i][ri][j] = new double[lengthRj];
@@ -474,15 +485,7 @@ public class DistanceMatrix {
        for sequence optimization: if > 1 residue optimized, run on only
        one thread.
       */
-      int nThreads;
-      if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
-        nThreads = (nMultiRes > 1) ? 1
-            : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
-      } else {
-        // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
-        nThreads = 16;
-      }
-      ParallelTeam parallelTeam = new ParallelTeam(nThreads);
+      ParallelTeam parallelTeam = getParallelTeam(nMultiRes);
       Crystal crystal = molecularAssembly.getCrystal();
       int nSymm = crystal.spaceGroup.getNumberOfSymOps();
       logger.info("\n Computing Residue Distance Matrix");
@@ -541,8 +544,7 @@ public class DistanceMatrix {
       neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
 
       neighborTime += System.nanoTime();
-      logger.info(
-          format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
+      logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
       DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(), numResidues,
           crystal, lists, neighborList.getPairwiseSchedule());
@@ -557,28 +559,39 @@ public class DistanceMatrix {
         logger.log(Level.SEVERE, message, e);
       }
       parallelTime += System.nanoTime();
-      logger.info(
-          format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
+      logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
 
       ResidueState.revertAllCoordinates(allResiduesList, orig);
       try {
         parallelTeam.shutdown();
       } catch (Exception ex) {
-        logger.warning(
-            format(" Exception shutting down parallel team for the distance matrix: %s", ex));
+        logger.warning(format(" Exception shutting down parallel team for the distance matrix: %s", ex));
       }
     }
+  }
+
+  private ParallelTeam getParallelTeam(int nMultiRes) {
+    int nThreads;
+    if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
+      nThreads = (nMultiRes > 1) ? 1
+          : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+    } else {
+      // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
+      nThreads = 16;
+    }
+    ParallelTeam parallelTeam = new ParallelTeam(nThreads);
+    return parallelTeam;
   }
 
   /**
    * Returns the RMS separation distance of three 2-body distances. Defaults to Double.MAX_VALUE when
    * there are pair distances outside cutoffs.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer for k
    * @return RMS separation distance
    */
@@ -597,13 +610,13 @@ public class DistanceMatrix {
    * Returns the RMS separation distance of 6 2-body distances. Defaults to Double.MAX_VALUE when
    * there are pair distances outside cutoffs.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer for k
-   * @param l Residue l
+   * @param l  Residue l
    * @param rl Rotamer for l
    * @return RMS separation distance
    */
@@ -625,9 +638,9 @@ public class DistanceMatrix {
    * Evaluate the pairwise distance between two residues' rotamers under any symmetry operator; does
    * "lazy loading" for the distance matrix.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer for i
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer for j
    * @return Shortest distance
    */

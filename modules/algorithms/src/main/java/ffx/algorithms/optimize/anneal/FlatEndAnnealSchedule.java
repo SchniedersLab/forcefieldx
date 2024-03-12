@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -107,7 +107,7 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
           String.format("\nMain annealing is followed by a %9.3f-long window at %10.4g K", lenAfter,
               tLow));
     }
-    sb.append("\nMain annealing schedule: ").append(middle.toString());
+    sb.append("\nMain annealing schedule: ").append(middle);
     this.description = sb.toString();
   }
 

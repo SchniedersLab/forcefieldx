@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -47,6 +47,7 @@ import edu.rit.pj.WorkerRegion
 import edu.rit.pj.WorkerTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
+import ffx.potential.Utilities
 import ffx.utilities.FFXScript
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -97,6 +98,13 @@ class ForEachFile extends AlgorithmsScript {
   @Option(names = ['-s', '--schedule'], defaultValue = "dynamic", paramLabel = "dynamic",
       description = 'Load balancing will use a [Dynamic, Fixed, or Guided] schedule.')
   String schedule
+
+  /**
+   * -v --verbose Decide whether to print additional logging.
+   */
+  @Option(names = ['-v', '--verbose'], defaultValue = "false", paramLabel = "false",
+          description = 'Print additional logging for errors.')
+  boolean verbose
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -256,6 +264,10 @@ class ForEachFile extends AlgorithmsScript {
             groovyScript.run()
           } catch (Exception e) {
             logger.info(format(" Exception for file: %s", path))
+            if(verbose){
+              logger.info(e.toString());
+              logger.info(Utilities.stackTraceToString(e));
+            }
           }
         }
       }

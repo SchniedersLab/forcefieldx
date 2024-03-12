@@ -6,15 +6,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>edu.uiowa.eng.ffx</groupId>
-        <artifactId>ffx</artifactId>
+        <artifactId>forcefieldx</artifactId>
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>pj</artifactId>
+    <artifactId>ffx-pj</artifactId>
     <packaging>jar</packaging>
     <name>Parallel Java</name>
-    <description>Continuation (and minor modifications) to Parallel Java</description>
+    <description>Parallel Java supports both shared memory and message passing parallelization.</description>
     <version>1.0.1</version>
     <build>
         <pluginManagement>

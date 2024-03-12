@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.cos;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.floatPI;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sin;
 import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.numerics.tornado.FFXTornado;
@@ -50,7 +50,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
-/** Proof-of-concept use of the TornadoVM for parallelization of Java code. */
+/**
+ * Proof-of-concept use of the TornadoVM for parallelization of Java code.
+ */
 public class TornadoDFT {
 
   float[] inReal;

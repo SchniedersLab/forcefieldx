@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -220,7 +220,7 @@ public class BARFilter {
         return false;
       }
     } catch (IOException fileNotFoundException) {
-      fileNotFoundException.printStackTrace();
+      logger.warning(format(" Exception reading %s:\n %s", barFile, fileNotFoundException));
     }
     return true;
   }

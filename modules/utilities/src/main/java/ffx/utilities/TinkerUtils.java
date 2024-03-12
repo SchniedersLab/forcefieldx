@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -71,6 +71,13 @@ public class TinkerUtils {
 
   /** Tinker ranges end with a positive number. Positive numbers may also be a Singleton. */
   private static final Pattern atomSingletonPattern = Pattern.compile("(\\d+)");
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private TinkerUtils() {
+    // Empty constructor.
+  }
 
   /**
    * Parse a Tinker selection list. No checking is done to make sure range i

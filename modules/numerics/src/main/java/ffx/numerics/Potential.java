@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -58,7 +58,7 @@ public interface Potential extends OptimizationInterface {
 
   /**
    * Returns the list of Constraints associated with this Potential. The default implementation
-   * returns an empty list. TODO: Implement for all Potentials.
+   * returns an empty list.
    *
    * @return All Constraints.
    */

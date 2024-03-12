@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -216,13 +216,12 @@ class Scheduler extends AlgorithmsScript {
     sb.append(format("schedulerport %d\n", port))
     sb.append(format("frontendhost %s\n", frontend))
 
-    // Locate the JRE being used.
+    // Locate the Java executable being used.
     String javaHome = System.getProperty("java.home")
-    // Locate the version of FFX being used.
-    String ffxHome = System.getProperty("basedir")
-
     String java = javaHome + "/bin/java"
-    String ffx = ffxHome + "/bin/ffx-all-1.0.0-beta.jar"
+
+    // Set the classpath.
+    String classpath = System.getProperty("java.class.path")
 
     // args = "-Xmx" + memory
     String arg = "-Xmx" + memory
@@ -238,7 +237,7 @@ class Scheduler extends AlgorithmsScript {
             + CPUs + " "
             + node + " "
             + java + " "
-            + ffx + " "
+            + classpath + " "
             + arg + "\n")
         i++
       }
@@ -249,6 +248,8 @@ class Scheduler extends AlgorithmsScript {
     File config = new File(pjConfig)
     config.write(sb.toString())
 
+    // Locate the version of FFX being used.
+    String ffxHome = System.getProperty("basedir")
     // Run the Parallel Java Scheduler.
     String command = ffxHome + "/bin/scheduler " + pjConfig
     def process = command.execute()

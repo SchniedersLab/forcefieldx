@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -92,6 +92,13 @@ class Superpose extends AlgorithmsScript {
   @Option(names = ['--dRMSD'], paramLabel = "false", defaultValue = "false",
       description = 'Calculate dRMSD in addition to RMSD.')
   private boolean dRMSD
+
+  /**
+   * --ps or --printSymOp Print optimal SymOp to align structure 2 to structure 1.
+   */
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "false", defaultValue = "false",
+          description = 'Print optimal SymOp to align input structures.')
+  private static boolean printSym
 
   /**
    * -w or --write Write out the RMSD matrix.
@@ -261,7 +268,7 @@ class Superpose extends AlgorithmsScript {
         new ffx.potential.utils.Superpose(baseFilter, targetFilter, isSymmetric)
 
     // Do the superpositions.
-    superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots)
+    superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots, printSym)
 
     return this
   }

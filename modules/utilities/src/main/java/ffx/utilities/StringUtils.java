@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -120,6 +120,13 @@ public class StringUtils {
     }
 
     ionNames = Collections.unmodifiableMap(ions);
+  }
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private StringUtils() {
+    // Empty constructor.
   }
 
   /**
@@ -252,7 +259,7 @@ public class StringUtils {
     } else if (val <= minVal) {
       throw new IllegalArgumentException(
           String.format(
-              " Value %f is less than the minumum of %f enforced by width %d", val, minVal, width));
+              " Value %f is less than the minimum of %f enforced by width %d", val, minVal, width));
     }
 
     String str = String.format("%" + width + "." + prec + "f", val);
@@ -391,17 +398,13 @@ public class StringUtils {
       int start = parseInt(m.group(1)) - 1;
       int end = parseInt(m.group(2)) - 1;
       if (start > end) {
-        throw new IllegalArgumentException(
-            format(" %s input %s not valid: start > end.", keyType, atomRange));
+        throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, atomRange));
       } else if (start < 0) {
         throw new IllegalArgumentException(
-            format(
-                " %s input %s not valid: atoms should be indexed starting from 1.",
-                keyType, atomRange));
+            format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, atomRange));
       } else if (start >= nAtoms) {
         throw new IllegalArgumentException(
-            format(
-                " %s input %s not valid: atom range is out of bounds for assembly of length %d.",
+            format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.",
                 keyType, atomRange, nAtoms));
       } else {
         if (end >= nAtoms) {
@@ -505,5 +508,40 @@ public class StringUtils {
    */
   public static String tryParseWater(String name) {
     return waterNames.contains(name.toUpperCase()) ? STANDARD_WATER_NAME : null;
+  }
+
+  /**
+   * Write atoms ranges for a list of atom indices.
+   * @param atoms Atoms indices for which a comma separated list is desired.
+   * @return String of the atom list (comma separated, hyphens for large ranges).
+   */
+  public static String writeAtomRanges(int[] atoms){
+    Arrays.sort(atoms);
+    int nAtoms = atoms.length;
+    StringBuilder output = new StringBuilder();
+    for(int i = 0; i < nAtoms; i++){
+      int index = 0;
+      int current = atoms[i] + 1;
+      output.append(current);
+      // Determine if multiple entries are in a row (replace with "-").
+      while(i + index + 1 < nAtoms && atoms[i + index + 1] + 1 == current + index + 1){
+        index++;
+      }
+      if(index >= 2){
+        output.append("-").append(atoms[i + index] + 1);
+      }else if(index == 1){
+        output.append(",").append(atoms[i + index] + 1);
+      }
+      i += index;
+      if(i + 1 < nAtoms){
+        output.append(",");
+      }
+    }
+    String string = output.toString();
+    if(string.endsWith(",")){
+      return string.substring(0,string.length() - 1);
+    }else {
+      return output.toString();
+    }
   }
 }

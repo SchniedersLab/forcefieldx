@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -81,7 +81,7 @@ public class DynamicsBeemanBerendsenTest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
-                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                "acetamide_NVE.xyz", // filename
                 4.8087, // endKineticEnergy
                 -29.7186, // endPotentialEnergy
                 -24.9099, // endTotalEnergy
@@ -93,6 +93,8 @@ public class DynamicsBeemanBerendsenTest extends AlgorithmsTest {
   @Test
   public void testDynamicsBeemanBerendsen() {
 
+    String filepath = getResourcePath(filename);
+
     // Set-up the input arguments for the script.
     String[] args = {
         "-n", "10",
@@ -100,24 +102,18 @@ public class DynamicsBeemanBerendsenTest extends AlgorithmsTest {
         "-i", "Beeman",
         "-b", "Berendsen",
         "-r", "0.001",
-        "src/main/java/" + filename
+        filepath
     };
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
     Dynamics dynamics = new Dynamics(binding).run();
     algorithmsScript = dynamics;
-
     MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
     // Assert that end energies are within the tolerance for the dynamics trajectory
-    assertEquals(
-        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-    assertEquals(
-        info + " Final potential energy",
-        endPotentialEnergy,
-        molDyn.getPotentialEnergy(),
-        tolerance);
+    assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
     assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     assertEquals(info + " Final temperature", endTemperature, molDyn.getTemperature(), tolerance);
   }

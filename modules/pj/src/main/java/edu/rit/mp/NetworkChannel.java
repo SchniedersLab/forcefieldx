@@ -169,7 +169,7 @@ class NetworkChannel
         if (mySocketChannel != null) {
             try {
                 mySocketChannel.close();
-            } catch (IOException exc) {
+            } catch (IOException ignored) {
             }
         }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -125,7 +125,7 @@ public final class Utilities {
     int ionNum = 0;
     int moleculeNum = 0;
     List<String> segIDs = new ArrayList<>();
-    while (atoms.size() > 0) {
+    while (!atoms.isEmpty()) {
       /*
        Nitrogen is used to "seed" a backbone search because carbon can
        be separated from the backbone by a sulfur (e.g., MET).
@@ -140,7 +140,7 @@ public final class Utilities {
       if (seed.getAtomicNumber() != 7) {
         // logger.info(" Finished searching for proteins and nucleic acids.");
         List<Atom> moleculeAtoms;
-        while (atoms.size() > 0) {
+        while (!atoms.isEmpty()) {
           atom = atoms.get(0);
           if (atom.getNumBonds() == 0) {
             // A metal ion or noble gas
@@ -171,7 +171,7 @@ public final class Utilities {
           Molecule molecule = new Molecule("Molecule-" + moleculeNum);
           moleculeAtoms = getAtomListFromPool();
           collectAtoms(atoms.get(0), moleculeAtoms, true);
-          while (moleculeAtoms.size() > 0) {
+          while (!moleculeAtoms.isEmpty()) {
             atom = moleculeAtoms.get(0);
             moleculeAtoms.remove(0);
             molecule.addMSNode(atom);
@@ -183,7 +183,7 @@ public final class Utilities {
       }
 
       List<Atom> backbone = findPolymer(seed, null);
-      if (backbone.size() > 0) {
+      if (!backbone.isEmpty()) {
         seed = backbone.get(backbone.size() - 1);
         backbone = findPolymer(seed, null);
       }
@@ -263,12 +263,12 @@ public final class Utilities {
    * @return A String of its stack trace.
    */
   public static String stackTraceToString(Throwable ex) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (PrintStream ps = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    try (PrintStream ps = new PrintStream(byteArrayOutputStream, true, StandardCharsets.UTF_8)) {
       ex.printStackTrace(ps);
-      return baos.toString(StandardCharsets.UTF_8);
+      return byteArrayOutputStream.toString(StandardCharsets.UTF_8);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning("Unable to convert stack trace to String");
       return "";
     }
   }
@@ -680,7 +680,9 @@ public final class Utilities {
       int index = 1;
       for (Residue r : aaArray) {
         r.setNumber(index++);
-        renameAminoAcidToPDBStandard(r);
+        if(!renameAminoAcidToPDBStandard(r)){
+          return false;
+        }
         c.addMSNode(r);
       }
       // Potential DNA/RNA
@@ -709,7 +711,7 @@ public final class Utilities {
         }
         start += 6;
       }
-      // Make sure the fisrt base is found
+      // Make sure the first base is found
       Atom o2, o3;
       Atom c1, c2, c3;
       if (phosphate1 != null && oxygen1 != null) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -145,8 +145,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun0.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 0, // Pruning Level.
@@ -168,8 +168,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun1.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 1, // Pruning Level.
@@ -191,8 +191,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun2.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 2, // Pruning Level.
@@ -214,8 +214,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - 3-body (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun1.3body.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 1, // Pruning Level.
@@ -237,8 +237,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - No Pruning (DEE)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun0.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 0, // Pruning Level.
@@ -260,8 +260,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - Singles Pruning (DEE)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun1.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 1, // Pruning Level.
@@ -283,8 +283,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - Pairs Pruning (DEE)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun2.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 2, // Pruning Level.
@@ -306,8 +306,8 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
             },
             {
                 "Chignolin Direct with Orig Rot - 3-body (DEE)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                "5awl.pdb",
+                "5awl.direct.orig.prun1.3body.residues1-4.restart",
                 1, // Start Residue.
                 4, // End Residue.
                 1, // Pruning Level.
@@ -1024,11 +1024,10 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
 
   /** Load the test system. */
   private void load() {
-    ClassLoader cl = this.getClass().getClassLoader();
-    File structure = new File(cl.getResource(filename).getPath());
-    restartFile = new File(cl.getResource(restartName).getPath());
+    String structure = getResourcePath(filename);
+    restartFile = getResourceFile(restartName);
     PotentialsUtils potentialUtils = new PotentialsUtils();
-    molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
+    molecularAssembly = potentialUtils.openQuietly(structure);
     forceFieldEnergy = molecularAssembly.getPotentialEnergy();
   }
 }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -60,6 +60,13 @@ public class Hybrid36 {
   private static final int[] digitsValuesUpper = new int[128];
   private static final int[] digitsValuesLower = new int[128];
   private static boolean firstCall = true;
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private Hybrid36() {
+    // Empty constructor.
+  }
 
   /**
    * Hybrid-36 decoder: converts string s to integer result.

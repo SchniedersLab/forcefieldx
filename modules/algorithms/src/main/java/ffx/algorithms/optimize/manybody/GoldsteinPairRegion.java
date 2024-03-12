@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -153,7 +153,7 @@ public class GoldsteinPairRegion extends ParallelRegion {
           sumOverK = 0;
         }
       } else {
-        rotamerOptimization.logIfMaster(
+        rotamerOptimization.logIfRank0(
             format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
       }
     }

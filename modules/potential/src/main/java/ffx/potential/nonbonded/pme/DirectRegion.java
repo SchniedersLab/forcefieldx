@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -90,6 +90,8 @@ public class DirectRegion extends ParallelRegion {
   private double aewald;
   private double aewald3;
 
+  private double dielectric;
+
   public DirectRegion(int nt) {
     directLoop = new DirectLoop[nt];
   }
@@ -118,6 +120,7 @@ public class DirectRegion extends ParallelRegion {
       boolean generalizedKirkwoodTerm,
       GeneralizedKirkwood generalizedKirkwood,
       EwaldParameters ewaldParameters,
+      double dielectric,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
       double[][] directDipole,
@@ -135,6 +138,7 @@ public class DirectRegion extends ParallelRegion {
     this.generalizedKirkwood = generalizedKirkwood;
     this.aewald = ewaldParameters.aewald;
     this.aewald3 = ewaldParameters.aewald3;
+    this.dielectric = dielectric;
     // Output
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
@@ -167,6 +171,7 @@ public class DirectRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) throws Exception {
       int threadID = getThreadIndex();
+
       if (aewald > 0.0) {
         // Add the self and reciprocal space contributions.
         for (int i = lb; i <= ub; i++) {
@@ -179,6 +184,20 @@ public class DirectRegion extends ParallelRegion {
           fieldCR.add(threadID, i, fx, fy, fz);
         }
       }
+
+      // Reduce the total direct field.
+      field.reduce(lb, ub);
+      fieldCR.reduce(lb, ub);
+
+      // Scale the total direct field by the inverse dielectric.
+      if (dielectric > 1.0) {
+        double inverseDielectric = 1.0 / dielectric;
+        for (int i = lb; i <= ub; i++) {
+          field.scale(0, i, inverseDielectric);
+          fieldCR.scale(0, i, inverseDielectric);
+        }
+      }
+
       if (generalizedKirkwoodTerm) {
         // Set the electric field to the direct field plus the permanent GK reaction field.
         AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
@@ -186,13 +205,11 @@ public class DirectRegion extends ParallelRegion {
           double fx = fieldGK.getX(i);
           double fy = fieldGK.getY(i);
           double fz = fieldGK.getZ(i);
-          field.add(threadID, i, fx, fy, fz);
-          fieldCR.add(threadID, i, fx, fy, fz);
+          field.add(0, i, fx, fy, fz);
+          fieldCR.add(0, i, fx, fy, fz);
         }
       }
-      // Reduce the direct field.
-      field.reduce(lb, ub);
-      fieldCR.reduce(lb, ub);
+
 
       // Set the direct induced dipoles to the polarizability multiplied by the direct field.
       final double[][] induced0 = inducedDipole[0];

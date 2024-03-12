@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -56,7 +56,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularButane() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "-m", "src/main/java/ffx/potential/structures/butane.xyz"};
+    String filepath = getResourcePath("butane.xyz");
+    String[] args = {"-c", "-p", "1.4", "-m", filepath};
     binding.setVariable("args", args);
     // Construct and evaluate the Volume script.
     Volume volume = new Volume(binding).run();
@@ -69,7 +70,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-m", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-c", "-m", "-p", "1.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -85,9 +87,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularEthylbenzene() {
     // Configure input arguments for the Volume script.
-    String[] args = {
-        "-c", "-p", "1.4", "-m", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"
-    };
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"-c", "-p", "1.4", "-m", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -103,9 +104,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularHydrogenButane() {
     // Configure input arguments for the Volume script.
-    String[] args = {
-        "-c", "-p", "1.4", "-m", "-y", "src/main/java/ffx/potential/structures/butane.xyz"
-    };
+    String filepath = getResourcePath("butane.xyz");
+    String[] args = {"-c", "-p", "1.4", "-m", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -119,9 +119,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularHydrogenCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {
-        "-c", "-m", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/crambin.xyz"
-    };
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-c", "-m", "-p", "1.4", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -135,9 +134,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyMolecularHydrogenEthylbenzene() {
     // Configure input arguments for the Volume script.
-    String[] args = {
-        "-c", "-p", "1.4", "-m", "-y", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"
-    };
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"-c", "-p", "1.4", "-m", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -151,7 +149,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVButane() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/butane.xyz"};
+    String filepath = getResourcePath("butane.xyz");
+    String[] args = {"-c", "-p", "1.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -165,7 +164,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-c", "-p", "1.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -179,7 +179,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVEthylbenzene() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"-c", "-p", "1.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -193,7 +194,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVHydrogenButane() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/butane.xyz"};
+    String filepath = getResourcePath("butane.xyz");
+    String[] args = {"-c", "-p", "1.4", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -207,7 +209,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVHydrogenCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/crambin.xyz"};
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-c", "-p", "1.4", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -221,9 +224,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVHydrogenEthylbenzene() {
     // Configure input arguments for the Volume script.
-    String[] args = {
-        "-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"
-    };
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"-c", "-p", "1.4", "-y", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -237,7 +239,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollySEVHydrogenEthylbenzeneDerivatives() {
     // Configure input arguments for the Gradient script.
-    String[] args = {"--tol", "5.0e-2", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"--tol", "5.0e-2", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Gradient script
@@ -250,7 +253,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testConnollyVDWCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-c", "-p", "0.0", "src/main/java/ffx/potential/structures/crambin.xyz"};
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-c", "-p", "0.0", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -264,7 +268,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testGaussVolButane() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-o", "0.4", "src/main/java/ffx/potential/structures/butane.xyz"};
+    String filepath = getResourcePath("butane.xyz");
+    String[] args = {"-o", "0.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -278,7 +283,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testGaussVolCrambin() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-o", "0.0", "src/main/java/ffx/potential/structures/crambin.xyz"};
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"-o", "0.0", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -296,9 +302,8 @@ public class VolumeTest extends PotentialTest {
     System.setProperty("cavmodel", "gauss-disp");
     // Choose a random atom to test.
     int atomID = (int) floor(random() * 642) + 1;
-    String[] args = {
-        "--ga", Integer.toString(atomID), "src/main/java/ffx/potential/structures/crambin.xyz"
-    };
+    String filepath = getResourcePath("crambin.xyz");
+    String[] args = {"--ga", Integer.toString(atomID), filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Gradient script
@@ -311,7 +316,8 @@ public class VolumeTest extends PotentialTest {
   @Test
   public void testGaussVolEthylbenzene() {
     // Configure input arguments for the Volume script.
-    String[] args = {"-o", "0.4", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {"-o", "0.4", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Volume script.
@@ -327,7 +333,9 @@ public class VolumeTest extends PotentialTest {
     // Configure input arguments for the Gradient script.
     System.setProperty("gkterm", "true");
     System.setProperty("cavmodel", "gauss-disp");
-    String[] args = {"src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+    
+    String filepath = getResourcePath("ethylbenzene.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Gradient script

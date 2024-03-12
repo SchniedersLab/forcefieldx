@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,11 +49,17 @@ import static org.apache.commons.math3.util.FastMath.sin;
  */
 public class SinWave extends FunctionDataCurve {
 
-  /** Magnitude. */
+  /**
+   * Magnitude.
+   */
   private final double a;
-  /** Periodicity. */
+  /**
+   * Periodicity.
+   */
   private final double n;
-  /** Inverse periodicity. */
+  /**
+   * Inverse periodicity.
+   */
   private final double nInverse;
 
   /**
@@ -70,10 +76,10 @@ public class SinWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*sin(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x             an array of {@link double} objects.
    * @param halfWidthEnds Use half-width start and end bins.
-   * @param a magnitude.
-   * @param n periodicity.
+   * @param a             magnitude.
+   * @param n             periodicity.
    */
   public SinWave(double[] x, boolean halfWidthEnds, double a, double n) {
     int nPoints = x.length;
@@ -88,24 +94,29 @@ public class SinWave extends FunctionDataCurve {
     }
     lb = x[0];
     ub = x[nPoints - 1];
-    assertXIntegrity(x);
     this.x = new double[x.length];
     arraycopy(x, 0, this.x, 0, x.length);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double fX(double x) {
     return sinAt(x);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double integralAt(double x) {
     return -1 * a * nInverse * cos(n * x);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("Sine wave f(x) = ");

@@ -1,1 +1,1 @@
-Descriptions of FFX Commands and Keywords are generated during build time.
+Descriptions of FFX Commands and Properties are generated during build time.

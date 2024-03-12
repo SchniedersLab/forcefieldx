@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,6 +49,7 @@ import static ffx.numerics.integrate.Integration.rightSimpsons;
 import static ffx.numerics.integrate.Integration.rightTrapInput;
 import static org.junit.Assert.assertEquals;
 
+import ffx.utilities.FFXTest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +61,7 @@ import org.junit.Test;
  *
  * @author Claire O'Connell
  */
-public class IntegrationTest {
+public class IntegrationTest extends FFXTest {
 
   /** Create array with pointers to doubles that will contain known integrals. */
   private double[] knownIntegral;

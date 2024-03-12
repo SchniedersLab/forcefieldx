@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -41,6 +41,9 @@ import ffx.potential.cli.PotentialScript;
 import ffx.utilities.FFXTest;
 import groovy.lang.Binding;
 
+import java.io.File;
+import java.net.URL;
+
 /**
  * PotentialTest extends BaseFFXTest to include support for:
  * <br>
@@ -67,4 +70,37 @@ public class PotentialTest extends FFXTest {
       potentialScript.destroyPotentials();
     }
   }
+
+  /**
+   * Get a resource file from the classpath.
+   *
+   * @param filename
+   * @return the resource file.
+   */
+  public String getResourcePath(String filename) {
+    if (filename == null) {
+      return null;
+    }
+    ClassLoader classLoader = getClass().getClassLoader();
+    URL url = classLoader.getResource(filename);
+    if (url == null) {
+      return null;
+    }
+    return url.getPath();
+  }
+
+  /**
+   * Get a resource file from the classpath.
+   *
+   * @param filename
+   * @return the resource file.
+   */
+  public File getResourceFile(String filename) {
+    String path = getResourcePath(filename);
+    if (path == null) {
+      return null;
+    }
+    return new File(path);
+  }
+
 }

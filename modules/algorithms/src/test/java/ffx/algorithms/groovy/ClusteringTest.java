@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -52,7 +52,8 @@ public class ClusteringTest extends AlgorithmsTest {
   @Test
   public void testBaseCluster() {
     // Set-up the input arguments for the Cluster script.
-    String[] args = {"-a", "0", "-k", "10", "src/main/java/ffx/algorithms/structures/dist.txt"};
+    String filepath = getResourcePath("dist.txt");
+    String[] args = {"-a", "0", "-k", "10", filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

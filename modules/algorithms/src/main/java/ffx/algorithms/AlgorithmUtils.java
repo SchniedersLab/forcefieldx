@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -44,10 +44,9 @@ import ffx.algorithms.optimize.Minimize;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Keyword;
+
 import java.io.File;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * AlgorithmUtils, on top of the core functionality of PotentialsUtils, implements additional

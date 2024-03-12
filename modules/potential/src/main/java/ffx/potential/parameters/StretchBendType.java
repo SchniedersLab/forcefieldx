@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,14 +38,15 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.STRBND;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,32 +59,41 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "strbnd", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[3 integers and 2 reals] "
-        + "Provides the values for a single stretch-bend cross term potential parameter. "
-        + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined. "
-        + "The real number modifiers give the force constant values for the first bond (first two atom classes) with the angle, and the second bond with the angle, respectively. "
-        + "The default units for the stretch-bend force constant are kcal/mole/Ang-radian, but this can be controlled via the strbndunit keyword.")
+@FFXProperty(name = "strbnd", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [3 integers and 2 reals]
+    Provides the values for a single stretch-bend cross term potential parameter.
+    The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined.
+    The real number modifiers give the force constant values for the first bond (first two atom classes) with the angle, and the second bond with the angle, respectively.
+    The default units for the stretch-bend force constant are kcal/mole/Ang-radian, but this can be controlled via the strbndunit keyword.
+    """)
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
-  /** Constant <code>units=PI / 180.0</code> */
+  /**
+   * Constant <code>units=PI / 180.0</code>
+   */
   public static final double DEFAULT_STRBND_UNIT = PI / 180.0;
 
-  @FFXKeyword(name = "strbndunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)", description =
-      "Sets the scale factor needed to convert the energy value computed by the bond stretching-angle bending cross term potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXProperty(name = "strbndunit", propertyGroup = EnergyUnitConversion, defaultValue = "(Pi/180)", description = """
+      Sets the scale factor needed to convert the energy value computed by the bond stretching-angle bending cross
+      term potential into units of kcal/mole. The correct value is force field dependent and typically provided
+      in the header of the master force field parameter file.
+      """)
   public double strbndunit = DEFAULT_STRBND_UNIT;
 
   private static final Logger logger = Logger.getLogger(StretchBendType.class.getName());
-  /** Atom class for this stretch-bend type. */
+  /**
+   * Atom class for this stretch-bend type.
+   */
   public final int[] atomClasses;
-  /** Force constants (Kcal/mole/Angstrom-Degrees). */
+  /**
+   * Force constants (Kcal/mole/Angstrom-Degrees).
+   */
   public final double[] forceConstants;
 
   /**
    * StretchBendType Constructor.
    *
-   * @param atomClasses int[]
+   * @param atomClasses    int[]
    * @param forceConstants double[]
    */
   public StretchBendType(int[] atomClasses, double[] forceConstants) {
@@ -106,11 +116,11 @@ public final class StretchBendType extends BaseType implements Comparator<String
    *
    * @param stretchBendType1 a {@link ffx.potential.parameters.StretchBendType} object.
    * @param stretchBendType2 a {@link ffx.potential.parameters.StretchBendType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses      an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.StretchBendType} object.
    */
   public static StretchBendType average(StretchBendType stretchBendType1,
-      StretchBendType stretchBendType2, int[] atomClasses) {
+                                        StretchBendType stretchBendType2, int[] atomClasses) {
     if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
       return null;
     }
@@ -129,7 +139,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
   /**
    * Construct a StretchBendType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a StretchBendType instance.
    */
@@ -172,7 +182,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
     return c[0] + " " + c[1] + " " + c[2];
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String key1, String key2) {
     String[] keys1 = key1.split(" ");
@@ -199,7 +211,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -212,7 +226,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
     return Arrays.equals(atomClasses, stretchBendType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);

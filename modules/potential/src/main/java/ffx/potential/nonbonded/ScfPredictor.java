@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -73,17 +73,17 @@ public class ScfPredictor {
   /** Induced dipole predictor order. */
   private final int predictorOrder;
   /** Dimensions of [nsymm][nAtoms][3] */
-  protected double inducedDipole[][][];
+  protected double[][][] inducedDipole;
 
-  protected double inducedDipoleCR[][][];
+  protected double[][][] inducedDipoleCR;
   /** Number of atoms. */
   private int nAtoms;
   /** Maps LambdaMode to array indices: OFF/CONDENSED=0, CONDENSED_NOLIGAND=1, VAPOR=2 */
   private int mode;
   /** Dimensions of [mode][predictorOrder][nAtoms][3] */
-  private double predictorInducedDipole[][][][];
+  private double[][][][] predictorInducedDipole;
 
-  private double predictorInducedDipoleCR[][][][];
+  private double[][][][] predictorInducedDipoleCR;
   /** Induced dipole predictor index. */
   private int predictorStartIndex;
   /** Induced dipole predictor count. */
@@ -129,10 +129,6 @@ public class ScfPredictor {
       return;
     }
     switch (lambdaMode) {
-      case OFF:
-      case CONDENSED:
-        mode = 0;
-        break;
       case CONDENSED_NO_LIGAND:
         mode = 1;
         break;
@@ -243,7 +239,7 @@ public class ScfPredictor {
         logger.finest(String.format(" LS Iterations:     %10d", optimum.getIterations()));
         logger.finest(String.format(" Jacobian Evals:    %10d", optimum.getEvaluations()));
         logger.finest(String.format(" Root Mean Square:  %10.6f", optimum.getRMS()));
-        logger.finest(String.format(" LS Coefficients"));
+        logger.finest(" LS Coefficients");
         for (int i = 0; i < predictorOrder - 1; i++) {
           logger.finest(String.format(" %2d  %10.6f", i + 1, optimalValues[i]));
         }
@@ -281,14 +277,14 @@ public class ScfPredictor {
       return;
     }
 
-    final double aspc[] = {
+    final double[] aspc = {
       22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0
     };
-    /** Initialize a pointer into predictor induced dipole array. */
+    /* Initialize a pointer into predictor induced dipole array. */
     int index = predictorStartIndex;
-    /** Expansion loop. */
+    /* Expansion loop. */
     for (int k = 0; k < 6; k++) {
-      /** Set the current predictor coefficient. */
+      /* Set the current predictor coefficient. */
       double c = aspc[k];
       for (int i = 0; i < nAtoms; i++) {
         for (int j = 0; j < 3; j++) {
@@ -346,11 +342,11 @@ public class ScfPredictor {
 
   private class LeastSquaresPredictor {
 
-    double weights[];
-    double target[];
-    double jacobian[][];
-    double initialSolution[];
-    double tolerance = 1.0;
+    double[] weights;
+    double[] target;
+    double[][] jacobian;
+    double[] initialSolution;
+    double tolerance;
     RealVector valuesVector;
     RealVector targetVector;
     RealMatrix jacobianMatrix;
@@ -390,7 +386,7 @@ public class ScfPredictor {
                 " LS Optimization parameters:" + "  %s %s\n" + "  %s %s\n" + "  %d %d",
                 function,
                 targetVector.toString(),
-                start.toString(),
+                start,
                 checker.toString(),
                 maxIter,
                 maxEval));

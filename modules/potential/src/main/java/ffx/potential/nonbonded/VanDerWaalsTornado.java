@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floor;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
-
 import ffx.crystal.Crystal;
 import ffx.numerics.tornado.FFXTornado;
 import ffx.potential.bonded.Atom;
@@ -51,17 +44,24 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.floor;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 /**
  * The Van der Waals class computes Van der Waals interaction in parallel using a {@link
@@ -294,9 +294,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
         double y = dx[1];
         double z = dx[2];
         double r2;
-        if (aperiodic) {
-          r2 = x * x + y * y + z * z;
-        } else {
+        if (!aperiodic) {
           double xf = x * A00 + y * A10 + z * A20;
           double yf = x * A01 + y * A11 + z * A21;
           double zf = x * A02 + y * A12 + z * A22;
@@ -334,8 +332,8 @@ public class VanDerWaalsTornado extends VanDerWaals {
           dx[0] = x;
           dx[1] = y;
           dx[2] = z;
-          r2 = x * x + y * y + z * z;
         }
+        r2 = x * x + y * y + z * z;
         final int classK = atomClass[k];
         final double rk = rMin[classK];
         if (r2 <= vdwCutoff2 && mask[k] > 0 && rk > 0) {
@@ -694,7 +692,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
       VDWType type = forceField.getVDWType(Integer.toString(atomClass[i]));
       if (type == null) {
         logger.info(" No VdW type for atom class " + atomClass[i]);
-        logger.severe(" No VdW type for atom " + ai.toString());
+        logger.severe(" No VdW type for atom " + ai);
         return;
       }
       ai.setVDWType(type);

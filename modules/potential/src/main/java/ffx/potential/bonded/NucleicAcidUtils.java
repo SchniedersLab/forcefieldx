@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -270,20 +270,7 @@ public class NucleicAcidUtils {
       }
 
       // Check if this is a lone 3'-terminal phosphate cap; if so, will skip a lot of logic.
-      boolean threePrimeCap = false;
-      if (nAtoms < 7) {
-        boolean unrecognized = false;
-        for (Atom atom : resAtoms) {
-          String atomName = atom.getName();
-          // Recognized: P, OP[1-3], O5' (will be renamed to OP3), HOP[1-3], and DOP[1-3])
-          if (!(atomName.equals("P") || atomName.matches("[HD]?OP[1-3]") || atomName.matches(
-              "O5'"))) {
-            unrecognized = true;
-            break;
-          }
-        }
-        threePrimeCap = !unrecognized;
-      }
+      boolean threePrimeCap = isThreePrimeCap(nAtoms, resAtoms);
 
       // Check if the sugar is deoxyribose and change the residue name if necessary.
       boolean isDNA = false;
@@ -527,6 +514,24 @@ public class NucleicAcidUtils {
       // Save a reference to the current O3* oxygen.
       pSugarO3 = sugarO3;
     }
+  }
+
+  private static boolean isThreePrimeCap(int nAtoms, List<Atom> resAtoms) {
+    boolean threePrimeCap = false;
+    if (nAtoms < 7) {
+      boolean unrecognized = false;
+      for (Atom atom : resAtoms) {
+        String atomName = atom.getName();
+        // Recognized: P, OP[1-3], O5' (will be renamed to OP3), HOP[1-3], and DOP[1-3])
+        if (!(atomName.equals("P") || atomName.matches("[HD]?OP[1-3]") || atomName.matches(
+            "O5'"))) {
+          unrecognized = true;
+          break;
+        }
+      }
+      threePrimeCap = !unrecognized;
+    }
+    return threePrimeCap;
   }
 
   /**

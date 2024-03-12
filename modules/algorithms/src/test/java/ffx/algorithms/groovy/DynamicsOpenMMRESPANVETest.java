@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -70,7 +70,7 @@ public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
         new Object[][] {
             {
                 "System OpenMM RESPA NVE", // info
-                "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                "waterbox_eq.xyz", // filename
                 -24936.9565 // startingTotalEnergy
             }
         });
@@ -96,7 +96,7 @@ public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
         "-b", "Adiabatic",
         "-r", "0.001",
         "--mdE", "OpenMM",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 

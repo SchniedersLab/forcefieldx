@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -70,7 +70,7 @@ public class DynamicsRESPANVETest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Acetamide RESPA NVE", // info
-                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                "acetamide_NVE.xyz", // filename
                 -25.2085 // startingTotalEnergy
             }
         });
@@ -87,7 +87,7 @@ public class DynamicsRESPANVETest extends AlgorithmsTest {
         "-i", "RESPA",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 

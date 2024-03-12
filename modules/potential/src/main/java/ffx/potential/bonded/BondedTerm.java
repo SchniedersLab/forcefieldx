@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -239,6 +239,17 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
     return null;
   }
+
+  /**
+   * Returns a reference to the Atoms contained in this BondedTerm, regardless of whether they are child nodes in
+   * the tree structure.
+   *
+   * @return Atoms in this BondedTerm
+   */
+  public Atom[] getAtoms() {
+    return atoms;
+  }
+
 
   /**
    * Returns all Atoms contained in this BondedTerm, regardless of whether they are child nodes in

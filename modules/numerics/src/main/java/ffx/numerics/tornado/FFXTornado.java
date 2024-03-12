@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,19 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.tornado;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
-import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import java.util.logging.Logger;
 
 /** Utility Routines to use the TornadoVM */
 public class FFXTornado {

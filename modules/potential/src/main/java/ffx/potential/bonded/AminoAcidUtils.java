@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -325,12 +325,9 @@ public class AminoAcidUtils {
           case PRO:
             // Check for the presence of H1, H2 and H3.
             List<Atom> resAtoms = residue.getAtomList();
-            Optional<Atom> H1 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H1"))
-                .findAny();
-            Optional<Atom> H2 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H2"))
-                .findAny();
-            Optional<Atom> H3 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H3"))
-                .findAny();
+            Optional<Atom> H1 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H1")).findAny();
+            Optional<Atom> H2 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H2")).findAny();
+            Optional<Atom> H3 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H3")).findAny();
             // Delete the extra hydrogen.
             if (H1.isPresent() && H2.isPresent() && H3.isPresent()) {
               residue.deleteAtom(H1.get());
@@ -342,10 +339,8 @@ public class AminoAcidUtils {
                 H1.get().setName("H2");
               }
             }
-            buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType, forceField,
-                bondList);
-            buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType, forceField,
-                bondList);
+            buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType, forceField, bondList);
+            buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType, forceField, bondList);
             break;
           case PCA:
             buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField,
@@ -360,6 +355,10 @@ public class AminoAcidUtils {
               Atom h1 = (Atom) residue.getAtomNode("H1");
               Atom h2 = (Atom) residue.getAtomNode("H2");
               Atom h3 = (Atom) residue.getAtomNode("H3");
+              if (h3 == null) {
+                // If H3 is not present, look for H.
+                h3 = (Atom) residue.getAtomNode("H");
+              }
               // Delete the extra hydrogen.
               if (h1 != null && h2 != null && h3 != null) {
                 residue.deleteAtom(h3);

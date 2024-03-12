@@ -3371,10 +3371,8 @@ public class Comm {
         for (int i = 1; i < mySize; ++i) {
             int toRank = (myRank + i) % mySize;
             int fromRank = (myRank - i + mySize) % mySize;
-            commrequest[i]
-                    = sendReceive(toRank, tag, srcarray[toRank],
-                    fromRank, tag, dstarray[fromRank],
-                    (CommRequest) null);
+            commrequest[i] = sendReceive(toRank, tag, srcarray[toRank],
+                    fromRank, tag, dstarray[fromRank], null);
         }
 
         // Wait for completion of all send-receives.

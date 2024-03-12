@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -54,7 +54,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinConvergenceCriteria() {
     // Set-up the input arguments for the script.
-    String[] args = {"-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
+    String[] args = {"-e", "0.25", getResourcePath("acetamide.xtal.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -73,7 +73,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinCoords() {
     // Set-up the input arguments for the script.
-    String[] args = {"-c", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"};
+    String[] args = {"-c", getResourcePath("acetamide.xtal.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -92,9 +92,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinFractional() {
     // Set-up the input arguments for the script.
-    String[] args = {
-        "-f", "ATOM", "-e", "0.24", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
-    };
+    String[] args = {"-f", "ATOM", "-e", "0.24", getResourcePath("acetamide.xtal.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -124,9 +122,8 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinIterations() {
     // Set-up the input arguments for the script.
-    String[] args = {
-        "-I", "1", "-e", "0.25", "src/main/java/ffx/algorithms/structures/acetamide.xtal.xyz"
-    };
+    String[] args = {"-I", "1", "-e", "0.25", getResourcePath("acetamide.xtal.xyz")};
+
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

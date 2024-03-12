@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -66,6 +66,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial decomposition. <br>
@@ -961,7 +969,7 @@ public class NeighborList extends ParallelRegion {
      */
     private final double targetInterfacialRadius;
     /**
-     * The number of subcells that must be searched along the an axis to find all neighbors within
+     * The number of subcells that must be searched along an axis to find all neighbors within
      * the cutoff + buffer distance.
      *
      * <p>If the nEdge == 1 for {X=A,B,C} then all neighbors will be found in 3x3x3 = 27 cells.
@@ -986,11 +994,11 @@ public class NeighborList extends ParallelRegion {
      * The number of atoms.
      */
     private int nAtoms;
-    /** The cell indices of each atom along a A-axis. */
+    /** The cell indices of each atom along the A-axis. */
     private int[] cellA;
-    /** The cell indices of each atom along a B-axis. */
+    /** The cell indices of each atom along the B-axis. */
     private int[] cellB;
-    /** The cell indices of each atom along a C-axis. */
+    /** The cell indices of each atom along the C-axis. */
     private int[] cellC;
     /**
      * The fractional sub-volumes of the unit cell.

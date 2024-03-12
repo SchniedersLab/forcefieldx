@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,7 +49,7 @@ public class Frac2CartTest extends PotentialTest {
   @Test
   public void testFrac2Cart() {
     // Set-up the input arguments for the Frac2Cart script.
-    String[] args = {"src/main/java/ffx/potential/structures/acetanilide.frac.xyz"};
+    String[] args = {getResourcePath("acetanilide.frac.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -118,7 +118,6 @@ public class DistanceRegion extends ParallelRegion {
       execute(0, nResidues - 1, distanceLoops[threadID]);
     } catch (Exception e) {
       String message = " Exception computing residue-residue distances.";
-      e.printStackTrace();
       logger.log(Level.SEVERE, message, e);
     }
   }

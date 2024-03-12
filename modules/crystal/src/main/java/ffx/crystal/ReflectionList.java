@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,13 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import static ffx.crystal.SymOp.applySymRot;
 import static ffx.crystal.SymOp.applyTransSymRot;
 import static ffx.numerics.math.ScalarMath.mod;
@@ -47,47 +54,58 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.rint;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import org.apache.commons.configuration2.CompositeConfiguration;
-
 /**
  * Class to represent a reflection list.
  *
  * @author Timothy D. Fenn
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank"> Cowtan, K. 2002.
- *     Generic representation and evaluation of properties as a function of position in reciprocal
- *     space. J. Appl. Cryst. 35:655-663. </a>
+ * Generic representation and evaluation of properties as a function of position in reciprocal
+ * space. J. Appl. Cryst. 35:655-663. </a>
  * @since 1.0
  */
 public class ReflectionList {
 
-  /** The HKL list. */
-  public final ArrayList<HKL> hkllist = new ArrayList<>();
-  /** The Crystal instance. */
+  /**
+   * The HKL list.
+   */
+  public final ArrayList<HKL> hklList = new ArrayList<>();
+  /**
+   * The Crystal instance.
+   */
   public final Crystal crystal;
-  /** The space group. */
+  /**
+   * The space group.
+   */
   public final SpaceGroup spaceGroup;
-  /** Resolution instance. */
+  /**
+   * Resolution instance.
+   */
   public final Resolution resolution;
-  /** String to HKL look-up. */
-  final HashMap<String, HKL> hklmap = new HashMap<>();
-  /** The Laue System. */
-  private final LaueSystem laueSystem;
-  /** For binning reflections based on resolution */
-  public int nbins = 10;
-  /** Histogram. */
-  private final double[] hist = new double[1001];
-  /** Minimum resolution. */
+  /**
+   * String to HKL look-up.
+   */
+  final HashMap<String, HKL> hklMap = new HashMap<>();
+  /**
+   * For binning reflections based on resolution
+   */
+  public int nBins = 10;
+  /**
+   * Histogram.
+   */
+  private final double[] histogram = new double[1001];
+  /**
+   * Minimum resolution.
+   */
   private double minResolution;
-  /** Maximum resolution. */
+  /**
+   * Maximum resolution.
+   */
   private double maxResolution;
 
   /**
    * Constructor for ReflectionList.
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param crystal    a {@link ffx.crystal.Crystal} object.
    * @param resolution a {@link ffx.crystal.Resolution} object.
    */
   public ReflectionList(Crystal crystal, Resolution resolution) {
@@ -97,43 +115,41 @@ public class ReflectionList {
   /**
    * Constructor for ReflectionList.
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param crystal    a {@link ffx.crystal.Crystal} object.
    * @param resolution a {@link ffx.crystal.Resolution} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
    */
   public ReflectionList(Crystal crystal, Resolution resolution, CompositeConfiguration properties) {
     this.crystal = crystal;
-    spaceGroup = crystal.spaceGroup;
-    laueSystem = spaceGroup.laueSystem;
+    this.spaceGroup = crystal.spaceGroup;
     this.resolution = resolution;
 
-    int hmax = (int) (this.crystal.a / this.resolution.resolutionLimit());
-    int kmax = (int) (this.crystal.b / this.resolution.resolutionLimit());
-    int lmax = (int) (this.crystal.c / this.resolution.resolutionLimit());
+    int hMax = (int) (this.crystal.a / this.resolution.resolutionLimit());
+    int kMax = (int) (this.crystal.b / this.resolution.resolutionLimit());
+    int lMax = (int) (this.crystal.c / this.resolution.resolutionLimit());
 
     minResolution = Double.POSITIVE_INFINITY;
     maxResolution = Double.NEGATIVE_INFINITY;
     int n = 0;
 
     HKL hkl = new HKL();
-    for (int h = -hmax; h <= hmax; h++) {
+    for (int h = -hMax; h <= hMax; h++) {
       hkl.setH(h);
-      for (int k = -kmax; k <= kmax; k++) {
+      for (int k = -kMax; k <= kMax; k++) {
         hkl.setK(k);
-        for (int l = -lmax; l <= lmax; l++) {
+        for (int l = -lMax; l <= lMax; l++) {
           hkl.setL(l);
 
           double res = this.crystal.invressq(hkl);
-          getepsilon(hkl);
+          getEpsilon(hkl);
           LaueSystem laueSystem = spaceGroup.laueSystem;
           if (laueSystem.checkRestrictions(h, k, l)
               && resolution.inInverseResSqRange(res)
               && !hkl.sysAbs()) {
             minResolution = min(res, minResolution);
             maxResolution = max(res, maxResolution);
-            String s = ("" + h + "_" + k + "_" + l).intern();
-            hklmap.put(s, new HKL(hkl.getH(), hkl.getK(), hkl.getL(), hkl.getEpsilon(), hkl.allowed));
+            String s = (h + "_" + k + "_" + l).intern();
+            hklMap.put(s, new HKL(hkl.getH(), hkl.getK(), hkl.getL(), hkl.getEpsilon(), hkl.allowed));
             n++;
           }
         }
@@ -141,27 +157,26 @@ public class ReflectionList {
     }
 
     n = 0;
-    for (Entry<String, HKL> ei : hklmap.entrySet()) {
-      HKL ih = ei.getValue();
+    for (Entry<String, HKL> entry : hklMap.entrySet()) {
+      HKL ih = entry.getValue();
       ih.setIndex(n);
-      hkllist.add(ih);
+      hklList.add(ih);
       n++;
     }
 
     // Set up the resolution bins first build a histogram.
-    for (HKL ih : hkllist) {
-      double r =
-          (this.crystal.invressq(ih) - minResolution) / (maxResolution - minResolution);
+    for (HKL ih : hklList) {
+      double r = (this.crystal.invressq(ih) - minResolution) / (maxResolution - minResolution);
       int i = (int) (min(r, 0.999) * 1000.0);
-      hist[i + 1] += 1.0;
+      histogram[i + 1] += 1.0;
     }
 
     // Convert to cumulative histogram
-    for (int i = 1; i < hist.length; i++) {
-      hist[i] += hist[i - 1];
+    for (int i = 1; i < histogram.length; i++) {
+      histogram[i] += histogram[i - 1];
     }
-    for (int i = 0; i < hist.length; i++) {
-      hist[i] /= hist[hist.length - 1];
+    for (int i = 0; i < histogram.length; i++) {
+      histogram[i] /= histogram[histogram.length - 1];
     }
 
     // Assign each reflection to a bin in the range (0-nbins)
@@ -171,31 +186,24 @@ public class ReflectionList {
   /**
    * Constructor for ReflectionList.
    *
-   * @param a a double.
-   * @param b a double.
-   * @param c a double.
-   * @param alpha a double.
-   * @param beta a double.
-   * @param gamma a double.
-   * @param sg a {@link java.lang.String} object.
+   * @param a          a double.
+   * @param b          a double.
+   * @param c          a double.
+   * @param alpha      a double.
+   * @param beta       a double.
+   * @param gamma      a double.
+   * @param sg         a {@link java.lang.String} object.
    * @param resolution a double.
    */
-  public ReflectionList(
-      double a,
-      double b,
-      double c,
-      double alpha,
-      double beta,
-      double gamma,
-      String sg,
-      double resolution) {
+  public ReflectionList(double a, double b, double c, double alpha, double beta, double gamma,
+                        String sg, double resolution) {
     this(new Crystal(a, b, c, alpha, beta, gamma, sg), new Resolution(resolution));
   }
 
   /**
    * findSymHKL
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
+   * @param hkl  a {@link ffx.crystal.HKL} object.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
@@ -206,9 +214,9 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
+   * @param h    an int.
+   * @param k    an int.
+   * @param l    an int.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
@@ -219,10 +227,10 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
-   * @param mate a {@link ffx.crystal.HKL} object.
+   * @param h         an int.
+   * @param k         an int.
+   * @param l         an int.
+   * @param mate      a {@link ffx.crystal.HKL} object.
    * @param transpose a boolean.
    * @return a boolean.
    */
@@ -239,8 +247,8 @@ public class ReflectionList {
    * @return a {@link ffx.crystal.HKL} object.
    */
   public HKL getHKL(int h, int k, int l) {
-    String s = ("" + h + "_" + k + "_" + l);
-    return hklmap.get(s);
+    String s = (h + "_" + k + "_" + l);
+    return hklMap.get(s);
   }
 
   /**
@@ -287,19 +295,21 @@ public class ReflectionList {
    * @param s a double.
    * @return a double.
    */
-  public double ordinal(double s) {
+  public final double ordinal(double s) {
     double r = (s - minResolution) / (maxResolution - minResolution);
     r = min(r, 0.999) * 1000.0;
     int i = (int) r;
     r -= floor(r);
-    return ((1.0 - r) * hist[i] + r * hist[i + 1]);
+    return ((1.0 - r) * histogram[i] + r * histogram[i + 1]);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return " Reflection list with "
-        + this.hkllist.size()
+        + this.hklList.size()
         + " reflections, spacegroup "
         + this.spaceGroup.shortName
         + " resolution limit: "
@@ -309,8 +319,8 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
-   * @param mate a {@link ffx.crystal.HKL} object.
+   * @param hkl       a {@link ffx.crystal.HKL} object.
+   * @param mate      a {@link ffx.crystal.HKL} object.
    * @param transpose a boolean.
    * @return a boolean.
    */
@@ -351,16 +361,16 @@ public class ReflectionList {
    * @return a boolean.
    */
   private boolean hasHKL(int h, int k, int l) {
-    String s = ("" + h + "_" + k + "_" + l);
-    return hklmap.containsKey(s);
+    String s = (h + "_" + k + "_" + l);
+    return hklMap.containsKey(s);
   }
 
-  private void getepsilon(HKL hkl) {
+  private void getEpsilon(HKL hkl) {
     int epsilon = 1;
     int allowed = 255;
 
-    int nsym = spaceGroup.symOps.size();
-    for (int i = 1; i < nsym; i++) {
+    int nSym = spaceGroup.symOps.size();
+    for (int i = 1; i < nSym; i++) {
       HKL mate = new HKL();
       SymOp symOp = spaceGroup.symOps.get(i);
       applySymRot(hkl, mate, symOp);
@@ -386,18 +396,14 @@ public class ReflectionList {
     hkl.setAllowed(allowed);
   }
 
-  private void setResolutionBins() {
-    setResolutionBins(null);
-  }
-
-  private void setResolutionBins(CompositeConfiguration properties) {
+  private void setResolutionBins(@Nullable CompositeConfiguration properties) {
     if (properties != null) {
-      nbins = properties.getInt("nbins", 10);
+      nBins = properties.getInt("reflection-bins", 10);
     }
-    double nbinsd = nbins;
-    for (HKL ih : hkllist) {
-      int bin = (int) (nbinsd * ordinal(crystal.invressq(ih)));
-      ih.bin = min(bin, nbins - 1);
+    double nBinsDouble = nBins;
+    for (HKL ih : hklList) {
+      int bin = (int) (nBinsDouble * ordinal(crystal.invressq(ih)));
+      ih.bin = min(bin, nBins - 1);
     }
   }
 }

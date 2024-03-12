@@ -118,8 +118,7 @@ class ParallelTeamThread
                 try {
                     myTeam.myRegion.run();
                 } catch (Exception ex) {
-                    System.err.println(String.format("Error exiting parallel "
-                            + "team thread: %s", ex.toString()));
+                    System.err.printf("Error exiting parallel team thread: %s%n", ex);
                 }
                 break;
             }

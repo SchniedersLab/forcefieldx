@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -112,7 +112,7 @@ public class QIFrame {
    * @param dy Separation along the y-axis.
    * @param dz Separation along the z-axis.
    */
-  public void setQIVector(double dx, double dy, double dz) {
+  public final void setQIVector(double dx, double dy, double dz) {
     // The QI Z-axis is along the separation vector.
     double[] zAxis = {dx, dy, dz};
 

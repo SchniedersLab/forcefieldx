@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -817,7 +817,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     try {
       isDeoxy = switch (NucleicAcid3.valueOf(this.getName())) {
         case DAD, DCY, DGU, DTY -> true;
-        case CYT, ADE, THY, URI, GUA -> false;
         default -> false;
       };
       C1sCoords = new double[3];
@@ -961,7 +960,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   @Override
   public String toString() {
     if (shortString == null) {
-      shortString = "" + resNumber + "-" + getName();
+      shortString = resNumber + "-" + getName();
     }
     return shortString;
   }

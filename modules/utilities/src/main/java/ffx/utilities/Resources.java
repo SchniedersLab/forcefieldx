@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -55,6 +55,13 @@ import java.util.logging.Logger;
 public class Resources {
 
   private static final Logger logger = Logger.getLogger(Resources.class.getName());
+
+  /**
+   * Private constructor to prevent instantiation.
+   */
+  private Resources() {
+    // Empty constructor.
+  }
 
   /**
    * Log resources.

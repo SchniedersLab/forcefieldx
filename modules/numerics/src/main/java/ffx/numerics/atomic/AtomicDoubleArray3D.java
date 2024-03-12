@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -451,7 +451,7 @@ public class AtomicDoubleArray3D {
 
       /** {@inheritDoc} */
       @Override
-      public void run(int lb, int ub) throws Exception {
+      public void run(int lb, int ub) {
         int threadID = getThreadIndex();
         switch (operation) {
           case RESET -> reset(threadID, lb, ub);

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -870,11 +870,8 @@ public abstract class MSGroup extends MSNode {
 
   /** reOrderAtoms */
   public void reOrderAtoms() {
-    List<Atom> atomList = getAtomList();
-    int nAtoms = atomList.size();
-    Atom[] atoms = new Atom[nAtoms];
-    atoms = atomList.toArray(atoms);
-
+    Atom[] atoms = getAtomList().toArray(new Atom[0]);
+    int nAtoms = atoms.length;
     boolean sorted;
     do {
       sorted = true;

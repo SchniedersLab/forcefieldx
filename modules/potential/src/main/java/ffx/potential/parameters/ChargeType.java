@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,11 +38,12 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Comparator;
 
 /**
@@ -51,25 +52,30 @@ import java.util.Comparator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "charge", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[1 integer and 1 real] "
-        + "Provides a value for a single atomic partial charge electrostatic parameter. "
-        + "The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined. "
-        + "Note that charge parameters are given for atom types, not atom classes. "
-        + "If the integer modifier is negative, then the parameter value to follow applies only to the individual atom whose atom number is the negative of the modifier. "
-        + "The real number modifier gives the values of the atomic partial charge in electrons.")
+@FFXProperty(name = "charge", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [1 integer and 1 real]
+    Provides a value for a single atomic partial charge electrostatic parameter.
+    The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined.
+    Note that charge parameters are given for atom types, not atom classes. If the integer modifier is negative,
+    then the parameter value to follow applies only to the individual atom whose atom number is the negative of the modifier.
+    The real number modifier gives the values of the atomic partial charge in electrons.
+    """)
 public final class ChargeType extends BaseType implements Comparator<String> {
 
-  /** Partial atomic charge in units of electrons. */
+  /**
+   * Partial atomic charge in units of electrons.
+   */
   public final double charge;
-  /** The atom type that uses this charge parameter. */
+  /**
+   * The atom type that uses this charge parameter.
+   */
   public int atomType;
 
   /**
    * ChargeType constructor.
    *
    * @param atomType int
-   * @param charge double
+   * @param charge   double
    */
   public ChargeType(int atomType, double charge) {
     super(CHARGE, "" + atomType);
@@ -82,7 +88,7 @@ public final class ChargeType extends BaseType implements Comparator<String> {
    *
    * @param chargeType1 a {@link ffx.potential.parameters.ChargeType} object.
    * @param chargeType2 a {@link ffx.potential.parameters.ChargeType} object.
-   * @param atomType The atom type that defines the new type.
+   * @param atomType    The atom type that defines the new type.
    * @return a {@link ffx.potential.parameters.ChargeType} object.
    */
   public static ChargeType average(ChargeType chargeType1, ChargeType chargeType2, int atomType) {
@@ -93,7 +99,9 @@ public final class ChargeType extends BaseType implements Comparator<String> {
     return new ChargeType(atomType, charge);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     int t1 = parseInt(s1);

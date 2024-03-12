@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,6 +39,8 @@ package ffx.numerics.special;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import ffx.utilities.FFXTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +49,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class ModifiedBesselTest {
+public class ModifiedBesselTest extends FFXTest {
 
   /**
    * The implementation of the Modified 0th and 1st Order Bessel functions pass for a tolerance of

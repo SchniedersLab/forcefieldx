@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -40,7 +40,7 @@ package ffx.potential.nonbonded.pme;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -51,7 +51,7 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.parameters.ForceField;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +67,7 @@ public class SORRegion extends ParallelRegion {
   private final int maxThreads;
 
   private static final double DEFAULT_POLAR_SOR = 0.7;
-  @FFXKeyword(name = "polar-sor", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.7",
+  @FFXProperty(name = "polar-sor", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.7",
       description = "The induced dipole successive over-relaxation convergence acceleration factor.")
   private final double polsor;
   private final SORLoop[] sorLoop;

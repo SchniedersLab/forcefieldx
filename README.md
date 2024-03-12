@@ -9,17 +9,17 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
-[![Build Status](https://travis-ci.com/SchniedersLab/forcefieldx.svg?branch=master)](https://travis-ci.com/SchniedersLab/forcefieldx/)
+[![Force Field X Build](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml/badge.svg)](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml)
 
 ---
 
 ## Use Binder to Try Force Field X Online
 
 ### With Java
-[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=binder%2FForceFieldX-Java.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/binder/ForceFieldX-Java.ipynb)
+[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=ipynb-java%2FForceFieldX-Java.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/ipynb-java/ForceFieldX-Java.ipynb)
 
 ### With Kotlin
-[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=binder%2FForceFieldX-Kotlin.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/binder/ForceFieldX-Kotlin.ipynb)
+[![Binder][binder-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?filepath=ipynb-kotlin%2FForceFieldX-Kotlin.ipynb) [![Binder][binder-lab-image]](https://mybinder.org/v2/gh/SchniedersLab/forcefieldx/master?urlpath=lab/tree/ipynb-kotlin/ForceFieldX-Kotlin.ipynb)
 
 ---
 
@@ -49,7 +49,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
    mvn -DskipTests=false -Dffx.ci=true
 
-Currently, JDKs 17, 18 and 19 are supported. 
+Currently, JDK 21 is supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---

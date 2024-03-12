@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,10 +37,11 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.String.format;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
@@ -60,13 +62,18 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "forcefield", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[name] " + "Provides a name for the force field to be used in the current calculation. "
-        + "Its value is usually set in the master force field parameter file for the calculation (see the PARAMETERS keyword) instead of in the property file.")
+@FFXProperty(name = "forcefield", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [name]
+    Provides a name for the force field to be used in the current calculation.
+    Its value is usually set in the master force field parameter file for the calculation
+    (see the PARAMETERS keyword) instead of in the property file.
+    """)
 public class ForceField {
 
   private static final Logger logger = Logger.getLogger(ForceField.class.getName());
-  /** A map between a force field name and its internal parameter file. */
+  /**
+   * A map between a force field name and its internal parameter file.
+   */
   private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
 
   static {
@@ -77,7 +84,9 @@ public class ForceField {
     }
   }
 
-  /** The CompositeConfiguration that contains key=value property pairs from a number of sources. */
+  /**
+   * The CompositeConfiguration that contains key=value property pairs from a number of sources.
+   */
   private final CompositeConfiguration properties;
   private final Map<String, AngleType> angleTypes;
   private final Map<String, AngleType> anglepTypes;
@@ -103,14 +112,16 @@ public class ForceField {
   private final Map<String, VDWPairType> vanderWaalsPairTypes;
   private final Map<String, RelativeSolvationType> relativeSolvationTypes;
   private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
-  /** URL to the force field parameter file. */
+  /**
+   * URL to the force field parameter file.
+   */
   public URL forceFieldURL;
 
   /**
    * ForceField Constructor.
    *
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   *                   object.
    */
   public ForceField(CompositeConfiguration properties) {
     this.properties = properties;
@@ -235,7 +246,7 @@ public class ForceField {
    * Add an instance of a force field type. Force Field types are more complicated than simple
    * Strings or doubles, in that they have multiple fields and may occur multiple times.
    *
-   * @param <T> ForceFieldType to add that extends BaseType
+   * @param <T>  ForceFieldType to add that extends BaseType
    * @param type The ForceFieldType to add.
    */
   @SuppressWarnings("unchecked")
@@ -258,7 +269,7 @@ public class ForceField {
       }
       logger.log(Level.WARNING,
           " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
-          new Object[] {type.forceFieldType, type.key, treeMap.get(type.key).toString(),
+          new Object[]{type.forceFieldType, type.key, treeMap.get(type.key).toString(),
               type.toString()});
     }
     treeMap.put(type.key, type);
@@ -268,7 +279,7 @@ public class ForceField {
    * Add a property from an external parameter file.
    *
    * @param property Property string.
-   * @param value double
+   * @param value    double
    */
   public void addProperty(String property, String value) {
     if (property == null) {
@@ -486,7 +497,7 @@ public class ForceField {
    * getAtomType
    *
    * @param moleculeName a {@link java.lang.String} object.
-   * @param atomName a {@link java.lang.String} object.
+   * @param atomName     a {@link java.lang.String} object.
    * @return a {@link ffx.potential.parameters.AtomType} object.
    */
   public AtomType getAtomType(String moleculeName, String atomName) {
@@ -538,7 +549,7 @@ public class ForceField {
    * getBioType.
    *
    * @param moleculeName a {@link java.lang.String} object.
-   * @param atomName a {@link java.lang.String} object.
+   * @param atomName     a {@link java.lang.String} object.
    * @return a {@link ffx.potential.parameters.BioType} object.
    */
   public BioType getBioType(String moleculeName, String atomName) {
@@ -603,7 +614,7 @@ public class ForceField {
    * getBonds
    *
    * @param moleculeName a {@link java.lang.String} object.
-   * @param atomName a {@link java.lang.String} object.
+   * @param atomName     a {@link java.lang.String} object.
    * @return an array of {@link java.lang.String} objects.
    */
   public String[] getBonds(String moleculeName, String atomName) {
@@ -637,7 +648,7 @@ public class ForceField {
   /**
    * getBoolean
    *
-   * @param property The property to return.
+   * @param property       The property to return.
    * @param defaultBoolean The default to return.
    * @return a boolean.
    */
@@ -670,7 +681,7 @@ public class ForceField {
   /**
    * getDouble
    *
-   * @param property The property to return.
+   * @param property      The property to return.
    * @param defaultDouble The default to return.
    * @return The value of the property.
    */
@@ -748,7 +759,7 @@ public class ForceField {
   /**
    * getInteger
    *
-   * @param property The property to return.
+   * @param property       The property to return.
    * @param defaultInteger The default to return.
    * @return an int.
    */
@@ -863,23 +874,23 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
    */
   public OutOfPlaneBendType getOutOfPlaneBendType(AtomType a4, AtomType a0, AtomType a1,
-      AtomType a2) {
+                                                  AtomType a2) {
     int class4 = a4.atomClass;
     int class0 = a0.atomClass;
     int class1 = a1.atomClass;
     int class2 = a2.atomClass;
 
     // First check for an atom4-center-edge-edge type (also checking reversed edges).
-    String key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class0, class2});
+    String key = OutOfPlaneBendType.sortKey(new int[]{class4, class1, class0, class2});
     OutOfPlaneBendType outOfPlaneBendType = getOutOfPlaneBendType(key);
     if (outOfPlaneBendType == null) {
-      key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class2, class0});
+      key = OutOfPlaneBendType.sortKey(new int[]{class4, class1, class2, class0});
       outOfPlaneBendType = getOutOfPlaneBendType(key);
     }
 
     // Then, check for a generic OOP bend type atom4-center-any-any
     if (outOfPlaneBendType == null) {
-      key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, 0, 0});
+      key = OutOfPlaneBendType.sortKey(new int[]{class4, class1, 0, 0});
       outOfPlaneBendType = getOutOfPlaneBendType(key);
     }
 
@@ -1026,7 +1037,7 @@ public class ForceField {
   /**
    * getBoolean
    *
-   * @param property The property to return.
+   * @param property      The property to return.
    * @param defaultString The default to return.
    * @return a boolean.
    */
@@ -1209,7 +1220,9 @@ public class ForceField {
     return properties.containsKey(key);
   }
 
-  /** log */
+  /**
+   * log
+   */
   public void log() {
     for (ForceFieldType s : forceFieldTypes.keySet()) {
       log(s.toString());
@@ -1226,7 +1239,9 @@ public class ForceField {
     logger.info(toString(type));
   }
 
-  /** print */
+  /**
+   * print
+   */
   public void print() {
     for (ForceFieldType s : forceFieldTypes.keySet()) {
       print(s.toString());
@@ -1246,8 +1261,8 @@ public class ForceField {
   /**
    * Renumber ForceField class, type and biotype values.
    *
-   * @param classOffset The class offset.
-   * @param typeOffset The type offset.
+   * @param classOffset   The class offset.
+   * @param typeOffset    The type offset.
    * @param bioTypeOffset The biotype offset.
    */
   public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
@@ -1362,20 +1377,6 @@ public class ForceField {
   }
 
   /**
-   * setTorsionScale.
-   *
-   * @param scaleFactor a double.
-   */
-  public void setTorsionScale(double scaleFactor) {
-    for (TorsionType type : torsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
-    }
-    for (PiOrbitalTorsionType type : piOrbitalTorsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
-    }
-  }
-
-  /**
    * Return a String for any Force Field keyword.
    *
    * @param type ForceFieldType
@@ -1385,7 +1386,7 @@ public class ForceField {
     StringBuilder sb = new StringBuilder("\n");
     Map<String, ? extends BaseType> t = forceFieldTypes.get(type);
 
-    if (t.size() == 0) {
+    if (t.isEmpty()) {
       return "";
     }
 
@@ -1395,7 +1396,9 @@ public class ForceField {
     return sb.toString();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     String forceFieldName;
@@ -1447,8 +1450,8 @@ public class ForceField {
    * the new type. For an atomName such as CD, it will map to both CD1 and CD2.
    *
    * @param molecule The molecule name.
-   * @param atom The atom name.
-   * @param newType The new atom type.
+   * @param atom     The atom name.
+   * @param newType  The new atom type.
    * @return The AtomType that was replaced.
    */
   private AtomType updateBioType(String molecule, String atom, int newType) {
@@ -1470,11 +1473,11 @@ public class ForceField {
    * Patches that add new atom classes/types that bond to existing atom classes/types require
    * "hybrid" force field types that include a mixture of new and existing types.
    *
-   * @param typeMap A look-up from new types to existing types.
+   * @param typeMap    A look-up from new types to existing types.
    * @param patchTypes a {@link java.util.HashMap} object.
    */
   private void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap,
-      HashMap<String, AtomType> patchTypes) {
+                                    HashMap<String, AtomType> patchTypes) {
 
     for (BondType bondType : bondTypes.values().toArray(new BondType[0])) {
       BondType newType = bondType.patchClasses(typeMap);
@@ -1716,7 +1719,7 @@ public class ForceField {
    * <p>First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM, ELEC_LAMBDATERM,
    * or GK_LAMBDATERM.
    *
-   * @param toSet Property to set true if otherBooleans true.
+   * @param toSet         Property to set true if otherBooleans true.
    * @param otherBooleans Properties that imply toSet is true.
    */
   private void trueImpliedBoolean(String toSet, String... otherBooleans) {
@@ -1733,7 +1736,9 @@ public class ForceField {
     }
   }
 
-  /** Check for self-consistent polarization groups. */
+  /**
+   * Check for self-consistent polarization groups.
+   */
   private void checkPolarizationTypes() {
     boolean change = false;
     for (String key : polarizeTypes.keySet()) {
@@ -1782,7 +1787,9 @@ public class ForceField {
     PAM, FIXED_CHARGE
   }
 
-  /** Available force fields. */
+  /**
+   * Available force fields.
+   */
   public enum ForceFieldName {
     AMBER_1994, AMBER_1996, AMBER_1998, AMBER_1999, AMBER_1999_SB, AMOEBA_2004, AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2018, AMOEBA_BIO_2018_CPHMD, AMOEBA_NUC_2017, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2013, AMOEBA_WATER_2003, AMOEBA_WATER_2014, CHARMM_22, CHARMM_22_CMAP, IAMOEBA_WATER, OPLS_AA, OPLS_AAL
   }

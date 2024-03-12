@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,7 +38,7 @@
 package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.PotentialScript
@@ -147,8 +147,8 @@ class CoordShakeEnergy extends PotentialScript {
     }
 
     def eFunct
-    if (thePotential instanceof ForceFieldEnergyOpenMM) {
-      ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
+    if (thePotential instanceof OpenMMEnergy) {
+      OpenMMEnergy ommE = (OpenMMEnergy) thePotential
       eFunct = {double[] coords -> return (ommE.energyFFX(coords, true) - ommE.energy(coords, true))
       }
     } else {

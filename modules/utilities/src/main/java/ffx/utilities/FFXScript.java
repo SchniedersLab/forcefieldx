@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -43,6 +43,7 @@ import static picocli.CommandLine.usage;
 
 import groovy.lang.Binding;
 import groovy.lang.Script;
+
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -57,6 +58,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -69,7 +71,9 @@ import picocli.CommandLine.ParseResult;
  */
 public abstract class FFXScript extends Script {
 
-  /** The logger for this class. */
+  /**
+   * The logger for this class.
+   */
   public static final Logger logger = Logger.getLogger(FFXScript.class.getName());
 
   /**
@@ -80,13 +84,19 @@ public abstract class FFXScript extends Script {
    */
   public final Ansi color;
 
-  /** The array of args passed into the Script. */
+  /**
+   * The array of args passed into the Script.
+   */
   public String[] args;
 
-  /** Parse Result. */
+  /**
+   * Parse Result.
+   */
   public ParseResult parseResult = null;
 
-  /** -V or --version Prints the FFX version and exits. */
+  /**
+   * -V or --version Prints the FFX version and exits.
+   */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
@@ -94,7 +104,9 @@ public abstract class FFXScript extends Script {
       description = "Print the Force Field X version and exit.")
   public boolean version;
 
-  /** -h or --help Prints a help message. */
+  /**
+   * -h or --help Prints a help message.
+   */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
@@ -163,18 +175,34 @@ public abstract class FFXScript extends Script {
   /**
    * List the embedded FFX Groovy Scripts.
    *
-   * @param logScripts List Scripts.
+   * @param logScripts     List Scripts.
    * @param logTestScripts List Test Scripts.
    */
   public static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {
-
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-    String location = "ffx";
-    URL scriptURL = classLoader.getResource(location);
-    if (scriptURL == null) {
-      logger.info(format(" The %s resource could not be found by the classloader.", location));
-      return;
+    try {
+      logger.info("\n  Potential Package Commands:");
+      URL url = classLoader.getResource("ffx/potential");
+      listScriptsForPackage(url, logScripts, logTestScripts);
+      logger.info("\n  Algorithms Package Commands:");
+      url = classLoader.getResource("ffx/algorithms");
+      listScriptsForPackage(url, logScripts, logTestScripts);
+      logger.info("\n  Refinement Package Commands:");
+      url = classLoader.getResource("ffx/xray");
+      listScriptsForPackage(url, logScripts, logTestScripts);
+    } catch (Exception e) {
+      logger.info(" The ffx resource could not be found by the classloader.");
     }
+  }
+
+  /**
+   * List the embedded FFX Groovy Scripts.
+   *
+   * @param scriptURL      URL of package with scripts.
+   * @param logScripts     List Scripts.
+   * @param logTestScripts List Test Scripts.
+   */
+  private static void listScriptsForPackage(URL scriptURL, boolean logScripts, boolean logTestScripts) {
     String scriptPath = scriptURL.getPath();
     String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
     List<String> scripts = new ArrayList<>();
@@ -205,7 +233,7 @@ public abstract class FFXScript extends Script {
         }
       }
     } catch (Exception e) {
-      logger.info(format(" The %s resource could not be decoded.", location));
+      logger.info(format(" The %s resource could not be decoded.", scriptPath));
       return;
     }
 

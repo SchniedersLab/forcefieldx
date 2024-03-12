@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -41,6 +41,7 @@ import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOfRange;
 
+import ffx.potential.Utilities;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -111,6 +112,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael J. Schnieders
  */
+@SuppressWarnings("unchecked")
 public class ModelingPanel extends JPanel implements ActionListener, MouseListener {
 
   @Serial
@@ -193,6 +195,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("unchecked")
   @Override
   public void actionPerformed(ActionEvent evt) {
     synchronized (this) {
@@ -200,7 +203,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       // A change to the selected TINKER Command
       switch (actionCommand) {
         case "FFXCommand" -> {
-          JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
+          JComboBox<String> jcb = (JComboBox<String>) toolBar.getComponentAtIndex(2);
           String com = jcb.getSelectedItem().toString();
           if (!com.equals(activeCommand)) {
             activeCommand = com.toLowerCase();
@@ -383,7 +386,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     } else if ("Edit".equals(button.getText())) {
       String entry = new String(acidTextField.getText());
       // Allow editing - should add more input validation here
-      if (!entry.equals("")) {
+      if (!entry.isEmpty()) {
         String[] s = entry.trim().split(" +");
         String newResidue = s[0].toUpperCase();
         if ("NUCLEIC".equals(arg)) {
@@ -391,7 +394,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           try {
             NucleicAcidUtils.NucleicAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
-            acidComboBox.insertItemAt("" + index + " " + entry, index);
+            acidComboBox.insertItemAt(index + " " + entry, index);
           } catch (Exception e) {
             //
           }
@@ -399,7 +402,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           try {
             AminoAcidUtils.AminoAcid3.valueOf(newResidue);
             acidComboBox.removeItemAt(index);
-            acidComboBox.insertItemAt("" + index + " " + entry, index);
+            acidComboBox.insertItemAt(index + " " + entry, index);
           } catch (Exception e) {
             //
           }
@@ -418,14 +421,14 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           c = c.substring(c.indexOf("[") + 1, c.indexOf("]"));
           newResidue = newResidue + " " + c;
         }
-        acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+        acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
         index++;
       } else {
         if (!newResidue.equalsIgnoreCase("MOL")) {
-          acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+          acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
           index++;
         } else if (!selected.equalsIgnoreCase("MOL")) {
-          acidComboBox.insertItemAt("" + index + " " + newResidue, index + 1);
+          acidComboBox.insertItemAt(index + " " + newResidue, index + 1);
           index++;
         }
       }
@@ -448,7 +451,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       String s = acidComboBox.getItemAt(i);
       s = s.substring(s.indexOf(" ")).trim();
       acidComboBox.removeItemAt(i);
-      acidComboBox.insertItemAt("" + (i + 1) + " " + s, i);
+      acidComboBox.insertItemAt((i + 1) + " " + s, i);
     }
     // Set the selected entry and fill in the edit textField.
     if (index < 0) {
@@ -559,7 +562,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
             optionString.append(" ");
             optionString.append(jtfield.getText());
           } else if (value instanceof JComboBox) {
-            JComboBox jcb = (JComboBox) value;
+            JComboBox<String> jcb = (JComboBox<String>) value;
             Object object = jcb.getSelectedItem();
             if (object instanceof FFXSystem) {
               FFXSystem system = (FFXSystem) object;
@@ -617,7 +620,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           }
         }
       }
-      if (optionString.length() > 0) {
+      if (!optionString.isEmpty()) {
         commandTextArea.append(optionString.toString());
         commandTextArea.append("\n");
       }
@@ -701,7 +704,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     return nucleicPanel;
   }
 
-  private void initCommandComboBox(JComboBox commands) {
+  private void initCommandComboBox(JComboBox<String> commands) {
     commands.setActionCommand("FFXCommand");
     commands.setMaximumSize(xyzCommands.getPreferredSize());
     commands.setEditable(false);
@@ -786,7 +789,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       }
       commandList = ((Element) commandroot).getElementsByTagName("Command");
     } catch (ParserConfigurationException | SAXException | IOException e) {
-      System.err.println(e);
+      System.err.println(Utilities.stackTraceToString(e));
     } finally {
       if (commandList == null) {
         System.out.println("Force Field X commands.xml could not be parsed.");
@@ -1098,24 +1101,24 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
         activeSystem = mainPanel.getHierarchy().getActive();
       }
       // Finally, create and execute the command in a new thread.
-      FFXExec tinkerExec =
+      FFXExec ffxExec =
           new FFXExec(activeSystem, logName, command, dir, mainPanel, newFile, openOnto);
-      Thread tinkerThread = new Thread(tinkerExec);
-      tinkerThread.setPriority(Thread.NORM_PRIORITY);
-      tinkerThread.setName(logName);
+      Thread ffxThread = new Thread(ffxExec);
+      ffxThread.setPriority(Thread.NORM_PRIORITY);
+      ffxThread.setName(logName);
       // If the job progressively modifies coordinates, connect to it.
       if (commandActions.toUpperCase().contains("CONNECT")) {
-        mainPanel.connectToTINKER(activeSystem, tinkerThread);
+        mainPanel.connectToTINKER(activeSystem, ffxThread);
       } else {
-        tinkerThread.start();
+        ffxThread.start();
       }
       // If some action should be taken when the job finishes,
       // add it to the Modeling Jobs Vector
       if (!commandActions.equalsIgnoreCase("NONE")) {
-        executingCommands.add(tinkerThread);
+        executingCommands.add(ffxThread);
         // mainPanel.getLogPanel().refreshStatus();
       }
-      return tinkerExec;
+      return ffxExec;
     }
   }
 

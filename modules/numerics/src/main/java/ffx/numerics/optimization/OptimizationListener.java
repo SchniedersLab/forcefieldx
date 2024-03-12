@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -54,18 +54,18 @@ public interface OptimizationListener {
    * <p>It can be used to log status messages, update the user interface, or gracefully terminate
    * the optimizer.
    *
-   * @param iter Number of iterations.
-   * @param nBFGS Number of L-BFGS correction vectors.
+   * @param iter           Number of iterations.
+   * @param nBFGS          Number of L-BFGS correction vectors.
    * @param nFunctionEvals Number of function evaluations.
-   * @param gradientRMS RMS gradient at current solution.
-   * @param coordinateRMS RMS coordinate change at current solution.
-   * @param f Function value at current solution.
-   * @param df Change in the function value compared to the previous solution.
-   * @param angle Current angle between gradient and search direction.
-   * @param info Result of the line search (null at iteration == 0).
+   * @param gradientRMS    RMS gradient at current solution.
+   * @param coordinateRMS  RMS coordinate change at current solution.
+   * @param f              Function value at current solution.
+   * @param df             Change in the function value compared to the previous solution.
+   * @param angle          Current angle between gradient and search direction.
+   * @param info           Result of the line search (null at iteration == 0).
    * @return A return value of false will terminate the optimization.
    * @since 1.0
    */
   boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
-      double coordinateRMS, double f, double df, double angle, LineSearchResult info);
+                             double coordinateRMS, double f, double df, double angle, LineSearchResult info);
 }

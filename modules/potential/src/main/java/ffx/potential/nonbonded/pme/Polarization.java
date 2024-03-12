@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,20 +37,19 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
-@FFXKeyword(name = "polarization", clazz = String.class,
-    keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual",
-    description = "[DIRECT / MUTUAL / NONE] "
-        + "Selects between the use of direct and mutual dipole polarization for force fields "
-        + "that incorporate the polarization term. "
-        + "The direct modifier avoids an iterative calculation by using only the permanent "
-        + "electric field in computation of induced dipoles. "
-        + "The mutual option, which is the default in the absence of the polarization property, "
-        + "iterates the induced dipoles to self-consistency."
-        + "The none option turns off polarization and takes precedence over the polarizeterm property.")
+@FFXProperty(name = "polarization", clazz = String.class,
+    propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual", description = """
+    [DIRECT / MUTUAL / NONE]
+    Selects between the use of direct and mutual dipole polarization for force fields
+    that incorporate the polarization term. The direct modifier avoids an iterative calculation by using only the
+    permanent electric field in computation of induced dipoles. The mutual option, which is the default in the
+    absence of the polarization property, iterates the induced dipoles to self-consistency.
+    The none option turns off polarization and takes precedence over the polarizeterm property.
+    """)
 public enum Polarization {
   MUTUAL,
   DIRECT,

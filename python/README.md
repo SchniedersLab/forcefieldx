@@ -1,33 +1,29 @@
 
-Installing GraalVM, Python and Torch
-====================================
+Installation of Torch for use of ANI-2x
+=======================================
 
-## Download GraalVM
-Use the following command:
-  
-    bash <(curl -sL https://get.graalvm.org/jdk) -c python graalvm-ce-java17-22.3.1
+## Download and install GraalPy from Github
 
-Or see the following [website](https://www.graalvm.org/downloads) for other versions.
+    Installation instructions are available [here](https://www.graalvm.org/latest/reference-manual/python).
+    GraalPy can be downloaded from [GitHub](https://github.com/oracle/graalpython/releases).
+    
+    For example, the download for Linux is called:
+    graalpy-23.1.0-linux-amd64.tar.gz
 
-## Set the JAVA_HOME and PATH environment variables 
-See the logging from the curl command or the following example:
+## Update your PATH environment variables 
  
-    export JAVA_HOME="/iahome/m/mj/mjschnie/software/graalvm-ce-java17-22.3.1"
-    export PATH="$JAVA_HOME/bin:$PATH"
+    export GRAALPY_HOME="/iahome/m/mj/mjschnie/software/graalpy-23.1.0-linux-amd64"
+    export PATH="$GRAALPY_HOME/bin:$PATH"
 
-## Install Python for the GraalVM
-This step can be skipped if the curl command above was used with the "-c python" flag.
-  
-    gu install python
+## Create a virtual environment within the Force Field X directory and activate it
 
-## Create a virtual environment and activate it
-
+    cd /iahome/m/mj/mjschnie/forcefieldx
     graalpy -m venv ffx_venv
     source ffx_venv/bin/activate
 
-## Install Torch
+## Install Torch Using Pip
   
-    graalpy -m ginstall install torch
+    pip install torch
 
 ## Download the ANI-2x Torch script
 

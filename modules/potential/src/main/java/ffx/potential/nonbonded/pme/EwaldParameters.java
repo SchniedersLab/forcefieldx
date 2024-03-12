@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -41,15 +41,21 @@ import static ffx.numerics.special.Erf.erfc;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.utilities.FFXKeyword;
-import ffx.utilities.KeywordGroup;
+import ffx.utilities.FFXProperty;
+import ffx.utilities.PropertyGroup;
 
-/** Mutable Particle Mesh Ewald constants. */
+/**
+ * Mutable Particle Mesh Ewald constants.
+ */
 public class EwaldParameters {
 
-  /** Default cutoff values for PME under periodic boundary conditions. */
+  /**
+   * Default cutoff values for PME under periodic boundary conditions.
+   */
   public static final double DEFAULT_EWALD_CUTOFF = 7.0;
-  /** The sqrt of PI. */
+  /**
+   * The sqrt of PI.
+   */
   private static final double SQRT_PI = sqrt(Math.PI);
 
   /**
@@ -64,10 +70,12 @@ public class EwaldParameters {
    */
   public static final double DEFAULT_EWALD_COEFFICIENT = 0.545;
 
-  @FFXKeyword(name = "ewald-alpha", keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "0.545",
-      description =
-          "Sets the value of the Ewald coefficient, which controls the width of the Gaussian screening charges during particle mesh Ewald summation for multipole electrostatics. "
-              + "In the absence of the ewald-alpha keyword, the default value is 0.545, which is appropriate for most applications.")
+  @FFXProperty(name = "ewald-alpha", propertyGroup = PropertyGroup.ParticleMeshEwald, defaultValue = "0.545",
+      description = """
+          Sets the value of the Ewald coefficient, which controls the width of the Gaussian screening charges during
+          particle mesh Ewald summation for multipole electrostatics. In the absence of the ewald-alpha keyword,
+          the default value is 0.545, which is appropriate for most applications.
+          """)
   public double aewald;
   public double aewald3;
   public double an0;
@@ -86,7 +94,7 @@ public class EwaldParameters {
   /**
    * Determine the real space Ewald parameters and permanent multipole self energy.
    *
-   * @param off Real space cutoff.
+   * @param off    Real space cutoff.
    * @param aewald Ewald convergence parameter (0.0 turns off reciprocal space).
    */
   public void setEwaldParameters(double off, double aewald) {
@@ -162,9 +170,9 @@ public class EwaldParameters {
   /**
    * Determine the Ewald real space cutoff given the Ewald coefficient and a target precision.
    *
-   * @param coeff The Ewald coefficient in use.
+   * @param coeff     The Ewald coefficient in use.
    * @param maxCutoff The maximum cutoff.
-   * @param eps The target precision.
+   * @param eps       The target precision.
    * @return The determined real space Ewald cutoff.
    */
   public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
