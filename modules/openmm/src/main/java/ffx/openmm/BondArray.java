@@ -63,7 +63,7 @@ public class BondArray {
    * @param size The size of the bond array.
    */
   public BondArray(int size) {
-    OpenMM_BondArray_create(size);
+    pointer = OpenMM_BondArray_create(size);
   }
 
   /**
