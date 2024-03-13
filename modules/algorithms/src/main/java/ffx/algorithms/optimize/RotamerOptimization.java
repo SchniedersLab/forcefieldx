@@ -1328,6 +1328,10 @@ public class RotamerOptimization implements Terminatable {
     public double getPHRestraint() {
         return pHRestraint;
     }
+
+    public double getPH() {
+        return pH;
+    }
   /**
    * Sets the approximate dimensions of boxes, over-riding numXYZBoxes in determining box size.
    * Rounds box size up and number of boxes down to get a whole number of boxes along each axis.
