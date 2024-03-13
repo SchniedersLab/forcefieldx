@@ -398,7 +398,8 @@ class ReadXML extends PotentialScript {
                                 if (torsion.getNodeName() == "Proper") {
                                     forceField.addForceFieldType(new TorsionType(classes, amplitudes, phases, periods, TorsionType.TorsionMode.NORMAL))
                                 } else {
-                                    forceField.addForceFieldType(new TorsionType(classes, amplitudes, phases, periods, TorsionType.TorsionMode.IMPROPER))
+                                    forceField.addForceFieldType(new ImproperTorsionType(classes, amplitudes[0], phases[0], periods[0]))
+//                                    forceField.addForceFieldType(new TorsionType(classes, amplitudes, phases, periods, TorsionType.TorsionMode.IMPROPER))
                                 }
                             }
                             else if (torsion.hasAttributes()) {
@@ -422,8 +423,8 @@ class ReadXML extends PotentialScript {
                             if (nbF.getNodeName() == "Atom") {
                                 int atomType = atomTypeMap.get(nbF.getAttribute("type"))
                                 double q = parseDouble(nbF.getAttribute("charge")) // in proton units
-                                double sigma = parseDouble(nbF.getAttribute("sigma")) * ANGperNM / 2 // todo nm to Ang and divide by 2 to get radius -> could also just change flag at top
-                                double eps = parseDouble(nbF.getAttribute("epsilon")) / KJperKCal  // kJ/mol? to KCal/mol
+                                double sigma = parseDouble(nbF.getAttribute("sigma")) * ANGperNM / 2 * Math.pow(2.0,1.0/6.0) // nm to Ang and divide by 2 to get radius & r-min = 2^(1/6) * sigma
+                                double eps = parseDouble(nbF.getAttribute("epsilon")) / KJperKCal  // kJ/mol to KCal/mol
 
                                 forceField.addForceFieldType(new ChargeType(atomType, q))
                                 forceField.addForceFieldType(new VDWType(atomType, sigma, eps, -1.0))  // vdw by atom type
@@ -527,19 +528,30 @@ class ReadXML extends PotentialScript {
 
         // build header
         StringBuilder head = new StringBuilder()
-        head.append("forcefield\t\tAMBER-FF99SB-XML\n\n" +
-                    "vdwtype\t\t\tLENNARD-JONES\n" +
-                    "vdwindex\t\tTYPE\n" +
-                    "radiusrule\t\tARITHMETIC\n" +
-                    "radiustype\t\tR-MIN\n" + // or SIGMA
-                    "radiussize\t\tRADIUS\n" + // or DIAMETER
-                    "epsilonrule\t\tGEOMETRIC\n" +
-                    "vdw-14-scale\t\t0.500000\n" + // or 2.0
-                    "chg-14-scale\t\t0.833333\n" + // or 1.2
-                    "electric\t\t332.0522173\n" +
-                    "dielectric\t\t1.0\n")
+//        head.append("forcefield\t\tAMBER-FF99SB-XML\n\n" +
+//                    "vdwtype\t\t\tLENNARD-JONES\n" +
+//                    "vdwindex\t\tTYPE\n" +
+//                    "radiusrule\t\tARITHMETIC\n" +
+//                    "radiustype\t\tR-MIN\n" + // or SIGMA
+//                    "radiussize\t\tRADIUS\n" + // or DIAMETER
+//                    "epsilonrule\t\tGEOMETRIC\n" +
+//                    "vdw-14-scale\t\t0.500000\n" + // or 2.0
+//                    "chg-14-scale\t\t0.833333\n" + // or 1.2
+//                    "electric\t\t332.0522173\n" +
+//                    "dielectric\t\t1.0\n")
+        head.append("vdwtype LENNARD-JONES\n" +
+                "vdwindex TYPE\n" +
+                "radiusrule ARITHMETIC\n" +
+                "radiustype R-MIN\n" + // or SIGMA
+                "radiussize RADIUS\n" + // or DIAMETER
+                "epsilonrule GEOMETRIC\n" +
+                "vdw-14-scale 0.500000\n" + // or 2.0
+                "chg-14-scale 0.833333\n" + // or 1.2
+                "electric 332.0522173\n" +
+                "dielectric 1.0\n")
 // TODO: can get vdw-14-scale and chg-14-scale from the xml Node NonbondedForce attributes "lj14scale" and "coulomb14scale", respectively
         StringBuffer ffSB = forceField.toStringBuffer() // convert FF to string buffer
+//        String ffStr = ffSB.replaceAll('improper','imptors') // replace improper FF terms with 'imptors'
 
         // write forcefield file
         BufferedWriter out = new BufferedWriter(new FileWriter("sampleFF.txt"))
