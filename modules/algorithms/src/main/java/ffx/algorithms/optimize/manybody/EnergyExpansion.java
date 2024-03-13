@@ -702,7 +702,13 @@ public class EnergyExpansion {
         logger.fine(format(" %s Self-Energy %16.8f = FF %16.8f - BB %16.8f + Ph Bias %16.8f",
             rotamers[ri].getName(), energy + bias, energy + backboneEnergy, backboneEnergy, bias));
       }
-      energy += bias + pHRestraint;
+
+      String name = rotamers[ri].getName();
+      if ("HIE".equals(name) ||"HID".equals(name) || "LYD".equals(name) || "GLH".equals(name) || "ASH".equals(name) || "CYD".equals(name)) {
+        energy += bias + pHRestraint;
+      } else {
+        energy += bias;
+      }
     }
 
     return energy;
