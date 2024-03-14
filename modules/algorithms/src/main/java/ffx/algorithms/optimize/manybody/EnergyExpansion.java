@@ -707,11 +707,15 @@ public class EnergyExpansion {
             switch (name) {
                 case "ASP":
                     if(rO.getPH() - 3.94 <= 0){
-                        pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                        energy += bias + 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                    } else {
+                        energy += bias;
                     }
                 case "ASH":
                     if(rO.getPH() - 3.94 >= 0){
-                        pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                        energy += bias + 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                    }else {
+                        energy += bias;
                     }
                     break;
                 case "GLH":
