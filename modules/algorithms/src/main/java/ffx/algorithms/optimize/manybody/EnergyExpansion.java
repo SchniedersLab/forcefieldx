@@ -705,8 +705,14 @@ public class EnergyExpansion {
             double pH = rO.getPH();
             String name = rotamers[ri].getName();
             switch (name) {
+                case "ASP":
+                    if(rO.getPH() - 3.94 <= 0){
+                        pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                    }
                 case "ASH":
-                    energy += bias + 0.5*pHRestraint*Math.pow(pH-3.94,2);
+                    if(rO.getPH() - 3.94 >= 0){
+                        pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                    }
                     break;
                 case "GLH":
                     energy += bias + 0.5*pHRestraint*Math.pow(pH-4.25,2);
@@ -917,12 +923,18 @@ public class EnergyExpansion {
     public double getSelf(int i, int ri, Rotamer rot, boolean excludeFMod) {
         try {
             double totalSelf;
-            double pHRestraint;
+            double pHRestraint = 0;
             if (rot.isTitrating && excludeFMod) {
                 String name = rot.getName();
                 switch (name) {
+                    case "ASP":
+                        if(rO.getPH() - 3.94 <= 0){
+                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                        }
                     case "ASH":
-                        pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                        if(rO.getPH() - 3.94 >= 0){
+                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-3.94,2);
+                        }
                         break;
                     case "GLH":
                         pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()-4.25,2);
