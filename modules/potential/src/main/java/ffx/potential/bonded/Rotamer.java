@@ -141,6 +141,18 @@ public class Rotamer {
     this.aminoAcid3 = aminoAcid3;
   }
 
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param aminoAcid3 a {@link AminoAcid3} object.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 aminoAcid3, int weight, double... values) {
+    this(values);
+    this.aminoAcid3 = aminoAcid3;
+    this.weight = weight;
+  }
+
 
   /**
    * Constructor for Rotamer.

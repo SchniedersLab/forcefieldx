@@ -155,7 +155,7 @@ class ReducedPartition extends AlgorithmsScript {
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
-        double[][] titrateArray = new double[1][54]
+        double[][] populationArray = new double[1][54]
         double[][] titrateBoltzmann
         double[] protonationBoltzmannSums
         double totalBoltzmann = 0
@@ -305,15 +305,13 @@ class ReducedPartition extends AlgorithmsScript {
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
             offsets[j] = rotamerOptimization.getRefEnergy()
 
-            //Calculate the fraction protonated for the titratable residues
-            if (pKa) {
-                titrateArray = rotamerOptimization.getFraction()
-                if (printBoltzmann) {
-                    titrateBoltzmann = rotamerOptimization.getPopulationBoltzmann()
-                    totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
-                }
-
+            //Calculate the populations for the all residue rotamers
+            populationArray = rotamerOptimization.getFraction()
+            if (printBoltzmann) {
+                titrateBoltzmann = rotamerOptimization.getPopulationBoltzmann()
+                totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
             }
+
         }
 
         //Print information from the fraction protonated calculations
@@ -329,7 +327,7 @@ class ReducedPartition extends AlgorithmsScript {
                 double tautomerSum = 0
                 Rotamer[] rotamers = residue.getRotamers()
                 for (Rotamer rotamer : rotamers) {
-                    String rotPop = format("%.6f", titrateArray[titrateCount][rotamer.getWeight()])
+                    String rotPop = format("%.6f", populationArray[titrateCount][rotamer.getWeight()])
                     fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
                             rotamer.toString() + "\t" + rotPop + "\n")
                     switch (rotamer.getName()) {
@@ -338,7 +336,7 @@ class ReducedPartition extends AlgorithmsScript {
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += titrateArray[titrateCount][rotamer.getWeight()]
+                            protSum += populationArray[titrateCount][rotamer.getWeight()]
                             if (printBoltzmann) {
                                 protonationBoltzmannSums[titrateCount] += titrateBoltzmann[titrateCount][rotamer.getWeight()]
                             }
@@ -348,10 +346,10 @@ class ReducedPartition extends AlgorithmsScript {
                         case "GLU":
                         case "ASP":
                         case "CYD":
-                            deprotSum += titrateArray[titrateCount][rotamer.getWeight()]
+                            deprotSum += populationArray[titrateCount][rotamer.getWeight()]
                             break
                         case "HID":
-                            tautomerSum += titrateArray[titrateCount][rotamer.getWeight()]
+                            tautomerSum += populationArray[titrateCount][rotamer.getWeight()]
                             break
                         default:
                             break
@@ -362,7 +360,7 @@ class ReducedPartition extends AlgorithmsScript {
                 String formatedTautomerSum = format("%.6f", tautomerSum)
                 switch (residue.getName()) {
                     case "HIS":
-                        logger.info("\n "+ residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
+                        logger.info("\n " + residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
                                 "HIE" + "\t" + formatedDeprotSum + "\t" +
                                 "HID" + "\t" + formatedTautomerSum)
                         break
