@@ -299,7 +299,7 @@ class GenZ extends AlgorithmsScript {
             int[] currentRotamers = new int[selectedResidues.size()]
 
             //Calculate possible permutations for assembly
-            rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+            rotamerOptimization.getPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
             //Collect the Bolztmann weights and calculated offset of each assembly
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()

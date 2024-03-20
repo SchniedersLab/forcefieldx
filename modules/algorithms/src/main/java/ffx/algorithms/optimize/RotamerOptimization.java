@@ -2433,7 +2433,7 @@ public class RotamerOptimization implements Terminatable {
      * @param currentRotamers empty array
      * @throws Exception too many permutations to continue
      */
-    public void getProtonationPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+    public void getPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
         fraction = new double[residues.length][54];
         populationBoltzmann = new double[residues.length][54];
         partitionFunction(residues, i, currentRotamers);
