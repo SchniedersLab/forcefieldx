@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -57,8 +57,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIF() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
+    String cifpath = getResourcePath("CBZ16.cif");
+    String xyzpath = getResourcePath("cbz.xyz");
+    String[] args = {cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -77,7 +78,8 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFWriteAsCIF() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"--sc", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
+    String filepath = getResourcePath("paracetamol.xyz");
+    String[] args = {"--sc", filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -95,8 +97,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFNoHydrogen() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"--fl","src/main/java/ffx/potential/structures/CBZ03.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
+    String cifpath = getResourcePath("CBZ03.cif");
+    String xyzpath = getResourcePath("cbz.xyz");
+    String[] args = {"--fl", cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -114,8 +117,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFMultipleMolecules() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"src/main/java/ffx/potential/structures/1183240.cif",
-            "src/main/java/ffx/potential/structures/asplyswat.xyz"};
+    String cifpath = getResourcePath("1183240.cif");
+    String xyzpath = getResourcePath("asplyswat.xyz");
+    String[] args = {cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -133,8 +137,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFzPrimeChallenge() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"--fl","src/main/java/ffx/potential/structures/1183241.cif",
-            "src/main/java/ffx/potential/structures/glulys.xyz"};
+    String cifpath = getResourcePath("1183241.cif");
+    String xyzpath = getResourcePath("glulys.xyz");
+    String[] args = {"--fl", cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -152,8 +157,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFarc() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"--fl","src/main/java/ffx/potential/structures/cbzs.cif",
-            "src/main/java/ffx/potential/structures/cbz.xyz"};
+    String cifpath = getResourcePath("cbzs.cif");
+    String xyzpath = getResourcePath("cbz.xyz");
+    String[] args = {"--fl", cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -171,8 +177,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFdisulfide() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"src/main/java/ffx/potential/structures/UFAGIS01.cif",
-            "src/main/java/ffx/potential/structures/uf.xyz"};
+    String cifpath = getResourcePath("UFAGIS01.cif");
+    String xyzpath = getResourcePath("uf.xyz");
+    String[] args = {cifpath, xyzpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -190,8 +197,9 @@ public class ImportCIFTest extends PotentialTest {
   @Test
   public void testImportCIFpdb() {
     // Set up the input arguments for the ImportCIF script.
-    String[] args = {"src/main/java/ffx/potential/structures/288726.cif",
-        "src/main/java/ffx/potential/structures/ALA-HIE.pdb"};
+    String cifpath = getResourcePath("288726.cif");
+    String pdbpath = getResourcePath("ALA-HIE.pdb");
+    String[] args = {cifpath, pdbpath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

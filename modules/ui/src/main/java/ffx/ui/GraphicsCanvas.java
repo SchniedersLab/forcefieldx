@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -297,7 +297,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
       J3DGraphics2D g2D = getGraphics2D();
       synchronized (mainPanel.getHierarchy()) {
         ArrayList<MSNode> nodes = mainPanel.getHierarchy().getActiveNodes();
-        if (nodes != null && nodes.size() > 0) {
+        if (nodes != null && !nodes.isEmpty()) {
           for (MSNode node : nodes) {
             MolecularAssembly sys = node.getMSNode(MolecularAssembly.class);
             if (sys != null) {
@@ -920,23 +920,19 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     prefs.putDouble(c + ".radius", RendererCache.radius);
     prefs.put(c + ".mouse", mouseMode.name());
     prefs.putBoolean(c + ".highlight", RendererCache.highlightSelections);
-    prefs.put(
-        c + ".highlightColor",
-        "" + selectionColor.x + " " + selectionColor.y + " " + selectionColor.z);
+    prefs.put(c + ".highlightColor", selectionColor.x + " " + selectionColor.y + " " + selectionColor.z);
     prefs.putBoolean(c + ".labelAtoms", RendererCache.labelAtoms);
     prefs.putBoolean(c + ".labelResidues", RendererCache.labelResidues);
     prefs.putInt(c + ".labelSize", getGraphics2D().getFont().getSize());
     Color fontColor = getGraphics2D().getColor();
-    prefs.put(
-        c + ".labelColor",
-        "" + fontColor.getRed() + " " + fontColor.getGreen() + " " + fontColor.getBlue());
-    prefs.put(c + ".pickColor", "" + pickingColor.x + " " + pickingColor.y + " " + pickingColor.x);
+    prefs.put(c + ".labelColor", fontColor.getRed() + " " + fontColor.getGreen() + " " + fontColor.getBlue());
+    prefs.put(c + ".pickColor", pickingColor.x + " " + pickingColor.y + " " + pickingColor.x);
     prefs.putBoolean(c + ".picking", rendererPicking.getPicking());
     prefs.put(c + ".pickLevel", rendererPicking.getPickLevel());
-    prefs.put(c + ".userColor", "" + userColor.x + " " + userColor.y + " " + userColor.z);
+    prefs.put(c + ".userColor", userColor.x + " " + userColor.y + " " + userColor.z);
     Color3f temp = new Color3f();
     background.getColor(temp);
-    prefs.put(c + ".backgroundColor", "" + temp.x + " " + temp.y + " " + temp.z);
+    prefs.put(c + ".backgroundColor", temp.x + " " + temp.y + " " + temp.z);
   }
 
   /**

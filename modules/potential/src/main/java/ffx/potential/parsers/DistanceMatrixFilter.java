@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * The DistanceMatrixFilter class parses a Distance Matrix (*.TXT) files.
+ * The DistanceMatrixFilter class parses a Distance Matrix (*.DST) files.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -165,7 +165,7 @@ public class DistanceMatrixFilter {
       String data = br.readLine();
 
       // Check for blank lines at the top of the file
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = br.readLine();
       }
 

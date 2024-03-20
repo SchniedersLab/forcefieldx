@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Methods</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Method Development">
+      <p>Novel methods being developed within Force Field X include:</p>
+      <table>
+        <tr>
+          <td>
+            <a href="#GK">Implicit Solvents</a>
+          </td>
+          <td>Development of generalized Kirkwood implicit solvents for the polarizable AMOEBA force field.</td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#Crystal">Crystal Structure Prediction</a>
+          </td>
+          <td>A complete alchemical pipeline to predict of the structure, stability and solubility of organic
+            crystals.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#FreeEnergy">Advanced Free Energy Methods</a>
+          </td>
+          <td>Efficient free energy methods for advanced force fields using orthogonal space tempering and dual-topology
+            methods.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#ManyBody">Protein Missense Variants</a>
+          </td>
+          <td>Protein structure optimization using novel many-body expansion algorithms in the context of understanding
+            deafness genetics.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="#Refinement">Next Generation Structure Refinement</a>
+          </td>
+          <td>Advanced methods for refinement of structures against experimental data.</td>
+        </tr>
+      </table>
+      <subsection name="Implicit Solvent Models based on the Generalized Kirkwood Model" id="GK">
+        <table>
+          <tr>
+            <td>
+              <p align="left">
+                Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
+                J., A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.
+                <a href="https://doi.org/10.1063/5.0158914">
+                  <i>Journal of Chemical Physics</i>
+                  <b>2023</b>, 159, 054102.
+                </a>
+              </p>
+              <p align="center">
+                <img align="middle" src="images/AmoebaProteinGK.png" alt="JCP"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p align="left">
+                Corrigan, R. A., Qi, G., Thiel, A. C., Lynn, J. R., Walker, B. D., Casavant, T. L.,
+                Lagardere, L., Piquemal, J.-P., Ponder, J. W., Ren, P., and Schnieders, M. J.,
+                Implicit Solvents for the Polarizable Atomic Multipole AMOEBA Force Field.
+                <a href="https://dx.doi.org/10.1021/acs.jctc.0c01286">
+                  <i>Journal of Chemical Theory and Computation</i>
+                  <b>2021</b>, 17 (4), 2323-2341.
+                </a>
+              </p>
+              <p align="center">
+                <img align="middle" src="images/AmoebaSmallMoleculeGK.png" alt="JCTC"/>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Understanding Protein Missense Variants in the Context of Deafness Genetics" id="ManyBody">
+        <table>
+          <tr>
+            <td>
+              Tollefson, M. R., Gogal, R. A., Weaver, A. M., Schaefer, A. M., Marini, R. J.,
+              Azaiez, H., Kolbe, D. L., Wang, D., Weaver, A. E., Casavant, T. L., Braun, T. A.,
+              Smith, R. J. H., and Schnieders, M. J.,
+              Assessing Variants of Uncertain Significance Implicated in Hearing Loss Using a Comprehensive
+              Deafness Proteome.
+              <a href="https://doi.org/10.1007/s00439-023-02559-9">
+                <i>Human Genetics</i>
+                <b>2023</b>, 142, 819–834.
+              </a>
+              <p align="center">
+                <img align="middle" src="images/HearingLossGenetics.png" alt="HG"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Tollefson, M. R., Litman, J. M., Qi, G., O’Connell, C. E., Wipfler, M. J.,
+              Marini, R. J., Bernabe, H. V., Tollefson, W. T. A., Braun, T. A., Casavant, T. L.,
+              Smith, R. J. H. and M. J. Schnieders,
+              Structural Insights into Hearing Loss Genetics from Polarizable Protein Repacking.
+              <a href="https://dx.doi.org/10.1016/j.bpj.2019.06.030">
+                <i>Biophysical Journal</i>
+                <b>2019</b>, 117 (3), 602-612.
+              </a>
+              <p align="center">
+                <img align="middle" src="images/ManyBodyOpt.png" alt="BJ"/>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Prediction of the Structure, Stability and Solubility of Organic Crystals" id="Crystal">
+        <table>
+          <tr>
+            <td>
+              Nessler, A. J., Okada, O., Hermon, M. J., Nagata, H., and Schnieders, M. J.,
+              Progressive Alignment of Crystals: Reproducible and Efficient Assessment of Crystal Structure Similarity.
+              <a href="https://dx.doi.org/10.1107/S1600576722009670">
+                <i>Journal of Applied Crystallography</i>
+                <b>2022</b>, 55, 1528-1537.
+              </a>
+              <p align="center">
+                <img align="middle" src="images/PAC.png" alt="JAP"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Dybeck, E. C., Thiel, A., Schnieders, M. J., Pickard, F. C. I. V., Wood, G. P. F.,
+              Krzyzaniak, J. F., and Hancock, B. C.,
+              A Comparison of Methods for Computing Relative Anhydrous–Hydrate Stability
+              with Molecular Simulation,
+              <a href="https://dx.doi.org/10.1021/acs.cgd.2c00832">
+                <i>Crystal Growth and Design</i>
+                <b>2022</b>, 23, 142-167.
+              </a>
+              <p align="center">
+                <img align="middle" src="images/HydrateDFF.png" alt="JAP"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p align="left">
+                Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. J. Schnieders,
+                Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy.
+                <a href="https://dx.doi.org/10.1021/ct500180m">
+                  <i>Journal of Chemical Theory and Computation</i>
+                  <b>2014</b>
+                  10, (7), 2781-2791.
+                </a>
+              </p>
+              <p align="center">
+                <img src="images/DepositionPMF.png" alt="JCTC"/>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Alchemical Free Energy Methods for Advanced Force Fields" id="FreeEnergy">
+        <table>
+          <tr>
+            <td>
+              <p align="left">
+                Litman, J. M., Thiel, A. C., and M. J. Schnieders,
+                Scalable Indirect Free Energy Method Applied to Divalent Cation-Metalloprotein Binding.
+                <a href="https://dx.doi.org/10.1021/acs.jctc.9b00147">
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2019</b>, 15 (8), 4602-4614.
+                </a>
+              </p>
+              <p align="center">
+                <img align="middle" src="images/SB.png" alt="JCTC"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p align="left">
+                Nessler, I. J., Litman, J. M., and M. J. Schnieders,
+                Toward Polarizable AMOEBA Thermodynamics at Fixed Charge Efficiency Using a Dual Force Field Approach.
+                <a href="https://dx.doi.org/10.1039/C6CP02595A">
+                  <i>Physical Chemistry Chemical Physics</i>
+                  <b>2016</b>, 18 (44), 30313-30322.
+                </a>
+              </p>
+              <p align="center">
+                <img align="middle" src="images/DualFF.png" alt="PCCP"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
+              The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable
+              Force Field.
+              <a href="https://dx.doi.org/10.1021/ct300035u">
+              <i>Journal of Chemical Theory and Computation</i>
+              <b>2012</b>
+              8, (5), 1721–36.
+              </a>
+              <p align="center">
+                <img align="middle" src="images/OSRW.png" alt="JCTC"/>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+      <subsection name="Next Generation Structure Refinement Methods" id="Refinement">
+        <table>
+          <tr>
+            <td>
+              <p align="left">
+                LuCore, S. D., Litman, J. M., Powers, K. T., Gao, S., Lynn, A. M., Tollefson, W. T. A., Fenn, T. D.,
+                Washington, M. T. and M. J. Schnieders,
+                Dead-End Elimination with a Polarizable Force Field Repacks PCNA Models.
+                <a href="https://dx.doi.org/10.1016/j.bpj.2015.06.062">
+                  <i>Biophysical Journal</i>
+                  <b>2015</b>, 109 (4), 816-826.
+                </a>
+              </p>
+              <p align="center">
+                <img src="images/pcna.png" alt="BJ"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p align="left">
+                Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
+                Polarizable Force Fields for Biomolecular Modeling.
+                <a href="https://dx.doi.org/10.1002/SERIES6143">
+                  <i>Reviews in Computational Chemistry</i>
+                  <b>2015</b>
+                  Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
+                </a>
+              </p>
+              <p align="center">
+                <img src="images/dnmt1.png" alt="RCC"/>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p align="left">
+                Fenn, T. D. and M. J. Schnieders,
+                Polarizable Atomic Multipole X-ray Refinement: Weighting Schemes for Macromolecular Diffraction.
+                <a href="https://dx.doi.org/10.1107/S0907444911039060">
+                  <i>Acta Crystallographica Section D</i>
+                  <b>2011</b>
+                  67, (11), 957-65.
+                </a>
+              </p>
+              <p align="center">
+                <img src="images/actsite_ffx.png" alt="ACSD"/>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </subsection>
+    </section>
+  </body>
+</document>

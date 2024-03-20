@@ -84,7 +84,7 @@ public class FrontendFileReader {
         private InputStream myInputStream;
         private byte[] myBuffer = new byte[0];
 
-        private abstract class Invocation {
+        private abstract static class Invocation {
 
             public abstract boolean invoke()
                     throws IOException;
@@ -228,7 +228,7 @@ public class FrontendFileReader {
                 resultexc = exc;
                 try {
                     myInputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);
@@ -286,7 +286,7 @@ public class FrontendFileReader {
                 resultexc = exc;
                 try {
                     myInputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);

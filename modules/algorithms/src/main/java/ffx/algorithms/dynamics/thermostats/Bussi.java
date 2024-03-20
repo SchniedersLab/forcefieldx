@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -54,7 +54,6 @@ import java.util.Random;
  * distribution.
  *
  * @author Michael J. Schnieders
- *     <p>Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
  * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006">G. Bussi and M. Parrinello,
  *     "Stochastic Thermostats: Comparison of Local and Global Schemes", Computer Physics
  *     Communications, 179, 26-29 (2008)</a>
@@ -120,8 +119,11 @@ public class Bussi extends Thermostat {
       scale = -scale;
     }
     double[] v = state.v();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      v[i] *= scale;
+      if (mass[i] > 0.0) {
+        v[i] *= scale;
+      }
     }
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -549,8 +549,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
               final double tix = aewald4 * (diy * uiz - diz * uiy);
               final double tiy = aewald4 * (diz * uix - dix * uiz);
               final double tiz = aewald4 * (dix * uiy - diy * uix);
-              torque.add(threadID, i, polarizationScale * tix, polarizationScale * tiy,
-                  polarizationScale * tiz);
+              torque.add(threadID, i, polarizationScale * tix, polarizationScale * tiy, polarizationScale * tiz);
               if (lambdaTerm) {
                 double factor = dEdLSign * dlPowPol;
                 lambdaTorque.add(threadID, i, factor * tix, factor * tiy, factor * tiz);
@@ -668,22 +667,16 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             if (esvTerm && extendedSystem.isTitrating(i)) {
               final double[] mTitrDot = titrationMultipole[0][i];
               double eTitrDot = mTitrDot[t000] * sPhi[t000]
-                  + mTitrDot[t100] * sPhi[t100] + mTitrDot[t010] * sPhi[t010]
-                  + mTitrDot[t001] * sPhi[t001]
-                  + oneThird * (mTitrDot[t200] * sPhi[t200] + mTitrDot[t020] * sPhi[t020]
-                  + mTitrDot[t002] * sPhi[t002]
-                  + 2.0 * (mTitrDot[t110] * sPhi[t110] + mTitrDot[t101] * sPhi[t101]
-                  + mTitrDot[t011] * sPhi[t011]));
+                  + mTitrDot[t100] * sPhi[t100] + mTitrDot[t010] * sPhi[t010] + mTitrDot[t001] * sPhi[t001]
+                  + oneThird * (mTitrDot[t200] * sPhi[t200] + mTitrDot[t020] * sPhi[t020] + mTitrDot[t002] * sPhi[t002]
+                  + 2.0 * (mTitrDot[t110] * sPhi[t110] + mTitrDot[t101] * sPhi[t101] + mTitrDot[t011] * sPhi[t011]));
               double eTautDot = 0.0;
               if (extendedSystem.isTautomerizing(i)) {
                 final double[] mTautDot = tautomerMultipole[0][i];
                 eTautDot = mTautDot[t000] * sPhi[t000]
-                    + mTautDot[t100] * sPhi[t100] + mTautDot[t010] * sPhi[t010]
-                    + mTautDot[t001] * sPhi[t001]
-                    + oneThird * (mTautDot[t200] * sPhi[t200] + mTautDot[t020] * sPhi[t020]
-                    + mTautDot[t002] * sPhi[t002]
-                    + 2.0 * (mTautDot[t110] * sPhi[t110]
-                    + mTautDot[t101] * sPhi[t101] + mTautDot[t011] * sPhi[t011]));
+                    + mTautDot[t100] * sPhi[t100] + mTautDot[t010] * sPhi[t010] + mTautDot[t001] * sPhi[t001]
+                    + oneThird * (mTautDot[t200] * sPhi[t200] + mTautDot[t020] * sPhi[t020] + mTautDot[t002] * sPhi[t002]
+                    + 2.0 * (mTautDot[t110] * sPhi[t110] + mTautDot[t101] * sPhi[t101] + mTautDot[t011] * sPhi[t011]));
               }
               double factor = polarizationScale * electric;
               extendedSystem.addIndElecDeriv(i, eTitrDot * factor, eTautDot * factor);

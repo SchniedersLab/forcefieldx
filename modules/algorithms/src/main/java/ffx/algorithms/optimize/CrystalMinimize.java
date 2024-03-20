@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -68,7 +68,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
   private final Crystal unitCell;
 
   /**
-   * Constructor for Minimize.
+   * Constructor for CrystalMinimize.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param xtalEnergy a {@link ffx.potential.XtalEnergy} object.

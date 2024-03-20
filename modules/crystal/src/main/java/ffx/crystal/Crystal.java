@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -44,7 +44,7 @@ import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
-import static ffx.utilities.KeywordGroup.UnitCellAndSpaceGroup;
+import static ffx.utilities.PropertyGroup.UnitCellAndSpaceGroup;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -60,12 +60,14 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
@@ -84,46 +86,89 @@ public class Crystal {
 
   private static final Logger logger = Logger.getLogger(Crystal.class.getName());
 
-  /** The space group of the crystal. */
-  @FFXKeyword(name = "SpaceGroup", keywordGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
-      description = "This keyword selects the space group to be used in manipulation of crystal unit cells and asymmetric units.")
+  /**
+   * The space group of the crystal.
+   */
+  @FFXProperty(name = "SpaceGroup", propertyGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
+      description = """
+          This property defines the crystal space group used during structural manipulations and force field calculations.
+          """)
   public final SpaceGroup spaceGroup;
 
-  /** Length of the cell edge in the direction of the <b>a</b> basis vector. */
-  @FFXKeyword(name = "a-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "None",
-      description = "Sets the value of the a-axis length for a crystal unit cell, or, equivalently, the X-axis length for a periodic box (Angstroms).")
+  /**
+   * Length of the cell edge in the direction of the <b>a</b> basis vector.
+   */
+  @FFXProperty(name = "a-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "None",
+      description = """
+          Sets the value of the a-axis length for a crystal unit cell, or, equivalently,
+          the X-axis length for a periodic box (Angstroms).
+          """)
   public double a;
 
-  /** Length of the cell edge in the direction of the <b>b</b> basis vector. */
-  @FFXKeyword(name = "b-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
-      description = "Sets the value of the b-axis length for a crystal unit cell, or, equivalently, the Y-axis length for a periodic box (Angstroms).")
+  /**
+   * Length of the cell edge in the direction of the <b>b</b> basis vector.
+   */
+  @FFXProperty(name = "b-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+      description = """
+          Sets the value of the b-axis length for a crystal unit cell, or, equivalently,
+          the Y-axis length for a periodic box (Angstroms).
+          """)
   public double b;
 
-  /** Length of the cell edge in the direction of the <b>c</b> basis vector. */
-  @FFXKeyword(name = "c-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
-      description = "Sets the value of the c-axis length for a crystal unit cell, or, equivalently, the Z-axis length for a periodic box (Angstroms).")
+  /**
+   * Length of the cell edge in the direction of the <b>c</b> basis vector.
+   */
+  @FFXProperty(name = "c-axis", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+      description = """
+          Sets the value of the c-axis length for a crystal unit cell, or, equivalently,
+          the Z-axis length for a periodic box (Angstroms).
+          """)
   public double c;
 
-  /** The interaxial lattice angle between <b>b</b> and <b>c</b>. */
-  @FFXKeyword(name = "alpha", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
-      description = "Sets the value of the α-angle of a crystal unit cell, i.e., the angle between the b-axis and c-axis of a unit cell, or, equivalently, the angle between the Y-axis and Z-axis of a periodic box.")
+  /**
+   * The interaxial lattice angle between <b>b</b> and <b>c</b>.
+   */
+  @FFXProperty(name = "alpha", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
+      description = """
+          Sets the value of the α-angle of a crystal unit cell, i.e.,
+          the angle between the b-axis and c-axis of a unit cell, or, equivalently,
+          the angle between the Y-axis and Z-axis of a periodic box.
+          """)
   public double alpha;
 
-  /** The interaxial lattice angle between <b>a</b> and <b>c</b>. */
-  @FFXKeyword(name = "beta", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
-      description = "Sets the value of the β-angle of a crystal unit cell, i.e., the angle between the a-axis and c-axis of a unit cell, or, equivalently, the angle between the X-axis and Z-axis of a periodic box.")
+  /**
+   * The interaxial lattice angle between <b>a</b> and <b>c</b>.
+   */
+  @FFXProperty(name = "beta", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+      description = """
+          Sets the value of the β-angle of a crystal unit cell, i.e.,
+          the angle between the a-axis and c-axis of a unit cell, or, equivalently,
+          the angle between the X-axis and Z-axis of a periodic box.
+          """)
   public double beta;
 
-  /** The interaxial lattice angle between <b>a</b> and <b>b</b>. */
-  @FFXKeyword(name = "gamma", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
-      description = "Sets the value of the γ-angle of a crystal unit cell, i.e., the angle between the a-axis and b-axis of a unit cell, or, equivalently, the angle between the X-axis and Y-axis of a periodic box.")
+  /**
+   * The interaxial lattice angle between <b>a</b> and <b>b</b>.
+   */
+  @FFXProperty(name = "gamma", propertyGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+      description = """
+          Sets the value of the γ-angle of a crystal unit cell, i.e.,
+          the angle between the a-axis and b-axis of a unit cell, or, equivalently,
+          the angle between the X-axis and Y-axis of a periodic box.
+          """)
   public double gamma;
 
-  /** A mask equal to 0 for X-coordinates. */
+  /**
+   * A mask equal to 0 for X-coordinates.
+   */
   private static final int XX = 0;
-  /** A mask equal to 1 for Y-coordinates. */
+  /**
+   * A mask equal to 1 for Y-coordinates.
+   */
   private static final int YY = 1;
-  /** A mask equal to 2 for Z-coordinates. */
+  /**
+   * A mask equal to 2 for Z-coordinates.
+   */
   private static final int ZZ = 2;
 
   /**
@@ -133,23 +178,41 @@ public class Crystal {
    * <br>c-axis vector is the third row of A^(-1).
    */
   public final double[][] Ai = new double[3][3];
-  /** The direct space metric matrix. */
+  /**
+   * The direct space metric matrix.
+   */
   public final double[][] G = new double[3][3];
-  /** Reference to the space group crystal system. */
+  /**
+   * Reference to the space group crystal system.
+   */
   private final CrystalSystem crystalSystem;
-  /** Reference to the space group lattice system. */
+  /**
+   * Reference to the space group lattice system.
+   */
   private final LatticeSystem latticeSystem;
-  /** The crystal unit cell volume. */
+  /**
+   * The crystal unit cell volume.
+   */
   public double volume;
-  /** Matrix to convert from Cartesian to fractional coordinates. */
+  /**
+   * Matrix to convert from Cartesian to fractional coordinates.
+   */
   public double[][] A;
-  /** Entry in the A matrix. */
+  /**
+   * Entry in the A matrix.
+   */
   public double A00, A01, A02, A10, A11, A12, A20, A21, A22;
-  /** Interfacial radius in the direction of the A-axis. */
+  /**
+   * Interfacial radius in the direction of the A-axis.
+   */
   public double interfacialRadiusA;
-  /** Interfacial radius in the direction of the B-axis. */
+  /**
+   * Interfacial radius in the direction of the B-axis.
+   */
   public double interfacialRadiusB;
-  /** Interfacial radius in the direction of the C-axis. */
+  /**
+   * Interfacial radius in the direction of the C-axis.
+   */
   public double interfacialRadiusC;
   /**
    * Anisotropic bulk solvent B-factor scaling (0 or 1 for each component).
@@ -159,13 +222,21 @@ public class Crystal {
    * Number of bulk solvent B-factor components.
    */
   public int scaleN;
-  /** Entry in the Ai matrix. */
+  /**
+   * Entry in the Ai matrix.
+   */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
-  /** Change in the volume with respect to a. */
+  /**
+   * Change in the volume with respect to a.
+   */
   public double dVdA;
-  /** Change in the volume with respect to b. */
+  /**
+   * Change in the volume with respect to b.
+   */
   public double dVdB;
-  /** Change in the volume with respect to c. */
+  /**
+   * Change in the volume with respect to c.
+   */
   public double dVdC;
   /**
    * Change in the volume with respect to alpha (in Radians). This is set to zero if alpha is fixed.
@@ -189,9 +260,13 @@ public class Crystal {
    * at a special position.
    */
   private double specialPositionCutoff = 0.3;
-  /** Copy of symmetry operators in Cartesian coordinates. */
+  /**
+   * Copy of symmetry operators in Cartesian coordinates.
+   */
   private List<SymOp> symOpsCartesian;
-  /** The reciprocal space metric matrix. */
+  /**
+   * The reciprocal space metric matrix.
+   */
   private double[][] Gstar;
   /**
    * SpecialPositionCutoff squared.
@@ -206,16 +281,15 @@ public class Crystal {
    * The Crystal class encapsulates the lattice parameters and space group. Methods are available to
    * apply the minimum image convention and to apply space group operators.
    *
-   * @param a The a-axis length.
-   * @param b The b-axis length.
-   * @param c The c-axis length.
-   * @param alpha The alpha angle.
-   * @param beta The beta angle.
-   * @param gamma The gamma angle.
+   * @param a        The a-axis length.
+   * @param b        The b-axis length.
+   * @param c        The c-axis length.
+   * @param alpha    The alpha angle.
+   * @param beta     The beta angle.
+   * @param gamma    The gamma angle.
    * @param sgNumber The space group number.
    */
-  public Crystal(double a, double b, double c, double alpha, double beta, double gamma,
-      int sgNumber) {
+  public Crystal(double a, double b, double c, double alpha, double beta, double gamma, int sgNumber) {
     this(a, b, c, alpha, beta, gamma, SpaceGroupDefinitions.spaceGroupFactory(sgNumber).pdbName);
   }
 
@@ -223,13 +297,13 @@ public class Crystal {
    * The Crystal class encapsulates the lattice parameters and space group. Methods are available to
    * apply the minimum image convention and to apply space group operators.
    *
-   * @param a The a-axis length.
-   * @param b The b-axis length.
-   * @param c The c-axis length.
+   * @param a     The a-axis length.
+   * @param b     The b-axis length.
+   * @param c     The c-axis length.
    * @param alpha The alpha angle.
-   * @param beta The beta angle.
+   * @param beta  The beta angle.
    * @param gamma The gamma angle.
-   * @param sg The space group symbol.
+   * @param sg    The space group symbol.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
     // Crystal SpaceGroup and LatticeSystem are final variables. Temp variable to delay assigning.
@@ -405,7 +479,7 @@ public class Crystal {
    * checkProperties
    *
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   *                   object.
    * @return a {@link ffx.crystal.Crystal} object.
    */
   public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -472,17 +546,17 @@ public class Crystal {
    * <p>
    * If mateX, mateY or mateZ are null or not of length n, an exception is thrown.
    *
-   * @param n Number of atoms.
-   * @param x Input fractional x-coordinates.
-   * @param y Input fractional y-coordinates.
-   * @param z Input fractional z-coordinates.
+   * @param n     Number of atoms.
+   * @param x     Input fractional x-coordinates.
+   * @param y     Input fractional y-coordinates.
+   * @param z     Input fractional z-coordinates.
    * @param mateX Output fractional x-coordinates.
    * @param mateY Output fractional y-coordinates.
    * @param mateZ Output fractional z-coordinates.
    * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(int n, double[] x, double[] y, double[] z,
-      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
+                         double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
     if (x == null || y == null || z == null) {
       throw new IllegalArgumentException("The input arrays x, y and z must not be null.");
     }
@@ -532,8 +606,8 @@ public class Crystal {
   /**
    * Apply a fractional symmetry operator to one set of cartesian coordinates.
    *
-   * @param xyz Input cartesian coordinates.
-   * @param mate Symmetry mate cartesian coordinates.
+   * @param xyz   Input cartesian coordinates.
+   * @param mate  Symmetry mate cartesian coordinates.
    * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(double[] xyz, double[] mate, SymOp symOp) {
@@ -580,8 +654,8 @@ public class Crystal {
   /**
    * Apply a fractional symmetry operator to one set of cartesian coordinates.
    *
-   * @param xyz Input cartesian coordinates.
-   * @param mate Symmetry mate cartesian coordinates.
+   * @param xyz   Input cartesian coordinates.
+   * @param mate  Symmetry mate cartesian coordinates.
    * @param symOp The fractional symmetry operator.
    */
   public void applySymRot(double[] xyz, double[] mate, SymOp symOp) {
@@ -613,14 +687,14 @@ public class Crystal {
    * <p>
    * If mateX, mateY or mateZ are null or not of length n, an exception is thrown.
    *
-   * @param n Number of atoms.
-   * @param x Input x-coordinates.
-   * @param y Input y-coordinates.
-   * @param z Input z-coordinates.
-   * @param mateX Output x-coordinates.
-   * @param mateY Output y-coordinates.
-   * @param mateZ Output z-coordinates.
-   * @param symOp The symmetry operator.
+   * @param n      Number of atoms.
+   * @param x      Input x-coordinates.
+   * @param y      Input y-coordinates.
+   * @param z      Input z-coordinates.
+   * @param mateX  Output x-coordinates.
+   * @param mateY  Output y-coordinates.
+   * @param mateZ  Output z-coordinates.
+   * @param symOp  The symmetry operator.
    * @param rotmat an array of double.
    */
   public void applyTransSymRot(
@@ -711,11 +785,11 @@ public class Crystal {
    * parameters will only be accepted if symmetry restrictions are satisfied. If so, all Crystal
    * variables that depend on the unit cell parameters will be updated.
    *
-   * @param a length of the a-axis.
-   * @param b length of the b-axis.
-   * @param c length of the c-axis.
+   * @param a     length of the a-axis.
+   * @param b     length of the b-axis.
+   * @param c     length of the c-axis.
    * @param alpha Angle between b-axis and c-axis.
-   * @param beta Angle between a-axis and c-axis.
+   * @param beta  Angle between a-axis and c-axis.
    * @param gamma Angle between a-axis and b-axis.
    * @return The method return true if the parameters are accepted, false otherwise.
    */
@@ -760,12 +834,12 @@ public class Crystal {
    * If the new parameters are accepted, the target asymmetric unit volume is achieved by uniformly
    * scaling all lattice lengths.
    *
-   * @param a length of the a-axis.
-   * @param b length of the b-axis.
-   * @param c length of the c-axis.
-   * @param alpha Angle between b-axis and c-axis.
-   * @param beta Angle between a-axis and c-axis.
-   * @param gamma Angle between a-axis and b-axis.
+   * @param a              length of the a-axis.
+   * @param b              length of the b-axis.
+   * @param c              length of the c-axis.
+   * @param alpha          Angle between b-axis and c-axis.
+   * @param beta           Angle between a-axis and c-axis.
+   * @param gamma          Angle between a-axis and b-axis.
    * @param targetAUVolume Target asymmetric unit volume.
    * @return The method return true if the parameters are accepted, false otherwise.
    */
@@ -876,7 +950,7 @@ public class Crystal {
   /**
    * Compute the total transformation operator R = ToCart * Rot * ToFrac.
    *
-   * @param symOp Symmetry operator to apply.
+   * @param symOp  Symmetry operator to apply.
    * @param rotmat Resulting transformation operator R.
    */
   public void getTransformationOperator(SymOp symOp, double[][] rotmat) {
@@ -903,7 +977,9 @@ public class Crystal {
     return this;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(a, b, c, alpha, beta, gamma, spaceGroup.number);
@@ -912,7 +988,7 @@ public class Crystal {
   /**
    * Apply the minimum image convention.
    *
-   * @param xyz the coordinates of the first atom.
+   * @param xyz  the coordinates of the first atom.
    * @param xyz2 the coordinates of the second atom.
    * @return the output distance squared.
    */
@@ -1035,8 +1111,7 @@ public class Crystal {
 
   public boolean randomParameters(double dens, double mass) {
     double[] params = latticeSystem.resetUnitCellParams();
-    boolean succeed =
-        changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
+    boolean succeed = changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
     if (succeed) {
       setDensity(dens, mass);
     }
@@ -1088,7 +1163,7 @@ public class Crystal {
   /**
    * Set the unit cell vectors. Scale lattice lengths if necessary to hit the target volume.
    *
-   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param cellVectors    3x3 matrix of cell vectors.
    * @param targetAUVolume the target volume for the new cell Vectors.
    * @return True if the perturbation of cell vectors succeeds.
    */
@@ -1107,7 +1182,9 @@ public class Crystal {
     double scale = cbrt(currentDensity / dens);
     changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
     currentDensity = getDensity(mass);
-    logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(format(" Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
+    }
   }
 
   /**
@@ -1124,13 +1201,13 @@ public class Crystal {
   /**
    * toCartesianCoordinates
    *
-   * @param n an int.
+   * @param n  an int.
    * @param xf an array of double for fractional x-coordinates.
    * @param yf an array of double for fractional y-coordinates.
    * @param zf an array of double for fractional z-coordinates.
-   * @param x an array of double for cartesian x-coordinates.
-   * @param y an array of double for cartesian y-coordinates.
-   * @param z an array of double for cartesian z-coordinates.
+   * @param x  an array of double for cartesian x-coordinates.
+   * @param y  an array of double for cartesian y-coordinates.
+   * @param z  an array of double for cartesian z-coordinates.
    */
   public void toCartesianCoordinates(
       int n, double[] xf, double[] yf, double[] zf, double[] x, double[] y, double[] z) {
@@ -1147,7 +1224,7 @@ public class Crystal {
   /**
    * toCartesianCoordinates
    *
-   * @param n an int.
+   * @param n    an int.
    * @param frac an array of double for fractional coordinates.
    * @param cart an array of double for cartesian coordinates.
    */
@@ -1172,7 +1249,7 @@ public class Crystal {
    * toCartesianCoordinates
    *
    * @param xf an array of double for fractional coordinate.
-   * @param x an array of double for cartesian coordinate.
+   * @param x  an array of double for cartesian coordinate.
    */
   public void toCartesianCoordinates(double[] xf, double[] x) {
     double fx = xf[0];
@@ -1186,10 +1263,10 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param n an int.
-   * @param x an array of double for cartesian x-coordinates.
-   * @param y an array of double for cartesian y-coordinates.
-   * @param z an array of double for cartesian z-coordinates.
+   * @param n  an int.
+   * @param x  an array of double for cartesian x-coordinates.
+   * @param y  an array of double for cartesian y-coordinates.
+   * @param z  an array of double for cartesian z-coordinates.
    * @param xf an array of double for fractional x-coordinates.
    * @param yf an array of double for fractional y-coordinates.
    * @param zf an array of double for fractional z-coordinates.
@@ -1209,7 +1286,7 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param n an int.
+   * @param n    an int.
    * @param cart an array of double for cartesian coordinates.
    * @param frac an array of double for fractional coordinates.
    */
@@ -1233,7 +1310,7 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param x an array of double for cartesian coordinate.
+   * @param x  an array of double for cartesian coordinate.
    * @param xf an array of double for fractional coordinate.
    */
   public void toFractionalCoordinates(double[] x, double[] xf) {
@@ -1248,7 +1325,7 @@ public class Crystal {
   /**
    * toPrimaryCell
    *
-   * @param in an array of double.
+   * @param in  an array of double.
    * @param out an array of double.
    */
   public void toPrimaryCell(double[] in, double[] out) {
@@ -1268,7 +1345,9 @@ public class Crystal {
     return format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("\n Unit Cell\n");
@@ -1292,8 +1371,10 @@ public class Crystal {
     return sb.toString();
   }
 
-  /** Update all Crystal variables that are a function of unit cell parameters. */
-  public void updateCrystal() {
+  /**
+   * Update all Crystal variables that are a function of unit cell parameters.
+   */
+  public final void updateCrystal() {
 
     double cos_alpha;
     double sin_beta;
@@ -1350,8 +1431,8 @@ public class Crystal {
         dVdB = sin_gamma * gamma_term * a * c;
         dVdC = sin_gamma * gamma_term * a * b;
         double dbeta = 2.0 * sin_beta * cos_beta
-                - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma)
-                / (sin_gamma * sin_gamma);
+            - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma)
+            / (sin_gamma * sin_gamma);
         double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
         double dgamma2 = cos_alpha - cos_beta * cos_gamma;
         dgamma2 *= dgamma2 * 2.0 * cos_gamma / (sin_gamma * sin_gamma * sin_gamma);
@@ -1359,7 +1440,7 @@ public class Crystal {
             / (sin_gamma * gamma_term) * a * b * c;
         dVdBeta = 0.5 * sin_gamma * dbeta / gamma_term * a * b * c;
         dVdGamma = (cos_gamma * gamma_term + 0.5 * sin_gamma * (dgamma1 + dgamma2) / gamma_term)
-                * a * b * c;
+            * a * b * c;
       }
     }
 

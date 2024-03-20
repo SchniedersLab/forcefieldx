@@ -361,16 +361,8 @@ public class Configuration {
                     while (linescanner.hasNext()) {
                         jvmflags.add(linescanner.next());
                     }
-                    BackendInfo backendinfo
-                            = new BackendInfo(name,
-                                    cpus,
-                                    BackendInfo.State.IDLE,
-                                    now,
-                                    host,
-                                    jvm,
-                                    classpath,
-                                    jvmflags.toArray(new String[jvmflags.size()]),
-                                    DEFAULT_SHELL_COMMAND);
+                    BackendInfo backendinfo = new BackendInfo(name, cpus, BackendInfo.State.IDLE,
+                                    now, host, jvm, classpath, jvmflags.toArray(new String[0]), DEFAULT_SHELL_COMMAND);
                     myBackendInfo.add(backendinfo);
                 } else if (command.equals("backendshell")) {
                     String name = linescanner.next();

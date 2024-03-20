@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,18 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.reduction.DoubleOp;
+import edu.rit.pj.reduction.SharedDoubleArray;
+import ffx.crystal.Crystal;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.nonbonded.implicit.BornTanhRescaling.MAX_BORN_RADIUS;
 import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescaling;
 import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
@@ -46,22 +58,9 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.DoubleOp;
-import edu.rit.pj.reduction.SharedDoubleArray;
-import ffx.crystal.Crystal;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Parallel computation of Born radii via the Grycuk method.

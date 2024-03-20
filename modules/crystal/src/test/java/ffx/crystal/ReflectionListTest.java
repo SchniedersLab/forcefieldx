@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -182,9 +182,9 @@ public class ReflectionListTest extends FFXTest {
 
     assertEquals(
         info + " hash map and arraylist should have equal length",
-        reflectionlist.hklmap.size(),
-        reflectionlist.hkllist.size());
+        reflectionlist.hklMap.size(),
+        reflectionlist.hklList.size());
     assertEquals(
-        info + " reflection list should have correct size", size, reflectionlist.hkllist.size());
+        info + " reflection list should have correct size", size, reflectionlist.hklList.size());
   }
 }

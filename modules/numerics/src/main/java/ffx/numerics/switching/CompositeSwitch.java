@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -60,7 +60,9 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
 
   private static final Logger logger = Logger.getLogger(CompositeSwitch.class.getName());
 
-  /** Primary switching function to be obeyed exactly in the middle. */
+  /**
+   * Primary switching function to be obeyed exactly in the middle.
+   */
   private final UnivariateSwitchingFunction primaryFunction;
   /**
    * Secondary switching function used to interpolate smoothly (usually from 0/0/0) into
@@ -72,13 +74,21 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
    * 1/0/0) over lb to lbPrimary.
    */
   private final UnivariateSwitchingFunction endSwitch;
-  /** Lower bound of the primary switch/upper bound of startSwitch * primarySwitch. */
+  /**
+   * Lower bound of the primary switch/upper bound of startSwitch * primarySwitch.
+   */
   private final double lbPrimary;
-  /** Upper bound of the primary switch/lower bound of endSwitch * primarySwitch. */
+  /**
+   * Upper bound of the primary switch/lower bound of endSwitch * primarySwitch.
+   */
   private final double ubPrimary;
-  /** Overall lower bound of the CompositeSwitch. */
+  /**
+   * Overall lower bound of the CompositeSwitch.
+   */
   private final double lb;
-  /** Overall upper bound of the CompositeSwitch. */
+  /**
+   * Overall upper bound of the CompositeSwitch.
+   */
   private final double ub;
 
   // Below six constants are only valid if g(x) = x / range
@@ -113,44 +123,34 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   /**
    * Builds a composite switch in .
    *
-   * @param primary Primary switch to obey exactly from lbPrimary to ubPrimary.
-   * @param start Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to
-   *     internally function from 0-1.
-   * @param end Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to
-   *     internally function from 0-1.
+   * @param primary   Primary switch to obey exactly from lbPrimary to ubPrimary.
+   * @param start     Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to
+   *                  internally function from 0-1.
+   * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to
+   *                  internally function from 0-1.
    * @param lbPrimary Value at which primary should begin to be obeyed exactly.
    * @param ubPrimary Value at which primary should stop being obeyed exactly.
    */
-  public CompositeSwitch(
-      UnivariateSwitchingFunction primary,
-      UnivariateSwitchingFunction start,
-      UnivariateSwitchingFunction end,
-      double lbPrimary,
-      double ubPrimary) {
+  public CompositeSwitch(UnivariateSwitchingFunction primary, UnivariateSwitchingFunction start,
+                         UnivariateSwitchingFunction end, double lbPrimary, double ubPrimary) {
     this(primary, start, end, lbPrimary, ubPrimary, 0, 1);
   }
 
   /**
    * Builds a composite switch in .
    *
-   * @param primary Primary switch to obey exactly from lbPrimary to ubPrimary.
-   * @param start Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to
-   *     internally function from 0-1.
-   * @param end Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to
-   *     internally function from 0-1.
+   * @param primary   Primary switch to obey exactly from lbPrimary to ubPrimary.
+   * @param start     Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to
+   *                  internally function from 0-1.
+   * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to
+   *                  internally function from 0-1.
    * @param lbPrimary Value at which primary should begin to be obeyed exactly.
    * @param ubPrimary Value at which primary should stop being obeyed exactly.
-   * @param ub Overall upper bound of the CompositeSwitch.
-   * @param lb Overall lower bound of the CompositeSwitch.
+   * @param ub        Overall upper bound of the CompositeSwitch.
+   * @param lb        Overall lower bound of the CompositeSwitch.
    */
-  public CompositeSwitch(
-      UnivariateSwitchingFunction primary,
-      UnivariateSwitchingFunction start,
-      UnivariateSwitchingFunction end,
-      double lbPrimary,
-      double ubPrimary,
-      double lb,
-      double ub) {
+  public CompositeSwitch(UnivariateSwitchingFunction primary, UnivariateSwitchingFunction start,
+                         UnivariateSwitchingFunction end, double lbPrimary, double ubPrimary, double lb, double ub) {
     if (lbPrimary > ubPrimary) {
       throw new IllegalArgumentException(
           format(
@@ -178,10 +178,6 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     fdUB = ub - ubPrimary;
     multUB = 1.0 / fdUB;
     fdUB2 = fdUB * fdUB;
-
-    if (!testJoints()) {
-      logger.warning(format(" Switch %s is not smooth at one of its joints!", this));
-    }
   }
 
   @Override
@@ -281,8 +277,8 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   /**
    * Tests double equality to within a reasonable tolerance.
    *
-   * @param x1 First value.
-   * @param x2 Second value.
+   * @param x1  First value.
+   * @param x2  Second value.
    * @param tol Tolerance.
    * @return Fuzzy equality.
    */

@@ -1637,7 +1637,7 @@ public class JobScheduler
         if (myHttpServer != null) {
             try {
                 myHttpServer.close();
-            } catch (IOException exc) {
+            } catch (IOException ignored) {
             }
         }
         myLog.log("Stopped");

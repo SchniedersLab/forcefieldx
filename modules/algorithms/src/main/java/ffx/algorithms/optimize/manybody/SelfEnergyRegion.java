@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -110,7 +110,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     this.printFiles = printFiles;
 
     this.selfEnergyMap = eE.getSelfEnergyMap();
-    logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+    logger.info(format("\n Number of self energies: %d", selfEnergyMap.size()));
   }
 
   @Override
@@ -192,8 +192,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     } catch (ArithmeticException ex) {
       logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
     }
-    rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
-
+    rO.logIfRank0(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
     eE.setBackboneEnergy(backboneEnergy);
   }
 

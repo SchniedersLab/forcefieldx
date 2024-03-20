@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -688,7 +688,7 @@ public final class PDBFilter extends SystemFilter {
                 int end = line.length();
                 for (int start = 19; start + 3 <= end; start += 4) {
                   String res = line.substring(start, start + 3).trim();
-                  if (res == null || res.length() < 1) {
+                  if (res.isEmpty()) {
                     break;
                   }
                   chain[resID++] = res;
@@ -730,7 +730,8 @@ public final class PDBFilter extends SystemFilter {
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
                 boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
-                if (deleteAnisou) {
+                double resetBfactors = properties.getDouble("reset-bfactors", -1.0);
+                if (deleteAnisou || resetBfactors >= 0.0) {
                   break;
                 }
                 Integer serial = Hybrid36.decode(5, line.substring(6, 11));
@@ -900,8 +901,13 @@ public final class PDBFilter extends SystemFilter {
                       logger.fine(" Missing occupancy and b-factors set to 1.0.");
                     }
                   }
-                  newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
-                      tempFactor, segID);
+
+                  double bfactor = properties.getDouble("reset-bfactors", -1.0);
+                  if (bfactor >= 0.0) {
+                    tempFactor = bfactor;
+                  }
+
+                  newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
 
                   // Check if this is a modified residue.
                   if (modRes.containsKey(resName.toUpperCase())) {
@@ -1007,8 +1013,13 @@ public final class PDBFilter extends SystemFilter {
                     logger.fine(" Missing occupancy and b-factors set to 1.0.");
                   }
                 }
-                newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
-                    tempFactor, segID);
+
+                double bfactor = properties.getDouble("reset-bfactors", -1.0);
+                if (bfactor >= 0.0) {
+                  tempFactor = bfactor;
+                }
+
+                newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
                 newAtom.setHetero(true);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
@@ -1098,8 +1109,8 @@ public final class PDBFilter extends SystemFilter {
 // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
 // 74 – 78         Real(5.2)      Length          Link distance
 // =============================================================================
-                Character a1 = line.charAt(16);
-                Character a2 = line.charAt(46);
+                char a1 = line.charAt(16);
+                char a2 = line.charAt(46);
                 if (a1 != a2) {
                   // logger.info(format(" Ignoring LINK record as alternate locations do not match\n
                   // %s.", line));
@@ -1314,7 +1325,9 @@ public final class PDBFilter extends SystemFilter {
     buildDisulfideBonds(ssBondList, activeMolecularAssembly, bondList);
 
     // Finally, re-number the atoms if missing atoms were created.
-    if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
+    int currentN = activeMolecularAssembly.getAtomArray().length;
+    if (pdbAtoms != currentN) {
+      logger.info(format(" Renumbering PDB file due to built atoms (%d vs %d)", currentN, pdbAtoms));
       numberAtoms(activeMolecularAssembly);
     }
     return true;
@@ -1702,7 +1715,6 @@ public final class PDBFilter extends SystemFilter {
     return true;
   }
 
-
   /**
    * writeFile
    *
@@ -1958,17 +1970,7 @@ public final class PDBFilter extends SystemFilter {
             // Loop over atoms
             List<Atom> residueAtoms = residue.getAtomList().stream()
                 .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
-            List<Atom> backboneAtoms = residue.getBackboneAtoms().stream()
-                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
-            for (Atom atom : backboneAtoms) {
-              writeAtom(atom, serial++, sb, anisouSB, bw);
-              Character altLoc = atom.getAltLoc();
-              if (altLoc != null && !altLoc.equals(' ')) {
-                altLocFound = true;
-              }
-              residueAtoms.remove(atom);
-            }
             for (Atom atom : residueAtoms) {
               writeAtom(atom, serial++, sb, anisouSB, bw);
               Character altLoc = atom.getAltLoc();
@@ -1980,27 +1982,18 @@ public final class PDBFilter extends SystemFilter {
             if (altLocFound) {
               for (int ma = 1; ma < molecularAssemblies.length; ma++) {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID, currentSegID,
-                    false);
-                Residue altResidue = altPolymer.getResidue(resName, resID, false,
-                    Residue.ResidueType.AA);
+                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
+                Residue altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 if (altResidue == null) {
                   resName = AminoAcid3.UNK.name();
                   altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 }
-                backboneAtoms = altResidue.getBackboneAtoms();
-                residueAtoms = altResidue.getAtomList();
-                for (Atom atom : backboneAtoms) {
-                  if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                      .equals('A')) {
-                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
-                    writeAtom(atom, serial++, sb, anisouSB, bw);
-                  }
-                  residueAtoms.remove(atom);
-                }
+                residueAtoms = altResidue.getAtomList().stream()
+                    .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
                 for (Atom atom : residueAtoms) {
                   if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
                       .equals('A')) {
+                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                 }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -517,8 +517,14 @@ public class BondedUtils {
         }
         return N;
       }
-      default -> throw new IllegalArgumentException(
-          format(" Could not definitely identify amide nitrogen for residue %s", residue));
+//      default -> throw new IllegalArgumentException(
+//          format(" Could not definitely identify amide nitrogen for residue %s", residue));
+      default -> {
+        if(logger.isLoggable(Level.FINE)){
+          logger.warning(format(" Nitrogen could not be mapped for amide nitrogen of residue %s ", residue));
+        }
+        return null;
+      }
     }
   }
 

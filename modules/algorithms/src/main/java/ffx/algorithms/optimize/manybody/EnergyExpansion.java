@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,18 +37,17 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.utils.EnergyException;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -62,24 +61,40 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import static java.lang.String.format;
 
 public class EnergyExpansion {
 
   private static final Logger logger = Logger.getLogger(EnergyExpansion.class.getName());
-  /** Default value for the ommRecalculateThreshold in kcal/mol. */
+  /**
+   * Default value for the ommRecalculateThreshold in kcal/mol.
+   */
   private static final double DEFAULT_OMM_RECALCULATE_THRESHOLD = -200;
-  /** Default value for the singularityThreshold in kcal/mol. */
+  /**
+   * Default value for the singularityThreshold in kcal/mol.
+   */
   private static final double DEFAULT_SINGULARITY_THRESHOLD = -1000;
-  /** Map of self-energy values to compute. */
+  /**
+   * Map of self-energy values to compute.
+   */
   private final Map<Integer, Integer[]> selfEnergyMap = new HashMap<>();
-  /** Map of 2-body energy values to compute. */
+  /**
+   * Map of 2-body energy values to compute.
+   */
   private final Map<Integer, Integer[]> twoBodyEnergyMap = new HashMap<>();
-  /** Map of 3-body energy values to compute. */
+  /**
+   * Map of 3-body energy values to compute.
+   */
   private final Map<Integer, Integer[]> threeBodyEnergyMap = new HashMap<>();
-  /** Map of 4-body energy values to compute. */
+  /**
+   * Map of 4-body energy values to compute.
+   */
   private final Map<Integer, Integer[]> fourBodyEnergyMap = new HashMap<>();
-  /** Flag to indicate if this is the master process. */
+  /**
+   * Flag to indicate if this is the master process.
+   */
   private final boolean master;
   /**
    * If OpenMM is in use, recalculate any suspiciously low self/pair/triple energies using the
@@ -93,39 +108,65 @@ public class EnergyExpansion {
    * energy is "too good to be true" and actually represents a poor conformation.
    */
   private final double singularityThreshold;
-  /** Indicates if the Potential is an OpenMMForceFieldEnergy. */
+  /**
+   * Indicates if the Potential is an OpenMMForceFieldEnergy.
+   */
   private final boolean potentialIsOpenMM;
   private final RotamerOptimization rO;
   private final DistanceMatrix dM;
   private final EliminatedRotamers eR;
-  /** MolecularAssembly to perform rotamer optimization on. */
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
   private final MolecularAssembly molecularAssembly;
-  /** AlgorithmListener who should receive updates as the optimization runs. */
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
   private final AlgorithmListener algorithmListener;
   /**
    * A list of all residues being optimized. Note that Box and Window optimizations operate on
    * subsets of this list.
    */
   private final List<Residue> allResiduesList;
-  /** Interaction partners of a Residue that come after it. */
+  /**
+   * Interaction partners of a Residue that come after it.
+   */
   private final int[][] resNeighbors;
-  /** Flag to control use of 3-body terms. */
+  /**
+   * Flag to control use of 3-body terms.
+   */
   private final boolean threeBodyTerm;
-  /** Flag to indicate computation of a many-body expansion for original coordinates. */
+  /**
+   * Flag to indicate computation of a many-body expansion for original coordinates.
+   */
   private final boolean decomposeOriginal;
-  /** Flag to indicate use of box optimization. */
+  /**
+   * Flag to indicate use of box optimization.
+   */
   private final boolean usingBoxOptimization;
-  /** Flag to indicate verbose logging. */
+  /**
+   * Flag to indicate verbose logging.
+   */
   private final boolean verbose;
-  /** Flag to prune clashes. */
+  /**
+   * Flag to prune clashes.
+   */
   private final boolean pruneClashes;
-  /** Flag to prune pair clashes. */
+  /**
+   * Flag to prune pair clashes.
+   */
   private final boolean prunePairClashes;
-  /** Maximum number of 4-body energy values to compute. */
+  /**
+   * Maximum number of 4-body energy values to compute.
+   */
   private final int max4BodyCount;
-  /** The potential energy of the system with all side-chains to be optimized turned off. */
+  /**
+   * The potential energy of the system with all side-chains to be optimized turned off.
+   */
   private double backboneEnergy;
-  /** Self-energy of each residue for each rotamer. [residue][rotamer] */
+  /**
+   * Self-energy of each residue for each rotamer. [residue][rotamer]
+   */
   private double[][] selfEnergy;
   /**
    * Two-body energies for each pair of residues and each pair of rotamers.
@@ -139,10 +180,10 @@ public class EnergyExpansion {
   private double[][][][][][] threeBodyEnergy;
 
   public EnergyExpansion(RotamerOptimization rO, DistanceMatrix dM, EliminatedRotamers eR,
-      MolecularAssembly molecularAssembly, Potential potential, AlgorithmListener algorithmListener,
-      List<Residue> allResiduesList, int[][] resNeighbors, boolean threeBodyTerm,
-      boolean decomposeOriginal, boolean usingBoxOptimization, boolean verbose,
-      boolean pruneClashes, boolean prunePairClashes, boolean master) {
+                         MolecularAssembly molecularAssembly, Potential potential, AlgorithmListener algorithmListener,
+                         List<Residue> allResiduesList, int[][] resNeighbors, boolean threeBodyTerm,
+                         boolean decomposeOriginal, boolean usingBoxOptimization, boolean verbose,
+                         boolean pruneClashes, boolean prunePairClashes, boolean master) {
     this.rO = rO;
     this.dM = dM;
     this.eR = eR;
@@ -163,12 +204,10 @@ public class EnergyExpansion {
     if (max4BodyCount != Integer.MAX_VALUE) {
       logger.info(format(" Max 4Body Count: %d", max4BodyCount));
     }
-    singularityThreshold = properties.getDouble("ro-singularityThreshold",
-        DEFAULT_SINGULARITY_THRESHOLD);
-    potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
+    singularityThreshold = properties.getDouble("ro-singularityThreshold", DEFAULT_SINGULARITY_THRESHOLD);
+    potentialIsOpenMM = potential instanceof OpenMMEnergy;
     if (potentialIsOpenMM) {
-      ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold",
-          DEFAULT_OMM_RECALCULATE_THRESHOLD);
+      ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold", DEFAULT_OMM_RECALCULATE_THRESHOLD);
     } else {
       ommRecalculateThreshold = -1E200;
     }
@@ -221,7 +260,7 @@ public class EnergyExpansion {
   }
 
   public HashMap<String, Integer> allocate2BodyJobMap(Residue[] residues, int nResidues,
-      boolean reverseMap) {
+                                                      boolean reverseMap) {
     twoBodyEnergyMap.clear();
     // allocated twoBodyEnergy array and create pair jobs
     HashMap<String, Integer> reverseJobMapPairs = new HashMap<>();
@@ -276,7 +315,7 @@ public class EnergyExpansion {
   }
 
   public HashMap<String, Integer> allocate3BodyJobMap(Residue[] residues, int nResidues,
-      boolean reverseMap) {
+                                                      boolean reverseMap) {
     HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
     threeBodyEnergyMap.clear();
     // fill in 3-Body energies from the restart file.
@@ -426,7 +465,7 @@ public class EnergyExpansion {
   }
 
   public HashMap<String, Integer> allocateSelfJobMap(Residue[] residues, int nResidues,
-      boolean reverseMap) {
+                                                     boolean reverseMap) {
     selfEnergyMap.clear();
     // allocate selfEnergy array and create self jobs
     HashMap<String, Integer> reverseJobMapSingles = new HashMap<>();
@@ -459,10 +498,10 @@ public class EnergyExpansion {
    * of backbone and component self energies.
    *
    * @param residues Residues under optimization.
-   * @param i A residue index.
-   * @param ri A rotamer index for residue i.
-   * @param j A residue index j!=i.
-   * @param rj A rotamer index for residue j.
+   * @param i        A residue index.
+   * @param ri       A rotamer index for residue i.
+   * @param j        A residue index j!=i.
+   * @param rj       A rotamer index for residue j.
    * @return Epair(ri, rj)=E2(ri,rj)-Eself(ri)-Eself(rj)-Eenv/bb.
    */
   public double compute2BodyEnergy(Residue[] residues, int i, int ri, int j, int rj) {
@@ -507,12 +546,12 @@ public class EnergyExpansion {
    * the sum of backbone and component self/2-Body energies.
    *
    * @param residues Residues under optimization.
-   * @param i A residue index.
-   * @param ri A rotamer index for residue i.
-   * @param j A residue index j!=i.
-   * @param rj A rotamer index for residue j.
-   * @param k A residue index k!=j k!=i.
-   * @param rk A rotamer index for residue k.
+   * @param i        A residue index.
+   * @param ri       A rotamer index for residue i.
+   * @param j        A residue index j!=i.
+   * @param rj       A rotamer index for residue j.
+   * @param k        A residue index k!=j k!=i.
+   * @param rk       A rotamer index for residue k.
    * @return Etri(ri,
    *rj)=E3(ri,rj,rk)-Epair(ri,rj)-Epair(ri,rk)-Epair(rj,rk)-Eself(ri)-Eself(rj)-Eself(rk)-Eenv/bb.
    */
@@ -561,18 +600,18 @@ public class EnergyExpansion {
    * the sum of backbone and component self/2-Body/3-body energies.
    *
    * @param residues Residues under optimization.
-   * @param i A residue index.
-   * @param ri A rotamer index for residue i.
-   * @param j A residue index j!=i.
-   * @param rj A rotamer index for residue j.
-   * @param k A residue index k!=j k!=i.
-   * @param rk A rotamer index for residue k.
-   * @param l A residue index l!=i l!=j l!=k.
-   * @param rl A rotamer index for residue l.
+   * @param i        A residue index.
+   * @param ri       A rotamer index for residue i.
+   * @param j        A residue index j!=i.
+   * @param rj       A rotamer index for residue j.
+   * @param k        A residue index k!=j k!=i.
+   * @param rk       A rotamer index for residue k.
+   * @param l        A residue index l!=i l!=j l!=k.
+   * @param rl       A rotamer index for residue l.
    * @return The 4-body energy.
    */
   public double compute4BodyEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk,
-      int l, int rl) {
+                                   int l, int rl) {
     turnOffAllResidues(residues);
     turnOnResidue(residues[i], ri);
     turnOnResidue(residues[j], rj);
@@ -624,8 +663,8 @@ public class EnergyExpansion {
    * pH-dependent bias is included.
    *
    * @param residues Residues under optimization.
-   * @param i A residue index.
-   * @param ri A rotamer index for residue i.
+   * @param i        A residue index.
+   * @param ri       A rotamer index for residue i.
    * @return Eself(ri)=E1(ri)-Eenv/bb.
    */
   public double computeSelfEnergy(Residue[] residues, int i, int ri) {
@@ -675,7 +714,7 @@ public class EnergyExpansion {
    * @param rotamers The array of rotamer indices for each residue.
    * @return The total Ph bias.
    */
-  public double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers) {
+  public static double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers) {
     double total = 0.0;
     int n = residues.size();
     for (int i = 0; i < n; i++) {
@@ -693,9 +732,9 @@ public class EnergyExpansion {
   /**
    * Return a previously computed 2-body energy.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri of residue i.
-   * @param j Residue j.
+   * @param j  Residue j.
    * @param rj Rotamer rj of residue j.
    * @return The 2-Body energy.
    */
@@ -734,12 +773,12 @@ public class EnergyExpansion {
   /**
    * Return a previously computed 3-body energy.
    *
-   * @param i Residue i.
-   * @param ri Rotamer ri of residue i.
-   * @param j Residue j.
-   * @param rj Rotamer rj of residue j.
-   * @param k Residue k.
-   * @param rk Rotamer rk of residue k.
+   * @param i        Residue i.
+   * @param ri       Rotamer ri of residue i.
+   * @param j        Residue j.
+   * @param rj       Rotamer rj of residue j.
+   * @param k        Residue k.
+   * @param rk       Rotamer rk of residue k.
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
    * @return The 3-Body energy.
    */
@@ -828,7 +867,7 @@ public class EnergyExpansion {
   /**
    * Return a previously computed self-energy.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri of residue i.
    * @return The self-energy.
    */
@@ -844,7 +883,7 @@ public class EnergyExpansion {
   /**
    * Return a previously computed self-energy.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri of residue i.
    * @return The self-energy.
    */
@@ -881,7 +920,7 @@ public class EnergyExpansion {
   }
 
   public int loadEnergyRestart(File restartFile, Residue[] residues, int boxIteration,
-      int[] cellIndices) {
+                               int[] cellIndices) {
     try {
       int nResidues = residues.length;
       Path path = Paths.get(restartFile.getCanonicalPath());
@@ -894,7 +933,7 @@ public class EnergyExpansion {
         logger.severe(
             format(" Exception %s in calculating backbone energy; FFX shutting down.", ex));
       }
-      rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+      rO.logIfRank0(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
       if (usingBoxOptimization && boxIteration >= 0) {
         boolean foundBox = false;
@@ -922,10 +961,10 @@ public class EnergyExpansion {
           }
         }
         if (!foundBox) {
-          rO.logIfMaster(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
+          rO.logIfRank0(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
               cellIndices[0], cellIndices[1], cellIndices[2]));
           return 0;
-        } else if (linesThisBox.size() == 0) {
+        } else if (linesThisBox.isEmpty()) {
           return 0;
         } else {
           lines = linesThisBox;
@@ -946,11 +985,11 @@ public class EnergyExpansion {
         }
       }
       int loaded = 0;
-      if (tripleLines.size() > 0) {
+      if (!tripleLines.isEmpty()) {
         loaded = 3;
-      } else if (pairLines.size() > 0) {
+      } else if (!pairLines.isEmpty()) {
         loaded = 2;
-      } else if (singleLines.size() > 0) {
+      } else if (!singleLines.isEmpty()) {
         loaded = 1;
       } else {
         logger.warning(
@@ -975,12 +1014,12 @@ public class EnergyExpansion {
             try {
               setSelf(i, ri, energy);
               if (verbose) {
-                rO.logIfMaster(format(" From restart file: Self energy %3d (%8s,%2d): %s", i,
+                rO.logIfRank0(format(" From restart file: Self energy %3d (%8s,%2d): %s", i,
                     residues[i].toFormattedString(false, true), ri, rO.formatEnergy(energy)));
               }
             } catch (Exception e) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             }
             // remove that job from the pool
@@ -991,7 +1030,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded self energies from restart file.");
+        rO.logIfRank0(" Loaded self energies from restart file.");
 
         // Pre-Prune if self-energy is Double.NaN.
         eR.prePruneSelves(residues);
@@ -1006,8 +1045,8 @@ public class EnergyExpansion {
       condenseEnergyMap(selfEnergyMap);
 
       if (loaded >= 2) {
-        if (selfEnergyMap.size() > 0) {
-          rO.logIfMaster(
+        if (!selfEnergyMap.isEmpty()) {
+          rO.logIfRank0(
               " Double-check that parameters match original run due to missing self-energies.");
         }
         boolean reverseMap = true;
@@ -1073,14 +1112,14 @@ public class EnergyExpansion {
               }
 
               if (verbose) {
-                rO.logIfMaster(
+                rO.logIfRank0(
                     format(" From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
                         residues[i].toFormattedString(false, true), ri,
                         residues[j].toFormattedString(false, true), rj, energy));
               }
             } catch (Exception e) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             }
             // remove that job from the pool
@@ -1091,7 +1130,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded 2-body energies from restart file.");
+        rO.logIfRank0(" Loaded 2-body energies from restart file.");
 
         // Pre-Prune if pair-energy is Double.NaN.
         eR.prePrunePairs(residues);
@@ -1106,7 +1145,7 @@ public class EnergyExpansion {
       condenseEnergyMap(twoBodyEnergyMap);
 
       if (loaded >= 3) {
-        if (twoBodyEnergyMap.size() > 0) {
+        if (!twoBodyEnergyMap.isEmpty()) {
           if (master) {
             logger.warning(
                 "Double-check that parameters match original run!  Found trimers in restart file, but pairs job queue is non-empty.");
@@ -1193,18 +1232,18 @@ public class EnergyExpansion {
               }
             } catch (ArrayIndexOutOfBoundsException ex) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             } catch (NullPointerException npe) {
               if (verbose) {
-                rO.logIfMaster(format(" NPE in loading 3-body energies: pruning "
+                rO.logIfRank0(format(" NPE in loading 3-body energies: pruning "
                         + "likely changed! 3-body %s-%d %s-%d %s-%d",
                     residues[i].toFormattedString(false, true), ri, residues[j], rj, residues[k],
                     rk));
               }
             }
             if (verbose) {
-              rO.logIfMaster(
+              rO.logIfRank0(
                   format(" From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s", i, ri,
                       j, rj, k, rk, rO.formatEnergy(energy)));
             }
@@ -1216,7 +1255,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded trimer energies from restart file.");
+        rO.logIfRank0(" Loaded trimer energies from restart file.");
       }
 
       // Remap to sequential integer keys.
@@ -1234,9 +1273,9 @@ public class EnergyExpansion {
    * Return the lowest pair-energy for residue (i,ri) with residue j.
    *
    * @param residues Residue array.
-   * @param i Residue i index.
-   * @param ri Residue i rotamer index.
-   * @param j Residue j index.
+   * @param i        Residue i index.
+   * @param ri       Residue i rotamer index.
+   * @param j        Residue j index.
    * @return Lowest pair energy.
    */
   public double lowestPairEnergy(Residue[] residues, int i, int ri, int j) {
@@ -1271,7 +1310,7 @@ public class EnergyExpansion {
    * Return the lowest self-energy for residue i.
    *
    * @param residues Array if residues.
-   * @param i Index of residue i.
+   * @param i        Index of residue i.
    * @return Returns the lowest self-energy for residue i.
    */
   public double lowestSelfEnergy(Residue[] residues, int i) {
@@ -1302,11 +1341,11 @@ public class EnergyExpansion {
    * Calculates the minimum and maximum summations over additional residues for some pair ri-rj.
    *
    * @param residues Residues under consideration.
-   * @param minMax Result array: 0 is min summation, 1 max summation.
-   * @param i Residue i.
-   * @param ri Rotamer for residue i.
-   * @param j Residue j!=i.
-   * @param rj Rotamer for residue j.
+   * @param minMax   Result array: 0 is min summation, 1 max summation.
+   * @param i        Residue i.
+   * @param ri       Rotamer for residue i.
+   * @param j        Residue j!=i.
+   * @param rj       Rotamer for residue j.
    * @return False if ri-rj always clashes with other residues.
    * @throws IllegalArgumentException If ri, rj, or ri-rj eliminated.
    */
@@ -1426,10 +1465,10 @@ public class EnergyExpansion {
    * <p>The return value should be redundant with minMax[0] being NaN.
    *
    * @param residues Array of residues under consideration.
-   * @param minMax Index 0 to be filled by minimum energy, index 1 filled by maximum energy.
-   * @param i Some residue i under consideration.
-   * @param ri A rotamer for residue i.
-   * @param j Some arbitrary residue i!=j.
+   * @param minMax   Index 0 to be filled by minimum energy, index 1 filled by maximum energy.
+   * @param i        Some residue i under consideration.
+   * @param ri       A rotamer for residue i.
+   * @param j        Some arbitrary residue i!=j.
    * @return If a valid configuration between i,ri and j could be found.
    */
   public boolean minMaxPairEnergy(Residue[] residues, double[] minMax, int i, int ri, int j) {
@@ -1457,7 +1496,7 @@ public class EnergyExpansion {
         if (!validPair) {
           // Eliminate Rotamer Pair
           Residue residuei = residues[i];
-          rO.logIfMaster(format(" Inconsistent Pair: %8s %2d, %8s %2d.",
+          rO.logIfRank0(format(" Inconsistent Pair: %8s %2d, %8s %2d.",
               residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true),
               rj), Level.INFO);
           continue;
@@ -1506,11 +1545,11 @@ public class EnergyExpansion {
   /**
    * Store a pair energy in the pairs energy matrix.
    *
-   * @param i A residue index.
-   * @param ri A rotamer for residue i.
-   * @param j A residue index j != i.
-   * @param rj A rotamer for residue j.
-   * @param e Computed energy to store.
+   * @param i     A residue index.
+   * @param ri    A rotamer for residue i.
+   * @param j     A residue index j != i.
+   * @param rj    A rotamer for residue j.
+   * @param e     Computed energy to store.
    * @param quiet Silence warnings about exceptions.
    */
   public void set2Body(int i, int ri, int j, int rj, double e, boolean quiet) {
@@ -1551,13 +1590,13 @@ public class EnergyExpansion {
    * set3Body.
    *
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
-   * @param i a int.
-   * @param ri a int.
-   * @param j a int.
-   * @param rj a int.
-   * @param k a int.
-   * @param rk a int.
-   * @param e a double.
+   * @param i        a int.
+   * @param ri       a int.
+   * @param j        a int.
+   * @param rj       a int.
+   * @param k        a int.
+   * @param rk       a int.
+   * @param e        a double.
    */
   public void set3Body(Residue[] residues, int i, int ri, int j, int rj, int k, int rk, double e) {
     set3Body(residues, i, ri, j, rj, k, rk, e, false);
@@ -1566,19 +1605,19 @@ public class EnergyExpansion {
   /**
    * Stores a triple energy in the triples energy matrix.
    *
-   * @param i A residue index.
-   * @param ri A rotamer for residue i.
-   * @param j A residue index j != i.
-   * @param rj A rotamer for residue j.
-   * @param k A residue index k != j, k != i.
-   * @param rk A rotamer for residue k.
-   * @param e Computed energy to store.
-   * @param quiet Silence warnings about exceptions.
+   * @param i        A residue index.
+   * @param ri       A rotamer for residue i.
+   * @param j        A residue index j != i.
+   * @param rj       A rotamer for residue j.
+   * @param k        A residue index k != j, k != i.
+   * @param rk       A rotamer for residue k.
+   * @param e        Computed energy to store.
+   * @param quiet    Silence warnings about exceptions.
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
    * @throws java.lang.IllegalStateException If threeBodyTerm is false.
    */
   public void set3Body(Residue[] residues, int i, int ri, int j, int rj, int k, int rk, double e,
-      boolean quiet) throws IllegalStateException {
+                       boolean quiet) throws IllegalStateException {
     if (!threeBodyTerm) {
       throw new IllegalStateException(
           " Attempting to set a 3-body energy when threeBodyTerm is false!");
@@ -1659,9 +1698,9 @@ public class EnergyExpansion {
   /**
    * Stores a self energy in the self energy matrix.
    *
-   * @param i A residue index.
-   * @param ri A rotamer for residue i.
-   * @param e Computed energy to store.
+   * @param i     A residue index.
+   * @param ri    A rotamer for residue i.
+   * @param e     Computed energy to store.
    * @param quiet Silence warnings about exceptions.
    */
   public void setSelf(int i, int ri, double e, boolean quiet) {
@@ -1708,11 +1747,11 @@ public class EnergyExpansion {
    * Find the min/max of the 2-body energy.
    *
    * @param residues The residue array.
-   * @param minMax The bound on the 3-body energy (minMax[0] = min, minMax[1] = max.
-   * @param i Residue i
-   * @param ri Rotamer ri of Residue i
-   * @param j Residue j
-   * @param rj Rotamer rj of Residue j
+   * @param minMax   The bound on the 3-body energy (minMax[0] = min, minMax[1] = max.
+   * @param i        Residue i
+   * @param ri       Rotamer ri of Residue i
+   * @param j        Residue j
+   * @param rj       Rotamer rj of Residue j
    * @return true if this term is valid.
    */
   private boolean minMax2BodySum(Residue[] residues, double[] minMax, int i, int ri, int j, int rj) {
@@ -1778,18 +1817,18 @@ public class EnergyExpansion {
    * ri-rj-rk.
    *
    * @param residues Residues under consideration.
-   * @param minMax Result array: 0 is min summation, 1 max summation.
-   * @param i Residue i.
-   * @param ri Rotamer for residue i.
-   * @param j Residue j!=i.
-   * @param rj Rotamer for residue j.
-   * @param k Residue k!=j and k!=i.
-   * @param rk Rotamer for residue k.
+   * @param minMax   Result array: 0 is min summation, 1 max summation.
+   * @param i        Residue i.
+   * @param ri       Rotamer for residue i.
+   * @param j        Residue j!=i.
+   * @param rj       Rotamer for residue j.
+   * @param k        Residue k!=j and k!=i.
+   * @param rk       Rotamer for residue k.
    * @return False if ri-rj-rk always clashes with other residues.
    * @throws IllegalArgumentException if there are pre-existing eliminations in ri-rj-rk.
    */
   private boolean minMaxE3(Residue[] residues, double[] minMax, int i, int ri, int j, int rj, int k,
-      int rk) throws IllegalArgumentException {
+                           int rk) throws IllegalArgumentException {
     Residue resi = residues[i];
     Residue resj = residues[j];
     Residue resk = residues[k];

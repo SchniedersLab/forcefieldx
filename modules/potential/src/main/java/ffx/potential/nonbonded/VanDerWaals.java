@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,18 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.utilities.KeywordGroup.NonBondedCutoff;
-import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.BarrierAction;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -68,11 +56,24 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.PropertyGroup.NonBondedCutoff;
+import static ffx.utilities.PropertyGroup.VanDerWaalsFunctionalForm;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The Van der Waals class computes Van der Waals interaction in parallel using a
@@ -104,37 +105,58 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final SharedDouble sharedd2EdL2;
   private final VanDerWaalsRegion vanDerWaalsRegion;
   private final VanDerWaalsForm vdwForm;
-  @FFXKeyword(name = "vdwindex", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
-      description = "[CLASS / TYPE] "
-          + "Specifies whether van der Waals parameters are provided for atom classes or atom types. "
-          + "While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type. "
-          + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
+  @FFXProperty(name = "vdwindex", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
+      description = """ 
+          [CLASS / TYPE]
+          Specifies whether van der Waals parameters are provided for atom classes or atom types.
+          While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type.
+          The default in the absence of the vdwindex property is to index vdW parameters by atom class.
+          """)
   private final String vdwIndex;
-  @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9",
-      description =
-          "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
-              + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
+  @FFXProperty(name = "vdw-taper", propertyGroup = NonBondedCutoff, defaultValue = "0.9", description = """
+      Allows modification of the cutoff windows for van der Waals potential energy interactions. "
+      The default value in the absence of the vdw-taper keyword is to begin the cutoff window
+      at 0.9 of the vdw cutoff distance.
+      """)
   private final double vdwTaper;
 
   private final NonbondedCutoff nonbondedCutoff;
   private final MultiplicativeSwitch multiplicativeSwitch;
-  /** Boundary conditions and crystal symmetry. */
+  /**
+   * Boundary conditions and crystal symmetry.
+   */
   private Crystal crystal;
-  /** An array of all atoms in the system. */
+  /**
+   * An array of all atoms in the system.
+   */
   private Atom[] atoms;
-  /** Specification of the molecular index for each atom. */
+  /**
+   * Specification of the molecular index for each atom.
+   */
   private int[] molecule;
-  /** Flag to indicate the atom is treated by a neural network. */
+  /**
+   * Flag to indicate the atom is treated by a neural network.
+   */
   private boolean[] neuralNetwork;
-  /** The Force Field that defines the Van der Waals interactions. */
+  /**
+   * The Force Field that defines the Van der Waals interactions.
+   */
   private ForceField forceField;
-  /** An array of whether each atom in the system should be used in the calculations. */
+  /**
+   * An array of whether each atom in the system should be used in the calculations.
+   */
   private boolean[] use = null;
-  /** A local convenience variable equal to atoms.length. */
+  /**
+   * A local convenience variable equal to atoms.length.
+   */
   private int nAtoms;
-  /** A local convenience variable equal to the number of crystal symmetry operators. */
+  /**
+   * A local convenience variable equal to the number of crystal symmetry operators.
+   */
   private int nSymm;
-  /** ***************************************************************** Lambda variables. */
+  /**
+   * **************************************************************** Lambda variables.
+   */
   private boolean gradient;
   private boolean lambdaTerm;
   private boolean esvTerm;
@@ -149,18 +171,28 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * inner loop hard atoms false for inner loop soft atoms
    */
   private boolean[][] softCore;
-  /** Turn on inter-molecular softcore interactions using molecular index. */
+  /**
+   * Turn on inter-molecular softcore interactions using molecular index.
+   */
   private boolean intermolecularSoftcore = false;
 
   // *************************************************************************
   // Coordinate arrays.
-  /** Turn on intra-molecular softcore interactions using molecular index. */
+  /**
+   * Turn on intra-molecular softcore interactions using molecular index.
+   */
   private boolean intramolecularSoftcore = false;
-  /** Current value of the lambda state variable. */
+  /**
+   * Current value of the lambda state variable.
+   */
   private double lambda = 1.0;
-  /** Exponent on lambda (beta). */
+  /**
+   * Exponent on lambda (beta).
+   */
   private double vdwLambdaExponent = 3.0;
-  /** Offset in Angstroms (alpha). */
+  /**
+   * Offset in Angstroms (alpha).
+   */
   private double vdwLambdaAlpha = 0.25;
   /**
    * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary. [nThreads]
@@ -178,18 +210,28 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private double dsc2dL = 0.0;
   private double d2sc1dL2 = 0.0;
   private double d2sc2dL2 = 0.0;
-  /** Generalized extended system variables. */
+  /**
+   * Generalized extended system variables.
+   */
   private ExtendedSystem esvSystem;
 
-  /** A local copy of atomic coordinates, including reductions on the hydrogen atoms. */
+  /**
+   * A local copy of atomic coordinates, including reductions on the hydrogen atoms.
+   */
   private double[] coordinates;
-  /** Reduced coordinates of size: [nSymm][nAtoms * 3] */
+  /**
+   * Reduced coordinates of size: [nSymm][nAtoms * 3]
+   */
   private double[][] reduced;
 
   private double[] reducedXYZ;
-  /** Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors] */
+  /**
+   * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
+   */
   private int[][][] neighborLists;
-  /** A local reference to the atom class of each atom in the system. */
+  /**
+   * A local reference to the atom class of each atom in the system.
+   */
   private int[] atomClass;
   /**
    * Hydrogen atom vdW sites are located toward their heavy atom relative to their nucleus. This is a
@@ -209,9 +251,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private boolean reducedHydrogens;
   private double longRangeCorrection;
   private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
-  /** Cartesian coordinate gradient. */
+  /**
+   * Cartesian coordinate gradient.
+   */
   private AtomicDoubleArray3D grad;
-  /** Lambda derivative of the Cartesian coordinate gradient. */
+  /**
+   * Lambda derivative of the Cartesian coordinate gradient.
+   */
   private AtomicDoubleArray3D lambdaGrad;
   /**
    * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out in the Van der Waals
@@ -244,13 +290,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * The VanDerWaals class constructor.
    *
-   * @param atoms the Atom array to do Van Der Waals calculations on.
-   * @param molecule the molecule number for each atom.
-   * @param neuralNetwork an array of flags to indicate the atom is treated by a neural network.
-   * @param crystal The boundary conditions.
-   * @param forceField the ForceField parameters to apply.
-   * @param parallelTeam The parallel environment.
-   * @param vdwCutoff a double.
+   * @param atoms              the Atom array to do Van Der Waals calculations on.
+   * @param molecule           the molecule number for each atom.
+   * @param neuralNetwork      an array of flags to indicate the atom is treated by a neural network.
+   * @param crystal            The boundary conditions.
+   * @param forceField         the ForceField parameters to apply.
+   * @param parallelTeam       The parallel environment.
+   * @param vdwCutoff          a double.
    * @param neighborListCutoff a double.
    * @since 1.0
    */
@@ -442,7 +488,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * The energy routine may be called repeatedly.
    *
    * @param gradient If true, gradients with respect to atomic coordinates are computed.
-   * @param print If true, there is verbose printing.
+   * @param print    If true, there is verbose printing.
    * @return The energy.
    * @since 1.0
    */
@@ -515,13 +561,17 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     return sharedInteractions.get();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getLambda() {
     return lambda;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setLambda(double lambda) {
     assert (lambda >= 0.0 && lambda <= 1.0);
@@ -558,7 +608,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     // Redo the long range correction.
     if (doLongRangeCorrection) {
-      longRangeCorrection = getLongRangeCorrection();
+      longRangeCorrection = computeLongRangeCorrection();
       logger.info(format(" Long-range VdW correction %12.8f (kcal/mole).", longRangeCorrection));
     } else {
       longRangeCorrection = 0.0;
@@ -637,7 +687,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     return vdwForm;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getd2EdL2() {
     if (sharedd2EdL2 == null || !lambdaTerm) {
@@ -646,7 +698,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     return sharedd2EdL2.get();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getdEdL() {
     if (shareddEdL == null || !lambdaTerm) {
@@ -655,7 +709,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     return shareddEdL.get();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void getdEdXdL(double[] lambdaGradient) {
     if (lambdaGrad == null || !lambdaTerm) {
@@ -697,10 +753,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Setter for the field <code>atoms</code>.
    *
-   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param molecule an array of {@link int} objects.
+   * @param atoms         an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param molecule      an array of {@link int} objects.
    * @param neuralNetwork an array of flags to indicate if the atom is treated by a neural
-   *     network.
+   *                      network.
    */
   public void setAtoms(Atom[] atoms, int[] molecule, boolean[] neuralNetwork) {
     this.atoms = atoms;
@@ -747,7 +803,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuffer sb = new StringBuffer("\n  Van der Waals\n");
@@ -772,7 +830,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     return sb.toString();
   }
 
-  /** Allocate coordinate arrays and set up reduction indices and values. */
+  /**
+   * Allocate coordinate arrays and set up reduction indices and values.
+   */
   private void initAtomArrays() {
     if (esvTerm) {
       atoms = esvSystem.getExtendedAtoms();
@@ -910,9 +970,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    *
    * @return Long range correction (kcal/mol)
    * @see "M. P. Allen and D. J. Tildesley, "Computer Simulation of Liquids, 2nd Ed.", Oxford
-   *     University Press, 2017, Section 2.8"
+   * University Press, 2017, Section 2.8"
    */
-  private double getLongRangeCorrection() {
+  private double computeLongRangeCorrection() {
     // Need to treat esvLambda chain terms below before you can do this.
     if (esvTerm) {
       throw new UnsupportedOperationException();
@@ -925,11 +985,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     /*
      Integrate to maxR = 100 Angstroms or ~33 sigma.
-     Integration step size of delR to be 0.01 Angstroms.
+     nDelta integration steps: (100.0 - cutoff) * 2.0
+     rDelta integration step size: (100.0 - cutoff) / nDelta
     */
-    int step = 2;
+    int stepsPerAngstrom = 2;
     double range = 100.0;
-    int nDelta = (int) ((double) step * (range - nonbondedCutoff.cut));
+    int nDelta = (int) ((double) stepsPerAngstrom * (range - nonbondedCutoff.cut));
     double rDelta = (range - nonbondedCutoff.cut) / (double) nDelta;
     double offset = nonbondedCutoff.cut - 0.5 * rDelta;
     double oneMinLambda = 1.0 - lambda;
@@ -967,20 +1028,27 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           final double rho3 = rho * rho * rho;
           final double rhod = rho + vdwForm.delta;
           final double rhod3 = rhod * rhod * rhod;
-          double t1 = 0, t2 = 0;
+          double t1, t2;
           switch (vdwForm.vdwType) {
-            case BUFFERED_14_7:
-              final double rho7 = rho3 * rho3 * rho;
-              final double rhod7 = rhod3 * rhod3 * rhod;
-              t1 = vdwForm.t1n / rhod7;
-              t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0;
-              break;
-            case LENNARD_JONES:
+            case LENNARD_JONES -> {
               final double rho6 = rho3 * rho3;
               final double rhod6 = rhod3 * rhod3;
               t1 = vdwForm.t1n / rhod6;
               t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
-              break;
+            }
+            case BUFFERED_14_7 -> {
+              final double rho7 = rho3 * rho3 * rho;
+              final double rhod7 = rhod3 * rhod3 * rhod;
+              t1 = vdwForm.t1n / rhod7;
+              t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0;
+            }
+            default -> {
+              // Arbitrary power of "N" for the attractive dispersion.
+              final double rhoN = pow(rho, vdwForm.dispersivePower);
+              final double rhodN = pow(rhod, vdwForm.dispersivePower);
+              t1 = vdwForm.t1n / rhodN;
+              t2 = vdwForm.gamma1 / (rhoN + vdwForm.gamma) - 2.0;
+            }
           }
           final double eij = ev * t1 * t2;
           /*
@@ -1011,28 +1079,28 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         total += radCount[i] * radCount[j] * trapezoid;
         // Correct for softCore vdW that are being turned off.
         if (lambda < 1.0) {
-          total -=
-              (softRadCount[i] * radCount[j] + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                  * oneMinLambda
-                  * trapezoid;
+          total -= (softRadCount[i] * radCount[j] + (radCount[i] - softRadCount[i]) * softRadCount[j])
+              * oneMinLambda * trapezoid;
         }
       }
     }
 
     // Divide by the volume of the asymmetric unit.
     Crystal unitCell = crystal.getUnitCell();
-    total = total / (unitCell.volume / unitCell.spaceGroup.getNumberOfSymOps());
+    double asymmetricUnitVolume = unitCell.volume / unitCell.getNumSymOps();
+    total /= asymmetricUnitVolume;
+    logger.fine(format(" Long-range vdW correction: %16.8f", total));
     return total;
   }
 
   /**
    * Log the Van der Waals interaction.
    *
-   * @param i Atom i.
-   * @param k Atom j.
+   * @param i    Atom i.
+   * @param k    Atom j.
    * @param minr The minimum energy vdW separation distance.
-   * @param r The distance rij.
-   * @param eij The interaction energy.
+   * @param r    The distance rij.
+   * @param eij  The interaction energy.
    * @since 1.0
    */
   private void log(int i, int k, double minr, double r, double eij) {
@@ -1094,7 +1162,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     double dsc2dL = 0.0;
     double d2sc2dL2 = 0.0;
 
-    /** Overriden by the OST version which updates only during setLambda(). */
+    /**
+     * Overriden by the OST version which updates only during setLambda().
+     */
     public void setFactors() {
     }
   }
@@ -1120,7 +1190,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private final ReductionLoop[] reductionLoop;
     private final NeighborListBarrier neighborListAction;
 
-    /** Timing variables. */
+    /**
+     * Timing variables.
+     */
     private long initLoopTotalTime, vdWLoopTotalTime, reductionLoopTimeTotal;
     private long neighborListTotalTime, vdwTimeTotal;
     private final long[] initializationTime;
@@ -1274,7 +1346,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       // Initialize the shared variables.
       if (doLongRangeCorrection) {
-        longRangeCorrection = getLongRangeCorrection();
+        longRangeCorrection = computeLongRangeCorrection();
         sharedEnergy.set(longRangeCorrection);
       } else {
         sharedEnergy.set(0.0);
@@ -1298,7 +1370,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
     }
 
-    /** Update the local coordinate array and initialize reduction variables. */
+    /**
+     * Update the local coordinate array and initialize reduction variables.
+     */
     private class InitializationLoop extends IntegerForLoop {
 
       private int threadID;
@@ -1466,9 +1540,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             double dy = in[1] - out[1];
             double dz = in[2] - out[2];
             double r2 = dx * dx + dy * dy + dz * dz;
-            if (r2 < sp2) {
-              logger.log(Level.WARNING, " Atom may be at a special position: {0}",
-                  atoms[i].toString());
+            if (r2 < sp2 && logger.isLoggable(Level.FINEST)) {
+              logger.log(Level.FINEST, " Atom may be at a special position: {0}", atoms[i].toString());
             }
           }
         }
@@ -1933,12 +2006,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                   gzredi += dedz * rediv;
 
                   // Apply the transpose of the transformation operator.
-                  final double dedxk =
-                      dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
-                  final double dedyk =
-                      dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
-                  final double dedzk =
-                      dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+                  final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                  final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                  final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
                   grad.sub(threadID, k, red * dedxk, red * dedyk, red * dedzk);
                   grad.sub(threadID, redk, redkv * dedxk, redkv * dedyk, redkv * dedzk);
 
@@ -2042,7 +2112,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     }
 
-    /** Reduce Van der Waals gradient. */
+    /**
+     * Reduce Van der Waals gradient.
+     */
     private class ReductionLoop extends IntegerForLoop {
 
       int threadID;

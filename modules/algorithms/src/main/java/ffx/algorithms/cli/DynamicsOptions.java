@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,8 +38,8 @@
 package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MDEngine;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.integrators.Integrator;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -47,12 +47,15 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
-import java.util.logging.Logger;
+import ffx.utilities.Constants;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
+import javax.annotation.Nullable;
+import java.util.logging.Logger;
+
 /**
- * Represents command line options for scripts that calculate thermodynamics.
+ * Represents command line options for scripts that run molecular dynamics.
  *
  * @author Michael J. Schnieders
  * @author Hernan V. Bernabe
@@ -61,16 +64,20 @@ import picocli.CommandLine.Option;
 public class DynamicsOptions {
 
   private static final Logger logger = Logger.getLogger(DynamicsOptions.class.getName());
-  /** Thermostat. */
+  /**
+   * Thermostat.
+   */
   public ThermostatEnum thermostat;
-  /** Integrator. */
+  /**
+   * Integrator.
+   */
   public IntegratorEnum integrator;
 
   /**
    * The ArgGroup keeps the DynamicsOptions together when printing help.
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
-  public DynamicsOptionGroup group = new DynamicsOptionGroup();
+  private final DynamicsOptionGroup group = new DynamicsOptionGroup();
   private MDEngine engine = null;
 
   /**
@@ -80,6 +87,19 @@ public class DynamicsOptions {
    */
   public double getCheckpoint() {
     return group.checkpoint;
+  }
+
+  /**
+   * The checkpoint frequency in steps.
+   *
+   * @param defaultFrequency The default frequency if the checkpoint interval is less than the time step.
+   * @return The checkpoint frequency in steps.
+   */
+  public int getCheckpointFrequency(int defaultFrequency) {
+    if (group.checkpoint > getDtPsec()) {
+      return (int) (group.checkpoint / getDtPsec());
+    }
+    return defaultFrequency;
   }
 
   public void setCheckpoint(double checkpoint) {
@@ -96,6 +116,10 @@ public class DynamicsOptions {
     return group.dt;
   }
 
+  public double getDtPsec() {
+    return group.dt * Constants.FSEC_TO_PSEC;
+  }
+
   public void setDt(double dt) {
     group.dt = dt;
   }
@@ -103,30 +127,30 @@ public class DynamicsOptions {
   /**
    * Initialize a MolecularDynamics from the parsed options.
    *
-   * @param potential a {@link ffx.numerics.Potential} object.
-   * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param potential         a {@link ffx.numerics.Potential} object.
+   * @param activeAssembly    a {@link ffx.potential.MolecularAssembly} object.
    * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param writeoutOptions a {@link WriteoutOptions} object.
+   * @param writeoutOptions   a {@link WriteoutOptions} object.
    * @return a {@link MolecularDynamics} object.
    */
   public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
-      MolecularAssembly activeAssembly, AlgorithmListener algorithmListener) {
+                                       MolecularAssembly activeAssembly, AlgorithmListener algorithmListener) {
     return getDynamics(writeoutOptions, potential, activeAssembly, algorithmListener, engine);
   }
 
   /**
    * Initialize a MolecularDynamics from the parsed options.
    *
-   * @param potential a {@link ffx.numerics.Potential} object.
-   * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param potential         a {@link ffx.numerics.Potential} object.
+   * @param activeAssembly    a {@link ffx.potential.MolecularAssembly} object.
    * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param writeoutOptions a {@link WriteoutOptions} object.
-   * @param requestedEngine The requested engine (either FFX or OpenMM).
+   * @param writeoutOptions   a {@link WriteoutOptions} object.
+   * @param requestedEngine   The requested engine (either FFX or OpenMM).
    * @return a {@link MolecularDynamics} object.
    */
   public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
-      MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
-      MDEngine requestedEngine) {
+                                       MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
+                                       @Nullable MDEngine requestedEngine) {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
@@ -165,6 +189,19 @@ public class DynamicsOptions {
     return group.report;
   }
 
+  /**
+   * The molecular dynamics reporting frequency in steps.
+   *
+   * @param defaultFrequency The default frequency if the report interval is less than the time step.
+   * @return The reporting frequency in steps.
+   */
+  public int getReportFrequency(int defaultFrequency) {
+    if (group.report > getDtPsec()) {
+      return (int) (group.report / getDtPsec());
+    }
+    return defaultFrequency;
+  }
+
   public void setReport(double report) {
     group.report = report;
   }
@@ -191,7 +228,9 @@ public class DynamicsOptions {
     group.temperature = temperature;
   }
 
-  /** Parse the thermostat and integrator. */
+  /**
+   * Parse the thermostat and integrator.
+   */
   public void init() {
     thermostat = Thermostat.parseThermostat(group.thermostatString);
     integrator = Integrator.parseIntegrator(group.integratorString);
@@ -217,12 +256,21 @@ public class DynamicsOptions {
   }
 
   /**
-   * The thermostat; intended for MC-OST going to ADIABATIC.
+   * Set the thermostat.
    *
-   * @param thermo Thermostat to replace the requested one with.
+   * @param thermostat Thermostat to replace the requested one with.
    */
-  public void setThermostat(ThermostatEnum thermo) {
-    thermostat = thermo;
+  public void setThermostat(ThermostatEnum thermostat) {
+    this.thermostat = thermostat;
+  }
+
+  /**
+   * Set the integrator.
+   *
+   * @param integrator Integrator to replace the requested one with.
+   */
+  public void setIntegrator(IntegratorEnum integrator) {
+    this.integrator = integrator;
   }
 
   public void setThermostatString(String thermostatString) {
@@ -316,72 +364,81 @@ public class DynamicsOptions {
      * -d or --dt sets the time step in femtoseconds (default of 1.0). A value of 2.0 is possible for
      * the RESPA integrator.
      */
-    @Option(names = {"-d",
-        "--dt"}, paramLabel = "1.0", defaultValue = "1.0", description = "Time discretization step in femtoseconds.")
-    private double dt;
+    @Option(names = {"-d", "--dt"}, paramLabel = "1.0", defaultValue = "1.0",
+        description = "Time discretization step in femtoseconds.")
+    private double dt = 1.0;
 
     /**
      * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or
      * Bussi.
      */
-    @Option(names = {"-b",
-        "--thermostat"}, paramLabel = "Bussi", defaultValue = "Bussi", description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
-    private String thermostatString;
+    @Option(names = {"-b", "--thermostat"}, paramLabel = "Bussi", defaultValue = "Bussi",
+        description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
+    private String thermostatString = "Bussi";
 
     /**
      * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Stochastic
      * (i.e., Langevin dynamics) or Verlet.
      */
-    @Option(names = {"-i",
-        "--integrator"}, paramLabel = "Verlet", defaultValue = "Verlet", description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
-    private String integratorString;
+    @Option(names = {"-i", "--integrator"}, paramLabel = "Verlet", defaultValue = "Verlet",
+        description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
+    private String integratorString = "Verlet";
 
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
      */
-    @Option(names = {"-r",
-        "--report"}, paramLabel = "0.25", defaultValue = "0.25", description = "Interval in psec to report thermodynamics (psec).")
-    private double report;
-
-    /** -w or --write sets snapshot save frequency in picoseconds (1.0 psec default). */
-    @Option(names = {"-w",
-        "--write"}, paramLabel = "10.0", defaultValue = "10.0", description = "Interval in psec to write out coordinates (psec).")
-    private double write;
-
-    /** -t or --temperature sets the simulation temperature (Kelvin). */
-    @Option(names = {"-t",
-        "--temperature"}, paramLabel = "298.15", defaultValue = "298.15", description = "Temperature (Kelvin).")
-    private double temperature;
-
-    /** -n or --steps sets the number of molecular dynamics steps (default is 1 nsec). */
-    @Option(names = {"-n",
-        "--numberOfSteps"}, paramLabel = "1000000", defaultValue = "1000000", description = "Number of molecular dynamics steps.")
-    private long steps;
-
-    /** -z or --trajSteps Number of steps for each OpenMM MD cycle. */
-    @Option(names = {"-z",
-        "--trajSteps"}, paramLabel = "100", defaultValue = "100", description = "Number of steps per MD cycle (--mdE = OpenMM only).")
-    private int trajSteps;
+    @Option(names = {"-r", "--report"}, paramLabel = "0.25", defaultValue = "0.25",
+        description = "Interval in psec to report thermodynamics (psec).")
+    private double report = 0.25;
 
     /**
-     * -o or --optimize saves low-energy snapshots discovered (only for single topology
-     * simulations).
+     * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
      */
-    @Option(names = {"-o",
-        "--optimize"}, defaultValue = "false", description = "Optimize and save low-energy snapshots.")
-    private boolean optimize;
+    @Option(names = {"-w", "--write"}, paramLabel = "10.0", defaultValue = "10.0",
+        description = "Interval in psec to write out coordinates (psec).")
+    private double write = 10.0;
 
-    /** -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default). */
-    @Option(names = {"-k",
-        "--checkpoint"}, paramLabel = "1.0", defaultValue = "1.0", description = "Interval in psec to write out restart files (.dyn, .his, etc).")
+    /**
+     * -t or --temperature sets the simulation temperature (Kelvin).
+     */
+    @Option(names = {"-t", "--temperature"}, paramLabel = "298.15", defaultValue = "298.15",
+        description = "Temperature (Kelvin).")
+    private double temperature = 298.15;
+
+    /**
+     * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
+     */
+    @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000", defaultValue = "1000000",
+        description = "Number of molecular dynamics steps.")
+    private long steps = 1000000;
+
+    /**
+     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
+     */
+    @Option(names = {"-z", "--trajSteps"}, paramLabel = "100", defaultValue = "100",
+        description = "Number of steps per MD cycle (--mdE = OpenMM only).")
+    private int trajSteps = 100;
+
+    /**
+     * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
+     */
+    @Option(names = {"-o", "--optimize"}, defaultValue = "false",
+        description = "Optimize and save low-energy snapshots.")
+    private boolean optimize = false;
+
+    /**
+     * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
+     */
+    @Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0", defaultValue = "1.0",
+        description = "Interval in psec to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
 
     /**
      * --mdE or --molecularDynamicsEngine over-rides the default engine choice for integrating the
      * equations of motion
      */
-    @Option(names = {"--mdE",
-        "--molecularDynamicsEngine"}, paramLabel = "FFX", description = "Use FFX or OpenMM to integrate dynamics.")
-    private String engineString = null;
+    @Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
+        description = "Use FFX or OpenMM to integrate dynamics.")
+    private String engineString = "FFX";
   }
 }

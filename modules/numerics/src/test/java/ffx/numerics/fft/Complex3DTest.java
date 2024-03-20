@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -42,6 +42,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
+
+import ffx.utilities.FFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +52,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class Complex3DTest {
+public class Complex3DTest extends FFXTest {
 
   private final String info;
   private final int nx;

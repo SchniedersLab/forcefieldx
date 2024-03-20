@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -194,11 +194,9 @@ public abstract class FunctionDataCurve implements DataSet {
   }
 
   /**
-   * Used to check that the passed-in x array is composed of equally-spaced points from lb to ub.
-   *
-   * @param x an array of {@link double} objects.
+   * Used to check that x array is composed of equally-spaced points from lb to ub.
    */
-  protected final void assertXIntegrity(double[] x) {
+  protected final void assertXIntegrity() {
     assert ub > lb;
     int nX = numPoints();
     double sep = binWidth();

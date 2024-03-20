@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document
-  xmlns="http://maven.apache.org/XDOC/2.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
     <title>Commands</title>
@@ -24,6 +22,14 @@
             </td>
             <td>The ApplyTorsions command is used to apply a custom set of torsions to a
               side-chain.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.CoformerBindingSearch.html">test.CoformerBindingSearch</a>
+            </td>
+            <td>Calculates interaction energies of different molecular orientations and saves low energy
+              orientations.
             </td>
           </tr>
           <tr>
@@ -78,17 +84,17 @@
           </tr>
           <tr>
             <td>
-              <a href="commands/test.PhBar.html">test.PhBAR</a>
+              <a href="commands/test.PhDynamics.html">test.PhDynamics</a>
             </td>
-            <td>The PhBar command uses the BAR algorithm to estimate a free energy difference for a
-              CpHMD system.
+            <td>The PhDynamics command implements constant pH molecular dynamics.
             </td>
           </tr>
           <tr>
             <td>
-              <a href="commands/test.PhDynamics.html">test.PhDynamics</a>
+              <a href="commands/test.RaoBlackwellEstimator.html">test.RaoBlackwellEstimator</a>
             </td>
-            <td>The PhDynamics command implements constant pH molecular dynamics.
+            <td>Use the Rao-Blackwell Estimator to estimate a free energy difference of protonation for a CpHMD
+              system.
             </td>
           </tr>
           <!-- tr>

@@ -88,7 +88,7 @@ public class FrontendFileWriter {
         private byte[] myByteArray = new byte[0];
         private ByteBuf myByteBuf = ByteBuf.buffer(myByteArray);
 
-        private abstract class Invocation {
+        private abstract static class Invocation {
 
             public abstract boolean invoke()
                     throws IOException;
@@ -240,7 +240,7 @@ public class FrontendFileWriter {
                 result = exc;
                 try {
                     myOutputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);
@@ -291,7 +291,7 @@ public class FrontendFileWriter {
                 result = exc;
                 try {
                     myOutputStream.close();
-                } catch (IOException exc2) {
+                } catch (IOException ignored) {
                 }
                 synchronized (myFileHandlerForFFD) {
                     myFileHandlerForFFD.remove(ffd);

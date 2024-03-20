@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,15 +38,16 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -59,36 +60,56 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "imptors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[4 integers and up to 3 real/real/integer triples] "
-        + "Provides the values for a single AMBER-style improper torsional angle parameter. "
-        + "The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined. "
-        + "By convention, the third atom class of the four is the trigonal atom on which the improper torsion is centered. "
-        + "The torsional angle computed is literally that defined by the four atom classes in the order specified by the keyword. "
-        + "Each of the remaining triples of real/real/integer modifiers give the half-amplitude, phase offset in degrees and periodicity of a particular improper torsional term, respectively. "
-        + "Periodicities through 3-fold are allowed for improper torsional parameters.")
+@FFXProperty(name = "imptors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [4 integers and up to 3 real/real/integer triples]
+    Provides the values for a single AMBER-style improper torsional angle parameter.
+    The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined.
+    By convention, the third atom class of the four is the trigonal atom on which the improper torsion is centered.
+    The torsional angle computed is literally that defined by the four atom classes in the order specified by the keyword.
+    Each of the remaining triples of real/real/integer modifiers give the half-amplitude,
+    phase offset in degrees and periodicity of a particular improper torsional term, respectively.
+    Periodicities through 3-fold are allowed for improper torsional parameters.
+    """)
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
 
-  /** A Logger for the ImproperTorsionType class. */
+  /**
+   * A Logger for the ImproperTorsionType class.
+   */
   private static final Logger logger = Logger.getLogger(ImproperTorsionType.class.getName());
 
-  /** Atom classes that for this Improper Torsion angle. */
+  /**
+   * Atom classes that for this Improper Torsion angle.
+   */
   public final int[] atomClasses;
-  /** Force constant in kcal/mol. */
+  /**
+   * Force constant in kcal/mol.
+   */
   public final double k;
-  /** Phases in degrees. */
+  /**
+   * Phases in degrees.
+   */
   public final double phase;
-  /** Periodicity (should be 2 for an Improper Torsion). */
+  /**
+   * Periodicity (should be 2 for an Improper Torsion).
+   */
   public final int periodicity;
-  /** Value of cos(toRadians(phase)). */
+  /**
+   * Value of cos(toRadians(phase)).
+   */
   public final double cos;
-  /** Value of sin(toRadians(phase)). */
+  /**
+   * Value of sin(toRadians(phase)).
+   */
   public final double sin;
 
-  /** Convert angle bending energy to kcal/mole. */
-  @FFXKeyword(name = "imptorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
-      "Sets the scale factor needed to convert the energy value computed by the AMBER-style improper torsional angle potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  /**
+   * Convert angle bending energy to kcal/mole.
+   */
+  @FFXProperty(name = "imptorunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+      Sets the scale factor needed to convert the energy value computed by the AMBER-style improper
+      torsional angle potential into units of kcal/mole.
+      The correct value is force field dependent and typically provided in the header of the master force field parameter file.
+      """)
   public double impTorUnit = DEFAULT_IMPTOR_UNIT;
   public static final double DEFAULT_IMPTOR_UNIT = 1.0;
 
@@ -96,8 +117,8 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    * TorsionType Constructor.
    *
    * @param atomClasses Atom classes.
-   * @param k Force constant.
-   * @param phase The phase.
+   * @param k           Force constant.
+   * @param phase       The phase.
    * @param periodicity The periodicity.
    */
   public ImproperTorsionType(int[] atomClasses, double k, double phase, int periodicity) {
@@ -119,11 +140,11 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    *
    * @param improperTorsionType1 a {@link ffx.potential.parameters.ImproperTorsionType} object.
    * @param improperTorsionType2 a {@link ffx.potential.parameters.ImproperTorsionType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses          an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
    */
   public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
-      ImproperTorsionType improperTorsionType2, int[] atomClasses) {
+                                            ImproperTorsionType improperTorsionType2, int[] atomClasses) {
 
     if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
       return null;
@@ -143,7 +164,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   /**
    * Construct an ImproperTorsionType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return an ImproperTorsionType instance.
    */
@@ -186,14 +207,14 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   /**
    * Returns true if the atoms can be assigned this improperTorsionType.
    *
-   * @param inputClasses The atom classes will be re-ordered if its member atoms match this
-   *     ImproperTorsionType. The trigonal atom will not change position.
+   * @param inputClasses          The atom classes will be re-ordered if its member atoms match this
+   *                              ImproperTorsionType. The trigonal atom will not change position.
    * @param allowInitialWildCards Allow wildcard match to first two classes.
-   * @param allowFinalWildCard Allow wildcard match for final class.
+   * @param allowFinalWildCard    Allow wildcard match for final class.
    * @return True if this torsionType is assignable to the atom array.
    */
   public boolean assigned(int[] inputClasses, boolean allowInitialWildCards,
-      boolean allowFinalWildCard) {
+                          boolean allowFinalWildCard) {
     // Assign the trigonal atom.
     if (inputClasses[2] != atomClasses[2]) {
       return false;

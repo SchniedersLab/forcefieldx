@@ -43,6 +43,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serial;
 
 /**
  * Class ItemHolder provides an object that holds one item to be processed by a
@@ -58,6 +59,7 @@ class ItemHolder<T>
         implements Externalizable {
 
 // Hidden data members.
+    @Serial
     private static final long serialVersionUID = -5475933248018589590L;
 
 // Exported data members.

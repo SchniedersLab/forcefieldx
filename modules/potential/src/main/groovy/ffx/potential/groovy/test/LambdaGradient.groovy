@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,7 @@ package ffx.potential.groovy.test
 
 import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
@@ -50,8 +50,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.stream.IntStream
 
 import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
@@ -201,7 +199,7 @@ class LambdaGradient extends PotentialScript {
     StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
     potential = topologyOptions.assemblePotential(topologies, threadsAvail, sb)
 
-    if (potential instanceof ForceFieldEnergyOpenMM) {
+    if (potential instanceof OpenMMEnergy) {
       skipSecondDerivatives = true
     }
 

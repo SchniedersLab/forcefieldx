@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -44,28 +44,30 @@ import java.util.Arrays;
  *
  * @author Michael J. Schnieders
  * @see <ul>
- *     <li><a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
- *     target="_blank"> C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
- *     </a>
- *     <li><a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
- *     Wikipedia</a>
- *     <li><a href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines at
- *     MathWorld</a>
- *     </ul>
+ * <li><a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
+ * target="_blank"> C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ * </a>
+ * <li><a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
+ * Wikipedia</a>
+ * <li><a href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines at
+ * MathWorld</a>
+ * </ul>
  * @since 1.0
  */
 public class UniformBSpline {
 
-  /** Do not allow instantiation of UniformBSpline. All methods are static. */
+  /**
+   * Do not allow instantiation of UniformBSpline. All methods are static.
+   */
   private UniformBSpline() {
   }
 
   /**
    * Generate uniform b-Spline coefficients.
    *
-   * @param x A double in the range [0.0, 1.0] where 0.5 is over a grid point (0.0 is half-way to
-   *     the previous grid point, and 1.0 is half-way to the next grid point).
-   * @param order b-Spline order (degree + 1).
+   * @param x            A double in the range [0.0, 1.0] where 0.5 is over a grid point (0.0 is half-way to
+   *                     the previous grid point, and 1.0 is half-way to the next grid point).
+   * @param order        b-Spline order (degree + 1).
    * @param coefficients b-Spline coefficients (n coefficients for order n).
    * @since 1.0
    */
@@ -84,13 +86,13 @@ public class UniformBSpline {
   /**
    * Generate uniform b-Spline coefficients and their derivatives.
    *
-   * @param x A double in the range [0.0, 1.0].
-   * @param order b-Spline order (degree + 1).
-   * @param deriveOrder Derivative order. <br> 0 = no derivative. <br> 1 = 1rst derivative. <br>
-   *     It must not be greater than the b-Spline degree (order - 1). <br> The method is currently
-   *     limited to deriveOrder .LE. 5. <br>
+   * @param x            A double in the range [0.0, 1.0].
+   * @param order        b-Spline order (degree + 1).
+   * @param deriveOrder  Derivative order. <br> 0 = no derivative. <br> 1 = 1rst derivative. <br>
+   *                     It must not be greater than the b-Spline degree (order - 1). <br> The method is currently
+   *                     limited to deriveOrder .LE. 5. <br>
    * @param coefficients The b-Spline coefficient array of size [order][deriveOrder + 1].
-   * @param work A work array of size [order][order].
+   * @param work         A work array of size [order][order].
    * @since 1.0
    */
   public static void bSplineDerivatives(
@@ -177,7 +179,7 @@ public class UniformBSpline {
    * Differentiate a uniform b-Spline in place.
    *
    * @param coefficients B-Spline coefficients.
-   * @param order B-Spline order.
+   * @param order        B-Spline order.
    * @since 1.0
    */
   private static void bSplineDiff(final double[] coefficients, final int order) {
@@ -192,9 +194,9 @@ public class UniformBSpline {
   /**
    * Uniform b-Spline recursion.
    *
-   * @param x A double in the range [0.0, 1.0].
-   * @param order Current b-Spline order.
-   * @param coefficients Current b-Spline coefficients.
+   * @param x               A double in the range [0.0, 1.0].
+   * @param order           Current b-Spline order.
+   * @param coefficients    Current b-Spline coefficients.
    * @param newCoefficients New b-Spline coefficients for order + 1.
    * @since 1.0
    */

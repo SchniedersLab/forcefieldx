@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.SymOp.applyCartesianSymOp;
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.String.format;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
@@ -56,21 +51,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
-import java.awt.GraphicsEnvironment;
-import java.io.File;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BoundingSphere;
@@ -94,6 +74,27 @@ import org.jogamp.vecmath.Color3f;
 import org.jogamp.vecmath.Matrix3d;
 import org.jogamp.vecmath.Point3d;
 import org.jogamp.vecmath.Vector3d;
+
+import java.awt.GraphicsEnvironment;
+import java.io.File;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.sub;
+import static java.lang.String.format;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules, Ions and Water
@@ -293,13 +294,12 @@ public class MolecularAssembly extends MSGroup {
    */
   public void applyRandomDensity(double ucDensity) {
     if (ucDensity > 0) {
-      logger.info(
-          format("\n Applying random unit cell axes with target density of %6.3f\n", ucDensity));
-      // The replicates crystal is needed here (not the unit cell).
+      logger.info(format("\n Applying random unit cell axes with target density %6.3f (g/cc).", ucDensity));
       Crystal crystal = getCrystal();
       if (!crystal.aperiodic()) {
         double mass = getMass();
         crystal.randomParameters(ucDensity, mass);
+        logger.info(crystal.toString());
         potentialEnergy.setCrystal(crystal);
       } else {
         logger.fine(String.format(" Potential %s is an aperiodic system!", potentialEnergy));
@@ -610,7 +610,7 @@ public class MolecularAssembly extends MSGroup {
     try {
       wireframe.setBoundsAutoCompute(false);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning(" Exception in setting bounds for wireframe:\n" + e);
     }
     wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
     wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
@@ -2267,7 +2267,7 @@ public class MolecularAssembly extends MSGroup {
     try {
       wireframe.setBoundsAutoCompute(false);
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warning("Unable to set boundsAutoCompute to false.\n" + e);
     }
 
     wireframe.setCapability(Shape3D.ALLOW_GEOMETRY_READ);

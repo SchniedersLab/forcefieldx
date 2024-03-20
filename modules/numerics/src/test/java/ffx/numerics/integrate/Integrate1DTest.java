@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,6 +49,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 
 /**
@@ -58,7 +60,7 @@ import org.junit.Test;
  *
  * @author Claire O'Connell
  */
-public class Integrate1DTest {
+public class Integrate1DTest extends FFXTest {
 
   private static final int NUM_INTEGRATION_TYPES = 8; // Left/right, rect/trap/simp/boole.
   private static final Logger logger = Logger.getLogger(Integrate1DTest.class.getName());
@@ -123,6 +125,7 @@ public class Integrate1DTest {
             .collect(Collectors.toList());
 
     for (FunctionDataCurve pn : polynomials) {
+      pn.assertXIntegrity();
       DataSet dpn = new DoublesDataSet(pn);
       double[] ypts = pn.getAllFxPoints();
       DataSet abInitio = new DoublesDataSet(points, ypts, false);
@@ -164,6 +167,7 @@ public class Integrate1DTest {
             .collect(Collectors.toList());
 
     for (FunctionDataCurve pn : polynomials) {
+      pn.assertXIntegrity();
       DataSet dpn = new DoublesDataSet(pn);
       double[] ypts = pn.getAllFxPoints();
       DataSet abInitio = new DoublesDataSet(points2, ypts, true);
@@ -197,6 +201,7 @@ public class Integrate1DTest {
 
     double[] sinePoints = Integrate1DNumeric.generateXPoints(0, 4.0, 101, false);
     FunctionDataCurve sinWave = new SinWave(sinePoints, false, 20, 30);
+    sinWave.assertXIntegrity();
     DataSet dsw = new DoublesDataSet(sinWave);
     double[] ypts = sinWave.getAllFxPoints();
     DataSet abInitio = new DoublesDataSet(sinePoints, ypts, false);
@@ -229,6 +234,7 @@ public class Integrate1DTest {
 
     double[] sinePoints2 = Integrate1DNumeric.generateXPoints(0, 4.0, 102, true);
     sinWave = new SinWave(sinePoints2, true, 20, 30);
+    sinWave.assertXIntegrity();
     dsw = new DoublesDataSet(sinWave);
     ypts = sinWave.getAllFxPoints();
     abInitio = new DoublesDataSet(sinePoints2, ypts, true);
@@ -271,6 +277,7 @@ public class Integrate1DTest {
   public void parallelTest() {
     double[] pts = Integrate1DNumeric.generateXPoints(0, 2.0, 92, false);
     FunctionDataCurve tcurve = new SinWave(pts, false, 60, 60);
+    tcurve.assertXIntegrity();
     for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
       IntegrationResult seqResult = new IntegrationResult(tcurve, i, false);
       IntegrationResult parResult = new IntegrationResult(tcurve, i, true);
@@ -312,6 +319,7 @@ public class Integrate1DTest {
 
     for (int i = 0; i < polynomials.size(); i++) {
       FunctionDataCurve pn = polynomials.get(i);
+      pn.assertXIntegrity();
 
       // Get the analyticalIntegral over the range.
       double analytical = pn.analyticalIntegral();
@@ -465,6 +473,7 @@ public class Integrate1DTest {
 
     for (int i = 0; i < polynomials.size(); i++) {
       FunctionDataCurve pn = polynomials.get(i);
+      pn.assertXIntegrity();
 
       // Get the true value, and analyticalIntegral over the range.
       double trueVal = trueVals[i];
@@ -527,6 +536,7 @@ public class Integrate1DTest {
   public void testByBinIntegral() {
     double[] pts = Integrate1DNumeric.generateXPoints(0, 1.0, 18, false);
     FunctionDataCurve curve = new SinWave(pts, 1, 20.0);
+    curve.assertXIntegrity();
 
     logger.info(" Testing by-bin integration with a sin wave (sum vs. overall result).");
     for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
@@ -574,6 +584,7 @@ public class Integrate1DTest {
 
     logger.info(" Testing by-bin integration with a higher-frequency wave.");
     curve = new CosineWave(pts, 1, 120.0);
+    curve.assertXIntegrity();
     for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
       IntegrationResult knownResult = new IntegrationResult(curve, i, false);
       double[] sequentialPts =
@@ -670,6 +681,7 @@ public class Integrate1DTest {
     pts = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
     double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
     curve = new PolynomialCurve(pts, false, fifthOrder);
+    curve.assertXIntegrity();
 
     for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
       IntegrationResult knownResult = new IntegrationResult(curve, i, false);
@@ -730,6 +742,7 @@ public class Integrate1DTest {
     for (int j = 1; j <= 500; j++) {
       FunctionDataCurve wave =
           cosine ? new CosineWave(points, halvedEnds, j, j) : new SinWave(points, halvedEnds, j, j);
+      wave.assertXIntegrity();
 
       // Get the analyticalIntegral over the range.
       double analytical = wave.analyticalIntegral();

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -179,7 +179,7 @@ public class XYZFilter extends SystemFilter {
 
     // Check for a blank line.
     data = data.trim();
-    if (data.equals("")) {
+    if (data.isEmpty()) {
       return false;
     }
 
@@ -315,7 +315,7 @@ public class XYZFilter extends SystemFilter {
     try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = br.readLine();
       }
       if (data == null) {
@@ -399,7 +399,7 @@ public class XYZFilter extends SystemFilter {
       if (br.ready()) {
         // Read past blank lines between archive files
         data = br.readLine().trim();
-        while (data.equals("") && br.ready()) {
+        while (data.isEmpty() && br.ready()) {
           data = br.readLine().trim();
         }
         tokens = data.split(" +", 2);
@@ -539,7 +539,7 @@ public class XYZFilter extends SystemFilter {
 
       data = bufferedReader.readLine();
       // Read past blank lines
-      while (data != null && data.trim().equals("")) {
+      while (data != null && data.trim().isEmpty()) {
         data = bufferedReader.readLine();
       }
       if (data == null) {
@@ -586,7 +586,7 @@ public class XYZFilter extends SystemFilter {
         for (int i = 0; i < nSystem; i++) {
           data = bufferedReader.readLine();
           // Read past blank lines
-          while (data != null && data.trim().equals("")) {
+          while (data != null && data.trim().isEmpty()) {
             data = bufferedReader.readLine();
           }
           String[] tokens = data.trim().split(" +");
@@ -617,7 +617,7 @@ public class XYZFilter extends SystemFilter {
         for (int i = 0; i < nSystem; i++) {
           data = bufferedReader.readLine();
           // Read past blank lines
-          while (data != null && data.trim().equals("")) {
+          while (data != null && data.trim().isEmpty()) {
             data = bufferedReader.readLine();
           }
         }

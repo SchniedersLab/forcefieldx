@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -46,7 +46,8 @@ public class TimerTest extends PotentialTest {
   @Test
   public void testTimer() {
     // Set-up the input arguments for the Timer script.
-    String[] args = {"-n", "2", "-v", "-g", "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
+    String filepath = getResourcePath("ubiquitin.xyz");
+    String[] args = {"-n", "2", "-v", "-g", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the Timer script.

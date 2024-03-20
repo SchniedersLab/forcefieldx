@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -59,6 +59,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -154,7 +155,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
   private LinkedHashMap<String, String> paramHashtable = null;
 
   /**
-   * Default Construtor where parent is the tinker Window Frame object.
+   * Default Construtor where parent is the FFX Window Frame object.
    *
    * @param f a {@link ffx.ui.MainPanel} object.
    */
@@ -550,10 +551,10 @@ public final class KeywordPanel extends JPanel implements ActionListener {
    * @param newKeyFile a {@link java.io.File} object.
    * @return a boolean.
    */
-  private boolean keyOpen(File newKeyFile) {
+  private boolean keyOpen(@Nullable File newKeyFile) {
     if (newKeyFile != null && newKeyFile.exists() && newKeyFile.canRead()) {
       Hashtable<String, Keyword> newKeys = KeyFilter.open(newKeyFile);
-      if (newKeys != null && newKeys.size() > 0) {
+      if (newKeys != null && !newKeys.isEmpty()) {
         if (currentSystem != null) {
           currentSystem.setKeyFile(currentKeyFile);
           currentSystem.setKeywords(currentKeys);
@@ -620,7 +621,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       }
       Hashtable<String, Keyword> newKeys = newSystem.getKeywords();
       if (newKeyFile == null && newKeys == null) {
-        logger.info(String.format("Loaded %s with no keywords.", newSystem.toString()));
+        logger.info(String.format("Loaded %s with no keywords.", newSystem));
         return false;
       }
       // logger.info(String.format("Loading %s with %d keywords.", newSystem.toString(),
@@ -668,7 +669,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
    * @return a boolean.
    */
   private boolean loadActive(
-      FFXSystem newSystem, Hashtable<String, Keyword> newKeys, File newKeyFile) {
+      FFXSystem newSystem, @Nullable Hashtable<String, Keyword> newKeys, File newKeyFile) {
 
     synchronized (this) {
       // Store changes made to the current system (if any) first.
@@ -682,7 +683,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       // Clear previous values
       keyClear();
       // No keywords to load
-      if (newKeys == null || newKeys.size() == 0) {
+      if (newKeys == null || newKeys.isEmpty()) {
         return false;
       }
       currentSystem = newSystem;
@@ -843,7 +844,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         splitPane.setDividerLocation(temp);
       }
       if (currentKeyFile != null) {
-        statusLabel.setText("  " + currentKeyFile.toString());
+        statusLabel.setText("  " + currentKeyFile);
       } else {
         statusLabel.setText("  ");
       }
@@ -920,7 +921,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         if (type == KeywordComponent.SwingRepresentation.CHECKBOXES
             || type == KeywordComponent.SwingRepresentation.COMBOBOX) {
           values = keyword.getElementsByTagName("Value");
-          String labels[] = new String[values.getLength()];
+          String[] labels = new String[values.getLength()];
           for (int k = 0; k < values.getLength(); k++) {
             value = (Element) values.item(k);
             labels[k] = value.getAttribute("name");
@@ -967,7 +968,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
       }
       flatfileTextArea.append("\n");
       String s = commentStringBuffer.toString();
-      if (!s.trim().equals("")) {
+      if (!s.trim().isEmpty()) {
         flatfileTextArea.append(s.trim());
       }
       flatfileTextArea.append("\n");
@@ -1028,7 +1029,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
         bw.newLine();
         String s = comments.toString();
-        if (s != null && !s.trim().equals("")) {
+        if (s != null && !s.trim().isEmpty()) {
           bw.write(s.trim());
         }
         bw.newLine();

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,7 +49,8 @@ public class MoveIntoUnitCellTest extends PotentialTest {
   @Test
   public void testMoveIntoUnitCell() {
     // Set-up the input arguments for the MoveIntoUnitCell script.
-    String[] args = {"src/main/java/ffx/potential/structures/watertiny.xyz"};
+    String filepath = getResourcePath("watertiny.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

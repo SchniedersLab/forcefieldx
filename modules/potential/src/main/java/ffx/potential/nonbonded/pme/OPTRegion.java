@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -87,6 +87,7 @@ public class OPTRegion extends ParallelRegion {
   private GeneralizedKirkwood generalizedKirkwood;
   private double aewald;
   private double aewald3;
+  private double dielectric;
   private int currentOptOrder;
 
   public OPTRegion(int nt) {
@@ -156,7 +157,8 @@ public class OPTRegion extends ParallelRegion {
       AtomicDoubleArray3D fieldCR,
       boolean generalizedKirkwoodTerm,
       GeneralizedKirkwood generalizedKirkwood,
-      EwaldParameters ewaldParameters) {
+      EwaldParameters ewaldParameters,
+      double dielectric) {
     this.currentOptOrder = currentOptOrder;
     this.atoms = atoms;
     this.polarizability = polarizability;
@@ -170,6 +172,7 @@ public class OPTRegion extends ParallelRegion {
     this.generalizedKirkwood = generalizedKirkwood;
     this.aewald = ewaldParameters.aewald;
     this.aewald3 = ewaldParameters.aewald3;
+    this.dielectric = dielectric;
   }
 
   @Override
@@ -197,9 +200,9 @@ public class OPTRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) throws Exception {
       int threadID = getThreadIndex();
+
       final double[][] induced0 = inducedDipole[0];
       final double[][] inducedCR0 = inducedDipoleCR[0];
-
       if (aewald > 0.0) {
         // Add the self and reciprocal space fields to the real space field.
         for (int i = lb; i <= ub; i++) {
@@ -217,19 +220,29 @@ public class OPTRegion extends ParallelRegion {
           fieldCR.add(threadID, i, fxCR, fyCR, fzCR);
         }
       }
+
+      // Reduce the total intramolecular field.
+      field.reduce(lb, ub);
+      fieldCR.reduce(lb, ub);
+
+      // Scale the total intramolecular field by the inverse solute dielectric.
+      if (dielectric > 1.0) {
+        double inverseDielectric = 1.0 / dielectric;
+        for (int i = lb; i <= ub; i++) {
+          field.scale(0, i, inverseDielectric);
+          fieldCR.scale(0, i, inverseDielectric);
+        }
+      }
+
       if (generalizedKirkwoodTerm) {
         AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
         AtomicDoubleArray3D fieldGKCR = generalizedKirkwood.getFieldGKCR();
         // Add the GK reaction field to the intramolecular field.
         for (int i = lb; i <= ub; i++) {
-          field.add(threadID, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
-          fieldCR.add(threadID, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
+          field.add(0, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
+          fieldCR.add(0, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
         }
       }
-
-      // Reduce the real space field.
-      field.reduce(lb, ub);
-      fieldCR.reduce(lb, ub);
 
       // Collect the current Opt Order induced dipole.
       for (int i = lb; i <= ub; i++) {

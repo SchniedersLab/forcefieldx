@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -121,7 +121,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         targets.remove(i);
       }
     }
-    if (targets.size() < 1) {
+    if (targets.isEmpty()) {
       logger.severe(" Empty target list for CMBC.");
     }
   }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -155,11 +155,9 @@ public class RendererCache {
   /** Constant <code>userColor</code> */
   public static Color3f userColor = WHITE;
 
-  private static List<Transform3D> transform3DPool =
-      Collections.synchronizedList(new ArrayList<>());
-  private static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
-  private static List<BranchGroup> doubleCylinderPool =
-      Collections.synchronizedList(new ArrayList<>());
+  private static final List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<>());
+  private static final List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
+  private static final List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<>());
   private static ShaderProgram shaderProgram = null;
 
   static {
@@ -340,7 +338,7 @@ public class RendererCache {
    */
   static BranchGroup doubleCylinderFactory(Atom a1, Atom a2, int div) {
     BranchGroup branchGroup;
-    if (doubleCylinderPool.size() > 0) {
+    if (!doubleCylinderPool.isEmpty()) {
       branchGroup = doubleCylinderPool.remove(0);
       if (branchGroup != null) {
         TransformGroup cy1tg = (TransformGroup) branchGroup.getChild(0);
@@ -645,7 +643,7 @@ public class RendererCache {
    */
   static BranchGroup sphereFactory(Appearance ap, int div, Transform3D transform3D) {
     BranchGroup branchGroup;
-    if (spherePool.size() > 0) {
+    if (!spherePool.isEmpty()) {
       branchGroup = spherePool.remove(0);
       if (branchGroup != null) {
         TransformGroup transformGroup = (TransformGroup) branchGroup.getChild(0);
@@ -703,7 +701,7 @@ public class RendererCache {
    */
   static Transform3D transform3DFactory() {
     Transform3D transform3D;
-    if (transform3DPool.size() > 0) {
+    if (!transform3DPool.isEmpty()) {
       transform3D = transform3DPool.get(0);
       if (transform3D != null) {
         return transform3D;
@@ -722,7 +720,7 @@ public class RendererCache {
    */
   static Transform3D transform3DFactory(Vector3d position, double scale) {
     Transform3D transform3D;
-    if (transform3DPool.size() > 0) {
+    if (!transform3DPool.isEmpty()) {
       transform3D = transform3DPool.get(0);
       if (transform3D != null) {
         transform3D.setTranslation(position);

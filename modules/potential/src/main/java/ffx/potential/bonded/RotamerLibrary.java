@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,17 +37,14 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.ScalarMath.mod;
-import static ffx.potential.bonded.BondedUtils.determineIntxyz;
-import static ffx.potential.bonded.BondedUtils.intxyz;
-import static java.lang.String.format;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.TitrationUtils;
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -60,7 +57,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math3.util.FastMath;
+
+import static ffx.numerics.math.ScalarMath.mod;
+import static ffx.potential.bonded.BondedUtils.determineIntxyz;
+import static ffx.potential.bonded.BondedUtils.intxyz;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers for amino acids, and a library
@@ -123,7 +125,9 @@ public class RotamerLibrary {
    * array, which is stored in the cache. Subsequently, the reference is simply returned.
    */
   private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
-  /** The idealized amino acid rotamer library in use. Defaults to the Richardson library. */
+  /**
+   * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
+   */
   private final ProteinLibrary proteinLibrary;
   /**
    * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library as there's
@@ -148,8 +152,8 @@ public class RotamerLibrary {
    * Constructor for RotamerLibrary.
    *
    * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as
-   *     the idealized amino acid rotamer library.
-   * @param origCoords Whether to use original-coordinates rotamers.
+   *                    the idealized amino acid rotamer library.
+   * @param origCoords  Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(ProteinLibrary protLibrary, boolean origCoords) {
     this(protLibrary, DEFAULT_NA_LIB, origCoords);
@@ -158,8 +162,8 @@ public class RotamerLibrary {
   /**
    * Constructor for RotamerLibrary.
    *
-   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
-   *     the idealized nucleic acid rotamer library.
+   * @param naLibrary  A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
+   *                   the idealized nucleic acid rotamer library.
    * @param origCoords Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(NucleicAcidLibrary naLibrary, boolean origCoords) {
@@ -170,13 +174,13 @@ public class RotamerLibrary {
    * Constructor for RotamerLibrary.
    *
    * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as
-   *     the idealized amino acid rotamer library.
-   * @param naLibrary A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
-   *     the idealized nucleic acid rotamer library.
-   * @param origCoords Whether to use original-coordinates rotamers.
+   *                    the idealized amino acid rotamer library.
+   * @param naLibrary   A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as
+   *                    the idealized nucleic acid rotamer library.
+   * @param origCoords  Whether to use original-coordinates rotamers.
    */
   public RotamerLibrary(ProteinLibrary protLibrary, NucleicAcidLibrary naLibrary,
-      boolean origCoords) {
+                        boolean origCoords) {
     proteinLibrary = protLibrary;
     nucleicAcidLibrary = naLibrary;
     useOrigCoordsRotamer = origCoords;
@@ -210,8 +214,8 @@ public class RotamerLibrary {
    * Version of applyRotamer which allows for chain context-independent drawing of nucleic acid
    * Rotamers. Solely used in saveRotamers at this point, although it may be useful for debugging.
    *
-   * @param residue the Residue to be moved.
-   * @param rotamer Rotamer to be applied.
+   * @param residue     the Residue to be moved.
+   * @param rotamer     Rotamer to be applied.
    * @param independent Whether to draw Rotamer independent of chain context.
    */
   public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
@@ -249,13 +253,13 @@ public class RotamerLibrary {
    * <p>Presently uses default locations for C1', O4', and C4' to build these atoms.
    *
    * @param residue Nucleic acid Residue to which the pucker is to bea applied
-   * @param pucker An int specifying pucker (1=North, 2=South).
+   * @param pucker  An int specifying pucker (1=North, 2=South).
    * @param isDeoxy Boolean
-   * @param place Flag for usage case.
+   * @param place   Flag for usage case.
    * @return A double[] with O3' coordinates (place=false), or null (place=true).
    */
   public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker,
-      boolean isDeoxy, boolean place) {
+                                          boolean isDeoxy, boolean place) {
     // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
     // SP is short for Sugar Pucker (torsion).
     final double C2_SP_SOUTH_RNA = 24.2;
@@ -412,8 +416,8 @@ public class RotamerLibrary {
    * Measures the torsions of an amino acid Residue's current configuration.
    *
    * @param residue To be measured.
-   * @param chi Array to be filled with torsion values.
-   * @param print Verbosity flag.
+   * @param chi     Array to be filled with torsion values.
+   * @param print   Verbosity flag.
    * @return The number of rotamers this Residue has.
    */
   public static int measureAARotamer(Residue residue, double[] chi, boolean print) {
@@ -868,7 +872,7 @@ public class RotamerLibrary {
    * Measures the torsional angles of a residue's side chain.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
-   * @param print a boolean.
+   * @param print   a boolean.
    * @return an array of {@link double} objects.
    */
   public static double[] measureRotamer(Residue residue, boolean print) {
@@ -903,8 +907,8 @@ public class RotamerLibrary {
    * Measures the torsion angles of a Residue.
    *
    * @param residue To be measured
-   * @param chi Array to be filled with torsion values
-   * @param print Verbosity flag
+   * @param chi     Array to be filled with torsion values
+   * @param print   Verbosity flag
    * @return The number of rotamers this Residue has.
    */
   public static int measureRotamer(Residue residue, double[] chi, boolean print) {
@@ -945,20 +949,21 @@ public class RotamerLibrary {
    * Measures the torsions in a list of Residues.
    *
    * @param residueList Residues to be measured.
-   * @param print Verbosity flag.
+   * @param print       Verbosity flag.
    */
   public static void measureRotamers(List<Residue> residueList, boolean print) {
     double[] chi = new double[7];
+    if (residueList.isEmpty()) {
+      return;
+    }
+    logger.info("\n Residue    Current Torsional Angles");
     for (Residue residue : residueList) {
-      chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;
+      fill(chi, 0.0);
       measureRotamer(residue, chi, print);
       switch (residue.getResidueType()) {
-        case AA -> logger.info(
-            format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue, chi[0], chi[1],
-                chi[2], chi[3]));
-        case NA -> logger.info(
-            format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
-                chi[0], chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
+        case AA -> logger.info(format(" %c %8s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue, chi[0], chi[1], chi[2], chi[3]));
+        case NA -> logger.info(format(" %c %8s %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+                residue.getChainID(), residue, chi[0], chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
         default -> logger.info(" Not recognized as a nucleic or amino acid residue");
       }
     }
@@ -972,7 +977,6 @@ public class RotamerLibrary {
     try (BufferedReader br = new BufferedReader(new FileReader(rpatchFile))) {
       String resName = null;
       List<String> applyLines = new ArrayList<>();
-      // List<Rotamer> rotamers = new ArrayList<>();
       List<String> rotLines = new ArrayList<>();
       ResidueType rType = Residue.ResidueType.AA;
       String line = br.readLine();
@@ -2411,23 +2415,23 @@ public class RotamerLibrary {
    * Moves CZ of Phe/Tyr/Tyd to a mean position determined by both branches of the ring.
    *
    * @param resName Residue containing CZ.
-   * @param CZ CZ to be placed.
-   * @param CG CG atom.
-   * @param CE1 CE1 atom.
-   * @param CD1 CE2 atom.
-   * @param CE2 CE2 atom.
-   * @param CD2 CD2 atom.
+   * @param CZ      CZ to be placed.
+   * @param CG      CG atom.
+   * @param CE1     CE1 atom.
+   * @param CD1     CE2 atom.
+   * @param CE2     CE2 atom.
+   * @param CD2     CD2 atom.
    */
   private static void applyCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2,
-      Atom CD2) {
+                              Atom CD2) {
     CZ.moveTo(drawCZ(resName, CZ, CG, CE1, CD1, CE2, CD2));
   }
 
   /**
    * Draws the backbone of a nucleic acid Residue.
    *
-   * @param residue Residue.
-   * @param rotamer Rotamer being applied to Residue.
+   * @param residue     Residue.
+   * @param rotamer     Rotamer being applied to Residue.
    * @param prevResidue Residue 5' of residue.
    */
   private static void applyNABackbone(Residue residue, Rotamer rotamer, Residue prevResidue) {
@@ -2491,14 +2495,14 @@ public class RotamerLibrary {
    * Applies Cartesian translations to nucleic acid backbone atoms to allow P to correctly join up
    * with O3' of the prior Residue.
    *
-   * @param residue Residue.
-   * @param prevResidue Residue 5' of residue.
-   * @param rotamer Rotamer being applied to residue.
+   * @param residue         Residue.
+   * @param prevResidue     Residue 5' of residue.
+   * @param rotamer         Rotamer being applied to residue.
    * @param prevSugarPucker Expected sugar pucker of prevResidue.
    * @return The magnitude of any applied correction.
    */
   private static double applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
-      NucleicSugarPucker prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
+                                           NucleicSugarPucker prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
     // Backbone atoms of this residue to be adjusted
     Atom C3s = (Atom) residue.getAtomNode("C3'");
     Atom O4s = (Atom) residue.getAtomNode("O4'");
@@ -2571,8 +2575,8 @@ public class RotamerLibrary {
    * <p>Cannot presently handle 3' phosphate caps: I do not know what they would be labeled as in
    * PDB files. A template for how to handle 3' phosphate caps is written but commented out.
    *
-   * @param residue Residue.
-   * @param rotamer Rotamer to be applied to Residue.
+   * @param residue     Residue.
+   * @param rotamer     Rotamer to be applied to Residue.
    * @param independent Whether to draw NA rotamer independent of chain context.
    * @return Magnitude of the correction vector.
    */
@@ -2619,15 +2623,15 @@ public class RotamerLibrary {
    * Draws nucleic acid Atoms outside the backbone. Called after corrections have been applied, so
    * that these Atoms are drawn with ideal bond lengths and angles.
    *
-   * @param residue Residue.
-   * @param rotamer If 5' capped by HO5s, uses chi5 to draw HO5s.
-   * @param prevResidue NA residue at the 5' end of residue.
-   * @param isDeoxy If Residue is DNA; false means RNA.
-   * @param is3sTerminal If Residue is at a 3' end.
+   * @param residue         Residue.
+   * @param rotamer         If 5' capped by HO5s, uses chi5 to draw HO5s.
+   * @param prevResidue     NA residue at the 5' end of residue.
+   * @param isDeoxy         If Residue is DNA; false means RNA.
+   * @param is3sTerminal    If Residue is at a 3' end.
    * @param prevSugarPucker Sugar pucker for prevResidue specified by Rotamer.
    */
   private static void applyNASideAtoms(Residue residue, Rotamer rotamer, Residue prevResidue,
-      boolean isDeoxy, boolean is3sTerminal, NucleicSugarPucker prevSugarPucker) {
+                                       boolean isDeoxy, boolean is3sTerminal, NucleicSugarPucker prevSugarPucker) {
     Atom C1s = (Atom) residue.getAtomNode("C1'");
     Atom C2s = (Atom) residue.getAtomNode("C2'");
     Atom C3s = (Atom) residue.getAtomNode("C3'");
@@ -2812,16 +2816,16 @@ public class RotamerLibrary {
    * Draws CZ of Phe/Tyr/Tyd twice (from each branch of the ring), the cuts it down the middle.
    *
    * @param resName Residue containing CZ.
-   * @param CZ CZ to be placed.
-   * @param CG CG atom.
-   * @param CE1 CE1 atom.
-   * @param CD1 CD1 atom.
-   * @param CE2 CE2 atom.
-   * @param CD2 CD2 atom.
+   * @param CZ      CZ to be placed.
+   * @param CG      CG atom.
+   * @param CE1     CE1 atom.
+   * @param CD1     CD1 atom.
+   * @param CE2     CE2 atom.
+   * @param CD2     CD2 atom.
    * @return Mean coordinates for CZ based on internal geometry.
    */
   private static double[] drawCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2,
-      Atom CD2) {
+                                 Atom CD2) {
     double bondLen = CZ.getBond(CE1).bondType.distance;
     double ang = getAngle(resName, CZ, CE1, CD1);
     double[] xCG = new double[3];
@@ -2849,9 +2853,9 @@ public class RotamerLibrary {
    * (default), or based on force field.
    *
    * @param resName AminoAcid3 for a1-a3.
-   * @param a1 An Atom.
-   * @param a2 Another Atom.
-   * @param a3 A third Atom.
+   * @param a1      An Atom.
+   * @param a2      Another Atom.
+   * @param a3      A third Atom.
    * @return a1-a2-a3 angle for internal geometry.
    */
   private static double getAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
@@ -2871,9 +2875,9 @@ public class RotamerLibrary {
    * from a tight bonded-terms-only optimization under AMOEBA BIO 2018.
    *
    * @param resName Name of the Residue containing a1-a3.
-   * @param a1 An atom.
-   * @param a2 Another Atom.
-   * @param a3 Another Atom.
+   * @param a1      An atom.
+   * @param a2      Another Atom.
+   * @param a3      Another Atom.
    * @return Stored idealized a1-a2-a3 angle in degrees.
    */
   private static double idealGeometryAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
@@ -2916,8 +2920,8 @@ public class RotamerLibrary {
    * gamma (i) and delta (i) for residue i.
    *
    * @param residue Residue to be measured.
-   * @param chi Array to be filled with torsion values.
-   * @param print Verbosity flag.
+   * @param chi     Array to be filled with torsion values.
+   * @param print   Verbosity flag.
    * @return The number of rotamers this Residue has.
    */
   private static int measureNARotamer(Residue residue, double[] chi, boolean print) {
@@ -3033,8 +3037,8 @@ public class RotamerLibrary {
    * measureUNKRotamer.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
-   * @param chi an array of {@link double} objects.
-   * @param print a boolean.
+   * @param chi     an array of {@link double} objects.
+   * @param print   a boolean.
    */
   private static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
     String resName = residue.getName().toUpperCase();
@@ -3295,7 +3299,7 @@ public class RotamerLibrary {
    * the enumeration of allowed sequences for different structural classes Journal of Molecular
    * Biology 1987, 193 (4), 775-791
    *
-   * @param name Type of amino acid.
+   * @param name           Type of amino acid.
    * @param titrationUtils TitrationUtils for rotamers whose titration state can change.
    * @return Rotamer cache (double[] of torsions).
    */
@@ -4642,7 +4646,7 @@ public class RotamerLibrary {
      * Returns the sugar pucker associated with a delta torsion. This currently does not support the
      * C3'-exo DNA-only pucker.
      *
-     * @param delta Delta torsion to check
+     * @param delta   Delta torsion to check
      * @param isDeoxy If DNA (vs. RNA). Presently ignored.
      * @return Pucker
      */
@@ -4695,7 +4699,9 @@ public class RotamerLibrary {
     }
   }
 
-  /** Class contains rotamer information for a nonstandard amino acid. */
+  /**
+   * Class contains rotamer information for a nonstandard amino acid.
+   */
   private static class NonstandardRotLibrary {
 
     private final String resName;
@@ -4716,8 +4722,8 @@ public class RotamerLibrary {
      * Checks the angles for a nonstandard residue.
      *
      * @param residue Residue to measure.
-     * @param chi Array to be filled up with chi values.
-     * @param print Verbosity flag.
+     * @param chi     Array to be filled up with chi values.
+     * @param print   Verbosity flag.
      * @return Number of dihedral angles.
      */
     int measureNonstdRot(Residue residue, double[] chi, boolean print) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -749,7 +749,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
     }
 
     if (activeSystem.getCycles() > 1) {
-      step.setText("" + activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
+      step.setText(activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
     } else {
       step.setText("");
     }

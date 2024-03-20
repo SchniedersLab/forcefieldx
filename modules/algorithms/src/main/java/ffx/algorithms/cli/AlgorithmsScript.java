@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -46,6 +46,8 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.FFXScript;
 import groovy.lang.Binding;
+
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +60,9 @@ import java.util.List;
  */
 public class AlgorithmsScript extends FFXScript {
 
-  /** An instance of AlgorithmFunctions passed into the current context. */
+  /**
+   * An instance of AlgorithmFunctions passed into the current context.
+   */
   public AlgorithmFunctions algorithmFunctions;
 
   /**
@@ -67,10 +71,14 @@ public class AlgorithmsScript extends FFXScript {
    */
   public MolecularAssembly activeAssembly;
 
-  /** An instance of the AlgorithmListener interface. */
+  /**
+   * An instance of the AlgorithmListener interface.
+   */
   public AlgorithmListener algorithmListener;
 
-  /** The directory in which to place output files. Mostly for tests. */
+  /**
+   * The directory in which to place output files. Mostly for tests.
+   */
   protected File baseDir;
 
   public AlgorithmsScript() {
@@ -180,7 +188,7 @@ public class AlgorithmsScript extends FFXScript {
    * @param filename Filename to open.
    * @return The active assembly.
    */
-  public MolecularAssembly getActiveAssembly(String filename) {
+  public MolecularAssembly getActiveAssembly(@Nullable String filename) {
     if (filename != null) {
       // Open the supplied file.
       MolecularAssembly[] assemblies = {algorithmFunctions.open(filename)};
@@ -196,7 +204,7 @@ public class AlgorithmsScript extends FFXScript {
    * @param filename Filename to open.
    * @return The active assemblies.
    */
-  public MolecularAssembly[] getActiveAssemblies(String filename) {
+  public MolecularAssembly[] getActiveAssemblies(@Nullable String filename) {
     MolecularAssembly[] assemblies;
     if (filename != null) {
       // Open the supplied file.
@@ -204,7 +212,7 @@ public class AlgorithmsScript extends FFXScript {
       activeAssembly = assemblies[0];
       return assemblies;
     } else {
-      assemblies = new MolecularAssembly[] {activeAssembly};
+      assemblies = new MolecularAssembly[]{activeAssembly};
     }
     return assemblies;
   }

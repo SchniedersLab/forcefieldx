@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -45,20 +45,21 @@ import java.util.List;
  * <p>
  * Implements a comparable pair, where a non-comparable T can be compared via a comparable S.
  *
- * @param <T> Some object.
- * @param <S> Some indexing, comparable object.
+ * @param <T> The class of the non-comparable object.
+ * @param <S> The class of the indexing, comparable object.
+ * @param val The non-comparable object.
+ * @param key The indexing, comparable object.
  * @author Jacob Litman
  * @since 1.0
  */
-public record ObjectPair<T, S extends Comparable<S>>(T val, S key) implements
-    Comparable<ObjectPair<T, S>> {
+public record ObjectPair<T, S extends Comparable<S>>(T val, S key) implements Comparable<ObjectPair<T, S>> {
 
   /**
    * sortAndReturn.
    *
    * @param theList a {@link List} object.
-   * @param <U> Some object.
-   * @param <V> Some indexing, comparable object
+   * @param <U>     Some object.
+   * @param <V>     Some indexing, comparable object
    * @return the sorted {@link List} of objects.
    */
   public static <U, V extends Comparable<V>> List<U> sortAndReturn(List<ObjectPair<U, V>> theList) {
@@ -70,7 +71,9 @@ public record ObjectPair<T, S extends Comparable<S>>(T val, S key) implements
     return retList;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compareTo(ObjectPair<T, S> o) {
     return key.compareTo(o.key());

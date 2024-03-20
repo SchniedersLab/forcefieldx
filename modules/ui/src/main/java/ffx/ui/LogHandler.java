@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,6 +38,7 @@
 package ffx.ui;
 
 import edu.rit.pj.Comm;
+import ffx.potential.Utilities;
 import ffx.ui.MainPanel.ExitStatus;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
@@ -110,7 +111,7 @@ public class LogHandler extends Handler {
           System.setOut(printStream);
           System.setErr(printStream);
         } catch (Exception e) {
-          System.err.println(e);
+          System.err.println(Utilities.stackTraceToString(e));
         }
       }
     }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -100,15 +100,15 @@ public final class SimulationFilter extends SystemFilter {
     atomList = new ArrayList<Atom>();
     Vector<Integer> bonds1 = new Vector<Integer>();
     Vector<Integer> bonds2 = new Vector<Integer>();
-    double d[] = new double[3];
-    int b[] = new int[4];
+    double[] d = new double[3];
+    int[] b = new int[4];
     for (int i = 0; i < system.numatoms; i++) {
       d[0] = system.coordinates[0][i];
       d[1] = system.coordinates[1][i];
       d[2] = system.coordinates[2][i];
-      String s = new String("" + system.types[i]);
+      String s = "" + system.types[i];
       AtomType atomType = atomTypes.get(s);
-      Atom a = new Atom(i + 1, new String("" + atomType.type), atomType, d);
+      Atom a = new Atom(i + 1, "" + atomType.type, atomType, d);
       atomList.add(a);
       int b1 = i + 1;
       b[0] = system.connectivity[0][i];

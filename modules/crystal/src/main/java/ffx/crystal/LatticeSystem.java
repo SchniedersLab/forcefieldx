@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -65,7 +65,7 @@ public enum LatticeSystem {
    * <p>
    * Set this to 0.0 for strict checking of lattice parameters.
    * <p>
-   * For an acetamide crystal minimization, 1.0e-15 was too small a tolerance for equivalent lattice
+   * For an acetamide crystal minimization, 1.0e-16 was too small a tolerance for equivalent lattice
    * parameters to equate as equal.
    */
   private static final double tolerance = 1.0e-15;
@@ -94,28 +94,29 @@ public enum LatticeSystem {
     double ab = 0.5 * (params[0] + params[1]);
     double abc = (params[0] + params[1] + params[2]) / 3.0;
     switch (this) {
-      case TRICLINIC_LATTICE:
-        break;
-      case MONOCLINIC_LATTICE:
+      default -> {
+        // TRICLINIC -- No restrictions.
+      }
+      case MONOCLINIC_LATTICE -> {
         // alpha = gamma = 90
         params[3] = 90.0;
         params[5] = 90.0;
-        break;
-      case ORTHORHOMBIC_LATTICE:
+      }
+      case ORTHORHOMBIC_LATTICE -> {
         // alpha = beta = gamma = 90
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 90.0;
-        break;
-      case TETRAGONAL_LATTICE:
+      }
+      case TETRAGONAL_LATTICE -> {
         // a = b, alpha = beta = gamma = 90
         params[0] = ab;
         params[1] = ab;
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 90.0;
-        break;
-      case RHOMBOHEDRAL_LATTICE:
+      }
+      case RHOMBOHEDRAL_LATTICE -> {
         // a = b = c, alpha = beta = gamma.
         double angles = (params[3] + params[4] + params[5]) / 3.0;
         params[0] = abc;
@@ -124,17 +125,16 @@ public enum LatticeSystem {
         params[3] = angles;
         params[4] = angles;
         params[5] = angles;
-        break;
-      case HEXAGONAL_LATTICE:
+      }
+      case HEXAGONAL_LATTICE -> {
         // a = b, alpha = beta = 90, gamma = 120
         params[0] = ab;
         params[1] = ab;
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 120.0;
-        break;
-      case CUBIC_LATTICE:
-      default:
+      }
+      case CUBIC_LATTICE -> {
         // a = b = c, alpha = beta = gamma = 90
         params[0] = abc;
         params[1] = abc;
@@ -142,7 +142,7 @@ public enum LatticeSystem {
         params[3] = 90.0;
         params[4] = 90.0;
         params[5] = 90.0;
-        break;
+      }
     }
     return params;
   }
@@ -150,19 +150,19 @@ public enum LatticeSystem {
   /**
    * Check that the lattice parameters satisfy the restrictions of the lattice systems.
    *
-   * @param a the a-axis length.
-   * @param b the b-axis length.
-   * @param c the c-axis length.
+   * @param a     the a-axis length.
+   * @param b     the b-axis length.
+   * @param c     the c-axis length.
    * @param alpha the alpha angle.
-   * @param beta the beta angle.
+   * @param beta  the beta angle.
    * @param gamma the gamma angle.
    * @return True if the restrictions are satisfied, false otherwise.
    */
   public boolean validParameters(double a, double b, double c, double alpha, double beta,
-      double gamma) {
+                                 double gamma) {
     switch (this) {
-      case TRICLINIC_LATTICE -> {
-        // No restrictions.
+      default -> {
+        // TRICLINIC -- No restrictions.
         return true;
       }
       case MONOCLINIC_LATTICE -> {
@@ -190,32 +190,28 @@ public enum LatticeSystem {
         return check(a, b) && check(b, c) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma,
             90.0);
       }
-      default -> {
-        assert (2 != 2);
-        return false;
-      }
     }
   }
 
   /**
    * Change the lattice parameters to satisfy the restrictions of the lattice system.
    *
-   * @param a the proposed a-axis length.
-   * @param b the proposed b-axis length.
-   * @param c the proposed c-axis length.
+   * @param a     the proposed a-axis length.
+   * @param b     the proposed b-axis length.
+   * @param c     the proposed c-axis length.
    * @param alpha the proposed alpha angle.
-   * @param beta the proposed beta angle.
+   * @param beta  the proposed beta angle.
    * @param gamma the proposed gamma angle.
    * @return Adjusted parameters if the restrictions are satisfied, original parameters otherwise.
    */
   public double[] fixParameters(double a, double b, double c, double alpha, double beta,
-      double gamma) {
+                                double gamma) {
     double[] parameters = {a, b, c, alpha, beta, gamma};
     double ab = (parameters[0] + parameters[1]) / 2;
     double abc = (parameters[0] + parameters[1] + parameters[2]) / 3;
     switch (this) {
-      case TRICLINIC_LATTICE -> {
-        // No restrictions.
+      default -> {
+        // TRICLINIC -- No restrictions.
         return parameters;
       }
       case MONOCLINIC_LATTICE -> {
@@ -268,10 +264,6 @@ public enum LatticeSystem {
         parameters[3] = 90.0;
         parameters[4] = 90.0;
         parameters[5] = 90.0;
-        return parameters;
-      }
-      default -> {
-        assert (2 != 2);
         return parameters;
       }
     }

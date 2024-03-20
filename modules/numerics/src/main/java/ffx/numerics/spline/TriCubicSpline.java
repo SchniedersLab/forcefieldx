@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,25 +37,31 @@
 // ******************************************************************************
 package ffx.numerics.spline;
 
+import javax.annotation.Nullable;
+
 /**
  * TriCubicSpline class.
  *
  * @author Timothy D. Fenn
  * @see <a href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf"
- *     target="_blank">Catmull-Rom splines</a>
+ * target="_blank">Catmull-Rom splines</a>
  * @since 1.0
  */
 public class TriCubicSpline {
 
-  /** Tau for the smoothing matrix. */
+  /**
+   * Tau for the smoothing matrix.
+   */
   private static final double tau = 0.25;
-  /** Smoothing matrix: Catmull-Rom spline with tau=0.25 */
+  /**
+   * Smoothing matrix: Catmull-Rom spline with tau=0.25
+   */
   private static final double[][] catmullRomMat =
-      new double[][] {
-        {0.0, 1.0, 0.0, 0.0},
-        {-tau, 0.0, tau, 0.0},
-        {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
-        {-tau, 2.0 - tau, tau - 2.0, tau}
+      new double[][]{
+          {0.0, 1.0, 0.0, 0.0},
+          {-tau, 0.0, tau, 0.0},
+          {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
+          {-tau, 2.0 - tau, tau - 2.0, tau}
       };
 
   private final double[] p;
@@ -71,7 +77,9 @@ public class TriCubicSpline {
   private final double[] dv;
   private final double[] dw;
 
-  /** Initialize Spline function. */
+  /**
+   * Initialize Spline function.
+   */
   public TriCubicSpline() {
     dw = new double[4];
     dv = new double[4];
@@ -90,14 +98,14 @@ public class TriCubicSpline {
   /**
    * Determine the spline value at a given point.
    *
-   * @param dx delta between point and previous grid point in X
-   * @param dy delta between point and previous grid point in Y
-   * @param dz delta between point and previous grid point in Z
+   * @param dx     delta between point and previous grid point in X
+   * @param dy     delta between point and previous grid point in Y
+   * @param dz     delta between point and previous grid point in Z
    * @param scalar 3d array in x,y,z order of 3D scalar data
-   * @param g gradient array (can be null)
+   * @param g      gradient array (can be null)
    * @return the interpolated scalar value at the requested point
    */
-  public double spline(double dx, double dy, double dz, double[][][] scalar, double[] g) {
+  public double spline(double dx, double dy, double dz, double[][][] scalar, @Nullable double[] g) {
 
     // p(s) = u . catmull-rom matrix . p^T applied in 3 dimensions (u, v, w)
     u[0] = 1.0;

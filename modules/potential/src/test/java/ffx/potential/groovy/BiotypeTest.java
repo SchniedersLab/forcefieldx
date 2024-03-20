@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -52,7 +52,7 @@ public class BiotypeTest extends PotentialTest {
   @Test
   public void testBiotype() {
     // Set-up the input arguments for the Biotype script.
-    String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+    String[] args = {getResourcePath("acetanilide.xyz")};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.

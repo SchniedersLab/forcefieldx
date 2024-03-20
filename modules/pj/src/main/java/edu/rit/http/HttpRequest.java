@@ -274,13 +274,13 @@ public class HttpRequest {
 
             // Read remaining lines if any until an empty line.
             String headerName = null;
-            String headerValue = "";
+            StringBuilder headerValue = new StringBuilder();
             for (;;) {
                 if (!scanner.hasNextLine()) {
                     return;
                 }
                 line = scanner.nextLine();
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     break;
                 }
 
@@ -290,13 +290,13 @@ public class HttpRequest {
                     if (headerName == null) {
                         return;
                     }
-                    headerValue += line;
+                    headerValue.append(line);
                 } else {
                     // Starting new header. Record previous header if any.
                     if (headerName != null) {
-                        myHeaderMap.put(headerName, headerValue);
+                        myHeaderMap.put(headerName, headerValue.toString());
                         headerName = null;
-                        headerValue = "";
+                        headerValue = new StringBuilder();
                     }
 
                     // Parse header name and value.
@@ -311,13 +311,13 @@ public class HttpRequest {
                         return;
                     }
                     headerName = line.substring(0, i);
-                    headerValue += line.substring(i + 2);
+                    headerValue.append(line.substring(i + 2));
                 }
             }
 
             // If we get here, all is well. Record final header if any.
             if (headerName != null) {
-                myHeaderMap.put(headerName, headerValue);
+                myHeaderMap.put(headerName, headerValue.toString());
             }
 
             // Record method, URI, and HTTP version.

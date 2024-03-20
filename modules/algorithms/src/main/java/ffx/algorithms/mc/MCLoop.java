@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -170,7 +170,7 @@ public class MCLoop implements MonteCarloListener {
       // pick random subLoop
       midResidue = ThreadLocalRandom.current().nextInt(firstResidue + 1, endResidue);
       // pick random solution
-      if (loopSolutions.size() > 0) {
+      if (!loopSolutions.isEmpty()) {
         List<double[]> tempLoops = loop.generateLoops(midResidue - 1, midResidue + 1,
             loopSolutions.get(random.nextInt(loopSolutions.size())));
         loopSolutions.addAll(tempLoops);

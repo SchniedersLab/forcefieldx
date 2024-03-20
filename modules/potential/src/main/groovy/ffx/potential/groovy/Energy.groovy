@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -43,6 +43,8 @@ import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Torsion
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
@@ -53,8 +55,11 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.util.logging.Level
+
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
+import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
@@ -127,6 +132,20 @@ class Energy extends PotentialScript {
   @Option(names = ['--ec', '--energyCutoff'], paramLabel = "0.0", defaultValue = "0.0",
       description = "Create ARC file of structures within a specified energy of the lowest energy structure.")
   private double eCutoff = 0.0
+
+  /**
+   * --pd or --printDihedral sets atoms to print dihedral values.
+   */
+  @Option(names = ["--pd", "--printDihedral"], paramLabel = "", defaultValue = "",
+      description = "Atom indices to print dihedral angle values.")
+  private String dihedralAtoms = ""
+
+  /**
+   * --pb or --printBondedTerms Print all bonded energy terms.
+   */
+  @Option(names = ["--pb", "--printBondedTerms"], paramLabel = "", defaultValue = "false",
+      description = "Print all bonded energy terms.")
+  private boolean printBondedTerms = false
 
   /**
    * The final argument is a PDB or XYZ coordinate file.
@@ -217,8 +236,17 @@ class Energy extends PotentialScript {
     }
 
     if (inertia) {
-      double[][] inertiaValue =
-          momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+      momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+    }
+
+    List<Integer> unique
+    if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
+      unique = new ArrayList<>(parseAtomRanges("Dihedral Atoms", dihedralAtoms, activeAssembly.getAtomList().size()))
+      printDihedral(activeAssembly, unique)
+    }
+
+    if (printBondedTerms) {
+      forceFieldEnergy.logBondedTerms()
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -254,6 +282,9 @@ class Energy extends PotentialScript {
           if (!crystal.aperiodic()) {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
                 crystal.getDensity(activeAssembly.getMass())))
+            if(logger.isLoggable(Level.FINE)){
+              logger.fine(crystal.toString());
+            }
           }
           if (gradient){
             double[] g = new double[nVars]
@@ -296,8 +327,15 @@ class Energy extends PotentialScript {
         }
 
         if (inertia) {
-          double[][] inertiaValue =
-              momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+          momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+        }
+
+        if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
+          printDihedral(activeAssembly, unique)
+        }
+
+        if (printBondedTerms) {
+          forceFieldEnergy.logBondedTerms()
         }
       }
 
@@ -436,6 +474,38 @@ class Energy extends PotentialScript {
     }
 
     return this
+  }
+
+  /**
+   * Print dihedral angles for a specified set of atoms.
+   * @param molecularAssembly Molecular assembly containing atoms of interest.
+   * @param indices Atom indices of desired dihedral angle.
+   * @return
+   */
+  private static void printDihedral(MolecularAssembly molecularAssembly, ArrayList<Integer> indices) {
+    if (indices != null && indices.size() == 4) {
+      Atom[] atoms = molecularAssembly.getAtomArray()
+      Atom atom0 = atoms[indices.get(0)]
+      Atom atom1 = atoms[indices.get(1)]
+      Atom atom2 = atoms[indices.get(2)]
+      Atom atom3 = atoms[indices.get(3)]
+      try {
+        for (Torsion torsion : atom0.getTorsions()) {
+          if (torsion.compare(atom0, atom1, atom2, atom3)) {
+            logger.info("\n Torsion: " + torsion.toString())
+            return
+          }
+        }
+      } catch (Exception e) {
+        logger.info(" Exception during dihedral print " + e.toString())
+        e.printStackTrace()
+      }
+      logger.info("\n No torsion between atoms:\n  "
+          + atom0.toString() + "\n  "
+          + atom1.toString() + "\n  "
+          + atom2.toString() + "\n  "
+          + atom3.toString())
+    }
   }
 
   @Override

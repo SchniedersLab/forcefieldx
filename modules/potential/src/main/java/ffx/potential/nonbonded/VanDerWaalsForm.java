@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,19 +37,20 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.PropertyGroup.VanDerWaalsFunctionalForm;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * This class contains fields and methods for maintaining details of the van der Waals functional
@@ -59,12 +60,18 @@ import java.util.logging.Logger;
  */
 public class VanDerWaalsForm {
 
-  /** The logger. */
+  /**
+   * The logger.
+   */
   private static final Logger logger = Logger.getLogger(VanDerWaalsForm.class.getName());
 
-  /** Constant <code>RADMIN=0</code> */
+  /**
+   * Constant <code>RADMIN=0</code>
+   */
   static final byte RADMIN = 0;
-  /** Constant <code>EPS=1</code> */
+  /**
+   * Constant <code>EPS=1</code>
+   */
   static final byte EPS = 1;
 
   /**
@@ -127,101 +134,137 @@ public class VanDerWaalsForm {
    */
   public static final double DEFAULT_VDW_CUTOFF = 12.0;
 
-  /** First constant suggested by Halgren for the Buffered-14-7 potential. */
-  @FFXKeyword(name = "halgren-gamma", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.12",
-      description =
-          "Sets the value of the gamma parameter in Halgren’s buffered 14-7 vdw potential energy functional form. "
-              + "In the absence of the gamma-halgren property, a default value of 0.12 is used.")
+  /**
+   * First constant suggested by Halgren for the Buffered-14-7 potential.
+   */
+  @FFXProperty(name = "halgren-gamma", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.12",
+      description = """
+          Sets the value of the gamma parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
+          In the absence of the gamma-halgren property, a default value of 0.12 is used."
+          """)
+
   public final double gamma;
 
-  /** Second constant suggested by Halgren for the Buffered-14-7 potential. */
-  @FFXKeyword(name = "halgren-delta", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.07",
-      description =
-          "Sets the value of the delta parameter in Halgren’s buffered 14-7 vdw potential energy functional form. "
-              + "In the absence of the delta-halgren property, a default value of 0.07 is used.")
+  /**
+   * Second constant suggested by Halgren for the Buffered-14-7 potential.
+   */
+  @FFXProperty(name = "halgren-delta", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.07",
+      description = """
+          Sets the value of the delta parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
+          In the absence of the delta-halgren property, a default value of 0.07 is used.
+          """)
   public final double delta;
 
   /**
    * van der Waals functional form.
    */
-  @FFXKeyword(name = "vdwtype", clazz = String.class,
-      keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "LENNARD-JONES",
-      description = "[LENNARD-JONES / BUFFERED-14-7] "
-          + "Sets the functional form for the van der Waals potential energy term. "
-          + "The text modifier gives the name of the functional form to be used. "
-          + "The default in the absence of the vdwtype keyword is to use the standard "
-          + "two parameter Lennard-Jones function.")
+  @FFXProperty(name = "vdwtype", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "LENNARD-JONES",
+      description = """
+          [LENNARD-JONES / BUFFERED-14-7]
+          Sets the functional form for the van der Waals potential energy term.
+          The text modifier gives the name of the functional form to be used.
+          The default in the absence of the vdwtype keyword is to use the standard two parameter Lennard-Jones function.
+          """)
   public VDW_TYPE vdwType;
 
-  /** Epsilon combining rule. */
-  @FFXKeyword(name = "epsilonrule", clazz = String.class,
-      keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "GEOMETRIC",
-      description = "[GEOMETRIC / HHG / W-H] "
-          + "Selects the combining rule used to derive the epsilon value for van der Waals interactions. "
-          + "The default in the absence of the epsilonrule keyword is to use the geometric mean of the "
-          + "individual epsilon values of the two atoms involved in the van der Waals interaction.")
+  /**
+   * Epsilon combining rule.
+   */
+  @FFXProperty(name = "epsilonrule", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "GEOMETRIC",
+      description = """
+          [GEOMETRIC / HHG / W-H]
+          Selects the combining rule used to derive the epsilon value for van der Waals interactions.
+          The default in the absence of the epsilonrule keyword is to use the geometric mean of the
+          individual epsilon values of the two atoms involved in the van der Waals interaction.
+          """)
   public EPSILON_RULE epsilonRule;
 
-  /** Radius combining rule. */
-  @FFXKeyword(name = "radiusrule", clazz = String.class,
-      keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "ARITHMETIC",
-      description = "[ARITHMETIC / GEOMETRIC / CUBIC-MEAN] "
-          + "Sets the functional form of the radius combining rule for heteroatomic van der Waals potential energy interactions. "
-          + "The default in the absence of the radiusrule keyword is to use the arithmetic mean combining rule to get radii for heteroatomic interactions.")
+  /**
+   * Radius combining rule.
+   */
+  @FFXProperty(name = "radiusrule", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "ARITHMETIC",
+      description = """
+          [ARITHMETIC / GEOMETRIC / CUBIC-MEAN]
+          Sets the functional form of the radius combining rule for heteroatomic van der Waals potential energy interactions.
+          The default in the absence of the radiusrule keyword is to use the arithmetic mean combining rule to get radii for heteroatomic interactions.
+          """)
   public RADIUS_RULE radiusRule;
 
-  /** Radius size in the parameter file (radius or diameter). */
-  @FFXKeyword(name = "radiussize", clazz = String.class,
-      keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "RADIUS",
-      description = "[RADIUS / DIAMETER] "
-          + "Determines whether the atom size values given in van der Waals parameters read from "
-          + "VDW keyword statements are interpreted as atomic radius or diameter values. "
-          + "The default in the absence of the radiussize keyword is to assume that vdw size parameters are given as radius values.")
+  /**
+   * Radius size in the parameter file (radius or diameter).
+   */
+  @FFXProperty(name = "radiussize", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "RADIUS",
+      description = """
+          [RADIUS / DIAMETER]
+          Determines whether the atom size values given in van der Waals parameters read from
+          VDW keyword statements are interpreted as atomic radius or diameter values.
+          The default in the absence of the radiussize keyword is to assume that vdw size parameters are given as radius values.
+          """)
   public RADIUS_SIZE radiusSize;
 
-  /** Radius type in the parameter file (R-Min or Sigma). */
-  @FFXKeyword(name = "radiustype", clazz = String.class,
-      keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "R-MIN",
-      description = "[R-MIN / SIGMA] "
-          + "Determines whether atom size values given in van der Waals parameters read from VDW keyword "
-          + "statements are interpreted as potential minimum (Rmin) or LJ-style sigma values. "
-          + "The default in the absence of the radiustype keyword is to assume that vdw size parameters are given as Rmin values.")
+  /**
+   * Radius type in the parameter file (R-Min or Sigma).
+   */
+  @FFXProperty(name = "radiustype", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "R-MIN",
+      description = """
+          [R-MIN / SIGMA]
+          Determines whether atom size values given in van der Waals parameters read from VDW keyword
+          statements are interpreted as potential minimum (Rmin) or LJ-style sigma values.
+          The default in the absence of the radiustype keyword is to assume that vdw size parameters are given as Rmin values.
+          """)
   public RADIUS_TYPE radiusType;
 
-  /** Define scale factors between 1-2 atoms. */
-  @FFXKeyword(name = "vdw-12-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
-      description =
-          "Provides a multiplicative scale factor that is applied to van der Waals potential "
-              + "interactions between 1-2 connected atoms, i.e., atoms that are directly bonded. "
-              + "The default value of 0.0 is used to omit 1-2 interactions, "
-              + "if the vdw-12-scale property is not given in either the parameter file or the proprety file.")
+  /**
+   * Define scale factors between 1-2 atoms.
+   */
+  @FFXProperty(name = "vdw-12-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
+      description = """
+          Provides a multiplicative scale factor that is applied to van der Waals potential
+          interactions between 1-2 connected atoms, i.e., atoms that are directly bonded.
+          The default value of 0.0 is used to omit 1-2 interactions,
+          if the vdw-12-scale property is not given in either the parameter file or the property file.
+          """)
   protected double scale12;
 
-  /** Define scale factors between 1-3 atoms. */
-  @FFXKeyword(name = "vdw-13-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
-      description =
-          "Provides a multiplicative scale factor that is applied to van der Waals potential "
-              + "interactions between 1-3 connected atoms, i.e., atoms separated by two covalent bonds. "
-              + "The default value of 0.0 is used to omit 1-3 interactions, if the vdw-13-scale property "
-              + "is not given in either the parameter file or the property file.")
+  /**
+   * Define scale factors between 1-3 atoms.
+   */
+  @FFXProperty(name = "vdw-13-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
+      description = """
+          Provides a multiplicative scale factor that is applied to van der Waals potential
+          interactions between 1-3 connected atoms, i.e., atoms separated by two covalent bonds.
+          The default value of 0.0 is used to omit 1-3 interactions, if the vdw-13-scale property
+          is not given in either the parameter file or the property file.
+          """)
   protected double scale13;
 
-  /** Define scale factors between 1-4 atoms. */
-  @FFXKeyword(name = "vdw-14-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "1.0",
-      description =
-          "Provides a multiplicative scale factor that is applied to van der Waals potential "
-              + "interactions between 1-4 connected atoms, i.e., atoms separated by three covalent bonds. "
-              + "The default value of 1.0 is used, if the vdw-14-scale keyword is not given in either "
-              + "the parameter file or the property file.")
+  /**
+   * Define scale factors between 1-4 atoms.
+   */
+  @FFXProperty(name = "vdw-14-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "1.0",
+      description = """
+          Provides a multiplicative scale factor that is applied to van der Waals potential
+          interactions between 1-4 connected atoms, i.e., atoms separated by three covalent bonds.
+          The default value of 1.0 is used, if the vdw-14-scale keyword is not given in either
+          the parameter file or the property file.
+          """)
   protected double scale14;
 
-  /** Maximum number of classes in the force field. */
+  /**
+   * Maximum number of classes in the force field.
+   */
   int maxClass;
-  /** Store the Rmin for each class. */
+  /**
+   * Store the Rmin for each class.
+   */
   double[] rMin;
-  /** Store the Eps for each class */
+  /**
+   * Store the Eps for each class
+   */
   double[] eps;
-  /** Store combined radius and epsilon values. */
+  /**
+   * Store combined radius and epsilon values.
+   */
   private final double[][] radEps;
   /**
    * Store combined radius and epsilon values for 1-4 interactions.
@@ -233,17 +276,29 @@ public class VanDerWaalsForm {
    * Softcore vdW partial derivatives that are different between LJ and B14-7.
    */
   private final VDWPowers vdwPowers;
-  /** vdW Dispersive Power (e.g. 6). */
+  /**
+   * vdW Dispersive Power (e.g. 6).
+   */
   final int dispersivePower;
-  /** vdW Dispersive Power minus 1 (e.g. 6-1 = 5). */
+  /**
+   * vdW Dispersive Power minus 1 (e.g. 6-1 = 5).
+   */
   private final int dispersivePower1;
-  /** Define some handy constants. */
+  /**
+   * Define some handy constants.
+   */
   final double t1n;
-  /** Repulsive power minus dispersive power (e.g., 12-6 = 6). */
+  /**
+   * Repulsive power minus dispersive power (e.g., 12-6 = 6).
+   */
   final int repDispPower;
-  /** Repulsive power minus dispersive power minus 1 (e.g., 12-6-1 = 5). */
+  /**
+   * Repulsive power minus dispersive power minus 1 (e.g., 12-6-1 = 5).
+   */
   private final int repDispPower1;
-  /** First constant suggested by Halgren for the Buffered-14-7 potential plus 1 */
+  /**
+   * First constant suggested by Halgren for the Buffered-14-7 potential plus 1
+   */
   final double gamma1;
 
   /**
@@ -263,15 +318,9 @@ public class VanDerWaalsForm {
     }
 
     switch (vdwType) {
-      case BUFFERED_14_7:
-        vdwPowers = new Buffered_14_7();
-        break;
-      case LENNARD_JONES:
-        vdwPowers = new LJ_6_12();
-        break;
-      default:
-        vdwPowers = new VDWPowers();
-        break;
+      case BUFFERED_14_7 -> vdwPowers = new Buffered_14_7();
+      case LENNARD_JONES -> vdwPowers = new LJ_6_12();
+      default -> vdwPowers = new VDWPowers();
     }
 
     // Define epsilon combining rule.
@@ -313,19 +362,18 @@ public class VanDerWaalsForm {
     // Configure van der Waals well shape parameters.
     int repulsivePower;
     switch (vdwType) {
-      case LENNARD_JONES:
+      case LENNARD_JONES -> {
         repulsivePower = 12;
         dispersivePower = 6;
         delta = 0.0;
         gamma = 0.0;
-        break;
-      case BUFFERED_14_7:
-      default:
+      }
+      default -> {
         repulsivePower = 14;
         dispersivePower = 7;
         delta = forceField.getDouble("DELTA-HALGREN", DEFAULT_DELTA);
         gamma = forceField.getDouble("GAMMA-HALGREN", DEFAULT_GAMMA);
-        break;
+      }
     }
 
     repDispPower = repulsivePower - dispersivePower;
@@ -366,23 +414,14 @@ public class VanDerWaalsForm {
     radEps14 = new double[maxClass + 1][2 * (maxClass + 1)];
 
     // Scale factor to convert to vdW size to Rmin.
-    double radScale;
-    switch (radiusSize) {
-      case DIAMETER:
-        radScale = 0.5;
-        break;
-      case RADIUS:
-      default:
-        radScale = 1.0;
-        break;
-    }
+    double radScale = switch (radiusSize) {
+      case DIAMETER -> 0.5;
+      default -> 1.0;
+    };
     switch (radiusType) {
-      case SIGMA:
-        radScale *= 1.122462048309372981;
-        break;
-      case R_MIN:
-      default:
-        break;
+      case SIGMA -> radScale *= 1.122462048309372981;
+      default -> {
+      }
     }
 
     rMin = new double[maxClass + 1];
@@ -477,54 +516,58 @@ public class VanDerWaalsForm {
   /**
    * Get the combined EPS value.
    *
-   * @param ei The eps value of the first atom.
-   * @param ej The eps value of the second atom.
-   * @param ri The radius of the first atom.
-   * @param rj The radius of the second atom.
+   * @param ei          The eps value of the first atom.
+   * @param ej          The eps value of the second atom.
+   * @param ri          The radius of the first atom.
+   * @param rj          The radius of the second atom.
    * @param epsilonRule The epsilon rule to use.
    * @return The combined eps value.
    */
   public static double getCombinedEps(double ei, double ej, double ri, double rj,
-      EPSILON_RULE epsilonRule) {
+                                      EPSILON_RULE epsilonRule) {
     double sei = sqrt(ei);
     double sej = sqrt(ej);
     switch (epsilonRule) {
-      case GEOMETRIC:
+      case GEOMETRIC -> {
         return sei * sej;
-      case W_H:
+      }
+      case W_H -> {
         // ep = 2.0d0 * (seps(i)*seps(k)) * (rad(i)*rad(k))**3 / (rad(i)**6+rad(k)**6)
         double rr = ri * rj;
         double rr3 = rr * rr * rr;
         double ri6 = pow(ri, 6);
         double rj6 = pow(rj, 6);
         return 2.0 * sei * sej * rr3 / (ri6 + rj6);
-      default:
-      case HHG:
+      }
+      default -> {
         return 4.0 * (ei * ej) / ((sei + sej) * (sei + sej));
+      }
     }
   }
 
   /**
    * Get the combined radius value.
    *
-   * @param ri The radius of the first atom.
-   * @param rj The radius of the second atom.
+   * @param ri         The radius of the first atom.
+   * @param rj         The radius of the second atom.
    * @param radiusRule The radius combining rule to use.
    * @return The combined radius value.
    */
   public static double getCombinedRadius(double ri, double rj, RADIUS_RULE radiusRule) {
     switch (radiusRule) {
-      case ARITHMETIC:
+      case ARITHMETIC -> {
         return ri + rj;
-      case GEOMETRIC:
+      }
+      case GEOMETRIC -> {
         return 2.0 * sqrt(ri) * sqrt(rj);
-      default:
-      case CUBIC_MEAN:
+      }
+      default -> {
         double ri2 = ri * ri;
         double ri3 = ri * ri2;
         double rj2 = rj * rj;
         double rj3 = rj * rj2;
         return 2.0 * (ri3 + rj3) / (ri2 + rj2);
+      }
     }
   }
 

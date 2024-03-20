@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import ffx.potential.ForceFieldEnergy.Platform;
+import ffx.potential.Platform;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,7 +54,7 @@ public enum SCFAlgorithm {
 
   private final List<Platform> supportedPlatforms;
 
-  SCFAlgorithm(boolean ffx, boolean openMM, Platform... otherPlatforms) {
+  SCFAlgorithm(boolean ffx, boolean openMM) {
     List<Platform> platforms = new ArrayList<>();
     if (ffx) {
       platforms.add(Platform.FFX);
@@ -64,17 +64,7 @@ public enum SCFAlgorithm {
       platforms.add(Platform.OMM_CUDA);
       platforms.add(Platform.OMM_REF);
     }
-    platforms.addAll(Arrays.asList(otherPlatforms));
     supportedPlatforms = Collections.unmodifiableList(platforms);
-  }
-
-  /**
-   * Returns the list of supported Platforms.
-   *
-   * @return The supported platform List. Unmodifiable.
-   */
-  public List<Platform> getSupportedPlatforms() {
-    return supportedPlatforms;
   }
 
   /**

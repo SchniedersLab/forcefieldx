@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -64,7 +64,7 @@ public class SCFPredictorParameters {
   /** Dimensions of [mode][predictorOrder][nAtoms][3] */
   public double[][][][] predictorInducedDipoleCR;
 
-  public LeastSquaresPredictor leastSquaresPredictor;
+  private LeastSquaresPredictor leastSquaresPredictor;
   public LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
   public final SCFPredictor scfPredictor;
@@ -85,10 +85,6 @@ public class SCFPredictorParameters {
 
     int mode;
     switch (lambdaMode) {
-      case OFF:
-      case CONDENSED:
-        mode = 0;
-        break;
       case CONDENSED_NO_LIGAND:
         mode = 1;
         break;
@@ -182,10 +178,6 @@ public class SCFPredictorParameters {
 
       int mode;
       switch (lambdaMode) {
-        case OFF:
-        case CONDENSED:
-          mode = 0;
-          break;
         case CONDENSED_NO_LIGAND:
           mode = 1;
           break;
@@ -231,10 +223,6 @@ public class SCFPredictorParameters {
 
     int mode;
     switch (lambdaMode) {
-      case OFF:
-      case CONDENSED:
-        mode = 0;
-        break;
       case CONDENSED_NO_LIGAND:
         mode = 1;
         break;
@@ -283,10 +271,6 @@ public class SCFPredictorParameters {
 
     int mode;
     switch (lambdaMode) {
-      case OFF:
-      case CONDENSED:
-        mode = 0;
-        break;
       case CONDENSED_NO_LIGAND:
         mode = 1;
         break;
@@ -347,10 +331,6 @@ public class SCFPredictorParameters {
     public double[] value(double[] variables) {
       int mode;
       switch (lambdaMode) {
-        case OFF:
-        case CONDENSED:
-          mode = 0;
-          break;
         case CONDENSED_NO_LIGAND:
           mode = 1;
           break;
@@ -396,10 +376,6 @@ public class SCFPredictorParameters {
     void updateJacobianAndTarget() {
       int mode;
       switch (lambdaMode) {
-        case OFF:
-        case CONDENSED:
-          mode = 0;
-          break;
         case CONDENSED_NO_LIGAND:
           mode = 1;
           break;

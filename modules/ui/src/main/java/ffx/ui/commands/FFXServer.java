@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -110,7 +110,7 @@ public class FFXServer implements Runnable {
    * @return a boolean.
    */
   public boolean needUpdate() {
-    if (clients.size() == 0) {
+    if (clients.isEmpty()) {
       sleepTime = 100;
       return false;
     }
@@ -179,7 +179,7 @@ public class FFXServer implements Runnable {
           outputs.add(oout);
           oin = new ObjectInputStream(client.getInputStream());
           inputs.add(oin);
-          Logger.getLogger("ffx").info("Client connected\n" + client.toString());
+          Logger.getLogger("ffx").info("Client connected\n" + client);
         }
       } catch (Exception e) {
         if (client != null) {
@@ -217,8 +217,7 @@ public class FFXServer implements Runnable {
         if (client != null) {
           client.close();
         }
-      } catch (Exception ex) {
-        return;
+      } catch (Exception ignored) {
       }
     }
   }
@@ -242,8 +241,7 @@ public class FFXServer implements Runnable {
         server.close();
         server = null;
       }
-    } catch (Exception e) {
-      return;
+    } catch (Exception ignored) {
     }
   }
 
@@ -280,7 +278,7 @@ public class FFXServer implements Runnable {
     if (system == null) {
       return;
     }
-    if (clients.size() == 0) {
+    if (clients.isEmpty()) {
       return;
     }
     ObjectOutputStream oout;
@@ -355,7 +353,7 @@ public class FFXServer implements Runnable {
       try {
         server.bind(new InetSocketAddress(InetAddress.getByName(null), serverPort));
       } catch (Exception ex) {
-        Logger.getLogger("ffx").severe("SERVER -- Could not start\n" + e.toString());
+        Logger.getLogger("ffx").severe("SERVER -- Could not start\n" + e);
         return;
       }
     }
