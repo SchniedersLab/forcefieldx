@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics;
 
+import ffx.numerics.estimator.MBARHarmonicOscillatorsTest;
 import ffx.numerics.fft.FFTTestSuite;
 import ffx.numerics.func1d.QuasiLinearSwitchTest;
 import ffx.numerics.integrate.Integrate1DTest;
@@ -57,6 +58,7 @@ import org.junit.runners.Suite.SuiteClasses;
     FFTTestSuite.class,
     Integrate1DTest.class,
     IntegrationTest.class,
+    MBARHarmonicOscillatorsTest.class,
     ModifiedBesselTest.class,
     MultipoleTestSuite.class,
     SquareRootTest.class,

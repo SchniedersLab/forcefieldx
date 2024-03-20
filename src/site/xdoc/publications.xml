@@ -14,12 +14,13 @@
         </tr>
         <tr>
           <td>
-            <b>2023</b>
+            <b>2024</b>
           </td>
           <td>
-            Nessler, A., Okada, O., Kinoshita, Y., Nishimura, K., Nagata, H., Fukuzawa, K., Yonemochi, E. and Schnieders, M.
-            Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
-            <a href="https://doi.org/10.26434/chemrxiv-2023-cl0c5">
+            Thiel, A., Speranza, M., Jadhav, S., Stevens, L., Unruh, D., Ren, P., Ponder, J., Shen, J. and Schnieders,
+            M.
+            Constant-pH Simulations with the Polarizable Atomic Multipole AMOEBA Force Field.
+            <a href="https://doi.org/10.26434/chemrxiv-2023-96z34">
               <i>ChemRxiv. Cambridge: Cambridge Open Engage</i>
               <b>2023</b>
             </a>
@@ -30,16 +31,17 @@
             <b><!-- BLANK --></b>
           </td>
           <td>
-            Thiel, A., Speranza, M., Jadhav, S., Stevens, L., Unruh, D., Ren, P., Ponder, J., Shen, J. and Schnieders, M.
-            Constant-pH Simulations with the Polarizable Atomic Multipole AMOEBA Force Field.
-            <a href="https://doi.org/10.26434/chemrxiv-2023-96z34">
-              <i>ChemRxiv. Cambridge: Cambridge Open Engage</i>
-              <b>2023</b>
+            Nessler, A., Okada, O., Kinoshita, Y., Nishimura, K., Nagata, H., Fukuzawa, K., Yonemochi, E. and
+            Schnieders, M.
+            Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
+            <a href="https://pubs.acs.org/doi/10.1021/acs.cgd.3c01358">
+              <i>Crystal Growth and Design</i>
+              <b>2024</b>
             </a>
           </td>
         </tr>
         <tr>
-          <td><!-- BLANK --></td>
+          <td>2023</td>
           <td>Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
             J.,
             A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.

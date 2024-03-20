@@ -254,13 +254,13 @@ class BAR extends AlgorithmsScript {
       for (int i = 0; i < nWindows; i++) {
         for (int j = 0; j < nFiles; j++) {
           String fullPathToFile = FilenameUtils.getFullPath(files[j])
-          String directoryFullPath = fullPathToFile.replace(files[j], "") + i;
+          String directoryFullPath = fullPathToFile.replace(files[j], "") + i
           windowDirectories.add(directoryFullPath + File.separator + i)
         }
       }
       lambdaValues = new double[nWindows]
       for (int i = 0; i < nWindows; i++) {
-        lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
+        lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false)
       }
     } else {
       // Otherwise we assume two ensembles at then given lambda values.
@@ -350,8 +350,7 @@ class BAR extends AlgorithmsScript {
     }
 
     for (int i = 0; i < numTopologies; i++) {
-      MolecularAssembly ma =
-          alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
+      MolecularAssembly ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
       molecularAssemblies[i] = ma
       openers[i] = algorithmFunctions.getFilter()
     }
@@ -458,12 +457,10 @@ class BAR extends AlgorithmsScript {
       if (tinkerBAR) {
         if (w == 0) {
           barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
-              energyAt[w + 1], volume[w], volume[w + 1],
-              this.temperature)
+              energyAt[w + 1], volume[w], volume[w + 1], this.temperature)
         } else if (w != nWindows - 1) {
           barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
-              energyAt[w + 1], volume[w], volume[w + 1],
-              this.temperature)
+              energyAt[w + 1], volume[w], volume[w + 1], this.temperature)
         }
         if (w != nWindows-1){
           String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
@@ -540,8 +537,7 @@ class BAR extends AlgorithmsScript {
       }
 
       SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyWindowLow,
-          energyWindowAt, energyWindowHigh,
-          temperature)
+          energyWindowAt, energyWindowHigh, temperature)
       SequentialEstimator forwards = bar.getInitialForwardsGuess()
       SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
@@ -565,8 +561,7 @@ class BAR extends AlgorithmsScript {
       forwardEnthalpy = forBS.getTotalEnthalpy()
       double varForeFE = forBS.getTotalUncertainty()
       double varEnthalpyFore = forBS.getTotalEnthalpyUncertainty()
-      logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", forwardFEP,
-          varForeFE))
+      logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", forwardFEP, varForeFE))
 
       time = -System.nanoTime()
       backBS.bootstrap(bootstrap)
@@ -577,13 +572,10 @@ class BAR extends AlgorithmsScript {
       backwardEnthalpy = backBS.getTotalEnthalpy()
       double varBackFE = backBS.getTotalUncertainty()
       double varEnthalpyBack = backBS.getTotalEnthalpyUncertainty()
-      logger.info(
-          format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", backwardFEP,
-              varBackFE))
+      logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", backwardFEP, varBackFE))
       barEnergy = bar.getFreeEnergy()
 
-      logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy,
-          bar.getUncertainty()))
+      logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy, bar.getUncertainty()))
       time = -System.nanoTime()
       barBS.bootstrap(bootstrap)
       time += System.nanoTime()
@@ -593,50 +585,35 @@ class BAR extends AlgorithmsScript {
       double varBARFE = barBS.getTotalUncertainty()
       barEnthalpy = barBS.getTotalEnthalpy()
       double varEnthalpy = barBS.getTotalEnthalpyUncertainty()
-      logger.info(
-          format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS,
-              varBARFE))
+      logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS, varBARFE))
 
       if (w == nWindows) {
         logger.info("\n Enthalpy from Potential Energy Averages:\n")
-
         for (int n = 0; n < nWindows; n++) {
-          logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
-              n, energyMean[n], energySD[n]))
-
+          logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.", n, energyMean[n], energySD[n]))
         }
         double enthalpyDiff = energyMean[nWindows - 1] - energyMean[0]
         double enthalpyDiffSD = Math.sqrt(energyVar[nWindows - 1] + energyVar[0])
-        logger.info(format(" Enthalpy via Direct Estimate:     %12.4f +/- %6.4f kcal/mol.",
-            enthalpyDiff, enthalpyDiffSD))
-
+        logger.info(format(" Enthalpy via Direct Estimate:     %12.4f +/- %6.4f kcal/mol.", enthalpyDiff, enthalpyDiffSD))
         logger.info("\n Enthalpy and Entropy:\n")
       } else {
         logger.info(format("\n Enthalpy and Entropy for Window %d\n", w))
       }
 
-      forwardEntropy = (forwardEnthalpy - forwardFEP) / this.temperature
-      backwardEntropy = (backwardEnthalpy - backwardFEP) / this.temperature
+      forwardEntropy = (forwardEnthalpy - forwardFEP) / temperature
+      backwardEntropy = (backwardEnthalpy - backwardFEP) / temperature
 
-      logger.info(
-          format(" Enthalpy via Forward FEP:       %12.4f +/- %6.4f kcal/mol.", forwardEnthalpy,
-              varEnthalpyFore))
+      logger.info(format(" Enthalpy via Forward FEP:       %12.4f +/- %6.4f kcal/mol.", forwardEnthalpy, varEnthalpyFore))
       logger.info(format(" Entropy via Forward FEP:        %12.4f kcal/mol/K.", forwardEntropy))
-      logger.info(format(" Forward FEP -T*ds Value:        %12.4f kcal/mol.", -(forwardEntropy *
-          this.temperature)))
+      logger.info(format(" Forward FEP -T*ds Value:        %12.4f kcal/mol.", -(forwardEntropy * temperature)))
 
-      logger.info(
-          format("\n Enthalpy via Backward FEP:      %12.4f +/- %6.4f kcal/mol.", backwardEnthalpy,
-              varEnthalpyBack))
+      logger.info(format("\n Enthalpy via Backward FEP:      %12.4f +/- %6.4f kcal/mol.", backwardEnthalpy, varEnthalpyBack))
       logger.info(format(" Entropy via Backward FEP:       %12.4f kcal/mol/K.", backwardEntropy))
-      logger.info(format(" Backward FEP -T*ds Value:       %12.4f kcal/mol.", -(backwardEntropy *
-          this.temperature)))
+      logger.info(format(" Backward FEP -T*ds Value:       %12.4f kcal/mol.", -(backwardEntropy * temperature)))
 
       double tsBar = barEnthalpy - barEnergyBS
-      double sBAR = tsBar / (this.temperature)
-      logger.info(
-          format("\n Enthalpy via BAR:               %12.4f +/- %6.4f kcal/mol.", barEnthalpy,
-              varEnthalpy))
+      double sBAR = tsBar / temperature
+      logger.info(format("\n Enthalpy via BAR:               %12.4f +/- %6.4f kcal/mol.", barEnthalpy, varEnthalpy))
       logger.info(format(" Entropy via BAR:                %12.4f kcal/mol/K.", sBAR))
       logger.info(format(" BAR Estimate of -T*ds:          %12.4f kcal/mol.", -(tsBar)))
 
