@@ -43,7 +43,7 @@
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
-            <target>${targetVersion}</target>
+            <release>${compileVersion}</release>
             <useIncrementalCompilation>true</useIncrementalCompilation>
           </configuration>
           <version>${compiler.version}</version>
