@@ -100,7 +100,7 @@ public class Rotamer {
    * The TitrationUtils handles application of rotamer specific force field parameters.
    */
   private TitrationUtils titrationUtils = null;
-  private int weight;
+  private int rotIndex;
 
   /**
    * Constructor for unknown residue types.
@@ -147,10 +147,10 @@ public class Rotamer {
    * @param aminoAcid3 a {@link AminoAcid3} object.
    * @param values a double.
    */
-  public Rotamer(AminoAcid3 aminoAcid3, int weight, double... values) {
+  public Rotamer(AminoAcid3 aminoAcid3, int rotIndex, double... values) {
     this(values);
     this.aminoAcid3 = aminoAcid3;
-    this.weight = weight;
+    this.rotIndex = rotIndex;
   }
 
 
@@ -182,12 +182,12 @@ public class Rotamer {
     }
   }
 
-  public Rotamer(AminoAcid3 aminoAcid3, TitrationUtils titrationUtils, int weight, double... values) {
+  public Rotamer(AminoAcid3 aminoAcid3, TitrationUtils titrationUtils, int rotIndex, double... values) {
     this(aminoAcid3, values);
     if (titrationUtils != null) {
       this.isTitrating = true;
       this.titrationUtils = titrationUtils;
-      this.weight = weight;
+      this.rotIndex = rotIndex;
     } else {
       this.isTitrating = false;
     }
@@ -401,7 +401,7 @@ public class Rotamer {
     }
   }
 
-  public int getWeight() {return weight;}
+  public int getRotIndex() {return rotIndex;}
 
   public double getRotamerPhBias() {
     return titrationUtils.getRotamerPhBias(aminoAcid3);

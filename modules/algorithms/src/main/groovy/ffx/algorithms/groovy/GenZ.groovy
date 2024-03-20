@@ -327,7 +327,7 @@ class GenZ extends AlgorithmsScript {
                 double tautomerSum = 0
                 Rotamer[] rotamers = residue.getRotamers()
                 for (Rotamer rotamer : rotamers) {
-                    String rotPop = format("%.6f", populationArray[titrateCount][rotamer.getWeight()])
+                    String rotPop = format("%.6f", populationArray[titrateCount][rotamer.getRotIndex()])
                     fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
                             rotamer.toString() + "\t" + rotPop + "\n")
                     switch (rotamer.getName()) {
@@ -336,9 +336,9 @@ class GenZ extends AlgorithmsScript {
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += populationArray[titrateCount][rotamer.getWeight()]
+                            protSum += populationArray[titrateCount][rotamer.getRotIndex()]
                             if (printBoltzmann) {
-                                protonationBoltzmannSums[titrateCount] += titrateBoltzmann[titrateCount][rotamer.getWeight()]
+                                protonationBoltzmannSums[titrateCount] += titrateBoltzmann[titrateCount][rotamer.getRotIndex()]
                             }
                             break
                         case "HIE":
@@ -346,10 +346,10 @@ class GenZ extends AlgorithmsScript {
                         case "GLU":
                         case "ASP":
                         case "CYD":
-                            deprotSum += populationArray[titrateCount][rotamer.getWeight()]
+                            deprotSum += populationArray[titrateCount][rotamer.getRotIndex()]
                             break
                         case "HID":
-                            tautomerSum += populationArray[titrateCount][rotamer.getWeight()]
+                            tautomerSum += populationArray[titrateCount][rotamer.getRotIndex()]
                             break
                         default:
                             break

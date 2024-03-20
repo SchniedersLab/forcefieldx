@@ -81,7 +81,6 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Constants;
@@ -112,13 +111,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
 
@@ -2381,7 +2376,7 @@ public class RotamerOptimization implements Terminatable {
                         for (Residue residue : residues) {
                             Rotamer[] rotamers = residue.getRotamers();
                             int currentRotamer = currentRotamers[res];
-                            int count = rotamers[currentRotamer].getWeight();
+                            int count = rotamers[currentRotamer].getRotIndex();
                             populationBoltzmann[res][count] += boltzmannWeight;
                             res += 1;
                         }
