@@ -115,6 +115,7 @@ public class ExtendedSystem implements Potential {
      */
     private final double ASHtautBiasMag;
     private final double ASHtitrBiasMag;
+    private final double ASHbaselinePKA;
     private final double[] CYSFmod = new double[4];
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
@@ -344,6 +345,7 @@ public class ExtendedSystem implements Potential {
         ASH1toASH2[0] = TitrationUtils.Titration.ASH1toASH2.offset;
         ASHtitrBiasMag = properties.getDouble("ASH.titration.bias.magnitude", DISCR_BIAS);
         ASHtautBiasMag = properties.getDouble("ASH.tautomer.bias.magnitude", DISCR_BIAS);
+        ASHbaselinePKA = properties.getDouble("ASH.baseline.pka", TitrationUtils.Titration.ASHtoASP.pKa);
 
         GLHFmod[3] = properties.getDouble("GLH.cubic", TitrationUtils.Titration.GLHtoGLU.cubic);
         GLHFmod[2] = properties.getDouble("GLH.quadratic", TitrationUtils.Titration.GLHtoGLU.quadratic);
@@ -761,7 +763,7 @@ public class ExtendedSystem implements Potential {
                 dDiscr_dTaut = -8.0 * ASHtautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
-                double pKa1 = TitrationUtils.Titration.ASHtoASP.pKa;
+                double pKa1 = ASHbaselinePKA;
                 double pKa2 = pKa1;
                 pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
