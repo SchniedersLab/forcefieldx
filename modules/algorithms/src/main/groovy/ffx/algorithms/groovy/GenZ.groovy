@@ -29,8 +29,8 @@ import static java.lang.String.format
  * <br>
  * ffxc ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Run ReducedPartition function for free energy change.", name = "ffxc ReducedPartition")
-class ReducedPartition extends AlgorithmsScript {
+@Command(description = " Run GenZ function for free energy change.", name = "ffxc GenZ")
+class GenZ extends AlgorithmsScript {
 
     @Mixin
     ManyBodyOptions manyBodyOptions
@@ -89,7 +89,7 @@ class ReducedPartition extends AlgorithmsScript {
     /**
      * ManyBody Constructor.
      */
-    ReducedPartition() {
+    GenZ() {
         this(new Binding())
     }
 
@@ -97,7 +97,7 @@ class ReducedPartition extends AlgorithmsScript {
      * ManyBody Constructor.
      * @param binding The Groovy Binding to use.
      */
-    ReducedPartition(Binding binding) {
+    GenZ(Binding binding) {
         super(binding)
     }
 
@@ -105,7 +105,7 @@ class ReducedPartition extends AlgorithmsScript {
      * {@inheritDoc}
      */
     @Override
-    ReducedPartition run() {
+    GenZ run() {
         if (!init()) {
             return this
         }

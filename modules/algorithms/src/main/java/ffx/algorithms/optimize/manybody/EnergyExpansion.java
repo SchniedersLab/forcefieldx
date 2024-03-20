@@ -704,7 +704,6 @@ public class EnergyExpansion {
             }
             double pH = rO.getPH();
             String name = rotamers[ri].getName();
-            logger.info("This is the rotamer name: " + name);
             switch (name) {
                 case "ASP":
                     if (pH - 3.94 <= 0) {
