@@ -2368,18 +2368,17 @@ public class RotamerOptimization implements Terminatable {
                     // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
                     if (evaluatedPermutations == 1) {
                         refEnergy = totalEnergy;
+                        logger.info("The reference energy: " + refEnergy);
                     }
-                    double boltzmannWeight = exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
+                    double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
 
                     // Collect Boltzmann weight for every rotamer for residues included in the optimization
-                    if (fraction.length > 0) {
-                        for (Residue residue : residues) {
-                            Rotamer[] rotamers = residue.getRotamers();
-                            int currentRotamer = currentRotamers[res];
-                            int count = rotamers[currentRotamer].getRotIndex();
-                            populationBoltzmann[res][count] += boltzmannWeight;
-                            res += 1;
-                        }
+                    for (Residue residue : residues) {
+                        Rotamer[] rotamers = residue.getRotamers();
+                        int currentRotamer = currentRotamers[res];
+                        int rotIndex = rotamers[currentRotamer].getRotIndex();
+                        populationBoltzmann[res][rotIndex] += boltzmannWeight;
+                        res += 1;
                     }
 
                     // Sum Boltzmann of all permutations

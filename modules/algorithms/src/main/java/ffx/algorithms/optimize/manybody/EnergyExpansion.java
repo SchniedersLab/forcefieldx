@@ -520,6 +520,11 @@ public class EnergyExpansion {
 
             //double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
             energy = rO.currentEnergy(residues) + subtract;
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" %s Pair-Energy %16.8f = FF %16.8f - BB %16.8f + Self Ri %16.8f + Self Rj %16.8f ",
+                        rot_i[ri].getName() + "-" + rot_j[rj].getName(), energy, energy + backboneEnergy, backboneEnergy,
+                        getSelf(i, ri, rot_i[ri], true) , getSelf(j, rj, rot_j[rj], true)));
+            }
             if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
                 logger.warning(
                         format(" Experimental: re-computing pair energy %s-%d %s-%d using Force Field X",
@@ -670,7 +675,7 @@ public class EnergyExpansion {
     public double computeSelfEnergy(Residue[] residues, int i, int ri) {
         rO.turnOffAllResidues(residues);
         rO.turnOnResidue(residues[i], ri);
-        double pHRestraint = rO.getPHRestraint();
+        double KpH = rO.getPHRestraint();
         double energy;
         try {
             if (algorithmListener != null) {
@@ -698,93 +703,76 @@ public class EnergyExpansion {
 
         if (rotamers[ri].isTitrating) {
             double bias = rotamers[ri].getRotamerPhBias();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" %s Self-Energy %16.8f = FF %16.8f - BB %16.8f + Ph Bias %16.8f",
-                        rotamers[ri].getName(), energy + bias, energy + backboneEnergy, backboneEnergy, bias));
-            }
+
             double pH = rO.getPH();
             String name = rotamers[ri].getName();
+            double pHrestraint = 0;
+
             switch (name) {
                 case "ASP":
-                    if (pH - 3.94 <= 0) {
-                        energy += bias + 0.5 * pHRestraint * Math.pow(pH - 3.94, 2);
-                    } else {
-                        energy += bias;
+                    if (pH <= 3.94) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
                     }
                     break;
                 case "ASH":
-                    if (pH - 3.94 >= 0) {
-                        energy += bias + 0.5 * pHRestraint * Math.pow(pH  - 3.94, 2);
-                    } else {
-                        energy += bias;
+                    if (pH >= 3.94) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
                     }
                     break;
                 case "GLU":
-                    if (pH - 4.25 <= 0) {
-                        energy += bias + 0.5 * pHRestraint * Math.pow(pH  - 4.25, 2);
-                    } else {
-                        energy += bias;
+                    if (pH <= 4.25) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
                     }
                     break;
                 case "GLH":
-                    if (pH - 4.25 >= 0) {
-                        energy += bias + 0.5 * pHRestraint* Math.pow(pH  - 4.25, 2);
-                    } else {
-                        energy += bias;
+                    if (pH >= 4.25) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
                     }
                     break;
                 case "HIS":
-                    if (pH - 6.6 >= 0) {
-                        energy += bias + 0.5 * pHRestraint * Math.pow(pH - 6.6, 2);
-                    } else {
-                        energy += bias;
+                    if (pH >= 6.6) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
                     }
                     break;
                 case "HID":
-                    if (pH - 7.0 <= 0) {
-                        energy += bias + 0.5 * pHRestraint * Math.pow(pH - 7.0, 2);
-                    } else {
-                        energy += bias;
+                    if (pH <= 7.0) {
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 7.0, 2);
                     }
                     break;
                 case "HIE":
-                    if(pH - 6.6 <= 0){
-                        energy += bias + 0.5*pHRestraint*Math.pow(pH - 6.6,2);
-                    } else {
-                        energy += bias;
+                    if(pH <= 6.6){
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
                     }
                     break;
                 case "LYD":
-                    if(pH - 10.4 <= 0){
-                        energy += bias + 0.5*pHRestraint*Math.pow(pH - 10.4,2);
-                    } else {
-                        energy += bias;
+                    if(pH <= 10.4){
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
                     }
                     break;
                 case "LYS":
-                    if(pH - 10.4 >= 0){
-                        energy += bias + 0.5*pHRestraint*Math.pow(pH - 10.4,2);
-                    } else {
-                        energy += bias;
+                    if(pH >= 10.4){
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
                     }
                     break;
                 case "CYD":
                     if(pH - 8.55 <= 0){
-                        energy += bias + 0.5*pHRestraint*Math.pow(pH - 8.55,2);
-                    } else {
-                        energy += bias;
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
                     }
                     break;
                 case "CYS":
                     if(pH - 8.55 >= 0){
-                        energy += bias + 0.5*pHRestraint*Math.pow(pH - 8.55,2);
-                    } else {
-                        energy += bias;
+                        pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
                     }
                     break;
                 default:
                     break;
             }
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" %s Self-Energy %16.8f = FF %16.8f - BB %16.8f + Ph Bias %16.8f + pHrestraint %16.8f ",
+                        rotamers[ri].getName(), energy + bias + pHrestraint, energy + backboneEnergy, backboneEnergy, bias, pHrestraint));
+            }
+            energy += bias + pHrestraint;
         }
         return energy;
     }
@@ -797,17 +785,78 @@ public class EnergyExpansion {
      * @param rotamers The array of rotamer indices for each residue.
      * @return The total Ph bias.
      */
-    public static double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers) {
+    public double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers) {
         double total = 0.0;
         int n = residues.size();
         for (int i = 0; i < n; i++) {
             Rotamer[] rot = residues.get(i).getRotamers();
             int ri = rotamers[i];
+            double pHrestraint = 0;
+            double pH = rO.getPH();
+            double KpH = rO.getPHRestraint();
             if (rot[ri].isTitrating) {
-                total += rot[ri].getRotamerPhBias();
+                switch (rot[ri].getName()) {
+                    case "ASP":
+                        if (pH <= 3.94) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                        }
+                        break;
+                    case "ASH":
+                        if (pH >= 3.94) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                        }
+                        break;
+                    case "GLU":
+                        if (pH <= 4.25) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                        }
+                        break;
+                    case "GLH":
+                        if (pH >= 4.25) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                        }
+                        break;
+                    case "HIS":
+                        if (pH >= 6.6) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                        }
+                        break;
+                    case "HID":
+                        if (pH <= 7.0) {
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 7.0, 2);
+                        }
+                        break;
+                    case "HIE":
+                        if(pH <= 6.6){
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                        }
+                        break;
+                    case "LYD":
+                        if(pH <= 10.4){
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                        }
+                        break;
+                    case "LYS":
+                        if(pH >= 10.4){
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                        }
+                        break;
+                    case "CYD":
+                        if(pH - 8.55 <= 0){
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                        }
+                        break;
+                    case "CYS":
+                        if(pH - 8.55 >= 0){
+                            pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                total += rot[ri].getRotamerPhBias() + pHrestraint;
             }
         }
-
         return total;
     }
 
@@ -978,45 +1027,45 @@ public class EnergyExpansion {
                 String name = rot.getName();
                 switch (name) {
                     case "ASP":
-                        if (rO.getPH() - 3.94 <= 0) {
+                        if (rO.getPH() <= 3.94) {
                             pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
                         }
                     case "ASH":
-                        if (rO.getPH() - 3.94 >= 0) {
+                        if (rO.getPH() >= 3.94) {
                             pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
                         }
                         break;
                     case "GLU":
-                        if (rO.getPH() - 4.25 <= 0) {
+                        if (rO.getPH() <= 4.25) {
                             pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
                     case "GLH":
-                        if (rO.getPH() - 4.25 >= 0) {
+                        if (rO.getPH() >= 4.25) {
                             pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
                         break;
                     case "HIS":
-                        if (rO.getPH() - 6.6 >= 0) {
+                        if (rO.getPH() >= 6.6) {
                             pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "HID":
-                        if (rO.getPH() - 7.0 <= 0) {
+                        if (rO.getPH() <= 7.0) {
                             pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 7.0, 2);
                         }
                         break;
                     case "HIE":
-                        if(rO.getPH() - 6.6 <= 0){
+                        if(rO.getPH() <= 6.6){
                             pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "LYD":
-                        if(rO.getPH() - 10.4 <= 0){
+                        if(rO.getPH() <= 10.4){
                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
                         }
                         break;
                     case "LYS":
-                        if(rO.getPH() - 10.4 >= 0){
+                        if(rO.getPH() >= 10.4){
                             pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
                         }
                         break;
@@ -1033,7 +1082,7 @@ public class EnergyExpansion {
                     default:
                         break;
                 }
-                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() - pHRestraint;
+                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias();
             } else {
                 totalSelf = selfEnergy[i][ri];
             }

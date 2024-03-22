@@ -315,30 +315,31 @@ class GenZ extends AlgorithmsScript {
         }
 
         //Print information from the fraction protonated calculations
-        if (pKa) {
-            FileWriter fileWriter = new FileWriter("populations.txt")
-            int titrateCount = 0
-            for (Residue residue : selectedResidues) {
-                fileWriter.write("\n")
-                protonationBoltzmannSums = new double[selectedResidues.size()]
-                // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-                double protSum = 0
-                double deprotSum = 0
-                double tautomerSum = 0
-                Rotamer[] rotamers = residue.getRotamers()
-                for (Rotamer rotamer : rotamers) {
-                    String rotPop = format("%.6f", populationArray[titrateCount][rotamer.getRotIndex()])
-                    fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
-                            rotamer.toString() + "\t" + rotPop + "\n")
+
+        FileWriter fileWriter = new FileWriter("populations.txt")
+        int residueIndex = 0
+        for (Residue residue : selectedResidues) {
+            fileWriter.write("\n")
+            protonationBoltzmannSums = new double[selectedResidues.size()]
+            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+            double protSum = 0
+            double deprotSum = 0
+            double tautomerSum = 0
+            Rotamer[] rotamers = residue.getRotamers()
+            for (Rotamer rotamer : rotamers) {
+                String rotPop = format("%.6f", populationArray[residueIndex][rotamer.getRotIndex()])
+                fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
+                        rotamer.toString() + "\t" + rotPop + "\n")
+                if (pKa) {
                     switch (rotamer.getName()) {
                         case "HIS":
                         case "LYS":
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += populationArray[titrateCount][rotamer.getRotIndex()]
+                            protSum += populationArray[residueIndex][rotamer.getRotIndex()]
                             if (printBoltzmann) {
-                                protonationBoltzmannSums[titrateCount] += titrateBoltzmann[titrateCount][rotamer.getRotIndex()]
+                                protonationBoltzmannSums[residueIndex] += titrateBoltzmann[residueIndex][rotamer.getRotIndex()]
                             }
                             break
                         case "HIE":
@@ -346,15 +347,23 @@ class GenZ extends AlgorithmsScript {
                         case "GLU":
                         case "ASP":
                         case "CYD":
-                            deprotSum += populationArray[titrateCount][rotamer.getRotIndex()]
+                            deprotSum += populationArray[residueIndex][rotamer.getRotIndex()]
                             break
                         case "HID":
-                            tautomerSum += populationArray[titrateCount][rotamer.getRotIndex()]
+                            tautomerSum += populationArray[residueIndex][rotamer.getRotIndex()]
                             break
                         default:
                             break
                     }
                 }
+
+            }
+            if (printBoltzmann) {
+                logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
+                        protonationBoltzmannSums[residueIndex])
+                logger.info("\n Total Boltzmann: " + totalBoltzmann)
+            }
+            if (pKa){
                 String formatedProtSum = format("%.6f", protSum)
                 String formatedDeprotSum = format("%.6f", deprotSum)
                 String formatedTautomerSum = format("%.6f", tautomerSum)
@@ -383,19 +392,13 @@ class GenZ extends AlgorithmsScript {
                     default:
                         break
                 }
-
-                if (printBoltzmann) {
-                    logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
-                            protonationBoltzmannSums[titrateCount])
-                    logger.info("\n Total Boltzmann: " + totalBoltzmann)
-                }
-
-
-                titrateCount += 1
             }
-            fileWriter.close()
-            System.out.println("\n Successfully wrote to the populations file.")
-        } else {
+            residueIndex += 1
+        }
+
+        fileWriter.close()
+        System.out.println("\n Successfully wrote to the populations file.")
+        if (mutatingResidue != -1) {
             //Calculate Gibbs free energy change of mutating residues
             double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]))
             logger.info("\n Gibbs Free Energy Change: " + gibbs)
