@@ -398,8 +398,11 @@ class ReadXML extends PotentialScript {
                                 if (torsion.getNodeName() == "Proper") {
                                     forceField.addForceFieldType(new TorsionType(classes, amplitudes, phases, periods, TorsionType.TorsionMode.NORMAL))
                                 } else {
+                                    int trigAtom = classes[0] // Trigonal atom is defined first in XML, needs to be third in FFX/TINKER
+                                    classes[0] = classes[1]
+                                    classes[1] = classes[2]
+                                    classes[2] = trigAtom
                                     forceField.addForceFieldType(new ImproperTorsionType(classes, amplitudes[0], phases[0], periods[0]))
-//                                    forceField.addForceFieldType(new TorsionType(classes, amplitudes, phases, periods, TorsionType.TorsionMode.IMPROPER))
                                 }
                             }
                             else if (torsion.hasAttributes()) {
