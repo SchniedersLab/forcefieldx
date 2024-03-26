@@ -37,16 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static ffx.potential.bonded.Residue.ResidueType.NA;
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.abs;
-
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.WorkerTeam;
@@ -70,7 +60,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
@@ -81,9 +70,12 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.ObjectPair;
 import ffx.utilities.Resources;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -107,8 +99,15 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
+import static ffx.potential.bonded.Residue.ResidueType.NA;
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone conformations using rotamers.
@@ -2213,16 +2212,23 @@ public class RotamerOptimization implements Terminatable {
    */
   private double independent(List<Residue> residues) {
     double e = 0.0;
-    List<Residue> rList = new ArrayList<>(Collections.nCopies(1, null));
+    List<Residue> singletonResidue = new ArrayList<>(Collections.nCopies(1, null));
+    double startingEnergy;
+    Residue residue = residues.get(0);
+    singletonResidue.set(0, residue);
+    Rotamer[] rotamers = residue.getRotamers();
+    Rotamer rotamer = rotamers[0];
+    RotamerLibrary.applyRotamer(residue, rotamer);
+    startingEnergy = currentEnergy(singletonResidue);
     for (int i = 0; i < residues.size(); i++) {
-      Residue residue = residues.get(i);
-      rList.set(0, residue);
+      residue = residues.get(i);
+      singletonResidue.set(0, residue);
       logger.info(format(" Optimizing %s side-chain.", residue));
-      Rotamer[] rotamers = residue.getRotamers();
+      rotamers = residue.getRotamers();
       e = Double.MAX_VALUE;
-      int bestRotamer = -1;
+      int bestRotamer = 0;
       for (int j = 0; j < rotamers.length; j++) {
-        Rotamer rotamer = rotamers[j];
+        rotamer = rotamers[j];
         RotamerLibrary.applyRotamer(residue, rotamer);
         if (algorithmListener != null) {
           algorithmListener.algorithmUpdate(molecularAssembly);
@@ -2230,24 +2236,32 @@ public class RotamerOptimization implements Terminatable {
         double newE = Double.NaN;
         try {
           if (rotamer.isTitrating) {
-            newE = currentEnergy(rList) + rotamer.getRotamerPhBias();
+            newE = currentEnergy(singletonResidue) + rotamer.getRotamerPhBias() - startingEnergy;
           } else {
-            newE = currentEnergy(rList);
+            newE = currentEnergy(singletonResidue) - startingEnergy;
+          }
+          logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
+          double singularityThreshold = -1000;
+          if (newE < -1000) {
+            String message = format("   Rejecting as energy (%s << %s) is likely an error.", formatEnergy(newE), formatEnergy(singularityThreshold));
+            logger.info(message);
+            newE = Double.MAX_VALUE;
+          } else {
+            logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
           }
         } catch (ArithmeticException ex) {
-          logger.fine(format(" Exception %s in energy calculations during independent for %s-%d", ex,
-              residue, j));
+          logger.info(format(" Exception %s in energy calculations during independent for %s-%d", ex, residue, j));
         }
         if (newE < e) {
           e = newE;
           bestRotamer = j;
         }
       }
-      if (bestRotamer > -1) {
-        Rotamer rotamer = rotamers[bestRotamer];
-        RotamerLibrary.applyRotamer(residue, rotamer);
-        optimum[i] = bestRotamer;
-      }
+      rotamer = rotamers[bestRotamer];
+      RotamerLibrary.applyRotamer(residue, rotamer);
+      optimum[i] = bestRotamer;
+      logger.info(format(" Best Energy %8s %-2d: %s", residue.toString(rotamer), bestRotamer, formatEnergy(e)));
+
       if (algorithmListener != null) {
         algorithmListener.algorithmUpdate(molecularAssembly);
       }

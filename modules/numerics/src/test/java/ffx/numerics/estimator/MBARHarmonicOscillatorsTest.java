@@ -46,7 +46,7 @@ import java.util.Arrays;
 public class MBARHarmonicOscillatorsTest extends FFXTest {
 
     /**
-     * Test the MBAR estimator numerics with harmonic oscillators. This test uses L-BFGS, so it
+     * Test the MBAR estimator numerics with harmonic oscillators. This test uses SCI & NR, so it
      * isn't exactly deterministic. The error is set to 1.0E-1, so the first decimal is fine for this.
      * Pymbar does the same thing.
      */
@@ -62,20 +62,34 @@ public class MBARHarmonicOscillatorsTest extends FFXTest {
 
         // Generate sample data
         String setting = "u_kln";
-        Object[] sampleResult = testCase.sample(N_k, setting);
+        Object[] sampleResult = testCase.sample(N_k, setting, (long) 0);
         double[][][] u_kln = (double[][][]) sampleResult[1];
         double[] temps = {1 / Constants.R};
 
         MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, MultistateBennettAcceptanceRatio.SeedType.ZEROS);
-        double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFreeEnergies, mbar.mbarFreeEnergies.length);
+        double[] mbarFEEstimates = mbar.getMBARFreeEnergies();
+        double[] mbarErrorEstimates = mbar.getBinUncertainties();
+        double[][] mbarDiffMatrix = mbar.getDiffMatrix();
+        double[] mbarFEExpected = new double[]{0.0, 0.3468272332334239, 0.554882810046907, 0.6909139007747198};
+        double[] mbarErrorExpected = new double[]{0.00647778279366289, 0.006176323555016366, 0.008170508071621832};
+        double[][] mbarDiffMatrixExpected = new double[][]{
+                {0.0, 0.00647778279366289, 0.010874539771152386, 0.01568591641036036},
+                {0.005859375, 0.0, 0.006176323555016366, 0.012881744099875898},
+                {0.010697706201272776, 0.00647778279366289, 0.0, 0.008170508071621832},
+                {0.015563845166512918, 0.013028968812623373, 0.008170508071621832, 0.0}
+        };
 
-        // Get the analytical free energy differences
-        double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
-        // Calculate the error
-        double[] error = new double[analyticalFreeEnergies.length];
-        for (int i = 0; i < error.length; i++) {
-            error[i] = - mbarFEEstimates[i] + analyticalFreeEnergies[i];
-            Assert.assertEquals(0.0, error[i], 1.0E-1); // First decimal is fine for this (compare to pymbar)
+        // Compare tolerance to pymbar --> I tested this with a for loop over 1000 times and it always passed
+        for (int i = 0; i < mbarFEExpected.length; i++) {
+            Assert.assertEquals(mbarFEExpected[i], mbarFEEstimates[i], 1.0E-1);
+        }
+        for (int i = 0; i < mbarErrorExpected.length; i++) {
+            Assert.assertEquals(mbarErrorExpected[i], mbarErrorEstimates[i], 1.0E-1);
+        }
+        for (int i = 0; i < mbarDiffMatrixExpected.length; i++) {
+            for (int j = 0; j < mbarDiffMatrixExpected[i].length; j++) {
+                Assert.assertEquals(mbarDiffMatrixExpected[i][j], mbarDiffMatrix[i][j], 1.0E-1);
+            }
         }
     }
 }

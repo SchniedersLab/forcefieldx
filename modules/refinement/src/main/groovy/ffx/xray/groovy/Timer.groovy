@@ -124,7 +124,7 @@ class Timer extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
     // Print the initial energy of each conformer.

@@ -117,7 +117,7 @@ class ComputeFc extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
 
     logger.info("\n Running xray.ComputeFc on " + filename)
 
