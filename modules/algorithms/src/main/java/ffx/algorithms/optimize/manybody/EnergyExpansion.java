@@ -792,8 +792,6 @@ public class EnergyExpansion {
             Rotamer[] rot = residues.get(i).getRotamers();
             int ri = rotamers[i];
             double pHrestraint = 0;
-            logger.info("This is the rotamer name: " + rot[ri].getName());
-            logger.info("This is the kPH: " + KpH + " and this is the pH: " + pH);
             if (rot[ri].isTitrating) {
                 switch (rot[ri].getName()) {
                     case "ASP":
@@ -854,7 +852,6 @@ public class EnergyExpansion {
                     default:
                         break;
                 }
-                logger.info("This is the pH restraint: " + pHrestraint);
                 total += rot[ri].getRotamerPhBias() + pHrestraint;
             }
         }
