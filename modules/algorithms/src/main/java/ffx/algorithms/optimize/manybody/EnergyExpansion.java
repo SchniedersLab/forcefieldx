@@ -855,7 +855,7 @@ public class EnergyExpansion {
                         break;
                 }
                 logger.info("This is the pH restraint: " + pHrestraint);
-                total += rot[ri].getRotamerPhBias() - pHrestraint;
+                total += rot[ri].getRotamerPhBias() + pHrestraint;
             }
         }
         return total;
@@ -1085,7 +1085,7 @@ public class EnergyExpansion {
                     default:
                         break;
                 }
-                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() + pHRestraint;
+                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() - pHRestraint;
             } else {
                 totalSelf = selfEnergy[i][ri];
             }
