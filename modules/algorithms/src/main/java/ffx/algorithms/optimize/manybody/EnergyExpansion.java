@@ -785,15 +785,15 @@ public class EnergyExpansion {
      * @param rotamers The array of rotamer indices for each residue.
      * @return The total Ph bias.
      */
-    public double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers) {
+    public double getTotalRotamerPhBias(List<Residue> residues, int[] rotamers, double pH, double KpH) {
         double total = 0.0;
         int n = residues.size();
         for (int i = 0; i < n; i++) {
             Rotamer[] rot = residues.get(i).getRotamers();
             int ri = rotamers[i];
             double pHrestraint = 0;
-            double pH = rO.getPH();
-            double KpH = rO.getPHRestraint();
+            logger.info("This is the rotamer name: " + rot[ri].getName());
+            logger.info("This is the kPH: " + KpH + " and this is the pH: " + pH);
             if (rot[ri].isTitrating) {
                 switch (rot[ri].getName()) {
                     case "ASP":
@@ -855,7 +855,7 @@ public class EnergyExpansion {
                         break;
                 }
                 logger.info("This is the pH restraint: " + pHrestraint);
-                total += rot[ri].getRotamerPhBias() + pHrestraint;
+                total += rot[ri].getRotamerPhBias() - pHrestraint;
             }
         }
         return total;
@@ -1023,14 +1023,15 @@ public class EnergyExpansion {
     public double getSelf(int i, int ri, Rotamer rot, boolean excludeFMod) {
         try {
             double totalSelf;
-            double pHRestraint = 0;
             if (rot.isTitrating && excludeFMod) {
                 String name = rot.getName();
+                double pHRestraint = 0;
                 switch (name) {
                     case "ASP":
                         if (rO.getPH() <= 3.94) {
                             pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
                         }
+                        break;
                     case "ASH":
                         if (rO.getPH() >= 3.94) {
                             pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
@@ -1038,16 +1039,17 @@ public class EnergyExpansion {
                         break;
                     case "GLU":
                         if (rO.getPH() <= 4.25) {
-                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
+                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
+                        break;
                     case "GLH":
                         if (rO.getPH() >= 4.25) {
-                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
+                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
                         break;
                     case "HIS":
                         if (rO.getPH() >= 6.6) {
-                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
+                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "HID":
@@ -1057,7 +1059,7 @@ public class EnergyExpansion {
                         break;
                     case "HIE":
                         if(rO.getPH() <= 6.6){
-                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
+                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "LYD":
@@ -1083,7 +1085,7 @@ public class EnergyExpansion {
                     default:
                         break;
                 }
-                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() - pHRestraint;
+                totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias() + pHRestraint;
             } else {
                 totalSelf = selfEnergy[i][ri];
             }

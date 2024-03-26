@@ -1283,7 +1283,7 @@ public class RotamerOptimization implements Terminatable {
         double rotEnergy = Double.NaN;
         try {
           rotArray[nResidues - 1] = ri;
-          rotEnergy = currentEnergy(resList) + eE.getTotalRotamerPhBias(resList, rotArray);
+          rotEnergy = currentEnergy(resList) + eE.getTotalRotamerPhBias(resList, rotArray, pH, pHRestraint);
           logger.info(format(" %d Energy: %s", ++evaluatedPermutations, formatEnergy(rotEnergy)));
         } catch (ArithmeticException ex) {
           logger.info(
@@ -2038,7 +2038,7 @@ public class RotamerOptimization implements Terminatable {
           try {
             // Add the rotamer pH bias to the force field energy.
             amoebaEnergy =
-                currentEnergy(resList) + eE.getTotalRotamerPhBias(resList, currentRotamers);
+                currentEnergy(resList) + eE.getTotalRotamerPhBias(resList, currentRotamers, pH, pHRestraint);
           } catch (ArithmeticException ex) {
             logger.warning(
                 format(" Exception %s in calculating full AMOEBA energy for permutation %d", ex,
@@ -2772,7 +2772,7 @@ public class RotamerOptimization implements Terminatable {
 
       try {
         // Add the force field energy to the pH bias.
-        e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimumSubset);
+        e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimumSubset, pH, pHRestraint);
       } catch (ArithmeticException ex) {
         e = Double.NaN;
         logger.severe(
@@ -3029,7 +3029,7 @@ public class RotamerOptimization implements Terminatable {
     double e = Double.NaN;
     try {
       // Add the force field energy to the pH bias.
-      e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimumSubset);
+      e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimumSubset, pH, pHRestraint);
     } catch (ArithmeticException ex) {
       logger.severe(
           format(" Exception %s in calculating current energy at the end of self and pairs", ex));
@@ -3142,7 +3142,7 @@ public class RotamerOptimization implements Terminatable {
       double fullEnergy = 0;
       try {
         // Add the force field energy to the pH bias.
-        fullEnergy = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimum);
+        fullEnergy = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimum, pH, pHRestraint);
       } catch (Exception ex) {
         logger.severe(format(" Exception %s in calculating full energy; FFX shutting down", ex));
       }
@@ -3163,7 +3163,7 @@ public class RotamerOptimization implements Terminatable {
       RotamerLibrary.applyRotamer(residue, rotamer);
       if (useForceFieldEnergy) {
         try {
-          e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimum);
+          e = currentEnergy(residueList) + eE.getTotalRotamerPhBias(residueList, optimum, pH, pHRestraint);
         } catch (ArithmeticException ex) {
           logger.fine(
               format(" Exception %s in calculating full AMOEBA energy at the end of brute force",

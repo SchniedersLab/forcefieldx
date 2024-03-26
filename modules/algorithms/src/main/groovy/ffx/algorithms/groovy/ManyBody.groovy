@@ -115,6 +115,7 @@ class ManyBody extends AlgorithmsScript {
     // Otherwise, during titration the number of terms for each torsion can change and
     // cause updateParametersInContext to throw an exception.
     double titrationPH = manyBodyOptions.getTitrationPH()
+
     if (manyBodyOptions.getTitration()) {
       System.setProperty("manybody-titration", "true")
     }
@@ -193,6 +194,9 @@ class ManyBody extends AlgorithmsScript {
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         potentialEnergy, algorithmListener)
+    rotamerOptimization.setPHRestraint(manyBodyOptions.getPHRestraint())
+    rotamerOptimization.setOnlyProtons(manyBodyOptions.getOnlyProtons())
+    rotamerOptimization.setpH(titrationPH)
 
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
     List<Residue> residueList = rotamerOptimization.getResidues()
@@ -220,7 +224,7 @@ class ManyBody extends AlgorithmsScript {
       double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
-            optimalRotamers)
+            optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       }
