@@ -43,7 +43,7 @@
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
-            <target>${targetVersion}</target>
+            <release>${compileVersion}</release>
             <useIncrementalCompilation>true</useIncrementalCompilation>
           </configuration>
           <version>${compiler.version}</version>
@@ -976,14 +976,14 @@
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.7.0</assembly.version>
+    <assembly.version>3.7.1</assembly.version>
     <biojava.version>7.1.1</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.3.1</checkstyle.version>
-    <ciftools-java.version>5.0.2</ciftools-java.version>
+    <ciftools-java.version>6.0.0</ciftools-java.version>
     <clean.version>3.3.2</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
@@ -995,7 +995,7 @@
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>21</compileVersion>
-    <compiler.version>3.12.1</compiler.version>
+    <compiler.version>3.13.0</compiler.version>
     <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.1</deploy.version>
@@ -1006,9 +1006,9 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>8.0.1</git-commit-id.version>
+    <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>23.1.2</graal.version>
+    <graal.version>24.0.0</graal.version>
     <groovy-all.version>5.0.0-alpha-7</groovy-all.version>
     <guava.version>33.1.0-jre</guava.version>
     <install.version>3.1.1</install.version>

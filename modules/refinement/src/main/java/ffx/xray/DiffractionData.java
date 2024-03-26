@@ -302,14 +302,15 @@ public class DiffractionData implements DataContainer {
       resolution[i] = reflectionList[i].resolution;
       refinementData[i] = new DiffractionRefinementData(properties, reflectionList[i]);
       tmp = new File(datafile[i].getFilename());
-      datafile[i]
-          .getDiffractionfilter()
+      datafile[i].getDiffractionfilter()
           .readFile(tmp, reflectionList[i], refinementData[i], properties);
     }
 
-    if (!crystal[0].equals(assembly[0].getCrystal().getUnitCell())) {
-      logger.severe(
-          "PDB and reflection file crystal information do not match! (check CRYST1 record?)");
+    if (!crystal[0].getUnitCell().equals(assembly[0].getCrystal().getUnitCell())) {
+      logger.info("\n The PDB and reflection file crystal information do not match.");
+      logger.info(" PDB File:" + assembly[0].getCrystal().getUnitCell().toString());
+      logger.info(" Reflection File:" + crystal[0].getUnitCell().toString());
+      logger.severe(" Please check the concordance of the PDB CRYST1 record with the diffraction file.");
     }
 
     if (logger.isLoggable(Level.INFO)) {
