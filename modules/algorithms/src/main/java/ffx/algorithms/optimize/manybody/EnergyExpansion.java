@@ -204,12 +204,10 @@ public class EnergyExpansion {
     if (max4BodyCount != Integer.MAX_VALUE) {
       logger.info(format(" Max 4Body Count: %d", max4BodyCount));
     }
-    singularityThreshold = properties.getDouble("ro-singularityThreshold",
-        DEFAULT_SINGULARITY_THRESHOLD);
+    singularityThreshold = properties.getDouble("ro-singularityThreshold", DEFAULT_SINGULARITY_THRESHOLD);
     potentialIsOpenMM = potential instanceof OpenMMEnergy;
     if (potentialIsOpenMM) {
-      ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold",
-          DEFAULT_OMM_RECALCULATE_THRESHOLD);
+      ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold", DEFAULT_OMM_RECALCULATE_THRESHOLD);
     } else {
       ommRecalculateThreshold = -1E200;
     }

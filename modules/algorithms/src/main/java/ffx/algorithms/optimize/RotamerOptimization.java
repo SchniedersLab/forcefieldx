@@ -43,7 +43,7 @@ import edu.rit.pj.WorkerTeam;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.mc.MCMove;
-import ffx.algorithms.optimize.manybody.BoxOptCell;
+import ffx.algorithms.optimize.manybody.ManyBodyCell;
 import ffx.algorithms.optimize.manybody.DistanceMatrix;
 import ffx.algorithms.optimize.manybody.EliminatedRotamers;
 import ffx.algorithms.optimize.manybody.EnergyExpansion;
@@ -1155,7 +1155,7 @@ public class RotamerOptimization implements Terminatable {
       allResiduesArray = allResiduesList.toArray(new Residue[nAllResidues]);
 
       /*
-       * Distance matrix is  used to add residues to the sliding window based on distance cutoff,
+       * Distance matrix is used to add residues to the sliding window based on distance cutoff,
        * and for cutoff distances.
        *
        * The memory and compute overhead can be a problem for some very large structures.
@@ -1295,7 +1295,7 @@ public class RotamerOptimization implements Terminatable {
    * @param boxBorderSize Box overlap in Angstroms.
    */
   public void setBoxBorderSize(double boxBorderSize) {
-    boxOpt.boxBorderSize = boxBorderSize;
+    boxOpt.cellBorderSize = boxBorderSize;
   }
 
   /**
@@ -1305,7 +1305,7 @@ public class RotamerOptimization implements Terminatable {
    */
   public void setBoxEnd(int boxEnd) {
     // Is -1 if boxes run to completion.
-    boxOpt.boxEnd = boxEnd;
+    boxOpt.cellEnd = boxEnd;
   }
 
   /**
@@ -1324,7 +1324,7 @@ public class RotamerOptimization implements Terminatable {
    * @param boxStart a int.
    */
   public void setBoxStart(int boxStart) {
-    boxOpt.boxStart = boxStart;
+    boxOpt.cellStart = boxStart;
   }
 
   /**
@@ -1480,7 +1480,7 @@ public class RotamerOptimization implements Terminatable {
    * @param numXYZBoxes Int[3] of number of boxes in x, y, z.
    */
   public void setNumXYZBoxes(int[] numXYZBoxes) {
-    arraycopy(numXYZBoxes, 0, boxOpt.numXYZBoxes, 0, boxOpt.numXYZBoxes.length);
+    arraycopy(numXYZBoxes, 0, boxOpt.numXYZCells, 0, boxOpt.numXYZCells.length);
   }
 
   /**
@@ -2213,22 +2213,16 @@ public class RotamerOptimization implements Terminatable {
   private double independent(List<Residue> residues) {
     double e = 0.0;
     List<Residue> singletonResidue = new ArrayList<>(Collections.nCopies(1, null));
-    double startingEnergy;
-    Residue residue = residues.get(0);
-    singletonResidue.set(0, residue);
-    Rotamer[] rotamers = residue.getRotamers();
-    Rotamer rotamer = rotamers[0];
-    RotamerLibrary.applyRotamer(residue, rotamer);
-    startingEnergy = currentEnergy(singletonResidue);
     for (int i = 0; i < residues.size(); i++) {
-      residue = residues.get(i);
+      Residue residue = residues.get(i);
       singletonResidue.set(0, residue);
       logger.info(format(" Optimizing %s side-chain.", residue));
-      rotamers = residue.getRotamers();
+      Rotamer[] rotamers = residue.getRotamers();
       e = Double.MAX_VALUE;
       int bestRotamer = 0;
+      double startingEnergy = 0.0;
       for (int j = 0; j < rotamers.length; j++) {
-        rotamer = rotamers[j];
+        Rotamer rotamer = rotamers[j];
         RotamerLibrary.applyRotamer(residue, rotamer);
         if (algorithmListener != null) {
           algorithmListener.algorithmUpdate(molecularAssembly);
@@ -2236,18 +2230,23 @@ public class RotamerOptimization implements Terminatable {
         double newE = Double.NaN;
         try {
           if (rotamer.isTitrating) {
-            newE = currentEnergy(singletonResidue) + rotamer.getRotamerPhBias() - startingEnergy;
+            newE = currentEnergy(singletonResidue) + rotamer.getRotamerPhBias();
           } else {
-            newE = currentEnergy(singletonResidue) - startingEnergy;
+            newE = currentEnergy(singletonResidue);
+          }
+          // Report energies relative to the first rotamer.
+          if (j == 0) {
+            startingEnergy = newE;
+            newE = 0.0;
+          } else {
+            newE -= startingEnergy;
           }
           logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
-          double singularityThreshold = -1000;
-          if (newE < -1000) {
+          double singularityThreshold = -100000;
+          if (newE < singularityThreshold) {
             String message = format("   Rejecting as energy (%s << %s) is likely an error.", formatEnergy(newE), formatEnergy(singularityThreshold));
             logger.info(message);
             newE = Double.MAX_VALUE;
-          } else {
-            logger.info(format("  Energy %8s %-2d: %s", residue.toString(rotamers[j]), j, formatEnergy(newE)));
           }
         } catch (ArithmeticException ex) {
           logger.info(format(" Exception %s in energy calculations during independent for %s-%d", ex, residue, j));
@@ -2257,7 +2256,7 @@ public class RotamerOptimization implements Terminatable {
           bestRotamer = j;
         }
       }
-      rotamer = rotamers[bestRotamer];
+      Rotamer rotamer = rotamers[bestRotamer];
       RotamerLibrary.applyRotamer(residue, rotamer);
       optimum[i] = bestRotamer;
       logger.info(format(" Best Energy %8s %-2d: %s", residue.toString(rotamer), bestRotamer, formatEnergy(e)));
@@ -3219,15 +3218,11 @@ public class RotamerOptimization implements Terminatable {
   }
 
   private void applyEliminationCriteria(Residue[] residues) {
-    // allocateEliminationMemory is now called for all algorithms in rotamerEnergies method.
-    // allocateEliminationMemory(residues);
-
     if (verboseEnergies) {
       try {
         logIfRank0(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
       } catch (ArithmeticException ex) {
-        logger.severe(
-            format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
+        logger.severe(format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
       }
     }
 
@@ -3481,8 +3476,7 @@ public class RotamerOptimization implements Terminatable {
     int loaded = 0;
     if (loadEnergyRestart) {
       if (usingBoxOptimization) {
-        loaded = eE.loadEnergyRestart(energyRestartFile, residues, boxOpt.boxLoadIndex,
-            boxOpt.boxLoadCellIndices);
+        loaded = eE.loadEnergyRestart(energyRestartFile, residues, boxOpt.boxLoadIndex, boxOpt.boxLoadCellIndices);
       } else {
         loaded = eE.loadEnergyRestart(energyRestartFile, residues);
       }
@@ -4428,11 +4422,11 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Number of boxes for box optimization in X, Y, Z.
      */
-    public final int[] numXYZBoxes = {3, 3, 3};
+    public final int[] numXYZCells = {3, 3, 3};
     /**
      * Box border size.
      */
-    public double boxBorderSize = 0;
+    public double cellBorderSize = 0;
     /**
      * Approximate box size.
      */
@@ -4444,11 +4438,11 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Index of the first box to optimize.
      */
-    public int boxStart = 0;
+    public int cellStart = 0;
     /**
      * Index of the last box to optimize.
      */
-    public int boxEnd = -1;
+    public int cellEnd = -1;
     /**
      * Flag to indicate manual definition of a super box.
      */
@@ -4491,33 +4485,32 @@ public class RotamerOptimization implements Terminatable {
 
       // Cells indexed by x*(YZ divisions) + y*(Z divisions) + z.
       int totalCells = getTotalCellCount(crystal); // Also initializes cell count if using -bB
-      if (boxStart > totalCells - 1) {
-        logger.severe(format(
-            " FFX shutting down: Box optimization start is out of range of total boxes: %d > %d",
-            (boxStart + 1), totalCells));
+      if (cellStart > totalCells - 1) {
+        logIfRank0(format(" First cell out of range (%d) -- reset to first cell.", cellStart + 1));
+        cellStart = 0;
       }
-      if (boxEnd > totalCells - 1) {
-        boxEnd = totalCells - 1;
-        logIfRank0(" Final box out of range: reset to last possible box.");
-      } else if (boxEnd < 0) {
-        boxEnd = totalCells - 1;
+      if (cellEnd > totalCells - 1) {
+        // Warn the user if the box end was explicitly set incorrectly.
+        if (cellEnd != -1 && cellEnd != Integer.MAX_VALUE) {
+          logIfRank0(format(" Final cell out of range (%d) -- reset to last cell.", cellEnd + 1));
+        }
+        cellEnd = totalCells - 1;
+      } else if (cellEnd < 0) {
+        cellEnd = totalCells - 1;
       }
-      BoxOptCell[] cells = loadCells(crystal, residues);
+      ManyBodyCell[] cells = loadCells(crystal, residues);
       int numCells = cells.length;
-      logIfRank0(format(" Optimizing boxes  %d  to  %d", (boxStart + 1), (boxEnd + 1)));
+      logIfRank0(format(" Optimizing cells %d to %d", (cellStart + 1), (cellEnd + 1)));
       for (int i = 0; i < numCells; i++) {
-        BoxOptCell celli = cells[i];
-        List<Residue> residueSubsetList = celli.getResiduesAsList();
-        int[] cellIndices = celli.getXYZIndex();
-        logIfRank0(format("\n Iteration %d of the box optimization.", (i + 1)));
-        logIfRank0(format(" Cell index (linear): %d", (celli.getLinearIndex() + 1)));
-        logIfRank0(format(" Cell xyz indices: x = %d, y = %d, z = %d", cellIndices[0] + 1,
-            cellIndices[1] + 1, cellIndices[2] + 1));
+        ManyBodyCell manyBodyCell = cells[i];
+        List<Residue> residueSubsetList = manyBodyCell.getResiduesAsList();
+        int[] cellIndices = manyBodyCell.getABCIndices();
+        logIfRank0(format("\n Iteration %d of cell based optimization.", (i + 1)));
+        logIfRank0(manyBodyCell.toString());
         int nResidueSubset = residueSubsetList.size();
         if (nResidueSubset > 0) {
           if (rank0 && writeEnergyRestart && printFiles) {
-            String boxHeader = format(" Box %d: %d,%d,%d", i + 1, cellIndices[0], cellIndices[1],
-                cellIndices[2]);
+            String boxHeader = format(" Box %d: %d,%d,%d", i + 1, cellIndices[0], cellIndices[1], cellIndices[2]);
             try {
               energyWriter.append(boxHeader);
               energyWriter.newLine();
@@ -4525,7 +4518,6 @@ public class RotamerOptimization implements Terminatable {
               logger.log(Level.SEVERE, " Exception writing box header to energy restart file.", ex);
             }
           }
-
           if (loadEnergyRestart) {
             boxLoadIndex = i + 1;
             boxLoadCellIndices = new int[3];
@@ -4535,14 +4527,8 @@ public class RotamerOptimization implements Terminatable {
           }
 
           long boxTime = -System.nanoTime();
-          Residue firstResidue = residueSubsetList.get(0);
+          Residue firstResidue = residueSubsetList.getFirst();
           Residue lastResidue = residueSubsetList.get(nResidueSubset - 1);
-          if (firstResidue != lastResidue) {
-            logIfRank0(
-                format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
-          } else {
-            logIfRank0(format(" Residue %s", firstResidue.toString()));
-          }
           if (revert) {
             ResidueState[] coordinates = ResidueState.storeAllCoordinates(residueSubsetList);
             double startingEnergy = 0;
@@ -4550,17 +4536,13 @@ public class RotamerOptimization implements Terminatable {
             try {
               startingEnergy = currentEnergy(residueSubsetList);
             } catch (ArithmeticException ex) {
-              logger.severe(
-                  format(" Exception %s in calculating starting energy of a box; FFX shutting down",
-                      ex));
+              logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex));
             }
             globalOptimization(residueSubsetList);
             try {
               finalEnergy = currentEnergy(residueSubsetList);
             } catch (ArithmeticException ex) {
-              logger.severe(
-                  format(" Exception %s in calculating starting energy of a box; FFX shutting down",
-                      ex));
+              logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex));
             }
             if (startingEnergy <= finalEnergy) {
               logger.info(
@@ -4577,8 +4559,7 @@ public class RotamerOptimization implements Terminatable {
             long currentTime = System.nanoTime();
             boxTime += currentTime;
             logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfRank0(
-                format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+            logIfRank0(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           } else {
             globalOptimization(residueSubsetList);
             // Copy sliding window optimal rotamers into the overall optimum array.
@@ -4590,8 +4571,7 @@ public class RotamerOptimization implements Terminatable {
             long currentTime = System.nanoTime();
             boxTime += currentTime;
             logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfRank0(
-                format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+            logIfRank0(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           }
           if (rank0 && printFiles) {
             // Don't write a file if it's the final iteration.
@@ -4600,8 +4580,7 @@ public class RotamerOptimization implements Terminatable {
             }
             try {
               if (firstResidue != lastResidue) {
-                logIfRank0(format(" File with residues %s ... %s in window written.", firstResidue,
-                    lastResidue));
+                logIfRank0(format(" File with residues %s ... %s in window written.", firstResidue, lastResidue));
               } else {
                 logIfRank0(format(" File with residue %s in window written.", firstResidue));
               }
@@ -4716,13 +4695,13 @@ public class RotamerOptimization implements Terminatable {
         boxes[2] = crystal.c / approxBoxLength;
         for (int i = 0; i < boxes.length; i++) {
           if (boxes[i] < 1) {
-            numXYZBoxes[i] = 1;
+            numXYZCells[i] = 1;
           } else {
-            numXYZBoxes[i] = (int) boxes[i];
+            numXYZCells[i] = (int) boxes[i];
           }
         }
       }
-      for (int numXYZBox : numXYZBoxes) {
+      for (int numXYZBox : numXYZCells) {
         numCells *= numXYZBox;
       }
       return numCells;
@@ -4736,16 +4715,14 @@ public class RotamerOptimization implements Terminatable {
      * @return Filled cells.
      */
     @SuppressWarnings("fallthrough")
-    private BoxOptCell[] loadCells(Crystal crystal, Residue[] residues) {
-      double xCellBorderFracSize = (boxBorderSize / crystal.a);
-      double yCellBorderFracSize = (boxBorderSize / crystal.b);
-      double zCellBorderFracSize = (boxBorderSize / crystal.c);
-      logIfRank0(
-          format(" Number of boxes along x: %d, y: %d, z: %d", numXYZBoxes[0], numXYZBoxes[1],
-              numXYZBoxes[2]));
+    private ManyBodyCell[] loadCells(Crystal crystal, Residue[] residues) {
+      double aCellBorderFracSize = (cellBorderSize / crystal.a);
+      double bCellBorderFracSize = (cellBorderSize / crystal.b);
+      double cCellBorderFracSize = (cellBorderSize / crystal.c);
+      int numCells = cellEnd - cellStart + 1;
+      logIfRank0(format(" Number of fractional cells: %d = %d x %d x %d", numCells,  numXYZCells[0], numXYZCells[1], numXYZCells[2]));
 
-      int numCells = boxEnd - boxStart + 1;
-      BoxOptCell[] cells = new BoxOptCell[numCells];
+      ManyBodyCell[] cells = new ManyBodyCell[numCells];
       int currentIndex = 0;
       int filledCells = 0;
       int[] xyzIndices = new int[3];
@@ -4756,44 +4733,44 @@ public class RotamerOptimization implements Terminatable {
        * 4, 5, and 3 boxes along xyz would be indexed 2*5*3 + 3*3 + 2 = 41).
        * The int[] indices stores separate x, y, and z indices.
        */
-      for (int i = 0; i < numXYZBoxes[0]; i++) {
+      for (int i = 0; i < numXYZCells[0]; i++) {
         if (doBreak) {
           break;
         }
         xyzIndices[0] = i;
-        for (int j = 0; j < numXYZBoxes[1]; j++) {
+        for (int j = 0; j < numXYZCells[1]; j++) {
           if (doBreak) {
             break;
           }
           xyzIndices[1] = j;
-          for (int k = 0; k < numXYZBoxes[2]; k++) {
-            if (currentIndex < boxStart) {
+          for (int k = 0; k < numXYZCells[2]; k++) {
+            if (currentIndex < cellStart) {
               ++currentIndex;
               continue;
-            } else if (currentIndex > boxEnd) {
+            } else if (currentIndex > cellEnd) {
               doBreak = true;
               break;
             }
             xyzIndices[2] = k;
             double[] fracCoords = new double[6];
-            fracCoords[0] = (((1.0 * i) / numXYZBoxes[0]) - xCellBorderFracSize);
-            fracCoords[1] = (((1.0 * j) / numXYZBoxes[1]) - yCellBorderFracSize);
-            fracCoords[2] = (((1.0 * k) / numXYZBoxes[2]) - zCellBorderFracSize);
-            fracCoords[3] = (((1.0 + i) / numXYZBoxes[0]) + xCellBorderFracSize);
-            fracCoords[4] = (((1.0 + j) / numXYZBoxes[1]) + yCellBorderFracSize);
-            fracCoords[5] = (((1.0 + k) / numXYZBoxes[2]) + zCellBorderFracSize);
-            cells[filledCells++] = new BoxOptCell(fracCoords, xyzIndices, currentIndex);
+            fracCoords[0] = (((1.0 * i) / numXYZCells[0]) - aCellBorderFracSize);
+            fracCoords[1] = (((1.0 * j) / numXYZCells[1]) - bCellBorderFracSize);
+            fracCoords[2] = (((1.0 * k) / numXYZCells[2]) - cCellBorderFracSize);
+            fracCoords[3] = (((1.0 + i) / numXYZCells[0]) + aCellBorderFracSize);
+            fracCoords[4] = (((1.0 + j) / numXYZCells[1]) + bCellBorderFracSize);
+            fracCoords[5] = (((1.0 + k) / numXYZCells[2]) + cCellBorderFracSize);
+            cells[filledCells++] = new ManyBodyCell(fracCoords, xyzIndices, currentIndex);
             ++currentIndex;
           }
         }
       }
       assignResiduesToCells(crystal, residues, cells);
-      for (BoxOptCell cell : cells) {
-        cell.sortBoxResidues();
+      for (ManyBodyCell cell : cells) {
+        cell.sortCellResidues();
       }
       switch (direction) {
         case BACKWARD:
-          BoxOptCell[] tempCells = new BoxOptCell[numCells];
+          ManyBodyCell[] tempCells = new ManyBodyCell[numCells];
           for (int i = 0; i < numCells; i++) {
             tempCells[i] = cells[numCells - (i + 1)];
           }
@@ -4815,12 +4792,12 @@ public class RotamerOptimization implements Terminatable {
      * @param residues List of residues to be optimized.
      * @param cells    BoxOptCell instance.
      */
-    private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
+    private void assignResiduesToCells(Crystal crystal, Residue[] residues, ManyBodyCell[] cells) {
       // Search through residues, add them to all boxes containing their
       // fractional coordinates.
       int nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
-      for (BoxOptCell cell : cells) {
+      for (ManyBodyCell cell : cells) {
         Set<Residue> toAdd = new HashSet<>();
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
           SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);

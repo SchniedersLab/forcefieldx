@@ -172,10 +172,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
 
     // Used to seed an initial guess.
-    forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
-        FORWARDS);
-    backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
-        BACKWARDS);
+    forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, FORWARDS);
+    backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, BACKWARDS);
 
     nWindows = nTrajectories - 1;
     forwardZwanzig = forwardsFEP.getBinEnergies();
@@ -366,8 +364,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
       if (len0 == 0 || len1 == 0) {
         barEstimates[i] = c;
-        logger.log(warningLevel,
-            format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
+        logger.log(warningLevel, format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
         continue;
       }
 

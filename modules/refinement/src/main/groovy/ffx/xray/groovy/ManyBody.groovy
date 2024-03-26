@@ -123,7 +123,7 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("manybody-titration", "true")
     }
 
-    // Xray ManyBody expansion converges more quickly with the NEA set.
+    // Many-Body expansion of the X-ray target converges much more quickly with the NEA.
     String nea = System.getProperty("native-environment-approximation", "true")
     System.setProperty("native-environment-approximation", nea)
 
@@ -140,8 +140,6 @@ class ManyBody extends AlgorithmsScript {
       molecularAssemblies = [activeAssembly]
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
-
-    //MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
     CompositeConfiguration properties = activeAssembly.getProperties()
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
@@ -162,11 +160,12 @@ class ManyBody extends AlgorithmsScript {
 
     // Handle rotamer optimization with titration.
     if (titrationPH > 0) {
-      logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+      logger.info(format("\n Adding titration hydrogen to: %s\n", filenames.get(0)))
       List<Integer> resNumberList = new ArrayList<>()
       for (Residue residue : residues) {
         resNumberList.add(residue.getResidueNumber())
       }
+
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
           resNumberList, titrationPH)
@@ -179,11 +178,10 @@ class ManyBody extends AlgorithmsScript {
     // Load parsed X-ray properties.
     xrayOptions.setProperties(parseResult, properties)
 
-    // Set up diffraction data (can be multiple files)
+    // Set up the diffraction data, which could be multiple files.
     DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
     refinementEnergy.setScaling(null)
-
 
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
@@ -213,7 +211,7 @@ class ManyBody extends AlgorithmsScript {
       double[] x = new double[refinementEnergy.getNumberOfVariables()]
       x = refinementEnergy.getCoordinates(x)
       double e = refinementEnergy.energy(x, true)
-      logger.info(format(" Starting energy: %16.8f ", e))
+      logger.info(format("\n Initial target energy: %16.8f ", e))
 
       List<Residue> residueList = rotamerOptimization.getResidues()
       RotamerLibrary.measureRotamers(residueList, false)

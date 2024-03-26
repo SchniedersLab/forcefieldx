@@ -43,7 +43,7 @@
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
-            <target>${targetVersion}</target>
+            <release>${compileVersion}</release>
             <useIncrementalCompilation>true</useIncrementalCompilation>
           </configuration>
           <version>${compiler.version}</version>
@@ -346,16 +346,16 @@
           <arguments>
             <argument>-ms1G</argument>
             <argument>-mx1G</argument>
-            <argument>-Djava.awt.headless=true</argument>
             <argument>-classpath</argument>
-            <argument>bin/ffx-all.jar</argument>
+            <argument>lib/*</argument>
+            <!-- argument>-Djava.awt.headless=true</argument>
+            <argument>-Dj3d.rend=noop</argument>
             <argument>ffx.Main</argument>
-            <argument>timer</argument>
+            <argument>Timer</argument>
             <argument>-n</argument>
-            <argument>100000</argument>
-            <argument>-c</argument>
-            <argument>1</argument>
-            <argument>examples/ubiquitin.xyz</argument>
+            <argument>1000</argument>
+            <argument>examples/ubiquitin.xyz</argument -->
+            <argument>ffx.numerics.estimator.MultistateBennettAcceptanceRatio</argument>
           </arguments>
           <executable>java</executable>
         </configuration>
@@ -976,26 +976,26 @@
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.6.0</assembly.version>
-    <biojava.version>7.1.0</biojava.version>
+    <assembly.version>3.7.1</assembly.version>
+    <biojava.version>7.1.1</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.3.1</checkstyle.version>
-    <ciftools-java.version>5.0.2</ciftools-java.version>
+    <ciftools-java.version>6.0.0</ciftools-java.version>
     <clean.version>3.3.2</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.9.0</commons-configuration2.version>
+    <commons-configuration2.version>2.10.0</commons-configuration2.version>
     <commons-io.version>2.15.1</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>21</compileVersion>
-    <compiler.version>3.12.1</compiler.version>
+    <compiler.version>3.13.0</compiler.version>
     <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.1</deploy.version>
@@ -1006,19 +1006,18 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>7.0.0</git-commit-id.version>
+    <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>23.1.2</graal.version>
-    <!-- groovy-all.version>4.0.16</groovy-all.version -->
-    <groovy-all.version>5.0.0-alpha-5</groovy-all.version>
-    <guava.version>33.0.0-jre</guava.version>
+    <graal.version>24.0.0</graal.version>
+    <groovy-all.version>5.0.0-alpha-7</groovy-all.version>
+    <guava.version>33.1.0-jre</guava.version>
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.8</javaparser.version>
+    <javaparser.version>3.25.9</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.6.3</javadoc.version>
-    <jakarta-xml.version>4.0.1</jakarta-xml.version>
+    <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
@@ -1027,7 +1026,7 @@
     <jxr.version>3.3.2</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.23.0</log4j.version>
+    <log4j.version>2.23.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
