@@ -63,6 +63,7 @@ public class Rotamer {
   public final double chi5;
   final double chi6;
   final double chi7;
+
   /**
    * An array of chi angles for this rotamer.
    */
@@ -99,6 +100,7 @@ public class Rotamer {
    * The TitrationUtils handles application of rotamer specific force field parameters.
    */
   private TitrationUtils titrationUtils = null;
+  private int rotIndex;
 
   /**
    * Constructor for unknown residue types.
@@ -142,6 +144,19 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
+   * @param aminoAcid3 a {@link AminoAcid3} object.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 aminoAcid3, int rotIndex, double... values) {
+    this(values);
+    this.aminoAcid3 = aminoAcid3;
+    this.rotIndex = rotIndex;
+  }
+
+
+  /**
+   * Constructor for Rotamer.
+   *
    * @param nucleicAcid3 a {@link NucleicAcid3} object.
    * @param values a double.
    */
@@ -162,6 +177,17 @@ public class Rotamer {
     if (titrationUtils != null) {
       this.isTitrating = true;
       this.titrationUtils = titrationUtils;
+    } else {
+      this.isTitrating = false;
+    }
+  }
+
+  public Rotamer(AminoAcid3 aminoAcid3, TitrationUtils titrationUtils, int rotIndex, double... values) {
+    this(aminoAcid3, values);
+    if (titrationUtils != null) {
+      this.isTitrating = true;
+      this.titrationUtils = titrationUtils;
+      this.rotIndex = rotIndex;
     } else {
       this.isTitrating = false;
     }
@@ -375,7 +401,14 @@ public class Rotamer {
     }
   }
 
+  public int getRotIndex() {return rotIndex;}
+
   public double getRotamerPhBias() {
     return titrationUtils.getRotamerPhBias(aminoAcid3);
   }
+
+  public double[] getAngles() {
+    return angles;
+  }
+
 }
