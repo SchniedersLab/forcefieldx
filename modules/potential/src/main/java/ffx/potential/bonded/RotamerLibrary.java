@@ -1874,7 +1874,7 @@ public class RotamerLibrary {
         double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
 
         intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
-        intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, 0.0, 0);
+        intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, rotamer.chi2, 0);
         intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
         intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
         intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
@@ -1926,7 +1926,7 @@ public class RotamerLibrary {
         intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
         intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, 1);
         intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 107.9, -1);
-        intxyz(HD2, OD2, dHD2_OD2, CG, dHD2_OD2_CG, OD1, 0, 0);
+        intxyz(HD2, OD2, dHD2_OD2, CG, dHD2_OD2_CG, OD1, rotamer.chi3, 0);
       }
       case ASN -> {
         Atom CA = (Atom) residue.getAtomNode("CA");
@@ -2071,7 +2071,7 @@ public class RotamerLibrary {
         intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
         intxyz(HG2, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, 1);
         intxyz(HG3, CG, dHG_CG, CB, dHG_CG_CB, CD, 107.9, -1);
-        intxyz(HE2, OE2, dHE2_OE2, CD, dHE2_OE2_CD, OE1, 0.0, 0);
+        intxyz(HE2, OE2, dHE2_OE2, CD, dHE2_OE2_CD, OE1, rotamer.chi4, 0);
       }
       case GLN -> {
         Atom CA = (Atom) residue.getAtomNode("CA");
