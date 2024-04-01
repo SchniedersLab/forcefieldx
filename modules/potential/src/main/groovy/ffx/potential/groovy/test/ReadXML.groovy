@@ -363,7 +363,7 @@ class ReadXML extends PotentialScript {
                         break
 
                     case "PeriodicTorsionForce":
-                        // Import additional (water) atom types
+
                         // Note: don't need this for TIP3P.xml, but here if we're combining other xml's
                         for (int i = 0; i < watDoc.getElementsByTagName("Proper").length; i++) {
                             Node watNode = doc.importNode(watDoc.getElementsByTagName("Proper").item(i), true)
@@ -946,16 +946,44 @@ class ReadXML extends PotentialScript {
                         // <Torsion> : map="0-11", class1-5
 
                         NodeList cmaps = parentNode.item(0).getChildNodes()
+                        double[][] energiesMaps
                         for (Node cmap : cmaps) {
 //                            public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
                             // int[5] atomClasses come from <Torsion>
                             // int[2] gridPoints - 25 25 in CHARMM_22_CMAP; should be length(torsion1) length(torsion2)
-                            // double[] torsion1
-                            // double[] torsion2
+                            int numMaps
                             // double[] energy
                             if (cmap.getNodeName() == "Map") {
                                 String nodeData = cmap.getChildNodes().item(0).getNodeValue() // gets data in <Map> node
-                                //TODO
+
+                                int nx;
+                                int ny;
+                                for(int i=0; i<1; i++) {
+                                    String[] arr = nodeData.split('[\\n\\r]');
+                                    nx = arr.length;
+                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
+                                    //parses it as doubles at the same time
+                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
+                                }
+                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
+
+                                int[] gridPoints = new int[]{nx,ny};
+                                double[] torsion1;
+                                double[] torsion2;
+                                double phi = -180.0;
+                                double psi = -180;
+                                for (int i=0; i<nx; i++) {
+                                    //reset psi to -180.0 each outer iteration, increment phi
+                                    psi = -180.0;
+                                    phi = phi + (15*i);
+                                    for (int j=0; j<ny; j++){
+                                        //torsion1 says constant ny times
+                                        torsion1[j] = phi
+                                        //iterate through psi from -180 to 180 each outer loop
+                                        torsion2[j] = psi + (15*j);
+                                    }
+                                }
+                                numMaps++;
                             } else if (cmap.getNodeName() == "Torsion") {
                                 int[] classes = new int[5]
                                 String map = cmap.getAttribute("map")
@@ -969,6 +997,8 @@ class ReadXML extends PotentialScript {
                                 logger.info("CHECK")
                             }
                         }
+
+                        //TODO: make actual torsiontorsiontype objects
                         break
 
                     case "NonbondedForce":
