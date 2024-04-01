@@ -380,23 +380,29 @@ class GenZ extends AlgorithmsScript {
                 String formatedTautomerSum = format("%.6f", tautomerSum)
                 switch (residue.getName()) {
                     case "HIS":
+                    case "HIE":
+                    case "HID":
                         logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
                                 "HIE" + "\t" + formatedDeprotSum + "\t" +
                                 "HID" + "\t" + formatedTautomerSum)
                         break
                     case "LYS":
+                    case "LYD":
                         logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
                                 "LYD" + "\t" + formatedDeprotSum)
                         break
                     case "ASH":
+                    case "ASP":
                         logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
                                 "ASH" + "\t" + formatedProtSum)
                         break
                     case "GLH":
+                    case "GLU":
                         logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
                                 "GLH" + "\t" + formatedProtSum)
                         break
                     case "CYS":
+                    case "CYD":
                         logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
                                 "CYD" + "\t" + formatedDeprotSum)
                         break
