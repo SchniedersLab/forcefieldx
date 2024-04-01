@@ -198,6 +198,11 @@ class GenZ extends AlgorithmsScript {
 
         List<Residue> titrateResidues = new ArrayList<>()
 
+        //Prepare variables for saving out the highest population rotamers (optimal rotamers)
+        int[] optimalRotamers
+        Set<Atom> excludeAtoms = new HashSet<>()
+        boolean isTitrating = false
+
         //Calculate all possible permutations for the number of assembles
         for (int j = 0; j < numLoop; j++) {
 
@@ -312,12 +317,18 @@ class GenZ extends AlgorithmsScript {
                 totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
             }
 
+            optimalRotamers = rotamerOptimization.getOptimumRotamers()
+            if (manyBodyOptions.getTitration()) {
+                isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
+            }
+
         }
 
         //Print information from the fraction protonated calculations
 
         FileWriter fileWriter = new FileWriter("populations.txt")
         int residueIndex = 0
+        Rotamer[] mostPopRot = new Rotamer[selectedResidues.size()]
         for (Residue residue : selectedResidues) {
             fileWriter.write("\n")
             protonationBoltzmannSums = new double[selectedResidues.size()]
@@ -328,7 +339,7 @@ class GenZ extends AlgorithmsScript {
             Rotamer[] rotamers = residue.getRotamers()
             for (Rotamer rotamer : rotamers) {
                 String rotPop = format("%.6f", populationArray[residueIndex][rotamer.getRotIndex()])
-                fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
+                fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
                         rotamer.toString() + "\t" + rotPop + "\n")
                 if (pKa) {
                     switch (rotamer.getName()) {
@@ -369,24 +380,24 @@ class GenZ extends AlgorithmsScript {
                 String formatedTautomerSum = format("%.6f", tautomerSum)
                 switch (residue.getName()) {
                     case "HIS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
+                        logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
                                 "HIE" + "\t" + formatedDeprotSum + "\t" +
                                 "HID" + "\t" + formatedTautomerSum)
                         break
                     case "LYS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
+                        logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
                                 "LYD" + "\t" + formatedDeprotSum)
                         break
                     case "ASH":
-                        logger.info("\n " + residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
+                        logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
                                 "ASH" + "\t" + formatedProtSum)
                         break
                     case "GLH":
-                        logger.info("\n " + residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
+                        logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
                                 "GLH" + "\t" + formatedProtSum)
                         break
                     case "CYS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
+                        logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
                                 "CYD" + "\t" + formatedDeprotSum)
                         break
                     default:
@@ -395,9 +406,25 @@ class GenZ extends AlgorithmsScript {
             }
             residueIndex += 1
         }
-
         fileWriter.close()
         System.out.println("\n Successfully wrote to the populations file.")
+
+
+
+        System.setProperty("standardizeAtomNames", "false")
+        File modelFile = saveDirFile(activeAssembly.getFile())
+        PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+                activeAssembly.getProperties())
+        if (manyBodyOptions.getTitration()) {
+            String remark = format("Titration pH: %6.3f", titrationPH)
+            if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+                logger.info(format(" Save failed for %s", activeAssembly))
+            }
+        } else {
+            if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+                logger.info(format(" Save failed for %s", activeAssembly))
+            }
+        }
         if (mutatingResidue != -1) {
             //Calculate Gibbs free energy change of mutating residues
             double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]))
@@ -407,6 +434,8 @@ class GenZ extends AlgorithmsScript {
 
         return this
     }
+
+
 
     /**
      * Returns the potential energy of the active assembly. Used during testing assertions.

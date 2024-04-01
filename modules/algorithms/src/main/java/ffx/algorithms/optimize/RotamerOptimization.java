@@ -2368,7 +2368,6 @@ public class RotamerOptimization implements Terminatable {
                     // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
                     if (evaluatedPermutations == 1) {
                         refEnergy = totalEnergy;
-                        logger.info("The reference energy: " + refEnergy);
                     }
                     double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
 
@@ -2436,13 +2435,21 @@ public class RotamerOptimization implements Terminatable {
         fraction = new double[residues.length][54];
         populationBoltzmann = new double[residues.length][54];
         partitionFunction(residues, i, currentRotamers);
+        optimum = new int[residues.length];
         for (int m = 0; m < fraction.length; m++) {
             for (int n = 0; n < 54; n++) {
                 fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+                if(n > 0 && fraction[m][n] > fraction[m][n-1]){
+                    optimum[m] = n;
+                }
             }
+            Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
+            RotamerLibrary.applyRotamer(residues[m],highestPopRot);
         }
-        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations);
+
+        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
     }
+
 
   /**
    * Return an integer array of optimized rotamers following rotamer optimization.
