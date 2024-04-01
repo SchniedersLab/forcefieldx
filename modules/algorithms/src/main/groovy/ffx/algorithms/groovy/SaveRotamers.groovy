@@ -37,13 +37,18 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.*
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parameters.TitrationUtils
+import ffx.potential.parsers.PDBFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import ffx.algorithms.optimize.TitrationManyBody
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getExtension
@@ -115,6 +120,12 @@ class SaveRotamers extends PotentialScript {
       description = 'Adjusts the pucker of the 5\' residue to match the rotamer.')
   boolean upstreamPucker
 
+  /**
+   * --tR or --titrateResidue to allow for titration states to be saved
+   */
+  @Option(names = ['--tR', '--titrateResidue'], paramLabel = 'false', defaultValue = 'false',
+          description = 'Titrate residues.')
+  boolean titrateResidue
 
   /**
    * The final argument is an XYZ or PDB coordinate file.
@@ -122,6 +133,9 @@ class SaveRotamers extends PotentialScript {
   @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in XYZ or PDB format.')
   private String filename = null
+
+  TitrationManyBody titrationManyBody
+  TitrationUtils titrationUtils
 
   /**
    * SaveRotamers Constructor.
@@ -156,9 +170,22 @@ class SaveRotamers extends PotentialScript {
       return this
     }
 
+
     // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
+    CompositeConfiguration properties = activeAssembly.getProperties()
 
+    if(titrateResidue){
+      List<Residue> residues = activeAssembly.getResidueList()
+      List<Integer> resNumberList = new ArrayList<>()
+      for(Residue residue: residues){
+        resNumberList.add(residue.getResidueNumber())
+      }
+      titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+              resNumberList, 7.0)
+      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
+      setActiveAssembly(protonatedAssembly)
+    }
     RotamerLibrary rLib = new RotamerLibrary(
         RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true)
     String chain = Character.toString(c)
@@ -222,13 +249,15 @@ class SaveRotamers extends PotentialScript {
 
     String ext = getExtension(filename)
     filename = removeExtension(filename)
-
+    Set<Atom> excludeAtoms = new HashSet<>()
+    List<Residue> removeAtomList = new ArrayList<>()
     if (saveAllRotamers) {
       if (allStart >= nrotamers) {
         logger.info(" Specified start range is outside of rotamer range. No action taken.")
       } else {
         for (int i = allStart; i < nrotamers; i++) {
           RotamerLibrary.applyRotamer(residue, rotamers[i], independent)
+          logger.info(rotamers[i].getName())
           if (upstreamPucker) {
             double prevDelta = rotamers[i].chi1
             NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(prevDelta, isDeoxy)
@@ -238,8 +267,25 @@ class SaveRotamers extends PotentialScript {
             logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
-            logger.info(format(" Saving rotamer %d", i))
-            potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
+            if(titrateResidue){
+              excludeAtoms.clear()
+              removeAtomList.clear()
+              removeAtomList.add(residue)
+
+              int[] currentRot = [i]
+              boolean isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms,currentRot,
+                      removeAtomList)
+              //properties.setProperty("standardizeAtomNames", "false")
+              File modelFile = new File(filename + ".pdb")
+              PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+                      properties)
+              if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+                logger.info(format(" Save failed for %s", activeAssembly))
+              }
+            } else {
+              logger.info(format(" Saving rotamer %d", i))
+              potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
+            }
           }
         }
       }

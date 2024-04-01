@@ -144,6 +144,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private SeedType seedType;
 
+  /**
+   * Enum of MBAR seed types.
+   */
   public enum SeedType {BAR, ZWANZIG, ZEROS}
 
   /**
@@ -378,7 +381,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     return stream(differences).allMatch(d -> d < tolerance);
   }
 
-  //////// Methods for calculating MBAR variables, vectors, and matrices ////////
+  //////// Methods for calculating MBAR variables, vectors, and matrices. ////////
 
   /**
    * MBAR objective function. This is used for L-BFGS optimization.
@@ -653,7 +656,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     return diffMatrix;
   }
 
-  //////// Methods for solving MBAR with self-consistent iteration, L-BFGS optimization, and Newton-Raphson ////////
+  //////// Methods for solving MBAR with self-consistent iteration, L-BFGS optimization, and Newton-Raphson. ////////
 
   /**
    * Self-consistent iteration to update free energies.
@@ -918,7 +921,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   public double[] getBinEnthalpies() {
     return mbarEnthalpy;
   }
-
 
   /**
    * Harmonic oscillators test case generates data for testing the MBAR implementation

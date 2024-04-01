@@ -206,8 +206,10 @@ class MutatePDB extends AlgorithmsScript {
       }
     }
     pdbFilter.writeFile(structureFile, false)
+    String versionFileName = pdbFilter.getVersionFileName()
 
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
+    binding.setVariable('versionFileName', versionFileName)
 
     return this
   }
