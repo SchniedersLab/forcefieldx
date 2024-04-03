@@ -51,6 +51,7 @@ import static java.util.Arrays.stream;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
+ * @author Matthew J. Speranza
  * @since 1.0
  */
 public abstract class SequentialEstimator implements StatisticalEstimator {
@@ -59,8 +60,12 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
   protected final double[][] eLow;
   protected final double[][] eAt;
   protected final double[][] eHigh;
-  protected final double[][][] eAll; // [[[energies]perturbationsAcrossLambda]lambdaWindow] N X K array for each lambda window
-  protected final double[][] eAllFlat; // [lambda][evaluationsAtLambda]
+  protected final double[][][] eAll; // [lambdaWindow][perturbations][energies]
+  protected final double[][] eAllFlat; // [lambda][evaluationsAtThisLambdaFromAllOtherLambda]
+  /**
+   * The number of snaps in each lambda trajectory file.
+   */
+  protected final double[] snaps;
   protected final double[] temperatures;
   protected final int nTrajectories;
 
@@ -87,6 +92,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     nTrajectories = lambdaValues.length;
     eAll = null;
     eAllFlat = null;
+    snaps = null;
 
     assert stream(energiesLow[0]).allMatch(Double::isNaN)
         && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
@@ -131,20 +137,18 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * <p>
    * This constructor also breaks energiesAll into a flattened array (across the second dimension) such that
    * the first dimension is the lambda window where the energy was evaluated and the second dimension is the
-   * samples. energiesAll is also broken down into eAt, eLow, and eHigh arrays for convenience & so that BAR
+   * snaps. energiesAll is also broken down into eAt, eLow, and eHigh arrays for convenience & so that BAR
    * calculations can be performed and compared.
    *
    * @param lambdaValues Values of lambda dynamics was run at.
-   * @param energiesAll Potential energies of trajectory L at all other lambdas.
+   * @param energiesAll Potential energy snaps of trajectories at all other lambdas. (Missing states are NaN)
    * @param temperature Temperature each lambda window was run at (single-element indicates
    *                    identical temperatures).
    */
   public SequentialEstimator(double[] lambdaValues, double[][][] energiesAll, double[] temperature) {
     nTrajectories = lambdaValues.length;
-
     assert nTrajectories == energiesAll.length
         : "The energy arrays is of the incorrect length in the first lambda dimension!";
-
     assert nTrajectories == energiesAll[0].length
         : "The energy arrays is of the incorrect length in the second lambda dimension!";
 
@@ -165,13 +169,19 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
       }
     }
 
+    snaps = new double[nTrajectories];
     eAllFlat = new double[nTrajectories][];
     for (int i = 0; i < nTrajectories; i++) {
         ArrayList<Double> temp = new ArrayList<>();
         for(int j = 0; j < nTrajectories; j++) {
+          int count = 0;
           for(int k = 0; k < eAll[j][i].length; k++) {
-            temp.add(eAll[j][i][k]);
+            if (!Double.isNaN(eAll[j][i][k])) { // Remove all NaN values from uneven sampled arrays
+              temp.add(eAll[j][i][k]);
+              count++;
+            }
           }
+          snaps[j] = count;
         }
         eAllFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
     }

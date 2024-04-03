@@ -79,15 +79,16 @@ public class MBARFilter {
         int maxSnaps = max(snaps);
 
         boolean warn = minSnaps != maxSnaps;
-        if (warn) {
-            logger.warning("MINIMUM NUMBER OF SNAPS ACROSS WINDOWS: " + minSnaps);
-            logger.warning("MAXIMUM NUMBER OF SNAPS ACROSS WINDOWS: " + maxSnaps);
-            logger.warning("NOT ALL FILES CONTAINED THE SAME NUMBER OF SNAPSHOTS. " +
-                    "EXTRA SNAPSHOTS WERE REMOVED FROM OTHER SAMPLES TO COMPENSATE!");
-            double[][][] temp = new double[eAll.length][eAll[0].length][minSnaps];
-            for(int j = 0; j < eAll.length; j++){
-                for(int k = 0; k < eAll[0].length; k++){
-                    System.arraycopy(eAll[j][k], 0, temp[j][k], 0, minSnaps);
+        if (warn) { // Basically just make sure eAll isn't jagged
+            logger.warning("NOT ALL FILES CONTAINED THE SAME NUMBER OF SNAPSHOTS. ");
+            logger.warning("SAMPLES PER WINDOW: " + Arrays.toString(snaps));
+            double[][][] temp = new double[windows][windows][maxSnaps];
+            for(int j = 0; j < windows; j++){
+                for(int k = 0; k < windows; k++){
+                    System.arraycopy(eAll[j][k], 0, temp[j][k], 0, snaps[j]);
+                    for(int l = snaps[j]; l < maxSnaps; l++){ // Fill in the rest with NaNs
+                        temp[j][k][l] = Double.NaN;
+                    }
                 }
             }
             eAll = temp;
@@ -128,10 +129,11 @@ public class MBARFilter {
         }
         try (FileReader fr1 = new FileReader(tempBarFile);
              BufferedReader br1 = new BufferedReader(fr1);) {
+            // Read header
             String line = br1.readLine();
             String[] tokens = line.trim().split("\\t *| +");
-            int numSnaps = Integer.parseInt(tokens[0]);
             temperatures[state] = Double.parseDouble(tokens[1]);
+            // Read energies (however many there are)
             int count = 0;
             line = br1.readLine();
             while (line != null) {

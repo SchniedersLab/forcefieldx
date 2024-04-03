@@ -63,7 +63,7 @@ class MBAR extends AlgorithmsScript {
     boolean bar = false
 
     @Option(names = ["--numBootstrap", "--nb"], paramLabel = "50",
-            description = "Number of bootstrap samples to use.")
+            description = "Number of bootstrap snaps to use.")
     int numBootstrap = 50
 
     @Option(names = ["--seed"], paramLabel = "BAR",
