@@ -42,7 +42,6 @@ import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class MBARFilesTest extends AlgorithmsTest {
 
     /**
@@ -54,7 +53,7 @@ public class MBARFilesTest extends AlgorithmsTest {
             return;
         }
         String filepath = getResourcePath("testBar/mbarFiles");
-        String[] args = {"--seed", "zeros", "--nb", "0", "--bar", filepath};
+        String[] args = {"--seed", "zeros", "--nb", "0", filepath};
         binding.setVariable("args", args);
 
         //MBAR mbar = new MBAR(binding).run();
@@ -65,6 +64,6 @@ public class MBARFilesTest extends AlgorithmsTest {
         //Assert.assertNotNull(mbarEstimator);
 
         //double sum = mbarEstimator.getFreeEnergy();
-        //Assert.assertEquals(71.8016, sum, 1e-2);
+        //Assert.assertEquals(72.7092, sum, 1e-2);
     }
 }

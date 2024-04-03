@@ -228,7 +228,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
         }
     }
 
-    // Initialize the eLow, eAt, and eHigh arrays to their expected values from eAll.
+    // Initialize the eLow, eAt, and eHigh arrays to their expected values from eAll. Don't include NaN values.
     eLow = new double[nTrajectories][eAll[0][0].length];
     fill(eLow[0], Double.NaN);
     eAt = new double[nTrajectories][];
@@ -236,11 +236,11 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     fill(eHigh[nTrajectories - 1], Double.NaN);
     for (int i = 0; i < nTrajectories; i++) {
       if (i != 0) {
-        eLow[i] = copyOf(eAll[i][i-1], eAll[i][i-1].length);
+        eLow[i] = copyOf(eAll[i][i-1], snaps[i]);
       }
-      eAt[i] = copyOf(eAll[i][i], eAll[i][i].length);
+      eAt[i] = copyOf(eAll[i][i], snaps[i]);
       if(i != nTrajectories - 1) {
-        eHigh[i] = copyOf(eAll[i][i + 1], eAll[i][i + 1].length);
+        eHigh[i] = copyOf(eAll[i][i + 1], snaps[i]);
       }
     }
   }

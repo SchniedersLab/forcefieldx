@@ -42,6 +42,7 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
@@ -212,16 +213,27 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           return;
         }
       case ZWANZIG:
-        Zwanzig forwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, FORWARDS);
-        Zwanzig backwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, BACKWARDS);
-        double[] forwardZwanzig = forwardsFEP.getBinEnergies();
-        double[] backwardZwanzig = backwardsFEP.getBinEnergies();
-        mbarFEEstimates[0] = 0.0;
-        for (int i = 0; i < nFreeEnergyDiffs; i++) {
-          mbarFEEstimates[i + 1] = mbarFEEstimates[i] + .5 * (forwardZwanzig[i] + backwardZwanzig[i]);
-        }
+        try{
+          Zwanzig forwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, FORWARDS);
+          Zwanzig backwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, BACKWARDS);
+          double[] forwardZwanzig = forwardsFEP.getBinEnergies();
+          double[] backwardZwanzig = backwardsFEP.getBinEnergies();
+          mbarFEEstimates[0] = 0.0;
+          for (int i = 0; i < nFreeEnergyDiffs; i++) {
+            mbarFEEstimates[i + 1] = mbarFEEstimates[i] + .5 * (forwardZwanzig[i] + backwardZwanzig[i]);
+          }
+          if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
+            throw new IllegalArgumentException("MBAR contains NaNs or Infs after seeding.");
+          }
         break;
+        } catch (IllegalArgumentException e) {
+          logger.warning(" Zwanzig failed to converge. Zeros will be used for seed energies.");
+          seedType = SeedType.ZEROS;
+          seedEnergies();
+          return;
+        }
       case SeedType.ZEROS:
+        fill(mbarFEEstimates, 0.0);
         break;
       default:
         throw new IllegalArgumentException("Seed type not supported");
@@ -650,7 +662,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[] uncertainties = new double[freeEnergyEstimates.length - 1];
     // del(dFij) = Theta[i,i] - 2 * Theta[i,j] + Theta[j,j]
     for (int i = 0; i < freeEnergyEstimates.length - 1; i++) {
-      // TODO: Check how pymbar handles this
+      // TODO: Figure out why this is happening (likely due to theta calculation differing from pymbar's)
       double variance = theta[i][i] - 2 * theta[i][i + 1] + theta[i + 1][i + 1];
       if (variance < 0) {
         logger.warning(" Negative variance detected in MBAR uncertainty calculation. " +

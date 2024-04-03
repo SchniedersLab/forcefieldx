@@ -48,13 +48,13 @@ import ffx.numerics.estimator.MultistateBennettAcceptanceRatio
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*
 
 /**
- * Simple wrapper for the MBAR class and does not support energy evaluations, which need to be precomputed.
+ * Simple wrapper for the MBAR class and does not support energy evaluations, which need to be precomputed in PhEnergy or Energy scripts using --mbar.
  * <br>
  * Usage:
  * <br>
  * ffxc test.MBAR [options] &lt;path&gt
  */
-@Command(description = " Evaluates a free energy change with the Multistate Bennett Acceptance Ratio algorithm using pregenerated snapshot energy evaluations.",
+@Command(description = " Evaluates a free energy change with the Multistate Bennett Acceptance Ratio algorithm with energy evaluations from PhEnergy or Energy commands using the --mbar flag.",
         name = "test.MBAR")
 class MBAR extends AlgorithmsScript {
 
@@ -125,7 +125,7 @@ class MBAR extends AlgorithmsScript {
             return this
         }
 
-        MultistateBennettAcceptanceRatio mbar = filter.getMBAR(seed)
+        mbar = filter.getMBAR(seed)
         this.mbar = mbar
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
@@ -200,6 +200,6 @@ class MBAR extends AlgorithmsScript {
     }
 
     MultistateBennettAcceptanceRatio getMBAR() {
-        return
+        return mbar
     }
 }
