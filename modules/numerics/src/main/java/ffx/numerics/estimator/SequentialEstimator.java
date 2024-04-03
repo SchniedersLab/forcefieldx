@@ -65,7 +65,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
   /**
    * The number of snaps in each lambda trajectory file.
    */
-  protected final double[] snaps;
+  protected final int[] snaps;
   protected final double[] temperatures;
   protected final int nTrajectories;
 
@@ -162,28 +162,58 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
 
     // Just in case, deep copy the array rather than storing them as provided.
     eAll = new double[nTrajectories][][];
+    int maxSnaps = 0;
     for (int i = 0; i < nTrajectories; i++) {
       eAll[i] = new double[energiesAll[i].length][];
       for (int j = 0; j < energiesAll[i].length; j++) {
         eAll[i][j] = copyOf(energiesAll[i][j], energiesAll[i][j].length);
+        maxSnaps = Math.max(maxSnaps, eAll[i][j].length);
       }
     }
 
-    snaps = new double[nTrajectories];
+    // Remove jagged edges from eAll with NaN values in case it hasn't been done for you
+    for(int i = 0; i < nTrajectories; i++) {
+      for(int j = 0; j < nTrajectories; j++) {
+        if (eAll[i][j].length < maxSnaps) {
+          double[] temp = new double[maxSnaps];
+          System.arraycopy(eAll[i][j], 0, temp, 0, eAll[i][j].length);
+          for(int k = eAll[i][j].length; k < maxSnaps; k++) {
+              temp[k] = Double.NaN;
+          }
+          eAll[i][j] = temp;
+        }
+      }
+    }
+
+    // Flatten the eAll array into a 2D array of [lambda][allEvaluationsAtThisLambda]
+    snaps = new int[nTrajectories];
+    int[] nanCount = new int[nTrajectories];
     eAllFlat = new double[nTrajectories][];
     for (int i = 0; i < nTrajectories; i++) {
         ArrayList<Double> temp = new ArrayList<>();
         for(int j = 0; j < nTrajectories; j++) {
           int count = 0;
+          int countNaN = 0;
           for(int k = 0; k < eAll[j][i].length; k++) {
-            if (!Double.isNaN(eAll[j][i][k])) { // Remove all NaN values from uneven sampled arrays
+            // Don't include NaN values
+            if (!Double.isNaN(eAll[j][i][k])) {
               temp.add(eAll[j][i][k]);
               count++;
+            } else {
+              countNaN++;
             }
           }
           snaps[j] = count;
+          nanCount[j] = countNaN;
         }
         eAllFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
+    }
+
+    for(int i = 0; i < nTrajectories; i++) {
+      if (snaps[i] + nanCount[i] != maxSnaps) {
+        throw new IllegalArgumentException("Lambda window " + i
+                + " is not set properly. You need to fill in the missing states with NaN.");
+      }
     }
 
     // Assert that lengths of the energiesAll arrays are correct.

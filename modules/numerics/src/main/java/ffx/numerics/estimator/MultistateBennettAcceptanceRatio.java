@@ -51,6 +51,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -306,19 +307,52 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
 
+    // Remove reduced potential arrays where snaps are zero since they cause issues for N.R. and likely L-BFGS
+    // i.e. no trajectories for that lambda were generated/sampled, but other trajectories had potentials evaluated at that lambda
+    ArrayList<Integer> zeroSnapLambdas = new ArrayList<>();
+    for(int i = 0; i < nLambdaStates; i++) {
+      if (snaps[i] == 0) {
+        zeroSnapLambdas.add(i);
+      }
+    }
+    int nLambdaStatesTemp = nLambdaStates - zeroSnapLambdas.size();
+    double[][] reducedPotentialsTemp = new double[nLambdaStates - zeroSnapLambdas.size()][numEvaluations];
+    double[] mbarFEEstimatesTemp = new double[nLambdaStates - zeroSnapLambdas.size()];
+    int[] snapsTemp = new int[nLambdaStates - zeroSnapLambdas.size()];
+    if (!zeroSnapLambdas.isEmpty()) {
+      int index = 0;
+      for (int i = 0; i < nLambdaStates; i++) {
+        if (!zeroSnapLambdas.contains(i)) {
+          reducedPotentialsTemp[index] = reducedPotentials[i];
+          mbarFEEstimatesTemp[index] = mbarFEEstimates[i];
+          snapsTemp[index] = snaps[i];
+          index++;
+        }
+      }
+    } else { // If there aren't any zero snap lambdas, just use the original arrays
+      reducedPotentialsTemp = reducedPotentials;
+      mbarFEEstimatesTemp = mbarFEEstimates;
+      snapsTemp = snaps;
+    }
+
     try {
-      if (nLambdaStates > 100) { // L-BFGS optimization for high granularity windows where hessian is expensive
+      if (nLambdaStatesTemp > 100) { // L-BFGS optimization for high granularity windows where hessian is expensive
         int mCorrections = 5;
-        double[] x = new double[nLambdaStates];
-        arraycopy(mbarFEEstimates, 0, x, 0, nLambdaStates);
-        double[] grad = mbarGradient(reducedPotentials, snaps, mbarFEEstimates);
+        double[] x = new double[nLambdaStatesTemp];
+        arraycopy(mbarFEEstimatesTemp, 0, x, 0, nLambdaStatesTemp);
+        double[] grad = mbarGradient(reducedPotentialsTemp, snapsTemp, mbarFEEstimatesTemp);
         double eps = 1.0E-4; // Gradient tolarance -> chosen since L-BFGS seems unstable with tight tolerances
         OptimizationListener listener = getOptimizationListener();
-        LBFGS.minimize(nLambdaStates, mCorrections, x, mbarObjectiveFunction(reducedPotentials, snaps, mbarFEEstimates),
+        LBFGS.minimize(nLambdaStatesTemp, mCorrections, x, mbarObjectiveFunction(reducedPotentialsTemp, snapsTemp, mbarFEEstimatesTemp),
             grad, eps, 1000, this, listener);
-        arraycopy(x, 0, mbarFEEstimates, 0, nLambdaStates);
+        arraycopy(x, 0, mbarFEEstimatesTemp, 0, nLambdaStatesTemp);
       } else { // Newton optimization if hessian inversion isn't too expensive
-        mbarFEEstimates = newton(mbarFEEstimates, reducedPotentials, snaps, 1.0, 100, tolerance);
+        mbarFEEstimatesTemp = newton(mbarFEEstimatesTemp, reducedPotentialsTemp, snapsTemp, 1.0, 100, tolerance);
+      }
+
+      // Update the FE estimates with the optimized values from derivative-based optimization
+      for(Integer i : zeroSnapLambdas) {
+        mbarFEEstimates[i] = mbarFEEstimatesTemp[i];
       }
     } catch (Exception e) {
       logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
@@ -388,7 +422,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return The objective function value.
    */
-  private static double mbarObjectiveFunction(double[][] reducedPotentials, double[] snapsPerLambda, double[] freeEnergyEstimates) {
+  private static double mbarObjectiveFunction(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     if (stream(freeEnergyEstimates).anyMatch(Double::isInfinite) || stream(freeEnergyEstimates).anyMatch(Double::isNaN)) {
       throw new IllegalArgumentException("MBAR contains NaNs or Infs.");
     }
@@ -420,7 +454,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return Gradient for the mbar objective function.
    */
-  private static double[] mbarGradient(double[][] reducedPotentials, double[] snapsPerLambda, double[] freeEnergyEstimates) {
+  private static double[] mbarGradient(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     double[] log_num_k = new double[nStates];
     double[] log_denom_n = new double[reducedPotentials[0].length];
@@ -461,7 +495,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return Hessian for the mbar objective function.
    */
-  private static double[][] mbarHessian(double[][] reducedPotentials, double[] snapsPerLambda, double[] freeEnergyEstimates) {
+  private static double[][] mbarHessian(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     double[][] W = mbarW(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     // h = dot(W.T, W) * snapsPerLambda * snapsPerLambda[:, newaxis] - diag(W.sum(0) * snapsPerLambda)
@@ -497,7 +531,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return W matrix.
    */
-  private static double[][] mbarW(double[][] reducedPotentials, double[] snapsPerLambda, double[] freeEnergyEstimates) {
+  private static double[][] mbarW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     double[] log_denom_n = new double[reducedPotentials[0].length];
     double[][] logDiff = new double[reducedPotentials.length][reducedPotentials[0].length];
@@ -537,7 +571,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return logW matrix.
    */
-  private static double[][] mbarLogW(double[][] reducedPotentials, double[] snapsPerLambda, double[] freeEnergyEstimates) {
+  private static double[][] mbarLogW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     // double[] log_num_k = new double[nStates];
     double[] log_denom_n = new double[reducedPotentials[0].length];
@@ -581,12 +615,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param snapsPerLambda  free energies
    * @return Theta matrix.
    */
-  private static double[][] mbarTheta(double[][] reducedPotentials, double[] snapsPerState, double[] snapsPerLambda) {
+  private static double[][] mbarTheta(double[][] reducedPotentials, int[] snapsPerState, double[] snapsPerLambda) {
     // SVD of W
     double[][] W = mbarW(reducedPotentials, snapsPerState, snapsPerLambda);
     RealMatrix WMatrix = MatrixUtils.createRealMatrix(W).transpose();
     RealMatrix I = MatrixUtils.createRealIdentityMatrix(snapsPerLambda.length);
-    RealMatrix NkMatrix = MatrixUtils.createRealDiagonalMatrix(snapsPerState);
+    RealMatrix NkMatrix = MatrixUtils.createRealDiagonalMatrix(stream(snapsPerState).mapToDouble(i -> i).toArray());
     SingularValueDecomposition svd = new SingularValueDecomposition(WMatrix);
     RealMatrix V = svd.getV();
     RealMatrix S = MatrixUtils.createRealDiagonalMatrix(svd.getSingularValues());
@@ -610,13 +644,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return Uncertainties for the MBAR free energy estimates.
    */
-  private static double[] mbarUncertaintyCalc(double[][] reducedPotentials, double[] snapsPerLambda,
+  private static double[] mbarUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
                                               double[] freeEnergyEstimates) {
     double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[] uncertainties = new double[freeEnergyEstimates.length - 1];
     // del(dFij) = Theta[i,i] - 2 * Theta[i,j] + Theta[j,j]
     for (int i = 0; i < freeEnergyEstimates.length - 1; i++) {
-      uncertainties[i] = sqrt(theta[i][i] - 2 * theta[i][i + 1] + theta[i + 1][i + 1]);
+      // TODO: Check how pymbar handles this
+      double variance = theta[i][i] - 2 * theta[i][i + 1] + theta[i + 1][i + 1];
+      if (variance < 0) {
+        logger.warning(" Negative variance detected in MBAR uncertainty calculation. " +
+                "Multiplying by -1 to get real value. Check diff matrix to see which variances were negative. " +
+                "They should be NaN.");
+        variance *= -1;
+      }
+      uncertainties[i] = sqrt(variance);
     }
     return uncertainties;
   }
@@ -629,7 +671,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return Total uncertainty for the MBAR free energy estimates.
    */
-  private static double mbarTotalUncertaintyCalc(double[][] reducedPotentials, double[] snapsPerLambda,
+  private static double mbarTotalUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
                                                  double[] freeEnergyEstimates) {
     double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     int nStates = freeEnergyEstimates.length;
@@ -644,7 +686,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return Diff matrix for the MBAR free energy estimates.
    */
-  private static double[][] diffMatrixCalculation(double[][] reducedPotential, double[] snapsPerLambda,
+  private static double[][] diffMatrixCalculation(double[][] reducedPotential, int[] snapsPerLambda,
                                                   double[] freeEnergyEstimates) {
     double[][] theta = mbarTheta(reducedPotential, snapsPerLambda, freeEnergyEstimates);
     double[][] diffMatrix = new double[freeEnergyEstimates.length][freeEnergyEstimates.length];
@@ -666,7 +708,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param freeEnergyEstimates  free energies
    * @return updated free energies
    */
-  private static double[] selfConsistentUpdate(double[][] reducedPotential, double[] snapsPerLambda,
+  private static double[] selfConsistentUpdate(double[][] reducedPotential, int[] snapsPerLambda,
                                                double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     double[] updatedF_k = new double[nStates];
@@ -743,7 +785,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return updated free energies.
    */
   private static double[] newton(double[] freeEnergyEstimates, double[][] reducedPotentials,
-                                 double[] snapsPerLambda, double stepSize, int maxIter, double tolerance) {
+                                 int[] snapsPerLambda, double stepSize, int maxIter, double tolerance) {
     double[] grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[][] hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[] f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, stepSize);
@@ -771,7 +813,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return the sum
    */
   private static double logSumExp(double[] values, double max) {
-    double[] b = fill(new double[values.length], 1.0);
+    int[] b = fill(new int[values.length], 1);
     return logSumExp(values, b, max);
   }
 
@@ -785,7 +827,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param b      Weights for each value in the array.
    * @return the sum
    */
-  private static double logSumExp(double[] values, double[] b, double max) {
+  private static double logSumExp(double[] values, int[] b, double max) {
     // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's logsumexp implementation
     // Find the maximum value in the array.
     assert values.length == b.length : "values and b must be the same length";
@@ -1184,7 +1226,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   public static void main(String[] args) {
     double[] O_k = {0, 1, 2, 3, 4}; // Equilibrium positions
     double[] K_k = {1, 2, 2.5, 3, 4}; // Spring constants
-    int[] N_k = {10, 500, 300, 40, 10000}; // No support for different number of snapshots
+    int[] N_k = {0, 500, 300, 40, 10000}; // No support for different number of snapshots
     double beta = 1.0;
 
     // Create an instance of HarmonicOscillatorsTestCase
@@ -1193,7 +1235,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Generate sample data
     String setting = "u_kln";
     System.out.print("Generating sample data... ");
-    Object[] sampleResult = testCase.sample(N_k, setting, (long) 0); // Set seed to fixed value for reproducibility
+    Object[] sampleResult = testCase.sample(N_k, setting, (long) 2); // Set seed to fixed value for reproducibility
     System.out.println("done. \n");
     double[][][] u_kln = (double[][][]) sampleResult[1];
     double[] temps = {1 / Constants.R};

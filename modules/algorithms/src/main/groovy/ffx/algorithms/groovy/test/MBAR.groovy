@@ -107,7 +107,7 @@ class MBAR extends AlgorithmsScript {
             logger.severe("No path to MBAR/BAR files specified.")
             return this
         }
-        File path = new File(this.path)
+        File path = new File(path)
         if (!path.exists()) {
             logger.severe("Path to MBAR/BAR files does not exist: " + path)
             return this
