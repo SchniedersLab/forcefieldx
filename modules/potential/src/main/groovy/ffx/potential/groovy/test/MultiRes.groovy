@@ -181,7 +181,6 @@ class MultiRes extends PotentialScript {
     for (int i = 0; i < numResidues; i++) {
       multiResidue.setActiveResidue(i)
       logger.info("\n Active Residue: " + multiResidue.toString())
-      forceFieldEnergy.reInit()
       forceFieldEnergy.energy(true, true)
     }
 

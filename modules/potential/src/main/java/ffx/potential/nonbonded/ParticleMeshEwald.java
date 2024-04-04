@@ -869,9 +869,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      to electrostatic gradient to the total XYZ gradient.
     */
     if (gradient || lambdaTerm) {
-      reduceRegion.init(lambdaTerm, gradient,
-          atoms, coordinates, frame, axisAtom,
-          grad, torque, lambdaGrad, lambdaTorque);
+      reduceRegion.init(lambdaTerm, gradient, atoms, coordinates, frame, axisAtom, grad, torque, lambdaGrad, lambdaTorque);
       reduceRegion.excuteWith(parallelTeam);
     }
 
