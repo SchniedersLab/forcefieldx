@@ -49,6 +49,7 @@ import org.w3c.dom.NodeList
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
+import javax.management.InvalidAttributeValueException
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -946,30 +947,61 @@ class ReadXML extends PotentialScript {
                         // <Torsion> : map="0-11", class1-5
 
                         NodeList cmaps = parentNode.item(0).getChildNodes()
-                        double[][] energiesMaps
+                        int maps = cmaps.getLength()
+                        double[][] energiesMaps = new double[maps][]
+                        int numMaps = 0
                         for (Node cmap : cmaps) {
 //                            public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
                             // int[5] atomClasses come from <Torsion>
                             // int[2] gridPoints - 25 25 in CHARMM_22_CMAP; should be length(torsion1) length(torsion2)
-                            int numMaps
                             // double[] energy
                             if (cmap.getNodeName() == "Map") {
                                 String nodeData = cmap.getChildNodes().item(0).getNodeValue() // gets data in <Map> node
 
-                                int nx;
-                                int ny;
+                                int nx
+                                int ny
+                                //get values for nx and ny
                                 for(int i=0; i<1; i++) {
-                                    String[] arr = nodeData.split('[\\n\\r]');
-                                    nx = arr.length;
-                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
-                                    //parses it as doubles at the same time
-                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
+                                    String[] arr = nodeData.split('[\\n\\r]+')
+                                    for (String node in arr){
+                                        arr[i] = arr[i].trim()
+                                    }
+                                    if (arr != null){
+                                        logger.info("CHECK ARR")
+                                    }
+                                    nx = arr.length
+                                    String[] arrIndiv = arr[i].split(' ');
+                                    ny = arrIndiv.length
+                                    if (nx != ny){
+                                        throw new InvalidAttributeValueException("nx and ny not the same length")
+                                    }
                                 }
-                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
+                                //
+                                ArrayList<Double> nodeList = new ArrayList<Double>()
+                                try{
+                                    //split on all delimiters, new line, carriage return, and space
+                                    String[] nodeStrings = nodeData.split("[\\n \\r]+");
+                                    //get rid of extraneous white space
+                                    for (int i=0; i<nodeStrings.length; i++){
+                                        nodeStrings[i] = nodeStrings[i].trim()
+                                        if (nodeStrings[i] != null && nodeStrings[i] != "") {
+                                            double num = parseDouble(nodeStrings[i])
+                                            nodeList.add(num)
+                                        }
+                                    }
+                                }
+                                catch(NumberFormatException e){
+                                    logger.info("cmap energies issue in full array")
+                                    throw e;
+                                }
+                                //logger.info("FILTERED AND PARSED AS DOUBLE")
+                                //logger.info(nodeList.toString())
+                                double[] arr = nodeList.stream().mapToDouble(d -> d).toArray();
+                                energiesMaps[numMaps] = arr
 
                                 int[] gridPoints = new int[]{nx,ny};
-                                double[] torsion1;
-                                double[] torsion2;
+                                double[] torsion1 = new double[nx*ny];
+                                double[] torsion2 = new double[ny*nx];
                                 double phi = -180.0;
                                 double psi = -180;
                                 for (int i=0; i<nx; i++) {
@@ -987,11 +1019,11 @@ class ReadXML extends PotentialScript {
                             } else if (cmap.getNodeName() == "Torsion") {
                                 int[] classes = new int[5]
                                 String map = cmap.getAttribute("map")
-                                classes[0] = cmap.getAttribute("class1")
-                                classes[1] = cmap.getAttribute("class2")
-                                classes[2] = cmap.getAttribute("class3")
-                                classes[3] = cmap.getAttribute("class4")
-                                classes[4] = cmap.getAttribute("class5")
+                                classes[0] = atomClassMap.get(cmap.getAttribute("class1"))
+                                classes[1] = atomClassMap.get(cmap.getAttribute("class2"))
+                                classes[2] = atomClassMap.get(cmap.getAttribute("class3"))
+                                classes[3] = atomClassMap.get(cmap.getAttribute("class4"))
+                                classes[4] = atomClassMap.get(cmap.getAttribute("class5"))
                                 //TODO
                             } else if (cmap.hasAttributes()) {
                                 logger.info("CHECK")
