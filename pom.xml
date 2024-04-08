@@ -990,7 +990,7 @@
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.10.1</commons-configuration2.version>
-    <commons-io.version>2.15.1</commons-io.version>
+    <commons-io.version>2.16.0</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
@@ -1014,7 +1014,7 @@
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.9</javaparser.version>
+    <javaparser.version>3.25.10</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.6.3</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
@@ -1056,7 +1056,7 @@
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
-    <source.version>3.3.0</source.version>
+    <source.version>3.3.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.2.5</surefire.version>
     <!-- Control the target JRE version -->

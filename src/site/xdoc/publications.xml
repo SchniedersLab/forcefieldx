@@ -9,6 +9,16 @@
     <section name="Selected Recent Publications with Force Field X">
       <table>
         <tr>
+          <td>
+            <img src="images/Thiel-JCTC-2024-Cover.jpg" alt="CpHMD" width="600"/>
+          </td>
+          <td>
+            <img src="images/Nessler-CGD-2024-Cover.jpg" alt="CSP" width="600"/>
+          </td>
+        </tr>
+      </table>
+      <table>
+        <tr>
           <th>Year</th>
           <th>Publication</th>
         </tr>
@@ -35,7 +45,7 @@
             Schnieders, M.
             Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
             <a href="https://pubs.acs.org/doi/10.1021/acs.cgd.3c01358">
-              <i>Crystal Growth and Design</i>
+              <i>Crystal Growth &amp; Design</i>
               <b>2024</b>
             </a>
           </td>
