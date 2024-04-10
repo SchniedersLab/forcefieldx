@@ -115,12 +115,13 @@ public class ExtendedSystem implements Potential {
      */
     private final double ASHtautBiasMag;
     private final double ASHtitrBiasMag;
-    private final double ASHbaselinePKA;
+    private final double ASHrestraintConstant;
     private final double[] CYSFmod = new double[4];
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
     private final double CYStitrBiasMag;
+    private final double CYSrestraintConstant;
     private final double[] GLHFmod = new double[4];
     private final double[] GLH1toGLH2 = new double[4];
     /**
@@ -128,6 +129,7 @@ public class ExtendedSystem implements Potential {
      */
     private final double GLHtautBiasMag;
     private final double GLHtitrBiasMag;
+    private final double GLHrestraintConstant;
 
     /**
      * Coefficients that define the tautomer component of the bivariate Histidine Fmod
@@ -141,11 +143,13 @@ public class ExtendedSystem implements Potential {
      */
     private final double HIStautBiasMag;
     private final double HIStitrBiasMag;
+    private final double HISrestraintConstant;
     private final double[] LYSFmod = new double[4];
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
     private final double LYStitrBiasMag;
+    private final double LYSrestraintConstant;
     private final boolean doBias;
     private final boolean doElectrostatics;
     private final boolean doPolarization;
@@ -345,7 +349,7 @@ public class ExtendedSystem implements Potential {
         ASH1toASH2[0] = TitrationUtils.Titration.ASH1toASH2.offset;
         ASHtitrBiasMag = properties.getDouble("ASH.titration.bias.magnitude", DISCR_BIAS);
         ASHtautBiasMag = properties.getDouble("ASH.tautomer.bias.magnitude", DISCR_BIAS);
-        ASHbaselinePKA = properties.getDouble("ASH.baseline.pka", TitrationUtils.Titration.ASHtoASP.pKa);
+        ASHrestraintConstant = properties.getDouble("ASH.restraint.constant", 0.0);
 
         GLHFmod[3] = properties.getDouble("GLH.cubic", TitrationUtils.Titration.GLHtoGLU.cubic);
         GLHFmod[2] = properties.getDouble("GLH.quadratic", TitrationUtils.Titration.GLHtoGLU.quadratic);
@@ -357,18 +361,21 @@ public class ExtendedSystem implements Potential {
         GLH1toGLH2[0] = TitrationUtils.Titration.GLH1toGLH2.offset;
         GLHtitrBiasMag = properties.getDouble("GLH.titration.bias.magnitude", DISCR_BIAS);
         GLHtautBiasMag = properties.getDouble("GLH.tautomer.bias.magnitude", DISCR_BIAS);
+        GLHrestraintConstant = properties.getDouble("GLH.restraint.constant", 0.0);
 
         LYSFmod[3] = properties.getDouble("LYS.cubic", TitrationUtils.Titration.LYStoLYD.cubic);
         LYSFmod[2] = properties.getDouble("LYS.quadratic", TitrationUtils.Titration.LYStoLYD.quadratic);
         LYSFmod[1] = properties.getDouble("LYS.linear", TitrationUtils.Titration.LYStoLYD.linear);
         LYSFmod[0] = TitrationUtils.Titration.LYStoLYD.offset;
         LYStitrBiasMag = properties.getDouble("LYS.titration.bias.magnitude", DISCR_BIAS);
+        LYSrestraintConstant = properties.getDouble("LYS.restraint.constant", 0.0);
 
         CYSFmod[3] = properties.getDouble("CYS.cubic", TitrationUtils.Titration.CYStoCYD.cubic);
         CYSFmod[2] = properties.getDouble("CYS.quadratic", TitrationUtils.Titration.CYStoCYD.quadratic);
         CYSFmod[1] = properties.getDouble("CYS.linear", TitrationUtils.Titration.CYStoCYD.linear);
         CYSFmod[0] = TitrationUtils.Titration.CYStoCYD.offset;
         CYStitrBiasMag = properties.getDouble("CYS.titration.bias.magnitude", DISCR_BIAS);
+        CYSrestraintConstant = properties.getDouble("CYS.restraint.constant", 0.0);
 
         HIDFmod[3] = properties.getDouble("HID.cubic", TitrationUtils.Titration.HIStoHID.cubic);
         HIDFmod[2] = properties.getDouble("HID.quadratic", TitrationUtils.Titration.HIStoHID.quadratic);
@@ -384,6 +391,7 @@ public class ExtendedSystem implements Potential {
         HIDtoHIEFmod[0] = TitrationUtils.Titration.HIDtoHIE.offset;
         HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
         HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
+        HISrestraintConstant = properties.getDouble("HIS.restraint.constant", 0.0);
 
         // Log all of the titration bias magnitudes for each titratable residue.
         logger.info("\n Titration bias magnitudes:");
@@ -763,7 +771,7 @@ public class ExtendedSystem implements Potential {
                 dDiscr_dTaut = -8.0 * ASHtautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
-                double pKa1 = ASHbaselinePKA;
+                double pKa1 = TitrationUtils.Titration.ASHtoASP.pKa;
                 double pKa2 = pKa1;
                 pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
@@ -771,6 +779,13 @@ public class ExtendedSystem implements Potential {
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
                 dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
+
+                // pH restraint to add to pH Bias
+                double restraint = ASHrestraintConstant;
+                double pHSignedSquared = (pKa1 - constantSystemPh) * Math.abs(pKa1 - constantSystemPh);
+                // x*abs(x) is quadratic-like but sign is preserved
+                pHBias += restraint * (1.0 - titrationLambda) * pHSignedSquared;
+                dPh_dTitr += restraint * -1.0 * pHSignedSquared;
 
                 // Model Bias & Derivs
                 double coeffA0 = ASH1toASH2[3];
@@ -821,6 +836,13 @@ public class ExtendedSystem implements Potential {
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
                 dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
+
+                // pH restraint to add to pH Bias
+                restraint = GLHrestraintConstant;
+                pHSignedSquared = (pKa1 - constantSystemPh) * Math.abs(pKa1 - constantSystemPh);
+                // x*abs(x) is quadratic-like but sign is preserved
+                pHBias += restraint * (1.0 - titrationLambda) * pHSignedSquared;
+                dPh_dTitr += restraint * -1.0 * pHSignedSquared;
 
                 // Model Bias & Derivs
                 coeffA0 = GLH1toGLH2[3];
@@ -875,6 +897,17 @@ public class ExtendedSystem implements Potential {
                 dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
 
+                // pH restraint to add to pH Bias
+                restraint = HISrestraintConstant;
+                double pH1SignedSquared = (pKa1 - constantSystemPh) * Math.abs(pKa1 - constantSystemPh);
+                double pH2SignedSquared = (pKa2 - constantSystemPh) * Math.abs(pKa2 - constantSystemPh);
+                // x*abs(x) is quadratic-like but sign is preserved
+                pHBias += restraint * (1.0 - titrationLambda)
+                        * (tautomerLambda * pH1SignedSquared + (1.0 - tautomerLambda) * pH2SignedSquared);
+                dPh_dTitr += restraint * -1.0
+                        * (tautomerLambda * pH1SignedSquared + (1.0 - tautomerLambda) * pH2SignedSquared);
+                dPh_dTaut += restraint * (1.0 - titrationLambda)
+                        * (pH1SignedSquared - pH2SignedSquared);
                 // Model Bias & Derivs
 
                 coeffA0 = HIDtoHIEFmod[3];
@@ -920,6 +953,13 @@ public class ExtendedSystem implements Potential {
                 dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (pKa1 - constantSystemPh);
                 dPh_dTaut = 0.0;
 
+                // pH restraint to add to pH Bias
+                restraint = LYSrestraintConstant;
+                pHSignedSquared = (pKa1 - constantSystemPh) * Math.abs(pKa1 - constantSystemPh);
+                // x*abs(x) is quadratic-like but sign is preserved
+                pHBias += restraint * (1.0 - titrationLambda) * pHSignedSquared;
+                dPh_dTitr += restraint * -1.0 * pHSignedSquared;
+
                 // Model Bias & Derivs
                 double cubic = LYSFmod[3];
                 double quadratic = LYSFmod[2];
@@ -940,6 +980,14 @@ public class ExtendedSystem implements Potential {
                 pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (pKa1 - constantSystemPh);
                 dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (pKa1 - constantSystemPh);
                 dPh_dTaut = 0.0;
+
+                // pH restraint to add to pH Bias
+                restraint = CYSrestraintConstant;
+                pHSignedSquared = (pKa1 - constantSystemPh) * Math.abs(pKa1 - constantSystemPh);
+                // x*abs(x) is quadratic-like but sign is preserved
+                pHBias += restraint * (1.0 - titrationLambda) * pHSignedSquared;
+                dPh_dTitr += restraint * -1.0 * pHSignedSquared;
+
 
                 // Model Bias & Derivs
                 cubic = CYSFmod[3];
