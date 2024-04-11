@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test
+package ffx.algorithms.groovy
 
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
@@ -55,7 +55,7 @@ import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*
  * ffxc test.MBAR [options] &lt;path&gt
  */
 @Command(description = " Evaluates a free energy change with the Multistate Bennett Acceptance Ratio algorithm with energy evaluations from PhEnergy or Energy commands using the --mbar flag.",
-        name = "test.MBAR")
+        name = "MBAR")
 class MBAR extends AlgorithmsScript {
 
     @Option(names = ["--bar"], paramLabel = "false",
@@ -99,7 +99,6 @@ class MBAR extends AlgorithmsScript {
      */
     @Override
     MBAR run() {
-        // Begin boilerplate code.
         if (!init()) {
             return this
         }
