@@ -125,8 +125,8 @@ class ReadXML extends PotentialScript {
         doc = dBuilder.parse(inputFile)
         watDoc = dBuilder.parse(watFile)
 
-//        readAmber(doc, watDoc)
-        readCharmm(doc, watDoc)
+        readAmber(doc, watDoc)
+//        readCharmm(doc, watDoc)
 
         return this
     }
@@ -940,8 +940,7 @@ class ReadXML extends PotentialScript {
                         break
 
                     case "CMAPTorsionForce": //TODO
-                        logger.info("At CMAPTorsionForce")
-                        // Don't need to add waters/ions because they are do not have phi/psi angles
+                        // Don't need to add waters/ions because they do not have phi/psi angles
                         // <Map> : long lists doubles - look for new line chars?
                         // <Torsion> : map="0-11", class1-5
 
@@ -956,42 +955,43 @@ class ReadXML extends PotentialScript {
                             if (cmap.getNodeName() == "Map") {
                                 String nodeData = cmap.getChildNodes().item(0).getNodeValue() // gets data in <Map> node
 
-                                int nx;
-                                int ny;
-                                for(int i=0; i<1; i++) {
-                                    String[] arr = nodeData.split('[\\n\\r]');
-                                    nx = arr.length;
-                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
-                                    //parses it as doubles at the same time
-                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
-                                }
-                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
-
-                                int[] gridPoints = new int[]{nx,ny};
-                                double[] torsion1;
-                                double[] torsion2;
-                                double phi = -180.0;
-                                double psi = -180;
-                                for (int i=0; i<nx; i++) {
-                                    //reset psi to -180.0 each outer iteration, increment phi
-                                    psi = -180.0;
-                                    phi = phi + (15*i);
-                                    for (int j=0; j<ny; j++){
-                                        //torsion1 says constant ny times
-                                        torsion1[j] = phi
-                                        //iterate through psi from -180 to 180 each outer loop
-                                        torsion2[j] = psi + (15*j);
-                                    }
-                                }
-                                numMaps++;
+                                int nx
+                                int ny
+                                String[] arr = nodeData.split('[\\n\\r]')
+//                                for(int i=0; i<1; i++) {
+//                                    String[] arr = nodeData.split('[\\n\\r]');
+//                                    nx = arr.length;
+//                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
+//                                    //parses it as doubles at the same time
+//                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
+//                                }
+//                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
+//
+//                                int[] gridPoints = new int[]{nx,ny};
+//                                double[] torsion1;
+//                                double[] torsion2;
+//                                double phi = -180.0;
+//                                double psi = -180;
+//                                for (int i=0; i<nx; i++) {
+//                                    //reset psi to -180.0 each outer iteration, increment phi
+//                                    psi = -180.0;
+//                                    phi = phi + (15*i);
+//                                    for (int j=0; j<ny; j++){
+//                                        //torsion1 says constant ny times
+//                                        torsion1[j] = phi
+//                                        //iterate through psi from -180 to 180 each outer loop
+//                                        torsion2[j] = psi + (15*j);
+//                                    }
+//                                }
+//                                numMaps++;
                             } else if (cmap.getNodeName() == "Torsion") {
                                 int[] classes = new int[5]
                                 String map = cmap.getAttribute("map")
-                                classes[0] = cmap.getAttribute("class1")
-                                classes[1] = cmap.getAttribute("class2")
-                                classes[2] = cmap.getAttribute("class3")
-                                classes[3] = cmap.getAttribute("class4")
-                                classes[4] = cmap.getAttribute("class5")
+                                classes[0] = atomClassMap(cmap.getAttribute("type1"))
+                                classes[1] = atomClassMap(cmap.getAttribute("type2"))
+                                classes[2] = atomClassMap(cmap.getAttribute("type3"))
+                                classes[3] = atomClassMap(cmap.getAttribute("type4"))
+                                classes[4] = atomClassMap(cmap.getAttribute("type5"))
                                 //TODO
                             } else if (cmap.hasAttributes()) {
                                 logger.info("CHECK")

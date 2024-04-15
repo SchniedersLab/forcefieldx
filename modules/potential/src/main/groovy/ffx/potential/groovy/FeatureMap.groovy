@@ -145,6 +145,7 @@ class FeatureMap extends PotentialScript {
         }
 
         List<String[]> featureList = new ArrayList<>()
+        logger.info(format("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: %d",residues.size()))
         //Store all features for each residue in an array list called Features
         for (int i = 0; i < residues.size(); i++) {
             double residueSurfaceArea =
@@ -207,8 +208,8 @@ class FeatureMap extends PotentialScript {
             int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
-                if (i == 0 || i == 1) {
-                    if (updatedFile.length() == 0 && i == 1) {
+                if (i == 0) {
+                    if (updatedFile.length() == 0 && i == 0) {
                         newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
                                 'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
                         if(includeAcidity){
@@ -224,7 +225,7 @@ class FeatureMap extends PotentialScript {
                             newCSVLine.append(delimiter + 'Secondary Structure Annotation')
                         }
                         bw.write(newCSVLine.toString())
-                    } else if (i == 0 && updatedFile.length() == 0) {
+                    } else {
                         bw.write(line + '\n')
                     }
                 } else {
