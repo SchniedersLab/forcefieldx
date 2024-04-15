@@ -990,7 +990,7 @@
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.10.1</commons-configuration2.version>
-    <commons-io.version>2.16.0</commons-io.version>
+    <commons-io.version>2.16.1</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
@@ -1009,10 +1009,10 @@
     <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>24.0.0</graal.version>
-    <groovy-all.version>5.0.0-alpha-7</groovy-all.version>
+    <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
     <guava.version>33.1.0-jre</guava.version>
     <install.version>3.1.1</install.version>
-    <jar.version>3.3.0</jar.version>
+    <jar.version>3.4.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <javaparser.version>3.25.10</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
@@ -1044,8 +1044,8 @@
     <release.repo>file:release</release.repo>
     <release.version>3.0.1</release.version>
     <resources.version>3.3.1</resources.version>
-    <scm.version>2.0.1</scm.version>
-    <slf4j-nop.version>2.0.12</slf4j-nop.version>
+    <scm.version>2.1.0</scm.version>
+    <slf4j-nop.version>2.0.13</slf4j-nop.version>
     <!-- The Shade plugin use of localRepository causes a validation message -->
     <maven.plugin.validation>brief</maven.plugin.validation>
     <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
