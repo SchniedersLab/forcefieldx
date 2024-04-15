@@ -76,7 +76,7 @@ public class TitrationManyBody {
     this.pH = pH;
   }
 
-  public MolecularAssembly getProtonatedAssembly() {
+  public MolecularAssembly getProtonatedAssembly(){
     MolecularAssembly protonatedAssembly = new MolecularAssembly(filename);
     protonatedAssembly.setForceField(forceField);
     File structureFile = new File(filename);
@@ -88,9 +88,17 @@ public class TitrationManyBody {
     protonatedAssembly.finalize(true, forceField);
     potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
     protonatedAssembly.setFile(structureFile);
+    double proteinDielectric = 1.0;
+    boolean tanhCorrection = false;
+    try {
+      proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC");
+      tanhCorrection = forceField.getBoolean("TANH_CORRECTION");
+    } catch (Exception e) {
+      logger.info("Protein Dielectric or Tanh Correction is Null");
+    }
 
     TitrationUtils titrationUtils;
-    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
+    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(), proteinDielectric,tanhCorrection);
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
@@ -141,9 +149,17 @@ public class TitrationManyBody {
         protonFilter.applyAtomProperties();
         newAssembly.finalize(true, forceField);
         potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);
+        double proteinDielectric = 1.0;
+        boolean tanhCorrection = false;
+        try {
+          proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC");
+          tanhCorrection = forceField.getBoolean("TANH_CORRECTION");
+        } catch (Exception e) {
+          logger.info("Protein Dielectric or Tanh Correction is Null");
+        }
 
         TitrationUtils titrationUtils;
-        titrationUtils = new TitrationUtils(molecularAssembly.getForceField());
+        titrationUtils = new TitrationUtils(molecularAssembly.getForceField(), proteinDielectric,tanhCorrection);
         titrationUtils.setRotamerPhBias(298.15, pH);
         for (Residue residue : molecularAssembly.getResidueList()) {
           String resName = residue.getName();
