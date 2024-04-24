@@ -49,7 +49,6 @@ import org.w3c.dom.NodeList
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
-import javax.management.InvalidAttributeValueException
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -126,8 +125,8 @@ class ReadXML extends PotentialScript {
         doc = dBuilder.parse(inputFile)
         watDoc = dBuilder.parse(watFile)
 
-//        readAmber(doc, watDoc)
-        readCharmm(doc, watDoc)
+        readAmber(doc, watDoc)
+//        readCharmm(doc, watDoc)
 
         return this
     }
@@ -941,89 +940,58 @@ class ReadXML extends PotentialScript {
                         break
 
                     case "CMAPTorsionForce": //TODO
-                        logger.info("At CMAPTorsionForce")
-                        // Don't need to add waters/ions because they are do not have phi/psi angles
+                        // Don't need to add waters/ions because they do not have phi/psi angles
                         // <Map> : long lists doubles - look for new line chars?
                         // <Torsion> : map="0-11", class1-5
 
                         NodeList cmaps = parentNode.item(0).getChildNodes()
-                        int maps = cmaps.getLength()
-                        double[][] energiesMaps = new double[maps][]
-                        int numMaps = 0
+                        double[][] energiesMaps
                         for (Node cmap : cmaps) {
 //                            public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
                             // int[5] atomClasses come from <Torsion>
                             // int[2] gridPoints - 25 25 in CHARMM_22_CMAP; should be length(torsion1) length(torsion2)
+                            int numMaps
                             // double[] energy
                             if (cmap.getNodeName() == "Map") {
                                 String nodeData = cmap.getChildNodes().item(0).getNodeValue() // gets data in <Map> node
 
                                 int nx
                                 int ny
-                                //get values for nx and ny
-                                for(int i=0; i<1; i++) {
-                                    String[] arr = nodeData.split('[\\n\\r]+')
-                                    for (String node in arr){
-                                        arr[i] = arr[i].trim()
-                                    }
-                                    if (arr != null){
-                                        logger.info("CHECK ARR")
-                                    }
-                                    nx = arr.length
-                                    String[] arrIndiv = arr[i].split(' ');
-                                    ny = arrIndiv.length
-                                    if (nx != ny){
-                                        throw new InvalidAttributeValueException("nx and ny not the same length")
-                                    }
-                                }
-                                //
-                                ArrayList<Double> nodeList = new ArrayList<Double>()
-                                try{
-                                    //split on all delimiters, new line, carriage return, and space
-                                    String[] nodeStrings = nodeData.split("[\\n \\r]+");
-                                    //get rid of extraneous white space
-                                    for (int i=0; i<nodeStrings.length; i++){
-                                        nodeStrings[i] = nodeStrings[i].trim()
-                                        if (nodeStrings[i] != null && nodeStrings[i] != "") {
-                                            double num = parseDouble(nodeStrings[i])
-                                            nodeList.add(num)
-                                        }
-                                    }
-                                }
-                                catch(NumberFormatException e){
-                                    logger.info("cmap energies issue in full array")
-                                    throw e;
-                                }
-                                //logger.info("FILTERED AND PARSED AS DOUBLE")
-                                //logger.info(nodeList.toString())
-                                double[] arr = nodeList.stream().mapToDouble(d -> d).toArray();
-                                energiesMaps[numMaps] = arr
-
-                                int[] gridPoints = new int[]{nx,ny};
-                                double[] torsion1 = new double[nx*ny];
-                                double[] torsion2 = new double[ny*nx];
-                                double phi = -180.0;
-                                double psi = -180;
-                                for (int i=0; i<nx; i++) {
-                                    //reset psi to -180.0 each outer iteration, increment phi
-                                    psi = -180.0;
-                                    phi = phi + (15*i);
-                                    for (int j=0; j<ny; j++){
-                                        //torsion1 says constant ny times
-                                        torsion1[j] = phi
-                                        //iterate through psi from -180 to 180 each outer loop
-                                        torsion2[j] = psi + (15*j);
-                                    }
-                                }
-                                numMaps++;
+                                String[] arr = nodeData.split('[\\n\\r]')
+//                                for(int i=0; i<1; i++) {
+//                                    String[] arr = nodeData.split('[\\n\\r]');
+//                                    nx = arr.length;
+//                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
+//                                    //parses it as doubles at the same time
+//                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
+//                                }
+//                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
+//
+//                                int[] gridPoints = new int[]{nx,ny};
+//                                double[] torsion1;
+//                                double[] torsion2;
+//                                double phi = -180.0;
+//                                double psi = -180;
+//                                for (int i=0; i<nx; i++) {
+//                                    //reset psi to -180.0 each outer iteration, increment phi
+//                                    psi = -180.0;
+//                                    phi = phi + (15*i);
+//                                    for (int j=0; j<ny; j++){
+//                                        //torsion1 says constant ny times
+//                                        torsion1[j] = phi
+//                                        //iterate through psi from -180 to 180 each outer loop
+//                                        torsion2[j] = psi + (15*j);
+//                                    }
+//                                }
+//                                numMaps++;
                             } else if (cmap.getNodeName() == "Torsion") {
                                 int[] classes = new int[5]
                                 String map = cmap.getAttribute("map")
-                                classes[0] = atomClassMap.get(cmap.getAttribute("class1"))
-                                classes[1] = atomClassMap.get(cmap.getAttribute("class2"))
-                                classes[2] = atomClassMap.get(cmap.getAttribute("class3"))
-                                classes[3] = atomClassMap.get(cmap.getAttribute("class4"))
-                                classes[4] = atomClassMap.get(cmap.getAttribute("class5"))
+                                classes[0] = atomClassMap(cmap.getAttribute("type1"))
+                                classes[1] = atomClassMap(cmap.getAttribute("type2"))
+                                classes[2] = atomClassMap(cmap.getAttribute("type3"))
+                                classes[3] = atomClassMap(cmap.getAttribute("type4"))
+                                classes[4] = atomClassMap(cmap.getAttribute("type5"))
                                 //TODO
                             } else if (cmap.hasAttributes()) {
                                 logger.info("CHECK")
