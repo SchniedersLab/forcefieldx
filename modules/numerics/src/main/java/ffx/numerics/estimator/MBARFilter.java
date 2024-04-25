@@ -1,6 +1,5 @@
-package ffx.potential.parsers;
+package ffx.numerics.estimator;
 
-import ffx.numerics.estimator.MultistateBennettAcceptanceRatio;
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*;
 
 import java.io.*;
@@ -131,6 +130,22 @@ public class MBARFilter {
              BufferedReader br1 = new BufferedReader(fr1);) {
             // Read header
             String line = br1.readLine();
+            if (line == null) { // Empty file
+                for(int i = 0; i < windows; i++){
+                    tempFileEnergies.get(i).add(Double.NaN);
+                }
+                snaps[state] = 0;
+                temperatures[state] = 298; // Assumed default temp since 0 leads to division by zero
+                windowsRead++;
+                fileEnergies = new double[windows][];
+                for (int i = 0; i < windows; i++) {
+                    fileEnergies[i] = new double[tempFileEnergies.get(i).size()];
+                    for (int j = 0; j < tempFileEnergies.get(i).size(); j++) {
+                        fileEnergies[i][j] = tempFileEnergies.get(i).get(j);
+                    }
+                }
+                return fileEnergies;
+            }
             String[] tokens = line.trim().split("\\t *| +");
             temperatures[state] = Double.parseDouble(tokens[1]);
             // Read energies (however many there are)

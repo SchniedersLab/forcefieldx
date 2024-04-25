@@ -38,6 +38,7 @@
 package ffx.numerics.estimator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
@@ -229,18 +230,28 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     }
 
     // Initialize the eLow, eAt, and eHigh arrays to their expected values from eAll. Don't include NaN values.
-    eLow = new double[nTrajectories][eAll[0][0].length];
-    fill(eLow[0], Double.NaN);
-    eAt = new double[nTrajectories][];
-    eHigh = new double[nTrajectories][eAll[0][0].length];
-    fill(eHigh[nTrajectories - 1], Double.NaN);
-    for (int i = 0; i < nTrajectories; i++) {
-      if (i != 0) {
-        eLow[i] = copyOf(eAll[i][i-1], snaps[i]);
+    // Handle zero sample cases for BAR
+    ArrayList<Integer> nonZeroSampleStates = new ArrayList<>();
+    for(int i = 0; i < nTrajectories; i++) {
+      if(snaps[i] != 0) {
+        nonZeroSampleStates.add(i);
       }
-      eAt[i] = copyOf(eAll[i][i], snaps[i]);
-      if(i != nTrajectories - 1) {
-        eHigh[i] = copyOf(eAll[i][i + 1], snaps[i]);
+    }
+    eLow = new double[nonZeroSampleStates.size()][eAll[0][0].length];
+    fill(eLow[0], Double.NaN);
+    eAt = new double[nonZeroSampleStates.size()][];
+    eHigh = new double[nonZeroSampleStates.size()][eAll[0][0].length];
+    fill(eHigh[nonZeroSampleStates.size() - 1], Double.NaN);
+    for (int i = 0; i < nonZeroSampleStates.size(); i++) {
+      int index = nonZeroSampleStates.get(i); // Contains out of bounds index for e;
+      if (i != 0) {
+        int indexLow = nonZeroSampleStates.get(i - 1);
+        eLow[i] = copyOf(eAll[index][indexLow], snaps[index]);
+      }
+      eAt[i] = copyOf(eAll[index][index], snaps[index]);
+      if(i != nonZeroSampleStates.size() - 1) {
+        int indexHigh = nonZeroSampleStates.get(i + 1);
+        eHigh[i] = copyOf(eAll[index][indexHigh], snaps[index]);
       }
     }
   }

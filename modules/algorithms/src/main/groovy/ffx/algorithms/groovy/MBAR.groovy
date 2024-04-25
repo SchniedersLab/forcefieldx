@@ -40,9 +40,7 @@ package ffx.algorithms.groovy
 import ffx.crystal.Crystal
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.LambdaInterface
-import ffx.potential.parsers.MBARFilter
+import ffx.numerics.estimator.MBARFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
@@ -157,7 +155,7 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Path to MBAR/BAR files does not exist: " + path)
             return this
         }
-        if (!path.isDirectory() || !(path.isFile() && path.canRead())) {
+        if (!path.isDirectory() && !(path.isFile() && path.canRead())) {
             logger.severe("Path to MBAR/BAR files is not accessible: " + path)
             return this
         }
@@ -244,8 +242,9 @@ class MBAR extends AlgorithmsScript {
     }
 
     private static double[][] getEnergyForLambdas(File[] files) {
-        MolecularAssembly mola = getActiveAssembly(this.fileNames.toString())
         return new double[][]{}
+        //MolecularAssembly mola = getActiveAssembly(this.fileNames.toString())
+        //return new double[][]{}
         /*
         if (mola == null) {
             logger.severe

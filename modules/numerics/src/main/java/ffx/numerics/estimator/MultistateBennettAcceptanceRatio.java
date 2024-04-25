@@ -257,7 +257,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     fill(mbarFEEstimates, 0.0);
     seedEnergies();
     if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
-      throw new IllegalArgumentException("MBAR contains NaNs or Infs after seeding.");
+      seedType = SeedType.ZEROS;
+      seedEnergies();
     }
 
     // Precompute beta for each state.
@@ -304,27 +305,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
 
-    // SCI iterations used to start optimization of MBAR objective function.
-    // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
-    double[] prevMBAR;
-    double omega = 1.5; // Parameter chosen empirically to work with most systems (> 2 works but not always).
-    for (int i = 0; i < 10; i++) {
-      prevMBAR = copyOf(mbarFEEstimates, nLambdaStates);
-      mbarFEEstimates = selfConsistentUpdate(reducedPotentials, snaps, mbarFEEstimates);
-      for (int j = 0; j < nLambdaStates; j++) { // SOR
-        mbarFEEstimates[j] = omega * mbarFEEstimates[j] + (1 - omega) * prevMBAR[j];
-      }
-      if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
-        throw new IllegalArgumentException("MBAR contains NaNs or Infs during startup SCI ");
-      }
-    }
-
-    // Remove reduced potential arrays where snaps are zero since they cause issues for N.R. and likely L-BFGS
+    // Remove reduced potential arrays where snaps are zero since they cause issues for N.R. and SCI
     // i.e. no trajectories for that lambda were generated/sampled, but other trajectories had potentials evaluated at that lambda
     ArrayList<Integer> zeroSnapLambdas = new ArrayList<>();
+    ArrayList<Integer> sampledLambdas = new ArrayList<>();
     for(int i = 0; i < nLambdaStates; i++) {
       if (snaps[i] == 0) {
         zeroSnapLambdas.add(i);
+      } else {
+        sampledLambdas.add(i);
       }
     }
     int nLambdaStatesTemp = nLambdaStates - zeroSnapLambdas.size();
@@ -347,6 +336,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       snapsTemp = snaps;
     }
 
+    // SCI iterations used to start optimization of MBAR objective function.
+    // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
+    double[] prevMBAR;
+    double omega = 1.5; // Parameter chosen empirically to work with most systems (> 2 works but not always).
+    for (int i = 0; i < 10; i++) {
+      prevMBAR = copyOf(mbarFEEstimatesTemp, nLambdaStatesTemp);
+      mbarFEEstimatesTemp = selfConsistentUpdate(reducedPotentialsTemp, snapsTemp, mbarFEEstimatesTemp);
+      for (int j = 0; j < nLambdaStatesTemp; j++) { // SOR
+        mbarFEEstimatesTemp[j] = omega * mbarFEEstimatesTemp[j] + (1 - omega) * prevMBAR[j];
+      }
+      if (stream(mbarFEEstimatesTemp).anyMatch(Double::isInfinite) || stream(mbarFEEstimatesTemp).anyMatch(Double::isNaN)) {
+        throw new IllegalArgumentException("MBAR contains NaNs or Infs during startup SCI ");
+      }
+    }
+
     try {
       if (nLambdaStatesTemp > 100) { // L-BFGS optimization for high granularity windows where hessian is expensive
         int mCorrections = 5;
@@ -363,8 +367,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
 
       // Update the FE estimates with the optimized values from derivative-based optimization
-      for(Integer i : zeroSnapLambdas) {
-        mbarFEEstimates[i] = mbarFEEstimatesTemp[i];
+      int count = 0;
+      for(Integer i : sampledLambdas){
+        mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
+        count++;
       }
     } catch (Exception e) {
       logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
@@ -1237,8 +1243,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   public static void main(String[] args) {
     double[] O_k = {0, 1, 2, 3, 4}; // Equilibrium positions
-    double[] K_k = {1, 2, 2.5, 3, 4}; // Spring constants
-    int[] N_k = {0, 500, 300, 40, 10000}; // No support for different number of snapshots
+    double[] K_k = {1, 3, 7, 10, 15}; // Spring constants
+    int[] N_k = {0, 500, 300, 0, 10000}; // No support for different number of snapshots
     double beta = 1.0;
 
     // Create an instance of HarmonicOscillatorsTestCase
@@ -1272,7 +1278,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding.");
-    MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, SeedType.ZEROS);
+    //MBARFilter mbarFilter = new MBARFilter(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/LYS_Umod/zeroSampleTest"));
+    MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
     double[] mbarUncertainties = Arrays.copyOf(mbar.mbarUncertainties, mbar.mbarUncertainties.length);
     double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
