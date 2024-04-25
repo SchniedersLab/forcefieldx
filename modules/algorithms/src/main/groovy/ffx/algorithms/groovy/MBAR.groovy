@@ -37,8 +37,11 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.crystal.Crystal
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.LambdaInterface
 import ffx.potential.parsers.MBARFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -46,6 +49,7 @@ import picocli.CommandLine.Option
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*
+import static java.lang.String.format
 
 /**
  * Simple wrapper for the MBAR class and does not support energy evaluations, which need to be precomputed in PhEnergy or Energy scripts using --mbar.
@@ -74,8 +78,8 @@ class MBAR extends AlgorithmsScript {
      * The path to MBAR/BAR files.
      */
     @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'Path to MBAR/BAR files.')
-    String path = null
+            description = 'Path to MBAR/BAR files to analyze or an archive trajectory.')
+    List<String> fileNames = null
 
     public MultistateBennettAcceptanceRatio mbar = null
 
@@ -102,20 +106,61 @@ class MBAR extends AlgorithmsScript {
         if (!init()) {
             return this
         }
-        if (path == null) {
+
+        if (fileNames == null) {
             logger.severe("No path to MBAR/BAR files specified.")
             return this
         }
-        File path = new File(path)
+        boolean isArc = false
+        if(fileNames.size() == 1) {
+            File path = new File(fileNames[0])
+            isArc = !(path.exists() && path.isDirectory())
+        }
+
+        // Write MBAR file
+        if(isArc){
+            // Get list of files & check validity
+            List<File> files = new ArrayList<File>()
+            File parent = new File(fileNames[0]).getParentFile()
+            for(String file : fileNames){
+                assert file != null
+                File path = new File(file)
+                if (!path.exists()) {
+                    logger.severe("Path to arc file does not exist: " + path)
+                    return this
+                }
+                if(!path.isFile() || !path.canRead()) {
+                    logger.severe("Path to arc file is not accessible: " + path)
+                    return this
+                }
+                if(path.getName().endsWith(".arc") && path.getParentFile() == parent) {
+                    files.add(path)
+                } else {
+                    logger.severe("Path to file does not have the same parent as other files: " + path)
+                    return this
+                }
+            }
+            double[][] energies = getEnergyForLambdas(files)
+            int window = Integer.parseInt(files[0].getParentFile().getName())
+            File outputDir = new File(files[0].getParentFile().getParentFile(), "mbarFiles")
+            if(!outputDir.exists()) {
+                outputDir.mkdir()
+            }
+            File outputFile = new File(outputDir, "energy_" + window + ".mbar")
+            MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298)
+            return this
+        }
+
+        // Run MBAR calculation
+        File path = new File(fileNames[0])
         if (!path.exists()) {
             logger.severe("Path to MBAR/BAR files does not exist: " + path)
             return this
         }
-        if (!path.isDirectory()) {
-            logger.severe("Path to MBAR/BAR files is not a directory: " + path)
+        if (!path.isDirectory() || !(path.isFile() && path.canRead())) {
+            logger.severe("Path to MBAR/BAR files is not accessible: " + path)
             return this
         }
-
         MBARFilter filter = new MBARFilter(path);
         seedWith = seedWith.toUpperCase()
         SeedType seed = SeedType.valueOf(seedWith) as MultistateBennettAcceptanceRatio.SeedType
@@ -196,6 +241,73 @@ class MBAR extends AlgorithmsScript {
             }
         }
         return this
+    }
+
+    private static double[][] getEnergyForLambdas(File[] files) {
+        MolecularAssembly mola = getActiveAssembly(this.fileNames.toString())
+        return new double[][]{}
+        /*
+        if (mola == null) {
+            logger.severe
+        }
+
+        int nSnapshots = openers[0].countNumModels()
+
+        double[] x = new double[potential.getNumberOfVariables()]
+        double[] vol = new double[nSnapshots]
+        for (int k = 0; k < lambdaValues.length; k++) {
+            energy[k] = new double[nSnapshots]
+        }
+
+        LambdaInterface linter1 = (LambdaInterface) potential
+
+        int endWindow = nWindows - 1
+        String endWindows = endWindow + File.separator
+
+        if (arcFileName[0].contains(endWindows)) {
+            logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
+                    "Energy Low", "Lambda At", "Energy At"))
+        } else if (arcFileName[0].contains("0/")) {
+            logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda At",
+                    "Energy At", "Lambda High", "Energy High"))
+        } else {
+            logger.info(format(" %s     %s   %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
+                    "Energy Low", "Lambda At", "Energy At", "Lambda High", "Energy High"))
+        }
+
+        for (int i = 0; i < nSnapshots; i++) {
+            boolean resetPosition = (i == 0)
+            for (int n = 0; n < openers.length; n++) {
+                openers[n].readNext(resetPosition, false)
+            }
+
+            x = potential.getCoordinates(x)
+            for (int k = 0; k < lambdaValues.length; k++) {
+                double lambda = lambdaValues[k]
+                linter1.setLambda(lambda)
+                energy[k][i] = potential.energy(x, false)
+            }
+
+            if (lambdaValues.length == 2) {
+                logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1, lambdaValues[0],
+                        energy[0][i], lambdaValues[1], energy[1][i]))
+            } else {
+                logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1,
+                        lambdaValues[0],
+                        energy[0][i], lambdaValues[1], energy[1][i], lambdaValues[2], energy[2][i]))
+            }
+
+            if (isPBC) {
+                Crystal unitCell = potential.getCrystal().getUnitCell()
+                vol[i] = unitCell.volume / nSymm
+                logger.info(format(" %8d %14.4f",
+                        i + 1, vol[i]))
+            }
+        }
+
+        return vol
+
+         */
     }
 
     MultistateBennettAcceptanceRatio getMBAR() {
