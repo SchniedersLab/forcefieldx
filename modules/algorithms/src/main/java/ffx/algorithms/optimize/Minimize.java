@@ -47,6 +47,7 @@ import ffx.algorithms.dynamics.MDEngine;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
+import ffx.numerics.optimization.LineSearchHZ;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.Platform;
@@ -324,7 +325,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
                                     double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
-                                    double angle, LineSearch.LineSearchResult lineSearchResult) {
+                                    double angle, LineSearchHZ.LineSearchHZResult lineSearchResult) {
     long currentTime = System.nanoTime();
     Double seconds = (currentTime - time) * 1.0e-9;
     time = currentTime;
@@ -343,7 +344,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     if (lineSearchResult == null) {
       logger.info(format("%6d%13.4f%11.4f", iteration, energy, rmsGradient));
     } else {
-      if (lineSearchResult == LineSearch.LineSearchResult.Success) {
+      if (lineSearchResult == LineSearchHZ.LineSearchHZResult.Success) {
         logger.info(
             format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f", iteration, energy, rmsGradient,
                 energyChange, rmsCoordinateChange, angle, functionEvaluations, seconds));

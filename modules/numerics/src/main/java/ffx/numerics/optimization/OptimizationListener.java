@@ -38,6 +38,7 @@
 package ffx.numerics.optimization;
 
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.LineSearchHZ.LineSearchHZResult;
 
 /**
  * This interface allows the optimizer to notify registered instances of successful steps. Currently
@@ -66,6 +67,9 @@ public interface OptimizationListener {
    * @return A return value of false will terminate the optimization.
    * @since 1.0
    */
+//  boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
+//                             double coordinateRMS, double f, double df, double angle, LineSearchResult info);
+
   boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
-                             double coordinateRMS, double f, double df, double angle, LineSearchResult info);
+                             double coordinateRMS, double f, double df, double angle, LineSearchHZResult info);
 }

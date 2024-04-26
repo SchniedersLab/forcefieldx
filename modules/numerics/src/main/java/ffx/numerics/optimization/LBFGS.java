@@ -49,6 +49,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.OptimizationInterface;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.LineSearchHZ.LineSearchHZResult;
 
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
@@ -240,8 +241,10 @@ public class LBFGS {
     double gamma = 1.0;
 
     // Line search parameters.
-    final LineSearch lineSearch = new LineSearch(n);
-    final LineSearchResult[] info = {LineSearchResult.Success};
+//    final LineSearch lineSearch = new LineSearch(n);
+//    final LineSearchResult[] info = {LineSearchResult.Success};
+    final LineSearchHZ lineSearchHZ = new LineSearchHZ(n);
+    final LineSearchHZResult[] info = {LineSearchHZResult.Success};
     final int[] nFunctionEvals = {0};
     final double[] angle = {0.0};
     double df = 0.5 * DEFAULT_STEPMAX * gnorm;
@@ -304,7 +307,8 @@ public class LBFGS {
       // Perform the line search along the new conjugate direction.
       nFunctionEvals[0] = 0;
       double prevF = f;
-      f = lineSearch.search(n, x, f, g, p, angle, df, info, nFunctionEvals, potential);
+//      f = lineSearch.search(n, x, f, g, p, angle, df, info, nFunctionEvals, potential);
+      f = lineSearchHZ.search(n,x,f,g,p,angle,df,info,nFunctionEvals,potential);
       evaluations += nFunctionEvals[0];
 
       // Update variables based on the results of this iteration.
@@ -333,7 +337,7 @@ public class LBFGS {
       grms = sqrt(grms) / rms;
 
       boolean done = false;
-      if (info[0] == LineSearchResult.BadIntpln || info[0] == LineSearchResult.IntplnErr) {
+      if (info[0] == LineSearchHZResult.NoConvergence || info[0] == LineSearchHZResult.FailNewEvalPt) {
         nErrors++;
         if (nErrors >= maxErrors) {
           done = true;
@@ -453,7 +457,7 @@ public class LBFGS {
    * @since 1.0
    */
   private static void log(int iter, int nfun, double grms, double xrms, double f, double df,
-                          double angle, LineSearchResult info) {
+                          double angle, LineSearchHZResult info) {
     if (iter == 0) {
       logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
       logger.info(

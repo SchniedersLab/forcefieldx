@@ -172,32 +172,32 @@ public class LineSearch {
     info[0] = null;
 
     // Copy the search direction p into a new vector s.
-    arraycopy(p, 0, s, 0, n);
+    arraycopy(p, 0, s, 0, n); // s = p
 
     // Compute the length of the gradient and search direction.
-    double gNorm = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1));
-    double sNorm = sqrt(v1DotV2(n, s, 0, 1, s, 0, 1));
+    double gNorm = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1)); //sqrt(g.g)
+    double sNorm = sqrt(v1DotV2(n, s, 0, 1, s, 0, 1)); //sqrt(s.s)
 
     /*
      Store the initial function, then normalize the search vector and find
      the projected gradient.
     */
-    f0 = f;
-    arraycopy(x, 0, x0, 0, n);
+    f0 = f; // initial function store
+    arraycopy(x, 0, x0, 0, n); // copy coordinates to x0
     for (int i = 0; i < n; i++) {
-      s[i] /= sNorm;
+      s[i] /= sNorm; // normalize search direction vector
     }
-    sg0 = v1DotV2(n, s, 0, 1, g, 0, 1);
+    sg0 = v1DotV2(n, s, 0, 1, g, 0, 1); // projected gradient s.g. length?
 
     /*
      Check the angle between the search direction and the negative
      gradient vector.
     */
-    double cosang = -sg0 / gNorm;
-    cosang = min(1.0, max(-1.0, cosang));
-    angle[0] = toDegrees(acos(cosang));
-    if (angle[0] > DEFAULT_ANGLEMAX) {
-      info[0] = LineSearchResult.WideAngle;
+    double cosang = -sg0 / gNorm; // cosine angle of negative gradient vector (adjancent/hypotnuse)
+    cosang = min(1.0, max(-1.0, cosang)); // ?? why 1/-1 and not pi?
+    angle[0] = toDegrees(acos(cosang)); // angle between gradient and search direction (inverse cosine of cosine angle in degrees)
+    if (angle[0] > DEFAULT_ANGLEMAX) { // cant have too big of a differnce bewteen search direction and gradient
+      info[0] = LineSearch.LineSearchResult.WideAngle;
       return f;
     }
 
@@ -205,16 +205,16 @@ public class LineSearch {
      Set the initial stepSize to the length of the passed search vector,
      or based on previous function decrease.
     */
-    step = 2.0 * abs(fMove / sg0);
-    step = min(step, sNorm);
+    step = 2.0 * abs(fMove / sg0); // 2 * abs(change in function value due to previous step / projected gradient length)
+    step = min(step, sNorm); // take smaller value: above calc. or search vector normal (length)
     if (step > DEFAULT_STEPMAX) {
-      step = DEFAULT_STEPMAX;
+      step = DEFAULT_STEPMAX; // step can't be larger than default stepmax
     }
     if (step < DEFAULT_STEPMIN) {
-      step = DEFAULT_STEPMIN;
+      step = DEFAULT_STEPMIN; // step can't be smaller than default stepmin
     }
 
-    return begin();
+    return begin(); // call begin() method
   }
 
   /**
@@ -224,45 +224,45 @@ public class LineSearch {
     restart = true;
     interpolation = 0;
     fB = f0;
-    sgB = sg0;
-    return step();
+    sgB = sg0; // todo why B here? (not A or C)
+    return step(); // call step() method
   }
 
   /**
    * Replace last point by latest and take another step.
    */
   private double step() {
-    fA = fB;
-    sgA = sgB;
-    aV1PlusV2(n, step, s, 0, 1, x, 0, 1);
+    fA = fB; // so now fA = fB = f0
+    sgA = sgB; // same: sgA = sgB = sg0
+    aV1PlusV2(n, step, s, 0, 1, x, 0, 1); // scalar step * step direction + coords (step*s + x) ! (x + alpha*p) TODO: UPDATES 'X' VECTOR
 
     // Get new function and projected gradient following a step
-    functionEvaluations[0]++;
-    fB = optimizationSystem.energyAndGradient(x, g);
-    sgB = v1DotV2(n, s, 0, 1, g, 0, 1);
+    functionEvaluations[0]++; // increment counter of number of function evaluations
+    fB = optimizationSystem.energyAndGradient(x, g); // replace fB with new function (Energy) value; also updates gradient vector in method?
+    sgB = v1DotV2(n, s, 0, 1, g, 0, 1); // recompute projected gradient with updated gradient array (g) (step direction array is the same)
 
     // Scale step size if initial gradient change is too large
-    if (abs(sgB / sgA) >= DEFAULT_SLOPEMAX && restart) {
-      arraycopy(x0, 0, x, 0, n);
-      step /= 10.0;
-      info[0] = LineSearchResult.ScaleStep;
-      begin();
+    if (abs(sgB / sgA) >= DEFAULT_SLOPEMAX && restart) { // TODO: DEFAULT_SLOPEMAX = ftol in c++ (ALMOST same as line 1083 [doesnt have f <= ftest1]) - restart = stage1?
+      arraycopy(x0, 0, x, 0, n); // copy x0 to x (x=x0) to reset coordinates to original values
+      step /= 10.0; // step / 10 -> scale down a whole order of magnitude
+      info[0] = LineSearch.LineSearchResult.ScaleStep; // for logging that this was done
+      begin(); // redo begin() method
     }
-    restart = false;
+    restart = false; // cant restart after first pass
 
     /*
      We now have an appropriate step size. Return if the gradient is small
      and function decreases.
     */
-    if (abs(sgB / sg0) <= DEFAULT_CAPPA && fB < fA) {
+    if (abs(sgB / sg0) <= DEFAULT_CAPPA && fB < fA) { // TODO: DEFAULT_CAPPA = gtol in c++ (SAME IF AS IN LINE 1074)
       if (info[0] == null) {
-        info[0] = LineSearchResult.Success;
+        info[0] = LineSearch.LineSearchResult.Success;
       }
       f0 = fB;
-      sg0 = sgB;
+      sg0 = sgB; // why update if not returned?
       return f0;
     }
-
+//TODO CONTINUE HERE (LINE 1094 IN C++?)
     // Interpolate if gradient changes sign or function increases.
     if (sgB * sgA < 0.0 || fB > fA) {
       return cubic();
