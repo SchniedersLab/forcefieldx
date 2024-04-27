@@ -16,6 +16,11 @@ import static org.apache.commons.lang3.math.NumberUtils.min;
  * is a list of energies for each snapshot at each lambda value being considered with an index to start
  * the line. Then the energies go from least (0) to greatest (1) lambda value.
  *
+ * TODO: Add support for adding NaN columns evenly when reading in files with more lambda evaluations than files.
+ * Strategy: Read in files & read numLambdas, if its > numFiles, check numLambdas are same in each file,
+ *           and recursively call after renaming files and creating new (empty) files to fill in. Hopefully
+ *           the user has made numLambda such that it is a multiple of numTrajectories to make guessing easy.
+ *
  * @author Matthew J. Speranza
  * @since 1.0
  *

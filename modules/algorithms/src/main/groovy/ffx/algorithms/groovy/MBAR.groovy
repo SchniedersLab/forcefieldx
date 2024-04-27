@@ -37,17 +37,25 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.crystal.Crystal
+import edu.rit.pj.ParallelTeam
+import ffx.crystal.CrystalPotential
 import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.EstimateBootstrapper
 import ffx.numerics.estimator.MBARFilter
+import ffx.potential.MolecularAssembly
+import ffx.potential.cli.AlchemicalOptions
+import ffx.potential.cli.TopologyOptions
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.bonded.LambdaInterface
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
+import picocli.CommandLine.Mixin
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*
 import static java.lang.String.format
+import org.apache.commons.io.FilenameUtils
 
 /**
  * Simple wrapper for the MBAR class and does not support energy evaluations, which need to be precomputed in PhEnergy or Energy scripts using --mbar.
@@ -60,6 +68,12 @@ import static java.lang.String.format
         name = "MBAR")
 class MBAR extends AlgorithmsScript {
 
+    @Mixin
+    private AlchemicalOptions alchemical
+
+    @Mixin
+    private TopologyOptions topology
+
     @Option(names = ["--bar"], paramLabel = "false",
             description = "Run BAR calculation as well.")
     boolean bar = false
@@ -67,6 +81,10 @@ class MBAR extends AlgorithmsScript {
     @Option(names = ["--numBootstrap", "--nb"], paramLabel = "50",
             description = "Number of bootstrap snaps to use.")
     int numBootstrap = 50
+
+    @Option(names = ["--numLambda", "--nL"], paramLabel = "-1",
+            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. 3 trajectory --> 3n lambda windows. ")
+    int numLambda = -1
 
     @Option(names = ["--seed"], paramLabel = "BAR",
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR.")
@@ -76,10 +94,11 @@ class MBAR extends AlgorithmsScript {
      * The path to MBAR/BAR files.
      */
     @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'Path to MBAR/BAR files to analyze or an archive trajectory.')
-    List<String> fileNames = null
+            description = 'Path to MBAR/BAR files to analyze or an PDB/XYZ in a directory with archive(s).')
+    List<String> fileList = null
 
     public MultistateBennettAcceptanceRatio mbar = null
+    int numTopologies
 
     /**
      * MBAR Constructor.
@@ -105,58 +124,55 @@ class MBAR extends AlgorithmsScript {
             return this
         }
 
-        if (fileNames == null) {
-            logger.severe("No path to MBAR/BAR files specified.")
+        /**
+         * Load user supplied fileNames into an array.
+         */
+        if (fileList == null) {
+            logger.severe("No path to MBAR/BAR or trajectory(s) file names specified.")
             return this
         }
-        boolean isArc = false
-        if(fileNames.size() == 1) {
-            File path = new File(fileNames[0])
-            isArc = !(path.exists() && path.isDirectory())
+        int nFiles = fileList.size()
+        String[] fileNames = new String[nFiles]
+        File[] files = new File[nFiles]
+        for (int i = 0; i < nFiles; i++) {
+            fileNames[i] = fileList.get(i)
+            files[i] = new File(fileNames[i])
+            if (!files[i].exists()) {
+                logger.severe("File does not exist: " + fileNames[i])
+                return this
+            }
         }
+        boolean isArc = !files[0].isDirectory()
 
         // Write MBAR file
         if(isArc){
-            // Get list of files & check validity
-            List<File> files = new ArrayList<File>()
-            File parent = new File(fileNames[0]).getParentFile()
-            for(String file : fileNames){
-                assert file != null
-                File path = new File(file)
-                if (!path.exists()) {
-                    logger.severe("Path to arc file does not exist: " + path)
-                    return this
-                }
-                if(!path.isFile() || !path.canRead()) {
-                    logger.severe("Path to arc file is not accessible: " + path)
-                    return this
-                }
-                if(path.getName().endsWith(".arc") && path.getParentFile() == parent) {
-                    files.add(path)
-                } else {
-                    logger.severe("Path to file does not have the same parent as other files: " + path)
-                    return this
-                }
+            if (numLambda == -1){
+                logger.severe("numLambda must be specified for lambda energy evaluations.")
+                return this
             }
-            double[][] energies = getEnergyForLambdas(files)
-            int window = Integer.parseInt(files[0].getParentFile().getName())
-            File outputDir = new File(files[0].getParentFile().getParentFile(), "mbarFiles")
+            // Get list of fileNames & check validity
+            double[][] energies = getEnergyForLambdas(files, numLambda) // Long step!
+            File parent = new File(fileList[0]).getParentFile() // Run directory
+            int window = Integer.parseInt(parent.getName()) // Run name should be int
+            File outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
             if(!outputDir.exists()) {
                 outputDir.mkdir()
             }
+            // Write MBAR file with window number, although this will be reassigned by the file filter based on
+            // placement relative to other fileNames with energy values.
             File outputFile = new File(outputDir, "energy_" + window + ".mbar")
-            MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298)
+            MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
             return this
         }
 
         // Run MBAR calculation
-        File path = new File(fileNames[0])
+        File path = new File(fileList.get(0))
         if (!path.exists()) {
-            logger.severe("Path to MBAR/BAR files does not exist: " + path)
+            logger.severe("Path to MBAR/BAR fileNames does not exist: " + path)
             return this
         }
         if (!path.isDirectory() && !(path.isFile() && path.canRead())) {
-            logger.severe("Path to MBAR/BAR files is not accessible: " + path)
+            logger.severe("Path to MBAR/BAR fileNames is not accessible: " + path)
             return this
         }
         MBARFilter filter = new MBARFilter(path);
@@ -241,72 +257,89 @@ class MBAR extends AlgorithmsScript {
         return this
     }
 
-    private static double[][] getEnergyForLambdas(File[] files) {
-        return new double[][]{}
-        //MolecularAssembly mola = getActiveAssembly(this.fileNames.toString())
-        //return new double[][]{}
+    private double[][] getEnergyForLambdas(File[] files, int nLambda) {
+        // Stuff copied from BAR.groovy
         /*
-        if (mola == null) {
-            logger.severe
+            Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+            Checking numTopologies == 1 should only be done for scripts that imply
+            some sort of lambda scaling.
+            The Minimize script, for example, may be running on a single, unscaled physical topology.
+        */
+        boolean lambdaTerm = (numTopologies == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm", "true")
+        }
+        // Relative free energies via the DualTopologyEnergy class require different
+        // default free energy parameters than absolute free energies.
+        if (numTopologies == 2) {
+            // Ligand vapor electrostatics are not calculated. This cancels when the
+            // difference between protein and water environments is considered.
+            System.setProperty("ligand-vapor-elec", "false")
+        }
+        if (numTopologies == 2) {
+            logger.info(format(" Initializing two topologies for each window."))
+        } else {
+            logger.info(format(" Initializing a single topology for each window."))
+        }
+        // Read in files and meta-details
+        int numTopologies = files.length
+        int threadsAvail = ParallelTeam.getDefaultThreadCount()
+        int numParallel = topology.getNumParallel(threadsAvail, numTopologies)
+        int threadsPer = (int) (threadsAvail / numParallel)
+        MolecularAssembly[] molecularAssemblies = new MolecularAssembly[files.length]
+        SystemFilter[] openers = new SystemFilter[files.length]
+        for (int i = 0; i < numTopologies; i++) {
+            MolecularAssembly ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, files[i].getName(), i)
+            molecularAssemblies[i] = ma
+            openers[i] = algorithmFunctions.getFilter()
+        }
+        StringBuilder sb = new StringBuilder(format(
+                "\n Performing FEP evaluations for: %s\n ", files))
+        CrystalPotential potential = (CrystalPotential) topology.assemblePotential(molecularAssemblies, threadsAvail, sb)
+        String[] arcFileName = new String[files.length]
+        for (int j = 0; j < numTopologies; j++) {
+            // Only use the first arc file (even if restarts happened)
+            arcFileName[j] = FilenameUtils.removeExtension(files[j].getAbsolutePath()) + ".arc"
+            File archiveFile = new File(arcFileName[j])
+            openers[j].setFile(archiveFile)
+            molecularAssemblies[j].setFile(archiveFile)
         }
 
+        // Slightly modified from BAR.groovy
         int nSnapshots = openers[0].countNumModels()
-
         double[] x = new double[potential.getNumberOfVariables()]
-        double[] vol = new double[nSnapshots]
+        double[] lambdaValues = new double[nLambda]
+        double[][] energy = new double[nLambda][nSnapshots]
         for (int k = 0; k < lambdaValues.length; k++) {
+            lambdaValues[k] = k.toDouble() / (nLambda - 1)
             energy[k] = new double[nSnapshots]
         }
-
         LambdaInterface linter1 = (LambdaInterface) potential
-
-        int endWindow = nWindows - 1
-        String endWindows = endWindow + File.separator
-
-        if (arcFileName[0].contains(endWindows)) {
-            logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
-                    "Energy Low", "Lambda At", "Energy At"))
-        } else if (arcFileName[0].contains("0/")) {
-            logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda At",
-                    "Energy At", "Lambda High", "Energy High"))
-        } else {
-            logger.info(format(" %s     %s   %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
-                    "Energy Low", "Lambda At", "Energy At", "Lambda High", "Energy High"))
-        }
-
+        logger.info(format("\n\n Performing energy evaluations for %d snapshots.", nSnapshots))
+        logger.info(format(" Using %d lambda values.", nLambda))
+        logger.info(format(" Using %d topologies.", numTopologies))
+        logger.info(" Lambda values: " + lambdaValues)
+        logger.info("")
         for (int i = 0; i < nSnapshots; i++) {
+            // Read coords
             boolean resetPosition = (i == 0)
             for (int n = 0; n < openers.length; n++) {
                 openers[n].readNext(resetPosition, false)
             }
-
             x = potential.getCoordinates(x)
+
+            // Compute energies for each lambda
+            StringBuilder sb2 = new StringBuilder().append("Snapshot ").append(i).append(" Energy Evaluations: ")
             for (int k = 0; k < lambdaValues.length; k++) {
                 double lambda = lambdaValues[k]
                 linter1.setLambda(lambda)
                 energy[k][i] = potential.energy(x, false)
+                sb2.append(" ").append(energy[k][i])
             }
-
-            if (lambdaValues.length == 2) {
-                logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1, lambdaValues[0],
-                        energy[0][i], lambdaValues[1], energy[1][i]))
-            } else {
-                logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1,
-                        lambdaValues[0],
-                        energy[0][i], lambdaValues[1], energy[1][i], lambdaValues[2], energy[2][i]))
-            }
-
-            if (isPBC) {
-                Crystal unitCell = potential.getCrystal().getUnitCell()
-                vol[i] = unitCell.volume / nSymm
-                logger.info(format(" %8d %14.4f",
-                        i + 1, vol[i]))
-            }
+            logger.info(sb2.append("\n").toString())
         }
 
-        return vol
-
-         */
+        return energy
     }
 
     MultistateBennettAcceptanceRatio getMBAR() {
