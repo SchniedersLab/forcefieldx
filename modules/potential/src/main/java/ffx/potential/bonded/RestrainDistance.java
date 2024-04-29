@@ -56,14 +56,13 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class RestraintBond extends BondedTerm implements LambdaInterface {
+public class RestrainDistance extends BondedTerm implements LambdaInterface {
 
   @Serial
   private static final long serialVersionUID = 1L;
-
   public static final double DEFAULT_RB_LAM_START = 0.75;
   public static final double DEFAULT_RB_LAM_END = 1.0;
-  private static final Logger logger = Logger.getLogger(RestraintBond.class.getName());
+  private static final Logger logger = Logger.getLogger(RestrainDistance.class.getName());
   private final double restraintLambdaStart;
   private final double restraintLambdaStop;
   private final double restraintLambdaWindow;
@@ -91,8 +90,8 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
    * @param lamEnd At what lambda does the restraint hit full strength?
    * @param sf Switching function determining lambda dependence; null produces a ConstantSwitch.
    */
-  public RestraintBond(Atom a1, Atom a2, Crystal crystal, boolean lambdaTerm, double lamStart,
-      double lamEnd, UnivariateSwitchingFunction sf) {
+  public RestrainDistance(Atom a1, Atom a2, Crystal crystal, boolean lambdaTerm, double lamStart,
+                          double lamEnd, UnivariateSwitchingFunction sf) {
     restraintLambdaStart = lamStart;
     restraintLambdaStop = lamEnd;
     assert lamEnd > lamStart;
