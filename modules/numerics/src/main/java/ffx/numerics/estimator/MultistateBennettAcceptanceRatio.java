@@ -218,7 +218,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           mbarFreeEnergies[i + 1] = mbarFreeEnergies[i] + .5 * (forwardZwanzig[i] + backwardZwanzig[i]);
         }
         break;
-      case SeedType.ZEROS:
+      case ZEROS:
         break;
       default:
         throw new IllegalArgumentException("Seed type not supported");

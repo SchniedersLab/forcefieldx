@@ -67,9 +67,6 @@ public interface OptimizationListener {
    * @return A return value of false will terminate the optimization.
    * @since 1.0
    */
-//  boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
-//                             double coordinateRMS, double f, double df, double angle, LineSearchResult info);
-
   boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
-                             double coordinateRMS, double f, double df, double angle, LineSearchHZResult info);
+                             double coordinateRMS, double f, double df, double angle, LineSearchResult info);
 }

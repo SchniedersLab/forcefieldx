@@ -44,14 +44,18 @@ import static org.apache.commons.math3.util.FastMath.*;
 
 import ffx.numerics.OptimizationInterface;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.logging.Logger;
+
 /**
- * This class implements an algorithm for uni-dimensional line search. This file is a translation of
- * FORTRAN code written by Jay Ponder.<br>
+ * This class implements a line search described by Hager and Zhang (2004, 2005, 2006).
  *
  * @author Michael J. Schnieders <br> Derived from Jay Ponder's FORTRAN code (search.f).
  * @since 1.0
  */
 public class LineSearchHZ {
+  private static final Logger logger = Logger.getLogger(LineSearchHZ.class.getName()); // TODO - remove after debugging
 
   /**
    * Number of parameters to optimize.
@@ -76,7 +80,8 @@ public class LineSearchHZ {
   /**
    * Line search result (pass by reference).
    */
-  private LineSearchHZResult[] info;
+//  private LineSearchHZResult[] info;
+  private LineSearch.LineSearchResult[] info;
   /**
    * Implementation of the energy and gradient for the system.
    */
@@ -95,7 +100,7 @@ public class LineSearchHZ {
   private final int lineSearchMax = 100; // not sure where from
   private double[] alphaArr, valueArr, slopeArr;
   private int alphaIdx, valueIdx, slopeIdx;
-  private int nf; // number of function evaluations
+  private int nf[]; // number of function evaluations
   private boolean first; // flag for first iteration TODO change to just get from other values
   private boolean QuadStep;
 
@@ -111,10 +116,10 @@ public class LineSearchHZ {
     this.n = n;
 
     first = true;
-    QuadStep = false; // user's choice?
-    alphaArr = new double[lineSearchMax]; //todo? this size?
-    valueArr = new double[lineSearchMax];
-    slopeArr = new double[lineSearchMax];
+    QuadStep = false; // user's choice? todo was false
+    alphaArr = new double[10000]; // [lineSearchMax]; //todo? this size?
+    valueArr = new double[10000]; // [lineSearchMax];
+    slopeArr = new double[10000]; // [lineSearchMax];
     alphaIdx = 0;
     valueIdx = 0;
     slopeIdx = 0;
@@ -142,42 +147,48 @@ public class LineSearchHZ {
 //         OptimizationInterface optimizationSystem)
   // TODO MATLAB code has it returning double[] {alpha, phi}
   public double search(int n, double[] x, double f, double[] g, double[] p, double[] angle,
-                         double fMove, LineSearchHZResult[] info, int[] functionEvaluations,
-                         OptimizationInterface optimizationSystem) {
+                       double fMove, LineSearch.LineSearchResult[] info, int[] functionEvaluations,
+                       OptimizationInterface optimizationSystem) {
     assert(n > 0);
+//    logger.info(String.format("==ENTERED LINE SEARCH: n = %d",n));
 
     // Initialize the line search.
     this.x = x;
     this.g = g;
     this.optimizationSystem = optimizationSystem;
-    this.nf = functionEvaluations[0]; // TODO change nf to array and do nf[0]++;
+    this.nf = functionEvaluations;
     this.info = info;
+//    logger.info(String.format("===Other parameters: x[0] = %f, x.length=%d, g[0] = %f, g.length=%d, nf = %d",x[0],x.length,g[0],g.length,nf[0]));
 
     // Zero out the status indicator.
     info[0] = null;
-    // TODO: x and g should not be in function arguments
 
     // Copy the search direction p into a new vector s.
     arraycopy(p, 0, s, 0, n); // s = p
     arraycopy(x, 0, x0, 0, n); // copy coordinates to x0 (start)
-    //TODO: note I changed all the methods from the original conversion from MATLAB to match what Mike did
-    // (using global variables - i think necessary for updating values anyway).
-    // Perform testing tomorrow. Need to Fina a way to let mvn build, whether going to all the file it affects, or some other way
+
+    // look at SATURDAY todon lines
+
 
     // L0
     // I0-I2 in HZ paper, denoted initial(k)
 //    double c = initialGuess(n,x,f,g,p,angle,fMove,functionEvaluations,optimizationSystem);
     double c = initialGuess(f); // using initial f given when called from LBFGS
+    // log: "initial c = %f",c
 
     double[] tempPhi = getPhiDPhi(0);
     double phi_0 = tempPhi[0];
     double dphi_0 = tempPhi[1];
 
     if (!(Double.isFinite(phi_0) && Double.isFinite(dphi_0))) {
-      info[0] = LineSearchHZResult.StartErr;
+      // warning: "Value and slope at step length = 0 must be finite."
+//      info[0] = LineSearchHZResult.StartErr;
+      info[0] = LineSearch.LineSearchResult.IntplnErr;
     }
     if (dphi_0 >= ulp(1)*abs(phi_0)) { // 2.2204e-16
-      info[0] = LineSearchHZResult.AngleWarn;
+      // warning: "Search direction is not a direction of descent; dphi_0 = %f, (eps*abs(phi_0)) = %f", dphi_0, ulp(1) * abs(phi_0)
+//      info[0] = LineSearchHZResult.AngleWarn;
+      info[0] = LineSearch.LineSearchResult.WideAngle;
     } else if (dphi_0 >= 0) {
 //      double alphas = ulp(1); // 2.2204e-16 in MATLAB
 //      double values = phi_0;
@@ -186,6 +197,8 @@ public class LineSearchHZ {
       alphaIdx++;
       valueIdx++;
 //      return new double[]{alphaArr[0], valueArr[0]}; // {alphas, values} todo
+//      logger.info(String.format("===Returned at line 199. Step slope >= 0. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",alphaArr[0],valueArr[0],dphi_0,x[0],g[0]));
+      x = x0; // SATURDAY todo
       return valueArr[0];
     }
 
@@ -222,10 +235,12 @@ public class LineSearchHZ {
     }
 
     if ( !(Double.isFinite(phi_c) && Double.isFinite(dphi_c)) ) {
-      info[0] = LineSearchHZResult.FailNewEvalPt; // Failed to achieve finite new evaluation point, using alpha = 0.
+//      info[0] = LineSearchHZResult.FailNewEvalPt; // Failed to achieve finite new evaluation point, using alpha = 0.
+      info[0] = LineSearch.LineSearchResult.IntplnErr;
       alphaArr[0] = 0; // alphas = 0
       valueArr[0] = phi_0; // values = 0
 //      return new double[]{alphaArr[0], valueArr[0]}; // {alphas, values} TODO
+//      logger.info(String.format("===Returned at line 241. Phi/dPhi not finite. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",alphaArr[0],valueArr[0],dphi_0,x[0],g[0]));
       return valueArr[0];
     }
 //    double[] alphasArr = new double[]{alphas, c};
@@ -242,6 +257,8 @@ public class LineSearchHZ {
     if (satisfiesWolfe(c, phi_c, dphi_c, phi_0, dphi_0, phiLim)) {
       // Save the accepted c for future use. info_global(current_lev,column_idx) TODO
 //      return new double[]{c, phi_c}; //todo return c, phi_c (step/alpha and fxn value)
+      info[0] = LineSearch.LineSearchResult.Success;
+//      logger.info(String.format("===Returned at line 259. Satisfies Wolfe conditions. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",c,phi_c,dphi_c,x[0],g[0]));
       return phi_c;
     }
 
@@ -274,11 +291,12 @@ public class LineSearchHZ {
         ia = 0; // This guarantees that we enter bisect with \bar{a} = 0
 
         if ( (c != alphaArr[ib]) || (slopeArr[ib] >= 0) ) {
-          info[0] = LineSearchHZResult.IntplnErr; // error: "c = num2str(c)" ??
+//          info[0] = LineSearchHZResult.IntplnErr; // error: "c = num2str(c)" ??
+          info[0] = LineSearch.LineSearchResult.IntplnErr;
         }
 
         // This implements U3a-c
-        int[] iab = bisect(ia, ib, phiLim); //, x,s); // todo don't return this like this?
+        int[] iab = bisect(ia, ib, phiLim); //, x,s);
         ia = iab[0];
         ib = iab[1];
 
@@ -296,6 +314,8 @@ public class LineSearchHZ {
         double phi_cold = phi_c;
         if (cold >= alphaMax) {
 //          return new double[]{cold,phi_cold}; TODO
+          info[0] = LineSearch.LineSearchResult.ReSearch;
+//          logger.info(String.format("===Returned at line 315. cold (step) >= alphaMax! alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",cold,phi_cold,-69.69,x[0],g[0]));
           return phi_cold;
         }
         // c_{j+1} = rho * c_{j}, where rho is the growth factor for the bracketing interval. Hager and Zhang suggest to
@@ -328,6 +348,8 @@ public class LineSearchHZ {
 //          alphas = cold;
 //          values = phi_cold;
 //          return new double[]{cold, phi_cold}; TODO
+          info[0] = LineSearch.LineSearchResult.IntplnErr;
+//          logger.info(String.format("===Returned at line 349. Phi/dphi not Finite. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",cold,phi_cold,dphi_c,x[0],g[0]));
           return phi_cold;
         }
         alphaArr[alphaIdx] = c;
@@ -354,6 +376,8 @@ public class LineSearchHZ {
       // log: "linesearch: ia = %d, ib = %d, a = %f, b = %f, phi(a) = %f, phi(b) = %f",ia,ib,a,b,valueArr[ia],valueArr[ib]
       if (b-a <= ulp(b)) {
 //        return new double[]{a, valueArr[ia]}; TODO
+        info[0] = LineSearch.LineSearchResult.ReSearch;
+//        logger.info(String.format("===Returned at line 378. [a,b] too close. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",a,valueArr[ia],slopeArr[ia],x[0],g[0]));
         return valueArr[ia];
       }
 
@@ -366,8 +390,10 @@ public class LineSearchHZ {
       int iB = WiAB[2];
       // log: "L1: END of secant2."
       if (isWolfe) {
-        info[0] = LineSearchHZResult.Success;
+//        info[0] = LineSearchHZResult.Success;d
+        info[0] = LineSearch.LineSearchResult.Success;
 //        return new double[]{alphaArr[iA],valueArr[iA]};TODO
+//        logger.info(String.format("===Returned at line 394. Satisfies Wolfe conditions. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",alphaArr[iA],valueArr[iA],slopeArr[iA],x[0],g[0]));
         return valueArr[iA];
       }
       double A = alphaArr[iA];
@@ -379,8 +405,10 @@ public class LineSearchHZ {
         if ( (valueArr[ia] + ulp(1)) >= valueArr[ib] && (valueArr[iA] + ulp(1)) >= valueArr[iB] ) {
           // It's so flat, secant didn't do anything useful, time to quit
           // log: "Linesearch: secant suggests it is flat."
-          info[0] = LineSearchHZResult.Flat;
+//          info[0] = LineSearchHZResult.Flat;
+          info[0] = LineSearch.LineSearchResult.WideAngle;
 //          return new double[]{A, valueArr[iA]}; // return A, values(iA) TODO
+//          logger.info(String.format("===Returned at line 409. Flat function. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",alphaArr[iA],valueArr[iA],slopeArr[iA],x[0],g[0]));
           return valueArr[iA];
         }
         ia = iA;
@@ -413,9 +441,11 @@ public class LineSearchHZ {
     }
     // End of main loop of linesearch algorithm
     // warning: "Linesearch failed to converge, reached maximum iterations linesearchmax = %d",lineSearchMax
-    info[0] = LineSearchHZResult.NoConvergence;
+//    info[0] = LineSearchHZResult.NoConvergence;
+    info[0] = LineSearch.LineSearchResult.BadIntpln;
 
 //    return new double[]{c, phi_0}; //TODO should have state too?
+//    logger.info(String.format("===Returned at line 446. End of loop, no convergence (return starting values). alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",c,phi_0,dphi_0,x[0],g[0]));
     return phi_0;
   }
 
@@ -483,7 +513,7 @@ public class LineSearchHZ {
   private double initialGuess(double f) {
 
     // TODO: INITIAL GUESS -- already have initial guess when this is called?
-    nf = 0; // set number of function evals. to zero
+//    nf[0] = 0; // set number of function evals. to zero
     double alpha;
     if (first) { // At first iteration, pick initial step according to H.Z. I0
 //      alpha = hzStepI0(n,x,f,g,p,angle,fMove,functionEvaluations,optimizationSystem);
@@ -524,10 +554,13 @@ public class LineSearchHZ {
   private double hzStepI0(double f) {
     double alpha = 1.0;
     double f_x = f; // initial function value
-    double[] gr = g;
+//    double[] gr = g;
     double gr_max = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1));
     if (gr_max != 0) {
-      double x_max = max(x[0],x[1]); // Infinity norm - should be maximum absolute value (magnitude) of whole vector
+//      double x_max = max(x[0],x[1]); // Infinity norm - should be maximum absolute value (magnitude) of whole vector
+      double[] sortX = x;
+      Arrays.sort(sortX);
+      double x_max = Math.max(abs(sortX[0]), abs(sortX[sortX.length - 1]));
       if (x_max != 0) { // I0.(a)
         alpha = psi0 * x_max / gr_max;
       } else if (f_x != 0) { // point I0.(b)
@@ -608,17 +641,17 @@ public class LineSearchHZ {
   }
 
   private double[] getPhiDPhi(double c) {
+    arraycopy(x0, 0, x, 0, n); // reset X vector before adding c*s
     // TODO - do i need to store a copy of the previous coordinates, like are these just trial moves??
     // Returns phi_c = f(x + c*s) derivative ( dphi_c = f'(x+c*s).s
     // Retraction
     aV1PlusV2(n, c, s, 0, 1, x, 0, 1); // updates x; (x_new = x + c *s)
 
     // Compute phi_c
-    double[] g = new double[x.length]; // gradient array (will be wrote to in function?)
     double phi_c = optimizationSystem.energyAndGradient(x, g); // f(x_new)
 
     // Increase counter for the number of function evaluations
-    nf++;
+    nf[0]++;
 
     // Compute dphi_c (already calculated graient above)
 //    return v1DotV2(n, s, 0, 1, g, 0, 1); // s . g
@@ -627,10 +660,10 @@ public class LineSearchHZ {
   }
 
   private double getPhi(double c) {
+    arraycopy(x0, 0, x, 0, n); // reset X vector before adding c*s
     aV1PlusV2(n, c, s, 0, 1, x, 0, 1); // updates x; (x_new = x + c *s)
-    double[] g = new double[x.length]; // TODO
     double phi_c = optimizationSystem.energyAndGradient(x, g); // f(x_new)
-    nf++;
+    nf[0]++;
     return phi_c;
   }
 
@@ -665,7 +698,8 @@ public class LineSearchHZ {
 
     if ( !(dphi_a < 0 && dphi_b >= 0) ) {
       // warning: "The opposite slope condition is not satisfied: dphi(a) = %f; dphi(b) = %f",dphi_a,dphi_b
-      info[0] = LineSearchHZResult.BadSlopes;
+//      info[0] = LineSearchHZResult.BadSlopes;
+      info[0] = LineSearch.LineSearchResult.BadIntpln;
     }
 
     // S1

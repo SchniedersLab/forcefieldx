@@ -325,7 +325,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
                                     double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
-                                    double angle, LineSearchHZ.LineSearchHZResult lineSearchResult) {
+                                    double angle, LineSearch.LineSearchResult lineSearchResult) {
     long currentTime = System.nanoTime();
     Double seconds = (currentTime - time) * 1.0e-9;
     time = currentTime;
@@ -344,7 +344,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     if (lineSearchResult == null) {
       logger.info(format("%6d%13.4f%11.4f", iteration, energy, rmsGradient));
     } else {
-      if (lineSearchResult == LineSearchHZ.LineSearchHZResult.Success) {
+      if (lineSearchResult == LineSearch.LineSearchResult.Success) {
         logger.info(
             format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f", iteration, energy, rmsGradient,
                 energyChange, rmsCoordinateChange, angle, functionEvaluations, seconds));
