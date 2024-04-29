@@ -74,6 +74,73 @@ public class MBARFilter {
         }
         return new MultistateBennettAcceptanceRatio(lambda, eAll, temperatures, tolerance, seedType);
     }
+
+    /**
+     * Each contains (sequentially) an additional 10% of the total samples.
+     * @param seedType
+     * @param tol
+     * @return an array of MBAR objects
+     */
+    public MultistateBennettAcceptanceRatio[] getTimeConvergenceMBAR(SeedType seedType, double tol){
+        double[] lambda = new double[windows];
+        for (int i = 0; i < windows; i++) {
+            lambda[i] = i / (windows - 1.0);
+        }
+        MultistateBennettAcceptanceRatio[] mbar = new MultistateBennettAcceptanceRatio[10];
+        for (int i = 0; i < 10; i++){
+            double[][][] e = new double[windows][][];
+            int maxSamples = max(snaps);
+            int timePeriod = maxSamples / 10;
+            if (timePeriod * (i + 1) > maxSamples) {
+                e = eAll;
+            } else {
+                for (int j = 0; j < windows; j++) {
+                    e[j] = new double[windows][];
+                    for (int k = 0; k < windows; k++) {
+                        e[j][k] = new double[timePeriod * (i + 1)];
+                        System.arraycopy(eAll[j][k], 0, e[j][k], 0, timePeriod * (i + 1));
+                    }
+                }
+            }
+            logger.info(" Analysis percentage: " + (i + 1)*10 + "% samples calculation.");
+            mbar[i] = new MultistateBennettAcceptanceRatio(lambda, e, temperatures, tol, seedType);
+        }
+        return mbar;
+    }
+
+    /**
+     * 10% of the total samples at different time points.
+     * @param seedType
+     * @param tol
+     * @return an array of MBAR objects
+     */
+    public MultistateBennettAcceptanceRatio[] getPeriodComparisonMBAR(SeedType seedType, double tol){
+        double[] lambda = new double[windows];
+        for (int i = 0; i < windows; i++) {
+            lambda[i] = i / (windows - 1.0);
+        }
+        MultistateBennettAcceptanceRatio[] mbar = new MultistateBennettAcceptanceRatio[10];
+        for (int i = 0; i < 10; i++){
+            double[][][] e = new double[windows][][];
+            int maxSamples = max(snaps);
+            int timePeriod = maxSamples / 10;
+            for (int j = 0; j < windows; j++) {
+                e[j] = new double[windows][];
+                for (int k = 0; k < windows; k++) {
+                    e[j][k] = new double[timePeriod];
+                    if (timePeriod * (i + 1) > maxSamples) {
+                        System.arraycopy(eAll[j][k], timePeriod * i, e[j][k], 0, maxSamples - timePeriod * i);
+                    } else {
+                        System.arraycopy(eAll[j][k], timePeriod * i, e[j][k], 0, timePeriod);
+                    }
+                }
+            }
+            logger.info(" Period: " + (timePeriod*i) + " - " + (timePeriod*(i+1)) + " samples calculation.");
+            mbar[i] = new MultistateBennettAcceptanceRatio(lambda, e, temperatures, tol, seedType);
+        }
+        return mbar;
+    }
+
     private void parseFiles(){
         eAll = new double[windows][][];
         for (int i = 0; i < windows; i++) {
@@ -112,52 +179,8 @@ public class MBARFilter {
         // Handle files with more lambda windows than actual trajectories
         warn = maxLambdas != windows;
         if (warn) {
-            logger.warning("NOT ALL FILES CONTAINED THE SAME NUMBER OF LAMBDA EVALUATIONS. FILLING IN MISSING " +
-                    "LAMBDA EVALUATIONS WITH NaN (*end-states assumed to have sampling).");
-            logger.warning("SEEDING WITH ZEROS");
-            MultistateBennettAcceptanceRatio.FORCE_ZEROS_SEED = true;
-            logger.warning("LAMBDA EVALUATIONS PER WINDOW: " + Arrays.toString(numLambdas));
-            int diff = maxLambdas - windows;
-            int gaps = windows-1;
-            int numBetween = diff/gaps;
-            if (gaps * numBetween + windows != maxLambdas) {
-                logger.info("Gaps: " + gaps + " NumBetween: " + numBetween + " Windows: " + windows + " MaxLambdas: " + maxLambdas);
-                logger.severe("Failed to fill in missing lambda evaluations evenly. Calculation: " + gaps + " * " + numBetween + " + " + windows + " != " + maxLambdas);
-            }
-            // Arraylist takes longer but is easier to write
-            ArrayList<double[][]> e = new ArrayList<>(maxLambdas);
-            ArrayList<Double> t = new ArrayList<>(maxLambdas);
-            ArrayList<Integer> s = new ArrayList<>(maxLambdas);
-            for (int i = 0; i < gaps; i++){
-                e.add(eAll[i]);
-                t.add(temperatures[i]);
-                s.add(snaps[i]);
-                for (int j = 0; j < numBetween; j++){
-                     double[][] gapE = new double[maxLambdas][maxSnaps];
-                     for (int k = 0; k < maxLambdas; k++){
-                         for (int l = 0; l < maxSnaps; l++){
-                             gapE[k][l] = Double.NaN;
-                         }
-                     }
-                     e.add(gapE);
-                    //TODO: Fix atrocious setting of temperatures
-                     t.add(298.0);
-                     s.add(0);
-                }
-                if (i == gaps-1){ // Add the last one that got missed by looping over gaps
-                    e.add(eAll[i+1]);
-                    t.add(temperatures[i+1]);
-                    s.add(snaps[i+1]);
-                }
-            }
-            temperatures = t.stream().mapToDouble(Double::doubleValue).toArray();
-            snaps = s.stream().mapToInt(Integer::intValue).toArray();
-            double[][][] temp = new double[maxLambdas][][];
-            for (int i = 0; i < maxLambdas; i++) {
-                temp[i] = e.get(i);
-            }
-            eAll = temp;
-            windows = maxLambdas;
+            logger.warning("FILES CONTAIN MORE LAMBDA WINDOWS THAN ACTUAL TRAJECTORIES. ");
+            logger.severe("Create completely empty files (zero lines) to fill in the gaps.");
         }
     }
 
@@ -193,6 +216,26 @@ public class MBARFilter {
              BufferedReader br1 = new BufferedReader(fr1);) {
             // Read header
             String line = br1.readLine();
+            if (line == null) { // Empty file
+                for(int i = 0; i < windows; i++){
+                    tempFileEnergies.get(i).add(Double.NaN);
+                }
+                snaps[state] = 0;
+                temperatures[state] = 298; // Assumed default temp since 0 leads to division by zero
+                MultistateBennettAcceptanceRatio.FORCE_ZEROS_SEED = true;
+                if (state != 0) {
+                    numLambdas[state] = numLambdas[state - 1];
+                }
+                windowsRead++;
+                fileEnergies = new double[windows][];
+                for (int i = 0; i < windows; i++) {
+                    fileEnergies[i] = new double[tempFileEnergies.get(i).size()];
+                    for (int j = 0; j < tempFileEnergies.get(i).size(); j++) {
+                        fileEnergies[i][j] = tempFileEnergies.get(i).get(j);
+                    }
+                }
+                return fileEnergies;
+            }
             String[] tokens = line.trim().split("\\t *| +");
             temperatures[state] = Double.parseDouble(tokens[1]);
             // Read energies (however many there are)
@@ -212,6 +255,9 @@ public class MBARFilter {
                 line = br1.readLine();
             }
             numLambdas[state] = numLambda;
+            if(state != 0 && numLambdas[0] == 0){ // If the zeroth window is missing this wasn't set yet
+                numLambdas[0] = numLambda;
+            }
             snaps[state] = count;
         } catch(IOException e){
             logger.info("Failed to read MBAR file: " + tempBarFile.getAbsolutePath());

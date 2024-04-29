@@ -78,11 +78,15 @@ class MBAR extends AlgorithmsScript {
             description = "Run BAR calculation as well using a subset of the MBAR data.")
     boolean bar = true
 
+    @Option(names = ["--convergence"], paramLabel = "false",
+            description = "Run MBAR multiple times across different time periods of the data to examine the change in FE over time.")
+    boolean convergence = false
+
     @Option(names = ["--numBootstrap", "--nb"], paramLabel = "0",
             description = "Number of bootstrap samples to use.")
     int numBootstrap = 0
 
-    @Option(names = ["--numLambda", "--nL"], paramLabel = "-1",
+    @Option(names = ["--numLambda", "--nL", "--nw"], paramLabel = "-1",
             description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
     int numLambda = -1
 
@@ -136,7 +140,7 @@ class MBAR extends AlgorithmsScript {
         File[] files = new File[nFiles]
         for (int i = 0; i < nFiles; i++) {
             fileNames[i] = fileList.get(i)
-            files[i] = new File(fileNames[i])
+            files[i] = (new File(fileNames[i])).getAbsoluteFile()
             if (!files[i].exists()) {
                 logger.severe("File does not exist: " + fileNames[i])
                 return this
@@ -151,8 +155,7 @@ class MBAR extends AlgorithmsScript {
                 return this
             }
             // Get list of fileNames & check validity
-            double[][] energies = getEnergyForLambdas(files, numLambda) // Long step!
-            File parent = new File(fileList[0]).getParentFile() // Run directory
+            File parent = files[0].getParentFile() // Run directory
             int window = Integer.parseInt(parent.getName()) // Run name should be int
             File outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
             if(!outputDir.exists()) {
@@ -162,6 +165,7 @@ class MBAR extends AlgorithmsScript {
             // placement relative to other fileNames with energy values.
             File outputFile = new File(outputDir, "energy_" + window + ".mbar")
             //TODO: Fix atrocious setting of temperatures
+            double[][] energies = getEnergyForLambdas(files, numLambda) // Long step!
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
             return this
         }
@@ -253,6 +257,45 @@ class MBAR extends AlgorithmsScript {
                 } catch (Exception ignored) {
                     logger.warning(" BAR calculation failed to converge.")
                 }
+            }
+        }
+
+        if (convergence){
+            MultistateBennettAcceptanceRatio.FORCE_ZEROS_SEED = true;
+            MultistateBennettAcceptanceRatio[] mbarTimeConvergence =
+                    filter.getTimeConvergenceMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
+            double[][] dGTime = new double[mbarTimeConvergence.length][]
+            for (int i = 0; i < mbarTimeConvergence.length; i++) {
+                dGTime[i] = mbarTimeConvergence[i].getBinEnergies()
+            }
+            MultistateBennettAcceptanceRatio[] mbarPeriodComparison =
+                    filter.getPeriodComparisonMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
+            double[][] dGPeriod = new double[mbarPeriodComparison.length][]
+            for (int i = 0; i < mbarPeriodComparison.length; i++) {
+                dGPeriod[i] = mbarPeriodComparison[i].getBinEnergies()
+            }
+            logger.info("\n MBAR Time Convergence Results:")
+            logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
+                    10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
+            for(int i = 0; i < dGTime[0].length; i++) {
+                StringBuilder sb = new StringBuilder()
+                sb.append(" dG_").append(i).append(": ")
+                for(int j = 0; j < dGTime.length; j++) {
+                    sb.append(format("%10.4f ", dGTime[j][i]))
+                }
+                logger.info(sb.toString())
+            }
+            logger.info("\n")
+            logger.info("\n MBAR Period Comparison Results:")
+            logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
+                    10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
+            for(int i = 0; i < dGTime[0].length; i++) {
+                StringBuilder sb = new StringBuilder()
+                sb.append(" dG_").append(i).append(": ")
+                for(int j = 0; j < dGTime.length; j++) {
+                    sb.append(format("%10.4f ", dGTime[j][i]))
+                }
+                logger.info(sb.toString())
             }
         }
         return this

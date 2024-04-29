@@ -333,6 +333,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           index++;
         }
       }
+      logger.info(" Sampled Lambdas: " + sampledLambdas);
+      logger.info(" Zero Snap Lambdas: " + zeroSnapLambdas);
     } else { // If there aren't any zero snap lambdas, just use the original arrays
       reducedPotentialsTemp = reducedPotentials;
       mbarFEEstimatesTemp = mbarFEEstimates;
@@ -368,16 +370,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       } else { // Newton optimization if hessian inversion isn't too expensive
         mbarFEEstimatesTemp = newton(mbarFEEstimatesTemp, reducedPotentialsTemp, snapsTemp, tolerance);
       }
-
-      // Update the FE estimates with the optimized values from derivative-based optimization
-      int count = 0;
-      for(Integer i : sampledLambdas){
-        mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
-        count++;
-      }
     } catch (Exception e) {
-      logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration.");
-      logger.warning(e.getMessage());
+      logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration. Message: " +
+              e.getMessage());
+    }
+
+    // Update the FE estimates with the optimized values from derivative-based optimization
+    int count = 0;
+    for(Integer i : sampledLambdas){
+      if (Double.isNaN(mbarFEEstimatesTemp[count])) {
+        mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
+      }
+      count++;
     }
 
     // Self-consistent iteration is used to finish off optimization of MBAR objective function
@@ -392,9 +396,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         throw new IllegalArgumentException("MBAR estimate contains NaNs or Infs after iteration " + sciIter);
       }
       sciIter++;
-    } while (!converged(prevMBAR));
-
-    logger.fine(" MBAR converged after " + sciIter + " iterations with omega " + omega + ".");
+    } while (!converged(prevMBAR) && sciIter < 1000);
 
     // Zero out the first term
     double f0 = mbarFEEstimates[0];
@@ -696,7 +698,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
                                                  double[] freeEnergyEstimates) {
     double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     int nStates = freeEnergyEstimates.length;
-    return sqrt(theta[0][0] - 2 * theta[0][nStates - 1] + theta[nStates - 1][nStates - 1]);
+    return sqrt(abs(theta[0][0] - 2 * theta[0][nStates - 1] + theta[nStates - 1][nStates - 1]));
   }
 
   /**
