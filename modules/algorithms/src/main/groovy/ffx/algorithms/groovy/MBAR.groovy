@@ -58,13 +58,13 @@ import static java.lang.String.format
 import org.apache.commons.io.FilenameUtils
 
 /**
- * Simple wrapper for the MBAR class and does not support energy evaluations, which need to be precomputed in PhEnergy or Energy scripts using --mbar.
+ * Perform MBAR calculation or necessary energy evaluations. See PhEnergy for CpHMD energy evaluations.
  * <br>
  * Usage:
  * <br>
  * ffxc test.MBAR [options] &lt;path&gt
  */
-@Command(description = " Evaluates a free energy change with the Multistate Bennett Acceptance Ratio algorithm with energy evaluations from PhEnergy or Energy commands using the --mbar flag.",
+@Command(description = " Evaluates a free energy change with the Multistate Bennett Acceptance Ratio algorithm.",
         name = "MBAR")
 class MBAR extends AlgorithmsScript {
 
@@ -74,20 +74,20 @@ class MBAR extends AlgorithmsScript {
     @Mixin
     private TopologyOptions topology
 
-    @Option(names = ["--bar"], paramLabel = "false",
-            description = "Run BAR calculation as well.")
-    boolean bar = false
+    @Option(names = ["--bar"], paramLabel = "true",
+            description = "Run BAR calculation as well using a subset of the MBAR data.")
+    boolean bar = true
 
-    @Option(names = ["--numBootstrap", "--nb"], paramLabel = "50",
-            description = "Number of bootstrap snaps to use.")
-    int numBootstrap = 50
+    @Option(names = ["--numBootstrap", "--nb"], paramLabel = "0",
+            description = "Number of bootstrap samples to use.")
+    int numBootstrap = 0
 
     @Option(names = ["--numLambda", "--nL"], paramLabel = "-1",
-            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. 3 trajectory --> 3n lambda windows. ")
+            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
     int numLambda = -1
 
     @Option(names = ["--seed"], paramLabel = "BAR",
-            description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR.")
+            description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR. Fallback to ZEROS if input is does not or is unlikely to converge.")
     String seedWith = "BAR"
 
     /**
@@ -161,6 +161,7 @@ class MBAR extends AlgorithmsScript {
             // Write MBAR file with window number, although this will be reassigned by the file filter based on
             // placement relative to other fileNames with energy values.
             File outputFile = new File(outputDir, "energy_" + window + ".mbar")
+            //TODO: Fix atrocious setting of temperatures
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
             return this
         }
@@ -177,33 +178,33 @@ class MBAR extends AlgorithmsScript {
         }
         MBARFilter filter = new MBARFilter(path);
         seedWith = seedWith.toUpperCase()
-        SeedType seed = SeedType.valueOf(seedWith) as MultistateBennettAcceptanceRatio.SeedType
+        SeedType seed = SeedType.valueOf(seedWith) as SeedType
         if (seed == null) {
             logger.severe("Invalid seed type: " + seedWith)
             return this
         }
 
-        mbar = filter.getMBAR(seed)
+        mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType)
         this.mbar = mbar
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
             return this
         }
         logger.info("\n MBAR Results:")
-        logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", mbar.getFreeEnergy(),
+        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", mbar.getFreeEnergy(),
                 mbar.getUncertainty()))
         double[] dGs = mbar.getBinEnergies()
         double[] uncertainties = mbar.getBinUncertainties()
         double[][] uncertaintyMatrix = mbar.getDiffMatrix()
         for (int i = 0; i < dGs.length; i++) {
-            logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+            logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }
         logger.info("\n MBAR uncertainty between all i & j: ")
         for(int i = 0; i < uncertaintyMatrix.length; i++) {
             StringBuilder sb = new StringBuilder()
             sb.append("    [")
             for(int j = 0; j < uncertaintyMatrix[i].length; j++) {
-                sb.append(String.format(" %6.5f ", uncertaintyMatrix[i][j]))
+                sb.append(format(" %6.5f ", uncertaintyMatrix[i][j]))
             }
             sb.append("]")
             logger.info(sb.toString())
@@ -213,14 +214,14 @@ class MBAR extends AlgorithmsScript {
             try {
                 logger.info("\n BAR Results:")
                 BennettAcceptanceRatio bar = mbar.getBAR()
-                logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bar.getFreeEnergy(),
+                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bar.getFreeEnergy(),
                         bar.getUncertainty()))
                 dGs = bar.getBinEnergies()
                 uncertainties = bar.getBinUncertainties()
                 for (int i = 0; i < dGs.length; i++) {
-                    logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                    logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
                 logger.warning(" BAR calculation failed to converge.")
             }
         }
@@ -229,12 +230,12 @@ class MBAR extends AlgorithmsScript {
             EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
             bootstrapper.bootstrap(numBootstrap)
             logger.info("\n MBAR Bootstrap Results from " + numBootstrap + " Samples:")
-            logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
+            logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
                     bootstrapper.getTotalUncertainty()))
             dGs = bootstrapper.getFE()
             uncertainties = bootstrapper.getUncertainty()
             for (int i = 0; i < dGs.length; i++) {
-                logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
             }
             logger.info("\n")
             if (bar) {
@@ -242,14 +243,14 @@ class MBAR extends AlgorithmsScript {
                     logger.info("\n BAR Bootstrap Results:")
                     bootstrapper = new EstimateBootstrapper(mbar.getBAR())
                     bootstrapper.bootstrap(numBootstrap)
-                    logger.info(String.format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
+                    logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
                             bootstrapper.getTotalUncertainty()))
                     dGs = bootstrapper.getFE()
                     uncertainties = bootstrapper.getUncertainty()
                     for (int i = 0; i < dGs.length; i++) {
-                        logger.info(String.format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                        logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                     logger.warning(" BAR calculation failed to converge.")
                 }
             }
@@ -340,9 +341,5 @@ class MBAR extends AlgorithmsScript {
         }
 
         return energy
-    }
-
-    MultistateBennettAcceptanceRatio getMBAR() {
-        return mbar
     }
 }

@@ -42,7 +42,6 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.utilities.Constants;
-import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
@@ -110,7 +109,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * promote stability. This estimate is novel to the MBAR method and is not seen in BAR or Zwanzig. Only the differences
    * between these values have physical significance.
    */
-  double[] mbarFEEstimates;
+  private double[] mbarFEEstimates;
   /**
    * MBAR free-energy difference uncertainties.
    */
@@ -153,6 +152,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * Enum of MBAR seed types.
    */
   public enum SeedType {BAR, ZWANZIG, ZEROS}
+  public static boolean FORCE_ZEROS_SEED = false;
 
   /**
    * Constructor for MBAR estimator.
@@ -255,6 +255,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   public void estimateDG(boolean randomSamples) {
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
+    if (FORCE_ZEROS_SEED) {
+      seedType = SeedType.ZEROS;
+    }
     seedEnergies();
     if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
       seedType = SeedType.ZEROS;
@@ -363,7 +366,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             grad, eps, 1000, this, listener);
         arraycopy(x, 0, mbarFEEstimatesTemp, 0, nLambdaStatesTemp);
       } else { // Newton optimization if hessian inversion isn't too expensive
-        mbarFEEstimatesTemp = newton(mbarFEEstimatesTemp, reducedPotentialsTemp, snapsTemp, 1.0, 100, tolerance);
+        mbarFEEstimatesTemp = newton(mbarFEEstimatesTemp, reducedPotentialsTemp, snapsTemp, tolerance);
       }
 
       // Update the FE estimates with the optimized values from derivative-based optimization
@@ -794,25 +797,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Newton-Raphson optimization for MBAR.
    *
-   * @param freeEnergyEstimates       free energies.
-   * @param reducedPotentials      energies.
-   * @param snapsPerLambda       number of snaps per state.
-   * @param stepSize  step size for the Newton-Raphson step.
-   * @param maxIter   maximum number of iterations.
-   * @param tolerance convergence tolerance.
+   * @param freeEnergyEstimates free energies.
+   * @param reducedPotentials   energies.
+   * @param snapsPerLambda      number of snaps per state.
+   * @param tolerance           convergence tolerance.
    * @return updated free energies.
    */
   private static double[] newton(double[] freeEnergyEstimates, double[][] reducedPotentials,
-                                 int[] snapsPerLambda, double stepSize, int maxIter, double tolerance) {
+                                 int[] snapsPerLambda, double tolerance) {
     double[] grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[][] hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
-    double[] f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, stepSize);
+    double[] f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
     int iter = 1;
-    while (iter < maxIter && MathArrays.distance1(freeEnergyEstimates, f_kPlusOne) > tolerance) {
+    while (iter < 100 && MathArrays.distance1(freeEnergyEstimates, f_kPlusOne) > tolerance) {
       freeEnergyEstimates = f_kPlusOne;
       grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
       hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
-      f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, stepSize);
+      f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
       iter++;
     }
 
@@ -822,11 +823,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * Calculates the log of the sum of the exponentials of the given values.
+   * Calculates the log of the sum of the exponential of the given values.
    * <p>
    * The max value is subtracted from each value in the array before exponentiation to prevent overflow.
    *
-   * @param values The values to exponentiate and sum.
+   * @param values The values to exponential and sum.
    * @param max    The max value is subtracted from each value in the array prior to exponentiation.
    * @return the sum
    */
@@ -836,21 +837,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * Calculates the log of the sum of the exponentials of the given values.
+   * Calculates the log of the sum of the exponential of the given values.
    * <p>
    * The max value is subtracted from each value in the array before exponentiation to prevent overflow.
    *
-   * @param values The values to exponentiate and sum.
+   * @param values The values to exponential and sum.
    * @param max    The max value is subtracted from each value in the array prior to exponentiation.
    * @param b      Weights for each value in the array.
    * @return the sum
    */
   private static double logSumExp(double[] values, int[] b, double max) {
-    // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's logsumexp implementation
+    // ChatGPT mostly wrote this and I tweaked it to match more closely with scipy's log-sum-exp implementation
     // Find the maximum value in the array.
     assert values.length == b.length : "values and b must be the same length";
 
-    // Subtract the maximum value from each value in the array, exponentiate the result, and add up these values.
+    // Subtract the maximum value from each value in the array, exponential the result, and add up these values.
     double sum = 0.0;
     for (int i = 0; i < values.length; i++) {
       sum += b[i] * exp(values[i] - max);
