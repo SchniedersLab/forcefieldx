@@ -16,10 +16,8 @@ import static org.apache.commons.lang3.math.NumberUtils.min;
  * is a list of energies for each snapshot at each lambda value being considered with an index to start
  * the line. Then the energies go from least (0) to greatest (1) lambda value.
  *
- * TODO: Add support for adding NaN columns evenly when reading in files with more lambda evaluations than files.
- * Strategy: Read in files & read numLambdas, if its > numFiles, check numLambdas are same in each file,
- *           and add NaN columns if necessary between traj energy evaluations. Hopefully the user has made
- *           numLambda such that it is a multiple of numTrajectories to make guessing easy.
+ * Files < numLambda states are handled. Users should simply generate MBAR files with desired number of lambda
+ * windows, this filter should handle the rest and warn about potential issues.
  *
  * @author Matthew J. Speranza
  * @since 1.0
