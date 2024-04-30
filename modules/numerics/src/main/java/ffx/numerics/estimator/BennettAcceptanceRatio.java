@@ -368,7 +368,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         continue;
       }
 
-      // Ratio of the number of samples: Tinker equivalent: rfrm
+      // Ratio of the number of snaps: Tinker equivalent: rfrm
       double sampleRatio = ((double) len0) / ((double) len1);
 
       // Fermi differences.
