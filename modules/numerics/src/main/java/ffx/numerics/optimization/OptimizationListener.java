@@ -38,6 +38,7 @@
 package ffx.numerics.optimization;
 
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.LineSearchHZ.LineSearchHZResult;
 
 /**
  * This interface allows the optimizer to notify registered instances of successful steps. Currently

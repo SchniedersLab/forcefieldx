@@ -47,6 +47,7 @@ import ffx.algorithms.dynamics.MDEngine;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
+import ffx.numerics.optimization.LineSearchHZ;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.Platform;
