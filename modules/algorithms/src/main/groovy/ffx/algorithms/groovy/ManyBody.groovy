@@ -115,7 +115,8 @@ class ManyBody extends AlgorithmsScript {
     // Otherwise, during titration the number of terms for each torsion can change and
     // cause updateParametersInContext to throw an exception.
     double titrationPH = manyBodyOptions.getTitrationPH()
-    if (titrationPH > 0) {
+
+    if (manyBodyOptions.getTitration()) {
       System.setProperty("manybody-titration", "true")
     }
 
@@ -133,9 +134,19 @@ class ManyBody extends AlgorithmsScript {
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
 
+
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
+    }
+
+    String listResidues = "";
+    if(manyBodyOptions.getOnlyTitration() || manyBodyOptions.getOnlyProtons() ||
+            manyBodyOptions.getInterestedResidue() != -1 && manyBodyOptions.getDistanceCutoff() != -1){
+      listResidues = manyBodyOptions.selectDistanceResidues(activeAssembly.getResidueList(),
+              manyBodyOptions.getInterestedResidue(),manyBodyOptions.getOnlyTitration(),
+              manyBodyOptions.getOnlyProtons(),manyBodyOptions.getDistanceCutoff())
+      manyBodyOptions.setListResidues(listResidues)
     }
 
     CompositeConfiguration properties = activeAssembly.getProperties()
@@ -156,7 +167,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     // Handle rotamer optimization with titration.
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       logger.info("\n Adding titration hydrogen to : " + filename + "\n")
 
       // Collect residue numbers.
@@ -183,6 +194,9 @@ class ManyBody extends AlgorithmsScript {
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         potentialEnergy, algorithmListener)
+    rotamerOptimization.setPHRestraint(manyBodyOptions.getPHRestraint())
+    rotamerOptimization.setOnlyProtons(manyBodyOptions.getOnlyProtons())
+    rotamerOptimization.setpH(titrationPH)
 
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
     List<Residue> residueList = rotamerOptimization.getResidues()
@@ -199,7 +213,7 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
     }
 
@@ -210,7 +224,7 @@ class ManyBody extends AlgorithmsScript {
       double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
-            optimalRotamers)
+            optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       }
@@ -221,7 +235,7 @@ class ManyBody extends AlgorithmsScript {
       File modelFile = saveDirFile(activeAssembly.getFile())
       PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
           properties)
-      if (titrationPH > 0) {
+      if (manyBodyOptions.getTitration()) {
         String remark = format("Titration pH: %6.3f", titrationPH)
         if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
           logger.info(format(" Save failed for %s", activeAssembly))
@@ -233,7 +247,7 @@ class ManyBody extends AlgorithmsScript {
       }
     }
 
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       System.clearProperty("manybody-titration")
     }
 
