@@ -990,23 +990,19 @@ class ReadXML extends PotentialScript {
                                     throw e;
                                 }
                                 energiesMap = nodeList.stream().mapToDouble(d -> d).toArray();
+                                logger.info(energiesMap.length.toString())
 
                                 int[] gridPoints = new int[]{nx, ny};
-                                double[] torsion1 = new double[nx * ny];
-                                double[] torsion2 = new double[ny * nx];
+                                double[] torsion1 = new double[nx];
+                                double[] torsion2 = new double[ny];
                                 double phi = -180.0;
-                                double psi = -180;
+                                double psi = -180.0;
                                 for (int i = 0; i < nx; i++) {
-                                    //reset psi to -180.0 each outer iteration, increment phi
-                                    psi = -180.0;
-                                    phi = phi + (15 * i);
-                                    for (int j = 0; j < ny; j++) {
-                                        //torsion1 says constant ny times
-                                        torsion1[j] = phi
-                                        //iterate through psi from -180 to 180 each outer loop
-                                        torsion2[j] = psi + (15 * j);
-                                    }
+                                    torsion1[i] = phi + (15 * i);
+                                    torsion2[i] = psi+ (15*i);
                                 }
+                                logger.info(torsion1.length.toString())
+                                logger.info(torsion2.length.toString())
                                 Element torsionNode = (Element) cmaps.getElementsByTagName("Torsion").item(numMap)
                                 int[] classes = new int[5]
                                 String torsionMapNum = torsionNode.getAttribute("map") //should equal numMap
