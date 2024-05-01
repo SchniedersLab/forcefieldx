@@ -46,6 +46,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -72,14 +73,21 @@ import static org.apache.commons.math3.util.FastMath.PI
 class ReadXML extends PotentialScript {
 
     /**
-     * The final argument(s) should be two filenames.
+     * -c or --charmm enables reading the XML in as a Charmm forcefield.
+     */
+    @Option(names = ['-c', '--charmm'], paramLabel = "", defaultValue = "false",
+    description = "Parse forcefield file as Charmm instead of Amber")
+    private boolean charmmRead = false;
+
+    /**
+     * The final argument(s) should be three filenames.
      */
     @Parameters(arity = "1", paramLabel = "file",
             description = 'XML FF file to be read.')
-    List<String> filenames = null
+    List<String> arguments = null
 
-    final double ANGperNM = 10.0;
-    final double KJperKCal = 4.184;
+    final double ANGperNM = 10.0
+    final double KJperKCal = 4.184
 
     LinkedHashMap<String, Integer> atomTypeMap
     LinkedHashMap<String, Integer> atomClassMap
@@ -101,9 +109,9 @@ class ReadXML extends PotentialScript {
         biotypeMap = new LinkedHashMap<>()
 
         // specify files coming in
-        File biotypeClasses = new File(filenames[0])  // biotype description to xml Residue Map TODO - could we use residuesFinal.xml
-        File inputFile = new File(filenames[1]) // main xml FF file
-        File watFile = new File(filenames[2]) // water xml FF file (e.g. TIP3P)
+        File biotypeClasses = new File(arguments[0])  // biotype description to xml Residue Map TODO - could we use residuesFinal.xml
+        File inputFile = new File(arguments[1]) // main xml FF file
+        File watFile = new File(arguments[2]) // water xml FF file (e.g. TIP3P)
 
         // Read and create hash map of biotype molecule descriptions and XML residue names
         Scanner myReader = new Scanner(biotypeClasses)
@@ -116,7 +124,7 @@ class ReadXML extends PotentialScript {
         myReader.close()
 
         // Instantiate Document building objects
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance()
         DocumentBuilder dBuilder = null;
         Document doc = null;
         Document watDoc = null;
@@ -126,13 +134,15 @@ class ReadXML extends PotentialScript {
         doc = dBuilder.parse(inputFile)
         watDoc = dBuilder.parse(watFile)
 
-        //readAmber(doc, watDoc)
-        readCharmm(doc, watDoc)
+        //check flag
+        if (charmmRead){readCharmm(doc,watDoc)}
+        else {readAmber(doc,watDoc)}
 
         return this
     }
 
     private void readAmber(Document doc, Document watDoc) {
+        logger.info("Reading in XML as Amber FF")
         CompositeConfiguration properties = Keyword.loadProperties(null)
 //        properties.addProperty("renumberPatch", "FALSE")
         properties.addProperty("FORCEFIELD", "AMBER_1999_SB_XML")
@@ -576,6 +586,7 @@ class ReadXML extends PotentialScript {
     }
 
     private void readCharmm(Document doc, Document watDoc) {
+        logger.info("Reading in XML as Charmm FF")
         CompositeConfiguration properties = Keyword.loadProperties(null)
         properties.addProperty("FORCEFIELD", "CHARMM_36_CMAP_XML")
         properties.addProperty("VDWTYPE", "LENNARD-JONES")
@@ -826,15 +837,42 @@ class ReadXML extends PotentialScript {
                         }
                         break
 
-                    case "AmoebaUreyBradleyForce": //TODO
+                    case "AmoebaUreyBradleyForce":
                         logger.info("At AmoebaUreyBradleyForce")
-
                         // Import additional (water) atom types
+                        // Note: don't need this for water_ions_default xml, but here for other potential water models
                         for (int i = 0; i < watDoc.getElementsByTagName("UreyBradley").length; i++) {
                             Node watNode = doc.importNode(watDoc.getElementsByTagName("UreyBradley").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
 
+                        NodeList ureybradleys = parentNode.item(0).getChildNodes()
+
+                        for (Node ub : ureybradleys) {
+                            //public UreyBradleyType(int[] atomClasses, double forceConstant, double distance)
+                            String class1 = ub.getAttribute("class1")
+                            String class2 = ub.getAttribute("class2")
+                            String class3 = ub.getAttribute("class3")
+                            double d = Double.parseDouble(ub.getAttribute("d"))
+                            double k = Double.parseDouble(ub.getAttribute("k"))
+
+                            if (!atomClassMap.containsKey(class1)) {
+                                atomClassMap.put(class1, atomClassMap.size()+1)
+                            }
+                            if (!atomClassMap.containsKey(class2)) {
+                                atomClassMap.put(class2, atomClassMap.size()+1)
+                            }
+                            if (!atomClassMap.containsKey(class3)) {
+                                atomClassMap.put(class3, atomClassMap.size()+1)
+                            }
+
+                            int[] classes = new int[3]
+                            classes[0] = atomClassMap.get(class1)
+                            classes[1] = atomClassMap.get(class2)
+                            classes[2] = atomClassMap.get(class3)
+
+                            forceField.addForceFieldType(new UreyBradleyType(classes, k, d))
+                        }
                         break
 
                     case "PeriodicTorsionForce":
@@ -845,8 +883,8 @@ class ReadXML extends PotentialScript {
                             Node watNode = doc.importNode(ele.getElementsByTagName("Proper").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
-                        for (int i = 0; i < ele.getElementsByTagName("Imroper").length; i++) {
-                            Node watNode = doc.importNode(ele.getElementsByTagName("Imroper").item(i), true)
+                        for (int i = 0; i < ele.getElementsByTagName("Improper").length; i++) {
+                            Node watNode = doc.importNode(ele.getElementsByTagName("Improper").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
 
