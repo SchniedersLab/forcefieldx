@@ -9,6 +9,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.RestrainDistance;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parsers.XYZFilter;
 
