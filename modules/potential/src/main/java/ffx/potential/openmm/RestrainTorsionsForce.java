@@ -64,7 +64,7 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy that contains the restraint-torsions.
    */
   public RestrainTorsionsForce(OpenMMEnergy openMMEnergy) {
-    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestraintTorsions();
+    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestrainTorsions();
     if (restraintTorsions == null || restraintTorsions.isEmpty()) {
       return;
     }
@@ -109,7 +109,7 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
     // Check if this system has restraintTorsions.
-    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestraintTorsions();
+    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestrainTorsions();
     if (restraintTorsions == null || restraintTorsions.isEmpty()) {
       return;
     }

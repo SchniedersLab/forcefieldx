@@ -267,8 +267,7 @@ public class BornRadiiRegion extends ParallelRegion {
         if (sum <= 0.0) {
           born[i] = MAX_BORN_RADIUS;
           if (verboseRadii) {
-            logger.info(format(
-                " Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)",
+            logger.info(format(" Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)",
                 i + 1, born[i], baseRadius[i]));
           }
         } else {
@@ -276,29 +275,22 @@ public class BornRadiiRegion extends ParallelRegion {
           if (born[i] < baseRi) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
-                      baseRi));
+              logger.info(format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1, baseRi));
             }
           } else if (born[i] > MAX_BORN_RADIUS) {
             born[i] = MAX_BORN_RADIUS;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
-                      i + 1, baseRi));
+              logger.info(format(" Born radius > %12.6f Angstroms for atom %d: set Born radius to %12.6f",
+                     MAX_BORN_RADIUS, i + 1, baseRi));
             }
           } else if (isInfinite(born[i]) || isNaN(born[i])) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1,
-                      baseRi));
+              logger.info(format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1, baseRi));
             }
           } else {
             if (verboseRadii) {
-              logger.info(
-                  format(" Set Born radius for atom %d to %12.6f (Base Radius: %2.6f)", i + 1,
-                      born[i], baseRi));
+              logger.info(format(" Born radius for atom %d: %12.6f (Base Radius: %2.6f)", i + 1, born[i], baseRi));
             }
           }
         }

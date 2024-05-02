@@ -8,8 +8,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.RestraintBond;
-import ffx.potential.nonbonded.pme.Polarization;
+import ffx.potential.bonded.RestrainDistance;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parsers.XYZFilter;
 
@@ -459,6 +458,31 @@ public class ConformationScan {
         }
         forceFieldEnergy.getCoordinates(x);
         double e = forceFieldEnergy.energy(x, true);
+        RestrainDistance restrainDistance = getRestraintBond(a, b, e);
+        Minimize minEngine = new Minimize(mola, forceFieldEnergy, null);
+        try {
+            minEngine.minimize(this.eps, this.maxIter);
+        } catch (Exception ex){
+            // Delete restraintBond no matter what
+            a.getBonds().remove(restrainDistance);
+            b.getBonds().remove(restrainDistance);
+            a.update();
+            b.update();
+            mola.getBondList().remove(restrainDistance);
+            mola.update();
+            return -1;
+        }
+        // Delete restraintBond
+        a.getBonds().remove(restrainDistance);
+        b.getBonds().remove(restrainDistance);
+        a.update();
+        b.update();
+        mola.getBondList().remove(restrainDistance);
+        mola.update();
+        return minEngine.getStatus();
+    }
+
+    private RestrainDistance getRestraintBond(Atom a, Atom b, double e) throws Exception {
         if (e > 1000000){
             throw new Exception(" Energy too high to minimize.");
         }
@@ -468,34 +492,15 @@ public class ConformationScan {
                 this.hBondDist,
                 BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
                 this.flatBottomRadius);
-        RestraintBond restraintBond = new RestraintBond(a, b,
+        RestrainDistance restrainDistance = new RestrainDistance(a, b,
                 null,
                 false,
                 0.0, 0.0,
                 null);
-        restraintBond.setBondType(restraint);
-        Minimize minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        try {
-            minEngine.minimize(this.eps, this.maxIter);
-        } catch (Exception ex){
-            // Delete restraintBond no matter what
-            a.getBonds().remove(restraintBond);
-            b.getBonds().remove(restraintBond);
-            a.update();
-            b.update();
-            mola.getBondList().remove(restraintBond);
-            mola.update();
-            return -1;
-        }
-        // Delete restraintBond
-        a.getBonds().remove(restraintBond);
-        b.getBonds().remove(restraintBond);
-        a.update();
-        b.update();
-        mola.getBondList().remove(restraintBond);
-        mola.update();
-        return minEngine.getStatus();
+        restrainDistance.setBondType(restraint);
+        return restrainDistance;
     }
+
     private void setTargetAtoms(Atom[] atoms){
         for(Atom a: atoms){
             if(a.getAtomType().atomicNumber == 7|| a.getAtomType().atomicNumber == 8

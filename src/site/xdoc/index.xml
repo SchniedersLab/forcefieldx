@@ -137,20 +137,6 @@
         </p>
         <table>
           <tr>
-            <td>
-                CHE 1751688
-            </td>
-            <td>
-                R01 DC012049
-            </td>
-            <td>
-              <!-- BLANK -->
-            </td>
-            <td>
-              <!-- BLANK -->
-            </td>
-          </tr>
-          <tr>
             <td width="150">
               <p>
                 <img src="images/NSF.png" alt="NSF" width="125" align="middle"/>
@@ -170,6 +156,20 @@
               <p>
                 <img src="images/UofI.png" alt="UI" width="125" align="middle"/>
               </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              NSF CHE-1751688
+            </td>
+            <td>
+              NIH R01 DC012049
+            </td>
+            <td>
+              SFARI Award 1019623
+            </td>
+            <td>
+              Mid-Career Scholar Award
             </td>
           </tr>
         </table>
