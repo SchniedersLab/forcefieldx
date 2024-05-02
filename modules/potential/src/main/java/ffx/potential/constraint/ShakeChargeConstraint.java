@@ -22,8 +22,6 @@ public class ShakeChargeConstraint implements Constraint {
     public void applyChargeConstraintToStep(final double[] x, final double[] afric, final double[] masses, final double dt){
         boolean done = false;
         int iter = 0;
-        System.out.println("c: " + c);
-        System.out.println("tol: " + tol);
         while(!done){
             done = true;
             iter++;
@@ -37,7 +35,6 @@ public class ShakeChargeConstraint implements Constraint {
             double delta = totalLambda - c;
 
             if (Math.abs(delta) > tol) {
-                System.out.println("delta: " + Math.abs(delta));
                 done = false;
                 double term = delta / (dt * dt * totalInverseMass);
                 for (int i = 0; i < nConstraints; i++) {
