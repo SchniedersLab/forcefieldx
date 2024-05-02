@@ -8,6 +8,7 @@ public class ShakeChargeConstraint implements Constraint {
     final int nConstraints;
     final double tol;
     final int c;
+    final double maxIters =150;
 
     public ShakeChargeConstraint(int nConstraints, int c, double tol){
         this.nConstraints = nConstraints;
@@ -18,27 +19,36 @@ public class ShakeChargeConstraint implements Constraint {
     public void applyConstraintToStep(final double[] xPrior, double[] xNew, final double[] masses, double tol){
     }
 
-    public boolean applyChargeConstraintToStep( final double[] x, final double[] a, final double[] masses, final double dt){
-        boolean done = true;
-
-        double totalLambda = 0.0;
-        double totalInverseMass = 0.0;
-        for (int i = 0; i < nConstraints; i++) {
-            double lambda = Math.sin(x[i]) * Math.sin(x[i]);
-            totalLambda += lambda;
-            totalInverseMass += (1.0 / masses[i]);
-        }
-        double delta = totalLambda - c;
-
-        if (Math.abs(delta) > tol) {
-            done = false;
-            double term = delta / (dt * dt * totalInverseMass);
+    public void applyChargeConstraintToStep(final double[] x, final double[] afric, final double[] masses, final double dt){
+        boolean done = false;
+        int iter = 0;
+        System.out.println("c: " + c);
+        System.out.println("tol: " + tol);
+        while(!done){
+            done = true;
+            iter++;
+            double totalLambda = 0.0;
+            double totalInverseMass = 0.0;
             for (int i = 0; i < nConstraints; i++) {
-                //accel[i] += -term * Math.sin(2 * x[i]);
-                a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * term * Math.sin(2 * x[i]) / masses[i];
+                double lambda = Math.sin(x[i]) * Math.sin(x[i]);
+                totalLambda += lambda;
+                totalInverseMass += (1.0 / masses[i]);
+            }
+            double delta = totalLambda - c;
+
+            if (Math.abs(delta) > tol) {
+                System.out.println("delta: " + Math.abs(delta));
+                done = false;
+                double term = delta / (dt * dt * totalInverseMass);
+                for (int i = 0; i < nConstraints; i++) {
+                    double g = -term * Math.sin(2 * x[i]);
+                    x[i] = x[i] + g * afric[i];
+                }
+            }
+            if(iter >= maxIters){
+                throw new RuntimeException("SHAKE Charge Constraint -- Warning, Charge Constraint not Satisfied");
             }
         }
-        return done;
     }
 
     @Override

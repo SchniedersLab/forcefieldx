@@ -556,7 +556,7 @@ public class ExtendedSystem implements Potential {
         }
         if(useChargeConstraint){
             constraints = new ArrayList<>();
-            ShakeChargeConstraint chargeConstraint = new ShakeChargeConstraint(nTitr,totalCharge,0.000001);
+            ShakeChargeConstraint chargeConstraint = new ShakeChargeConstraint(nTitr,totalCharge,0.001);
             constraints.add(chargeConstraint);
         } else{
             constraints = Collections.emptyList();

@@ -508,7 +508,7 @@ public class PhReplicaExchange implements Terminatable {
       {
         residueRatios[i][j] = collapsedRatio[j][i];
       }
-      Arrays.sort(residueRatios[i]);
+      //Arrays.sort(residueRatios[i]);
 
       // L-BFGS minimization of the Henderson-Hasselbalch equation to find the best fit hill coeff and pKa
       double[] temp = TitrationUtils.predictHillCoeffandPka(pHScale, residueRatios[i]);
