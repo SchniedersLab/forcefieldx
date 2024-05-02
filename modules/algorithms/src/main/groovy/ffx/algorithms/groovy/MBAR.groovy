@@ -277,26 +277,42 @@ class MBAR extends AlgorithmsScript {
             logger.info("\n MBAR Time Convergence Results:")
             logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
                     10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
+            double[] totals = new double[dGTime[0].length]
             for(int i = 0; i < dGTime[0].length; i++) {
                 StringBuilder sb = new StringBuilder()
                 sb.append(" dG_").append(i).append(": ")
                 for(int j = 0; j < dGTime.length; j++) {
                     sb.append(format("%10.4f ", dGTime[j][i]))
+                    totals[j] += dGTime[j][i]
                 }
                 logger.info(sb.toString())
             }
+            StringBuilder totalsSB = new StringBuilder()
+            for(int i = 0; i < totals.length; i++) {
+                totalsSB.append(format("%10.4f ", totals[i]))
+            }
+            logger.info("")
+            logger.info("  Tot: " + totalsSB.toString())
             logger.info("\n")
             logger.info("\n MBAR Period Comparison Results:")
             logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
                     10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
+            totals = new double[dGPeriod[0].length]
             for(int i = 0; i < dGTime[0].length; i++) {
                 StringBuilder sb = new StringBuilder()
                 sb.append(" dG_").append(i).append(": ")
                 for(int j = 0; j < dGTime.length; j++) {
-                    sb.append(format("%10.4f ", dGTime[j][i]))
+                    sb.append(format("%10.4f ", dGPeriod[j][i]))
+                    totals[j] += dGPeriod[j][i]
                 }
                 logger.info(sb.toString())
             }
+            totalsSB = new StringBuilder()
+            for(int i = 0; i < totals.length; i++) {
+                totalsSB.append(format("%10.4f ", totals[i]))
+            }
+            logger.info("")
+            logger.info("  Tot: " + totalsSB.toString())
         }
         return this
     }
