@@ -88,6 +88,11 @@
           <version>${install.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${jar.version}</version>
           <configuration>
@@ -139,7 +144,7 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <!-- forkCount>0</forkCount -->
+            <!-- forkCount>1</forkCount -->
             <trimStackTrace>false</trimStackTrace>
           </configuration>
           <dependencies>
@@ -375,8 +380,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
-          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
-          <useSystemClassLoader>false</useSystemClassLoader>
+          <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
           </excludes>
@@ -450,6 +456,33 @@
         <groupId>org.codehaus.mojo</groupId>
         <inherited>false</inherited>
         <version>${properties.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <destFile>target/jacoco.exec</destFile>
+          <!-- append>true</append -->
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+            <configuration>
+              <propertyName>jacoco.agent.ut.arg</propertyName>
+            </configuration>
+          </execution>
+          <!-- attached to Maven test phase -->
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -917,6 +950,7 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>modules/algorithms</module>
+    <module>modules/codecov</module>
     <module>modules/crystal</module>
     <module>modules/openmm</module>
     <module>modules/numerics</module>
@@ -998,7 +1032,7 @@
     <compiler.version>3.13.0</compiler.version>
     <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.1.1</deploy.version>
+    <deploy.version>3.1.2</deploy.version>
     <enforcer.version>3.4.1</enforcer.version>
     <exec.version>3.2.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
@@ -1008,11 +1042,12 @@
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>24.0.0</graal.version>
+    <graal.version>24.0.1</graal.version>
     <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
-    <guava.version>33.1.0-jre</guava.version>
-    <install.version>3.1.1</install.version>
-    <jar.version>3.4.0</jar.version>
+    <guava.version>33.2.0-jre</guava.version>
+    <install.version>3.1.2</install.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <jar.version>3.4.1</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <javaparser.version>3.25.10</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
@@ -1030,9 +1065,9 @@
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.7.5</picocli.version>
+    <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.21.2</pmd.version>
+    <pmd.version>3.22.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
     <project-info-reports.version>3.5.0</project-info-reports.version>

@@ -1930,9 +1930,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             hd.zHistogram[lambdaBin][dUdLBin] += value;
             hd.counts++;
           } catch (IndexOutOfBoundsException e) {
-            logger.warning(format(
+            logger.info(format(" Histogram dimensions %d %d", hd.lambdaBins, hd.dUdLBins));
+            logger.info(format(
                 " Count skipped in addToRecursionKernelValue due to an index out of bounds exception.\n L=%10.8f (%d), dU/dL=%10.8f (%d) and count=%10.8f",
                 currentLambda, lambdaBin, currentdUdL, dUdLBin, value));
+
           }
         }
       }
