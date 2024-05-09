@@ -142,13 +142,13 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   private static final long serialVersionUID = 1L;
 
   /**
-   * Constant <code>version="1.0.0-BETA"</code>
+   * Constant <code>version="1.0.0"</code>
    */
-  public static final String version = "1.0.0-BETA";
+  public static final String version = "1.0.0";
   /**
-   * Constant <code>date="February 2024"</code>
+   * Constant <code>date="June 2024"</code>
    */
-  public static final String date = "February 2024";
+  public static final String date = "June 2024";
   /**
    * Constant
    */
@@ -233,7 +233,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     var commitSCM = "";
     if (mvnProps.exists()) {
       try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
-        var ffxVersion = "1.0.0-BETA";
+        var ffxVersion = "1.0.0";
         var ffxVersionProp = "ffx.version=";
         var gitCommitsCount = "";
         var gitCommitsCountProp = "git.total.commit.count=";

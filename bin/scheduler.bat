@@ -38,7 +38,7 @@
 
 @echo off
 
-set VERSION=1.0.0-beta
+set VERSION=1.0.0
 
 set ERROR_CODE=0
 

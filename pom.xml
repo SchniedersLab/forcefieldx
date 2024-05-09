@@ -1038,7 +1038,7 @@
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
-    <ffx.version>1.0.0-BETA</ffx.version>
+    <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
@@ -1352,5 +1352,5 @@
     <url>https://github.com/SchniedersLab/forcefieldx</url>
   </scm>
   <url>https://ffx.biochem.uiowa.edu</url>
-  <version>1.0.0-beta</version>
+  <version>1.0.0</version>
 </project>
