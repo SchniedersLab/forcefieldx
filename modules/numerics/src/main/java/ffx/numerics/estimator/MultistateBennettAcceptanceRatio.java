@@ -61,8 +61,8 @@ import static ffx.numerics.estimator.Zwanzig.Directionality.BACKWARDS;
 import static ffx.numerics.estimator.Zwanzig.Directionality.FORWARDS;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
-import static org.apache.commons.lang3.ArrayFill.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
@@ -834,7 +834,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return the sum
    */
   private static double logSumExp(double[] values, double max) {
-    int[] b = fill(new int[values.length], 1);
+    int[] b = new int[values.length];
+    fill(b, 1);
     return logSumExp(values, b, max);
   }
 

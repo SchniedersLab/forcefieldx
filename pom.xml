@@ -1027,7 +1027,9 @@
     <commons-io.version>2.16.1</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <!-- Control the source version version -->
+    <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
+    <commons-text.version>1.10.0</commons-text.version>
+    <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.13.0</compiler.version>
     <dependency.version>3.6.1</dependency.version>
