@@ -131,7 +131,6 @@ class ManyBody extends AlgorithmsScript {
     if (filenames != null && filenames.size() > 0) {
       molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
       activeAssembly = molecularAssemblies[0]
-      logger.info(molecularAssemblies.length.toString())
       modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())

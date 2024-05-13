@@ -141,11 +141,9 @@ public class TitrationManyBody {
         File structureFile = new File(filename);
         protonFilter = new PDBFilter(structureFile, newAssembly, forceField,
             forceField.getProperties(), resNumberList);
-        logger.info(newAssembly.getResidueList().toString());
         protonFilter.setRotamerTitration(true);
         protonFilter.setAltID(newAssembly, altLocs.get(i));
         protonFilter.readFile();
-        logger.info(newAssembly.getResidueList().get(0).getAtomList().get(0).getAltLoc().toString());
         protonFilter.applyAtomProperties();
         newAssembly.finalize(true, forceField);
         potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);

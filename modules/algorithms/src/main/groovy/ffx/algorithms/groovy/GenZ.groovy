@@ -328,7 +328,6 @@ class GenZ extends AlgorithmsScript {
 
         FileWriter fileWriter = new FileWriter("populations.txt")
         int residueIndex = 0
-        Rotamer[] mostPopRot = new Rotamer[selectedResidues.size()]
         for (Residue residue : selectedResidues) {
             fileWriter.write("\n")
             protonationBoltzmannSums = new double[selectedResidues.size()]

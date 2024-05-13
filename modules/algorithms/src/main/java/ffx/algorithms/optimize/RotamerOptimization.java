@@ -47,6 +47,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.*;
 
+import com.github.javaparser.utils.Pair;
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.WorkerTeam;
@@ -89,6 +90,7 @@ import ffx.utilities.Resources;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
+import javax.swing.text.html.parser.Element;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -2364,7 +2366,6 @@ public class RotamerOptimization implements Terminatable {
                     // Calculate the total energy of a permutation/conformation
                     double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
                             energyRegion.getTwoBody() + energyRegion.getThreeBody();
-
                     // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
                     if (evaluatedPermutations == 1) {
                         refEnergy = totalEnergy;
@@ -2441,13 +2442,34 @@ public class RotamerOptimization implements Terminatable {
                 fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
                 if(n > 0 && fraction[m][n] > fraction[m][n-1]){
                     optimum[m] = n;
+                } else if(n == 0){
+                    optimum[m] = n;
                 }
             }
             Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
             RotamerLibrary.applyRotamer(residues[m],highestPopRot);
         }
-
+        logger.info("Population Array size: " + Arrays.toString(fraction[0]));
         logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+    }
+
+    public int[][] getConformers() throws Exception{
+        int[][] conformers = new int[fraction.length][3];
+        for(int i = 0; i < fraction.length; i++){
+            double[] tempArray = new double[fraction[0].length];
+            java.lang.System.arraycopy(fraction[i], 0, tempArray, 0, fraction[0].length);
+            List<Double> elements = new ArrayList<Double>();
+            for (int j = 0; j < tempArray.length; j++) {
+                elements.add(tempArray[j]);
+            }
+            Arrays.sort(tempArray);
+            int count = -1;
+            for(int k = tempArray.length-3; k < tempArray.length; k++){
+                count++;
+                conformers[i][count] = elements.indexOf(tempArray[k]);
+            }
+        }
+        return conformers;
     }
 
 
