@@ -357,7 +357,7 @@ class GenZ extends AlgorithmsScript {
                             String name = atom.getName()
                             if(name != 'CA' && name != 'O' && name != 'C' && name != 'N'&& name != 'OXT'&& name != 'H'
                                     && name != 'OT2' && name != 'H1' && name != 'H2'&& name != 'H3'&& name != 'HA'
-                                    && name != 'HA2' && name != 'HA3'){
+                                    && name != 'HA2' && name != 'HA3' && populationArray[resIndex][rotIndex] != 0){
                                 atom.setAltLoc(altLocs[confIndex])
                                 double occupancy = populationArray[resIndex][rotIndex]
                                 atom.setOccupancy(occupancy)
