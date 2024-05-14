@@ -2297,7 +2297,6 @@ public class RotamerOptimization implements Terminatable {
         } else {
             // At the end of the recursion, check each rotamer of the final residue.
             for (int ri = 0; ri < lenri; ri++) {
-                int res = 0;
                 if (eR.check(i, ri)) {
                     continue;
                 }
@@ -2373,12 +2372,9 @@ public class RotamerOptimization implements Terminatable {
                     double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
 
                     // Collect Boltzmann weight for every rotamer for residues included in the optimization
-                    for (Residue residue : residues) {
-                        Rotamer[] rotamers = residue.getRotamers();
+                    for (int res=0; res < residues.length; res++) {
                         int currentRotamer = currentRotamers[res];
-                        int rotIndex = rotamers[currentRotamer].getRotIndex();
-                        populationBoltzmann[res][rotIndex] += boltzmannWeight;
-                        res += 1;
+                        populationBoltzmann[res][currentRotamer] += boltzmannWeight;
                     }
 
                     // Sum Boltzmann of all permutations
@@ -2433,12 +2429,12 @@ public class RotamerOptimization implements Terminatable {
      * @throws Exception too many permutations to continue
      */
     public void getPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
-        fraction = new double[residues.length][54];
-        populationBoltzmann = new double[residues.length][54];
+        fraction = new double[residues.length][55];
+        populationBoltzmann = new double[residues.length][55];
         partitionFunction(residues, i, currentRotamers);
         optimum = new int[residues.length];
         for (int m = 0; m < fraction.length; m++) {
-            for (int n = 0; n < 54; n++) {
+            for (int n = 0; n < 55; n++) {
                 fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
                 if(n > 0 && fraction[m][n] > fraction[m][n-1]){
                     optimum[m] = n;

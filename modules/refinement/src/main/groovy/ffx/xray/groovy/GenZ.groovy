@@ -158,7 +158,7 @@ class GenZ extends AlgorithmsScript {
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[1]
         double[] offsets = new double[1]
-        double[][] populationArray = new double[1][54]
+        double[][] populationArray = new double[1][55]
         double[][] titrateBoltzmann
         double[] protonationBoltzmannSums
         double totalBoltzmann = 0
@@ -258,28 +258,28 @@ class GenZ extends AlgorithmsScript {
             double deprotSum = 0
             double tautomerSum = 0
             Rotamer[] rotamers = residue.getRotamers()
-            for (Rotamer rotamer : rotamers) {
-                String rotPop = format("%.6f", populationArray[residueIndex][rotamer.getRotIndex()])
+            for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
+                String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
                 fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
-                        rotamer.toString() + "\t" + rotPop + "\n")
+                        rotamers[rotIndex].toString() + "\t" + rotPop + "\n")
                 if (manyBodyOptions.titration) {
-                    switch (rotamer.getName()) {
+                    switch (rotamers[rotIndex].getName()) {
                         case "HIS":
                         case "LYS":
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += populationArray[residueIndex][rotamer.getRotIndex()]
+                            protSum += populationArray[residueIndex][rotIndex]
                             break
                         case "HIE":
                         case "LYD":
                         case "GLU":
                         case "ASP":
                         case "CYD":
-                            deprotSum += populationArray[residueIndex][rotamer.getRotIndex()]
+                            deprotSum += populationArray[residueIndex][rotIndex]
                             break
                         case "HID":
-                            tautomerSum += populationArray[residueIndex][rotamer.getRotIndex()]
+                            tautomerSum += populationArray[residueIndex][rotIndex]
                             break
                         default:
                             break
