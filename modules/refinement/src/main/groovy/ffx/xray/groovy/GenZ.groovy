@@ -355,14 +355,16 @@ class GenZ extends AlgorithmsScript {
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
                         for(Atom atom: residue.getAtomList()){
                             String name = atom.getName()
-                            if(name != 'CA' && name != 'O' && name != 'C' && name != 'N'&& name != 'OXT'&& name != 'H'
-                                    && name != 'OT2' && name != 'H1' && name != 'H2'&& name != 'H3'&& name != 'HA'
-                                    && name != 'HA2' && name != 'HA3' && populationArray[resIndex][rotIndex] != 0){
+                            if(!residue.getBackboneAtoms().contains(atom) && populationArray[resIndex][rotIndex] != 0 ||
+                                    !residue.getBackboneAtoms().contains(atom) &&
+                                    populationArray[resIndex][conformers[resIndex][1]] != 0 && confIndex == 2){
                                 atom.setAltLoc(altLocs[confIndex])
                                 double occupancy = populationArray[resIndex][rotIndex]
                                 atom.setOccupancy(occupancy)
                                 //double[] atomCoor = new double[]{atom.getResidueNumber(), atom.getX(), atom.getY(), atom.getZ()}
-                                //atomListA.add(atomCoor)
+                                //atomListA.add(atomCoor)name != 'CA' && name != 'O' && name != 'C' && name != 'N'&& name != 'OXT'&& name != 'H'
+                                //                                    && name != 'OT2' && name != 'H1' && name != 'H2'&& name != 'H3'&& name != 'HA'
+                                //                                    && name != 'HA2' && name != 'HA3'
                             }
                         }
                     /*if(confIndex == 2){
