@@ -355,7 +355,7 @@ class GenZ extends AlgorithmsScript {
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
                         for(Atom atom: residue.getAtomList()){
                             String name = atom.getName()
-                            if(!residue.getBackboneAtoms().contains(atom) && populationArray[resIndex][rotIndex] != 0 ||
+                            if(!residue.getBackboneAtoms().contains(atom) && populationArray[resIndex][rotIndex] != 0 && confIndex != 2||
                                     !residue.getBackboneAtoms().contains(atom) &&
                                     populationArray[resIndex][conformers[resIndex][1]] != 0 && confIndex == 2){
                                 atom.setAltLoc(altLocs[confIndex])
