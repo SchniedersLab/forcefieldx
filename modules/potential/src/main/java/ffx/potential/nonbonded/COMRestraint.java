@@ -118,7 +118,7 @@ public class COMRestraint implements LambdaInterface {
       d2LambdaPow = 0.0;
     }
     dcomdx = new double[nAtoms];
-    forceConstant = forceField.getDouble("RESTRAINT_K", 10.0);
+    forceConstant = forceField.getDouble("COMRESTRAINT_K", 10.0);
 
     computeCOM(initialCOM, nMolecules);
 
