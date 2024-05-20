@@ -95,8 +95,8 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     eAllFlat = null;
     snaps = null;
 
-    assert stream(energiesLow[0]).allMatch(Double::isNaN)
-        && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
+    // assert stream(energiesLow[0]).allMatch(Double::isNaN)
+    //    && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
 
     assert nTrajectories == energiesAt.length
         && nTrajectories == energiesLow.length

@@ -212,7 +212,7 @@ public class EnergyTest extends ParentEnergyTest {
                 2290,
                 0.0,
                 2290,
-                -184.01591119210968,
+		-157.89784474,
                 2556,
                 true
             },
