@@ -30,7 +30,6 @@ website/
 .settings/
 .idea/
 .netbeans/
-.mvn/
 
 velocity.log
 build.log

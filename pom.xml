@@ -1083,8 +1083,6 @@
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.13</slf4j-nop.version>
-    <!-- The Shade plugin use of localRepository causes a validation message -->
-    <maven.plugin.validation>brief</maven.plugin.validation>
     <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
     <site.version>3.12.1</site.version>
     <!-- site.version>4.0.0-M11</site.version -->
