@@ -2445,7 +2445,6 @@ public class RotamerOptimization implements Terminatable {
             Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
             RotamerLibrary.applyRotamer(residues[m],highestPopRot);
         }
-        logger.info("Population Array size: " + Arrays.toString(fraction[0]));
         logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
     }
 

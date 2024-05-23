@@ -242,7 +242,6 @@ class GenZ extends AlgorithmsScript {
 
         //Calculate the populations for the all residue rotamers
         populationArray = rotamerOptimization.getFraction()
-        logger.info("Population Array size: " + Arrays.toString(populationArray[0]))
 
         optimalRotamers = rotamerOptimization.getOptimumRotamers()
         if (manyBodyOptions.getTitration()) {
@@ -330,8 +329,6 @@ class GenZ extends AlgorithmsScript {
 
         int[][] conformers = rotamerOptimization.getConformers()
         char[] altLocs = new char[]{'C', 'B', 'A'}
-        List<Residue> residueAList = new ArrayList<>()
-        List<double[]> atomListA = new ArrayList<>()
         List<String> residueChainNum = new ArrayList<>()
         for(Residue residue: activeAssembly.getResidueList()){
             char chain = residue.getChainID()
@@ -350,81 +347,31 @@ class GenZ extends AlgorithmsScript {
                 Residue residue = conformerAssembly.getResidueList().get(index)
                 residue.setRotamers(manyBodyOptions.getRotamerLibrary(true))
                 Rotamer[] rotamers = residue.getRotamers()
-                if(conformers[resIndex][confIndex] != 0 || confIndex == 2){
-                    int rotIndex = conformers[resIndex][confIndex]
+                int rotIndex = conformers[resIndex][confIndex]
+                if(populationArray[resIndex][rotIndex]  != 0){
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
                         for(Atom atom: residue.getAtomList()){
-                            String name = atom.getName()
-                            if(!residue.getBackboneAtoms().contains(atom) && populationArray[resIndex][rotIndex] != 0 && confIndex != 2||
-                                    !residue.getBackboneAtoms().contains(atom) &&
-                                    populationArray[resIndex][conformers[resIndex][1]] != 0 && confIndex == 2){
-                                atom.setAltLoc(altLocs[confIndex])
+                            if(!residue.getBackboneAtoms().contains(atom)){
                                 double occupancy = populationArray[resIndex][rotIndex]
-                                atom.setOccupancy(occupancy)
-                                //double[] atomCoor = new double[]{atom.getResidueNumber(), atom.getX(), atom.getY(), atom.getZ()}
-                                //atomListA.add(atomCoor)name != 'CA' && name != 'O' && name != 'C' && name != 'N'&& name != 'OXT'&& name != 'H'
-                                //                                    && name != 'OT2' && name != 'H1' && name != 'H2'&& name != 'H3'&& name != 'HA'
-                                //                                    && name != 'HA2' && name != 'HA3'
-                            }
-                        }
-                    /*if(confIndex == 2){
-                            residueAList.add(residue)
-                    } else {
-                        List<Atom> atomListB = residue.getAtomList()
-                        double[][] atomACoor = new double[residue.getAtomList().size()][3]
-                        int count = 0
-                        for(int atomIndex = 0; atomIndex < atomListA.size(); atomIndex++){
-                            if(atomListA.get(atomIndex)[0] == residue.getResidueNumber()){
-                                for(int k = 1; k<4; k++){
-                                    atomACoor[count][k-1] = atomListA.get(atomIndex)[k]
+                                if(occupancy == 1){
+                                    atom.setOccupancy(occupancy)
+                                    atom.setAltLoc(' ' as Character)
+                                } else {
+                                    atom.setAltLoc(altLocs[confIndex])
+                                    atom.setOccupancy(occupancy)
                                 }
-                                count++
-                            }
-                        }
-                        for (int i = 0; i < residue.getAtomList().size(); i++) {
-                            double coorAX = atomACoor[i][0]
-                            double coorAY = atomACoor[i][1]
-                            double coorAZ = atomACoor[i][2]
-                            Atom atom = atomListB.get(i)
-                            double coorBX = atom.getX()
-                            double coorBY = atom.getY()
-                            double coorBZ = atom.getZ()
-                            if (coorAX == coorBX && coorAY == coorBY && coorAZ == coorBZ) {
-                                atom.setAltLoc(' ' as Character)
-                                int aResidueIndex = conformerAssemblies[0].getResidueList().indexOf(residue)
-                                Residue aResidue = conformerAssemblies[0].getResidueList().get(aResidueIndex)
-                                Atom atomA = aResidue.getAtomList()[i]
-                                atomA.setAltLoc(' ' as Character)
-                                atomA.setOccupancy(1.0)
                             } else {
-                                atom.setAltLoc(altLocs[confIndex])
-                                double occupancy = populationArray[resIndex][rotIndex]
-                                atom.setOccupancy(occupancy)
-                                int rotIndexA = conformers[resIndex][2]
-                                int aResidueIndex = conformerAssemblies[0].getResidueList().indexOf(residue)
-                                Residue aResidue = conformerAssemblies[0].getResidueList().get(aResidueIndex)
-                                Atom atomA = aResidue.getAtomList()[i]
-                                atomA.setAltLoc('A' as Character)
-                                double occupancyA = populationArray[resIndex][rotIndexA]
-                                atomA.setOccupancy(occupancyA)
+                                atom.setOccupancy(1.0)
+                                atom.setAltLoc(' ' as Character)
                             }
                         }
-
-                    }*/
                 }
 
             }
             conformerAssemblies[assemblyIndex] = conformerAssembly
             assemblyIndex++
-            logger.info("The assembly index " + assemblyIndex)
         }
 
-        // Print the final energy of each conformer.
-        /*algorithmFunctions.energy(conformerAssemblies)
-        DiffractionData diffractionDataFinal = xrayOptions.getDiffractionData(filenames, conformerAssemblies, properties)
-        refinementEnergy = xrayOptions.toXrayEnergy(diffractionDataFinal)
-        refinementEnergy.setScaling(null)*/
-        String remark = "String"
         PDBFilter pdbFilter = new PDBFilter(structureFile, Arrays.asList(conformerAssemblies), forceField, properties)
         pdbFilter.writeFile(structureFile, false, excludeAtoms, true, true)
         /*if (titrationPH > 0) {
