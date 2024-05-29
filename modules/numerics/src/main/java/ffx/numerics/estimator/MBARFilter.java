@@ -76,39 +76,6 @@ public class MBARFilter {
     }
 
     /**
-     * Each contains (sequentially) an additional 10% of the total samples.
-     * @param seedType
-     * @param tol
-     * @return an array of MBAR objects
-     */
-    public MultistateBennettAcceptanceRatio[] getTimeConvergenceMBAR(SeedType seedType, double tol){
-        double[] lambda = new double[windows];
-        for (int i = 0; i < windows; i++) {
-            lambda[i] = i / (windows - 1.0);
-        }
-        MultistateBennettAcceptanceRatio[] mbar = new MultistateBennettAcceptanceRatio[10];
-        for (int i = 0; i < 10; i++){
-            double[][][] e = new double[windows][][];
-            int maxSamples = max(snaps);
-            int timePeriod = maxSamples / 10;
-            if (timePeriod * (i + 1) > maxSamples) {
-                e = eAll;
-            } else {
-                for (int j = 0; j < windows; j++) {
-                    e[j] = new double[windows][];
-                    for (int k = 0; k < windows; k++) {
-                        e[j][k] = new double[timePeriod * (i + 1)];
-                        System.arraycopy(eAll[j][k], 0, e[j][k], 0, timePeriod * (i + 1));
-                    }
-                }
-            }
-            logger.info(" Analysis percentage: " + (i + 1)*10 + "% samples calculation.");
-            mbar[i] = new MultistateBennettAcceptanceRatio(lambda, e, temperatures, tol, seedType);
-        }
-        return mbar;
-    }
-
-    /**
      * 10% of the total samples at different time points.
      * @param seedType
      * @param tol
@@ -277,5 +244,29 @@ public class MBARFilter {
 
     public void writeFile(double[][] energies, File file, double temperature) {
         MultistateBennettAcceptanceRatio.writeFile(energies, file, temperature);
+    }
+
+    public void setStartSnapshot(int startIndex) {
+        for (int i = 0; i < windows; i++) {
+            for (int j = 0; j < windows; j++) {
+                try{
+                    eAll[i][j] = Arrays.copyOfRange(eAll[i][j], startIndex, eAll[i][j].length);
+                } catch (ArrayIndexOutOfBoundsException e){
+                    logger.severe("Start index " + startIndex + " is out of bounds for file " + barFiles[i].getName());
+                }
+            }
+        }
+    }
+
+    public void setEndSnapshot(int endIndex) {
+        for (int i = 0; i < windows; i++) {
+            for (int j = 0; j < windows; j++) {
+                try{
+                    eAll[i][j] = Arrays.copyOfRange(eAll[i][j], 0, endIndex);
+                } catch (ArrayIndexOutOfBoundsException e){
+                    logger.severe("End index " + endIndex + " is out of bounds for file " + barFiles[i].getName());
+                }
+            }
+        }
     }
 }

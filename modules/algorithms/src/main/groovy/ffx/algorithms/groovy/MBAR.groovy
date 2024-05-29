@@ -94,6 +94,19 @@ class MBAR extends AlgorithmsScript {
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR. Fallback to ZEROS if input is does not or is unlikely to converge.")
     String seedWith = "BAR"
 
+    @Option(names = ["--tol", "--tolerance"], paramLabel = "1e-7",
+            description = "Iteration change tolerance.")
+    private double tol = 1e-7
+
+    @Option(names = ["--ss", "--startSnapshot"], paramLabel = "-1",
+            description = "Start at this snapshot when reading in tinker BAR files.")
+    private int startingSnapshot = -1
+
+    @Option(names = ["--es", "--endSnapshot"], paramLabel = "-1",
+            description = "End at this snapshot when reading in tinker BAR files.")
+    private int endingSnapshot = -1
+
+
     /**
      * The path to MBAR/BAR files.
      */
@@ -147,8 +160,7 @@ class MBAR extends AlgorithmsScript {
             }
         }
         boolean isArc = !files[0].isDirectory()
-
-        // Write MBAR file
+        // Write MBAR file if option is set
         if(isArc){
             if (numLambda == -1){
                 logger.severe("numLambda must be specified for lambda energy evaluations.")
@@ -169,8 +181,7 @@ class MBAR extends AlgorithmsScript {
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
             return this
         }
-
-        // Run MBAR calculation
+        // Run MBAR calculation if file write-out is not requested & files are correct
         File path = new File(fileList.get(0))
         if (!path.exists()) {
             logger.severe("Path to MBAR/BAR fileNames does not exist: " + path)
@@ -181,14 +192,22 @@ class MBAR extends AlgorithmsScript {
             return this
         }
         MBARFilter filter = new MBARFilter(path);
+        if (startingSnapshot >= 0){
+            filter.setStartSnapshot(startingSnapshot)
+            logger.info("Starting with snapshot index: " + startingSnapshot)
+        }
+        if (endingSnapshot >= 0){
+            filter.setEndSnapshot(endingSnapshot)
+            logger.info("Ending with snapshot index: " + endingSnapshot)
+        }
         seedWith = seedWith.toUpperCase()
         SeedType seed = SeedType.valueOf(seedWith) as SeedType
         if (seed == null) {
             logger.severe("Invalid seed type: " + seedWith)
             return this
         }
-
-        mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType)
+        // Runs calculation on class creation
+        mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, tol)
         this.mbar = mbar
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
@@ -214,6 +233,7 @@ class MBAR extends AlgorithmsScript {
             logger.info(sb.toString())
         }
         logger.info("\n")
+        // BAR to compare (negligible difference if properly converged and doesn't take long at all)
         if(bar){
             try {
                 logger.info("\n BAR Results:")
@@ -230,6 +250,7 @@ class MBAR extends AlgorithmsScript {
             }
         }
         logger.info("\n")
+        // Bootstrapping MBAR & BAR
         if(numBootstrap != 0) {
             EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
             bootstrapper.bootstrap(numBootstrap)
@@ -259,55 +280,29 @@ class MBAR extends AlgorithmsScript {
                 }
             }
         }
-
+        // Compare MBAR calculation across different tenths of the data
         if (convergence){
             MultistateBennettAcceptanceRatio.FORCE_ZEROS_SEED = true;
-            MultistateBennettAcceptanceRatio[] mbarTimeConvergence =
-                    filter.getTimeConvergenceMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
-            double[][] dGTime = new double[mbarTimeConvergence.length][]
-            for (int i = 0; i < mbarTimeConvergence.length; i++) {
-                dGTime[i] = mbarTimeConvergence[i].getBinEnergies()
-            }
             MultistateBennettAcceptanceRatio[] mbarPeriodComparison =
                     filter.getPeriodComparisonMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
             double[][] dGPeriod = new double[mbarPeriodComparison.length][]
             for (int i = 0; i < mbarPeriodComparison.length; i++) {
                 dGPeriod[i] = mbarPeriodComparison[i].getBinEnergies()
             }
-            logger.info("\n MBAR Time Convergence Results:")
-            logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
-                    10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
-            double[] totals = new double[dGTime[0].length]
-            for(int i = 0; i < dGTime[0].length; i++) {
-                StringBuilder sb = new StringBuilder()
-                sb.append(" dG_").append(i).append(": ")
-                for(int j = 0; j < dGTime.length; j++) {
-                    sb.append(format("%10.4f ", dGTime[j][i]))
-                    totals[j] += dGTime[j][i]
-                }
-                logger.info(sb.toString())
-            }
-            StringBuilder totalsSB = new StringBuilder()
-            for(int i = 0; i < totals.length; i++) {
-                totalsSB.append(format("%10.4f ", totals[i]))
-            }
-            logger.info("")
-            logger.info("  Tot: " + totalsSB.toString())
-            logger.info("\n")
             logger.info("\n MBAR Period Comparison Results:")
             logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
                     10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
-            totals = new double[dGPeriod[0].length]
-            for(int i = 0; i < dGTime[0].length; i++) {
+            double[] totals = new double[dGPeriod[0].length]
+            for(int i = 0; i < dGPeriod[0].length; i++) {
                 StringBuilder sb = new StringBuilder()
                 sb.append(" dG_").append(i).append(": ")
-                for(int j = 0; j < dGTime.length; j++) {
+                for(int j = 0; j < dGPeriod.length; j++) {
                     sb.append(format("%10.4f ", dGPeriod[j][i]))
                     totals[j] += dGPeriod[j][i]
                 }
                 logger.info(sb.toString())
             }
-            totalsSB = new StringBuilder()
+            StringBuilder totalsSB = new StringBuilder()
             for(int i = 0; i < totals.length; i++) {
                 totalsSB.append(format("%10.4f ", totals[i]))
             }
