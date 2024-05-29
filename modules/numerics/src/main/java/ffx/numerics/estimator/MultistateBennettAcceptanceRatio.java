@@ -408,6 +408,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates);
+    logWeights();
 
     // Convert to kcal/mol & calculate differences/sums
     for (int i = 0; i < nLambdaStates; i++) {
@@ -418,6 +419,40 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
+  }
+
+  private void logWeights() {
+    double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    double[] snapshotWeights = new double[W[0].length];
+    for (int i = 0; i < W[0].length; i++) {
+      for(int j = 0; j < W.length; j++) {
+        snapshotWeights[i] += W[j][i];
+      }
+    }
+    double[] trajectoryWeights = new double[W.length];
+    for (int i = 0; i < W.length; i++) {
+      int start = 0;
+      for(int j = 0; j < i; j++) {
+        start += snaps[j];
+      }
+      for(int j = 0; j < snaps[i]; j++) {
+        trajectoryWeights[i] += snapshotWeights[start + j];
+      }
+    }
+    logger.info(" Trajectory Weights: " + Arrays.toString(trajectoryWeights));
+    // Print out first ten values of each row of W
+    double[][] firstTens = new double[W.length][10];
+    for (int i = 0; i < W.length; i++) {
+      logger.info(" W row " + i + ": " + Arrays.toString(Arrays.copyOf(W[i], 10)));
+      firstTens[i] = Arrays.copyOf(W[i], 10);
+    }
+    for(int i = 0; i < 10; i++) {
+      double sum = 0.0;
+      for(int j = 0; j < W.length; j++) {
+          sum += firstTens[j][i];
+      }
+      logger.info(" W column " + i + ": " + sum);
+    }
   }
 
   /**
