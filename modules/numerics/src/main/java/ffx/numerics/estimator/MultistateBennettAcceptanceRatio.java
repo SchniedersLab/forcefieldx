@@ -276,9 +276,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Sample random snapshots from each window.
     int[][] indices = new int[nLambdaStates][numEvaluations];
     if (randomSamples) {
-      int[] randomIndices = getBootstrapIndices(numEvaluations, random);
+      // Build random indices vector maintaining snapshot nums!
+      int[] randomIndices = new int[numEvaluations];
+      int sum = 0;
+      for (int snap : snaps) {
+        System.arraycopy(getBootstrapIndices(snap, random), 0, randomIndices, sum, snap);
+        sum += snap;
+      }
       for (int i = 0; i < nLambdaStates; i++) {
-        // Use the same random indices across all lambda values
+        // Use the same random indices across lambda values
         indices[i] = randomIndices;
       }
     } else {
@@ -389,7 +395,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     do {
       prevMBAR = copyOf(mbarFEEstimates, nLambdaStates);
       mbarFEEstimates = selfConsistentUpdate(reducedPotentials, snaps, mbarFEEstimates);
-      for (int i = 0; i < nLambdaStates; i++) { // SOR
+      if (snapsTemp.length != snaps.length){ // Compare to pymbar
+        break;
+      }
+      for (int i = 0; i < nLambdaStates; i++) { // SOR for acceleration
         mbarFEEstimates[i] = omega * mbarFEEstimates[i] + (1 - omega) * prevMBAR[i];
       }
       if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
@@ -397,8 +406,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
       sciIter++;
     } while (!converged(prevMBAR) && sciIter < 1000);
+    logger.fine(" SCI iterations: " + sciIter);
 
-    // Zero out the first term
+    // Zero out the first term one last time
     double f0 = mbarFEEstimates[0];
     for (int i = 0; i < nLambdaStates; i++) {
       mbarFEEstimates[i] -= f0;
@@ -408,7 +418,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates);
-    logWeights();
+    if (!randomSamples) {
+      logWeights(); // Annoying in log file to do this for every bootstrap
+    }
 
     // Convert to kcal/mol & calculate differences/sums
     for (int i = 0; i < nLambdaStates; i++) {
@@ -422,37 +434,31 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   private void logWeights() {
+    logger.info(" MBAR Weight Matrix Information:");
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
-    double[] snapshotWeights = new double[W[0].length];
-    for (int i = 0; i < W[0].length; i++) {
-      for(int j = 0; j < W.length; j++) {
-        snapshotWeights[i] += W[j][i];
+    double[][] collapsedW = new double[W.length][W.length]; // Collapse W trajectory-wise (into K x K)
+    for (int i = 0; i < snaps.length; i++) {
+      for (int j = 0; j < W.length; j++) {
+        int start = 0;
+        for(int k = 0; k < i; k++) {
+          start += snaps[k];
+        }
+        for(int k = 0; k < snaps[i]; k++) {
+            collapsedW[j][i] += W[j][start + k];
+        }
       }
     }
-    double[] trajectoryWeights = new double[W.length];
-    for (int i = 0; i < W.length; i++) {
-      int start = 0;
-      for(int j = 0; j < i; j++) {
-        start += snaps[j];
-      }
-      for(int j = 0; j < snaps[i]; j++) {
-        trajectoryWeights[i] += snapshotWeights[start + j];
+    for(int i = 0; i < W.length; i++) {
+      logger.info( " W[" + i + "] collapsed by trajectory: " + Arrays.toString(collapsedW[i]));
+    }
+    double[] rowSum = new double[W.length];
+    for(int i = 0; i < collapsedW[0].length; i++) {
+      for (double[] trajectory : collapsedW) {
+        rowSum[i] += trajectory[i];
       }
     }
-    logger.info(" Trajectory Weights: " + Arrays.toString(trajectoryWeights));
-    // Print out first ten values of each row of W
-    double[][] firstTens = new double[W.length][10];
-    for (int i = 0; i < W.length; i++) {
-      logger.info(" W row " + i + ": " + Arrays.toString(Arrays.copyOf(W[i], 10)));
-      firstTens[i] = Arrays.copyOf(W[i], 10);
-    }
-    for(int i = 0; i < 10; i++) {
-      double sum = 0.0;
-      for(int j = 0; j < W.length; j++) {
-          sum += firstTens[j][i];
-      }
-      logger.info(" W column " + i + ": " + sum);
-    }
+    softMax(rowSum);
+    logger.info(" Softmax of trajectory weight: " + Arrays.toString(rowSum));
   }
 
   /**
@@ -846,14 +852,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[][] hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[] f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
     int iter = 1;
-    while (iter < 100 && MathArrays.distance1(freeEnergyEstimates, f_kPlusOne) > tolerance) {
+    while (iter < 300) {
       freeEnergyEstimates = f_kPlusOne;
       grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
       hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
       f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
+      double eps = 0.0;
+      for(int i = 0; i < freeEnergyEstimates.length; i++){
+        eps += abs(grad[i]);
+      }
+      if (eps < tolerance) {
+        break;
+      }
       iter++;
     }
-
     logger.fine(" Newton converged after " + iter + " iterations.");
 
     return f_kPlusOne;
@@ -896,6 +908,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Take the natural logarithm of the sum and add the maximum value back in.
     return max + log(sum);
+  }
+
+  private static void softMax(double[] values){
+    double max = stream(values).max().getAsDouble();
+    double sum = 0.0;
+    for(int i = 0; i < values.length; i++){
+      values[i] = exp(values[i]-max);
+      sum += values[i];
+    }
+    for(int i = 0; i < values.length; i++){
+      values[i] /= sum;
+    }
   }
 
   /**
@@ -1282,7 +1306,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   public static void main(String[] args) {
     double[] O_k = {0, 1, 2, 3, 4}; // Equilibrium positions
     double[] K_k = {1, 3, 7, 10, 15}; // Spring constants
-    int[] N_k = {0, 500, 300, 0, 10000}; // No support for different number of snapshots
+    int[] N_k = {10000, 10000, 10000, 0, 10000}; // No support for different number of snapshots
     double beta = 1.0;
 
     // Create an instance of HarmonicOscillatorsTestCase
@@ -1323,7 +1347,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
 
     EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-    bootstrapper.bootstrap(50);
+    bootstrapper.bootstrap(10);
     System.out.println("done. \n");
 
     // Get the analytical free energy differences
