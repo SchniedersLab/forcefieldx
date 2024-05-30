@@ -21,6 +21,7 @@ catalog.xml
 .classpath
 .project
 
+testing/
 target/
 scripts/
 /groovy/

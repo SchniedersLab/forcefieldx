@@ -210,6 +210,7 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Invalid seed type: " + seedWith)
             return this
         }
+        MultistateBennettAcceptanceRatio.VERBOSE = verbose
         // Runs calculation on class creation
         mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, tol)
         this.mbar = mbar
