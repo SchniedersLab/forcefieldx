@@ -45,7 +45,6 @@ import ffx.utilities.Constants;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.util.MathArrays;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -153,6 +152,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   public enum SeedType {BAR, ZWANZIG, ZEROS}
   public static boolean FORCE_ZEROS_SEED = false;
+  public static boolean VERBOSE = false;
 
   /**
    * Constructor for MBAR estimator.
@@ -253,6 +253,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   @Override
   public void estimateDG(boolean randomSamples) {
+    if (MultistateBennettAcceptanceRatio.VERBOSE){
+      logger.setLevel(java.util.logging.Level.FINE);
+    }
+
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
     if (FORCE_ZEROS_SEED) {
@@ -384,7 +388,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Update the FE estimates with the optimized values from derivative-based optimization
     int count = 0;
     for(Integer i : sampledLambdas){
-      if (Double.isNaN(mbarFEEstimatesTemp[count])) {
+      if (!Double.isNaN(mbarFEEstimatesTemp[count])) { // Should be !NaN
         mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
       }
       count++;
@@ -418,8 +422,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates);
-    if (!randomSamples) {
-      logWeights(); // Annoying in log file to do this for every bootstrap
+    if (!randomSamples) { // Don't log for bootstrapping
+      logWeights();
     }
 
     // Convert to kcal/mol & calculate differences/sums
@@ -434,7 +438,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   private void logWeights() {
-    logger.info(" MBAR Weight Matrix Information:");
+    logger.fine(" MBAR Weight Matrix Information Collapsed:");
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
     double[][] collapsedW = new double[W.length][W.length]; // Collapse W trajectory-wise (into K x K)
     for (int i = 0; i < snaps.length; i++) {
@@ -449,7 +453,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     for(int i = 0; i < W.length; i++) {
-      logger.info( " W[" + i + "] collapsed by trajectory: " + Arrays.toString(collapsedW[i]));
+      logger.fine( "\n Estimation " + i + ": " + Arrays.toString(collapsedW[i]));
     }
     double[] rowSum = new double[W.length];
     for(int i = 0; i < collapsedW[0].length; i++) {
@@ -458,7 +462,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     softMax(rowSum);
-    logger.info(" Softmax of trajectory weight: " + Arrays.toString(rowSum));
+    logger.fine("\n Softmax of trajectory weight: " + Arrays.toString(rowSum));
   }
 
   /**
@@ -813,7 +817,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * Newton-Raphson step for MBAR optimization.
+   * Newton-Raphson step for MBAR optimization. Falls back to the steepest descent if hessian is singular.
+   *
+   * The matrix can come back from being singular after iterations, so it isn't worth moving to L-BFGS.
    *
    * @param n        current free energies.
    * @param grad     gradient of the objective function.
@@ -823,8 +829,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private static double[] newtonStep(double[] n, double[] grad, double[][] hessian, double stepSize) {
     double[] nPlusOne = new double[n.length];
-    RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
-    double[] step = hessianInverse.preMultiply(grad);
+    double[] step;
+    try {
+      RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
+      step = hessianInverse.preMultiply(grad);
+    } catch (IllegalArgumentException e){
+        logger.fine(" Singular matrix detected in MBAR Newton-Raphson step. Performing steepest descent step.");
+        step = grad;
+        stepSize = 1e-5;
+    }
     // Zero out the first term of the step
     double temp = step[0];
     step[0] = 0.0;
@@ -856,6 +869,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       freeEnergyEstimates = f_kPlusOne;
       grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
       hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
+      // Catches singular matrices and performs steepest descent
       f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
       double eps = 0.0;
       for(int i = 0; i < freeEnergyEstimates.length; i++){

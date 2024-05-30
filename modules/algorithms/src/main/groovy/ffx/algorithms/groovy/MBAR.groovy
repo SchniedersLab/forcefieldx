@@ -106,6 +106,10 @@ class MBAR extends AlgorithmsScript {
             description = "End at this snapshot when reading in tinker BAR files.")
     private int endingSnapshot = -1
 
+    @Option(names = ["--verbose"], paramLabel = "false",
+            description = "Log weight matrices, iterations, and other details.")
+    private boolean verbose = false
+
 
     /**
      * The path to MBAR/BAR files.
