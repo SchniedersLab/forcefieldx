@@ -399,9 +399,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     do {
       prevMBAR = copyOf(mbarFEEstimates, nLambdaStates);
       mbarFEEstimates = selfConsistentUpdate(reducedPotentials, snaps, mbarFEEstimates);
-      if (snapsTemp.length != snaps.length){ // Compare to pymbar
-        break;
-      }
       for (int i = 0; i < nLambdaStates; i++) { // SOR for acceleration
         mbarFEEstimates[i] = omega * mbarFEEstimates[i] + (1 - omega) * prevMBAR[i];
       }
@@ -410,7 +407,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
       sciIter++;
     } while (!converged(prevMBAR) && sciIter < 1000);
-    logger.fine(" SCI iterations: " + sciIter);
+    if (MultistateBennettAcceptanceRatio.VERBOSE) {
+      logger.info(" SCI iterations: " + sciIter);
+    }
 
     // Zero out the first term one last time
     double f0 = mbarFEEstimates[0];
@@ -422,7 +421,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
     diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates);
-    if (!randomSamples) { // Don't log for bootstrapping
+    if (!randomSamples && MultistateBennettAcceptanceRatio.VERBOSE) { // Don't log for bootstrapping
       logWeights();
     }
 
@@ -438,7 +437,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   private void logWeights() {
-    logger.fine(" MBAR Weight Matrix Information Collapsed:");
+    logger.info(" MBAR Weight Matrix Information Collapsed:");
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
     double[][] collapsedW = new double[W.length][W.length]; // Collapse W trajectory-wise (into K x K)
     for (int i = 0; i < snaps.length; i++) {
@@ -453,7 +452,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     for(int i = 0; i < W.length; i++) {
-      logger.fine( "\n Estimation " + i + ": " + Arrays.toString(collapsedW[i]));
+      logger.info( "\n Estimation " + i + ": " + Arrays.toString(collapsedW[i]));
     }
     double[] rowSum = new double[W.length];
     for(int i = 0; i < collapsedW[0].length; i++) {
@@ -462,7 +461,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     softMax(rowSum);
-    logger.fine("\n Softmax of trajectory weight: " + Arrays.toString(rowSum));
+    logger.info("\n Softmax of trajectory weight: " + Arrays.toString(rowSum));
   }
 
   /**
@@ -834,7 +833,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
       step = hessianInverse.preMultiply(grad);
     } catch (IllegalArgumentException e){
-        logger.fine(" Singular matrix detected in MBAR Newton-Raphson step. Performing steepest descent step.");
+        if(MultistateBennettAcceptanceRatio.VERBOSE) {
+          logger.info(" Singular matrix detected in MBAR Newton-Raphson step. Performing steepest descent step.");
+        }
         step = grad;
         stepSize = 1e-5;
     }
@@ -865,7 +866,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[][] hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[] f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
     int iter = 1;
-    while (iter < 300) {
+    while (iter < 15) { // Quadratic convergence is expected, SCI will run anyway
       freeEnergyEstimates = f_kPlusOne;
       grad = mbarGradient(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
       hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
@@ -880,7 +881,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
       iter++;
     }
-    logger.fine(" Newton converged after " + iter + " iterations.");
+    if(MultistateBennettAcceptanceRatio.VERBOSE) {
+      logger.info(" Newton iterations (max 15): " + iter);
+    }
 
     return f_kPlusOne;
   }
@@ -1354,14 +1357,17 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding.");
-    //MBARFilter mbarFilter = new MBARFilter(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/LYS_Umod/zeroSampleTest"));
-    MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
+    MBARFilter mbarFilter = new MBARFilter(new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/nnqq"));
+    mbarFilter.setStartSnapshot(5000);
+    MultistateBennettAcceptanceRatio.VERBOSE = true;
+    MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
+    //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
     double[] mbarUncertainties = Arrays.copyOf(mbar.mbarUncertainties, mbar.mbarUncertainties.length);
     double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
 
     EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
-    bootstrapper.bootstrap(10);
+    bootstrapper.bootstrap(0);
     System.out.println("done. \n");
 
     // Get the analytical free energy differences
