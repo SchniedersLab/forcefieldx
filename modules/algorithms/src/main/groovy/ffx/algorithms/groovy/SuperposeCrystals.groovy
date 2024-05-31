@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -70,18 +70,161 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
 class SuperposeCrystals extends AlgorithmsScript {
 
   /**
-   * --na or --numAU AUs in the RMSD.
+   * --ac or --alchemicalAtoms sets atoms unique for both crystals, as comma-separated hyphenated
+   * ranges or singletons.
    */
-  @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
-      description = 'AUs in the RMSD.')
-  private int numAU
+  @Option(names = ["--ac", "--alchemicalAtoms"], paramLabel = "", defaultValue = "",
+          description = "Atom indices to be excluded from both crystals (e.g. 1-24,32-65). Use if molecular identity is the same for both crystals.")
+  private String excludeAtoms = ""
+
+  /**
+   * --ac1 or --alchemicalAtoms1 sets atoms unique to the base crystal, as comma-separated hyphenated
+   * ranges or singletons.
+   */
+  @Option(names = ["--ac1", "--alchemicalAtoms1"], paramLabel = "", defaultValue = "",
+          description = "Atom indices to be excluded in the first crystal (e.g. 1-24,32-65).")
+  private String excludeAtomsA = ""
+
+  /**
+   * --ac2 or --alchemicalAtoms2 sets atoms unique to the target crystal, as comma-separated hyphenated
+   * ranges or singletons.
+   */
+  @Option(names = ["--ac2", "--alchemicalAtoms2"], paramLabel = "", defaultValue = "",
+          description = "Atom indices to be excluded in the second crystal (e.g. 1-24,32-65).")
+  private String excludeAtomsB = ""
+
+  /**
+   * --ca or --carbonAlphas Consider only alpha carbons for proteins.
+   */
+  @Option(names = ['--ca', '--carbonAlphas'], paramLabel = "false", defaultValue = "false",
+          description = 'Consider only alpha carbons for proteins.')
+  private static boolean alphaCarbons
+
+  /**
+   * --gc or --gyrationComponents Display components for radius of gyration for final clusters.
+   */
+  @Option(names = ['--gc', '--gyrationComponents'], paramLabel = "false", defaultValue = "false",
+          description = 'Display components for radius of gyration for final clusters.')
+  private static boolean gyrationComponents
+
+  /**
+   * --ht or --hitTolerance Tolerance to determine if a comparison should be counted as a "hit".
+   */
+  @CommandLine.Option(names = ['--ht', '--hitTolerance'], paramLabel = '-1.0', defaultValue = '-1.0',
+          description = "Sum comparisons that attain a value lower than this tolerance.")
+  private double hitTol
 
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
   @Option(names = ['--if', '--inflationFactor'], paramLabel = '5.0', defaultValue = '5.0',
-      description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
+          description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
+
+  /**
+   * --ih or --includeHydrogen Include hydrogen atoms.
+   */
+  @Option(names = ['--ih', '--includeHydrogen'], paramLabel = "false", defaultValue = "false",
+      description = 'Include hydrogen atoms.')
+  private static boolean includeHydrogen
+
+  /**
+   * --in or --inertia Display moments of inertia for final clusters.
+   */
+  @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
+      description = 'Display moments of inertia for final clusters.')
+  private static boolean inertia
+
+  /**
+   * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
+   */
+  @Option(names = ['-l', '--linkage'], paramLabel = '1', defaultValue = '1',
+      description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
+  private int linkage
+
+  /**
+   * --lm or --lowMemory Slower comparisons, but reduces memory usage.
+   */
+  @Option(names = ['--lm', '--lowMemory'], paramLabel = "false", defaultValue = "false",
+          description = 'Reduce memory usage at the cost of efficiency.')
+  private static boolean lowMemory
+
+  /**
+   * --mt or --matchTolerance Tolerance to determine if two AUs are different.
+   */
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
+          description = "Tolerance to determine if two AUs are different.")
+  private double matchTol
+
+  /**
+   * --mw or --massWeighted Use mass-weighted atomic coordinates for alignment.
+   */
+  @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
+          description = 'Use mass-weighted atomic coordinates for alignment.')
+  private static boolean massWeighted
+
+  /**
+   * --na or --numAU AUs in the RMSD.
+   */
+  @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
+          description = 'AUs in the RMSD.')
+  private int numAU
+
+  /**
+   * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
+   */
+  @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
+      description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
+  private int crystalPriority
+
+  /**
+   * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
+   */
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "-1.0", defaultValue = "-1.0",
+          description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
+  private static double printSym
+
+  /**
+   * -r or --restart Restart from a previously written RMSD matrix (if one exists).
+   */
+  @Option(names = ['-r', '--restart'], paramLabel = "false", defaultValue = "false",
+          description = 'Restart from a previously written RMSD matrix (if one exists).')
+  private static boolean restart
+
+  /**
+   * --saveClusters Save files for the superposed crystals.
+   */
+  @Option(names = ['--save'], paramLabel = "-1.0", defaultValue = "-1.0",
+          description = 'Save structures less than or equal to this cutoff.')
+  private static double save
+
+  /**
+   * --sc --saveClusters Save files for the superposed crystals.
+   */
+  @Option(names = ['--sc','--saveClusters'], paramLabel = "0", defaultValue = "0",
+          description = 'Save files for the superposed crystals (1=PDB, 2=XYZ).')
+  private static int saveClusters
+
+  /**
+   * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
+   */
+  @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
+          description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
+  private static boolean machineLearning
+
+  /**
+   * --st or --strict Compare all unique AUs between each crystal.
+   */
+  @Option(names = ['--st', '--strict'], paramLabel = "false", defaultValue = "false",
+          description = 'More intensive, less efficient version of PAC.')
+  private static boolean strict
+
+  /**
+   * -w or --write Write out the PAC RMSD matrix.
+   */
+  @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
+          description = 'Write out the PAC RMSD matrix.')
+  private static boolean write
 
   /**
    * --zp or --zPrime Z' for both crystals (same).
@@ -94,151 +237,15 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --zp1 or --zPrime1 Z' for crystal 1 (default to autodetect).
    */
   @Option(names = ['--zp1', '--zPrime1'], paramLabel = '-1', defaultValue = '-1',
-      description = "Z'' for crystal 1 (default will try to autodetect).")
+          description = "Z'' for crystal 1 (default will try to autodetect).")
   private int zPrime1
 
   /**
    * --zp2 or --zPrime2 Z' for crystal 2 (default to autodetect).
    */
   @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
-      description = "Z'' for crystal 2 (default will try to autodetect).")
+          description = "Z'' for crystal 2 (default will try to autodetect).")
   private int zPrime2
-
-  /**
-   * --ac or --alchemicalAtoms sets atoms unique for both crystals, as comma-separated hyphenated
-   * ranges or singletons.
-   */
-  @Option(names = ["--ac", "--alchemicalAtoms"], paramLabel = "", defaultValue = "",
-      description = "Atom indices to be excluded from both crystals (e.g. 1-24,32-65). Use if molecular identity is the same for both crystals.")
-  private String excludeAtoms = ""
-
-  /**
-   * --ac1 or --alchemicalAtoms1 sets atoms unique to the base crystal, as comma-separated hyphenated
-   * ranges or singletons.
-   */
-  @Option(names = ["--ac1", "--alchemicalAtoms1"], paramLabel = "", defaultValue = "",
-      description = "Atom indices to be excluded in the first crystal (e.g. 1-24,32-65).")
-  private String excludeAtomsA = ""
-
-  /**
-   * --ac2 or --alchemicalAtoms2 sets atoms unique to the target crystal, as comma-separated hyphenated
-   * ranges or singletons.
-   */
-  @Option(names = ["--ac2", "--alchemicalAtoms2"], paramLabel = "", defaultValue = "",
-      description = "Atom indices to be excluded in the second crystal (e.g. 1-24,32-65).")
-  private String excludeAtomsB = ""
-
-  /**
-   * --mt or --matchTolerance Tolerance to determine if two AUs are different.
-   */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
-      description = "Tolerance to determine if two AUs are different.")
-  private double matchTol
-
-  /**
-   * --ht or --hitTolerance Tolerance to determine if a comparison should be counted as a "hit".
-   */
-  @CommandLine.Option(names = ['--ht', '--hitTolerance'], paramLabel = '-1.0', defaultValue = '-1.0',
-          description = "Sum comparisons that attain a value lower than this tolerance.")
-  private double hitTol
-
-  /**
-   * -w or --write Write out the PAC RMSD matrix.
-   */
-  @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-      description = 'Write out the PAC RMSD matrix.')
-  private static boolean write
-
-  /**
-   * -r or --restart Restart from a previously written RMSD matrix (if one exists).
-   */
-  @Option(names = ['-r', '--restart'], paramLabel = "false", defaultValue = "false",
-      description = 'Restart from a previously written RMSD matrix (if one exists).')
-  private static boolean restart
-
-  /**
-   * --save Save files for the superposed crystals.
-   */
-  @Option(names = ['--save'], paramLabel = "0", defaultValue = "0",
-      description = 'Save files for the superposed crystals (1=PDB, 2=XYZ).')
-  private static int save
-
-  /**
-   * --st or --strict Compare all unique AUs between each crystal.
-   */
-  @Option(names = ['--st', '--strict'], paramLabel = "false", defaultValue = "false",
-      description = 'More intensive, less efficient version of PAC.')
-  private static boolean strict
-
-  /**
-   * --lm or --lowMemory Slower comparisons, but reduces memory usage.
-   */
-  @Option(names = ['--lm', '--lowMemory'], paramLabel = "false", defaultValue = "false",
-      description = 'Reduce memory usage at the cost of efficiency.')
-  private static boolean lowMemory
-
-  /**
-   * --ca or --carbonAlphas Consider only alpha carbons for proteins.
-   */
-  @Option(names = ['--ca', '--carbonAlphas'], paramLabel = "false", defaultValue = "false",
-      description = 'Consider only alpha carbons for proteins.')
-  private static boolean alphaCarbons
-
-  /**
-   * --ih or --includeHydrogen Include hydrogen atoms.
-   */
-  @Option(names = ['--ih', '--includeHydrogen'], paramLabel = "false", defaultValue = "false",
-      description = 'Include hydrogen atoms.')
-  private static boolean includeHydrogen
-
-  /**
-   * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
-   */
-  @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
-      description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
-  private static boolean machineLearning
-
-  /**
-   * --in or --inertia Display moments of inertia for final clusters.
-   */
-  @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
-      description = 'Display moments of inertia for final clusters.')
-  private static boolean inertia
-
-  /**
-   * --rgc or --gyrationComponents Display components for radius of gyration for final clusters.
-   */
-  @Option(names = ['--gc', '--gyrationComponents'], paramLabel = "false", defaultValue = "false",
-      description = 'Display components for radius of gyration for final clusters.')
-  private static boolean gyrationComponents
-
-  /**
-   * --mw or --massWeighted Use mass-weighted atomic coordinates for alignment.
-   */
-  @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
-      description = 'Use mass-weighted atomic coordinates for alignment.')
-  private static boolean massWeighted
-
-  /**
-   * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
-   */
-  @Option(names = ['--ps', '--printSymOp'], paramLabel = "-1.0", defaultValue = "-1.0",
-      description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
-  private static double printSym
-
-  /**
-   * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
-   */
-  @Option(names = ['-l', '--linkage'], paramLabel = '1', defaultValue = '1',
-      description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
-  private int linkage
-
-  /**
-   * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
-   */
-  @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
-      description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
-  private int crystalPriority
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -325,7 +332,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     // Define the filename to use for the RMSD values.
     String filename = filenames.get(0)
-    String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
+    String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".dst")
 
     if(zPrime > 0 && zPrime % 1 == 0){
       zPrime1 = zPrime;
@@ -334,7 +341,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     runningStatistics =
         pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
-            alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, save,
+            alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, saveClusters, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
             lowMemory, pacFilename)
 

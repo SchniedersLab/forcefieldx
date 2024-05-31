@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,19 +39,19 @@ package ffx.algorithms.thermodynamics;
 
 import ffx.utilities.FileUtils;
 import ffx.utilities.HistogramXmlAdapter;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlAccessOrder;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorOrder;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import javax.annotation.Nullable;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -597,6 +597,14 @@ public class HistogramData {
     rectifyLambdaVariables();
   }
 
+  public void setdUdLBinWidth(double dUdLBinWidth) {
+    // The scale the minimum value of the first dU/dL bin.
+    double ratio = dUdLBinWidth / this.dUdLBinWidth;
+    this.dUdLMinimum *= ratio;
+    this.dUdLBinWidth = dUdLBinWidth;
+    rectifyDUDLVariables();
+  }
+
   /**
    * Gets the tempering offset.
    *
@@ -615,7 +623,6 @@ public class HistogramData {
    * @param temperingOffset Tempering offset in kcal/mol.
    */
   public void setTemperingOffset(double temperingOffset) {
-    this.temperingOffset = temperingOffset;
     this.temperingOffset = temperingOffset;
   }
 
@@ -667,7 +674,8 @@ public class HistogramData {
       setLambdaBinWidth(width);
     }
     if (properties.containsKey("flambda-bin-width")) {
-      dUdLBinWidth = properties.getDouble("flambda-bin-width");
+      double dUdLBinWidth = properties.getDouble("flambda-bin-width");
+      setdUdLBinWidth(dUdLBinWidth);
     }
     if (properties.containsKey("discrete-lambda")) {
       boolean discreteLambda = properties.getBoolean("discrete-lambda");
@@ -677,14 +685,14 @@ public class HistogramData {
 
   public String toString() {
     return format("  Lambda bins:      %6d\n", lambdaBins)
-            + format("  Lambda bin width: %6.3f\n", lambdaBinWidth)
-            + format("  dU/dL bins:       %6d\n", dUdLBins)
-            + format("  dU/dL bin width:  %6.3f (kcal/mol)\n", dUdLBinWidth)
-            + format("  Bias magnitude:   %6.3f (kcal/mol)\n", biasMag)
-            + format("  Tempering offset: %6.3f (kcal/mol)\n", getTemperingOffset())
-            + format("  Tempering rate:   %6.3f\n", temperingFactor)
-            + format("  Discrete lambda:  %6B\n", discreteLambda)
-            + format("  Meta-dynamics:    %6B\n\n", metaDynamics);
+        + format("  Lambda bin width: %6.3f\n", lambdaBinWidth)
+        + format("  dU/dL bins:       %6d\n", dUdLBins)
+        + format("  dU/dL bin width:  %6.3f (kcal/mol)\n", dUdLBinWidth)
+        + format("  Bias magnitude:   %6.3f (kcal/mol)\n", biasMag)
+        + format("  Tempering offset: %6.3f (kcal/mol)\n", getTemperingOffset())
+        + format("  Tempering rate:   %6.3f\n", temperingFactor)
+        + format("  Discrete lambda:  %6B\n", discreteLambda)
+        + format("  Meta-dynamics:    %6B\n\n", metaDynamics);
   }
 
 }

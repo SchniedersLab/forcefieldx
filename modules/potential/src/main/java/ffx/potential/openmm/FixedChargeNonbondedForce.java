@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -41,6 +41,9 @@ import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import edu.uiowa.jopenmm.OpenMMLibrary;
 import ffx.crystal.Crystal;
+import ffx.openmm.BondArray;
+import ffx.openmm.Force;
+import ffx.openmm.NonbondedForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.NonbondedCutoff;
@@ -72,7 +75,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * <p>
  * Uses arithmetic mean to define sigma and geometric mean for epsilon.
  */
-public class FixedChargeNonbondedForce extends OpenMMNonbondedForce {
+public class FixedChargeNonbondedForce extends NonbondedForce {
 
   private static final Logger logger = Logger.getLogger(FixedChargeNonbondedForce.class.getName());
 
@@ -149,7 +152,7 @@ public class FixedChargeNonbondedForce extends OpenMMNonbondedForce {
     }
     Bond[] bonds = openMMEnergy.getBonds();
     if (bonds != null && bonds.length > 0) {
-      OpenMMBondArray bondArray = new OpenMMBondArray(0);
+      BondArray bondArray = new BondArray(0);
       for (Bond bond : bonds) {
         int i1 = bond.getAtom(0).getXyzIndex() - 1;
         int i2 = bond.getAtom(1).getXyzIndex() - 1;
@@ -241,7 +244,7 @@ public class FixedChargeNonbondedForce extends OpenMMNonbondedForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the Non-Bonded Force information.
    * @return An OpenMM Non-Bonded Force, or null if there is no vdW information.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     if (vdW == null) {
       // Free the memory created by the OpenMMNonbondedForce constructor.

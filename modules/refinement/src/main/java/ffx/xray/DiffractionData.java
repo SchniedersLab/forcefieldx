@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -242,7 +242,7 @@ public class DiffractionData implements DataContainer {
     int rflag = properties.getInt("rfree-flag", -1);
     fsigfCutoff = properties.getDouble("f-sigf-cutoff", -1.0);
     gridSearch = properties.getBoolean("solvent-grid-search", false);
-    splineFit = properties.getBoolean("spline-fit", true);
+    splineFit = !properties.getBoolean("no-spline-fit", false);
     use_3g = properties.getBoolean("use-3g", true);
     aRadBuff = properties.getDouble("scattering-buffer", 0.75);
     double sampling = properties.getDouble("sampling", 0.6);
@@ -302,14 +302,15 @@ public class DiffractionData implements DataContainer {
       resolution[i] = reflectionList[i].resolution;
       refinementData[i] = new DiffractionRefinementData(properties, reflectionList[i]);
       tmp = new File(datafile[i].getFilename());
-      datafile[i]
-          .getDiffractionfilter()
+      datafile[i].getDiffractionfilter()
           .readFile(tmp, reflectionList[i], refinementData[i], properties);
     }
 
-    if (!crystal[0].equals(assembly[0].getCrystal().getUnitCell())) {
-      logger.severe(
-          "PDB and reflection file crystal information do not match! (check CRYST1 record?)");
+    if (!crystal[0].getUnitCell().equals(assembly[0].getCrystal().getUnitCell())) {
+      logger.info("\n The PDB and reflection file crystal information do not match.");
+      logger.info(" PDB File:" + assembly[0].getCrystal().getUnitCell().toString());
+      logger.info(" Reflection File:" + crystal[0].getUnitCell().toString());
+      logger.severe(" Please check the concordance of the PDB CRYST1 record with the diffraction file.");
     }
 
     if (logger.isLoggable(Level.INFO)) {

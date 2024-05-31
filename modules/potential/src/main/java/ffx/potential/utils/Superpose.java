@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -194,7 +194,7 @@ public class Superpose {
           targetAssembly.getProperties());
     }
 
-    String matrixFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt");
+    String matrixFilename = concat(getFullPath(filename), getBaseName(filename) + ".dst");
     RunningStatistics runningStatistics;
     if (restart) {
       // Define the filename to use for the RMSD values.

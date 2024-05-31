@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,8 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import ffx.potential.bonded.Angle;
+import ffx.openmm.Force;
+import ffx.openmm.PeriodicTorsionForce;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
@@ -49,7 +50,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
 import static java.lang.String.format;
 
-public class TorsionForce extends OpenMMPeriodicTorsionForce {
+public class TorsionForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(TorsionForce.class.getName());
 
@@ -73,9 +74,9 @@ public class TorsionForce extends OpenMMPeriodicTorsionForce {
       TorsionType torsionType = torsion.torsionType;
       int nTerms = torsionType.phase.length;
       for (int j = 0; j < nTerms; j++) {
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j];
         addTorsion(a1, a2, a3, a4, j + 1,
-            torsionType.phase[j] * OpenMM_RadiansPerDegree,
-            OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j]);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
       // Enforce 6-fold torsions since TorsionType instances can have different lengths
       // when side-chain protonation changes.
@@ -106,7 +107,7 @@ public class TorsionForce extends OpenMMPeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the torsions.
    * @return A Torsion Force, or null if there are no torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Torsion[] torsions = openMMEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return null;
@@ -135,9 +136,9 @@ public class TorsionForce extends OpenMMPeriodicTorsionForce {
       int a3 = torsion.getAtom(2).getXyzIndex() - 1;
       int a4 = torsion.getAtom(3).getXyzIndex() - 1;
       for (int j = 0; j < nTerms; j++) {
-        double forceConstant = OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
         setTorsionParameters(index++, a1, a2, a3, a4, j + 1,
-            torsionType.phase[j] * OpenMM_RadiansPerDegree, forceConstant);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
       // Enforce 6-fold torsions since TorsionType instances can have different lengths
       // when side-chain protonation changes.

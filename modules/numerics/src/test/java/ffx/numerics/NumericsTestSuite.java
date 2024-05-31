@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics;
 
+import ffx.numerics.estimator.MBARHarmonicOscillatorsTest;
 import ffx.numerics.fft.FFTTestSuite;
 import ffx.numerics.func1d.QuasiLinearSwitchTest;
 import ffx.numerics.integrate.Integrate1DTest;
@@ -57,6 +58,7 @@ import org.junit.runners.Suite.SuiteClasses;
     FFTTestSuite.class,
     Integrate1DTest.class,
     IntegrationTest.class,
+    MBARHarmonicOscillatorsTest.class,
     ModifiedBesselTest.class,
     MultipoleTestSuite.class,
     SquareRootTest.class,

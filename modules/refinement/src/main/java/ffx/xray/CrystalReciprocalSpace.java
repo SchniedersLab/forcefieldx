@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -320,7 +320,7 @@ public class CrystalReciprocalSpace {
     nSymm = 1;
     threadCount = parallelTeam.getThreadCount();
 
-    // Necssary for the bulk-solvent expansion!
+    // Necessary for the bulk-solvent expansion!
     bulkNSymm = crystal.spaceGroup.symOps.size();
     Resolution resolution = reflectionlist.resolution;
     double gridFactor = resolution.samplingLimit() / 2.0;

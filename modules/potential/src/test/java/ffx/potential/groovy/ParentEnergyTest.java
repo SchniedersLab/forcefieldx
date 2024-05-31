@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -55,7 +55,6 @@ import static org.junit.Assert.assertEquals;
 public class ParentEnergyTest extends PotentialTest {
 
   private final String info;
-  private final String filename;
   private final String filepath;
   private final int nAtoms;
   private final int nBonds;
@@ -101,7 +100,6 @@ public class ParentEnergyTest extends PotentialTest {
                           int nStretchTorsions, double angleTorsionEnergy, int nAngleTorsions, double vanDerWaalsEnergy,
                           int nVanDerWaals, double permanentEnergy, int nPermanent, double polarizationEnergy,
                           int nPolar, double gkEnergy, int nGK, boolean testOpenMM) {
-    this.filename = filename;
     this.info = info;
     this.nAtoms = nAtoms;
     this.bondEnergy = bondEnergy;

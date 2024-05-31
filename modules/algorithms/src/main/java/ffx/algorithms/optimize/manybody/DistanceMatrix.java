@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -544,8 +544,7 @@ public class DistanceMatrix {
       neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
 
       neighborTime += System.nanoTime();
-      logger.info(
-          format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
+      logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
       DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(), numResidues,
           crystal, lists, neighborList.getPairwiseSchedule());
@@ -560,15 +559,13 @@ public class DistanceMatrix {
         logger.log(Level.SEVERE, message, e);
       }
       parallelTime += System.nanoTime();
-      logger.info(
-          format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
+      logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
 
       ResidueState.revertAllCoordinates(allResiduesList, orig);
       try {
         parallelTeam.shutdown();
       } catch (Exception ex) {
-        logger.warning(
-            format(" Exception shutting down parallel team for the distance matrix: %s", ex));
+        logger.warning(format(" Exception shutting down parallel team for the distance matrix: %s", ex));
       }
     }
   }

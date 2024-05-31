@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -54,6 +54,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.logging.Level
 
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
@@ -269,6 +271,9 @@ class Energy extends PotentialScript {
           if (!crystal.aperiodic()) {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
                 crystal.getDensity(activeAssembly.getMass())))
+            if(logger.isLoggable(Level.FINE)){
+              logger.fine(crystal.toString());
+            }
           }
           energy = forceFieldEnergy.energy(x, true)
         } else {

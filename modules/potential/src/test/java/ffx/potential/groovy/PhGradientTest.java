@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -231,7 +231,7 @@ public class PhGradientTest extends PotentialTest {
                 -22.35053436,
                 8280,
                 -8.00000000,
-                -163.72800000
+                -166.24500000
             }
         });
   }

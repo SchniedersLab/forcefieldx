@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.parameters.PiOrbitalTorsionType;
 
@@ -49,7 +53,7 @@ import static java.lang.String.format;
 /**
  * OpenMM Pi-Orbital Torsion Force.
  */
-public class PiOrbitalTorsionForce extends OpenMMCustomCompoundBondForce {
+public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsionForce.class.getName());
 
@@ -68,8 +72,8 @@ public class PiOrbitalTorsionForce extends OpenMMCustomCompoundBondForce {
     addPerBondParameter("k");
     setName("PiOrbitalTorsion");
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
       int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
       int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
@@ -104,7 +108,7 @@ public class PiOrbitalTorsionForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the pi-orbital torsions.
    * @return An OpenMM Pi-Orbital Torsion Force, or null if there are no pi-orbital torsions.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
     if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
       return null;
@@ -123,8 +127,8 @@ public class PiOrbitalTorsionForce extends OpenMMCustomCompoundBondForce {
       return;
     }
 
-    OpenMMIntArray particles = new OpenMMIntArray(0);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
       int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;

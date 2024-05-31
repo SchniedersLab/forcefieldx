@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomBondForce;
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -51,7 +54,7 @@ import static java.lang.String.format;
 /**
  * Bond Force.
  */
-public class BondForce extends OpenMMCustomBondForce {
+public class BondForce extends CustomBondForce {
 
   private static final Logger logger = Logger.getLogger(BondForce.class.getName());
 
@@ -68,7 +71,7 @@ public class BondForce extends OpenMMCustomBondForce {
     setName("AmoebaBond");
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     for (Bond bond : bonds) {
       int i1 = bond.getAtom(0).getXyzIndex() - 1;
       int i2 = bond.getAtom(1).getXyzIndex() - 1;
@@ -91,7 +94,7 @@ public class BondForce extends OpenMMCustomBondForce {
   /**
    * Add a bond force to the OpenMM System.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     Bond[] bonds = openMMEnergy.getBonds();
     if (bonds == null || bonds.length < 1) {
       return null;
@@ -109,7 +112,7 @@ public class BondForce extends OpenMMCustomBondForce {
     }
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+    DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (Bond bond : bonds) {
       int i1 = bond.getAtom(0).getXyzIndex() - 1;

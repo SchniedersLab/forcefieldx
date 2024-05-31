@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -313,7 +313,7 @@ class Alchemical extends AlgorithmsScript {
     CompositeConfiguration properties = assemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, properties)
     RefinementEnergy refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
     double[] x = new double[refinementEnergy.getNumberOfVariables()]

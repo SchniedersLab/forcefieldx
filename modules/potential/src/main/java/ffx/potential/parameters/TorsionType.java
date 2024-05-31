@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -484,17 +484,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
       }
     }
     return torsionBuffer.toString();
-  }
-
-  /**
-   * setScaleFactor.
-   *
-   * @param scale a double.
-   */
-  void setScaleFactor(double scale) {
-    for (int i = 0; i < amplitude.length; i++) {
-      amplitude[i] *= scale;
-    }
   }
 
   /**

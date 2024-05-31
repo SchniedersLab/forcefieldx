@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -1373,20 +1373,6 @@ public class ForceField {
   public void setBondFunction(BondType.BondFunction bondFunction) {
     for (BondType bondType : bondTypes.values()) {
       bondType.setBondFunction(bondFunction);
-    }
-  }
-
-  /**
-   * setTorsionScale.
-   *
-   * @param scaleFactor a double.
-   */
-  public void setTorsionScale(double scaleFactor) {
-    for (TorsionType type : torsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
-    }
-    for (PiOrbitalTorsionType type : piOrbitalTorsionTypes.values()) {
-      type.setScaleFactor(scaleFactor);
     }
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -261,7 +261,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private final HashMap<Integer, Double> elementHCTScaleFactors;
 
   /**
-   * If true, the descreening size of atoms is based on their force field vdW radius
+   * If true, the descreening size of atoms is based on their force field vdW radius.
    */
   @FFXProperty(name = "descreen-vdw", propertyGroup = ImplicitSolvent, defaultValue = "true", description =
       "If true, the descreening size of each atom is based on its force field van der Waals radius.")

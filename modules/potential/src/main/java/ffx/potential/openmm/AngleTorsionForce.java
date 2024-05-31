@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
 
@@ -50,7 +54,7 @@ import static java.lang.String.format;
 /**
  * OpenMM Angle-Torsion Force.
  */
-public class AngleTorsionForce extends OpenMMCustomCompoundBondForce {
+public class AngleTorsionForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(AngleTorsionForce.class.getName());
 
@@ -80,7 +84,7 @@ public class AngleTorsionForce extends OpenMMCustomCompoundBondForce {
     }
     for (AngleTorsion angleTorsion : angleTorsions) {
       double[] constants = angleTorsion.getConstants();
-      OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+      DoubleArray parameters = new DoubleArray(0);
       for (int m = 0; m < 2; m++) {
         for (int n = 0; n < 3; n++) {
           int index = (3 * m) + n;
@@ -91,7 +95,7 @@ public class AngleTorsionForce extends OpenMMCustomCompoundBondForce {
       parameters.append(angleTorsion.angleType1.angle[0] * OpenMM_RadiansPerDegree);
       parameters.append(angleTorsion.angleType2.angle[0] * OpenMM_RadiansPerDegree);
 
-      OpenMMIntArray particles = new OpenMMIntArray(0);
+      IntArray particles = new IntArray(0);
       for (int i = 0; i < 4; i++) {
         particles.append(atoms[i].getXyzIndex() - 1);
       }
@@ -114,7 +118,7 @@ public class AngleTorsionForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angle-torsions.
    * @return An OpenMM Stretch-Bend Force, or null if there are no angle-torsion.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     AngleTorsion[] angleTorsions = openMMEnergy.getAngleTorsions();
     if (angleTorsions == null || angleTorsions.length < 1) {
       return null;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -212,7 +212,7 @@ public class EnergyTest extends ParentEnergyTest {
                 2290,
                 0.0,
                 2290,
-                -184.01591119210968,
+		-157.89784474,
                 2556,
                 true
             },

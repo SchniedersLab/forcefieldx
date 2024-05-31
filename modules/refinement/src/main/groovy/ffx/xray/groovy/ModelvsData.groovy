@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -40,10 +40,10 @@ package ffx.xray.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -137,7 +137,19 @@ class ModelvsData extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
+
+    boolean useHydrogen = properties.getBoolean("use-hydrogen", true)
+    if (!useHydrogen) {
+      Atom[] atoms = activeAssembly.getAtomArray()
+      for (Atom atom : atoms) {
+        if (atom.isHydrogen()) {
+          atom.setOccupancy(0.0)
+          // atom.setUse(false)
+        }
+      }
+    }
+
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
     algorithmFunctions.energy(molecularAssemblies)
@@ -162,9 +174,9 @@ class ModelvsData extends AlgorithmsScript {
     if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(molecularAssemblies).filter {a -> a != null
-      }.map {a -> a.getPotentialEnergy()
-      }.filter {e -> e != null
+      return Arrays.stream(molecularAssemblies).filter { a -> a != null
+      }.map { a -> a.getPotentialEnergy()
+      }.filter { e -> e != null
       }.collect(Collectors.toList())
     }
   }

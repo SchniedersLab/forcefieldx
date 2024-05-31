@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,38 +37,35 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.numerics.math.DoubleMath.length;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.pow;
-
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.numerics.math.DoubleMath.length;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.pow;
+
 /**
- * Restrain atoms to their initial coordinates.
+ * Restrain the position of atoms to their initial coordinates.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class RestrainPosition implements LambdaInterface {
+public class RestrainPosition extends BondedTerm implements LambdaInterface {
 
   private static final Logger logger = Logger.getLogger(RestrainPosition.class.getName());
-
-  private final Atom[] atoms;
 
   private final double[][] equilibriumCoordinates;
 
@@ -123,6 +120,7 @@ public class RestrainPosition implements LambdaInterface {
     }
 
     if (logger.isLoggable(Level.FINE)) {
+      logger.info(" RestrainPosition: " + lambdaTerm);
       for (Atom atom : atoms) {
         logger.fine(atom.toString());
       }
@@ -164,7 +162,6 @@ public class RestrainPosition implements LambdaInterface {
   public void setLambda(double lambda) {
     if (lambdaTerm) {
       this.lambda = lambda;
-
       double lambdaWindow = 1.0;
       if (this.lambda <= lambdaWindow) {
         double dldgl = 1.0 / lambdaWindow;
@@ -261,22 +258,18 @@ public class RestrainPosition implements LambdaInterface {
     }
   }
 
+
   /**
    * Calculates energy and gradients for this coordinate restraint.
    *
    * @param gradient Calculate gradients
-   * @param print    Unused
    * @return Energy in the coordinate restraint
    */
-  public double residual(boolean gradient, boolean print) {
-
-    if (lambdaTerm) {
-      dEdL = 0.0;
-      d2EdL2 = 0.0;
-      fill(lambdaGradient, 0.0);
-    }
-
-    double residual = 0.0;
+  @Override
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    double e = 0.0;
+    dEdL = 0.0;
+    d2EdL2 = 0.0;
     double fx2 = forceConstant * 2.0;
     for (int i = 0; i < nAtoms; i++) {
       // Current atomic coordinates.
@@ -291,8 +284,9 @@ public class RestrainPosition implements LambdaInterface {
       if (flatBottom > 0.0) {
         dr = Math.max(0.0, r - flatBottom);
       }
+      value = dr;
       double dr2 = dr * dr;
-      residual += dr2;
+      e += dr2;
       if (gradient || lambdaTerm) {
         double scale = fx2 * dr;
         if (r > 0.0) {
@@ -301,27 +295,29 @@ public class RestrainPosition implements LambdaInterface {
         final double dedx = dx[0] * scale;
         final double dedy = dx[1] * scale;
         final double dedz = dx[2] * scale;
+        final int index = atom.getIndex() - 1;
         if (gradient) {
-          atom.addToXYZGradient(lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
+          grad.add(threadID, index, lambdaPow * dedx, lambdaPow * dedy, lambdaPow * dedz);
         }
         if (lambdaTerm) {
-          int j3 = i * 3;
-          lambdaGradient[j3] = dLambdaPow * dedx;
-          lambdaGradient[j3 + 1] = dLambdaPow * dedy;
-          lambdaGradient[j3 + 2] = dLambdaPow * dedz;
+          lambdaGrad.add(threadID, index, dLambdaPow * dedx, dLambdaPow * dedy, dLambdaPow * dedz);
         }
       }
     }
 
     if (lambdaTerm) {
-      dEdL = dLambdaPow * forceConstant * residual;
-      d2EdL2 = d2LambdaPow * forceConstant * residual;
+      dEdL = dLambdaPow * forceConstant * e;
+      d2EdL2 = d2LambdaPow * forceConstant * e;
     }
 
-    return forceConstant * residual * lambdaPow;
+    energy = forceConstant * e * lambdaPow;
+
+    // logger.info(format(" RestrainPosition: %12.6f %12.6f %12.6f", energy, dEdL, d2EdL2));
+
+    return energy;
   }
 
-  public static List<RestrainPosition> parseRestrainPositions(MolecularAssembly molecularAssembly) {
+  public static RestrainPosition[] parseRestrainPositions(MolecularAssembly molecularAssembly) {
     List<RestrainPosition> restrainPositionList = new ArrayList<>();
     ForceField forceField = molecularAssembly.getForceField();
     CompositeConfiguration properties = forceField.getProperties();
@@ -345,15 +341,21 @@ public class RestrainPosition implements LambdaInterface {
         }
       }
     }
-    return restrainPositionList;
-   }
+
+    if (restrainPositionList.isEmpty()) {
+      return null;
+    }
+
+    return restrainPositionList.toArray(new RestrainPosition[0]);
+  }
 
   /**
-   * Parse a restraint line and return a CoordRestraint object.
-   * @param line The restraint line.
-   * @param atoms The atoms in the system.
+   * Parse a Restrain-Position line and return a RestrainPosition instance.
+   *
+   * @param line      The restraint line.
+   * @param atoms     The atoms in the system.
    * @param useLambda If true, apply lambda to this restraint.
-   * @return A CoordRestraint object.
+   * @return A RestrainPosition object.
    */
   public static RestrainPosition parseRestrainPosition(String line, Atom[] atoms, boolean useLambda) {
     String[] tokens = line.split("\\s+");
@@ -416,7 +418,8 @@ public class RestrainPosition implements LambdaInterface {
       if (tokens.length > 5) {
         flatBottom = parseDouble(tokens[5]);
       }
-      logger.fine(format(" Restrain-Position of %s to {%12.6f, %12.6f, %12.6f} with K=%8.4f and D=%8.4f",
+      logger.fine(format(
+          " Restrain-Position of %s to (%12.6f, %12.6f, %12.6f) with K=%8.4f and D=%8.4f",
           atom, x, y, z, forceConstant, flatBottom));
       coordinates = new double[3][1];
       coordinates[0][0] = x;
@@ -425,5 +428,4 @@ public class RestrainPosition implements LambdaInterface {
     }
     return new RestrainPosition(atomArray, coordinates, forceConstant, flatBottom, useLambda);
   }
-
 }

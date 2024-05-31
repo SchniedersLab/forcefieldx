@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -58,7 +58,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc Cart2Frac &lt;filename&gt;
  */
-@Command(description = " Convert Cartesian coordinates to fractional.", name = "Cart2Frac")
+@Command(description = " Convert from Cartesian to fractional coordinates.", name = "Cart2Frac")
 class Cart2Frac extends PotentialScript {
 
   /**

@@ -67,7 +67,7 @@
           <br/>
           Append /bin/ffx-all.jar to FFX_HOME
           <br/>
-          <code>FFX_JAR = FFX_HOME + "/bin/ffx-all-1.0.0-beta.jar"</code>
+          <code>FFX_JAR = FFX_HOME + "/bin/ffx-all-1.0.0.jar"</code>
           <br/>
           CD into the preferences directory
           <br/>

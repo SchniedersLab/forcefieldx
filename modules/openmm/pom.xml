@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <artifactId>forcefieldx</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <artifactId>ffx-openmm</artifactId>
+  <packaging>jar</packaging>
+  <name>OpenMM</name>
+  <description>This module contains Java analogues to many OpenMM C++ classes.</description>
+  <dependencies>
+    <dependency>
+      <artifactId>jopenmm-fat</artifactId>
+      <groupId>edu.uiowa.jopenmm</groupId>
+      <version>${jopenmm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>${jna.version}</version>
+    </dependency>
+  </dependencies>
+</project>

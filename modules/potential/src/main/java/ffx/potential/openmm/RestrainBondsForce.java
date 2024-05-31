@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,8 +37,11 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.CustomBondForce;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.RestraintBond;
+import ffx.potential.bonded.RestrainDistance;
 import ffx.potential.parameters.BondType;
 
 import java.util.List;
@@ -52,7 +55,7 @@ import static java.lang.String.format;
 /**
  * Restrain Bonds Force.
  */
-public class RestrainBondsForce extends OpenMMCustomBondForce {
+public class RestrainBondsForce extends CustomBondForce {
 
   private static final Logger logger = Logger.getLogger(RestrainBondsForce.class.getName());
 
@@ -65,8 +68,8 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
   public RestrainBondsForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
     super(bondFunction.toMathematicalForm());
 
-    List<RestraintBond> restraintBonds = openMMEnergy.getRestraintBonds(bondFunction);
-    if (restraintBonds == null || restraintBonds.isEmpty()) {
+    List<RestrainDistance> restrainDistances = openMMEnergy.getRestrainDistances(bondFunction);
+    if (restrainDistances == null || restrainDistances.isEmpty()) {
       destroy();
       return;
     }
@@ -77,7 +80,7 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
       addPerBondParameter("fb");
     }
 
-    BondType bondType = restraintBonds.getFirst().bondType;
+    BondType bondType = restrainDistances.getFirst().bondType;
     switch (bondFunction) {
       case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
         addGlobalParameter("cubic", bondType.cubic / OpenMM_NmPerAngstrom);
@@ -87,12 +90,12 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
 
     // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
     double forceConvert = 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
-    OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
-    for (RestraintBond restraintBond : restraintBonds) {
-      bondType = restraintBond.bondType;
+    DoubleArray parameters = new DoubleArray(0);
+    for (RestrainDistance restrainDistance : restrainDistances) {
+      bondType = restrainDistance.bondType;
       double forceConstant = bondType.forceConstant * bondType.bondUnit * forceConvert;
       double distance = bondType.distance * OpenMM_NmPerAngstrom;
-      Atom[] atoms = restraintBond.getAtomArray();
+      Atom[] atoms = restrainDistance.getAtomArray();
       int i1 = atoms[0].getXyzIndex() - 1;
       int i2 = atoms[1].getXyzIndex() - 1;
       parameters.append(forceConstant);
@@ -107,7 +110,7 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Restraint bonds force \t%6d\t%d", restraintBonds.size(), forceGroup));
+    logger.log(Level.INFO, format("  Restraint bonds force \t%6d\t%d", restrainDistances.size(), forceGroup));
   }
 
   /**
@@ -116,9 +119,9 @@ public class RestrainBondsForce extends OpenMMCustomBondForce {
    * @param bondFunction The bond function.
    * @param openMMEnergy The OpenMM Energy.
    */
-  public static OpenMMForce constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
-    List<RestraintBond> restraintBonds = openMMEnergy.getRestraintBonds(bondFunction);
-    if (restraintBonds == null || restraintBonds.isEmpty()) {
+  public static Force constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
+    List<RestrainDistance> restrainDistances = openMMEnergy.getRestrainDistances(bondFunction);
+    if (restrainDistances == null || restrainDistances.isEmpty()) {
       return null;
     }
     return new RestrainBondsForce(bondFunction, openMMEnergy);

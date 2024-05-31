@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -869,9 +869,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      to electrostatic gradient to the total XYZ gradient.
     */
     if (gradient || lambdaTerm) {
-      reduceRegion.init(lambdaTerm, gradient,
-          atoms, coordinates, frame, axisAtom,
-          grad, torque, lambdaGrad, lambdaTorque);
+      reduceRegion.init(lambdaTerm, gradient, atoms, coordinates, frame, axisAtom, grad, torque, lambdaGrad, lambdaTorque);
       reduceRegion.excuteWith(parallelTeam);
     }
 

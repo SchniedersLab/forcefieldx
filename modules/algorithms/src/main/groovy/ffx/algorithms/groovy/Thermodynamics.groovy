@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -247,8 +247,7 @@ class Thermodynamics extends AlgorithmsScript {
       }
     }
 
-    MolecularAssembly[] topologies =
-        topologyList.toArray(new MolecularAssembly[topologyList.size()])
+    MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     StringBuilder sb = new StringBuilder("\n Running ")
 
@@ -304,8 +303,7 @@ class Thermodynamics extends AlgorithmsScript {
     } else {
       orthogonalSpaceTempering = null
       potential = barostatOptions.checkNPT(topologies[0], potential)
-      thermodynamicsOptions.
-          runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
+      thermodynamicsOptions.runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
               algorithmListener)
       logger.info(" Done running Fixed")
     }

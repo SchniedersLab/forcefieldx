@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -172,10 +172,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
 
     // Used to seed an initial guess.
-    forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
-        FORWARDS);
-    backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature,
-        BACKWARDS);
+    forwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, FORWARDS);
+    backwardsFEP = new Zwanzig(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature, BACKWARDS);
 
     nWindows = nTrajectories - 1;
     forwardZwanzig = forwardsFEP.getBinEnergies();
@@ -366,12 +364,11 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
       if (len0 == 0 || len1 == 0) {
         barEstimates[i] = c;
-        logger.log(warningLevel,
-            format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
+        logger.log(warningLevel, format(" Window %d has no snapshots at one end (%d, %d)!", i, len0, len1));
         continue;
       }
 
-      // Ratio of the number of samples: Tinker equivalent: rfrm
+      // Ratio of the number of snaps: Tinker equivalent: rfrm
       double sampleRatio = ((double) len0) / ((double) len1);
 
       // Fermi differences.

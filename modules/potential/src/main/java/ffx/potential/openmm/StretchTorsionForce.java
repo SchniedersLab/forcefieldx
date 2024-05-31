@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.DoubleArray;
+import ffx.openmm.Force;
+import ffx.openmm.IntArray;
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.StretchTorsion;
 
@@ -50,7 +54,7 @@ import static java.lang.String.format;
 /**
  * OpenMM Stretch-Torsion Force.
  */
-public class StretchTorsionForce extends OpenMMCustomCompoundBondForce {
+public class StretchTorsionForce extends CustomCompoundBondForce {
 
   private static final Logger logger = Logger.getLogger(StretchTorsionForce.class.getName());
 
@@ -82,7 +86,7 @@ public class StretchTorsionForce extends OpenMMCustomCompoundBondForce {
 
     for (StretchTorsion stretchTorsion : stretchTorsions) {
       double[] constants = stretchTorsion.getConstants();
-      OpenMMDoubleArray parameters = new OpenMMDoubleArray(0);
+      DoubleArray parameters = new DoubleArray(0);
       for (int m = 0; m < 3; m++) {
         for (int n = 0; n < 3; n++) {
           int index = (3 * m) + n;
@@ -93,7 +97,7 @@ public class StretchTorsionForce extends OpenMMCustomCompoundBondForce {
       parameters.append(stretchTorsion.bondType2.distance * OpenMM_NmPerAngstrom);
       parameters.append(stretchTorsion.bondType3.distance * OpenMM_NmPerAngstrom);
 
-      OpenMMIntArray particles = new OpenMMIntArray(0);
+      IntArray particles = new IntArray(0);
       Atom[] atoms = stretchTorsion.getAtomArray(true);
       for (int i = 0; i < 4; i++) {
         particles.append(atoms[i].getXyzIndex() - 1);
@@ -115,7 +119,7 @@ public class StretchTorsionForce extends OpenMMCustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the stretch-torsions.
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-torsion.
    */
-  public static OpenMMForce constructForce(OpenMMEnergy openMMEnergy) {
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
     StretchTorsion[] stretchTorsions = openMMEnergy.getStretchTorsions();
     if (stretchTorsions == null || stretchTorsions.length < 1) {
       return null;

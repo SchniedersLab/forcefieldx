@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -42,7 +42,7 @@ import static org.apache.commons.math3.util.FastMath.floor;
 import java.util.Random;
 
 /**
- * java -cp target/numerics-1.0.0-beta.jar -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly
+ * java -cp target/numerics-1.0.0.jar -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly
  * -Djava.library.path=hsdis-amd64.dylib ffx.numerics.math.SSETest
  *
  * @author M. J. Schnieders

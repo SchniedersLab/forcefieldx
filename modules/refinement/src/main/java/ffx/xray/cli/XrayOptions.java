@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -57,6 +57,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static ffx.utilities.PropertyGroup.StructuralRefinement;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 /**
@@ -125,11 +127,7 @@ public class XrayOptions extends DataRefinementOptions {
     logger.info("\n");
 
     if (filenames.size() > 1) {
-      logger.info(
-          format(
-              " Diffraction file = %s, weight = %3.1f, neutron = %b",
-              filenames.get(1), wA, Boolean.FALSE));
-
+      logger.info(format(" Diffraction file = %s, weight = %3.1f, neutron = %b", filenames.get(1), wA, Boolean.FALSE));
       DiffractionFile diffractionfile = new DiffractionFile(filenames.get(1), wA, false);
       diffractionfiles.add(diffractionfile);
     }
@@ -140,22 +138,19 @@ public class XrayOptions extends DataRefinementOptions {
         double w = wA;
         if (reflectionGroup.data.length > i + 1) {
           try {
-            w = Double.parseDouble(reflectionGroup.data[i + 1]);
+            w = parseDouble(reflectionGroup.data[i + 1]);
           } catch (Exception e) {
             //
           }
         }
         if (reflectionGroup.data.length > i + 2) {
           try {
-            neutron = Boolean.parseBoolean(reflectionGroup.data[i + 2]);
+            neutron = parseBoolean(reflectionGroup.data[i + 2]);
           } catch (Exception e) {
             //
           }
         }
-        logger.info(
-            format(" Diffraction file = %s, weight = %3.1f, neutron = %b", reflectionGroup.data[i],
-                w,
-                neutron));
+        logger.info(format(" Diffraction file = %s, weight = %3.1f, neutron = %b", reflectionGroup.data[i], w, neutron));
         DiffractionFile diffractionfile = new DiffractionFile(reflectionGroup.data[i], w, neutron);
         diffractionfiles.add(diffractionfile);
       }
@@ -166,8 +161,7 @@ public class XrayOptions extends DataRefinementOptions {
       filename = FilenameUtils.removeExtension(filename);
       filename = FilenameUtils.getBaseName(filename);
 
-      logger.info(
-          format(" Diffraction from = %s, weight = %3.1f, neutron = %b", filename, wA, false));
+      logger.info(format(" Diffraction from = %s, weight = %3.1f, neutron = %b", filename, wA, false));
       DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false);
       diffractionfiles.add(diffractionfile);
     }
@@ -179,8 +173,7 @@ public class XrayOptions extends DataRefinementOptions {
    * setProperties.
    *
    * @param parseResult a {@link picocli.CommandLine.ParseResult} object.
-   * @param properties  a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *                    object.
+   * @param properties  a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
    */
   public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
     // wA
@@ -232,16 +225,16 @@ public class XrayOptions extends DataRefinementOptions {
     properties.setProperty("rfree-flag", reflectionGroup.rFreeFlag);
 
     // Spline Fit
-    if (!parseResult.hasMatchedOption("splineFit")) {
-      targetGroup.splineFit = properties.getBoolean("spline-fit", targetGroup.splineFit);
+    if (!parseResult.hasMatchedOption("noSplineFit")) {
+      targetGroup.noSplineFit = properties.getBoolean("no-spline-fit", targetGroup.noSplineFit);
     }
-    properties.setProperty("spline-fit", targetGroup.splineFit);
+    properties.setProperty("no-spline-fit", targetGroup.noSplineFit);
 
     // Use All Gaussians
     if (!parseResult.hasMatchedOption("allGaussians")) {
-      targetGroup.allGaussians = properties.getBoolean("use-3g", targetGroup.allGaussians);
+      targetGroup.useAllGaussians = !properties.getBoolean("use-3g", !targetGroup.useAllGaussians);
     }
-    properties.setProperty("use-3g", !targetGroup.allGaussians);
+    properties.setProperty("use-3g", !targetGroup.useAllGaussians);
 
     // X-ray Scale Tolerance
     if (!parseResult.hasMatchedOption("xrayScaleTol")) {
@@ -283,18 +276,13 @@ public class XrayOptions extends DataRefinementOptions {
    *
    * @param filenames   All filenames included in the diffraction data.
    * @param assemblies  All molecular assemblies included in the diffraction data.
-   * @param parseResult A ParseResult option from a Groovy script.
+   * @param properties  The properties to apply.
    * @return An assembled DiffractionData
    */
-  public DiffractionData getDiffractionData(
-      List<String> filenames, MolecularAssembly[] assemblies, ParseResult parseResult) {
-    // Load parsed X-ray properties.
-    CompositeConfiguration properties = assemblies[0].getProperties();
-    setProperties(parseResult, properties);
-
+  public DiffractionData getDiffractionData(List<String> filenames, MolecularAssembly[] assemblies,
+      CompositeConfiguration properties) {
     // Set up diffraction data (can be multiple files)
     List<DiffractionFile> diffractionFiles = processData(filenames, assemblies);
-
     return new DiffractionData(assemblies, properties, solventModel,
         diffractionFiles.toArray(new DiffractionFile[0]));
   }
@@ -399,6 +387,7 @@ public class XrayOptions extends DataRefinementOptions {
     @FFXProperty(name = "add-anisou", propertyGroup = StructuralRefinement, defaultValue = "false",
         description = "Add Anisotropic B-Factors to refinement.")
     boolean anisoU = false;
+
   }
 
   /**
@@ -427,11 +416,11 @@ public class XrayOptions extends DataRefinementOptions {
     /**
      * --sf or --splineFit
      */
-    @Option(names = {"--sf", "--splineFit"}, paramLabel = "true", defaultValue = "true",
-        description = "Use a resolution dependent spline scale.")
-    @FFXProperty(name = "spline-fit", propertyGroup = StructuralRefinement, defaultValue = "true",
+    @Option(names = {"--nsf", "--noSplineFit"}, paramLabel = "false", defaultValue = "false",
         description = "Use a resolution dependent spline scale factor.")
-    boolean splineFit = true;
+    @FFXProperty(name = "no-spline-fit", propertyGroup = StructuralRefinement, defaultValue = "false",
+        description = "Do not use a resolution dependent spline scale factor.")
+    boolean noSplineFit = false;
 
     /**
      * -A or --allGaussians
@@ -440,7 +429,7 @@ public class XrayOptions extends DataRefinementOptions {
         description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
     @FFXProperty(name = "use-3g", propertyGroup = StructuralRefinement, defaultValue = "true",
         description = "The three Gaussians with the largest amplitudes define the atomic scattering density.")
-    boolean allGaussians = false;
+    boolean useAllGaussians = false;
 
     /**
      * --xrayScaleTol
