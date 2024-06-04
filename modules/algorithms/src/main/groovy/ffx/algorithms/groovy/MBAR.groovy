@@ -164,6 +164,7 @@ class MBAR extends AlgorithmsScript {
             }
         }
         boolean isArc = !files[0].isDirectory()
+
         // Write MBAR file if option is set
         if(isArc){
             if (numLambda == -1){
@@ -185,6 +186,7 @@ class MBAR extends AlgorithmsScript {
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
             return this
         }
+
         // Run MBAR calculation if file write-out is not requested & files are correct
         File path = new File(fileList.get(0))
         if (!path.exists()) {
@@ -211,6 +213,7 @@ class MBAR extends AlgorithmsScript {
             return this
         }
         MultistateBennettAcceptanceRatio.VERBOSE = verbose
+
         // Runs calculation on class creation
         mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, tol)
         this.mbar = mbar
@@ -218,16 +221,29 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Could not create MBAR object.")
             return this
         }
+
+        // Print out results
         logger.info("\n MBAR Results:")
-        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", mbar.getFreeEnergy(),
-                mbar.getUncertainty()))
         double[] dGs = mbar.getBinEnergies()
         double[] uncertainties = mbar.getBinUncertainties()
-        double[][] uncertaintyMatrix = mbar.getDiffMatrix()
+        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", mbar.getFreeEnergy(),
+                mbar.getUncertainty()))
         for (int i = 0; i < dGs.length; i++) {
-            logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+            logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }
+
+        logger.info("\n MBAR Enthalpy & Entropy Results:")
+        double[] enthalpies = mbar.getBinEnthalpies()
+        double[] entropies = mbar.getBinEntropies()
+        double totalEnthalpy = sum(enthalpies)
+        double totalEntropy = sum(entropies)
+        logger.info(format(" Total dG = %10.4f (dH) - %10.4f (TdS) kcal/mol\n", totalEnthalpy, totalEntropy))
+        for (int i = 0; i < enthalpies.length; i++) {
+            logger.info(format("   dG %3d = %10.4f (dH) - %10.4f (TdS) kcal/mol", i, enthalpies[i], entropies[i]))
+        }
+
         logger.info("\n MBAR uncertainty between all i & j: ")
+        double[][] uncertaintyMatrix = mbar.getDiffMatrix()
         for(int i = 0; i < uncertaintyMatrix.length; i++) {
             StringBuilder sb = new StringBuilder()
             sb.append("    [")
@@ -243,12 +259,18 @@ class MBAR extends AlgorithmsScript {
             try {
                 logger.info("\n BAR Results:")
                 BennettAcceptanceRatio bar = mbar.getBAR()
-                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bar.getFreeEnergy(),
+                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", bar.getFreeEnergy(),
                         bar.getUncertainty()))
                 dGs = bar.getBinEnergies()
                 uncertainties = bar.getBinUncertainties()
                 for (int i = 0; i < dGs.length; i++) {
-                    logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                    logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                }
+                enthalpies = bar.getBinEnthalpies()
+                totalEnthalpy = sum(enthalpies)
+                logger.info(format("\n Total dH = %10.4f kcal/mol\n", totalEnthalpy))
+                for (int i = 0; i < enthalpies.length; i++) {
+                    logger.info(format("   dH %3d = %10.4f kcal/mol", i, enthalpies[i]))
                 }
             } catch (Exception ignored) {
                 logger.warning(" BAR calculation failed to converge.")
@@ -265,7 +287,7 @@ class MBAR extends AlgorithmsScript {
             dGs = bootstrapper.getFE()
             uncertainties = bootstrapper.getUncertainty()
             for (int i = 0; i < dGs.length; i++) {
-                logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
             }
             logger.info("\n")
             if (bar) {
@@ -278,7 +300,7 @@ class MBAR extends AlgorithmsScript {
                     dGs = bootstrapper.getFE()
                     uncertainties = bootstrapper.getUncertainty()
                     for (int i = 0; i < dGs.length; i++) {
-                        logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                        logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                     }
                 } catch (Exception ignored) {
                     logger.warning(" BAR calculation failed to converge.")
@@ -315,6 +337,14 @@ class MBAR extends AlgorithmsScript {
             logger.info("  Tot: " + totalsSB.toString())
         }
         return this
+    }
+
+    private double sum(double[] values) {
+        double sum = 0
+        for (double value : values) {
+            sum += value
+        }
+        return sum
     }
 
     private double[][] getEnergyForLambdas(File[] files, int nLambda) {

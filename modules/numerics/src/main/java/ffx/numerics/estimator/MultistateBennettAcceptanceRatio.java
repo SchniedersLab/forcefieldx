@@ -1172,6 +1172,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     return mbarEnthalpy;
   }
 
+  double[] getBinEntropies() {
+    return mbarEntropy;
+  }
+
   /**
    * Harmonic oscillators test case generates data for testing the MBAR implementation
    */
