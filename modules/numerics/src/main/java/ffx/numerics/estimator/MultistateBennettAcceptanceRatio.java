@@ -142,11 +142,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private double[] mbarEntropy;
 
+  public double[] rtValues;
+
   /**
    * "Reduced" potential energies. -ln(exp(beta * -U)) or more practically U * (1 / RT).
    * Has shape (nLambdaStates, numSnaps * nLambdaStates)
    */
-  private double[][] reducedPotentials;
+  public double[][] reducedPotentials;
   /**
    * Seed MBAR calculation with another free energy estimation (BAR,ZWANZIG) or zeros
    */
@@ -274,7 +276,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     // Precompute beta for each state.
-    double[] rtValues = new double[nLambdaStates];
+    rtValues = new double[nLambdaStates];
     double[] invRTValues = new double[nLambdaStates];
     for (int i = 0; i < nLambdaStates; i++) {
       rtValues[i] = Constants.R * temperatures[i];
@@ -423,9 +425,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     // Calculate uncertainties
-    mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
-    totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates);
-    diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates);
+    double[][] theta = mbarTheta(reducedPotentials, snaps, mbarFEEstimates); // Quite expensive
+    mbarUncertainties = mbarUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates, theta);
+    totalMBARUncertainty = mbarTotalUncertaintyCalc(reducedPotentials, snaps, mbarFEEstimates, theta);
+    diffMatrix = diffMatrixCalculation(reducedPotentials, snaps, mbarFEEstimates, theta);
     if (!randomSamples && MultistateBennettAcceptanceRatio.VERBOSE) { // Don't log for bootstrapping
       logWeights();
     }
@@ -437,7 +440,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (int i = 0; i < nFreeEnergyDiffs; i++) {
       mbarFEDifferenceEstimates[i] = mbarFEEstimates[i + 1] - mbarFEEstimates[i];
     }
-
 
     mbarEnthalpy = mbarEnthalpyCalc(eAllFlat, mbarFEEstimates);
     mbarEntropy = mbarEntropyCalc(mbarEnthalpy, mbarFEEstimates);
@@ -457,7 +459,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[] enthalpy = new double[mbarFEEstimates.length - 1];
     double[] averagePotential = new double[mbarFEEstimates.length];
     for(int i = 0; i < reducedPotentials.length; i++) {
-      averagePotential[i] = computeExpectations(reducedPotentials[i])[i]; // average potential of ith lambda
+      averagePotential[i] = computeExpectations(eAllFlat[i])[i]; // average potential of ith lambda
     }
     for(int i = 0; i < enthalpy.length; i++) {
       enthalpy[i] = averagePotential[i + 1] - averagePotential[i];
@@ -567,7 +569,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[] log_num_k = new double[nStates];
     double[] log_denom_n = new double[reducedPotentials[0].length];
     double[][] logDiff = new double[reducedPotentials.length][reducedPotentials[0].length];
-    double maxLogDiff = Double.NEGATIVE_INFINITY;
+    double[] maxLogDiff = new double[nStates];
+    Arrays.fill(maxLogDiff, Double.NEGATIVE_INFINITY);
     for (int i = 0; i < reducedPotentials[0].length; i++) {
       double[] temp = new double[nStates];
       double maxTemp = Double.NEGATIVE_INFINITY;
@@ -580,13 +583,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       log_denom_n[i] = logSumExp(temp, snapsPerLambda, maxTemp);
       for (int j = 0; j < nStates; j++) {
         logDiff[j][i] = -log_denom_n[i] - reducedPotentials[j][i];
-        if (logDiff[j][i] > maxLogDiff) {
-          maxLogDiff = logDiff[j][i];
+        if (logDiff[j][i] > maxLogDiff[j]) {
+          maxLogDiff[j] = logDiff[j][i];
         }
       }
     }
     for (int i = 0; i < nStates; i++) {
-      log_num_k[i] = logSumExp(logDiff[i], maxLogDiff);
+      log_num_k[i] = logSumExp(logDiff[i], maxLogDiff[i]);
     }
     double[] grad = new double[nStates];
     for (int i = 0; i < nStates; i++) {
@@ -651,9 +654,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           maxTemp = temp[j];
         }
       }
+      // log_denom_n = calculates log(sumOverStates(N_k * exp(FE[j] - reducedPotentials[j][i])))
       log_denom_n[i] = logSumExp(temp, snapsPerLambda, maxTemp);
     }
     // logW = freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis]
+    // freeEnergyEstimates[i] = log(ck / ci) --> ratio of normalization constants
     double[][] W = new double[nStates][reducedPotentials[0].length];
     for (int i = 0; i < nStates; i++) {
       for (int j = 0; j < reducedPotentials[0].length; j++) {
@@ -665,12 +670,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   /**
    * Eq. 13-15 in Shirts and Chodera (2008) for the MBAR observable uncertainty calculation.
+   * Originally implemented as seen in paper, but switched to logsumexp version because of
+   * Inf/NaN issues for large values captured in samples (i.e. potential energies).
    *
    * @return WnA matrix.
    */
   private double[][] mbarAugmentedW(double[] samples) {
     int nStates = mbarFEEstimates.length;
-    double[] cA = new double[nStates];
     // Enforce positivity of samples --> from pymbar
     double minSample = stream(samples).min().getAsDouble() - 3*java.lang.Math.ulp(1.0); // ulp to avoid zeros
     if (minSample < 0) {
@@ -679,27 +685,38 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     // Eq. 14 in Shirts and Chodera (2008)
-    for (int i = 0; i < reducedPotentials[0].length; i++) { // Snapshots
-      for (int j = 0; j < nStates; j++) { // Lambda values
-        double numeratorA = samples[i] * exp(- reducedPotentials[j][i]);
-        double denom = 0.0;
-        for(int k = 0; k < nStates; k++) { // Denominator
-          denom += exp(mbarFEEstimates[k] - reducedPotentials[k][i]) * snaps[k];
+    double[][] logCATerms = new double[nStates][reducedPotentials[0].length];
+    double[] maxLogCATerm = new double[reducedPotentials[0].length];
+    Arrays.fill(maxLogCATerm, Double.NEGATIVE_INFINITY);
+    double[] logCA = new double[nStates];
+    double[] log_denom_n = new double[reducedPotentials[0].length];
+    for (int i = 0; i < reducedPotentials[0].length; i++) {
+      double[] temp = new double[nStates];
+      double maxTemp = Double.NEGATIVE_INFINITY;
+      for (int j = 0; j < nStates; j++) {
+        temp[j] = mbarFEEstimates[j] - reducedPotentials[j][i];
+        if (temp[j] > maxTemp) {
+          maxTemp = temp[j];
         }
-        cA[j] += numeratorA / denom;
       }
+      log_denom_n[i] = logSumExp(temp, snaps, maxTemp);
+      for(int j = 0; j < nStates; j++){
+        logCATerms[j][i] = log(samples[i]) - reducedPotentials[j][i] - log_denom_n[i];
+        if(logCATerms[j][i] > maxLogCATerm[i]){
+          maxLogCATerm[j] = logCATerms[j][i];
+        }
+      }
+    }
+    for(int i = 0; i < nStates; i++){
+      logCA[i] = logSumExp(logCATerms[i], maxLogCATerm[i]);
     }
     // Eq. 13 in Shirts and Chodera (2008)
     double[][] WnA = new double[nStates][reducedPotentials[0].length];
-    double[][] Wna = mbarW(reducedPotentials, snaps, mbarFEEstimates);
-    for (int i = 0; i < reducedPotentials[0].length; i++) { // Snapshots
-      for (int j = 0; j < nStates; j++) { // Lambda values
-        double numeratorA = samples[i] * exp(- reducedPotentials[j][i]);
-        double denom = 0.0;
-        for(int k = 0; k < nStates; k++) { // Denominator
-          denom += exp(mbarFEEstimates[k] - reducedPotentials[k][i]) * snaps[k];
-        }
-        WnA[j][i] = numeratorA / denom / cA[j];
+    double[][] Wna = new double[nStates][reducedPotentials[0].length]; // normal W matrix
+    for (int i = 0; i < nStates; i++) {
+      for (int j = 0; j < reducedPotentials[0].length; j++) {
+        WnA[i][j] = samples[j] * exp(-logCA[i] - reducedPotentials[i][j] - log_denom_n[j]);
+        Wna[i][j] = exp(-mbarFEEstimates[i] - reducedPotentials[i][j] - log_denom_n[j]);
       }
     }
     if (minSample < 0) { // reset samples
@@ -709,7 +726,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
     double[][] augmentedW = new double[nStates * 2][reducedPotentials[0].length];
     for (int i = 0; i < augmentedW.length; i++) {
-      augmentedW[i] = i < nStates ? Wna[i % nStates] : WnA[(i-nStates)%nStates];
+      augmentedW[i] = i < nStates ? Wna[i] : WnA[(i-nStates)];
     }
     return augmentedW;
   }
@@ -821,8 +838,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return Uncertainties for the MBAR free energy estimates.
    */
   private static double[] mbarUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
-                                              double[] freeEnergyEstimates) {
-    double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
+                                              double[] freeEnergyEstimates, double[][] theta) {
     double[] uncertainties = new double[freeEnergyEstimates.length - 1];
     // del(dFij) = Theta[i,i] - 2 * Theta[i,j] + Theta[j,j]
     for (int i = 0; i < freeEnergyEstimates.length - 1; i++) {
@@ -848,8 +864,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return Total uncertainty for the MBAR free energy estimates.
    */
   private static double mbarTotalUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
-                                                 double[] freeEnergyEstimates) {
-    double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
+                                                 double[] freeEnergyEstimates, double[][] theta) {
     int nStates = freeEnergyEstimates.length;
     return sqrt(abs(theta[0][0] - 2 * theta[0][nStates - 1] + theta[nStates - 1][nStates - 1]));
   }
@@ -863,8 +878,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return Diff matrix for the MBAR free energy estimates.
    */
   private static double[][] diffMatrixCalculation(double[][] reducedPotential, int[] snapsPerLambda,
-                                                  double[] freeEnergyEstimates) {
-    double[][] theta = mbarTheta(reducedPotential, snapsPerLambda, freeEnergyEstimates);
+                                                  double[] freeEnergyEstimates, double[][] theta) {
     double[][] diffMatrix = new double[freeEnergyEstimates.length][freeEnergyEstimates.length];
     for (int i = 0; i < freeEnergyEstimates.length; i++) {
       for (int j = 0; j < freeEnergyEstimates.length; j++) {
@@ -1015,6 +1029,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * Calculates the log of the sum of the exponential of the given values.
    * <p>
    * The max value is subtracted from each value in the array before exponentiation to prevent overflow.
+   * The logSumExp operation itself prevents causing 0 values from appearing due to large denominators.
    *
    * @param values The values to exponential and sum.
    * @param max    The max value is subtracted from each value in the array prior to exponentiation.
@@ -1434,8 +1449,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   public static void main(String[] args) {
     double[] O_k = {0, .1, .7, 3, 4}; // Equilibrium positions
-    double[] K_k = {1, 3, 7, 10, 15}; // Spring constants
-    int[] N_k = {10000, 100, 10000, 1000, 10000};
+    double[] K_k = {1, 2, 3, 5, 6}; // Spring constants
+    int[] N_k = {10000, 10000, 10000, 10000, 10000};
     double beta = 1.0;
 
     // Create an instance of HarmonicOscillatorsTestCase
@@ -1455,7 +1470,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Output to forcefieldx/testing/mbar/data/harmonic_oscillators/mbarFiles/energies_{i}.mbar
     // Get absolute path to root of project
 
-    /*
     String rootPath = new File("").getAbsolutePath();
     File outputPath = new File(rootPath + "/testing/mbar/data/harmonic_oscillators/mbarFiles");
     if (!outputPath.exists() && !outputPath.mkdirs()) {
@@ -1467,15 +1481,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (int i = 0; i < u_kln.length; i++) {
       File file = new File(outputPath, "energies_" + i + ".mbar");
       writeFile(u_kln[i], file, temperatures[i]);
-    } */
+    }
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    //MBARFilter mbarFilter = new MBARFilter(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/LYS_Umod/mbarFiles"));
-    //mbarFilter.setStartSnapshot(10);
+    MBARFilter mbarFilter = new MBARFilter(new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/nnqq"));
+    //mbarFilter.setStartSnapshot(50);
     //MultistateBennettAcceptanceRatio.VERBOSE = true;
-    //MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
-    MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
+    MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
+    //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
     double[] mbarEnthalpy = Arrays.copyOf(mbar.mbarEnthalpy, mbar.mbarEnthalpy.length);
     double[] mbarEntropy = Arrays.copyOf(mbar.mbarEntropy, mbar.mbarEntropy.length);
@@ -1486,15 +1500,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     bootstrapper.bootstrap(0);
     System.out.println("done! \n");
 
-    System.out.println("\nEXPECTATION of x-pos observable: " + Arrays.toString(mbar.computeExpectations(x_n)));
-    System.out.println("x-pos mu expected: " + Arrays.toString(testCase.analyticalObservable("position")));
-    System.out.println("x-pos uncertainty: " + Arrays.toString(mbar.computeExpectationStd(x_n)));
+    //System.out.println("\nEXPECTATION of x-pos observable: " + Arrays.toString(mbar.computeExpectations(x_n)));
+    //System.out.println("x-pos mu expected: " + Arrays.toString(testCase.analyticalObservable("position")));
+    //System.out.println("x-pos uncertainty: " + Arrays.toString(mbar.computeExpectationStd(x_n)));
 
     int index=0; // Which lambda to look from
-    System.out.println("\nEXPECTATION of potential energy observable: " + Arrays.toString(mbar.computeExpectations(u_n[index])));
-    System.out.println("potential energy observable uncertainty: " + Arrays.toString(mbar.computeExpectationStd(u_n[index])));
-    System.out.println("potential mu expected (at self): " + Arrays.toString(testCase.analyticalObservable("potential energy")));
-    System.out.println();
+    double[][] u_kn = mbar.eAllFlat;
+    for(int i = 0; i < u_kn.length; i++) {
+      System.out.println("\nEXPECTATION of potential energy observable: " + Arrays.toString(mbar.computeExpectations(u_kn[i])));
+      System.out.println("potential energy observable uncertainty: " + Arrays.toString(mbar.computeExpectationStd(u_kn[i])));
+      //System.out.println("potential mu expected (at self): " + Arrays.toString(testCase.analyticalObservable("potential energy")));
+      //System.out.println();
+    }
 
     // Get the analytical free energy differences
     double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
