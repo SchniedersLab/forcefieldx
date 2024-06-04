@@ -135,7 +135,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * MBAR Enthalpy estimates
    */
-  private final double[] mbarEnthalpy;
+  private double[] mbarEnthalpy;
+
+  /**
+   * MBAR Entropy estimates
+   */
+  private double[] mbarEntropy;
 
   /**
    * "Reduced" potential energies. -ln(exp(beta * -U)) or more practically U * (1 / RT).
@@ -187,6 +192,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarFEDifferenceEstimates = new double[nFreeEnergyDiffs];
     mbarUncertainties = new double[nFreeEnergyDiffs];
     mbarEnthalpy = new double[nFreeEnergyDiffs];
+    mbarEntropy = new double[nFreeEnergyDiffs];
     random = new Random();
     estimateDG();
   }
@@ -432,7 +438,31 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       mbarFEDifferenceEstimates[i] = mbarFEEstimates[i + 1] - mbarFEEstimates[i];
     }
 
+
+    mbarEnthalpy = mbarEnthalpyCalc(eAllFlat, mbarFEEstimates);
+    mbarEntropy = mbarEntropyCalc(mbarEnthalpy, mbarFEEstimates);
+
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
+  }
+
+  private double[] mbarEntropyCalc(double[] mbarEnthalpy, double[] mbarFEEstimates) {
+    double[] entropy = new double[mbarFEEstimates.length - 1];
+    for(int i = 0; i < entropy.length; i++) {
+      entropy[i] = mbarEnthalpy[i] - mbarFEDifferenceEstimates[i]; // dG = dH - TdS | TdS = dH - dG
+    }
+    return entropy;
+  }
+
+  private double[] mbarEnthalpyCalc(double[][] reducedPotentials, double[] mbarFEEstimates) {
+    double[] enthalpy = new double[mbarFEEstimates.length - 1];
+    double[] averagePotential = new double[mbarFEEstimates.length];
+    for(int i = 0; i < reducedPotentials.length; i++) {
+      averagePotential[i] = computeExpectations(reducedPotentials[i])[i]; // average potential of ith lambda
+    }
+    for(int i = 0; i < enthalpy.length; i++) {
+      enthalpy[i] = averagePotential[i + 1] - averagePotential[i];
+    }
+    return enthalpy;
   }
 
   //////// Misc. Methods ////////////
@@ -825,7 +855,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * MBAR diff Matrix calculation.
+   * MBAR uncertainty diff Matrix calculation.
    *
    * @param reducedPotential energies
    * @param snapsPerLambda  number of snaps per state
@@ -1437,12 +1467,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    //MBARFilter mbarFilter = new MBARFilter(new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/nnqq"));
-    //mbarFilter.setStartSnapshot(5000);
+    //MBARFilter mbarFilter = new MBARFilter(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/LYS_Umod/mbarFiles"));
+    //mbarFilter.setStartSnapshot(10);
     //MultistateBennettAcceptanceRatio.VERBOSE = true;
     //MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
     MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
+    double[] mbarEnthalpy = Arrays.copyOf(mbar.mbarEnthalpy, mbar.mbarEnthalpy.length);
+    double[] mbarEntropy = Arrays.copyOf(mbar.mbarEntropy, mbar.mbarEntropy.length);
     double[] mbarUncertainties = Arrays.copyOf(mbar.mbarUncertainties, mbar.mbarUncertainties.length);
     double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
 
@@ -1474,7 +1506,17 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     System.out.println("MBAR Uncertainties:       " + Arrays.toString(mbarUncertainties));
     System.out.println("Free Energy Error:        " + Arrays.toString(error));
     System.out.println();
-    System.out.println("Diff Matrix: ");
+    System.out.println("MBAR dG:                  " + Arrays.toString(mbar.mbarFEDifferenceEstimates));
+    System.out.println("MBAR Enthalpy Changes:    " + Arrays.toString(mbarEnthalpy));
+    System.out.println("MBAR Entropy Changes:     " + Arrays.toString(mbarEntropy));
+    double[] temp = testCase.analyticalEntropies(0);
+    double[] temp2 = new double[temp.length - 1];
+    for(int i = 0; i < temp2.length; i++){
+      temp2[i] = temp[i+1] - temp[i];
+    }
+    System.out.println("Analytic Entropy Changes: " + Arrays.toString(temp2));
+    System.out.println();
+    System.out.println("Uncertainty Diff Matrix: ");
     for (double[] matrix : mbarDiffMatrix) {
       System.out.println(Arrays.toString(matrix));
     }
