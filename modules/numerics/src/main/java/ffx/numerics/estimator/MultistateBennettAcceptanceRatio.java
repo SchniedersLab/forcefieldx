@@ -42,9 +42,11 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.apache.commons.math3.util.FastMath;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -62,10 +64,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.stream;
 import static org.apache.commons.lang3.ArrayFill.fill;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
@@ -436,6 +435,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
   }
 
+  //////// Misc. Methods ////////////
+
+  /**
+   * Print out, for each FE expectation, the sum of the weights for each trajectory. This
+   * gives an array of length nLambdaStates, where each element is the sum of the weights
+   * coming from the trajectory sampled at the lambda value corresponding to that index.
+   *
+   * <p>i.e. collapsedW[0][0] is the sum of the weights in W[0] from the trajectory sampled at
+   * lambda 0. The diagonal of this matrix should be larger than all other values if that
+   * window had proper sampling.
+   *
+   */
   private void logWeights() {
     logger.info(" MBAR Weight Matrix Information Collapsed:");
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
@@ -514,7 +525,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * Gradient of the MBAR objective function. This is used for L-BFGS optimization.
+   * Gradient of the MBAR objective function. This is used for L-BFGS & Newton optimization.
    *
    * @param reducedPotentials energies
    * @param snapsPerLambda  number of snaps per state
@@ -601,8 +612,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   private static double[][] mbarW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
     int nStates = freeEnergyEstimates.length;
     double[] log_denom_n = new double[reducedPotentials[0].length];
-    double[][] logDiff = new double[reducedPotentials.length][reducedPotentials[0].length];
-    double maxLogDiff = Double.NEGATIVE_INFINITY;
     for (int i = 0; i < reducedPotentials[0].length; i++) {
       double[] temp = new double[nStates];
       double maxTemp = Double.NEGATIVE_INFINITY;
@@ -613,12 +622,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       }
       log_denom_n[i] = logSumExp(temp, snapsPerLambda, maxTemp);
-      for (int j = 0; j < nStates; j++) {
-        logDiff[j][i] = -log_denom_n[i] - reducedPotentials[j][i];
-        if (logDiff[j][i] > maxLogDiff) {
-          maxLogDiff = logDiff[j][i];
-        }
-      }
     }
     // logW = freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis]
     double[][] W = new double[nStates][reducedPotentials[0].length];
@@ -631,62 +634,138 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   /**
-   * logW = freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis]
+   * Eq. 13-15 in Shirts and Chodera (2008) for the MBAR observable uncertainty calculation.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
-   * @return logW matrix.
+   * @return WnA matrix.
    */
-  private static double[][] mbarLogW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
-    int nStates = freeEnergyEstimates.length;
-    // double[] log_num_k = new double[nStates];
-    double[] log_denom_n = new double[reducedPotentials[0].length];
-    double[][] logDiff = new double[reducedPotentials.length][reducedPotentials[0].length];
-    double maxLogDiff = Double.NEGATIVE_INFINITY;
-    for (int i = 0; i < reducedPotentials[0].length; i++) {
-      double[] temp = new double[nStates];
-      double maxTemp = Double.NEGATIVE_INFINITY;
-      for (int j = 0; j < nStates; j++) {
-        temp[j] = freeEnergyEstimates[j] - reducedPotentials[j][i];
-        if (temp[j] > maxTemp) {
-          maxTemp = temp[j];
-        }
-      }
-      log_denom_n[i] = logSumExp(temp, snapsPerLambda, maxTemp);
-      for (int j = 0; j < nStates; j++) {
-        logDiff[j][i] = -log_denom_n[i] - reducedPotentials[j][i];
-        if (logDiff[j][i] > maxLogDiff) {
-          maxLogDiff = logDiff[j][i];
-        }
+  private double[][] mbarAugmentedW(double[] samples) {
+    int nStates = mbarFEEstimates.length;
+    double[] cA = new double[nStates];
+    // Enforce positivity of samples --> from pymbar
+    double minSample = stream(samples).min().getAsDouble() - 3*java.lang.Math.ulp(1.0); // ulp to avoid zeros
+    if (minSample < 0) {
+      for (int i = 0; i < samples.length; i++) {
+        samples[i] -= minSample;
       }
     }
-    // logW = freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis]
-    double[][] logW = new double[nStates][reducedPotentials[0].length];
-    for (int i = 0; i < nStates; i++) {
-      for (int j = 0; j < reducedPotentials[0].length; j++) {
-        logW[i][j] = freeEnergyEstimates[i] - reducedPotentials[i][j] - log_denom_n[j];
+    // Eq. 14 in Shirts and Chodera (2008)
+    for (int i = 0; i < reducedPotentials[0].length; i++) { // Snapshots
+      for (int j = 0; j < nStates; j++) { // Lambda values
+        double numeratorA = samples[i] * exp(- reducedPotentials[j][i]);
+        double denom = 0.0;
+        for(int k = 0; k < nStates; k++) { // Denominator
+          denom += exp(mbarFEEstimates[k] - reducedPotentials[k][i]) * snaps[k];
+        }
+        cA[j] += numeratorA / denom;
       }
     }
-    return logW;
+    // Eq. 13 in Shirts and Chodera (2008)
+    double[][] WnA = new double[nStates][reducedPotentials[0].length];
+    double[][] Wna = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    for (int i = 0; i < reducedPotentials[0].length; i++) { // Snapshots
+      for (int j = 0; j < nStates; j++) { // Lambda values
+        double numeratorA = samples[i] * exp(- reducedPotentials[j][i]);
+        double denom = 0.0;
+        for(int k = 0; k < nStates; k++) { // Denominator
+          denom += exp(mbarFEEstimates[k] - reducedPotentials[k][i]) * snaps[k];
+        }
+        WnA[j][i] = numeratorA / denom / cA[j];
+      }
+    }
+    if (minSample < 0) { // reset samples
+      for (int i = 0; i < samples.length; i++) {
+        samples[i] += minSample;
+      }
+    }
+    double[][] augmentedW = new double[nStates * 2][reducedPotentials[0].length];
+    for (int i = 0; i < augmentedW.length; i++) {
+      augmentedW[i] = i < nStates ? Wna[i % nStates] : WnA[(i-nStates)%nStates];
+    }
+    return augmentedW;
+  }
+
+  /**
+   * Compute the MBAR expectation of a given observable (1xN) for each K. This observable
+   * could be something like x, x^2 (where x is equilibrium for a harmonic oscillator),
+   * or some other function of the configuration X like RMSD from a target conformation.
+   * Additionally, it could be evaluations of some potential at a specific lambda value.
+   * Each trajectory snap should have a corresponding observable value (or evaluation).
+   *
+   * @param samples
+   * @return
+   */
+  public double[] computeExpectations(double[] samples){
+    double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    double[] expectation = new double[W.length];
+    for(int i = 0; i < W.length; i++){
+      for(int j = 0; j < W[i].length; j++){
+        expectation[i] += W[i][j] * samples[j];
+      }
+    }
+    return expectation;
+  }
+
+  /**
+   * Compute the MBAR uncertainty of an observable. The equations for this are not clear,
+   * but we append an augmented weight matrix (calculated by multiplying the observed values
+   * into the W matrix calculation) to the original W matrix. This is then used to calculate
+   * theta.
+   *
+   * @param samples
+   * @return
+   */
+  public double[] computeExpectationStd(double[] samples){
+    int[] extendedSnaps = new int[snaps.length * 2];
+    System.arraycopy(snaps, 0, extendedSnaps, 0, snaps.length);
+    RealMatrix theta = MatrixUtils.createRealMatrix(mbarTheta(extendedSnaps, mbarAugmentedW(samples)));
+    // Subtract min sample value --> pymbar does this and says there's not a diff (but I think it helps)
+    double minSample = stream(samples).min().getAsDouble();
+    samples = stream(samples).map(d -> d - minSample).toArray();
+    double[] expectations = computeExpectations(samples);
+    samples = stream(samples).map(d -> d + minSample).toArray(); // Don't alter values in samples
+    double[] diag = new double[expectations.length*2];
+    for(int i = 0; i < expectations.length; i++){
+      diag[i] = expectations[i];
+      diag[i+expectations.length] = expectations[i];
+    }
+    RealMatrix diagMatrix = MatrixUtils.createRealDiagonalMatrix(diag);
+    theta = diagMatrix.multiply(theta).multiply(diagMatrix);
+    RealMatrix ul = theta.getSubMatrix(0, expectations.length-1, 0, expectations.length-1);
+    RealMatrix ur = theta.getSubMatrix(0, expectations.length-1, expectations.length, expectations.length*2-1);
+    RealMatrix ll = theta.getSubMatrix(expectations.length, expectations.length*2-1, 0, expectations.length-1);
+    RealMatrix lr = theta.getSubMatrix(expectations.length, expectations.length*2-1, expectations.length, expectations.length*2-1);
+    double[][] covA = ul.add(lr).subtract(ur).subtract(ll).getData(); // Loose precision here
+    double[] sigma = new double[covA.length];
+    for(int i = 0; i < covA.length; i++){
+      sigma[i] = sqrt(abs(covA[i][i]));
+    }
+    return sigma;
   }
 
   /**
    * Theta = W.T @ (I - W @ diag(snapsPerState) @ W.T)^-1 @ W.
    * <p>
    * Requires calculation and inversion of W matrix.
-   * D4 from supp info of MBAR paper used instead.
+   * D4 from supp info of MBAR paper used instead to reduce complexity to K^3.
    *
    * @param reducedPotentials energies
    * @param snapsPerState  number of snaps per state
-   * @param snapsPerLambda  free energies
+   * @param freeEnergies  free energies
    * @return Theta matrix.
    */
-  private static double[][] mbarTheta(double[][] reducedPotentials, int[] snapsPerState, double[] snapsPerLambda) {
-    // SVD of W
-    double[][] W = mbarW(reducedPotentials, snapsPerState, snapsPerLambda);
+  private static double[][] mbarTheta(double[][] reducedPotentials, int[] snapsPerState, double[] freeEnergies) {
+    return mbarTheta(snapsPerState, mbarW(reducedPotentials, snapsPerState, freeEnergies));
+  }
+
+  /**
+   * Compute theta with a given W matrix.
+   * @param snapsPerState
+   * @param W
+   * @return
+   */
+  private static double[][] mbarTheta(int[] snapsPerState, double[][] W) {
     RealMatrix WMatrix = MatrixUtils.createRealMatrix(W).transpose();
-    RealMatrix I = MatrixUtils.createRealIdentityMatrix(snapsPerLambda.length);
+    RealMatrix I = MatrixUtils.createRealIdentityMatrix(snapsPerState.length);
     RealMatrix NkMatrix = MatrixUtils.createRealDiagonalMatrix(stream(snapsPerState).mapToDouble(i -> i).toArray());
     SingularValueDecomposition svd = new SingularValueDecomposition(WMatrix);
     RealMatrix V = svd.getV();
@@ -697,7 +776,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     RealMatrix theta = S.multiply(V.transpose());
     theta = theta.multiply(NkMatrix).multiply(V).multiply(S);
     theta = I.subtract(theta);
-    theta = new SingularValueDecomposition(theta).getSolver().getInverse(); // pinv equivalent
+    theta = MatrixUtils.inverse(theta); // pinv equivalent
     theta = V.multiply(S).multiply(theta).multiply(S).multiply(V.transpose());
 
     return theta.getData();
@@ -1226,7 +1305,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for(int n = N_k[k]; n < N_max; n++){
           for ( int l =0; l < n_states; l++) {
             u_kln[k][l][n] = Double.NaN;
-            u_kn[l][index] = Double.NaN;
           }
         }
       }
@@ -1235,7 +1313,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       if ("u_kn".equals(mode)) {
         return new Object[]{x_n, u_kn, N_k, s_n};
       } else if ("u_kln".equals(mode)) {
-        return new Object[]{x_n, u_kln, N_k, s_n};
+        return new Object[]{x_n, u_kln, N_k, s_n, u_kn};
       } else {
         throw new IllegalArgumentException("Unknown mode: " + mode);
       }
@@ -1321,9 +1399,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   public static void main(String[] args) {
-    double[] O_k = {0, 1, 2, 3, 4}; // Equilibrium positions
+    double[] O_k = {0, .1, .7, 3, 4}; // Equilibrium positions
     double[] K_k = {1, 3, 7, 10, 15}; // Spring constants
-    int[] N_k = {10000, 10000, 10000, 0, 10000}; // No support for different number of snapshots
+    int[] N_k = {10000, 100, 10000, 1000, 10000};
     double beta = 1.0;
 
     // Create an instance of HarmonicOscillatorsTestCase
@@ -1332,8 +1410,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Generate sample data
     String setting = "u_kln";
     System.out.print("Generating sample data... ");
-    Object[] sampleResult = testCase.sample(N_k, setting, (long) 2); // Set seed to fixed value for reproducibility
+    Object[] sampleResult = testCase.sample(N_k, setting, System.currentTimeMillis()); // Set seed to fixed value for reproducibility
     System.out.println("done. \n");
+    double[][] u_n = ((double[][]) sampleResult[4]);
+    double[] x_n = (double[]) sampleResult[0];
     double[][][] u_kln = (double[][][]) sampleResult[1];
     double[] temps = {1 / Constants.R};
 
@@ -1356,19 +1436,29 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     } */
 
     // Create an instance of MultistateBennettAcceptanceRatio
-    System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding.");
-    MBARFilter mbarFilter = new MBARFilter(new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/nnqq"));
-    mbarFilter.setStartSnapshot(5000);
-    MultistateBennettAcceptanceRatio.VERBOSE = true;
-    MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
-    //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
+    System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
+    //MBARFilter mbarFilter = new MBARFilter(new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/nnqq"));
+    //mbarFilter.setStartSnapshot(5000);
+    //MultistateBennettAcceptanceRatio.VERBOSE = true;
+    //MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
+    MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
     double[] mbarUncertainties = Arrays.copyOf(mbar.mbarUncertainties, mbar.mbarUncertainties.length);
     double[][] mbarDiffMatrix = Arrays.copyOf(mbar.diffMatrix, mbar.diffMatrix.length);
 
     EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar);
     bootstrapper.bootstrap(0);
-    System.out.println("done. \n");
+    System.out.println("done! \n");
+
+    System.out.println("\nEXPECTATION of x-pos observable: " + Arrays.toString(mbar.computeExpectations(x_n)));
+    System.out.println("x-pos mu expected: " + Arrays.toString(testCase.analyticalObservable("position")));
+    System.out.println("x-pos uncertainty: " + Arrays.toString(mbar.computeExpectationStd(x_n)));
+
+    int index=0; // Which lambda to look from
+    System.out.println("\nEXPECTATION of potential energy observable: " + Arrays.toString(mbar.computeExpectations(u_n[index])));
+    System.out.println("potential energy observable uncertainty: " + Arrays.toString(mbar.computeExpectationStd(u_n[index])));
+    System.out.println("potential mu expected (at self): " + Arrays.toString(testCase.analyticalObservable("potential energy")));
+    System.out.println();
 
     // Get the analytical free energy differences
     double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
@@ -1388,7 +1478,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (double[] matrix : mbarDiffMatrix) {
       System.out.println(Arrays.toString(matrix));
     }
-    System.out.println("\n\n");
+    System.out.println("\n");
 
     // Get the calculated free energy differences
     double[] mbarBootstrappedEstimates = bootstrapper.getFE();
