@@ -36,6 +36,7 @@ public class MBARFilter {
     private int[] numLambdas;
     private int windowsRead;
     private int windows;
+    private MultistateBennettAcceptanceRatio mbar;
 
 
     public MBARFilter(File fileLocation) {
@@ -72,7 +73,8 @@ public class MBARFilter {
         for (int i = 0; i < windows; i++) {
             lambda[i] = i / (windows - 1.0);
         }
-        return new MultistateBennettAcceptanceRatio(lambda, eAll, temperatures, tolerance, seedType);
+        this.mbar = new MultistateBennettAcceptanceRatio(lambda, eAll, temperatures, tolerance, seedType);
+        return this.mbar;
     }
 
     /**
@@ -268,5 +270,44 @@ public class MBARFilter {
                 }
             }
         }
+    }
+
+    /**
+     * Read in observable data, try to leave as many fields in-tact as possible.
+     * @param parentDirectory
+     * @param multiDataObservable
+     */
+    public void readObservableData(File parentDirectory, boolean multiDataObservable) {
+        barFiles = fileLocation.listFiles((dir, name) -> name.matches("derivatives_\\d+.mbar") || name.matches("derivatives_\\d+.bar"));
+        assert barFiles != null;
+        // Sort files by state number
+        Arrays.sort(barFiles, (f1, f2) -> {
+            int state1 = Integer.parseInt(f1.getName().split("\\.")[0].split("_")[1]);
+            int state2 = Integer.parseInt(f2.getName().split("\\.")[0].split("_")[1]);
+            return Integer.compare(state1, state2);
+        });
+        eAll = new double[windows][][];
+        for (int i = 0; i < windows; i++) {
+            eAll[i] = readFile(barFiles[i].getName(), i);
+        }
+        int minSnaps = min(snaps);
+        int maxSnaps = max(snaps);
+
+        // Basically just make sure eAll isn't jagged
+        boolean warn = minSnaps != maxSnaps;
+        if (warn) {
+            double[][][] temp = new double[eAll.length][eAll[0].length][maxSnaps];
+            for(int j = 0; j < windows; j++){
+                for(int k = 0; k < windows; k++){
+                    System.arraycopy(eAll[j][k], 0, temp[j][k], 0, snaps[j]);
+                    for(int l = snaps[j]; l < maxSnaps; l++){ // Fill in the rest with NaNs
+                        temp[j][k][l] = Double.NaN;
+                    }
+                }
+            }
+            eAll = temp;
+        }
+        // Set observable data and compute observable averages
+        mbar.setObservableData(eAll, multiDataObservable);
     }
 }
