@@ -151,6 +151,10 @@ class PhEnergy extends PotentialScript {
             description = "Run (restartable) energy evaluations for MBAR. Requires an ARC file to be passed in. Set the tautomer flag to true for tautomer parameterization.")
     boolean mbar = false
 
+    @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
+            description = "Perform dU/dL evaluations and save to mbarFiles.")
+    boolean derivatives = false
+
     @Option(names = ["--perturbTautomer"], paramLabel = "false",
             description = "Change tautomer instead of lambda state for MBAR energy evaluations.")
     boolean tautomer = false
@@ -417,6 +421,8 @@ class PhEnergy extends PotentialScript {
         assert thisRung != -1 : "Could not determine the rung number from the directory name."
         File mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
                 + thisRung + ".mbar")
+        File mbarGradFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "derivative_"
+                + thisRung + ".mbar")
         mbarFile.getParentFile().mkdir()
         File[] lsFiles = parentDir.listFiles()
         List<File> rungFiles = new ArrayList<>()
@@ -450,9 +456,13 @@ class PhEnergy extends PotentialScript {
             int index = progress
             double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
             try(FileWriter fw = new FileWriter(mbarFile, mbarFile.exists())
-                BufferedWriter writer = new BufferedWriter(fw)){
+                BufferedWriter writer = new BufferedWriter(fw)
+                FileWriter fwGrad = new FileWriter(mbarGradFile, mbarGradFile.exists())
+                BufferedWriter writerGrad = new BufferedWriter(fwGrad)
+            ){
                 // Write header (Number of snaps, temp, and this.xyz)
                 StringBuilder sb = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
+                StringBuilder sbGrad = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
                 logger.info(" MBAR file temp is hardcoded to 298.0 K. Please change if necessary.")
                 sb.append("\n")
                 if (progress == 1) { // File didn't exist (more consistent than checking for existence)
@@ -463,6 +473,7 @@ class PhEnergy extends PotentialScript {
                 while (systemFilter.readNext()) {
                     // MBAR lines (\t index\t lambda0 lambda1 ... lambdaN)
                     sb = new StringBuilder("\t" + index + "\t")
+                    sbGrad = new StringBuilder("\t" + index + "\t")
                     index++
                     Crystal crystal = activeAssembly.getCrystal()
                     forceFieldEnergy.setCrystal(crystal)
@@ -473,13 +484,25 @@ class PhEnergy extends PotentialScript {
                             setESVLambda(lambda, esvSystem)
                         }
                         forceFieldEnergy.getCoordinates(x)
-                        energy = forceFieldEnergy.energy(x, false)
+                        if (derivatives) {
+                            energy = forceFieldEnergy.energyAndGradient(x, new double[x.length * 3])
+                            double grad = esvSystem.getDerivatives()[0] // Only one residue
+                            sbGrad.append(grad).append(" ")
+                        } else {
+                            energy = forceFieldEnergy.energy(x, false)
+                        }
                         sb.append(energy).append(" ")
                     }
                     sb.append("\n")
                     writer.write(sb.toString())
                     writer.flush() // Flush after each snapshot, otherwise it doesn't do it consistently
                     logger.info(sb.toString())
+                    if (derivatives) {
+                        sbGrad.append("\n")
+                        writerGrad.write(sbGrad.toString())
+                        writerGrad.flush()
+                        logger.info(sbGrad.toString())
+                    }
                 }
             } catch (IOException e) {
                 logger.severe("Error writing to MBAR file.")
