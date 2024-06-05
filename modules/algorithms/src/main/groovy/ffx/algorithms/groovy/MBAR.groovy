@@ -90,17 +90,21 @@ class MBAR extends AlgorithmsScript {
             description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
     int numLambda = -1
 
+    @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
+            description = "Calculate lambda derivatives for each snapshot.")
+    boolean lambdaDerivative = false
+
     @Option(names = ["--seed"], paramLabel = "BAR",
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR. Fallback to ZEROS if input is does not or is unlikely to converge.")
     String seedWith = "BAR"
 
     @Option(names = ["--tol", "--tolerance"], paramLabel = "1e-7",
             description = "Iteration change tolerance.")
-    private double tol = 1e-7
+    double tol = 1e-7
 
     @Option(names = ["--ss", "--startSnapshot"], paramLabel = "-1",
             description = "Start at this snapshot when reading in tinker BAR files.")
-    private int startingSnapshot = -1
+    int startingSnapshot = -1
 
     @Option(names = ["--es", "--endSnapshot"], paramLabel = "-1",
             description = "End at this snapshot when reading in tinker BAR files.")
@@ -108,7 +112,7 @@ class MBAR extends AlgorithmsScript {
 
     @Option(names = ["--verbose"], paramLabel = "false",
             description = "Log weight matrices, iterations, and other details.")
-    private boolean verbose = false
+    boolean verbose = false
 
 
     /**
@@ -182,8 +186,14 @@ class MBAR extends AlgorithmsScript {
             // placement relative to other fileNames with energy values.
             File outputFile = new File(outputDir, "energy_" + window + ".mbar")
             //TODO: Fix atrocious setting of temperatures
-            double[][] energies = getEnergyForLambdas(files, numLambda) // Long step!
+            double[][][] energiesAndDerivatives = getEnergyForLambdas(files, numLambda)
+            double[][] energies =  energiesAndDerivatives[0] // Long step!
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
+            if (lambdaDerivative) {
+                double[][] lambdaDerivatives = energiesAndDerivatives[1]
+                File outputDerivFile = new File(outputDir, "derivatives_" + window + ".mbar")
+                MultistateBennettAcceptanceRatio.writeFile(lambdaDerivatives, outputDerivFile, 298)
+            }
             return this
         }
 
@@ -347,7 +357,7 @@ class MBAR extends AlgorithmsScript {
         return sum
     }
 
-    private double[][] getEnergyForLambdas(File[] files, int nLambda) {
+    private double[][][] getEnergyForLambdas(File[] files, int nLambda) {
         // Stuff copied from BAR.groovy
         /*
             Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
@@ -400,9 +410,11 @@ class MBAR extends AlgorithmsScript {
         double[] x = new double[potential.getNumberOfVariables()]
         double[] lambdaValues = new double[nLambda]
         double[][] energy = new double[nLambda][nSnapshots]
+        double[][] lambdaDerivatives = new double[nLambda][nSnapshots]
         for (int k = 0; k < lambdaValues.length; k++) {
             lambdaValues[k] = k.toDouble() / (nLambda - 1)
             energy[k] = new double[nSnapshots]
+            lambdaDerivatives[k] = new double[nSnapshots]
         }
         LambdaInterface linter1 = (LambdaInterface) potential
         logger.info(format("\n\n Performing energy evaluations for %d snapshots.", nSnapshots))
@@ -420,15 +432,23 @@ class MBAR extends AlgorithmsScript {
 
             // Compute energies for each lambda
             StringBuilder sb2 = new StringBuilder().append("Snapshot ").append(i).append(" Energy Evaluations: ")
+            StringBuilder sb3 = new StringBuilder().append("Snapshot ").append(i).append(" Lambda Derivatives: ")
             for (int k = 0; k < lambdaValues.length; k++) {
                 double lambda = lambdaValues[k]
                 linter1.setLambda(lambda)
-                energy[k][i] = potential.energy(x, false)
+                energy[k][i] = potential.energyAndGradient(x, new double[1])
+                if (lambdaDerivative) {
+                    lambdaDerivatives[k][i] = linter1.dEdL
+                    sb3.append(" ").append(lambdaDerivatives[k][i])
+                }
                 sb2.append(" ").append(energy[k][i])
             }
             logger.info(sb2.append("\n").toString())
+            if (lambdaDerivative) {
+                logger.info(sb3.append("\n").toString())
+            }
         }
 
-        return energy
+        return new double[][][]{energy, lambdaDerivatives}
     }
 }
