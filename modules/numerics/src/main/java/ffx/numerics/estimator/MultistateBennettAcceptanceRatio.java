@@ -297,9 +297,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       if (repeatedCount == expectedRepeats) {
         logger.warning(" Repeated snapshots detected. MBAR may not converge.");
         eAllFlat = eAllFlatTemp;
+        int reduction = numEvaluations / eAllFlat[0].length;
         numEvaluations = eAllFlat[0].length;
-        for(int i = 0; i < snaps.length; i++) {
-          snaps[i] /= nLambdaStates;
+        for (int i = 0; i < snaps.length; i++) {
+          snaps[i] /= reduction;
         }
       }
     }
@@ -1575,7 +1576,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/ASD/mbarFilesRepeat0");
+    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarOST");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
     mbarFilter.setStartSnapshot(1);
     mbarFilter.setEndSnapshot(134);

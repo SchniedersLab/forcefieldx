@@ -66,7 +66,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
   /**
    * The number of snaps in each lambda trajectory file.
    */
-  protected final int[] snaps;
+  protected int[] snaps;
   protected final double[] temperatures;
   protected final int nTrajectories;
 
