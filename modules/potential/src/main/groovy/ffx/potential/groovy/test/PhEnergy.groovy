@@ -465,10 +465,16 @@ class PhEnergy extends PotentialScript {
                 StringBuilder sbGrad = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
                 logger.info(" MBAR file temp is hardcoded to 298.0 K. Please change if necessary.")
                 sb.append("\n")
+                sbGrad.append("\n")
                 if (progress == 1) { // File didn't exist (more consistent than checking for existence)
                     writer.write(sb.toString())
                     writer.flush()
                     logger.info(" Header: " + sb.toString())
+                    if(derivatives){
+                       writerGrad.write(sbGrad.toString())
+                       writerGrad.flush()
+                       logger.info(" Header: " + sbGrad.toString())
+                    }
                 }
                 while (systemFilter.readNext()) {
                     // MBAR lines (\t index\t lambda0 lambda1 ... lambdaN)

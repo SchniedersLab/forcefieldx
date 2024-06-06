@@ -772,6 +772,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       for(int j = 0; j < W[i].length; j++){
         expectation[i] += W[i][j] * samples[j];
       }
+      expectation[i] = expectation[i];
     }
     return expectation;
   }
@@ -1545,20 +1546,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-
-    MBARFilter mbarFilter = new MBARFilter(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan"));
+    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/ASP_Umod/ASD/mbarFilesDerivativeExtended");
+    MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
+    mbarFilter.setStartSnapshot(1);
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
-    mbarFilter.readObservableData(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan"), true);
+    mbarFilter.readObservableData(mbarParentFile, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertainties = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
             mbar.mbarObservableEnsembleAverageUncertainties.length);
-    mbarFilter.readObservableData(new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan"), false);
+    mbarFilter.readObservableData(mbarParentFile, false);
     double[] mbarObservableEnsembleAveragesSingle = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertaintiesSingle = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
             mbar.mbarObservableEnsembleAverageUncertainties.length);
-    //mbarFilter.setStartSnapshot(50);
     //MultistateBennettAcceptanceRatio.VERBOSE = true;
 
     //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
@@ -1577,14 +1578,27 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     System.out.println("MBAR Observable Ensemble Averages: " + Arrays.toString(mbarObservableEnsembleAverages));
     DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
             mbarObservableEnsembleAverages, false);
-    double integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.SIMPSONS);
-    System.out.println("Integral: " + integral);
+    double integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.TRAPEZOIDAL);
+    System.out.println("Integral Simp: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.BOOLE);
+    System.out.println("Integral Boole: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.SIMPSONS);
+    System.out.println("Integral Trap: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.RECTANGULAR);
+    System.out.println("Integral Rect: " + integral);
     System.out.println("Total FE: " + mbar.totalMBAREstimate);
     System.out.println("MBAR Ob  Ensemble Averages Single: " + Arrays.toString(mbarObservableEnsembleAveragesSingle));
     dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAveragesSingle.length, false),
             mbarObservableEnsembleAveragesSingle, false);
     integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.SIMPSONS);
-    System.out.println("Integral: " + integral);
+    System.out.println("Integral Simp: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.BOOLE);
+    System.out.println("Integral Boole: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.SIMPSONS);
+    System.out.println("Integral Trap: " + integral);
+    integral = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.RECTANGULAR);
+    System.out.println("Integral Rect: " + integral);
+    System.out.println("Total FE: " + mbar.totalMBAREstimate);
     System.out.println("MBAR Observable Ensemble Average Uncertainties: " + Arrays.toString(mbarObservableEnsembleAverageUncertainties));
     System.out.println("MBAR Ob  Ensemble Average Uncertainties Single: " + Arrays.toString(mbarObservableEnsembleAverageUncertaintiesSingle));
     System.out.println();

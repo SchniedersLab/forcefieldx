@@ -278,8 +278,11 @@ public class MBARFilter {
      * @param multiDataObservable
      */
     public void readObservableData(File parentDirectory, boolean multiDataObservable) {
-        barFiles = fileLocation.listFiles((dir, name) -> name.matches("derivatives_\\d+.mbar") || name.matches("derivatives_\\d+.bar"));
-        assert barFiles != null;
+        barFiles = fileLocation.listFiles((dir, name) -> name.matches("derivative_\\d+.mbar") ||
+                name.matches("derivative_\\d+.bar") ||
+                name.matches("derivatives_\\d+.mbar") ||
+                name.matches("derivatives_\\d+.bar"));
+        assert barFiles != null && barFiles.length > 0;
         // Sort files by state number
         Arrays.sort(barFiles, (f1, f2) -> {
             int state1 = Integer.parseInt(f1.getName().split("\\.")[0].split("_")[1]);
