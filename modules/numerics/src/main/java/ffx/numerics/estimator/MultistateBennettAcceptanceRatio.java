@@ -274,6 +274,36 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       logger.setLevel(java.util.logging.Level.FINE);
     }
 
+    // Find repeated snapshots if from continuous lambda
+    int numEvaluations = eAllFlat[0].length;
+    int firstTrajLength = snaps[0];
+    if(stream(snaps).allMatch(s -> s == firstTrajLength)) {
+      double[][] eAllFlatTemp = new double[nLambdaStates][snaps[0]];
+      for (int i = 0; i < nLambdaStates; i++) {
+        for (int j = 0; j < snaps[0]; j++) {
+          eAllFlatTemp[i][j] = eAllFlat[i][j];
+        }
+      }
+      // Check if there are repeated snapshots
+      int repeatedCount = 0;
+      for (int i = 0; i < nLambdaStates; i++) {
+        for (int j = snaps[0]; j < numEvaluations; j++) {
+          if (eAllFlatTemp[i][j % (snaps[0])] - eAllFlat[i][j] < 1.0E-6) {
+            repeatedCount++;
+          }
+        }
+      }
+      int expectedRepeats = eAllFlat.length * eAllFlat[0].length - eAllFlatTemp.length * eAllFlatTemp[0].length;
+      if (repeatedCount == expectedRepeats) {
+        logger.warning(" Repeated snapshots detected. MBAR may not converge.");
+        eAllFlat = eAllFlatTemp;
+        numEvaluations = eAllFlat[0].length;
+        for(int i = 0; i < snaps.length; i++) {
+          snaps[i] /= nLambdaStates;
+        }
+      }
+    }
+
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
     if (FORCE_ZEROS_SEED) {
@@ -292,7 +322,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       rtValues[i] = Constants.R * temperatures[i];
       invRTValues[i] = 1.0 / rtValues[i];
     }
-    int numEvaluations = eAllFlat[0].length;
 
     // Sample random snapshots from each window.
     int[][] indices = new int[nLambdaStates][numEvaluations];
@@ -319,8 +348,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // Precompute reducedPotentials since it doesn't change
     reducedPotentials = new double[nLambdaStates][numEvaluations];
     double minPotential = Double.POSITIVE_INFINITY;
-    for (int state = 0; state < nLambdaStates; state++) { // For each lambda value
-      for (int n = 0; n < numEvaluations; n++) {
+    for (int state = 0; state < eAllFlat.length; state++) { // For each lambda value
+      for (int n = 0; n < eAllFlat[0].length; n++) {
         reducedPotentials[state][n] = eAllFlat[state][indices[state][n]] * invRTValues[state];
         if (reducedPotentials[state][n] < minPotential) {
           minPotential = reducedPotentials[state][n];
@@ -1546,9 +1575,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/ASP_Umod/ASD/mbarFilesDerivativeExtended");
+    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/ASD/mbarFilesRepeat0");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
     mbarFilter.setStartSnapshot(1);
+    mbarFilter.setEndSnapshot(134);
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
     mbarFilter.readObservableData(mbarParentFile, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,

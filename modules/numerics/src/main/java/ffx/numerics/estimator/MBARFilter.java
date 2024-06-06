@@ -148,8 +148,10 @@ public class MBARFilter {
         // Handle files with more lambda windows than actual trajectories
         warn = maxLambdas != windows;
         if (warn) {
-            logger.warning("FILES CONTAIN MORE LAMBDA WINDOWS THAN ACTUAL TRAJECTORIES. ");
-            logger.severe("Create completely empty files (zero lines) to fill in the gaps.");
+            String symbol = maxLambdas > windows ? "MORE" : "LESS";
+            logger.warning("FILES CONTAIN " + symbol + " LAMBDA EVALUATIONS THAN ACTUAL TRAJECTORIES.");
+            symbol = maxLambdas > windows ? "Add" : "Remove";
+            logger.severe(symbol + " completely empty files (zero lines) to fill in the gaps.");
         }
     }
 

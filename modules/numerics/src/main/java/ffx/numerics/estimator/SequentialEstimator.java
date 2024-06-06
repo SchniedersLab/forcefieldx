@@ -62,7 +62,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
   protected final double[][] eAt;
   protected final double[][] eHigh;
   protected final double[][][] eAll; // [lambdaWindow][perturbations][energies]
-  protected final double[][] eAllFlat; // [lambda][evaluationsAtThisLambdaFromAllOtherLambda]
+  protected double[][] eAllFlat; // [lambda][evaluationsAtThisLambdaFromAllOtherLambda]
   /**
    * The number of snaps in each lambda trajectory file.
    */
