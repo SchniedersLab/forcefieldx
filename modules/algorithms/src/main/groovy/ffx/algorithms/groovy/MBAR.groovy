@@ -436,7 +436,7 @@ class MBAR extends AlgorithmsScript {
             for (int k = 0; k < lambdaValues.length; k++) {
                 double lambda = lambdaValues[k]
                 linter1.setLambda(lambda)
-                energy[k][i] = potential.energyAndGradient(x, new double[1])
+                energy[k][i] = potential.energyAndGradient(x, new double[x.length * 3])
                 if (lambdaDerivative) {
                     lambdaDerivatives[k][i] = linter1.dEdL
                     sb3.append(" ").append(lambdaDerivatives[k][i])
