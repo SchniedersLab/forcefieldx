@@ -151,6 +151,14 @@ class PhEnergy extends PotentialScript {
             description = "Run (restartable) energy evaluations for MBAR. Requires an ARC file to be passed in. Set the tautomer flag to true for tautomer parameterization.")
     boolean mbar = false
 
+    @Option(names = ["--numLambda", "--nL", "--nw"], paramLabel = "-1",
+            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
+    int numLambda = -1
+
+    @Option(names = ["--outputDir", "--oD"], paramLabel = "",
+            description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
+    String outputDirectory = ""
+
     @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
             description = "Perform dU/dL evaluations and save to mbarFiles.")
     boolean derivatives = false
@@ -412,34 +420,54 @@ class PhEnergy extends PotentialScript {
 
     void computeESVEnergiesAndWriteFile(SystemFilter systemFilter, ExtendedSystem esvSystem) {
         // Find all run directories to determine lambda states & make necessary files
-        File dir = new File(filename).getParentFile()
-        File parentDir = dir.getParentFile()
-        int thisRung = -1
-        dir.getName().find(/(\d+)/) { match ->
-            thisRung = match[0].toInteger()
-        }
-        assert thisRung != -1 : "Could not determine the rung number from the directory name."
-        File mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
-                + thisRung + ".mbar")
-        File mbarGradFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "derivative_"
-                + thisRung + ".mbar")
-        mbarFile.getParentFile().mkdir()
-        File[] lsFiles = parentDir.listFiles()
-        List<File> rungFiles = new ArrayList<>()
-        for (File file : lsFiles) {
-            if (file.isDirectory() && file.getName().matches(/\d+/)){
-                rungFiles.add(file)
+        File mbarFile;
+        File mbarGradFile;
+        double[] lambdas
+        if (outputDirectory.isEmpty()) {
+            File dir = new File(filename).getParentFile()
+            File parentDir = dir.getParentFile()
+            int thisRung = -1
+            dir.getName().find(/(\d+)/) { match ->
+                thisRung = match[0].toInteger()
+            }
+            assert thisRung != -1: "Could not determine the rung number from the directory name."
+            mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
+                    + thisRung + ".mbar")
+            mbarGradFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "derivative_"
+                    + thisRung + ".mbar")
+            mbarFile.getParentFile().mkdir()
+            File[] lsFiles = parentDir.listFiles()
+            List<File> rungFiles = new ArrayList<>()
+            for (File file : lsFiles) {
+                if (file.isDirectory() && file.getName().matches(/\d+/)) {
+                    rungFiles.add(file)
+                }
+            }
+            if (numLambda == -1) {
+                numLambda = rungFiles.size()
+            }
+            lambdas = new double[numLambda]
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
+            }
+
+
+            logger.info(" Computing energies for each lambda state for generation of mbar file.")
+            logger.info(" MBAR File: " + mbarFile)
+            logger.info(" Lambda States: " + lambdas)
+        } else {
+            mbarFile     = new File(outputDirectory + File.separator + "energy_0.mbar")
+            mbarGradFile = new File(outputDirectory + File.separator + "derivative_0.mbar")
+            lambdas = new double[numLambda]
+            if (numLambda == -1){
+                logger.severe("numLambda must be set when outputDirectory is set.")
+            }
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
             }
         }
-        double[] lambdas = new double[rungFiles.size()]
-        for (int i = 0; i < rungFiles.size(); i++) {
-            double dL = 1 / (rungFiles.size()-1)
-            lambdas[i] = i * dL
-        }
-
-        logger.info(" Computing energies for each lambda state for generation of mbar file.")
-        logger.info(" MBAR File: " + mbarFile)
-        logger.info(" Lambda States: " + lambdas)
 
         int progress = 1
         if (mbarFile.exists()){ // Restartable

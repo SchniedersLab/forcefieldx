@@ -94,6 +94,10 @@ class MBAR extends AlgorithmsScript {
             description = "Calculate lambda derivatives for each snapshot.")
     boolean lambdaDerivative = false
 
+    @Option(names = ["--outputDir", "--oD"], paramLabel = "",
+            description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
+    String outputDirectory = ""
+
     @Option(names = ["--seed"], paramLabel = "BAR",
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR. Fallback to ZEROS if input is does not or is unlikely to converge.")
     String seedWith = "BAR"
@@ -177,10 +181,20 @@ class MBAR extends AlgorithmsScript {
             }
             // Get list of fileNames & check validity
             File parent = files[0].getParentFile() // Run directory
-            int window = Integer.parseInt(parent.getName()) // Run name should be int
-            File outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
-            if(!outputDir.exists()) {
-                outputDir.mkdir()
+            int window;
+            File outputDir;
+            if (outputDirectory.isEmpty()) {
+                window = Integer.parseInt(parent.getName()) // Run name should be int
+                outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
+                if(!outputDir.exists()) {
+                    outputDir.mkdir()
+                }
+            } else {
+                outputDir = new File(outputDirectory)
+                if(!outputDir.exists()) {
+                    outputDir.mkdir()
+                }
+                window = 0
             }
             // Write MBAR file with window number, although this will be reassigned by the file filter based on
             // placement relative to other fileNames with energy values.
