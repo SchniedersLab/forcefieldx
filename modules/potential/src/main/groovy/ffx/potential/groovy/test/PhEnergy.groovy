@@ -518,7 +518,7 @@ class PhEnergy extends PotentialScript {
      */
     static void setESVLambda(double lambda, ExtendedSystem extendedSystem) {
         List<Residue> residueList = extendedSystem.getExtendedResidueList()
-        if (residueList.size() == 1) {
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))){
             extendedSystem.setTitrationLambda(residueList.get(0), lambda, false);
         } else {
             if (residueList.size() == 0) {
@@ -537,7 +537,7 @@ class PhEnergy extends PotentialScript {
      */
     static void setESVTautomer(double tautomer, ExtendedSystem extendedSystem) {
         List<Residue> residueList = extendedSystem.getExtendedResidueList()
-        if (residueList.size() == 1) {
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))) {
             extendedSystem.setTautomerLambda(residueList.get(0), tautomer, false);
         } else {
             if (residueList.size() == 0) {
