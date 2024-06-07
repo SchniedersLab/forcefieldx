@@ -449,6 +449,12 @@ class MBAR extends AlgorithmsScript {
             StringBuilder sb3 = new StringBuilder().append("Snapshot ").append(i).append(" Lambda Derivatives: ")
             for (int k = 0; k < lambdaValues.length; k++) {
                 double lambda = lambdaValues[k]
+                if (lambda <= 1E-6){
+                    lambda += .00275
+                }
+                if (lambda - 1.0 < 1E-6){
+                    lambda -= .00275
+                }
                 linter1.setLambda(lambda)
                 energy[k][i] = potential.energyAndGradient(x, new double[x.length * 3])
                 if (lambdaDerivative) {

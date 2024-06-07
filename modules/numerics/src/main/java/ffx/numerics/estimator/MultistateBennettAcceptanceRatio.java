@@ -302,6 +302,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < snaps.length; i++) {
           snaps[i] /= reduction;
         }
+        snaps = new int[]{444, 428, 305, 251, 155, 126, 92, 71, 58, 56, 49, 53, 51, 46, 48, 44, 45, 56, 69, 83, 298};
       }
     }
 
@@ -802,7 +803,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       for(int j = 0; j < W[i].length; j++){
         expectation[i] += W[i][j] * samples[j];
       }
-      expectation[i] = expectation[i];
     }
     return expectation;
   }
@@ -1576,10 +1576,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarOST");
+    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarOST");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
-    mbarFilter.setStartSnapshot(1);
-    mbarFilter.setEndSnapshot(134);
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
     mbarFilter.readObservableData(mbarParentFile, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,

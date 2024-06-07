@@ -37,6 +37,8 @@ public class MBARFilter {
     private int windowsRead;
     private int windows;
     private MultistateBennettAcceptanceRatio mbar;
+    private int startIndex = -1;
+    private int endIndex = -1;
 
 
     public MBARFilter(File fileLocation) {
@@ -251,8 +253,9 @@ public class MBARFilter {
     }
 
     public void setStartSnapshot(int startIndex) {
-        for (int i = 0; i < windows; i++) {
-            for (int j = 0; j < windows; j++) {
+        this.startIndex = startIndex;
+        for (int i = 0; i < eAll.length; i++) {
+            for (int j = 0; j < eAll[0].length; j++) {
                 try{
                     eAll[i][j] = Arrays.copyOfRange(eAll[i][j], startIndex, eAll[i][j].length);
                 } catch (ArrayIndexOutOfBoundsException e){
@@ -263,8 +266,9 @@ public class MBARFilter {
     }
 
     public void setEndSnapshot(int endIndex) {
-        for (int i = 0; i < windows; i++) {
-            for (int j = 0; j < windows; j++) {
+        this.endIndex = endIndex;
+        for (int i = 0; i < eAll.length; i++) {
+            for (int j = 0; j < eAll[0].length; j++) {
                 try{
                     eAll[i][j] = Arrays.copyOfRange(eAll[i][j], 0, endIndex);
                 } catch (ArrayIndexOutOfBoundsException e){
@@ -312,6 +316,14 @@ public class MBARFilter {
             }
             eAll = temp;
         }
+        // Apply cutoffs set by user
+        if (this.startIndex != -1) {
+            this.setStartSnapshot(this.startIndex);
+        }
+        if (this.endIndex != -1) {
+            this.setEndSnapshot(this.endIndex);
+        }
+
         // Set observable data and compute observable averages
         mbar.setObservableData(eAll, multiDataObservable);
     }
