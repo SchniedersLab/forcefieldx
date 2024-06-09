@@ -494,6 +494,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     double numLambda = potentialEvals.length;
     boolean oldPropagateLambda = propagateLambda;
     propagateLambda = false;
+    double oldTheta = histogram.ld.theta;
     double oldLambda = histogram.ld.lambda;
     for(int i = 0; i < numLambda; i++){
       double lambda = i / (numLambda-1);
@@ -512,6 +513,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       biasEvals[i] = biasEnergy;
     }
     setLambda(oldLambda);
+    histogram.ld.theta = oldTheta; // arcsin problem
     propagateLambda = oldPropagateLambda;
   }
 
