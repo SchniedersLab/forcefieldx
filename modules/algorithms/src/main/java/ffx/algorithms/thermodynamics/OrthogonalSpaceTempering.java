@@ -64,6 +64,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -197,6 +198,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * If true, values of (lambda, dU/dL) that have not been observed are rejected.
    */
   private boolean hardWallConstraint = false;
+  private double[] potentialEvals;
+  private double[] dUdLEvals;
+  private double[] biasEvals;
+  private int mbarCount = 0;
+  private boolean mbarEvaluationState = true;
 
   private final DynamicsOptions dynamicsOptions;
 
@@ -466,7 +472,66 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     totalEnergy = forceFieldEnergy + biasEnergy;
 
+
+    if (histogram.ld.stepsTaken % 10 == 0 && !mbarEvaluationState){
+      if (potentialEvals == null){
+        int numLambda = 20;
+        potentialEvals = new double[numLambda];
+        dUdLEvals = new double[numLambda];
+        biasEvals = new double[numLambda];
+      }
+      mbarEvaluationState = true;
+      mbarEvaluations();
+      mbarEvaluationState = false;
+      writeLine(new File("./"));
+      mbarCount++;
+    }
+
     return totalEnergy;
+  }
+
+  private void mbarEvaluations(){
+    double numLambda = potentialEvals.length;
+    for(int i = 0; i < numLambda; i++){
+      double lambda = i / (numLambda-1);
+      setLambda(lambda);
+      double[] x = new double[nVariables];
+      double[] gradient = new double[nVariables];
+      energyAndGradient(x, gradient);
+      potentialEvals[i] = forceFieldEnergy;
+      dUdLEvals[i] = dUdLambda;
+      biasEvals[i] = biasEnergy;
+    }
+  }
+
+  private void writeLine(File outputDirectory){
+    File energyFile = new File(outputDirectory.getAbsolutePath(), "energy_0.mbar");
+    File dUdLFile = new File(outputDirectory.getAbsolutePath(), "derivative_0.mbar");
+    File biasFile = new File(outputDirectory.getAbsolutePath(), "bias_0.mbar");
+    try(FileWriter energyWriter = new FileWriter(energyFile, true);
+        FileWriter dUdLWriter = new FileWriter(dUdLFile, true);
+        FileWriter biasWriter = new FileWriter(biasFile, true)){
+      StringBuilder energyLine = new StringBuilder("\t" + mbarCount);
+      StringBuilder dUdLLine = new StringBuilder("\t" + mbarCount);
+      StringBuilder biasLine = new StringBuilder("\t" + mbarCount);
+      for(int i = 0; i < potentialEvals.length; i++){
+        energyLine.append("\t").append(potentialEvals[i]);
+        dUdLLine.append("\t").append(dUdLEvals[i]);
+        biasLine.append("\t").append(biasEvals[i]);
+      }
+      // Write and flush the lines
+      energyWriter.write(energyLine.toString());
+      energyWriter.write("\n");
+      energyWriter.flush();
+      dUdLWriter.write(dUdLLine.toString());
+      dUdLWriter.write("\n");
+      dUdLWriter.flush();
+      biasWriter.write(biasLine.toString());
+      biasWriter.write("\n");
+      biasWriter.flush();
+    } catch (Exception e){
+      logger.severe(e.getMessage());
+    }
   }
 
   /**

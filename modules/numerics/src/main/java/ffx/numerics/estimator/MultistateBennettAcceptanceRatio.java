@@ -302,7 +302,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < snaps.length; i++) {
           snaps[i] /= reduction;
         }
-        snaps = new int[]{444, 428, 305, 251, 155, 126, 92, 71, 58, 56, 49, 53, 51, 46, 48, 44, 45, 56, 69, 83, 298};
       }
     }
 
@@ -457,12 +456,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     } while (!converged(prevMBAR) && sciIter < 1000);
     if (MultistateBennettAcceptanceRatio.VERBOSE) {
       logger.info(" SCI iterations: " + sciIter);
-    }
-
-    // Zero out the first term one last time
-    double f0 = mbarFEEstimates[0];
-    for (int i = 0; i < nLambdaStates; i++) {
-      mbarFEEstimates[i] -= f0;
     }
 
     // Calculate uncertainties
@@ -1576,8 +1569,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarOST");
+    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarNormal");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
+    MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
     mbarFilter.readObservableData(mbarParentFile, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
@@ -1589,7 +1583,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertaintiesSingle = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
             mbar.mbarObservableEnsembleAverageUncertainties.length);
-    //MultistateBennettAcceptanceRatio.VERBOSE = true;
 
     //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     //mbar.setObservableData(u_kln, true);
