@@ -280,14 +280,18 @@ public class MBARFilter {
 
     /**
      * Read in observable data, try to leave as many fields in-tact as possible.
-     * @param parentDirectory
      * @param multiDataObservable
      */
-    public void readObservableData(File parentDirectory, boolean multiDataObservable) {
-        barFiles = fileLocation.listFiles((dir, name) -> name.matches("derivative_\\d+.mbar") ||
-                name.matches("derivative_\\d+.bar") ||
-                name.matches("derivatives_\\d+.mbar") ||
-                name.matches("derivatives_\\d+.bar"));
+    public void readObservableData(boolean multiDataObservable, boolean isBiasData, boolean isDerivativeData) {
+        if (isDerivativeData && !isBiasData) {
+            barFiles= fileLocation.listFiles((dir, name) -> name.matches("derivative_\\d+.mbar") ||
+                    name.matches("derivative_\\d+.bar") ||
+                    name.matches("derivatives_\\d+.mbar") ||
+                    name.matches("derivatives_\\d+.bar"));
+        } else if (isBiasData) {
+            barFiles = fileLocation.listFiles((dir, name) -> name.matches("bias_\\d+.mbar") ||
+                name.matches("bias_\\d+.bar"));
+        }
         assert barFiles != null && barFiles.length > 0;
         // Sort files by state number
         Arrays.sort(barFiles, (f1, f2) -> {
@@ -325,6 +329,10 @@ public class MBARFilter {
         }
 
         // Set observable data and compute observable averages
-        mbar.setObservableData(eAll, multiDataObservable);
+        if (isBiasData) {
+            mbar.setBiasData(eAll, multiDataObservable);
+        } else {
+            mbar.setObservableData(eAll, multiDataObservable);
+        }
     }
 }

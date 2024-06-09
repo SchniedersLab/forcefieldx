@@ -45,11 +45,9 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.utilities.Constants;
-import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.util.FastMath;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -159,10 +157,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   private double[][] reducedPotentials;
 
   private double[][] oAllFlat;
+  private double[][] biasFlat;
   /**
    * Seed MBAR calculation with another free energy estimation (BAR,ZWANZIG) or zeros
    */
   private SeedType seedType;
+
   /**
    * Enum of MBAR seed types.
    */
@@ -304,6 +304,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       }
     }
+
+    //applyBiasCorrection();
 
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
@@ -479,6 +481,16 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     mbarEntropy = mbarEntropyCalc(mbarEnthalpy, mbarFEEstimates);
 
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
+  }
+
+  private void applyBiasCorrection() {
+    if(biasFlat != null) {
+      for (int i = 0; i < eAllFlat.length; i++) {
+        for (int j = 0; j < eAllFlat[0].length; j++) {
+          eAllFlat[i][j] += biasFlat[i][j];
+        }
+      }
+    }
   }
 
   //////// Misc. Methods ////////////
@@ -1528,7 +1540,51 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       }
     }
+    if (biasFlat != null) {
+      for(int i = 0; i< oAllFlat.length; i++) {
+        for (int j = 0; j < oAllFlat[i].length; j++) {
+          oAllFlat[i][j] *= exp(-biasFlat[i][j]);
+        }
+      }
+    }
     this.fillObservationExpectations(multiDataObservable);
+  }
+
+  public void setBiasData(double[][][] biasAll, boolean multiDataObservable) {
+    biasFlat = new double[biasAll.length][biasAll.length * biasAll[0][0].length];
+    if(multiDataObservable){ // Flatten data
+      int[] snapsT = new int[biasAll.length];
+      int[] nanCount = new int[biasAll.length];
+      for (int i = 0; i < biasAll.length; i++) {
+        ArrayList<Double> temp = new ArrayList<>();
+        for(int j = 0; j < biasAll.length; j++) {
+          int count = 0;
+          int countNaN = 0;
+          for(int k = 0; k < biasAll[j][i].length; k++) {
+            // Don't include NaN values
+            if (!Double.isNaN(biasAll[j][i][k])) {
+              temp.add(biasAll[j][i][k]);
+              count++;
+            } else {
+              countNaN++;
+            }
+          }
+          snapsT[j] = count;
+          nanCount[j] = countNaN;
+        }
+        biasFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
+      }
+    } else { // Put relevant data into the 0th index
+      int count = 0;
+      for (int i = 0; i < biasAll.length; i++){
+        for(int j = 0; j < biasAll[0][0].length; j++){
+          if(!Double.isNaN(biasAll[i][i][j])){
+            biasFlat[0][count] = biasAll[i][i][j];
+            count++;
+          }
+        }
+      }
+    }
   }
 
   public static void main(String[] args) {
@@ -1569,16 +1625,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarNormal");
+    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarBiasOST");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
     MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
-    mbarFilter.readObservableData(mbarParentFile, true);
+    mbarFilter.readObservableData(true, true, false);
+    mbar.estimateDG();
+    mbarFilter.readObservableData(true, false, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertainties = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
             mbar.mbarObservableEnsembleAverageUncertainties.length);
-    mbarFilter.readObservableData(mbarParentFile, false);
+    mbarFilter.readObservableData(false, false, true);
     double[] mbarObservableEnsembleAveragesSingle = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertaintiesSingle = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
@@ -1587,6 +1645,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     //MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1e-7, SeedType.ZEROS);
     //mbar.setObservableData(u_kln, true);
 
+    double[] lambdas = new double[19];
+    for(int i = 0; i < lambdas.length; i++){
+      lambdas[i] = i/18.0;
+    }
     double[] mbarFEEstimates = Arrays.copyOf(mbar.mbarFEEstimates, mbar.mbarFEEstimates.length);
     double[] mbarEnthalpy = Arrays.copyOf(mbar.mbarEnthalpy, mbar.mbarEnthalpy.length);
     double[] mbarEntropy = Arrays.copyOf(mbar.mbarEntropy, mbar.mbarEntropy.length);
@@ -1597,6 +1659,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     bootstrapper.bootstrap(0);
     System.out.println("done! \n");
 
+    System.out.println("Lambdas:                           " + Arrays.toString(lambdas));
     System.out.println("MBAR Observable Ensemble Averages: " + Arrays.toString(mbarObservableEnsembleAverages));
     DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
             mbarObservableEnsembleAverages, false);
