@@ -305,7 +305,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
 
-    //applyBiasCorrection();
+    applyBiasCorrection();
 
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
@@ -1543,7 +1543,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     if (biasFlat != null) {
       for(int i = 0; i< oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
-          oAllFlat[i][j] *= exp(-biasFlat[i][j]);
+          oAllFlat[i][j] *= exp(-2*biasFlat[i][j]);
         }
       }
     }
@@ -1630,7 +1630,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
     mbarFilter.readObservableData(true, true, false);
-    mbar.estimateDG();
+    mbar.estimateDG(); // Second run
     mbarFilter.readObservableData(true, false, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);

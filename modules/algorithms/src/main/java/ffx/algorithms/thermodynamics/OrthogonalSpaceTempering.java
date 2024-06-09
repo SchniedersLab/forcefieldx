@@ -494,6 +494,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     double numLambda = potentialEvals.length;
     boolean oldPropagateLambda = propagateLambda;
     propagateLambda = false;
+    double oldLambda = histogram.ld.lambda;
     for(int i = 0; i < numLambda; i++){
       double lambda = i / (numLambda-1);
       if (lambda < 1e-5 ){
@@ -510,6 +511,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       dUdLEvals[i] = dUdLambda;
       biasEvals[i] = biasEnergy;
     }
+    setLambda(oldLambda);
     propagateLambda = oldPropagateLambda;
   }
 
