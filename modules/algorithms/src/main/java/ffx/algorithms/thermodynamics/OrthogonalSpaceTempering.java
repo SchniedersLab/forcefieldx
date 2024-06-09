@@ -400,7 +400,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     gLdEdL = 0.0;
     double bias1D;
     // Update the free energy difference.
-    histogram.updateFreeEnergyDifference(false, false);
+    if (!mbarEvaluationState){ histogram.updateFreeEnergyDifference(false, false); }
     if (histogram.hd.metaDynamics) {
       bias1D = histogram.energyAndGradientMeta(true);
     } else {
@@ -492,6 +492,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
   private void mbarEvaluations(){
     double numLambda = potentialEvals.length;
+    boolean oldPropagateLambda = propagateLambda;
+    propagateLambda = false;
     for(int i = 0; i < numLambda; i++){
       double lambda = i / (numLambda-1);
       if (lambda < 1e-5 ){
@@ -508,6 +510,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       dUdLEvals[i] = dUdLambda;
       biasEvals[i] = biasEnergy;
     }
+    propagateLambda = oldPropagateLambda;
   }
 
   private void writeLine(File outputDirectory){
