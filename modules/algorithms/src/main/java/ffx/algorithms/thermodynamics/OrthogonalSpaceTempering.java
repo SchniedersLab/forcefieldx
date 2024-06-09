@@ -202,7 +202,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   private double[] dUdLEvals;
   private double[] biasEvals;
   private int mbarCount = 0;
-  private boolean mbarEvaluationState = true;
+  private boolean mbarEvaluationState = false;
 
   private final DynamicsOptions dynamicsOptions;
 
@@ -370,20 +370,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     totalEnergy = forceFieldEnergy + biasEnergy;
 
-    if (histogram.ld.stepsTaken % 10 == 0 && !mbarEvaluationState){
-      if (potentialEvals == null){
-        int numLambda = 20;
-        potentialEvals = new double[numLambda];
-        dUdLEvals = new double[numLambda];
-        biasEvals = new double[numLambda];
-      }
-      mbarEvaluationState = true;
-      mbarEvaluations();
-      mbarEvaluationState = false;
-      writeLine(new File("./"));
-      mbarCount++;
-    }
-
     return totalEnergy;
   }
 
@@ -487,7 +473,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     totalEnergy = forceFieldEnergy + biasEnergy;
 
 
-    if (histogram.ld.stepsTaken % 10 == 0 && !mbarEvaluationState){
+    logger.info("At step " + histogram.ld.stepsTaken + " the total energy is " + totalEnergy);
+    if (histogram.ld.stepsTaken % 10 == 0 && !mbarEvaluationState && propagateLambda){
       if (potentialEvals == null){
         int numLambda = 20;
         potentialEvals = new double[numLambda];
@@ -508,8 +495,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     double numLambda = potentialEvals.length;
     for(int i = 0; i < numLambda; i++){
       double lambda = i / (numLambda-1);
+      if (lambda < 1e-5 ){
+        lambda += 1e-5;
+      }
+      if (lambda > 1 - 1e-5){
+          lambda -= 1e-5;
+      }
       setLambda(lambda);
-      double[] x = new double[nVariables];
+      double[] x = potential.getCoordinates(new double[nVariables]);
       double[] gradient = new double[nVariables];
       energyAndGradient(x, gradient);
       potentialEvals[i] = forceFieldEnergy;
