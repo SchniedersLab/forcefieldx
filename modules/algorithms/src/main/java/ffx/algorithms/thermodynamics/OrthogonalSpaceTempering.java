@@ -473,7 +473,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     totalEnergy = forceFieldEnergy + biasEnergy;
 
 
-    if (histogram.ld.stepsTaken % 10 == 0 && !mbarEvaluationState && propagateLambda){
+    if (histogram.ld.stepsTaken % 1000 == 0 && !mbarEvaluationState && propagateLambda){
       if (potentialEvals == null){
         int numLambda = 20;
         potentialEvals = new double[numLambda];
@@ -526,15 +526,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         biasLine.append("\t").append(biasEvals[i]);
       }
       // Write and flush the lines
-      logger.info(" Energy line: " + energyLine);
       energyWriter.write(energyLine.toString());
       energyWriter.write("\n");
       energyWriter.flush();
-      logger.info(" dUdL line: " + dUdLLine);
       dUdLWriter.write(dUdLLine.toString());
       dUdLWriter.write("\n");
       dUdLWriter.flush();
-      logger.info(" Bias line: " + biasLine);
       biasWriter.write(biasLine.toString());
       biasWriter.write("\n");
       biasWriter.flush();
