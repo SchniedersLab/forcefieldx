@@ -509,7 +509,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       double[] gradient = new double[nVariables];
       energyAndGradient(x, gradient);
       potentialEvals[i] = forceFieldEnergy;
-      dUdLEvals[i] = dUdLambda;
+      dUdLEvals[i] = dForceFieldEnergydL;
       biasEvals[i] = biasEnergy;
     }
     setLambda(oldLambda);
