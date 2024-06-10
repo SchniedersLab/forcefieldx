@@ -229,7 +229,7 @@ class ManyBody extends AlgorithmsScript {
       e = refinementEnergy.energy(x, true)
 
       if (isTitrating) {
-        double phBias = EnergyExpansion.getTotalRotamerPhBias(residueList, optimalRotamers)
+        double phBias = EnergyExpansion.getTotalRotamerPhBias(residueList, optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
         logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
       } else {

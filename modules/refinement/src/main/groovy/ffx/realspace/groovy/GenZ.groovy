@@ -1,11 +1,9 @@
-package ffx.xray.groovy
+package ffx.realspace.groovy
 
-import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.TitrationManyBody
-import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -16,24 +14,18 @@ import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
-import ffx.xray.DiffractionData
+import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize
 import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine
 
-import java.util.stream.Collectors
-
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 import static java.lang.String.format
-import static java.lang.String.valueOf
-import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
 
-@CommandLine.Command(description = " Run GenZ function for free energy change.", name = "ffxc xray.GenZ")
-class GenZ extends AlgorithmsScript {
+@CommandLine.Command(description = " Run GenZ function for free energy change.", name = "ffxc realspace.GenZ")
+class GenZ extends AlgorithmsScript  {
 
     @CommandLine.Mixin
     ManyBodyOptions manyBodyOptions
@@ -42,7 +34,7 @@ class GenZ extends AlgorithmsScript {
     AlchemicalOptions alchemicalOptions
 
     @CommandLine.Mixin
-    XrayOptions xrayOptions
+    private RealSpaceOptions realSpaceOptions
 
     @CommandLine.Option(names = ["--rEE", "--ro-ensembleEnergy"], paramLabel = "0.0",
             description = "Keep permutations within ensemble Energy kcal/mol from the GMEC.")
@@ -90,7 +82,7 @@ class GenZ extends AlgorithmsScript {
             return this
         }
 
-        xrayOptions.init()
+
         double titrationPH = manyBodyOptions.getTitrationPH()
         double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
@@ -100,7 +92,6 @@ class GenZ extends AlgorithmsScript {
         if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
         }
-
 
 
         // Many-Body expansion of the X-ray target converges much more quickly with the NEA.
@@ -148,11 +139,6 @@ class GenZ extends AlgorithmsScript {
         Set<Atom> excludeAtoms = new HashSet<>()
         boolean isTitrating = false
 
-        // The refinement mode must be coordinates.
-        if (xrayOptions.refinementMode != RefinementMinimize.RefinementMode.COORDINATES) {
-            logger.info(" Refinement mode set to COORDINATES.")
-            xrayOptions.refinementMode = RefinementMinimize.RefinementMode.COORDINATES
-        }
 
         String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
@@ -194,13 +180,7 @@ class GenZ extends AlgorithmsScript {
             potentialEnergy = protonatedAssembly.getPotentialEnergy()
         }
 
-        // Load parsed X-ray properties.
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up the diffraction data, which could be multiple files.
-        DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
-        refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
-        refinementEnergy.setScaling(null)
+        refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
 
         if (lambdaTerm) {
             alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
@@ -217,13 +197,13 @@ class GenZ extends AlgorithmsScript {
         rotamerOptimization.setOnlyProtons(onlyProtons)
         rotamerOptimization.setpH(titrationPH)
 
+
         manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
         double[] x = new double[refinementEnergy.getNumberOfVariables()]
         x = refinementEnergy.getCoordinates(x)
         double e = refinementEnergy.energy(x, true)
         logger.info(format("\n Initial target energy: %16.8f ", e))
-
 
         RotamerLibrary.measureRotamers(residueList, false)
 
@@ -350,21 +330,21 @@ class GenZ extends AlgorithmsScript {
                 int rotIndex = conformers[resIndex][confIndex]
                 if(populationArray[resIndex][rotIndex]  != 0){
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
-                        for(Atom atom: residue.getAtomList()){
-                            if(!residue.getBackboneAtoms().contains(atom)){
-                                double occupancy = populationArray[resIndex][rotIndex]
-                                if(occupancy == 1){
-                                    atom.setOccupancy(occupancy)
-                                    atom.setAltLoc(' ' as Character)
-                                } else {
-                                    atom.setAltLoc(altLocs[confIndex])
-                                    atom.setOccupancy(occupancy)
-                                }
-                            } else {
-                                atom.setOccupancy(1.0)
+                    for(Atom atom: residue.getAtomList()){
+                        if(!residue.getBackboneAtoms().contains(atom)){
+                            double occupancy = populationArray[resIndex][rotIndex]
+                            if(occupancy == 1){
+                                atom.setOccupancy(occupancy)
                                 atom.setAltLoc(' ' as Character)
+                            } else {
+                                atom.setAltLoc(altLocs[confIndex])
+                                atom.setOccupancy(occupancy)
                             }
+                        } else {
+                            atom.setOccupancy(1.0)
+                            atom.setAltLoc(' ' as Character)
                         }
+                    }
                 }
 
             }
@@ -374,29 +354,8 @@ class GenZ extends AlgorithmsScript {
 
         PDBFilter pdbFilter = new PDBFilter(structureFile, Arrays.asList(conformerAssemblies), forceField, properties)
         pdbFilter.writeFile(structureFile, false, excludeAtoms, true, true)
-        /*if (titrationPH > 0) {
-            diffractionDataFinal.writeModel(removeExtension(filenames[0]) + ".pdb", excludeAtoms, titrationPH)
-        } else {
-
-        }*/
         System.setProperty("standardizeAtomNames", "false")
-
 
         return this
     }
-
-
-    @Override
-    List<Potential> getPotentials() {
-        if (conformerAssemblies == null) {
-            return new ArrayList<Potential>()
-        } else {
-            return Arrays.stream(conformerAssemblies).
-                    filter {a -> a != null
-                    }.map {a -> a.getPotentialEnergy()
-            }.filter {e -> e != null
-            }.collect(Collectors.toList())
-        }
-    }
-
 }

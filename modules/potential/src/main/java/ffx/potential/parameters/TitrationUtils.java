@@ -1870,7 +1870,7 @@ public class TitrationUtils {
    */
   public enum Titration {
 
-    ASHtoASP(3.94, -70.35, -35.35,-45.39, -23.15, 12.730, -107.430, 166.369, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
+    ASHtoASP(3.94, -70.35, -35.35,-20.39, -23.15, 12.730, -107.430, 166.369, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
     ASH1toASH2(Double.NaN, 0.00,0,0,0, 0.0, -35.305, 35.305, 0.0, AminoAcid3.ASH, AminoAcid3.ASH),
     GLHtoGLU(4.25, -81.90, -39.71, -55.74, -26.3,28.024, -131.270, 189.980, 0.0,  AminoAcid3.GLH, AminoAcid3.GLU),
     GLH1toGLH2(Double.NaN, 0,0,0,0.00, 0.0, -29.395, 29.395, 0.0, AminoAcid3.GLH, AminoAcid3.GLH),
