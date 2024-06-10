@@ -284,7 +284,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
   }
 
   private void setWEstimate() {
-    // generate initial w estimate
+    // Generate initial w estimate
     ReflectionSpline spline = new ReflectionSpline(reflectionList, refinementData.nBins);
     int[] nMean = new int[refinementData.nBins];
     for (int i = 0; i < refinementData.nBins; i++) {
@@ -314,14 +314,19 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
       x[spline.i1() + refinementData.nBins] +=
           (wi - x[spline.i1() + refinementData.nBins]) / nMean[spline.i1()];
+
       mean += (wi - mean) / tot;
     }
     logger.info(format(" Starting mean w:    %8.3f", mean));
-    logger.info(format(" Starting w scaling: %8.3f", 1.0 / mean));
+    double initialScale = 0.01;
+    if (mean > 0.0) {
+      initialScale = 1.0 / mean;
+    }
+    logger.info(format(" Starting w scaling: %8.3f", initialScale));
     for (int i = 0; i < refinementData.nBins; i++) {
       x[i] -= x[i + refinementData.nBins];
       x[i] *= scaling[i];
-      scaling[i + refinementData.nBins] = 1.0 / mean;
+      scaling[i + refinementData.nBins] = initialScale;
       x[i + refinementData.nBins] *= scaling[i + refinementData.nBins];
     }
   }

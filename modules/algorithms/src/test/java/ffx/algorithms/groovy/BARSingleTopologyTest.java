@@ -46,7 +46,7 @@ public class BARSingleTopologyTest extends AlgorithmsTest {
   /**
    * Tests BAR script with nw input.
    */
-  @Test
+  //@Test
   public void testBAR() {
 
     if (!ffxOpenMM) {

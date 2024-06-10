@@ -57,6 +57,7 @@
             <argument>ffx.potential.groovy.ImportCIF</argument>
             <argument>ffx.potential.groovy.Density</argument>
             <argument>ffx.potential.groovy.Energy</argument>
+            <argument>ffx.potential.groovy.ExportQE</argument>
             <argument>ffx.potential.groovy.Fasta</argument>
             <argument>ffx.potential.groovy.FeatureMap</argument>
             <argument>ffx.potential.groovy.Frac2Cart</argument>
@@ -65,12 +66,11 @@
             <argument>ffx.potential.groovy.SaveAsP1</argument>
             <argument>ffx.potential.groovy.SaveAsPDB</argument>
             <argument>ffx.potential.groovy.SaveAsXYZ</argument>
-            <argument>ffx.potential.groovy.SaveRotamers</argument>
             <argument>ffx.potential.groovy.Solvator</argument>
             <argument>ffx.potential.groovy.Timer</argument>
             <argument>ffx.potential.groovy.Volume</argument>
             <argument>ffx.potential.groovy.VolumeArc</argument>
-            <argument>ffx.potential.groovy.ExportQE</argument>
+            <argument>ffx.potential.groovy.WriteRestraints</argument>
             <argument>ffx.potential.groovy.test.CoordShakeEnergy</argument>
             <argument>ffx.potential.groovy.test.EnergyOpenMM</argument>
             <argument>ffx.potential.groovy.test.Gradient</argument>
@@ -83,6 +83,7 @@
             <argument>ffx.potential.groovy.test.ReorderAtoms</argument>
             <argument>ffx.potential.groovy.test.RGNtoPDB</argument>
             <argument>ffx.potential.groovy.test.SaveAsConstantPhPDB</argument>
+            <argument>ffx.potential.groovy.test.Tornado</argument>
           </arguments>
         </configuration>
         <dependencies>
@@ -343,11 +344,6 @@
       <version>${jopenmm.version}</version>
     </dependency>
     <dependency>
-      <artifactId>jtorchani-fat</artifactId>
-      <groupId>edu.uiowa.jtorchani</groupId>
-      <version>1.0.0-beta</version>
-    </dependency>
-    <dependency>
       <artifactId>guava</artifactId>
       <groupId>com.google.guava</groupId>
       <version>${guava.version}</version>
@@ -376,6 +372,11 @@
       <artifactId>cdk-isomorphism</artifactId>
       <groupId>org.openscience.cdk</groupId>
       <version>${cdk.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>jtorchani-fat</artifactId>
+      <groupId>edu.uiowa.jtorchani</groupId>
+      <version>1.0.0-beta</version>
     </dependency>
   </dependencies>
   <description>
@@ -407,6 +408,6 @@
     <artifactId>forcefieldx</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
   </parent>
 </project>

@@ -35,20 +35,19 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.algorithms.groovy
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.optimize.TitrationManyBody
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.*
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
-import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.TitrationUtils
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import ffx.algorithms.optimize.TitrationManyBody
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getExtension
@@ -62,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * ffxc SaveRotamers [options] &lt;filename&gt;
  */
 @Command(description = " Save out rotamers.", name = "SaveRotamers")
-class SaveRotamers extends PotentialScript {
+class SaveRotamers extends AlgorithmsScript {
 
   /**
    * -c or --chain to specify chain
@@ -124,7 +123,7 @@ class SaveRotamers extends PotentialScript {
    * --tR or --titrateResidue to allow for titration states to be saved
    */
   @Option(names = ['--tR', '--titrateResidue'], paramLabel = 'false', defaultValue = 'false',
-          description = 'Titrate residues.')
+      description = 'Titrate residues.')
   boolean titrateResidue
 
   /**
@@ -175,14 +174,14 @@ class SaveRotamers extends PotentialScript {
     filename = activeAssembly.getFile().getAbsolutePath()
     CompositeConfiguration properties = activeAssembly.getProperties()
 
-    if(titrateResidue){
+    if (titrateResidue) {
       List<Residue> residues = activeAssembly.getResidueList()
       List<Integer> resNumberList = new ArrayList<>()
-      for(Residue residue: residues){
+      for (Residue residue : residues) {
         resNumberList.add(residue.getResidueNumber())
       }
       titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-              resNumberList, 7.0)
+          resNumberList, 7.0)
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
     }
@@ -267,18 +266,18 @@ class SaveRotamers extends PotentialScript {
             logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
-            if(titrateResidue){
+            if (titrateResidue) {
               excludeAtoms.clear()
               removeAtomList.clear()
               removeAtomList.add(residue)
 
               int[] currentRot = [i]
-              boolean isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms,currentRot,
-                      removeAtomList)
+              boolean isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, currentRot,
+                  removeAtomList)
               //properties.setProperty("standardizeAtomNames", "false")
               File modelFile = new File(filename + ".pdb")
               PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
-                      properties)
+                  properties)
               if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
                 logger.info(format(" Save failed for %s", activeAssembly))
               }

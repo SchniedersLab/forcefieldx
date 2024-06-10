@@ -88,6 +88,11 @@
           <version>${install.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${jar.version}</version>
           <configuration>
@@ -139,7 +144,7 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <!-- forkCount>0</forkCount -->
+            <!-- forkCount>1</forkCount -->
             <trimStackTrace>false</trimStackTrace>
           </configuration>
           <dependencies>
@@ -375,8 +380,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
-          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
-          <useSystemClassLoader>false</useSystemClassLoader>
+          <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
           </excludes>
@@ -450,6 +456,33 @@
         <groupId>org.codehaus.mojo</groupId>
         <inherited>false</inherited>
         <version>${properties.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <destFile>target/jacoco.exec</destFile>
+          <!-- append>true</append -->
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+            <configuration>
+              <propertyName>jacoco.agent.ut.arg</propertyName>
+            </configuration>
+          </execution>
+          <!-- attached to Maven test phase -->
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -917,6 +950,7 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>modules/algorithms</module>
+    <module>modules/codecov</module>
     <module>modules/crystal</module>
     <module>modules/openmm</module>
     <module>modules/numerics</module>
@@ -982,57 +1016,60 @@
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.3.1</checkstyle.version>
+    <checkstyle.version>3.4.0</checkstyle.version>
     <ciftools-java.version>6.0.0</ciftools-java.version>
     <clean.version>3.3.2</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.10.0</commons-configuration2.version>
-    <commons-io.version>2.15.1</commons-io.version>
+    <commons-configuration2.version>2.10.1</commons-configuration2.version>
+    <commons-io.version>2.16.1</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <!-- Control the source version version -->
+    <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
+    <commons-text.version>1.10.0</commons-text.version>
+    <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.13.0</compiler.version>
     <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.1.1</deploy.version>
-    <enforcer.version>3.4.1</enforcer.version>
-    <exec.version>3.2.0</exec.version>
+    <deploy.version>3.1.2</deploy.version>
+    <enforcer.version>3.5.0</enforcer.version>
+    <exec.version>3.3.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
-    <ffx.version>1.0.0-BETA</ffx.version>
+    <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>8.0.2</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>24.0.0</graal.version>
-    <groovy-all.version>5.0.0-alpha-7</groovy-all.version>
-    <guava.version>33.1.0-jre</guava.version>
-    <install.version>3.1.1</install.version>
-    <jar.version>3.3.0</jar.version>
+    <graal.version>24.0.1</graal.version>
+    <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
+    <guava.version>33.2.1-jre</guava.version>
+    <install.version>3.1.2</install.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <jar.version>3.4.1</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.9</javaparser.version>
+    <javaparser.version>3.26.0</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.6.3</javadoc.version>
+    <javadoc.version>3.7.0</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>7.5.0-v11</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.3.2</jxr.version>
+    <jxr.version>3.4.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
     <log4j.version>2.23.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.7.5</picocli.version>
+    <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.21.2</pmd.version>
+    <pmd.version>3.22.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
     <project-info-reports.version>3.5.0</project-info-reports.version>
@@ -1044,10 +1081,8 @@
     <release.repo>file:release</release.repo>
     <release.version>3.0.1</release.version>
     <resources.version>3.3.1</resources.version>
-    <scm.version>2.0.1</scm.version>
-    <slf4j-nop.version>2.0.12</slf4j-nop.version>
-    <!-- The Shade plugin use of localRepository causes a validation message -->
-    <maven.plugin.validation>brief</maven.plugin.validation>
+    <scm.version>2.1.0</scm.version>
+    <slf4j-nop.version>2.0.13</slf4j-nop.version>
     <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
     <site.version>3.12.1</site.version>
     <!-- site.version>4.0.0-M11</site.version -->
@@ -1056,7 +1091,7 @@
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
-    <source.version>3.3.0</source.version>
+    <source.version>3.3.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.2.5</surefire.version>
     <!-- Control the target JRE version -->
@@ -1317,5 +1352,5 @@
     <url>https://github.com/SchniedersLab/forcefieldx</url>
   </scm>
   <url>https://ffx.biochem.uiowa.edu</url>
-  <version>1.0.0-beta</version>
+  <version>1.0.0</version>
 </project>

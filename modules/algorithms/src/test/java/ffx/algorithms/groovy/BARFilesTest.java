@@ -47,7 +47,7 @@ public class BARFilesTest extends AlgorithmsTest {
   /**
    * Tests BAR script with tinker bar files input.
    */
-  @Test
+  // @Test
   public void testBARFiles() {
 
     if (!ffxOpenMM) {

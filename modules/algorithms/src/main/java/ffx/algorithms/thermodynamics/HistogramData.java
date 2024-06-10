@@ -597,6 +597,14 @@ public class HistogramData {
     rectifyLambdaVariables();
   }
 
+  public void setdUdLBinWidth(double dUdLBinWidth) {
+    // The scale the minimum value of the first dU/dL bin.
+    double ratio = dUdLBinWidth / this.dUdLBinWidth;
+    this.dUdLMinimum *= ratio;
+    this.dUdLBinWidth = dUdLBinWidth;
+    rectifyDUDLVariables();
+  }
+
   /**
    * Gets the tempering offset.
    *
@@ -615,7 +623,6 @@ public class HistogramData {
    * @param temperingOffset Tempering offset in kcal/mol.
    */
   public void setTemperingOffset(double temperingOffset) {
-    this.temperingOffset = temperingOffset;
     this.temperingOffset = temperingOffset;
   }
 
@@ -667,7 +674,8 @@ public class HistogramData {
       setLambdaBinWidth(width);
     }
     if (properties.containsKey("flambda-bin-width")) {
-      dUdLBinWidth = properties.getDouble("flambda-bin-width");
+      double dUdLBinWidth = properties.getDouble("flambda-bin-width");
+      setdUdLBinWidth(dUdLBinWidth);
     }
     if (properties.containsKey("discrete-lambda")) {
       boolean discreteLambda = properties.getBoolean("discrete-lambda");
