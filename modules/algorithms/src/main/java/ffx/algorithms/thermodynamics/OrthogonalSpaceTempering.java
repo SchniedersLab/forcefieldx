@@ -473,7 +473,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     totalEnergy = forceFieldEnergy + biasEnergy;
 
 
-    if (histogram.ld.stepsTaken % 1000 == 0 && !mbarEvaluationState && propagateLambda){
+    if (histogram.ld.stepsTaken % 100 == 0 && !mbarEvaluationState && propagateLambda){
       if (potentialEvals == null){
         int numLambda = 30;
         potentialEvals = new double[numLambda];
