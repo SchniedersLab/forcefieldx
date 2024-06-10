@@ -1016,7 +1016,7 @@
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.3.1</checkstyle.version>
+    <checkstyle.version>3.4.0</checkstyle.version>
     <ciftools-java.version>6.0.0</ciftools-java.version>
     <clean.version>3.3.2</clean.version>
     <clover.version>4.4.1</clover.version>
@@ -1035,8 +1035,8 @@
     <dependency.version>3.6.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.2</deploy.version>
-    <enforcer.version>3.4.1</enforcer.version>
-    <exec.version>3.2.0</exec.version>
+    <enforcer.version>3.5.0</enforcer.version>
+    <exec.version>3.3.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1046,21 +1046,21 @@
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>24.0.1</graal.version>
     <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
-    <guava.version>33.2.0-jre</guava.version>
+    <guava.version>33.2.1-jre</guava.version>
     <install.version>3.1.2</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jar.version>3.4.1</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.10</javaparser.version>
+    <javaparser.version>3.26.0</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.6.3</javadoc.version>
+    <javadoc.version>3.7.0</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>7.5.0-v11</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.3.2</jxr.version>
+    <jxr.version>3.4.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
     <log4j.version>2.23.1</log4j.version>
