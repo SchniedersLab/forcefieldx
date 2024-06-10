@@ -1576,7 +1576,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
       for(int i = 0; i< oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
-          oAllFlat[i][j] *= exp(biasFlat[i][j] / rtValues[i]);
+          oAllFlat[i][j] *= exp(biasFlat[i][j]/rtValues[i]);
         }
       }
     }
@@ -1593,6 +1593,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       int[] nanCount = new int[biasAll.length];
       for (int i = 0; i < biasAll.length; i++) {
         ArrayList<Double> temp = new ArrayList<>();
+        double maxBias = Double.NEGATIVE_INFINITY;
         for(int j = 0; j < biasAll.length; j++) {
           int count = 0;
           int countNaN = 0;
@@ -1600,6 +1601,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
             // Don't include NaN values
             if (!Double.isNaN(biasAll[j][i][k])) {
               temp.add(biasAll[j][i][k]);
+              if(biasAll[j][i][k] > maxBias){
+                maxBias = biasAll[j][i][k];
+              }
               count++;
             } else {
               countNaN++;
@@ -1609,16 +1613,28 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           nanCount[j] = countNaN;
         }
         biasFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
+        // Regularize bias for this lambda
+        for(int j = 0; j < biasFlat[i].length; j++){
+          biasFlat[i][j] -= maxBias;
+        }
       }
     } else { // Put relevant data into the 0th index
       int count = 0;
+      double maxBias = Double.NEGATIVE_INFINITY;
       for (int i = 0; i < biasAll.length; i++){
         for(int j = 0; j < biasAll[0][0].length; j++){
           if(!Double.isNaN(biasAll[i][i][j])){
             biasFlat[0][count] = biasAll[i][i][j];
+            if(biasAll[i][i][j] > maxBias){
+              maxBias = biasAll[i][i][j];
+            }
             count++;
           }
         }
+      }
+      // Regularize bias for this lambda
+      for(int i = 0; i < biasFlat[0].length; i++){
+        biasFlat[0][i] -= maxBias;
       }
     }
   }
@@ -1663,7 +1679,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarBiasOST");
+    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/ASD/mbarFilesNormal");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
     //MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);

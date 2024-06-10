@@ -510,7 +510,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       energyAndGradient(x, gradient);
       potentialEvals[i] = forceFieldEnergy;
       dUdLEvals[i] = dForceFieldEnergydL;
-      biasEvals[i] = biasEnergy;
+      biasEvals[i] = gLdEdL;
     }
     setLambda(oldLambda);
     histogram.ld.theta = oldTheta; // arcsin problem
