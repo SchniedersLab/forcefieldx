@@ -811,11 +811,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       mbarObservableEnsembleAverageUncertainties = new double[oAllFlat.length];
       for(int i = 0; i < oAllFlat.length; i++){
         mbarObservableEnsembleAverages[i] = computeExpectations(oAllFlat[i])[i];
-        mbarObservableEnsembleAverageUncertainties[i] = computeExpectationStd(oAllFlat[i])[i];
+        //mbarObservableEnsembleAverageUncertainties[i] = computeExpectationStd(oAllFlat[i])[i];
       }
     } else {
       mbarObservableEnsembleAverages = computeExpectations(oAllFlat[0]);
-      mbarObservableEnsembleAverageUncertainties = computeExpectationStd(oAllFlat[0]);
+      //mbarObservableEnsembleAverageUncertainties = computeExpectationStd(oAllFlat[0]);
     }
   }
 
@@ -1569,11 +1569,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     if (biasFlat != null) {
-      double[] bias = new double[mbarFEEstimates.length];
-      int totSnaps = stream(snaps).sum();
-      for(int i = 0; i < bias.length; i++){
-        bias[i] = -(1/rtValues[i]) * log(snaps[i] / (double) totSnaps) - mbarFEEstimates[i];
-      }
       for(int i = 0; i< oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
           oAllFlat[i][j] *= exp(biasFlat[i][j]/rtValues[i]);
@@ -1679,7 +1674,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/ASD/mbarFilesNormal");
+    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarBiasOST");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
     //MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
