@@ -302,11 +302,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < snaps.length; i++) {
           snaps[i] /= reduction;
         }
-        snaps = new int[]{23, 22, 34, 27, 23, 23, 18, 20, 22, 27, 24, 20, 32, 24, 29, 24, 34, 50, 73};
+        snaps = new int[]{33, 89, 67, 70, 65, 62, 52, 56, 51, 41, 47, 59, 40, 46, 67, 66, 82, 82, 202};
       }
     }
 
-    addBiasCorrection(false);
+    //addBiasCorrection(false);
+    //subtractBiasCorrection(false);
 
     // Bootstrap needs resetting to zeros
     fill(mbarFEEstimates, 0.0);
@@ -495,7 +496,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < nLambdaStates; i++) {
           for (int n = 0; n < eAllFlat[0].length; n++) {
             // TODO: Update reduced potentials with correct indices with bootstrapping
-            reducedPotentials[i][n] += biasFlat[i][n] / rtValues[i];
+            reducedPotentials[i][n] += biasFlat[i][n];// / rtValues[i];
           }
         }
       }
@@ -513,7 +514,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         for (int i = 0; i < nLambdaStates; i++) {
           for (int n = 0; n < eAllFlat[0].length; n++) {
             // TODO: Update reduced potentials with correct indices with bootstrapping
-            reducedPotentials[i][n] -= biasFlat[i][n] / rtValues[i];
+            reducedPotentials[i][n] -= biasFlat[i][n];// / rtValues[i];
           }
         }
       }
@@ -852,11 +853,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     int[] extendedSnaps = new int[snaps.length * 2];
     System.arraycopy(snaps, 0, extendedSnaps, 0, snaps.length);
     RealMatrix theta = MatrixUtils.createRealMatrix(mbarTheta(extendedSnaps, mbarAugmentedW(samples)));
-    // Subtract min sample value --> pymbar does this and says there's not a diff (but I think it helps)
+    // Subtract min sample value --> pymbar does this and says there's not a difference
     double minSample = stream(samples).min().getAsDouble();
-    samples = stream(samples).map(d -> d - minSample).toArray();
+    //samples = stream(samples).map(d -> d - minSample).toArray();
     double[] expectations = computeExpectations(samples);
-    samples = stream(samples).map(d -> d + minSample).toArray(); // Don't alter values in samples
+    //samples = stream(samples).map(d -> d + minSample).toArray(); // Don't alter values in samples
     double[] diag = new double[expectations.length*2];
     for(int i = 0; i < expectations.length; i++){
       diag[i] = expectations[i];
@@ -1568,13 +1569,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     if (biasFlat != null) {
+      double[] bias = new double[mbarFEEstimates.length];
+      int totSnaps = stream(snaps).sum();
+      for(int i = 0; i < bias.length; i++){
+        bias[i] = -(1/rtValues[i]) * log(snaps[i] / (double) totSnaps) - mbarFEEstimates[i];
+      }
       for(int i = 0; i< oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
-          oAllFlat[i][j] *= exp(-biasFlat[i][j]/rtValues[i]);
+          oAllFlat[i][j] *= exp(biasFlat[i][j] / rtValues[i]);
         }
       }
     }
-    subtractBiasCorrection(true);
+    // TODO: If we want to correct reduced potentials for W matrix comp with prepped FE estimations
+    //subtractBiasCorrection(true);
+    //addBiasCorrection(true);
     this.fillObservationExpectations(multiDataObservable);
   }
 
@@ -1655,12 +1663,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Create an instance of MultistateBennettAcceptanceRatio
     System.out.print("Creating MBAR instance and estimateDG() with standard tol & Zeros seeding...");
-    File mbarParentFile = new File("/Users/matthewsperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarBiasOST");
+    File mbarParentFile = new File("/localscratch/Users/msperanza/Programs/forcefieldx/testing/mbar/hxacan/mbarBiasOST");
     MBARFilter mbarFilter = new MBARFilter(mbarParentFile);
-    MultistateBennettAcceptanceRatio.VERBOSE = true;
+    //MultistateBennettAcceptanceRatio.VERBOSE = true;
     MultistateBennettAcceptanceRatio mbar = mbarFilter.getMBAR(SeedType.ZEROS, 1e-7);
-    //mbarFilter.readObservableData(true, true, false);
-    //mbar.estimateDG(); // Second run
+    if (mbarFilter.readObservableData(true, true, false)) {
+      mbar.estimateDG(); // Second run
+    }
     mbarFilter.readObservableData(true, false, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
             mbar.mbarObservableEnsembleAverages.length);
