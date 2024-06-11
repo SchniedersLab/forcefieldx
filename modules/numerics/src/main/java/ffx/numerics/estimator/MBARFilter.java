@@ -287,7 +287,9 @@ public class MBARFilter {
             barFiles= fileLocation.listFiles((dir, name) -> name.matches("derivative_\\d+.mbar") ||
                     name.matches("derivative_\\d+.bar") ||
                     name.matches("derivatives_\\d+.mbar") ||
-                    name.matches("derivatives_\\d+.bar"));
+                    name.matches("derivatives_\\d+.bar") ||
+                    name.matches("observable_\\d+.mbar") ||
+                    name.matches("observable_\\d+.bar"));
         } else if (isBiasData) {
             barFiles = fileLocation.listFiles((dir, name) -> name.matches("bias_\\d+.mbar") ||
                 name.matches("bias_\\d+.bar"));
