@@ -277,6 +277,24 @@ class MBAR extends AlgorithmsScript {
             sb.append("]")
             logger.info(sb.toString())
         }
+
+        // Read in and compute expectations for observable data
+        boolean observableData = filter.readObservableData(true, false, true);
+        if (observableData){
+            logger.info("\n Observable data read in.")
+        }
+        boolean biasData = filter.readObservableData(true, true, false);
+        if(biasData){
+            logger.info(" Bias data read in.")
+        }
+        if(observableData) {
+            logger.info("\n MBAR Observable Data: ")
+            double[] observableValues = mbar.getObservationEnsembleAverages()
+            for (int i = 0; i < observableValues.length; i++) {
+                logger.info(format("     %3d = %10.4f ", i, observableValues[i]))
+            }
+            logger.info(" Integral:    " + mbar.getTIIntegral())
+        }
         logger.info("\n")
         // BAR to compare (negligible difference if properly converged and doesn't take long at all)
         if(bar){

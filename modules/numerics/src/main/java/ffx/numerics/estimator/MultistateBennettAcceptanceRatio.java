@@ -38,6 +38,9 @@
 package ffx.numerics.estimator;
 
 import ffx.numerics.OptimizationInterface;
+import ffx.numerics.integrate.DataSet;
+import ffx.numerics.integrate.DoublesDataSet;
+import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
@@ -159,13 +162,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private SeedType seedType;
 
+
+
   /**
    * Enum of MBAR seed types.
    */
-  public enum SeedType {BAR, ZWANZIG, ZEROS}
+  public enum SeedType {BAR, ZWANZIG, ZEROS;}
   public static boolean FORCE_ZEROS_SEED = false;
   public static boolean VERBOSE = false;
-
   /**
    * Constructor for MBAR estimator.
    *
@@ -469,8 +473,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
   }
 
-  //////// Misc. Methods ////////////
 
+  //////// Misc. Methods ////////////
   /**
    * Checks if the MBAR free energy estimates have converged by comparing the difference
    * between the previous and current free energies. The tolerance is set by the user.
@@ -524,8 +528,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     logger.info("\n Softmax of trajectory weight: " + Arrays.toString(rowSum));
   }
 
-  //////// Methods for calculating MBAR variables, vectors, and matrices. ////////
 
+  //////// Methods for calculating MBAR variables, vectors, and matrices. ////////
   /**
    * MBAR objective function. This is used for L-BFGS optimization.
    *
@@ -750,6 +754,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
   }
 
+  public double getTIIntegral() {
+    DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
+            mbarObservableEnsembleAverages, false);
+    return Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.TRAPEZOIDAL);
+  }
+
   public void setObservableData(double[][][] oAll, boolean multiDataObservable, boolean uncertainties) {
     oAllFlat = new double[oAll.length][oAll.length * oAll[0][0].length];
     if(multiDataObservable){ // Flatten data
@@ -832,6 +842,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private double[] computeExpectations(double[] samples){
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    if (W[0].length != samples.length) {
+      logger.severe("Samples and W matrix are not the same length. Exiting.");
+    }
     double[] expectation = new double[W.length];
     for(int i = 0; i < W.length; i++){
       for(int j = 0; j < W[i].length; j++){
