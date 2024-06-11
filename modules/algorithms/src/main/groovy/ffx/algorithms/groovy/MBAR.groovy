@@ -267,7 +267,7 @@ class MBAR extends AlgorithmsScript {
         }
 
         logger.info("\n MBAR uncertainty between all i & j: ")
-        double[][] uncertaintyMatrix = mbar.getDiffMatrix()
+        double[][] uncertaintyMatrix = mbar.getUncertaintyMatrix()
         for(int i = 0; i < uncertaintyMatrix.length; i++) {
             StringBuilder sb = new StringBuilder()
             sb.append("    [")

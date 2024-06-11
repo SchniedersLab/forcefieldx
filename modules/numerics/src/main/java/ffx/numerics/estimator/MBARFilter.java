@@ -334,7 +334,7 @@ public class MBARFilter {
         if (isBiasData) {
             mbar.setBiasData(eAll, multiDataObservable);
         } else {
-            mbar.setObservableData(eAll, multiDataObservable);
+            mbar.setObservableData(eAll, multiDataObservable, true);
         }
         return true;
     }
