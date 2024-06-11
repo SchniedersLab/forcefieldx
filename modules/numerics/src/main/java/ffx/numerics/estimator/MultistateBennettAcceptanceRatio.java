@@ -209,6 +209,25 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     estimateDG();
   }
 
+  public MultistateBennettAcceptanceRatio(double[] lambdaValues, int[] snaps, double[][] eAllFlat, double[] temperature,
+                                          double tolerance, SeedType seedType){
+    super(lambdaValues, snaps, eAllFlat, temperature);
+    this.tolerance = tolerance;
+    this.seedType = seedType;
+
+    // MBAR calculates free energy at each lambda value (only the differences between them have physical significance)
+    nLambdaStates = lambdaValues.length;
+    mbarFEEstimates = new double[nLambdaStates];
+
+    nFreeEnergyDiffs = lambdaValues.length - 1;
+    mbarFEDifferenceEstimates = new double[nFreeEnergyDiffs];
+    mbarUncertainties = new double[nFreeEnergyDiffs];
+    mbarEnthalpy = new double[nFreeEnergyDiffs];
+    mbarEntropy = new double[nFreeEnergyDiffs];
+    random = new Random();
+    estimateDG();
+  }
+
   /**
    * Set the MBAR seed energies using BAR, Zwanzig, or zeros.
    */
@@ -216,6 +235,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     switch (seedType) {
       case BAR:
         try {
+          if(eLow == null || eAt == null || eHigh == null) {
+            seedType = SeedType.ZEROS;
+            seedEnergies();
+            return;
+          }
           SequentialEstimator barEstimator = new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
           mbarFEEstimates[0] = 0.0;
           double[] barEstimates = barEstimator.getBinEnergies();
@@ -231,6 +255,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       case ZWANZIG:
         try{
+          if(eLow == null || eAt == null || eHigh == null) {
+            seedType = SeedType.ZEROS;
+            seedEnergies();
+            return;
+          }
           Zwanzig forwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, FORWARDS);
           Zwanzig backwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, BACKWARDS);
           double[] forwardZwanzig = forwardsFEP.getBinEnergies();
@@ -754,10 +783,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
   }
 
-  public double getTIIntegral() {
-    DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
-            mbarObservableEnsembleAverages, false);
-    return Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.TRAPEZOIDAL);
+  public void setBiasData(double[][] biasData){
+    this.biasFlat = biasData;
+    // Regularize bias for this lambda
+    for(int i = 0; i < biasFlat.length; i++){
+      double maxBias = Double.NEGATIVE_INFINITY;
+      for(int j = 0; j < biasFlat[i].length; j++){
+        if(biasFlat[i][j] > maxBias){
+          maxBias = biasFlat[i][j];
+        }
+      }
+      for(int j = 0; j < biasFlat[i].length; j++){
+        biasFlat[i][j] -= maxBias;
+      }
+    }
   }
 
   public void setObservableData(double[][][] oAll, boolean multiDataObservable, boolean uncertainties) {
@@ -804,6 +843,28 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
     this.fillObservationExpectations(multiDataObservable, uncertainties);
+  }
+
+  public void setObservableData(double[][] oAll, boolean uncertainties){
+    oAllFlat = oAll;
+    // OST Data
+    if (biasFlat != null) {
+      if (oAllFlat.length != biasFlat.length || oAllFlat[0].length != biasFlat[0].length) {
+        logger.severe("Observable and bias data are not the same size. Exiting.");
+      }
+      for(int i = 0; i< oAllFlat.length; i++) {
+        for (int j = 0; j < oAllFlat[i].length; j++) {
+          oAllFlat[i][j] *= exp(biasFlat[i][j]/rtValues[i]);
+        }
+      }
+    }
+    this.fillObservationExpectations(oAllFlat.length != 1, uncertainties);
+  }
+
+  public double getTIIntegral() {
+    DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
+            mbarObservableEnsembleAverages, false);
+    return Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.TRAPEZOIDAL);
   }
 
   /**

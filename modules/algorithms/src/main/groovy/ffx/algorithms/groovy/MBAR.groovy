@@ -94,6 +94,10 @@ class MBAR extends AlgorithmsScript {
             description = "Calculate lambda derivatives for each snapshot.")
     boolean lambdaDerivative = false
 
+    @Option(names = ["--continuousLambda", "--cL"], paramLabel = "false",
+            description = "Data comes from continuous lambda source and only contains mbar file.")
+    boolean continuousLambda = false
+
     @Option(names = ["--outputDir", "--oD"], paramLabel = "",
             description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
     String outputDirectory = ""
@@ -221,7 +225,7 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Path to MBAR/BAR fileNames is not accessible: " + path)
             return this
         }
-        MBARFilter filter = new MBARFilter(path);
+        MBARFilter filter = new MBARFilter(path, continuousLambda);
         if (startingSnapshot >= 0){
             filter.setStartSnapshot(startingSnapshot)
             logger.info("Starting with snapshot index: " + startingSnapshot)

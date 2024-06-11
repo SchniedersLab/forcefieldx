@@ -255,4 +255,36 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
       }
     }
   }
+
+  /**
+   * Simpler constructor for when data provided is already flattened (although it adds uncertainty about
+   * snap counts, they are all set to the same number).
+   *
+   * @param lambdaValues
+   * @param snaps
+   * @param eAllFlat
+   * @param temperature
+   */
+  public SequentialEstimator(double[] lambdaValues, int[] snaps, double[][] eAllFlat, double[] temperature){
+    nTrajectories = lambdaValues.length;
+    assert nTrajectories == eAllFlat.length
+            : "The energy arrays is of the incorrect length in the first lambda dimension!";
+
+    this.lamValues = copyOf(lambdaValues, nTrajectories);
+    temperatures = new double[nTrajectories];
+    if (temperature.length == 1) {
+      fill(temperatures, temperature[0]);
+    } else {
+      arraycopy(temperature, 0, temperatures, 0, nTrajectories);
+    }
+
+    this.eAllFlat = eAllFlat;
+    this.snaps = snaps;
+    // No way of knowing the snap counts for each lambda window & therefore no way to break data into these matrices,
+    // so just set these all to null.
+    eLow = null;
+    eAt = null;
+    eHigh = null;
+    eAll = null;
+  }
 }

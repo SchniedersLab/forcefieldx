@@ -31,6 +31,7 @@ public class MBARFilter {
     private ArrayList<ArrayList<Double>> tempFileEnergies;
     private double[][] fileEnergies;
     private double[][][] eAll;
+    private double[][] eAllFlat;
     private double[] temperatures;
     private int[] snaps;
     private int[] numLambdas;
@@ -39,19 +40,17 @@ public class MBARFilter {
     private MultistateBennettAcceptanceRatio mbar;
     private int startIndex = -1;
     private int endIndex = -1;
+    private int numLambda;
+    private boolean oneFile = false;
 
 
-    public MBARFilter(File fileLocation) {
+    public MBARFilter(File fileLocation, boolean continuousLambda) {
         this.fileLocation = fileLocation;
         barFiles = fileLocation.listFiles((dir, name) -> name.matches("energy_\\d+.mbar") || name.matches("energy_\\d+.bar"));
         assert barFiles != null;
-        if (barFiles.length == 0 || barFiles.length == 1) {
-            String message = barFiles.length == 0 ?
-                    " No files matching 'energy_\\d+.mbar' or 'energy_\\d+.bar' found in " +
-                            fileLocation.getAbsolutePath() :
-                    " Only one file matching 'energy_\\d+.mbar' or 'energy_\\d+.bar' found in " +
-                            fileLocation.getAbsolutePath() + ". At least two are required.";
-            logger.severe(message);
+        if (barFiles.length == 0) {
+            logger.severe(" No files matching 'energy_\\d+.mbar' or 'energy_\\d+.bar' found in " +
+                    fileLocation.getAbsolutePath());
         }
         // Sort files by state number
         Arrays.sort(barFiles, (f1, f2) -> {
@@ -63,7 +62,12 @@ public class MBARFilter {
         temperatures = new double[windows];
         snaps = new int[windows];
         numLambdas = new int[windows];
-        this.parseFiles();
+        if (continuousLambda) {
+            this.parseFile();
+            oneFile = true;
+        } else {
+            this.parseFiles();
+        }
     }
 
     public MultistateBennettAcceptanceRatio getMBAR(SeedType seedType){
@@ -75,7 +79,11 @@ public class MBARFilter {
         for (int i = 0; i < windows; i++) {
             lambda[i] = i / (windows - 1.0);
         }
-        this.mbar = new MultistateBennettAcceptanceRatio(lambda, eAll, temperatures, tolerance, seedType);
+        if(eAll != null) {
+            this.mbar = new MultistateBennettAcceptanceRatio(lambda, eAll, temperatures, tolerance, seedType);
+        } else {
+            this.mbar = new MultistateBennettAcceptanceRatio(lambda, snaps, eAllFlat, temperatures, tolerance, seedType);
+        }
         return this.mbar;
     }
 
@@ -152,8 +160,26 @@ public class MBARFilter {
         if (warn) {
             String symbol = maxLambdas > windows ? "MORE" : "LESS";
             logger.warning("FILES CONTAIN " + symbol + " LAMBDA EVALUATIONS THAN ACTUAL TRAJECTORIES.");
+            if(windows == 1){
+                logger.warning(" USE --continuousLambda FLAG IF USING A SINGLE FILE.");
+            }
             symbol = maxLambdas > windows ? "Add" : "Remove";
             logger.severe(symbol + " completely empty files (zero lines) to fill in the gaps.");
+        }
+    }
+
+    private void parseFile(){
+        eAllFlat = readFile(barFiles[0].getName(), 0);
+        // Reset variables
+        snaps = new int[numLambda];
+        for (int i = 0; i < numLambda; i++) {
+            snaps[i] = eAllFlat[i].length;
+        }
+        windows = numLambda;
+        double temp = temperatures[0];
+        temperatures = new double[windows];
+        for (int i = 0; i < windows; i++) {
+            temperatures[i] = temp;
         }
     }
 
@@ -178,9 +204,6 @@ public class MBARFilter {
      */
     private double[][] readFile(String fileName, int state) {
         tempBarFile = new File(fileLocation, fileName);
-        if (!tempBarFile.exists()) {
-            logger.severe("File " + tempBarFile.getAbsolutePath() + " does not exist.");
-        }
         tempFileEnergies = new ArrayList<>();
         for(int i = 0; i < windows; i++) {
             tempFileEnergies.add(new ArrayList<>());
@@ -213,7 +236,7 @@ public class MBARFilter {
             temperatures[state] = Double.parseDouble(tokens[1]);
             // Read energies (however many there are)
             int count = 0;
-            int numLambda = 0;
+            numLambda = 0;
             line = br1.readLine();
             while (line != null) {
                 tokens = line.trim().split("\\t *| +");
@@ -254,12 +277,22 @@ public class MBARFilter {
 
     public void setStartSnapshot(int startIndex) {
         this.startIndex = startIndex;
-        for (int i = 0; i < eAll.length; i++) {
-            for (int j = 0; j < eAll[0].length; j++) {
+        if(oneFile){
+            for(int i = 0; i < eAllFlat.length; i++) {
                 try{
-                    eAll[i][j] = Arrays.copyOfRange(eAll[i][j], startIndex, eAll[i][j].length);
-                } catch (ArrayIndexOutOfBoundsException e){
+                    eAllFlat[i] = Arrays.copyOfRange(eAllFlat[i], startIndex, eAllFlat[i].length);
+                } catch (ArrayIndexOutOfBoundsException e) {
                     logger.severe("Start index " + startIndex + " is out of bounds for file " + barFiles[i].getName());
+                }
+            }
+        } else {
+            for (int i = 0; i < eAll.length; i++) {
+                for (int j = 0; j < eAll[0].length; j++) {
+                    try {
+                        eAll[i][j] = Arrays.copyOfRange(eAll[i][j], startIndex, eAll[i][j].length);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        logger.severe("Start index " + startIndex + " is out of bounds for file " + barFiles[i].getName());
+                    }
                 }
             }
         }
@@ -267,12 +300,22 @@ public class MBARFilter {
 
     public void setEndSnapshot(int endIndex) {
         this.endIndex = endIndex;
-        for (int i = 0; i < eAll.length; i++) {
-            for (int j = 0; j < eAll[0].length; j++) {
-                try{
-                    eAll[i][j] = Arrays.copyOfRange(eAll[i][j], 0, endIndex);
-                } catch (ArrayIndexOutOfBoundsException e){
+        if (oneFile) {
+            for (int i = 0; i < eAllFlat.length; i++) {
+                try {
+                    eAllFlat[i] = Arrays.copyOfRange(eAllFlat[i], 0, endIndex);
+                } catch (ArrayIndexOutOfBoundsException e) {
                     logger.severe("End index " + endIndex + " is out of bounds for file " + barFiles[i].getName());
+                }
+            }
+        } else {
+            for (int i = 0; i < eAll.length; i++) {
+                for (int j = 0; j < eAll[0].length; j++) {
+                    try {
+                        eAll[i][j] = Arrays.copyOfRange(eAll[i][j], 0, endIndex);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        logger.severe("End index " + endIndex + " is out of bounds for file " + barFiles[i].getName());
+                    }
                 }
             }
         }
@@ -303,26 +346,31 @@ public class MBARFilter {
             int state2 = Integer.parseInt(f2.getName().split("\\.")[0].split("_")[1]);
             return Integer.compare(state1, state2);
         });
-        eAll = new double[windows][][];
-        for (int i = 0; i < windows; i++) {
-            eAll[i] = readFile(barFiles[i].getName(), i);
-        }
-        int minSnaps = min(snaps);
-        int maxSnaps = max(snaps);
+        if (oneFile){
+            eAllFlat = readFile(barFiles[0].getName(), 0);
+            multiDataObservable = eAllFlat.length != numLambda;
+        } else {
+            eAll = new double[windows][][];
+            for (int i = 0; i < windows; i++) {
+                eAll[i] = readFile(barFiles[i].getName(), i);
+            }
+            int minSnaps = min(snaps);
+            int maxSnaps = max(snaps);
 
-        // Basically just make sure eAll isn't jagged
-        boolean warn = minSnaps != maxSnaps;
-        if (warn) {
-            double[][][] temp = new double[eAll.length][eAll[0].length][maxSnaps];
-            for(int j = 0; j < windows; j++){
-                for(int k = 0; k < windows; k++){
-                    System.arraycopy(eAll[j][k], 0, temp[j][k], 0, snaps[j]);
-                    for(int l = snaps[j]; l < maxSnaps; l++){ // Fill in the rest with NaNs
-                        temp[j][k][l] = Double.NaN;
+            // Basically just make sure eAll isn't jagged
+            boolean warn = minSnaps != maxSnaps;
+            if (warn) {
+                double[][][] temp = new double[eAll.length][eAll[0].length][maxSnaps];
+                for (int j = 0; j < windows; j++) {
+                    for (int k = 0; k < windows; k++) {
+                        System.arraycopy(eAll[j][k], 0, temp[j][k], 0, snaps[j]);
+                        for (int l = snaps[j]; l < maxSnaps; l++) { // Fill in the rest with NaNs
+                            temp[j][k][l] = Double.NaN;
+                        }
                     }
                 }
+                eAll = temp;
             }
-            eAll = temp;
         }
         // Apply cutoffs set by user
         if (this.startIndex != -1) {
@@ -334,10 +382,19 @@ public class MBARFilter {
 
         // Set observable data and compute observable averages
         if (isBiasData) {
-            mbar.setBiasData(eAll, multiDataObservable);
+            if(!oneFile) {
+                mbar.setBiasData(eAll, multiDataObservable);
+            } else {
+                mbar.setBiasData(eAllFlat);
+            }
         } else {
-            mbar.setObservableData(eAll, multiDataObservable, false);
+            if (!oneFile) {
+                mbar.setObservableData(eAll, multiDataObservable, false);
+            } else{
+                mbar.setObservableData(eAllFlat, false);
+            }
         }
+
         return true;
     }
 }
