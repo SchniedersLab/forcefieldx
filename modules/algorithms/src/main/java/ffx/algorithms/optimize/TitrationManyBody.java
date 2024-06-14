@@ -91,8 +91,8 @@ public class TitrationManyBody {
     double proteinDielectric = 1.0;
     boolean tanhCorrection = false;
     try {
-      proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC");
-      tanhCorrection = forceField.getBoolean("TANH_CORRECTION");
+      proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC", 1.0);
+      tanhCorrection = forceField.getBoolean("TANH_CORRECTION", true);
     } catch (Exception e) {
       logger.info("Protein Dielectric or Tanh Correction is Null");
     }

@@ -165,7 +165,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Flag to indicate if this is the master process.
      */
-    private final boolean rank0;
+    protected final boolean rank0;
     /**
      * Flag to control the verbosity of printing.
      */
@@ -182,7 +182,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * If true, write out an energy restart file.
      */
-    private boolean writeEnergyRestart = true;
+    protected boolean writeEnergyRestart = true;
     /**
      * Parameters for box optimization are stored here.
      */
@@ -290,7 +290,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * This is the optimal rotamers corresponding to residueList.
      */
-    private int[] optimum;
+    protected int[] optimum;
 
     /**
      * Size of the sliding window.
@@ -303,11 +303,11 @@ public class RotamerOptimization implements Terminatable {
     /**
      * In sliding window, whether to revert an unfavorable change.
      */
-    private boolean revert;
+    protected boolean revert;
     /**
      * The sliding window direction.
      */
-    private Direction direction = Direction.FORWARD;
+    protected Direction direction = Direction.FORWARD;
 
     /**
      * The distance that the distance matrix checks for.
@@ -420,11 +420,11 @@ public class RotamerOptimization implements Terminatable {
      * The array of optimum rotamers for the subset of residues being optimized during box or window
      * optimization.
      */
-    private int[] optimumSubset;
+    protected int[] optimumSubset;
     /**
      * If true, load an energy restart file.
      */
-    private boolean loadEnergyRestart = false;
+    protected boolean loadEnergyRestart = false;
     /**
      * Energy restart File instance.
      */
@@ -475,7 +475,7 @@ public class RotamerOptimization implements Terminatable {
      * Sets whether files should be printed; true for standalone applications, false for some
      * applications which use rotamer optimization as part of a larger process.
      */
-    private boolean printFiles = true;
+    protected boolean printFiles = true;
     /**
      * Stores states of each ensemble if printFiles is false.
      */
@@ -487,7 +487,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Writes energies to restart file.
      */
-    private BufferedWriter energyWriter;
+    protected BufferedWriter energyWriter;
 
   /**
    * False unless JUnit testing.
@@ -2609,7 +2609,7 @@ public class RotamerOptimization implements Terminatable {
    * @param residueList Residues to optimize.
    * @return Final energy.
    */
-  private double globalOptimization(List<Residue> residueList) {
+  protected double globalOptimization(List<Residue> residueList) {
     int currentEnsemble = Integer.MAX_VALUE;
     Residue[] residues = residueList.toArray(new Residue[0]);
     int nResidues = residues.length;
