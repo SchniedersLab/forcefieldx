@@ -248,6 +248,7 @@ public class PolarizableMultipole {
   /**
    * Contract this multipole with the potential and its derivatives.
    *
+   * @param field The potential and its derivatives.
    * @return The permanent multipole energy.
    */
   protected final double multipoleEnergy(double[] field) {

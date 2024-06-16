@@ -148,9 +148,21 @@ public interface Potential extends OptimizationInterface {
    * Recognized variables currently include Cartesian coordinates and OTHER.
    */
   enum VARIABLE_TYPE {
+    /**
+     * X-coordinate.
+     */
     X,
+    /**
+     * Y-coordinate.
+     */
     Y,
+    /**
+     * Z-coordinate.
+     */
     Z,
+    /**
+     * Other variable type.
+     */
     OTHER
   }
 
@@ -159,8 +171,17 @@ public interface Potential extends OptimizationInterface {
    * or BOTH.
    */
   enum STATE {
+    /**
+     * Include FAST varying energy terms.
+     */
     FAST,
+    /**
+     * Include SLOW varying energy terms.
+     */
     SLOW,
+    /**
+     * Include both FAST and SLOW varying energy terms.
+     */
     BOTH
   }
 }

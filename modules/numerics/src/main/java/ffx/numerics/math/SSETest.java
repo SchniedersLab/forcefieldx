@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
-import static org.apache.commons.math3.util.FastMath.floor;
-
 import java.util.Random;
+
+import static org.apache.commons.math3.util.FastMath.floor;
 
 /**
  * java -cp target/numerics-1.0.0.jar -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly
@@ -49,8 +49,17 @@ import java.util.Random;
  */
 public class SSETest {
 
+  /**
+   * A matrix of double values.
+   */
   public final double[][] A;
+  /**
+   * A vector of double values.
+   */
   public final double[] x;
+  /**
+   * A flattened matrix of double values.
+   */
   private final double[] flatA;
 
   /**

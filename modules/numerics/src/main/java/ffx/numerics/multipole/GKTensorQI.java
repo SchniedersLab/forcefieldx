@@ -61,14 +61,16 @@ public class GKTensorQI extends CoulombTensorQI {
   private final GKSource gkSource;
 
   /**
+   * Create a new GKTensorQI object.
+   *
    * @param multipoleOrder The multipole order.
-   * @param order The tensor order.
-   * @param gkSource Generate the source terms for the GK recurrence.
-   * @param Eh Homogeneous dielectric constant.
-   * @param Es Solvent dielectric constant.
+   * @param order          The tensor order.
+   * @param gkSource       Generate the source terms for the GK recurrence.
+   * @param Eh             Homogeneous dielectric constant.
+   * @param Es             Solvent dielectric constant.
    */
   public GKTensorQI(GK_MULTIPOLE_ORDER multipoleOrder, int order, GKSource gkSource, double Eh,
-      double Es) {
+                    double Es) {
     super(order);
     this.multipoleOrder = multipoleOrder;
     this.gkSource = gkSource;
@@ -124,7 +126,7 @@ public class GKTensorQI extends CoulombTensorQI {
    */
   @Override
   public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+                                           double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
     return switch (multipoleOrder) {
       default -> monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
       case DIPOLE -> dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
@@ -144,7 +146,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return the permanent multipole GK energy.
    */
   protected double monopoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+                                             double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
 
     // Compute the potential due to a multipole component at site I.
     chargeIPotentialAtK(mI, 3);
@@ -188,7 +190,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return the permanent multipole GK energy.
    */
   protected double dipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+                                           double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
 
     // Compute the potential due to a multipole component at site I.
     dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 3);
@@ -240,7 +242,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return the permanent multipole GK energy.
    */
   protected double quadrupoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+                                               double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
 
     // Compute the potential due to a multipole component at site I.
     quadrupoleIPotentialAtK(mI, 3);
@@ -295,15 +297,15 @@ public class GKTensorQI extends CoulombTensorQI {
   /**
    * GK Polarization Energy.
    *
-   * @param mI PolarizableMultipole at site I.
-   * @param mK PolarizableMultipole at site K.
+   * @param mI          PolarizableMultipole at site I.
+   * @param mK          PolarizableMultipole at site K.
    * @param scaleEnergy This is ignored, since masking/scaling is not applied to GK
-   *     interactions.
+   *                    interactions.
    * @return a double.
    */
   @Override
   public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK,
-      double scaleEnergy) {
+                                   double scaleEnergy) {
     return polarizationEnergy(mI, mK);
   }
 
@@ -416,22 +418,22 @@ public class GKTensorQI extends CoulombTensorQI {
   /**
    * Polarization Energy and Gradient.
    *
-   * @param mI PolarizableMultipole at site I.
-   * @param mK PolarizableMultipole at site K.
+   * @param mI            PolarizableMultipole at site I.
+   * @param mK            PolarizableMultipole at site K.
    * @param inductionMask This is ignored, since masking/scaling is not applied to GK
-   *     interactions (everything is intermolecular).
-   * @param energyMask This is ignored, since masking/scaling is not applied to GK interactions
-   *     (everything is intermolecular).
-   * @param mutualMask This should be set to zero for direction polarization.
-   * @param Gi an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
+   *                      interactions (everything is intermolecular).
+   * @param energyMask    This is ignored, since masking/scaling is not applied to GK interactions
+   *                      (everything is intermolecular).
+   * @param mutualMask    This should be set to zero for direction polarization.
+   * @param Gi            an array of {@link double} objects.
+   * @param Ti            an array of {@link double} objects.
+   * @param Tk            an array of {@link double} objects.
    * @return a double.
    */
   @Override
   public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double inductionMask, double energyMask, double mutualMask, double[] Gi, double[] Ti,
-      double[] Tk) {
+                                              double inductionMask, double energyMask, double mutualMask, double[] Gi, double[] Ti,
+                                              double[] Tk) {
     return switch (multipoleOrder) {
       default -> monopolePolarizationEnergyAndGradient(mI, mK, Gi);
       case DIPOLE -> dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
@@ -448,7 +450,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return a double.
    */
   public double monopolePolarizationEnergyAndGradient(PolarizableMultipole mI,
-      PolarizableMultipole mK, double[] Gi) {
+                                                      PolarizableMultipole mK, double[] Gi) {
 
     // Find the permanent multipole potential at site k.
     chargeIPotentialAtK(mI, 2);
@@ -480,16 +482,16 @@ public class GKTensorQI extends CoulombTensorQI {
   /**
    * Dipole Polarization Energy and Gradient.
    *
-   * @param mI PolarizableMultipole at site I.
-   * @param mK PolarizableMultipole at site K.
+   * @param mI         PolarizableMultipole at site I.
+   * @param mK         PolarizableMultipole at site K.
    * @param mutualMask This should be set to zero for direction polarization.
-   * @param Gi an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
+   * @param Gi         an array of {@link double} objects.
+   * @param Ti         an array of {@link double} objects.
+   * @param Tk         an array of {@link double} objects.
    * @return a double.
    */
   public double dipolePolarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-      double mutualMask, double[] Gi, double[] Ti, double[] Tk) {
+                                                    double mutualMask, double[] Gi, double[] Ti, double[] Tk) {
 
     // Find the permanent dipole potential and derivatives at site K.
     dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 2);
@@ -584,7 +586,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return a double.
    */
   public double quadrupolePolarizationEnergyAndGradient(PolarizableMultipole mI,
-      PolarizableMultipole mK, double[] Gi, double[] Ti, double[] Tk) {
+                                                        PolarizableMultipole mK, double[] Gi, double[] Ti, double[] Tk) {
 
     // Find the permanent multipole potential and derivatives at site k.
     quadrupoleIPotentialAtK(mI, 2);

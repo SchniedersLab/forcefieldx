@@ -54,6 +54,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class CoulombTensorQI extends MultipoleTensor {
 
+  /**
+   * Create a new CoulombTensorQI object.
+   * @param order The tensor order.
+   */
   public CoulombTensorQI(int order) {
     super(COORDINATES.QI, order);
     operator = OPERATOR.COULOMB;
@@ -1047,8 +1051,6 @@ public class CoulombTensorQI extends MultipoleTensor {
    * <p>The packing of the tensor elements for order = 1<br>
    * tensor[0] = 1/|r| <br> tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
    * <br>
-   *
-   * <p>
    *
    * @param r double[] vector between two sites.
    * @param tensor double[] length must be at least binomial(order + 3, 3).

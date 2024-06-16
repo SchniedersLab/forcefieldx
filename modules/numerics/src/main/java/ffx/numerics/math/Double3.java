@@ -206,6 +206,7 @@ public class Double3 {
   /**
    * Returns the coordinate at position i.
    *
+   * @param i The coordinate index.
    * @return The coordinate.
    */
   public double get(int i) {

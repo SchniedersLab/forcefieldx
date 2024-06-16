@@ -51,6 +51,10 @@ public class ScalarMath {
 
   private static final double eightPi2 = 8.0 * PI * PI;
 
+  private ScalarMath() {
+    // Prevent instantiation.
+  }
+
   /**
    * b2u
    *
@@ -154,8 +158,8 @@ public class ScalarMath {
    * domain is periodic with a period of (ub - lb).
    *
    * @param value Value to move between bounds.
-   * @param lb Lower bound.
-   * @param ub Upper bound.
+   * @param lb    Lower bound.
+   * @param ub    Upper bound.
    * @return Returns periodic copy of value, in the range lb &lt;= value &lt; ub.
    */
   public static double modToRange(double value, double lb, double ub) {
@@ -179,7 +183,7 @@ public class ScalarMath {
   /**
    * quadForm
    *
-   * @param v an array of double.
+   * @param v   an array of double.
    * @param mat an array of double.
    * @return a double.
    */

@@ -62,6 +62,10 @@ public class FloatMath {
 
   private static final Logger logger = Logger.getLogger(FloatMath.class.getName());
 
+  private FloatMath() {
+    // Prevent instantiation.
+  }
+
   /**
    * Compute a * b + c and return the result in a new array.
    *

@@ -62,6 +62,10 @@ public final class DoubleMath {
 
   private static final Logger logger = Logger.getLogger(DoubleMath.class.getName());
 
+  private DoubleMath() {
+    // Prevent instantiation.
+  }
+
   /**
    * Compute a * b + c and return the result in a new array.
    *

@@ -2042,8 +2042,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * tensor[0] = 1/|r| <br> tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
    * <br>
    *
-   * <p>
-   *
    * @since 1.0
    */
   @Override

@@ -45,8 +45,6 @@ package ffx.numerics.fft;
  * double real = input[x*nextX + y*nextY + z*nextZ] <br> double imag = input[x*nextX + y*nextY +
  * z*nextZ + 1] <br> where <br> int nextX = 2 <br> int nextY = 2*nX <br> int nextZ = 2*nX*nY<br>
  *
- * <p>
- *
  * @author Michal J. Schnieders
  * @see Complex
  * @since 1.0
