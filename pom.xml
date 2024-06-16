@@ -1023,6 +1023,7 @@
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
+    <!-- Versions of commons-configuration beyond 2.10.1 are not compatible with the IJava ipynb -->
     <commons-configuration2.version>2.10.1</commons-configuration2.version>
     <commons-io.version>2.16.1</commons-io.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
@@ -1032,7 +1033,7 @@
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.13.0</compiler.version>
-    <dependency.version>3.6.1</dependency.version>
+    <dependency.version>3.7.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.2</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
@@ -1042,7 +1043,7 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>8.0.2</git-commit-id.version>
+    <git-commit-id.version>9.0.0</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>24.0.1</graal.version>
     <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
@@ -1069,10 +1070,10 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.22.0</pmd.version>
+    <pmd.version>3.23.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.5.0</project-info-reports.version>
+    <project-info-reports.version>3.6.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
@@ -1093,7 +1094,7 @@
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.2.5</surefire.version>
+    <surefire.version>3.3.0</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
