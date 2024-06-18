@@ -48,7 +48,17 @@ import ffx.numerics.Potential;
  */
 public interface CrystalPotential extends Potential {
 
+  /**
+   * Get the Crystal instance that specifies the periodic boundary conditions and symmetry.
+   *
+   * @return a Crystal instance.
+   */
   Crystal getCrystal();
 
+  /**
+   * Set the Crystal instance that specifies the periodic boundary conditions and symmetry.
+   *
+   * @param crystal a Crystal instance.
+   */
   void setCrystal(Crystal crystal);
 }

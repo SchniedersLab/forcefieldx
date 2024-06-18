@@ -52,12 +52,33 @@ import static org.apache.commons.math3.util.FastMath.random;
  * @since 1.0
  */
 public enum LatticeSystem {
+  /**
+   * Triclinic lattice system.
+   */
   TRICLINIC_LATTICE,
+  /**
+   * Monoclinic lattice system.
+   */
   MONOCLINIC_LATTICE,
+  /**
+   * Orthorhombic lattice system.
+   */
   ORTHORHOMBIC_LATTICE,
+  /**
+   * Tetragonal lattice system.
+   */
   TETRAGONAL_LATTICE,
+  /**
+   * Rhombohedral lattice system.
+   */
   RHOMBOHEDRAL_LATTICE,
+  /**
+   * Hexagonal lattice system.
+   */
   HEXAGONAL_LATTICE,
+  /**
+   * Cubic lattice system.
+   */
   CUBIC_LATTICE;
 
   /**
@@ -282,6 +303,8 @@ public enum LatticeSystem {
   /**
    * Returns the default c-axis for the lattice system.
    *
+   * @param aaxis the a-axis length.
+   * @param baxis the b-axis length.
    * @return default c-axis value
    */
   public double getDefaultCAxis(double aaxis, double baxis) {

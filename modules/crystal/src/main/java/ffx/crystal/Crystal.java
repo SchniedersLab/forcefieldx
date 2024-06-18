@@ -37,6 +37,18 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import ffx.utilities.FFXProperty;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
@@ -59,19 +71,6 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that describe the geometry
@@ -877,10 +876,20 @@ public class Crystal {
         && spaceGroup.number == crystal.spaceGroup.number);
   }
 
+  /**
+   * Are space group restrictions being checked.
+   *
+   * @return true if the restrictions are being checked.
+   */
   public boolean getCheckRestrictions() {
     return checkRestrictions;
   }
 
+  /**
+   * Set whether to check space group restrictions.
+   *
+   * @param checkRestrictions true to check restrictions.
+   */
   public void setCheckRestrictions(boolean checkRestrictions) {
     this.checkRestrictions = checkRestrictions;
   }
@@ -1109,11 +1118,18 @@ public class Crystal {
     return setCellVectors(newAi);
   }
 
-  public boolean randomParameters(double dens, double mass) {
+  /**
+   * Randomly set the unit cell vectors respecting the specified density.
+   *
+   * @param density The target density.
+   * @param mass    The total mass of the asymmetric unit.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean randomParameters(double density, double mass) {
     double[] params = latticeSystem.resetUnitCellParams();
     boolean succeed = changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
     if (succeed) {
-      setDensity(dens, mass);
+      setDensity(density, mass);
     }
     return succeed;
   }
@@ -1127,6 +1143,12 @@ public class Crystal {
     this.aperiodic = aperiodic;
   }
 
+  /**
+   * Set the unit cell parameters from unit cell vectors.
+   *
+   * @param cellVectors 3x3 matrix of unit cell vectors.
+   * @return The six unit cell parameters (a, b, c, alpha, beta, gamma).
+   */
   public double[] getCellParametersFromVectors(double[][] cellVectors) {
     // Update a-, b-, and c-axis lengths.
     double aa = length(cellVectors[0]);
@@ -1177,9 +1199,15 @@ public class Crystal {
     }
   }
 
-  public void setDensity(double dens, double mass) {
+  /**
+   * Set the unit cell vectors. Scale lattice lengths if necessary to hit the target volume.
+   *
+   * @param density The target density.
+   * @param mass    The total mass of the asymmetric unit.
+   */
+  public void setDensity(double density, double mass) {
     double currentDensity = getDensity(mass);
-    double scale = cbrt(currentDensity / dens);
+    double scale = cbrt(currentDensity / density);
     changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
     currentDensity = getDensity(mass);
     if (logger.isLoggable(Level.FINE)) {
