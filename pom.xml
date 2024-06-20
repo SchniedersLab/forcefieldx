@@ -109,6 +109,7 @@
             <author>true</author>
             <defaultAuthor>Michael J. Schnieders</defaultAuthor>
             <defaultSince>1.0</defaultSince>
+            <!-- doclint>all,-missing</doclint -->
           </configuration>
           <version>${javadoc.version}</version>
         </plugin>

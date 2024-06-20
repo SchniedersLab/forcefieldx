@@ -283,17 +283,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         + " \n"
         + commitSCM // Will contain its own spacing/newline, or be empty.
         + " \n"
-        + """
+        + """                
+                Please cite the following reference when using Force Field X:
+                
+                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove, 
+                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,  
+                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,  
+                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders, 
+                2024, Journal of Chemical Physics, 161 (1).
+                                
                 Copyright (c)  Michael J. Schnieders  2001-2024
-                Portions Copyright (c):
-                  Timothy D. Fenn      2009-2024
-                  Jacob M. Litman      2015-2024
-                  Rae A. Corrigan      2019-2024
-                  Guowei Qi            2019-2024
-                  Mallory R. Tollefson 2019-2024
-                  Aaron J. Nessler     2021-2024
-                  Andrew C. Thiel      2021-2024
-        
                 All Rights Reserved
         
                 Force Field X is distributed under the GPL v. 3 license
