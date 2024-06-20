@@ -473,6 +473,7 @@
             </goals>
             <configuration>
               <propertyName>jacoco.agent.ut.arg</propertyName>
+              <skip>${jacoco.skip}</skip>
             </configuration>
           </execution>
           <!-- attached to Maven test phase -->
@@ -1019,7 +1020,7 @@
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.4.0</checkstyle.version>
     <ciftools-java.version>6.0.0</ciftools-java.version>
-    <clean.version>3.3.2</clean.version>
+    <clean.version>3.4.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
@@ -1051,7 +1052,8 @@
     <guava.version>33.2.1-jre</guava.version>
     <install.version>3.1.2</install.version>
     <jacoco.version>0.8.12</jacoco.version>
-    <jar.version>3.4.1</jar.version>
+    <jacoco.skip>true</jacoco.skip>
+    <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <javaparser.version>3.26.0</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
@@ -1081,7 +1083,7 @@
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.0.1</release.version>
+    <release.version>3.1.0</release.version>
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.13</slf4j-nop.version>
