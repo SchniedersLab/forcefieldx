@@ -1880,7 +1880,7 @@ public class TitrationUtils {
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     CYStoCYD(8.55, -53.1, 0.0, -37.70, -6.75,44.247, -183.990, 226.710, 0.0, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, 20.92, 15.65, 18.83, 0.0, -64.317, 30.350, 0.0,  AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, 18.14, 27.2, 17.95,0.0, -62.931, 32.000, 0.0,AminoAcid3.HIS, AminoAcid3.HIE),
+    HIStoHIE(6.60, 37.44, 18.14, 29.4, 17.95,0.0, -62.931, 32.000, 0.0,AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, 0.0, 0.0, 0.0,0.0, -36.830, 34.325, 0.0,AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);

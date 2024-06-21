@@ -54,18 +54,7 @@ import edu.rit.pj.WorkerTeam;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.mc.MCMove;
-import ffx.algorithms.optimize.manybody.ManyBodyCell;
-import ffx.algorithms.optimize.manybody.DistanceMatrix;
-import ffx.algorithms.optimize.manybody.EliminatedRotamers;
-import ffx.algorithms.optimize.manybody.EnergyExpansion;
-import ffx.algorithms.optimize.manybody.EnergyRegion;
-import ffx.algorithms.optimize.manybody.FourBodyEnergyRegion;
-import ffx.algorithms.optimize.manybody.GoldsteinPairRegion;
-import ffx.algorithms.optimize.manybody.RotamerMatrixMC;
-import ffx.algorithms.optimize.manybody.RotamerMatrixMove;
-import ffx.algorithms.optimize.manybody.SelfEnergyRegion;
-import ffx.algorithms.optimize.manybody.ThreeBodyEnergyRegion;
-import ffx.algorithms.optimize.manybody.TwoBodyEnergyRegion;
+import ffx.algorithms.optimize.manybody.*;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
@@ -141,7 +130,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * MolecularAssembly to perform rotamer optimization on.
      */
-    protected final MolecularAssembly molecularAssembly;
+    protected MolecularAssembly molecularAssembly;
     /**
      * The Potential to evaluate during rotamer optimization.
      */
@@ -186,7 +175,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Parameters for box optimization are stored here.
      */
-    private final BoxOptimization boxOpt;
+    BoxOptimization boxOpt;
     /**
      * Represents the method called to obtain the directory corresponding to the current energy; will
      * be a simple return null for potential energy evaluations. While current energy calls will fill
