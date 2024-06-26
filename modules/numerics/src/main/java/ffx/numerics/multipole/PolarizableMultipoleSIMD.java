@@ -37,13 +37,18 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import jdk.incubator.vector.DoubleVector;
+
+import static jdk.incubator.vector.DoubleVector.SPECIES_PREFERRED;
+import static jdk.incubator.vector.DoubleVector.fromArray;
+
 /**
  * The PolarizableMultipole class defines a polarizable multipole.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class PolarizableMultipole {
+public class PolarizableMultipoleSIMD {
 
   private static final double oneThird = 1.0 / 3.0;
   private static final double twoThirds = 2.0 / 3.0;
@@ -51,95 +56,95 @@ public class PolarizableMultipole {
   /**
    * Partial charge.
    */
-  protected double q;
+  protected DoubleVector q;
   /**
    * Dipole x-component.
    */
-  protected double dx;
+  protected DoubleVector dx;
   /**
    * Dipole y-component.
    */
-  protected double dy;
+  protected DoubleVector dy;
   /**
    * Dipole z-component.
    */
-  protected double dz;
+  protected DoubleVector dz;
   /**
    * Quadrupole xx-component multiplied by 1/3.
    */
-  protected double qxx;
+  protected DoubleVector qxx;
   /**
    * Quadrupole yy-component multiplied by 1/3.
    */
-  protected double qyy;
+  protected DoubleVector qyy;
   /**
    * Quadrupole zz-component multiplied by 1/3.
    */
-  protected double qzz;
+  protected DoubleVector qzz;
   /**
    * Quadrupole xy-component multiplied by 2/3.
    */
-  protected double qxy;
+  protected DoubleVector qxy;
   /**
    * Quadrupole xz-component multiplied by 2/3.
    */
-  protected double qxz;
+  protected DoubleVector qxz;
   /**
    * Quadrupole xz-component multiplied by 2/3.
    */
-  protected double qyz;
+  protected DoubleVector qyz;
 
   /**
    * Induced dipole x-component.
    */
-  protected double ux;
+  protected DoubleVector ux;
   /**
    * Induced dipole y-component.
    */
-  protected double uy;
+  protected DoubleVector uy;
   /**
    * Induced dipole z-component.
    */
-  protected double uz;
+  protected DoubleVector uz;
   /**
    * Induced dipole chain rule x-component.
    */
-  protected double px;
+  protected DoubleVector px;
   /**
    * Induced dipole chain rule y-component.
    */
-  protected double py;
+  protected DoubleVector py;
   /**
    * Induced dipole chain rule z-component.
    */
-  protected double pz;
+  protected DoubleVector pz;
   /**
    * Averaged induced dipole + induced dipole chain-rule x-component: sx = 0.5 * (ux + px).
    */
-  protected double sx;
+  protected DoubleVector sx;
   /**
    * Averaged induced dipole + induced dipole chain-rule y-component: sy = 0.5 * (uy + py).
    */
-  protected double sy;
+  protected DoubleVector sy;
   /**
    * Averaged induced dipole + induced dipole chain-rule z-component: sz = 0.5 * (uz + pz).
    */
-  protected double sz;
+  protected DoubleVector sz;
 
   /**
    * PolarizableMultipole constructor with zero moments.
    */
-  public PolarizableMultipole() {
+  public PolarizableMultipoleSIMD() {
   }
 
   /**
    * PolarizableMultipole constructor.
    *
-   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
-   * @param u   Induced dipole u[ux, uy, uz]
-   * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
+   * @param Q   Multipoles Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipoles u[ux, uy, uz]
+   * @param uCR Induced dipole chain-rules uCR[ux, uy, uz]
    */
-  public PolarizableMultipole(double[] Q, double[] u, double[] uCR) {
+  public PolarizableMultipoleSIMD(double[][] Q, double[][] u, double[][] uCR) {
     setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
   }
@@ -150,11 +155,11 @@ public class PolarizableMultipole {
    * Note that the quadrupole trace components are multiplied by 1/3 and the
    * off-diagonal components are multiplied by 2/3.
    *
-   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
-   * @param u   Induced dipole u[ux, uy, uz]
-   * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
+   * @param Q   Multipoles Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipoles u[ux, uy, uz]
+   * @param uCR Induced dipole chain-rules uCR[ux, uy, uz]
    */
-  public void set(double[] Q, double[] u, double[] uCR) {
+  public void set(double[][] Q, double[][] u, double[][] uCR) {
     setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
   }
@@ -167,17 +172,17 @@ public class PolarizableMultipole {
    *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
    */
-  public final void setPermanentMultipole(double[] Q) {
-    q = Q[0];
-    dx = Q[1];
-    dy = Q[2];
-    dz = Q[3];
-    qxx = Q[4] * oneThird;
-    qyy = Q[5] * oneThird;
-    qzz = Q[6] * oneThird;
-    qxy = Q[7] * twoThirds;
-    qxz = Q[8] * twoThirds;
-    qyz = Q[9] * twoThirds;
+  public final void setPermanentMultipole(double[][] Q) {
+    q = fromArray(SPECIES_PREFERRED, Q[0], 0);
+    dx = fromArray(SPECIES_PREFERRED, Q[1], 0);
+    dy = fromArray(SPECIES_PREFERRED, Q[2], 0);
+    dz = fromArray(SPECIES_PREFERRED, Q[3], 0);
+    qxx = fromArray(SPECIES_PREFERRED, Q[4], 0).mul(oneThird);
+    qyy = fromArray(SPECIES_PREFERRED, Q[5], 0).mul(oneThird);
+    qzz = fromArray(SPECIES_PREFERRED, Q[6], 0).mul(oneThird);
+    qxy = fromArray(SPECIES_PREFERRED, Q[7], 0).mul(twoThirds);
+    qxz = fromArray(SPECIES_PREFERRED, Q[8], 0).mul(twoThirds);
+    qyz = fromArray(SPECIES_PREFERRED, Q[9], 0).mul(twoThirds);
   }
 
   /**
@@ -186,31 +191,16 @@ public class PolarizableMultipole {
    * @param u   Induced dipole u[ux, uy, uz]
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
-  public final void setInducedDipole(double[] u, double[] uCR) {
-    ux = u[0];
-    uy = u[1];
-    uz = u[2];
-    px = uCR[0];
-    py = uCR[1];
-    pz = uCR[2];
-    sx = 0.5 * (ux + px);
-    sy = 0.5 * (uy + py);
-    sz = 0.5 * (uz + pz);
-  }
-
-  /**
-   * Clear the induced dipoles.
-   */
-  public void clearInducedDipoles() {
-    ux = 0.0;
-    uy = 0.0;
-    uz = 0.0;
-    px = 0.0;
-    py = 0.0;
-    pz = 0.0;
-    sx = 0.0;
-    sy = 0.0;
-    sz = 0.0;
+  public final void setInducedDipole(double[][] u, double[][] uCR) {
+    ux = fromArray(SPECIES_PREFERRED, u[0], 0);
+    uy = fromArray(SPECIES_PREFERRED, u[1], 0);
+    uz = fromArray(SPECIES_PREFERRED, u[2], 0);
+    px = fromArray(SPECIES_PREFERRED, uCR[0], 0);
+    py = fromArray(SPECIES_PREFERRED, uCR[1], 0);
+    pz = fromArray(SPECIES_PREFERRED, uCR[2], 0);
+    sx = ux.add(px).mul(0.5);
+    sy = uy.add(py).mul(0.5);
+    sz = uz.add(pz).mul(0.5);
   }
 
   /**
@@ -222,9 +212,9 @@ public class PolarizableMultipole {
   public final void applyMasks(double scaleInduction, double scaleEnergy) {
     // [Ux, Uy, Uz] resulted from induction masking rules, and we now apply the energy mask.
     // [Px, Py, Pz] resulted from energy masking rules, and we now apply the induction mask.
-    sx = 0.5 * (ux * scaleEnergy + px * scaleInduction);
-    sy = 0.5 * (uy * scaleEnergy + py * scaleInduction);
-    sz = 0.5 * (uz * scaleEnergy + pz * scaleInduction);
+    sx = ux.mul(scaleEnergy).add(px.mul(scaleInduction)).mul(0.5);
+    sy = uy.mul(scaleEnergy).add(py.mul(scaleInduction)).mul(0.5);
+    sz = uz.mul(scaleEnergy).add(pz.mul(scaleInduction)).mul(0.5);
   }
 
 }

@@ -78,7 +78,7 @@ public class EwaldTensorQI extends CoulombTensorQI {
   public EwaldTensorQI(int order, double beta) {
     super(order);
     this.beta = beta;
-    operator = OPERATOR.SCREENED_COULOMB;
+    operator = Operator.SCREENED_COULOMB;
 
     // Auxiliary terms for screened Coulomb (Sagui et al. Eq. 2.28)
     ewaldSource = new double[o1];

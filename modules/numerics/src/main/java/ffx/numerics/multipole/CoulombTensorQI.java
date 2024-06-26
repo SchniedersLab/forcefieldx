@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static ffx.numerics.multipole.MultipoleUtilities.rlmn;
+import static ffx.numerics.multipole.MultipoleUtilities.term;
 import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -47,23 +49,26 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
- *     Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
- *     computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
- *     Ed. J. Leczszynski, World Scientifc, 1996. </a>
+ * Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
+ * computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
+ * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
 public class CoulombTensorQI extends MultipoleTensor {
 
   /**
    * Create a new CoulombTensorQI object.
+   *
    * @param order The tensor order.
    */
   public CoulombTensorQI(int order) {
-    super(COORDINATES.QI, order);
-    operator = OPERATOR.COULOMB;
+    super(CoordinateSystem.QI, order);
+    operator = Operator.COULOMB;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setR(double dx, double dy, double dz) {
     x = 0.0;
@@ -89,7 +94,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order1() {
     source(work);
@@ -99,7 +106,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R001 = z * term0001;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order2() {
     source(work);
@@ -114,7 +123,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R002 = fma(z, term0011, term0001);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order3() {
     source(work);
@@ -137,7 +148,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R201 = z * term2001;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order4() {
     source(work);
@@ -174,7 +187,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R202 = fma(z, term2011, term2001);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order5() {
     source(work);
@@ -231,7 +246,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R401 = z * term4001;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void order6() {
     source(work);
@@ -318,7 +335,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     R402 = fma(z, term4011, term4001);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -439,7 +458,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void chargeIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -478,7 +499,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order) {
@@ -517,7 +540,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -588,7 +613,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -708,7 +735,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void chargeKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -746,7 +775,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order) {
@@ -781,7 +812,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -851,7 +884,9 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected double Tlmnj(
       final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
@@ -887,7 +922,7 @@ public class CoulombTensorQI extends MultipoleTensor {
    * scale O(order^8). For order = 5, this approach is a factor of 10 slower than recursion that
    * stores intermediates.
    *
-   * @param r double[] vector between two sites. r[0] and r[1] must equal 0.0.
+   * @param r      double[] vector between two sites. r[0] and r[1] must equal 0.0.
    * @param tensor double[] length must be at least binomial(order + 3, 3).
    */
   @Override
@@ -932,14 +967,18 @@ public class CoulombTensorQI extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void recursion(final double[] r, final double[] tensor) {
     setR(r);
     recursion(tensor);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void recursion(final double[] tensor) {
     assert (x == 0.0 && y == 0.0);
@@ -1052,7 +1091,7 @@ public class CoulombTensorQI extends MultipoleTensor {
    * tensor[0] = 1/|r| <br> tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
    * <br>
    *
-   * @param r double[] vector between two sites.
+   * @param r      double[] vector between two sites.
    * @param tensor double[] length must be at least binomial(order + 3, 3).
    * @return Java code for the tensor recursion.
    * @since 1.0
@@ -1237,6 +1276,192 @@ public class CoulombTensorQI extends MultipoleTensor {
                   format(
                       "%s = fma(z, %s, %s);\n",
                       rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1)));
+            }
+          }
+        }
+      }
+    }
+    return sb.toString();
+  }
+
+  /**
+   * This function is a driver to collect elements of the Cartesian multipole tensor. Collecting all
+   * tensors scales slightly better than O(order^4).
+   *
+   * <p>For a multipole expansion truncated at quadrupole order, for example, up to order 5 is
+   * needed for energy gradients. The number of terms this requires is binomial(5 + 3, 3) or 8! / (5!
+   * * 3!), which is 56.
+   *
+   * <p>The packing of the tensor elements for order = 1<br>
+   * tensor[0] = 1/|r| <br> tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
+   * <br>
+   *
+   * @param r      double[] vector between two sites.
+   * @param tensor double[] length must be at least binomial(order + 3, 3).
+   * @return Java code for the tensor recursion.
+   * @since 1.0
+   */
+  protected String codeVectorTensorRecursion(final double[] r, final double[] tensor) {
+    setR(r);
+    assert (x == 0.0 && y == 0.0);
+    source(work);
+    StringBuilder sb = new StringBuilder();
+    tensor[0] = work[0];
+    if (work[0] > 0) {
+      sb.append(format("%s = %s;\n", rlmn(0, 0, 0), term(0, 0, 0, 0)));
+    }
+    // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
+    // Any (d/dx) term can be formed as
+    // Tl00j = x * T(l-1)00(j+1) + (l-1) * T(l-2)00(j+1)
+    // All intermediate terms are indexed as l*il + m*im + n*in + j;
+    // Store the l=1 tensor T100 (d/dx)
+    // Starting the loop at l=2 avoids an if statement.
+    double current;
+    double previous = work[1];
+    tensor[ti(1, 0, 0)] = 0.0;
+    for (int l = 2; l < o1; l++) {
+      // Initial condition for the inner loop is formation of T100(l-1).
+      // Starting the inner loop at a=1 avoids an if statement.
+      // T100(l-1) = 0.0 * T000(l)
+      current = 0.0;
+      int iw = il + (l - 1);
+      work[iw] = current;
+      // sb.append(format("double %s = 0.0;\n", term(1, 0, 0, l - 1)));
+      for (int a = 1; a < l - 1; a++) {
+        // T200(l-2) = 0.0 * T100(l-1) + (2 - 1) * T000(l-1)
+        // T300(l-3) = 0.0 * T200(l-2) + (3 - 1) * T100(l-2)
+        // ...
+        // T(l-1)001 = 0.0 * T(l-2)002 + (l - 2) * T(l-3)002
+        // iw = (a - 1) * il + (l - a)
+        current = a * work[iw - il];
+        iw += il - 1;
+        // iw = (a + 1) * il + (l - a - 1)
+        work[iw] = current;
+        if (current != 0) {
+          if (a > 2) {
+            sb.append(format("DoubleVector %s = %s.mul(%d);\n",
+                term(a + 1, 0, 0, l - a - 1), term(a - 1, 0, 0, l - a), a));
+          } else {
+            sb.append(format("DoubleVector %s = %s;\n", term(a + 1, 0, 0, l - a - 1), term(a - 1, 0, 0, l - a)));
+          }
+        }
+      }
+      // Store the Tl00 tensor (d/dx)^l
+      // Tl00 = 0.0 * T(l-1)001 + (l - 1) * T(l-2)001
+      int index = ti(l, 0, 0);
+      tensor[index] = (l - 1) * previous;
+      previous = current;
+      if (tensor[index] != 0) {
+        if (l > 2) {
+          sb.append(format("%s = %s.mul(%d);\n", rlmn(l, 0, 0), term(l - 2, 0, 0, 1), (l - 1)));
+        } else {
+          sb.append(format("%s = %s;\n", rlmn(l, 0, 0), term(0, 0, 0, 1)));
+        }
+      }
+    }
+    // Find (d/dx)^l * (d/dy)^m for l+m = 1..order (m > 0, n = 0)
+    // Any (d/dy) term can be formed as:
+    // Tlm0j = y * Tl(m-1)00(j+1) + (m-1) * Tl(m-2)00(j+1)
+    for (int l = 0; l < order; l++) {
+      // Store the m=1 tensor (d/dx)^l *(d/dy)
+      // Tl10 = y * Tl001
+      previous = work[l * il + 1];
+      tensor[ti(l, 1, 0)] = 0.0;
+      for (int m = 2; m + l < o1; m++) {
+        // Tl10(m-1) = y * Tl00m;
+        int iw = l * il + m;
+        current = 0.0;
+        iw += im - 1;
+        work[iw] = current;
+        for (int a = 1; a < m - 1; a++) {
+          // Tl20(m-2) = 0.0 * Tl10(m-1) + (2 - 1) * Tl00(m-1)
+          // Tl30(m-3) = 0.0 * Tl20(m-2) + (3 - 1) * Tl10(m-2)
+          // ...
+          // Tl(m-1)01 = 0.0 * Tl(m-2)02 + (m - 2) * Tl(m-3)02
+          current = a * work[iw - im];
+          iw += im - 1;
+          work[iw] = current;
+          if (current != 0) {
+            if (a > 1) {
+              sb.append(format("DoubleVector %s = %s.mul(%d);\n",
+                  term(l, a + 1, 0, m - a - 1), term(l, a - 1, 0, m - a), a));
+            } else {
+              sb.append(format("DoubleVector %s = %s;\n",
+                  term(l, a + 1, 0, m - a - 1), term(l, 0, 0, m - a)));
+            }
+          }
+        }
+        // Store the tensor (d/dx)^l * (d/dy)^m
+        // Tlm0 = y * Tl(m-1)01 + (m - 1) * Tl(m-2)01
+        int index = ti(l, m, 0);
+        tensor[index] = (m - 1) * previous;
+        previous = current;
+        if (tensor[index] != 0) {
+          if (m > 2) {
+            sb.append(format("%s = %s.mul(%d);\n", rlmn(l, m, 0), term(l, m - 2, 0, 1), (m - 1)));
+          } else {
+            sb.append(format("%s = %s;\n", rlmn(l, m, 0), term(l, m - 2, 0, 1)));
+          }
+        }
+      }
+    }
+    // Find (d/dx)^l * (d/dy)^m * (d/dz)^n for l+m+n = 1..order (n > 0)
+    // Any (d/dz) term can be formed as:
+    // Tlmnj = z * Tlm(n-1)(j+1) + (n-1) * Tlm(n-2)(j+1)
+    for (int l = 0; l < order; l++) {
+      for (int m = 0; m + l < order; m++) {
+        // Store the n=1 tensor (d/dx)^l *(d/dy)^m * (d/dz)
+        // Tlmn = z * Tlm01
+        final int lm = m + l;
+        final int lilmim = l * il + m * im;
+        previous = work[lilmim + 1];
+        int index = ti(l, m, 1);
+        tensor[index] = z * previous;
+        if (tensor[index] != 0) {
+          sb.append(format("%s = z.mul(%s);\n", rlmn(l, m, 1), term(l, m, 0, 1)));
+        }
+        for (int n = 2; lm + n < o1; n++) {
+          // Tlm1(n-1) = z * Tlm0n;
+          int iw = lilmim + n;
+          current = z * work[iw];
+          iw += in - 1;
+          work[iw] = current;
+          if (current != 0) {
+            sb.append(format("DoubleVector %s = z.mul(%s);\n", term(l, m, 1, n - 1), term(l, m, 0, n)));
+          }
+          final int n1 = n - 1;
+          for (int a = 1; a < n1; a++) {
+            // Tlm2(n-2) = z * Tlm1(n-1) + (2 - 1) * T1m0(n-1)
+            // Tlm3(n-3) = z * Tlm2(n-2) + (3 - 1) * Tlm1(n-2)
+            // ...
+            // Tlm(n-1)1 = z * Tlm(n-2)2 + (n - 2) * Tlm(n-3)2
+            current = z * current + a * work[iw - in];
+            iw += in - 1;
+            work[iw] = current;
+            if (current != 0) {
+              if (a > 1) {
+                sb.append(format("DoubleVector %s = z.fma(%s, %s.mul(%d));\n",
+                    term(l, m, a + 1, n - a - 1), term(l, m, a, n - a),
+                    term(l, m, a - 1, n - a), a));
+              } else {
+                sb.append(format("DoubleVector %s = z.fma(%s, %s);\n",
+                    term(l, m, a + 1, n - a - 1), term(l, m, a, n - a),
+                    term(l, m, 0, n - a)));
+              }
+            }
+          }
+          // Store the tensor (d/dx)^l * (d/dy)^m * (d/dz)^n
+          // Tlmn = z * Tlm(n-1)1 + (n - 1) * Tlm(n-2)1
+          index = ti(l, m, n);
+          tensor[index] = z * current + n1 * previous;
+          previous = current;
+          if (tensor[index] != 0) {
+            if (n > 2) {
+              sb.append(format("%s = z.fma(%s, %s.mul(%d));\n",
+                  rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1), (n - 1)));
+            } else {
+              sb.append(format("%s = z.fma(%s, %s);\n",
+                  rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1)));
             }
           }
         }

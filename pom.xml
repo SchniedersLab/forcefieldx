@@ -40,6 +40,8 @@
             <compilerArgs>
               <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
               <arg>-proc:none</arg>
+              <arg>--add-modules</arg>
+              <arg>jdk.incubator.vector</arg>
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
@@ -1035,7 +1037,7 @@
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.13.0</compiler.version>
-    <dependency.version>3.7.0</dependency.version>
+    <dependency.version>3.7.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.2</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>

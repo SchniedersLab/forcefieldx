@@ -70,7 +70,6 @@ import static ffx.numerics.multipole.GKTensorGlobalTest.watPolDirect;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPolEnergy;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.math.DoubleMath;
 import ffx.utilities.FFXTest;
 import org.junit.Test;
 
@@ -544,7 +543,7 @@ public class GKTensorQITest extends FFXTest {
     GKTensorQI gkTensorQI = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
 
     gkTensorQI.setR(r);
-    int tensorCount = MultipoleTensor.tensorCount(order);
+    int tensorCount = MultipoleUtilities.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorQI.noStorageRecursion(tensor);
     double[] tensorsPz = new double[tensorCount];
@@ -594,7 +593,7 @@ public class GKTensorQITest extends FFXTest {
 
     GKTensorQI gkTensorQI = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
     gkTensorQI.setR(r);
-    int tensorCount = MultipoleTensor.tensorCount(order);
+    int tensorCount = MultipoleUtilities.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorQI.noStorageRecursion(tensor);
     double[] tensorsPz = new double[tensorCount];

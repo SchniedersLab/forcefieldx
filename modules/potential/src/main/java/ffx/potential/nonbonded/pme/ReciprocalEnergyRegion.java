@@ -66,7 +66,7 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.multipole.MultipoleTensor;
+import ffx.numerics.multipole.MultipoleUtilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ReciprocalSpace;
@@ -84,7 +84,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private static final Logger logger = Logger.getLogger(ReciprocalEnergyRegion.class.getName());
 
   private static final double SQRT_PI = sqrt(Math.PI);
-  private static final int tensorCount = MultipoleTensor.tensorCount(3);
+  private static final int tensorCount = MultipoleUtilities.tensorCount(3);
   private final double electric;
   private final double aewald1;
   private final double aewald2;

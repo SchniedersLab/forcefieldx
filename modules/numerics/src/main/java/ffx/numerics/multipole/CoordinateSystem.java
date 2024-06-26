@@ -37,17 +37,16 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
-
-/** MultipoleTestSuite collects all Unit tests from the ffx.numerics.multipole package. */
-@RunWith(Suite.class)
-@SuiteClasses({
-    GKTensorGlobalTest.class,
-    GKTensorQITest.class,
-    MultipoleTensorGlobalTest.class,
-    MultipoleTensorTest.class,
-    MultipoleTensorQITest.class,
-})
-public class MultipoleTestSuite {}
+/**
+ * Global and Quasi-Internal (QI) coordinate systems are supported.
+ */
+public enum CoordinateSystem {
+  /**
+   * Global coordinate system.
+   */
+  GLOBAL,
+  /**
+   * Quasi-internal coordinate system.
+   */
+  QI
+}

@@ -40,8 +40,9 @@ package ffx.numerics.multipole;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static ffx.numerics.math.ScalarMath.binomial;
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static ffx.numerics.multipole.MultipoleUtilities.term;
+import static ffx.numerics.multipole.MultipoleUtilities.tlmn;
 import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -95,7 +96,7 @@ public abstract class MultipoleTensor {
   /**
    * The OPERATOR in use.
    */
-  protected OPERATOR operator;
+  protected Operator operator;
 
   /**
    * These are the "source" terms for the recursion for the Coulomb operator (1/R).
@@ -117,7 +118,7 @@ public abstract class MultipoleTensor {
   /**
    * The coordinate system in use (global or QI).
    */
-  protected final COORDINATES coordinates;
+  protected final CoordinateSystem coordinates;
 
   /**
    * Separation distance.
@@ -268,9 +269,9 @@ public abstract class MultipoleTensor {
    * Constructor for MultipoleTensor.
    *
    * @param order       The order of the tensor.
-   * @param coordinates a {@link MultipoleTensor.COORDINATES} object.
+   * @param coordinates a {@link CoordinateSystem} object.
    */
-  public MultipoleTensor(COORDINATES coordinates, int order) {
+  public MultipoleTensor(CoordinateSystem coordinates, int order) {
     assert (order > 0);
     o1 = order + 1;
     il = o1;
@@ -281,7 +282,7 @@ public abstract class MultipoleTensor {
 
     this.order = order;
     this.coordinates = coordinates;
-    this.operator = OPERATOR.COULOMB;
+    this.operator = Operator.COULOMB;
 
     // Auxiliary terms for Coulomb and Thole Screening.
     coulombSource = new double[o1];
@@ -296,96 +297,96 @@ public abstract class MultipoleTensor {
 
     T000 = new double[order + 1];
     // l + m + n = 0 (1)
-    t000 = ti(0, 0, 0, order);
+    t000 = MultipoleUtilities.ti(0, 0, 0, order);
     // l + m + n = 1 (3)   4
-    t100 = ti(1, 0, 0, order);
-    t010 = ti(0, 1, 0, order);
-    t001 = ti(0, 0, 1, order);
+    t100 = MultipoleUtilities.ti(1, 0, 0, order);
+    t010 = MultipoleUtilities.ti(0, 1, 0, order);
+    t001 = MultipoleUtilities.ti(0, 0, 1, order);
     // l + m + n = 2 (6)  10
-    t200 = ti(2, 0, 0, order);
-    t020 = ti(0, 2, 0, order);
-    t002 = ti(0, 0, 2, order);
-    t110 = ti(1, 1, 0, order);
-    t101 = ti(1, 0, 1, order);
-    t011 = ti(0, 1, 1, order);
+    t200 = MultipoleUtilities.ti(2, 0, 0, order);
+    t020 = MultipoleUtilities.ti(0, 2, 0, order);
+    t002 = MultipoleUtilities.ti(0, 0, 2, order);
+    t110 = MultipoleUtilities.ti(1, 1, 0, order);
+    t101 = MultipoleUtilities.ti(1, 0, 1, order);
+    t011 = MultipoleUtilities.ti(0, 1, 1, order);
     // l + m + n = 3 (10) 20
-    t300 = ti(3, 0, 0, order);
-    t030 = ti(0, 3, 0, order);
-    t003 = ti(0, 0, 3, order);
-    t210 = ti(2, 1, 0, order);
-    t201 = ti(2, 0, 1, order);
-    t120 = ti(1, 2, 0, order);
-    t021 = ti(0, 2, 1, order);
-    t102 = ti(1, 0, 2, order);
-    t012 = ti(0, 1, 2, order);
-    t111 = ti(1, 1, 1, order);
+    t300 = MultipoleUtilities.ti(3, 0, 0, order);
+    t030 = MultipoleUtilities.ti(0, 3, 0, order);
+    t003 = MultipoleUtilities.ti(0, 0, 3, order);
+    t210 = MultipoleUtilities.ti(2, 1, 0, order);
+    t201 = MultipoleUtilities.ti(2, 0, 1, order);
+    t120 = MultipoleUtilities.ti(1, 2, 0, order);
+    t021 = MultipoleUtilities.ti(0, 2, 1, order);
+    t102 = MultipoleUtilities.ti(1, 0, 2, order);
+    t012 = MultipoleUtilities.ti(0, 1, 2, order);
+    t111 = MultipoleUtilities.ti(1, 1, 1, order);
     // l + m + n = 4 (15) 35
-    t400 = ti(4, 0, 0, order);
-    t040 = ti(0, 4, 0, order);
-    t004 = ti(0, 0, 4, order);
-    t310 = ti(3, 1, 0, order);
-    t301 = ti(3, 0, 1, order);
-    t130 = ti(1, 3, 0, order);
-    t031 = ti(0, 3, 1, order);
-    t103 = ti(1, 0, 3, order);
-    t013 = ti(0, 1, 3, order);
-    t220 = ti(2, 2, 0, order);
-    t202 = ti(2, 0, 2, order);
-    t022 = ti(0, 2, 2, order);
-    t211 = ti(2, 1, 1, order);
-    t121 = ti(1, 2, 1, order);
-    t112 = ti(1, 1, 2, order);
+    t400 = MultipoleUtilities.ti(4, 0, 0, order);
+    t040 = MultipoleUtilities.ti(0, 4, 0, order);
+    t004 = MultipoleUtilities.ti(0, 0, 4, order);
+    t310 = MultipoleUtilities.ti(3, 1, 0, order);
+    t301 = MultipoleUtilities.ti(3, 0, 1, order);
+    t130 = MultipoleUtilities.ti(1, 3, 0, order);
+    t031 = MultipoleUtilities.ti(0, 3, 1, order);
+    t103 = MultipoleUtilities.ti(1, 0, 3, order);
+    t013 = MultipoleUtilities.ti(0, 1, 3, order);
+    t220 = MultipoleUtilities.ti(2, 2, 0, order);
+    t202 = MultipoleUtilities.ti(2, 0, 2, order);
+    t022 = MultipoleUtilities.ti(0, 2, 2, order);
+    t211 = MultipoleUtilities.ti(2, 1, 1, order);
+    t121 = MultipoleUtilities.ti(1, 2, 1, order);
+    t112 = MultipoleUtilities.ti(1, 1, 2, order);
     // l + m + n = 5 (21) 56
-    t500 = ti(5, 0, 0, order);
-    t050 = ti(0, 5, 0, order);
-    t005 = ti(0, 0, 5, order);
-    t410 = ti(4, 1, 0, order);
-    t401 = ti(4, 0, 1, order);
-    t140 = ti(1, 4, 0, order);
-    t041 = ti(0, 4, 1, order);
-    t104 = ti(1, 0, 4, order);
-    t014 = ti(0, 1, 4, order);
-    t320 = ti(3, 2, 0, order);
-    t302 = ti(3, 0, 2, order);
-    t230 = ti(2, 3, 0, order);
-    t032 = ti(0, 3, 2, order);
-    t203 = ti(2, 0, 3, order);
-    t023 = ti(0, 2, 3, order);
-    t311 = ti(3, 1, 1, order);
-    t131 = ti(1, 3, 1, order);
-    t113 = ti(1, 1, 3, order);
-    t221 = ti(2, 2, 1, order);
-    t212 = ti(2, 1, 2, order);
-    t122 = ti(1, 2, 2, order);
+    t500 = MultipoleUtilities.ti(5, 0, 0, order);
+    t050 = MultipoleUtilities.ti(0, 5, 0, order);
+    t005 = MultipoleUtilities.ti(0, 0, 5, order);
+    t410 = MultipoleUtilities.ti(4, 1, 0, order);
+    t401 = MultipoleUtilities.ti(4, 0, 1, order);
+    t140 = MultipoleUtilities.ti(1, 4, 0, order);
+    t041 = MultipoleUtilities.ti(0, 4, 1, order);
+    t104 = MultipoleUtilities.ti(1, 0, 4, order);
+    t014 = MultipoleUtilities.ti(0, 1, 4, order);
+    t320 = MultipoleUtilities.ti(3, 2, 0, order);
+    t302 = MultipoleUtilities.ti(3, 0, 2, order);
+    t230 = MultipoleUtilities.ti(2, 3, 0, order);
+    t032 = MultipoleUtilities.ti(0, 3, 2, order);
+    t203 = MultipoleUtilities.ti(2, 0, 3, order);
+    t023 = MultipoleUtilities.ti(0, 2, 3, order);
+    t311 = MultipoleUtilities.ti(3, 1, 1, order);
+    t131 = MultipoleUtilities.ti(1, 3, 1, order);
+    t113 = MultipoleUtilities.ti(1, 1, 3, order);
+    t221 = MultipoleUtilities.ti(2, 2, 1, order);
+    t212 = MultipoleUtilities.ti(2, 1, 2, order);
+    t122 = MultipoleUtilities.ti(1, 2, 2, order);
     // l + m + n = 6 (28) 84
-    t600 = ti(6, 0, 0, order);
-    t060 = ti(0, 6, 0, order);
-    t006 = ti(0, 0, 6, order);
-    t510 = ti(5, 1, 0, order);
-    t501 = ti(5, 0, 1, order);
-    t150 = ti(1, 5, 0, order);
-    t051 = ti(0, 5, 1, order);
-    t105 = ti(1, 0, 5, order);
-    t015 = ti(0, 1, 5, order);
-    t420 = ti(4, 2, 0, order);
-    t402 = ti(4, 0, 2, order);
-    t240 = ti(2, 4, 0, order);
-    t042 = ti(0, 4, 2, order);
-    t204 = ti(2, 0, 4, order);
-    t024 = ti(0, 2, 4, order);
-    t411 = ti(4, 1, 1, order);
-    t141 = ti(1, 4, 1, order);
-    t114 = ti(1, 1, 4, order);
-    t330 = ti(3, 3, 0, order);
-    t303 = ti(3, 0, 3, order);
-    t033 = ti(0, 3, 3, order);
-    t321 = ti(3, 2, 1, order);
-    t231 = ti(2, 3, 1, order);
-    t213 = ti(2, 1, 3, order);
-    t312 = ti(3, 1, 2, order);
-    t132 = ti(1, 3, 2, order);
-    t123 = ti(1, 2, 3, order);
-    t222 = ti(2, 2, 2, order);
+    t600 = MultipoleUtilities.ti(6, 0, 0, order);
+    t060 = MultipoleUtilities.ti(0, 6, 0, order);
+    t006 = MultipoleUtilities.ti(0, 0, 6, order);
+    t510 = MultipoleUtilities.ti(5, 1, 0, order);
+    t501 = MultipoleUtilities.ti(5, 0, 1, order);
+    t150 = MultipoleUtilities.ti(1, 5, 0, order);
+    t051 = MultipoleUtilities.ti(0, 5, 1, order);
+    t105 = MultipoleUtilities.ti(1, 0, 5, order);
+    t015 = MultipoleUtilities.ti(0, 1, 5, order);
+    t420 = MultipoleUtilities.ti(4, 2, 0, order);
+    t402 = MultipoleUtilities.ti(4, 0, 2, order);
+    t240 = MultipoleUtilities.ti(2, 4, 0, order);
+    t042 = MultipoleUtilities.ti(0, 4, 2, order);
+    t204 = MultipoleUtilities.ti(2, 0, 4, order);
+    t024 = MultipoleUtilities.ti(0, 2, 4, order);
+    t411 = MultipoleUtilities.ti(4, 1, 1, order);
+    t141 = MultipoleUtilities.ti(1, 4, 1, order);
+    t114 = MultipoleUtilities.ti(1, 1, 4, order);
+    t330 = MultipoleUtilities.ti(3, 3, 0, order);
+    t303 = MultipoleUtilities.ti(3, 0, 3, order);
+    t033 = MultipoleUtilities.ti(0, 3, 3, order);
+    t321 = MultipoleUtilities.ti(3, 2, 1, order);
+    t231 = MultipoleUtilities.ti(2, 3, 1, order);
+    t213 = MultipoleUtilities.ti(2, 1, 3, order);
+    t312 = MultipoleUtilities.ti(3, 1, 2, order);
+    t132 = MultipoleUtilities.ti(1, 3, 2, order);
+    t123 = MultipoleUtilities.ti(1, 2, 3, order);
+    t222 = MultipoleUtilities.ti(2, 2, 2, order);
   }
 
   /**
@@ -666,7 +667,7 @@ public abstract class MultipoleTensor {
    * @return int in the range (0..binomial(order + 3, 3) - 1)
    */
   protected final int ti(int dx, int dy, int dz) {
-    return ti(dx, dy, dz, order);
+    return MultipoleUtilities.ti(dx, dy, dz, order);
   }
 
   /**
@@ -735,6 +736,166 @@ public abstract class MultipoleTensor {
    * @since 1.0
    */
   protected abstract String codeTensorRecursion(final double[] r, final double[] tensor);
+
+  /**
+   * Contract multipole moments with their respective electrostatic potential derivatives.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param T  array of electrostatic potential and partial derivatives
+   * @param l  apply (d/dx)^l to the potential
+   * @param m  apply (d/dy)^l to the potential
+   * @param n  apply (d/dz)^l to the potential
+   * @param sb the code will be appended to the StringBuilder.
+   * @return the contracted interaction.
+   */
+  private double codeContractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
+                                        StringBuilder sb) {
+    double total = 0.0;
+    String name = term(l, m, n);
+    sb.append(format("double %s = 0.0;\n", name));
+    StringBuilder sb1 = new StringBuilder();
+    double term = mI.q * T[ti(l, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, tlmn(l, m, n), name));
+    }
+    term = mI.dx * T[ti(l + 1, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+    }
+    term = mI.dy * T[ti(l, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+    }
+    term = mI.dz * T[ti(l, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+    }
+    StringBuilder traceSB = new StringBuilder();
+    double trace = 0.0;
+    term = mI.qxx * T[ti(l + 2, m, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+    }
+    term = mI.qyy * T[ti(l, m + 2, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+    }
+    term = mI.qzz * T[ti(l, m, n + 2)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+    }
+    total += trace;
+    if (total != 0) {
+      sb.append(sb1);
+      if (trace != 0) {
+        sb.append(traceSB);
+      }
+    }
+    term = mI.qxy * T[ti(l + 1, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+    }
+    term = mI.qxz * T[ti(l + 1, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+    }
+    term = mI.qyz * T[ti(l, m + 1, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+    }
+    return total;
+  }
+
+  /**
+   * Contract multipole moments with their respective electrostatic potential derivatives
+   * using SIMD instructions.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param T  array of electrostatic potential and partial derivatives
+   * @param l  apply (d/dx)^l to the potential
+   * @param m  apply (d/dy)^l to the potential
+   * @param n  apply (d/dz)^l to the potential
+   * @param sb the code will be appended to the StringBuilder.
+   * @return the contracted interaction.
+   */
+  private double codeContractMultipoleISIMD(PolarizableMultipole mI, double[] T, int l, int m, int n,
+                                            StringBuilder sb) {
+    double total = 0.0;
+    String name = term(l, m, n);
+    StringBuilder sb1 = new StringBuilder();
+    double term = mI.q * T[ti(l, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("DoubleVector %s = mI.q.mul(R%s);\n", name, tlmn(l, m, n)));
+    } else {
+      sb.append(format("DoubleVector %s = DoubleVector.broadcast(R.species(), 0.0);\n", name));
+    }
+    term = mI.dx * T[ti(l + 1, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mI.dx.fma(R%s.neg(), %s);\n", name, tlmn(l + 1, m, n), name));
+    }
+    term = mI.dy * T[ti(l, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mI.dy.fma(R%s.neg(), %s);\n", name, tlmn(l, m + 1, n), name));
+    }
+    term = mI.dz * T[ti(l, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mI.dz.fma(R%s.neg(), %s);\n", name, tlmn(l, m, n + 1), name));
+    }
+    StringBuilder traceSB = new StringBuilder();
+    double trace = 0.0;
+    term = mI.qxx * T[ti(l + 2, m, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mI.qxx.fma(R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+    }
+    term = mI.qyy * T[ti(l, m + 2, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mI.qyy.fma(R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+    }
+    term = mI.qzz * T[ti(l, m, n + 2)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mI.qzz.fma(R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+    }
+    total += trace;
+    if (total != 0) {
+      sb.append(sb1);
+      if (trace != 0) {
+        sb.append(traceSB);
+      }
+    }
+    term = mI.qxy * T[ti(l + 1, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mI.qxy.fma(R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+    }
+    term = mI.qxz * T[ti(l + 1, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mI.qxz.fma(R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+    }
+    term = mI.qyz * T[ti(l, m + 1, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mI.qyz.fma(R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+    }
+    return total;
+  }
 
   /**
    * Contract multipole moments with their respective electrostatic potential derivatives.
@@ -816,6 +977,87 @@ public abstract class MultipoleTensor {
   }
 
   /**
+   * Contract multipole moments with their respective electrostatic potential derivatives
+   * using SIMD instructions.
+   *
+   * @param mK PolarizableMultipole at site K.
+   * @param T  array of electrostatic potential and partial derivatives
+   * @param l  apply (d/dx)^l to the potential
+   * @param m  apply (d/dy)^l to the potential
+   * @param n  apply (d/dz)^l to the potential
+   * @param sb the code will be appended to the StringBuilder.
+   * @return the contracted interaction.
+   */
+  private double codeContractMultipoleKSIMD(PolarizableMultipole mK, double[] T, int l, int m, int n,
+                                            StringBuilder sb) {
+    double total = 0.0;
+    String name = term(l, m, n);
+    StringBuilder sb1 = new StringBuilder();
+    double term = mK.q * T[ti(l, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("DoubleVector %s = mK.q.mul(R%s);\n", name, tlmn(l, m, n)));
+    } else {
+      sb.append(format("DoubleVector %s = DoubleVector.broadcast(R.species(), 0.0);\n", name));
+    }
+    term = mK.dx * T[ti(l + 1, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mK.dx.fma(R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+    }
+    term = mK.dy * T[ti(l, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mK.dy.fma(R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+    }
+    term = mK.dz * T[ti(l, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = mK.dz.fma(R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+    }
+    StringBuilder traceSB = new StringBuilder();
+    double trace = 0.0;
+    term = mK.qxx * T[ti(l + 2, m, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mK.qxx.fma(R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+    }
+    term = mK.qyy * T[ti(l, m + 2, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mK.qyy.fma(R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+    }
+    term = mK.qzz * T[ti(l, m, n + 2)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = mK.qzz.fma(R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+    }
+    total += trace;
+    if (total != 0) {
+      sb.append(sb1);
+      if (trace != 0) {
+        sb.append(traceSB);
+      }
+    }
+    term = mK.qxy * T[ti(l + 1, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mK.qxy.fma(R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+    }
+    term = mK.qxz * T[ti(l + 1, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mK.qxz.fma(R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+    }
+    term = mK.qyz * T[ti(l, m + 1, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = mK.qyz.fma(R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+    }
+    return total;
+  }
+
+  /**
    * Collect the potential its partial derivatives at K due to multipole moments at the origin.
    *
    * @param mI PolarizableMultipole at site I.
@@ -825,8 +1067,7 @@ public abstract class MultipoleTensor {
    * @param n  apply (d/dz)^l to the potential.
    * @param sb Append the code to the StringBuilder.
    */
-  protected void codePotentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
-                                         StringBuilder sb) {
+  protected void codePotentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n, StringBuilder sb) {
     E000 = codeContractMultipoleI(mI, T, l, m, n, sb);
     if (E000 != 0) {
       sb.append(format("E000 = %s;\n", term(l, m, n)));
@@ -913,6 +1154,110 @@ public abstract class MultipoleTensor {
   }
 
   /**
+   * Collect the potential its partial derivatives at K due to multipole moments at the origin
+   * using SIMD instructions.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param T  Electrostatic potential and partial derivatives.
+   * @param l  apply (d/dx)^l to the potential.
+   * @param m  apply (d/dy)^l to the potential.
+   * @param n  apply (d/dz)^l to the potential.
+   * @param sb Append the code to the StringBuilder.
+   */
+  protected void codePotentialMultipoleISIMD(PolarizableMultipole mI, double[] T, int l, int m, int n, StringBuilder sb) {
+    sb.append("switch (order) {\n");
+    sb.append("default:\n");
+    sb.append("case 3:\n");
+    // Order 3
+    E300 = codeContractMultipoleISIMD(mI, T, l + 3, m, n, sb);
+    if (E300 != 0) {
+      sb.append(format("\tE300 = %s;\n", term(l + 3, m, n)));
+    }
+    E030 = codeContractMultipoleISIMD(mI, T, l, m + 3, n, sb);
+    if (E030 != 0) {
+      sb.append(format("\tE030 = %s;\n", term(l, m + 3, n)));
+    }
+    E003 = codeContractMultipoleISIMD(mI, T, l, m, n + 3, sb);
+    if (E003 != 0) {
+      sb.append(format("\tE003 = %s;\n", term(l, m, n + 3)));
+    }
+    E210 = codeContractMultipoleISIMD(mI, T, l + 2, m + 1, n, sb);
+    if (E210 != 0) {
+      sb.append(format("\tE210 = %s;\n", term(l + 2, m + 1, n)));
+    }
+    E201 = codeContractMultipoleISIMD(mI, T, l + 2, m, n + 1, sb);
+    if (E201 != 0) {
+      sb.append(format("\tE201 = %s;\n", term(l + 2, m, n + 1)));
+    }
+    E120 = codeContractMultipoleISIMD(mI, T, l + 1, m + 2, n, sb);
+    if (E120 != 0) {
+      sb.append(format("\tE120 = %s;\n", term(l + 1, m + 2, n)));
+    }
+    E021 = codeContractMultipoleISIMD(mI, T, l, m + 2, n + 1, sb);
+    if (E021 != 0) {
+      sb.append(format("\tE021 = %s;\n", term(l, m + 2, n + 1)));
+    }
+    E102 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 2, sb);
+    if (E102 != 0) {
+      sb.append(format("\tE102 = %s;\n", term(l + 1, m, n + 2)));
+    }
+    E012 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 2, sb);
+    if (E012 != 0) {
+      sb.append(format("\tE012 = %s;\n", term(l, m + 1, n + 2)));
+    }
+    E111 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n + 1, sb);
+    if (E111 != 0) {
+      sb.append(format("\tE111 = %s;\n", term(l + 1, m + 1, n + 1)));
+    }
+    sb.append("case 2:\n");
+    // Order 2
+    E200 = codeContractMultipoleISIMD(mI, T, l + 2, m, n, sb);
+    if (E200 != 0) {
+      sb.append(format("\tE200 = %s;\n", term(l + 2, m, n)));
+    }
+    E020 = codeContractMultipoleISIMD(mI, T, l, m + 2, n, sb);
+    if (E020 != 0) {
+      sb.append(format("\tE020 = %s;\n", term(l, m + 2, n)));
+    }
+    E002 = codeContractMultipoleISIMD(mI, T, l, m, n + 2, sb);
+    if (E002 != 0) {
+      sb.append(format("\tE002 = %s;\n", term(l, m, n + 2)));
+    }
+    E110 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n, sb);
+    if (E110 != 0) {
+      sb.append(format("\tE110 = %s;\n", term(l + 1, m + 1, n)));
+    }
+    E101 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 1, sb);
+    if (E101 != 0) {
+      sb.append(format("\tE101 = %s;\n", term(l + 1, m, n + 1)));
+    }
+    E011 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 1, sb);
+    if (E011 != 0) {
+      sb.append(format("\tE011 = %s;\n", term(l, m + 1, n + 1)));
+    }
+    sb.append("case 1:\n");
+    // Order 1
+    E100 = codeContractMultipoleISIMD(mI, T, l + 1, m, n, sb);
+    if (E100 != 0) {
+      sb.append(format("\tE100 = %s;\n", term(l + 1, m, n)));
+    }
+    E010 = codeContractMultipoleISIMD(mI, T, l, m + 1, n, sb);
+    if (E100 != 0) {
+      sb.append(format("\tE010 = %s;\n", term(l, m + 1, n)));
+    }
+    E001 = codeContractMultipoleISIMD(mI, T, l, m, n + 1, sb);
+    if (E001 != 0) {
+      sb.append(format("\tE001 = %s;\n", term(l, m, n + 1)));
+    }
+    sb.append("case 0:\n");
+    E000 = codeContractMultipoleISIMD(mI, T, l, m, n, sb);
+    if (E000 != 0) {
+      sb.append(format("\tE000 = %s;\n", term(l, m, n)));
+    }
+    sb.append("}\n");
+  }
+
+  /**
    * Collect the potential its partial derivatives at the origin due to multipole moments at site K.
    *
    * @param mK PolarizableMultipole at site I.
@@ -922,8 +1267,7 @@ public abstract class MultipoleTensor {
    * @param n  apply (d/dz)^l to the potential.
    * @param sb Append the code to the StringBuilder.
    */
-  protected void codePotentialMultipoleK(PolarizableMultipole mK, double[] T, int l, int m, int n,
-                                         StringBuilder sb) {
+  protected void codePotentialMultipoleK(PolarizableMultipole mK, double[] T, int l, int m, int n, StringBuilder sb) {
     E000 = codeContractMultipoleK(mK, T, l, m, n, sb);
     if (E000 != 0) {
       sb.append(format("E000 = %s;\n", term(l, m, n)));
@@ -1007,6 +1351,111 @@ public abstract class MultipoleTensor {
     if (E111 != 0) {
       sb.append(format("E111 = -%s;\n", term(l + 1, m + 1, n + 1)));
     }
+  }
+
+  /**
+   * Collect the potential its partial derivatives at the origin due to multipole moments at site K
+   * using SIMD instructions.
+   *
+   * @param mK PolarizableMultipole at site I.
+   * @param T  Electrostatic potential and partial derivatives.
+   * @param l  apply (d/dx)^l to the potential.
+   * @param m  apply (d/dy)^l to the potential.
+   * @param n  apply (d/dz)^l to the potential.
+   * @param sb Append the code to the StringBuilder.
+   */
+  protected void codePotentialMultipoleKSIMD(PolarizableMultipole mK, double[] T, int l, int m, int n, StringBuilder sb) {
+    sb.append("switch (order) {\n");
+    sb.append("default:\n");
+    sb.append("case 3:\n");
+    // Order 3 (need a minus sign)
+    E300 = codeContractMultipoleKSIMD(mK, T, l + 3, m, n, sb);
+    if (E300 != 0) {
+      sb.append(format("E300 = %s.neg();\n", term(l + 3, m, n)));
+    }
+    E030 = codeContractMultipoleKSIMD(mK, T, l, m + 3, n, sb);
+    if (E030 != 0) {
+      sb.append(format("E030 = %s.neg();\n", term(l, m + 3, n)));
+    }
+    E003 = codeContractMultipoleKSIMD(mK, T, l, m, n + 3, sb);
+    if (E003 != 0) {
+      sb.append(format("E003 = %s.neg();\n", term(l, m, n + 3)));
+    }
+    E210 = codeContractMultipoleKSIMD(mK, T, l + 2, m + 1, n, sb);
+    if (E210 != 0) {
+      sb.append(format("E210 = %s.neg();\n", term(l + 2, m + 1, n)));
+    }
+    E201 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n + 1, sb);
+    if (E201 != 0) {
+      sb.append(format("E201 = %s.neg();\n", term(l + 2, m, n + 1)));
+    }
+    E120 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 2, n, sb);
+    if (E120 != 0) {
+      sb.append(format("E120 = %s.neg();\n", term(l + 1, m + 2, n)));
+    }
+    E021 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n + 1, sb);
+    if (E021 != 0) {
+      sb.append(format("E021 = %s.neg();\n", term(l, m + 2, n + 1)));
+    }
+    E102 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 2, sb);
+    if (E102 != 0) {
+      sb.append(format("E102 = %s.neg();\n", term(l + 1, m, n + 2)));
+    }
+    E012 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 2, sb);
+    if (E012 != 0) {
+      sb.append(format("E012 = %s.neg();\n", term(l, m + 1, n + 2)));
+    }
+    E111 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n + 1, sb);
+    if (E111 != 0) {
+      sb.append(format("E111 = %s.neg();\n", term(l + 1, m + 1, n + 1)));
+    }
+    // Order 2
+    sb.append("case 2:\n");
+    E200 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n, sb);
+    if (E200 != 0) {
+      sb.append(format("E200 = %s;\n", term(l + 2, m, n)));
+    }
+    E020 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n, sb);
+    if (E020 != 0) {
+      sb.append(format("E020 = %s;\n", term(l, m + 2, n)));
+    }
+    E002 = codeContractMultipoleKSIMD(mK, T, l, m, n + 2, sb);
+    if (E002 != 0) {
+      sb.append(format("E002 = %s;\n", term(l, m, n + 2)));
+    }
+    E110 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n, sb);
+    if (E110 != 0) {
+      sb.append(format("E110 = %s;\n", term(l + 1, m + 1, n)));
+    }
+    E101 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 1, sb);
+    if (E101 != 0) {
+      sb.append(format("E101 = %s;\n", term(l + 1, m, n + 1)));
+    }
+    E011 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 1, sb);
+    if (E011 != 0) {
+      sb.append(format("E011 = %s;\n", term(l, m + 1, n + 1)));
+    }
+    // Order 1 (need a minus sign)
+    sb.append("case 1:\n");
+    E100 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n, sb);
+    if (E100 != 0) {
+      sb.append(format("E100 = %s.neg();\n", term(l + 1, m, n)));
+    }
+    E010 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n, sb);
+    if (E100 != 0) {
+      sb.append(format("E010 = %s.neg();\n", term(l, m + 1, n)));
+    }
+    E001 = codeContractMultipoleKSIMD(mK, T, l, m, n + 1, sb);
+    if (E001 != 0) {
+      sb.append(format("E001 = %s.neg();\n", term(l, m, n + 1)));
+    }
+    // Order 0.
+    sb.append("case 0:\n");
+    E000 = codeContractMultipoleKSIMD(mK, T, l, m, n, sb);
+    if (E000 != 0) {
+      sb.append(format("E000 = %s;\n", term(l, m, n)));
+    }
+    sb.append("}\n");
   }
 
   /**
@@ -1511,105 +1960,13 @@ public abstract class MultipoleTensor {
   protected abstract void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
-   * Contract multipole moments with their respective electrostatic potential derivatives.
-   *
-   * @param mI PolarizableMultipole at site I.
-   * @param T  array of electrostatic potential and partial derivatives
-   * @param l  apply (d/dx)^l to the potential
-   * @param m  apply (d/dy)^l to the potential
-   * @param n  apply (d/dz)^l to the potential
-   * @param sb the code will be appended to the StringBuilder.
-   * @return the contracted interaction.
-   */
-  private double codeContractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
-                                        StringBuilder sb) {
-    double total = 0.0;
-    String name = term(l, m, n);
-    sb.append(format("double %s = 0.0;\n", name));
-    StringBuilder sb1 = new StringBuilder();
-    double term = mI.q * T[ti(l, m, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, tlmn(l, m, n), name));
-    }
-    term = mI.dx * T[ti(l + 1, m, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, tlmn(l + 1, m, n), name));
-    }
-    term = mI.dy * T[ti(l, m + 1, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, tlmn(l, m + 1, n), name));
-    }
-    term = mI.dz * T[ti(l, m, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, tlmn(l, m, n + 1), name));
-    }
-    StringBuilder traceSB = new StringBuilder();
-    double trace = 0.0;
-    term = mI.qxx * T[ti(l + 2, m, n)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
-    }
-    term = mI.qyy * T[ti(l, m + 2, n)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
-    }
-    term = mI.qzz * T[ti(l, m, n + 2)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
-    }
-    total += trace;
-    if (total != 0) {
-      sb.append(sb1);
-      if (trace != 0) {
-        sb.append(traceSB);
-      }
-    }
-    term = mI.qxy * T[ti(l + 1, m + 1, n)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
-    }
-    term = mI.qxz * T[ti(l + 1, m, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
-    }
-    term = mI.qyz * T[ti(l, m + 1, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
-    }
-    return total;
-  }
-
-  /**
-   * Returns the number of tensors for derivatives to the given order.
-   *
-   * @param order maximum number of derivatives.
-   * @return the number of tensors.
-   * @since 1.0
-   */
-  public static int tensorCount(int order) {
-    long ret = binomial(order + 3, 3);
-    assert (ret < Integer.MAX_VALUE);
-    return (int) ret;
-  }
-
-  /**
    * Log the tensors.
    *
    * @param operator The OPERATOR to use.
    * @param order    The tensor order.
    * @param tensor   The tensor array.
    */
-  private static void log(OPERATOR operator, int order, double[] tensor) {
+  private static void log(Operator operator, int order, double[] tensor) {
     final int o1 = order + 1;
     StringBuilder sb = new StringBuilder();
 
@@ -1619,18 +1976,18 @@ public abstract class MultipoleTensor {
     int count = 1;
     // Print (d/dx)^l for l = 1..order (m = 0, n = 0)
     for (int l = 1; l <= order; l++) {
-      double value = tensor[ti(l, 0, 0, order)];
+      double value = tensor[MultipoleUtilities.ti(l, 0, 0, order)];
       if (value != 0.0) {
-        sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, 0, 0, order), l, 0, 0, value));
+        sb.append(format("%5d %4d %4d %4d %12.8f\n", MultipoleUtilities.ti(l, 0, 0, order), l, 0, 0, value));
         count++;
       }
     }
     // Print (d/dx)^l * (d/dy)^m for l + m = 1..order (m >= 1, n = 0)
     for (int l = 0; l <= o1; l++) {
       for (int m = 1; m <= order - l; m++) {
-        double value = tensor[ti(l, m, 0, order)];
+        double value = tensor[MultipoleUtilities.ti(l, m, 0, order)];
         if (value != 0.0) {
-          sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, 0, order), l, m, 0, value));
+          sb.append(format("%5d %4d %4d %4d %12.8f\n", MultipoleUtilities.ti(l, m, 0, order), l, m, 0, value));
           count++;
         }
       }
@@ -1639,9 +1996,9 @@ public abstract class MultipoleTensor {
     for (int l = 0; l <= o1; l++) {
       for (int m = 0; m <= o1 - l; m++) {
         for (int n = 1; n <= order - l - m; n++) {
-          double value = tensor[ti(l, m, n, order)];
+          double value = tensor[MultipoleUtilities.ti(l, m, n, order)];
           if (value != 0.0) {
-            sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, n, order), l, m, n, value));
+            sb.append(format("%5d %4d %4d %4d %12.8f\n", MultipoleUtilities.ti(l, m, n, order), l, m, n, value));
             count++;
           }
         }
@@ -1649,140 +2006,6 @@ public abstract class MultipoleTensor {
     }
     sb.append(format("\n Total number of active tensors: %d\n", count));
     logger.log(Level.INFO, sb.toString());
-  }
-
-  /**
-   * Convenience method for writing out tensor indices.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>Rlmn</code>.
-   */
-  protected static String rlmn(int l, int m, int n) {
-    return format("R%d%d%d", l, m, n);
-  }
-
-  /**
-   * Convenience method for writing out intermediate terms in the recursion.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>termLMN</code>.
-   */
-  protected static String term(int l, int m, int n) {
-    return format("term%d%d%d", l, m, n);
-  }
-
-  /**
-   * Convenience method for writing out intermediate terms in the recursion.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @param j the jth intermediate term.
-   * @return a String of the form <code>termLMNJ</code>.
-   */
-  protected static String term(int l, int m, int n, int j) {
-    return format("term%d%d%d%d", l, m, n, j);
-  }
-
-  /**
-   * The index is based on the idea of filling tetrahedron.
-   * <p>
-   * 1/r has an index of 0.
-   * <br>
-   * derivatives of x are first; indices from 1..o for d/dx..(d/dx)^o
-   * <br>
-   * derivatives of x and y are second; base triangle of size (o+1)(o+2)/2
-   * <br>
-   * derivatives of x, y and z are last; total size (o+1)*(o+2)*(o+3)/6
-   * <br>
-   * <p>
-   * This function is useful to set up masking constants:
-   * <br>
-   * static int Tlmn = ti(l,m,n,order)
-   * <br>
-   * For example the (d/dy)^2 (1/R) storage location:
-   * <br>
-   * static int T020 = ti(0,2,0,order)
-   *
-   * @param dx    int The number of d/dx operations.
-   * @param dy    int The number of d/dy operations.
-   * @param dz    int The number of d/dz operations.
-   * @param order int The maximum tensor order (0 .LE. dx + dy + dz .LE. order).
-   * @return int in the range (0..binomial(order + 3, 3) - 1)
-   */
-  protected static int ti(int dx, int dy, int dz, int order) {
-    if (dx < 0 || dy < 0 || dz < 0 || dx + dy + dz > order) {
-      return -1;
-    }
-
-    int size = (order + 1) * (order + 2) * (order + 3) / 6;
-    /*
-     We only get to the top of the tetrahedron if dz = order, otherwise
-     subtract off the top, including the level of the requested tensor
-     index.
-    */
-    int top = order + 1 - dz;
-    top = top * (top + 1) * (top + 2) / 6;
-    int zIndex = size - top;
-    /*
-     Given the "dz level", dy can range from (0 .. order - dz).
-     To get to the row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indices are skipped.
-     This is an operation that looks like the area of rectangle, minus the area of an empty triangle.
-    */
-    int yIndex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
-    /*
-     Given the dz level and dy row, dx can range from (0..order - dz - dy)
-     The dx index is just walking down the dy row for "dx" steps.
-    */
-    return dx + yIndex + zIndex;
-  }
-
-  /**
-   * Convenience method for writing out tensor indices.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>tlmn</code>.
-   */
-  private static String tlmn(int l, int m, int n) {
-    return format("%d%d%d", l, m, n);
-  }
-
-  /**
-   * Operators that are supported.
-   */
-  public enum OPERATOR {
-    /**
-     * Coulomb operator.
-     */
-    COULOMB,
-    /**
-     * Screened Coulomb operator.
-     */
-    SCREENED_COULOMB,
-    /**
-     * Thole field operator.
-     */
-    THOLE_FIELD
-  }
-
-  /**
-   * Global and Quasi-Internal (QI) coordinate systems are supported.
-   */
-  public enum COORDINATES {
-    /**
-     * Global coordinate system.
-     */
-    GLOBAL,
-    /**
-     * Quasi-internal coordinate system.
-     */
-    QI
   }
 
   // l + m + n = 0 (1)
