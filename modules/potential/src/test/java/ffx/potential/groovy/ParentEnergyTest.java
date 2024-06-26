@@ -55,7 +55,6 @@ import static org.junit.Assert.assertEquals;
 public class ParentEnergyTest extends PotentialTest {
 
   private final String info;
-  private final String filename;
   private final String filepath;
   private final int nAtoms;
   private final int nBonds;
@@ -101,7 +100,6 @@ public class ParentEnergyTest extends PotentialTest {
                           int nStretchTorsions, double angleTorsionEnergy, int nAngleTorsions, double vanDerWaalsEnergy,
                           int nVanDerWaals, double permanentEnergy, int nPermanent, double polarizationEnergy,
                           int nPolar, double gkEnergy, int nGK, boolean testOpenMM) {
-    this.filename = filename;
     this.info = info;
     this.nAtoms = nAtoms;
     this.bondEnergy = bondEnergy;

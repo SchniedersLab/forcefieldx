@@ -6,7 +6,7 @@
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>forcefieldx</artifactId>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>ffx-numerics</artifactId>
@@ -65,11 +65,6 @@
       <artifactId>commons-math3</artifactId>
       <version>${commons-math3.version}</version>
     </dependency>
-    <!-- dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons-io.version}</version>
-    </dependency -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-pj</artifactId>
@@ -78,13 +73,8 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-utilities</artifactId>
-      <version>1.0.0-beta</version>
+      <version>1.0.0</version>
     </dependency>
-    <!-- dependency>
-      <groupId>org.jogamp</groupId>
-      <artifactId>jogamp-fat</artifactId>
-      <version>${jogamp-fat.version}</version>
-    </dependency -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

@@ -47,7 +47,9 @@ import java.util.logging.Logger;
 /** Utility Routines to use the TornadoVM */
 public class FFXTornado {
 
-  private static final Logger logger = Logger.getLogger(FFXTornado.class.getName());
+  private FFXTornado() {
+    // Prevent instantiation.
+  }
 
   /**
    * Get the default Tornado Device.

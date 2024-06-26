@@ -37,17 +37,17 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
-import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.log;
-
 import ffx.utilities.Constants;
 
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
+import static java.util.Arrays.copyOf;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * The Zwanzig class implements exponential averaging/free energy perturbation using the Zwanzig
@@ -60,6 +60,9 @@ import java.util.stream.IntStream;
 public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
 
   private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
+  /**
+   * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
+   */
   public final Directionality directionality;
   private final boolean forwards;
   /**
@@ -255,10 +258,15 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
   /**
    * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
-   * TODO: Implement bidirectional Zwanzig with simple estimation (i.e. 0.5*(forwards + backward)).
    */
   public enum Directionality {
+    /**
+     * Forwards perturbation.
+     */
     FORWARDS,
+    /**
+     * Backwards perturbation.
+     */
     BACKWARDS
   }
 }

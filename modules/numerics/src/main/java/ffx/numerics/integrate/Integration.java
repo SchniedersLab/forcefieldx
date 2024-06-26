@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.numerics.integrate;
 
+import java.text.DecimalFormat;
+
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
-
-import java.text.DecimalFormat;
 
 /**
  * This program integrates using three methods: the trapezoidal method, Simpson's Three Point
@@ -61,10 +61,15 @@ public class Integration {
     x[201] = 1;
   }
 
+  private Integration() {
+    // Prevent instantiation.
+  }
+
+
   /**
    * averageIntegral.
    *
-   * @param leftInt a double.
+   * @param leftInt  a double.
    * @param rightInt a double.
    * @return a double.
    */
@@ -91,8 +96,8 @@ public class Integration {
    * halfBinComposite.
    *
    * @param inputData an array of {@link double} objects.
-   * @param mode the integration mode.
-   * @param side a {@link java.lang.String} object.
+   * @param mode      the integration mode.
+   * @param side      a {@link java.lang.String} object.
    * @return a double.
    */
   public static double halfBinComposite(double[] inputData, int mode, String side) {
@@ -126,13 +131,13 @@ public class Integration {
       double upperHalfBin = (inputData[n - 1] + inputData[n - 2]) / 2.0 * (x[n - 1] - x[n - 2]);
       halfBinComposite += upperHalfBin;
       switch (mode) {
-          // Case 1 is the Simpson's method, uses trapezoid on left for bin left out of Simpson's
+        // Case 1 is the Simpson's method, uses trapezoid on left for bin left out of Simpson's
         case 1:
           double lowerTrapArea = (inputData[1] + inputData[2]) / 2.0 * (x[2] - x[1]);
           halfBinComposite += lowerTrapArea;
           break;
-          // Case 2 is the Boole's method, uses Simpsons and trapezoidal integral on left to cover
-          // remaining bins
+        // Case 2 is the Boole's method, uses Simpsons and trapezoidal integral on left to cover
+        // remaining bins
         case 2:
           lowerTrapArea = (inputData[1] + inputData[2]) / 2.0 * (x[2] - x[1]);
           halfBinComposite += lowerTrapArea;
@@ -159,10 +164,10 @@ public class Integration {
           (2.0 / 45.0)
               * (x[a + 1] - x[a])
               * (7 * inputData[a]
-                  + 32 * inputData[a + 1]
-                  + 12 * inputData[a + 2]
-                  + 32 * inputData[a + 3]
-                  + 7 * inputData[a + 4]);
+              + 32 * inputData[a + 1]
+              + 12 * inputData[a + 2]
+              + 32 * inputData[a + 3]
+              + 7 * inputData[a + 4]);
       normalBoole += area;
     }
 
@@ -303,10 +308,10 @@ public class Integration {
           (2.0 / 45.0)
               * (x[a + 1] - x[a])
               * (7 * inputData[a]
-                  + 32 * inputData[a + 1]
-                  + 12 * inputData[a + 2]
-                  + 32 * inputData[a + 3]
-                  + 7 * inputData[a + 4]);
+              + 32 * inputData[a + 1]
+              + 12 * inputData[a + 2]
+              + 32 * inputData[a + 3]
+              + 7 * inputData[a + 4]);
       normalBoole += area;
     }
 

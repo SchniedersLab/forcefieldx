@@ -206,6 +206,7 @@ public class Float3 {
   /**
    * Returns the coordinate at position i.
    *
+   * @param i The coordinate index.
    * @return The coordinate.
    */
   public float get(int i) {

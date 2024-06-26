@@ -61,6 +61,8 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   private final GKSource gkSource;
 
   /**
+   * Construct a new GKTensorGlobal object.
+   *
    * @param multipoleOrder The multipole order.
    * @param order The number of derivatives to complete.
    * @param gkSource Generate the source terms for the GK recurrence.

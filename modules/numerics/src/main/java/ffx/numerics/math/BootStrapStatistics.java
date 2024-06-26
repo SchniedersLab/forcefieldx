@@ -39,15 +39,14 @@
 package ffx.numerics.math;
 
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import java.util.Random;
-
 import org.apache.commons.math3.distribution.TDistribution;
 
 import javax.annotation.Nullable;
+import java.util.Random;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The BootStrapStatistics class uses bootstrapping to estimate statistics from a
@@ -60,17 +59,51 @@ import javax.annotation.Nullable;
 public class BootStrapStatistics {
 
   // Weight-sensitive values.
+  /**
+   * The mean value.
+   */
   public final double mean;
+  /**
+   * The variance.
+   */
   public final double var;
+  /**
+   * The population variance.
+   */
   public final double varPopulation;
+  /**
+   * The standard deviation.
+   */
   public final double sd;
+  /**
+   * The population standard deviation.
+   */
   public final double sdPopulation;
+  /**
+   * The sum of all weights.
+   */
   public final double sumWeights;
+
   // Weight-insensitive values.
+  /**
+   * The minimum value.
+   */
   public final double min;
+  /**
+   * The maximum value.
+   */
   public final double max;
+  /**
+   * The number of entries.
+   */
   public final long count;
+  /**
+   * The sum of all values.
+   */
   public final double sum;
+  /**
+   * The number of degrees of freedom.
+   */
   public final long dof;
   private final TDistribution tDist;
   private final String descString;

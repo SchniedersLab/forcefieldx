@@ -7,12 +7,12 @@ Installation of Torch for use of ANI-2x
     Installation instructions are available [here](https://www.graalvm.org/latest/reference-manual/python).
     GraalPy can be downloaded from [GitHub](https://github.com/oracle/graalpython/releases).
     
-    For example, the download for Linux is called:
-    graalpy-23.1.0-linux-amd64.tar.gz
+    For example, the download for Linux on Intel CPUs is called:
+    graalpy-24.0.1-linux-amd64.tar.gz
 
 ## Update your PATH environment variables 
  
-    export GRAALPY_HOME="/iahome/m/mj/mjschnie/software/graalpy-23.1.0-linux-amd64"
+    export GRAALPY_HOME="/iahome/m/mj/mjschnie/software/graalpy-24.0.1-linux-amd64"
     export PATH="$GRAALPY_HOME/bin:$PATH"
 
 ## Create a virtual environment within the Force Field X directory and activate it
@@ -30,7 +30,7 @@ Installation of Torch for use of ANI-2x
     wget https://ffx.biochem.uiowa.edu/ANI2x.pt.gz
     gunzip ANI2x.pt.gz
 
-## Evalute the ANI-2x energy & gradient
+## Evaluate the ANI-2x energy & gradient
   
     ffxc ANI.groovy ../examples/water-dimer.xyz  
 

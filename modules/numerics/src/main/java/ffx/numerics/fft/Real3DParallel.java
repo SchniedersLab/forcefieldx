@@ -52,8 +52,6 @@ import static java.util.Objects.requireNonNullElseGet;
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions in parallel.
  *
- * <p>
- *
  * @author Michal J. Schnieders
  * @see Real
  * @since 1.0

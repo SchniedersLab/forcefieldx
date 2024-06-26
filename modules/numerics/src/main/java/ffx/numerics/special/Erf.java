@@ -50,8 +50,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <p>Adapted from an original program written by W. J. Cody, Mathematics and Computer Science
  * Division, Argonne National Laboratory, Argonne, IL 60439
  *
- * <p>
- *
  * @author Michael J. Schnieders
  * @since 1.0
  */

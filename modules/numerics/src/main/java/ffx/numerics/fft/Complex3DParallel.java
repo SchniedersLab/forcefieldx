@@ -83,6 +83,9 @@ public class Complex3DParallel {
   private final FFTRegion fftRegion;
   private final IFFTRegion ifftRegion;
   private final ConvolutionRegion convRegion;
+  /**
+   * The input array must be of size 2 * nX * nY * nZ.
+   */
   public double[] input;
 
   /**
@@ -290,6 +293,11 @@ public class Complex3DParallel {
     }
   }
 
+  /**
+   * Get the timings for each thread.
+   *
+   * @return The timings for each thread.
+   */
   public long[] getTimings() {
     return convolutionTime;
   }
@@ -311,6 +319,9 @@ public class Complex3DParallel {
     }
   }
 
+  /**
+   * Initialize the timing array.
+   */
   public void initTiming() {
     for (int i = 0; i < threadCount; i++) {
       convolutionTime[i] = 0;

@@ -61,8 +61,8 @@ import static ffx.numerics.estimator.Zwanzig.Directionality.BACKWARDS;
 import static ffx.numerics.estimator.Zwanzig.Directionality.FORWARDS;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
-import static org.apache.commons.lang3.ArrayFill.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
@@ -148,10 +148,28 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * Seed MBAR calculation with another free energy estimation (BAR,ZWANZIG) or zeros
    */
   private SeedType seedType;
+
   /**
    * Enum of MBAR seed types.
    */
-  public enum SeedType {BAR, ZWANZIG, ZEROS}
+  public enum SeedType {
+    /**
+     * Use BAR to seed the MBAR calculation.
+     */
+    BAR,
+    /**
+     * Use Zwanzig to seed the MBAR calculation.
+     */
+    ZWANZIG,
+    /**
+     * Use zeros to seed the MBAR calculation.
+     */
+    ZEROS
+  }
+
+  /**
+   * Force the seed energies to be zeros.
+   */
   public static boolean FORCE_ZEROS_SEED = false;
 
   /**
@@ -213,7 +231,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           return;
         }
       case ZWANZIG:
-        try{
+        try {
           Zwanzig forwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, FORWARDS);
           Zwanzig backwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, BACKWARDS);
           double[] forwardZwanzig = forwardsFEP.getBinEnergies();
@@ -225,7 +243,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
             throw new IllegalArgumentException("MBAR contains NaNs or Infs after seeding.");
           }
-        break;
+          break;
         } catch (IllegalArgumentException e) {
           logger.warning(" Zwanzig failed to converge. Zeros will be used for seed energies.");
           seedType = SeedType.ZEROS;
@@ -312,7 +330,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // i.e. no trajectories for that lambda were generated/sampled, but other trajectories had potentials evaluated at that lambda
     ArrayList<Integer> zeroSnapLambdas = new ArrayList<>();
     ArrayList<Integer> sampledLambdas = new ArrayList<>();
-    for(int i = 0; i < nLambdaStates; i++) {
+    for (int i = 0; i < nLambdaStates; i++) {
       if (snaps[i] == 0) {
         zeroSnapLambdas.add(i);
       } else {
@@ -372,12 +390,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     } catch (Exception e) {
       logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration. Message: " +
-              e.getMessage());
+          e.getMessage());
     }
 
     // Update the FE estimates with the optimized values from derivative-based optimization
     int count = 0;
-    for(Integer i : sampledLambdas){
+    for (Integer i : sampledLambdas) {
       if (Double.isNaN(mbarFEEstimatesTemp[count])) {
         mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
       }
@@ -440,9 +458,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * MBAR objective function. This is used for L-BFGS optimization.
    *
-   * @param reducedPotentials -ln(boltzmann weights)
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   -ln(boltzmann weights)
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return The objective function value.
    */
   private static double mbarObjectiveFunction(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -472,9 +490,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Gradient of the MBAR objective function. This is used for L-BFGS optimization.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Gradient for the mbar objective function.
    */
   private static double[] mbarGradient(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -513,9 +531,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Hessian of the MBAR objective function. This is used for Newton optimization.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Hessian for the mbar objective function.
    */
   private static double[][] mbarHessian(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -549,9 +567,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * W = exp(freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis])
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return W matrix.
    */
   private static double[][] mbarW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -589,9 +607,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * logW = freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis]
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return logW matrix.
    */
   private static double[][] mbarLogW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -634,8 +652,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * D4 from supp info of MBAR paper used instead.
    *
    * @param reducedPotentials energies
-   * @param snapsPerState  number of snaps per state
-   * @param snapsPerLambda  free energies
+   * @param snapsPerState     number of snaps per state
+   * @param snapsPerLambda    free energies
    * @return Theta matrix.
    */
   private static double[][] mbarTheta(double[][] reducedPotentials, int[] snapsPerState, double[] snapsPerLambda) {
@@ -662,9 +680,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * MBAR uncertainty calculation.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Uncertainties for the MBAR free energy estimates.
    */
   private static double[] mbarUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
@@ -677,8 +695,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       double variance = theta[i][i] - 2 * theta[i][i + 1] + theta[i + 1][i + 1];
       if (variance < 0) {
         logger.warning(" Negative variance detected in MBAR uncertainty calculation. " +
-                "Multiplying by -1 to get real value. Check diff matrix to see which variances were negative. " +
-                "They should be NaN.");
+            "Multiplying by -1 to get real value. Check diff matrix to see which variances were negative. " +
+            "They should be NaN.");
         variance *= -1;
       }
       uncertainties[i] = sqrt(variance);
@@ -689,9 +707,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * MBAR total uncertainty calculation.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Total uncertainty for the MBAR free energy estimates.
    */
   private static double mbarTotalUncertaintyCalc(double[][] reducedPotentials, int[] snapsPerLambda,
@@ -704,9 +722,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * MBAR diff Matrix calculation.
    *
-   * @param reducedPotential energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotential    energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Diff matrix for the MBAR free energy estimates.
    */
   private static double[][] diffMatrixCalculation(double[][] reducedPotential, int[] snapsPerLambda,
@@ -726,9 +744,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Self-consistent iteration to update free energies.
    *
-   * @param reducedPotential energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotential    energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return updated free energies
    */
   private static double[] selfConsistentUpdate(double[][] reducedPotential, int[] snapsPerLambda,
@@ -834,7 +852,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return the sum
    */
   private static double logSumExp(double[] values, double max) {
-    int[] b = fill(new int[values.length], 1);
+    int[] b = new int[values.length];
+    fill(b, 1);
     return logSumExp(values, b, max);
   }
 
@@ -940,48 +959,85 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   //////// Getters and setters ////////
+
+  /**
+   * Get the MBAR free energy estimates.
+   *
+   * @return The free energy estimates.
+   */
   public BennettAcceptanceRatio getBAR() {
     return new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public MultistateBennettAcceptanceRatio copyEstimator() {
     return new MultistateBennettAcceptanceRatio(lamValues, eAll, temperatures, tolerance, seedType);
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public double[] getBinEnergies() {
     return mbarFEDifferenceEstimates;
   }
 
+  /**
+   * Get the MBAR free energy estimates.
+   *
+   * @return The free energy estimates.
+   */
   public double[] getMBARFreeEnergies() {
     return mbarFEEstimates;
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public double[] getBinUncertainties() {
     return mbarUncertainties;
   }
 
+  /**
+   * Get the difference matrix for the MBAR free energy estimates.
+   *
+   * @return The difference matrix.
+   */
   public double[][] getDiffMatrix() {
     return diffMatrix;
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public double getFreeEnergy() {
     return totalMBAREstimate;
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public double getUncertainty() {
     return totalMBARUncertainty;
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public int numberOfBins() {
     return nFreeEnergyDiffs;
   }
 
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public double[] getBinEnthalpies() {
     return mbarEnthalpy;
@@ -1027,10 +1083,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
 
+    /**
+     * Calculate the analytical means.
+     *
+     * @return The means.
+     */
     public double[] analyticalMeans() {
       return O_k;
     }
 
+    /**
+     * Calculate the analytical variances.
+     *
+     * @return The variances.
+     */
     public double[] analyticalVariances() {
       double[] variances = new double[n_states];
       for (int i = 0; i < n_states; i++) {
@@ -1039,6 +1105,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       return variances;
     }
 
+    /**
+     * Calculate the analytical standard deviations.
+     *
+     * @return The standard deviations.
+     */
     public double[] analyticalStandardDeviations() {
       double[] deviations = new double[n_states];
       for (int i = 0; i < n_states; i++) {
@@ -1047,6 +1118,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       return deviations;
     }
 
+    /**
+     * Calculate the analytical observables.
+     *
+     * @param observable The observable to calculate.
+     * @return The observables.
+     */
     public double[] analyticalObservable(String observable) {
       double[] result = new double[n_states];
 
@@ -1072,6 +1149,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       return result;
     }
 
+    /**
+     * Calculate the analytical free energies.
+     *
+     * @return The free energies.
+     */
     public double[] analyticalFreeEnergies() {
       int subtractComponentIndex = 0;
       double[] fe = new double[n_states];
@@ -1086,6 +1168,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       return fe;
     }
 
+    /**
+     * Calculate the analytical entropies.
+     *
+     * @param subtractComponent Index of the component to subtract from the entropies.
+     * @return The entropies.
+     */
     public double[] analyticalEntropies(int subtractComponent) {
       double[] entropies = new double[n_states];
       double[] potentialEnergy = analyticalObservable("analytical entropy");
@@ -1099,10 +1187,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     /**
-     * Sample from harmonic oscillator w/ gaussian & std
+     * Sample from harmonic oscillator w/ gaussian and std.
      *
-     * @param N_k  number of snaps per state
-     * @param mode only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k
+     * @param N_k  Number of snaps per state.
+     * @param mode Only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k.
+     * @param seed Random seed.
      * @return u_kn[k, n] is reduced potential of sample n evaluated at state k
      */
     public Object[] sample(int[] N_k, String mode, Long seed) {
@@ -1147,8 +1236,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           index++;
         }
         // Set the rest of the array to NaN
-        for(int n = N_k[k]; n < N_max; n++){
-          for ( int l =0; l < n_states; l++) {
+        for (int n = N_k[k]; n < N_max; n++) {
+          for (int l = 0; l < n_states; l++) {
             u_kln[k][l][n] = Double.NaN;
             u_kn[l][index] = Double.NaN;
           }
@@ -1165,6 +1254,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     }
 
+    /**
+     * Generate data for testing the MBAR implementation.
+     *
+     * @param n_states          Number of states.
+     * @param n_samplesPerState Number of samples per state.
+     * @param lower_O_k         Lower bound for equilibrium positions.
+     * @param upper_O_k         Upper bound for equilibrium positions.
+     * @param lower_K_k         Lower bound for spring constants.
+     * @param upper_K_k         Upper bound for spring constants.
+     * @param seed              Random seed.
+     * @return Array of objects containing the test case and the generated data.
+     */
     public static Object[] evenlySpacedOscillators(
         int n_states, int n_samplesPerState, double lower_O_k, double upper_O_k,
         double lower_K_k, double upper_K_k, Long seed) {
@@ -1189,6 +1290,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       return new Object[]{testCase, result[0], result[1], result[2], result[3]};
     }
 
+    /**
+     * Generate data for testing the MBAR implementation.
+     *
+     * @param args Command line arguments.
+     */
     public static void main(String[] args) {
       // Example parameters
       double[] O_k = {0, 1, 2, 3, 4};
@@ -1221,6 +1327,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
   }
 
+  /**
+   * Writes the energies to a file.
+   *
+   * @param energies    Energy values.
+   * @param file        File to write to.
+   * @param temperature Temperature.
+   */
   public static void writeFile(double[][] energies, File file, double temperature) {
     try (FileWriter fw = new FileWriter(file);
          BufferedWriter bw = new BufferedWriter(fw)) {
@@ -1244,6 +1357,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
   }
 
+  /**
+   * Main method for testing the MBAR implementation.
+   *
+   * @param args Command line arguments.
+   */
   public static void main(String[] args) {
     double[] O_k = {0, 1, 2, 3, 4}; // Equilibrium positions
     double[] K_k = {1, 3, 7, 10, 15}; // Spring constants

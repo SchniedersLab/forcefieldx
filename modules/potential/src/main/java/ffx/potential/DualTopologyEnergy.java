@@ -1530,18 +1530,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       if (gradient) {
         fill(gl1, 0.0);
         fill(rgl1, 0.0);
-        if (f1L > 0.0) {
-          energy1 = potential1.energyAndGradient(x1, g1, verbose);
-          dEdL_1 = lambdaInterface1.getdEdL();
-          d2EdL2_1 = lambdaInterface1.getd2EdL2();
-          lambdaInterface1.getdEdXdL(gl1);
-        } else {
-          // If the lambda function is zero, the energy and gradient are zero.
-          energy1 = 0.0;
-          dEdL_1 = 0.0;
-          d2EdL2_1 = 0.0;
-        }
-        if (doValenceRestraint1 && (f2L > 0.0) && potential1 instanceof ForceFieldEnergy) {
+        energy1 = potential1.energyAndGradient(x1, g1, verbose);
+        dEdL_1 = lambdaInterface1.getdEdL();
+        d2EdL2_1 = lambdaInterface1.getd2EdL2();
+        lambdaInterface1.getdEdXdL(gl1);
+        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
           forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
@@ -1562,12 +1555,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           logger.fine(format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, f2L));
         }
       } else {
-        if (f1L > 0.0) {
-          energy1 = potential1.energy(x1, verbose);
-        } else {
-          energy1 = 0.0;
-        }
-        if (doValenceRestraint1 && (f2L > 0.0) && potential1 instanceof ForceFieldEnergy) {
+        energy1 = potential1.energy(x1, verbose);
+        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
           forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
@@ -1621,35 +1610,29 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         fill(rgl2, 0.0);
 
         // Compute the energy and gradient of topology 2.
-        if (f2L > 0.0) {
-          energy2 = potential2.energyAndGradient(x2, g2, verbose);
-          dEdL_2 = -lambdaInterface2.getdEdL();
-          d2EdL2_2 = lambdaInterface2.getd2EdL2();
-          lambdaInterface2.getdEdXdL(gl2);
-          if (useSymOp) {
-            // Rotate the gradient back for shared atoms.
-            for (int i = 0; i < numSymOps; i++) {
-              List<Integer> symAtoms = symOpAtoms.get(i);
-              boolean[] mask = new boolean[nActive2];
-              for (int j = 0; j < nActive2; j++) {
-                if (sharedAtoms2[j]) {
-                  if (symAtoms.contains(j)) {
-                    mask[j] = true;
-                  }
+
+        energy2 = potential2.energyAndGradient(x2, g2, verbose);
+        dEdL_2 = -lambdaInterface2.getdEdL();
+        d2EdL2_2 = lambdaInterface2.getd2EdL2();
+        lambdaInterface2.getdEdXdL(gl2);
+        if (useSymOp) {
+          // Rotate the gradient back for shared atoms.
+          for (int i = 0; i < numSymOps; i++) {
+            List<Integer> symAtoms = symOpAtoms.get(i);
+            boolean[] mask = new boolean[nActive2];
+            for (int j = 0; j < nActive2; j++) {
+              if (sharedAtoms2[j]) {
+                if (symAtoms.contains(j)) {
+                  mask[j] = true;
                 }
               }
-              applyCartesianSymRot(g2, g2, inverse[i], mask);
-              applyCartesianSymRot(gl2, gl2, inverse[i], mask);
             }
+            applyCartesianSymRot(g2, g2, inverse[i], mask);
+            applyCartesianSymRot(gl2, gl2, inverse[i], mask);
           }
-        } else {
-          // If the lambda function is zero, the energy and gradient are zero.
-          energy2 = 0.0;
-          dEdL_2 = 0.0;
-          d2EdL2_2 = 0.0;
         }
 
-        if (doValenceRestraint2 && f1L > 0.0) {
+        if (doValenceRestraint2) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");
@@ -1686,12 +1669,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           logger.fine(format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, f1L));
         }
       } else {
-        if (f2L > 0.0) {
-          energy2 = potential2.energy(x2, verbose);
-        } else {
-          energy2 = 0.0;
-        }
-        if (doValenceRestraint2 && (f1L > 0.0) && potential2 instanceof ForceFieldEnergy) {
+        energy2 = potential2.energy(x2, verbose);
+        if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");

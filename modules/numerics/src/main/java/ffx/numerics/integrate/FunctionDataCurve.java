@@ -63,6 +63,17 @@ public abstract class FunctionDataCurve implements DataSet {
   protected boolean halfWidthEnd;
 
   /**
+   * Constructor.
+   */
+  public FunctionDataCurve() {
+    lb = 0.0;
+    ub = 0.0;
+    points = new double[0];
+    x = new double[0];
+    halfWidthEnd = false;
+  }
+
+  /**
    * Checks for equality to +/- 10 ulp.
    *
    * @param x1 a double.

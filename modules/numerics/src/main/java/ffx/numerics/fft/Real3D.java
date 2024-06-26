@@ -40,8 +40,6 @@ package ffx.numerics.fft;
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions.
  *
- * <p>
- *
  * @author Michal J. Schnieders
  * @see Real
  * @since 1.0

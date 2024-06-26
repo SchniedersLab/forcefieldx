@@ -75,6 +75,10 @@ import static ffx.crystal.LaueSystem.LM3M;
  */
 public class SpaceGroupDefinitions {
 
+  private SpaceGroupDefinitions () {
+    // Prevent instantiation.
+  }
+
   private static final double f12 = 1.0 / 2.0;
   private static final double f13 = 1.0 / 3.0;
   private static final double f23 = 2.0 / 3.0;

@@ -44,7 +44,7 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.multipole.MultipoleTensor;
+import ffx.numerics.multipole.MultipoleUtilities;
 import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -118,7 +118,7 @@ public class ParticleMeshEwald implements LambdaInterface {
   /**
    * Number of unique tensors for given order.
    */
-  private static final int tensorCount = MultipoleTensor.tensorCount(3);
+  private static final int tensorCount = MultipoleUtilities.tensorCount(3);
   /**
    * If lambdaTerm is true, some ligand atom interactions with the environment are being turned
    * on/off.

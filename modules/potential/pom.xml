@@ -344,11 +344,6 @@
       <version>${jopenmm.version}</version>
     </dependency>
     <dependency>
-      <artifactId>jtorchani-fat</artifactId>
-      <groupId>edu.uiowa.jtorchani</groupId>
-      <version>1.0.0-beta</version>
-    </dependency>
-    <dependency>
       <artifactId>guava</artifactId>
       <groupId>com.google.guava</groupId>
       <version>${guava.version}</version>
@@ -377,6 +372,11 @@
       <artifactId>cdk-isomorphism</artifactId>
       <groupId>org.openscience.cdk</groupId>
       <version>${cdk.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>jtorchani-fat</artifactId>
+      <groupId>edu.uiowa.jtorchani</groupId>
+      <version>1.0.0-beta</version>
     </dependency>
   </dependencies>
   <description>
@@ -408,6 +408,6 @@
     <artifactId>forcefieldx</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
   </parent>
 </project>

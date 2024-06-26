@@ -142,13 +142,13 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   private static final long serialVersionUID = 1L;
 
   /**
-   * Constant <code>version="1.0.0-BETA"</code>
+   * Constant <code>version="1.0.0"</code>
    */
-  public static final String version = "1.0.0-BETA";
+  public static final String version = "1.0.0";
   /**
-   * Constant <code>date="February 2024"</code>
+   * Constant <code>date="June 2024"</code>
    */
-  public static final String date = "February 2024";
+  public static final String date = "June 2024";
   /**
    * Constant
    */
@@ -233,7 +233,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     var commitSCM = "";
     if (mvnProps.exists()) {
       try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
-        var ffxVersion = "1.0.0-BETA";
+        var ffxVersion = "1.0.0";
         var ffxVersionProp = "ffx.version=";
         var gitCommitsCount = "";
         var gitCommitsCountProp = "git.total.commit.count=";
@@ -283,17 +283,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         + " \n"
         + commitSCM // Will contain its own spacing/newline, or be empty.
         + " \n"
-        + """
+        + """                
+                Please cite the following reference when using Force Field X:
+                
+                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove, 
+                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,  
+                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,  
+                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders, 
+                2024, Journal of Chemical Physics, 161 (1).
+                                
                 Copyright (c)  Michael J. Schnieders  2001-2024
-                Portions Copyright (c):
-                  Timothy D. Fenn      2009-2024
-                  Jacob M. Litman      2015-2024
-                  Rae A. Corrigan      2019-2024
-                  Guowei Qi            2019-2024
-                  Mallory R. Tollefson 2019-2024
-                  Aaron J. Nessler     2021-2024
-                  Andrew C. Thiel      2021-2024
-        
                 All Rights Reserved
         
                 Force Field X is distributed under the GPL v. 3 license

@@ -37,11 +37,18 @@
 //******************************************************************************
 package ffx.crystal;
 
-import static java.lang.Integer.parseInt;
-
 import java.util.HashMap;
 
+import static java.lang.Integer.parseInt;
+
+/**
+ * Information about the 230 space groups.
+ */
 public class SpaceGroupInfo {
+
+  private SpaceGroupInfo() {
+    // Prevent instantiation.
+  }
 
   /**
    * Names of the 230 three-dimensional space groups.
@@ -108,10 +115,14 @@ public class SpaceGroupInfo {
       0.0209, 0.0150, 0.0210, 0.0122
   };
 
-  /** PDB space group ranking (as of Feb. 2017). */
+  /**
+   * PDB space group ranking (as of Feb. 2017).
+   */
   public static final HashMap<String, String> rank = new HashMap<>();
 
-  /** PDB space group names. */
+  /**
+   * PDB space group names.
+   */
   public static final String[] pdbSpaceGroupNames = {
       "P 1", "P -1", "P 1 2 1", "P 1 21 1", "C 1 2 1", "P 1 m 1", "P 1 c 1", "C 1 m 1", "C 1 c 1",
       "P 1 2/m 1", "P 1 21/m 1", "C 1 2/m 1", "P 1 2/c 1", "P 1 21/c 1", "C 1 2/c 1", "P 2 2 2",
@@ -293,7 +304,7 @@ public class SpaceGroupInfo {
   /**
    * Check if the value of x is between lower and upper (inclusive).
    *
-   * @param x Input integer.
+   * @param x     Input integer.
    * @param lower Lower limit for comparison.
    * @param upper Upper limit for comparison.
    * @return True if x is within the limits (inclusive).

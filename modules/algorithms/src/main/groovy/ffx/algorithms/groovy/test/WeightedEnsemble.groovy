@@ -36,21 +36,19 @@
 //
 //******************************************************************************
 package ffx.algorithms.groovy.test
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.algorithms.dynamics.integrators.IntegratorEnum
-import ffx.algorithms.dynamics.thermostats.ThermostatEnum
+import ffx.algorithms.dynamics.WeightedEnsembleManager
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
-import ffx.algorithms.dynamics.WeightedEnsembleManager
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 import static ffx.algorithms.dynamics.WeightedEnsembleManager.OneDimMetric
 
@@ -61,101 +59,91 @@ import static ffx.algorithms.dynamics.WeightedEnsembleManager.OneDimMetric
  * <br>
  * ffxc test.WeightedEnsemble [options] &lt;filename&gt [file2...];
  */
-@Command(description = " Runs parallel simulations with intermittent resampling. This is a simple script as an example of how it can be used.", name = "test.WeightedEnsemble")
+@Command(description = " Runs parallel simulations with intermittent resampling.", name = "test.WeightedEnsemble")
 class WeightedEnsemble extends AlgorithmsScript {
 
-    @Mixin
-    DynamicsOptions dynamicsOptions
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
-    @Mixin
-    WriteoutOptions writeOutOptions
+  @Mixin
+  DynamicsOptions dynamicsOptions
 
-    @Option(names = ['--stepsPer'], paramLabel = '10000',
-            description = 'Number of steps to take between resampling cycles.')
-    int stepsPer = 10000
+  @Mixin
+  WriteoutOptions writeOutOptions
 
-    @Option(names = ['--initDynamics'], paramLabel = '10000',
-            description = 'Number of initialization steps to take before windows start. This is good for getting diverse starting structures.')
-    int initDynamics = 10000
+  @Option(names = ['--stepsPer'], paramLabel = '10000',
+      description = 'Number of steps to take between resampling cycles.')
+  int stepsPer = 10000
 
-    @Option(names = ['--numPerBin'], paramLabel = '2',
-            description = 'Number of walkers per bin.')
-    int numPerBin = 2
+  @Option(names = ['--initDynamics'], paramLabel = '10000',
+      description = 'Number of initialization steps to take before windows start. This is good for getting diverse starting structures.')
+  int initDynamics = 10000
 
-    @Option(names = ['--oneDimensionalMetric'], paramLabel = 'RMSD',
-            description = 'Bin across this metric. Options: RMSD, POTENTIAL, RESIDUE_DISTANCE, ATOM_DISTANCE, COM_DISTANCE, RAD_GYRATION')
-    String oneDimensionalMetric = "RMSD"
+  @Option(names = ['--numPerBin'], paramLabel = '2',
+      description = 'Number of walkers per bin.')
+  int numPerBin = 2
 
-    @Option(names = ['--atomOne'], paramLabel = '0',
-            description = 'For ATOM_DISTANCE. Atom which is part of molecule one for COM_DISTANCE and part of residue one for RESIDUE_DISTANCE.')
-    int atomOne = 0
+  @Option(names = ['--oneDimensionalMetric'], paramLabel = 'RMSD',
+      description = 'Bin across this metric. Options: RMSD, POTENTIAL, RESIDUE_DISTANCE, ATOM_DISTANCE, COM_DISTANCE, RAD_GYRATION')
+  String oneDimensionalMetric = "RMSD"
 
-    @Option(names = ['--atomTwo'], paramLabel = '0',
-            description = 'For ATOM_DISTANCE. Atom which is part of molecule two for COM_DISTANCE and part of residue two for RESIDUE_DISTANCE.')
-    int atomTwo = 0
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files",
+      description = "XYZ or PDB input files.")
+  private String filename
 
-    @Option(names = ['--noResample'], paramLabel = 'false',
-            description = 'Skip resampling.')
-    boolean noResample = false
+  /**
+   * Constructor.
+   */
+  WeightedEnsemble() {
+    this(new Binding())
+  }
 
+  /**
+   * Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  WeightedEnsemble(Binding binding) {
+    super(binding)
+  }
 
-    /**
-     * One or more filenames.
-     */
-    @Parameters(arity = "1..*", paramLabel = "files",
-            description = "XYZ or PDB input files.")
-    private String filename
-
-    /**
-     * Constructor.
-     */
-    WeightedEnsemble() {
-        this(new Binding())
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  WeightedEnsemble run() {
+    if (!init()) {
+      return this;
     }
+    dynamicsOptions.init();
 
-    /**
-     * Constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    WeightedEnsemble(Binding binding) {
-        super(binding)
+    // Set up FFX integrator
+    MolecularAssembly assembly = getActiveAssembly(filename);
+    File file = assembly.getFile();
+    if (file == null) {
+      logger.severe(" No file found for assembly: " + assembly);
+    } else {
+      logger.info(" Running Weighted Ensemble on " + file);
     }
+    Potential potential = assembly.getPotentialEnergy();
+    double[] x = new double[potential.getNumberOfVariables()];
+    potential.getCoordinates(x);
+    potential.energy(x, true);
+    MolecularDynamics md = dynamicsOptions.getDynamics(writeOutOptions, potential, assembly, algorithmListener);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    WeightedEnsemble run() {
-        if (!init()) {
-            return this;
-        }
-        dynamicsOptions.init();
-
-        // Set up FFX integrator
-        MolecularAssembly assembly = getActiveAssembly(filename);
-        File file = assembly.getFile();
-        if (file == null) {
-            logger.severe(" No file found for assembly: " + assembly);
-        } else{
-            logger.info(" Running Weighted Ensemble on " + file);
-        }
-        Potential potential = assembly.getPotentialEnergy();
-        double[] x = new double[potential.getNumberOfVariables()];
-        potential.getCoordinates(x);
-        potential.energy(x, true);
-        MolecularDynamics md = dynamicsOptions.getDynamics(writeOutOptions, potential, assembly, algorithmListener);
-
-        // Set up & run Weighted Ensemble
-        OneDimMetric metric = null;
-        try {
-            metric = OneDimMetric.valueOf(oneDimensionalMetric);
-        } catch (IllegalArgumentException e) {
-            logger.severe(" Invalid oneDimensionalMetric: " + oneDimensionalMetric);
-            return this;
-        }
-        WeightedEnsembleManager weightedEnsemble = new WeightedEnsembleManager(metric, numPerBin, md, file, !noResample);
-        weightedEnsemble.run(dynamicsOptions.numSteps, stepsPer, dynamicsOptions.temperature, dynamicsOptions.dt);
-
-        return this;
+    // Set up & run Weighted Ensemble
+    OneDimMetric metric = null;
+    try {
+      metric = OneDimMetric.valueOf(oneDimensionalMetric);
+    } catch (IllegalArgumentException e) {
+      logger.severe(" Invalid oneDimensionalMetric: " + oneDimensionalMetric);
+      return this;
     }
+    WeightedEnsembleManager weightedEnsemble = new WeightedEnsembleManager(metric, numPerBin, md, file);
+    weightedEnsemble.run(dynamicsOptions.numSteps, stepsPer, dynamicsOptions.temperature, dynamicsOptions.dt);
+
+    return this;
+  }
 }

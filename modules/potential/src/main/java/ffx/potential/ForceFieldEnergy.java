@@ -2160,7 +2160,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       totalBondedEnergy = nnEnergy + bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy
           + outOfPlaneBendEnergy + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
           + piOrbitalTorsionEnergy + improperTorsionEnergy + torsionTorsionEnergy
-          + restrainDistanceEnergy + restrainPositionEnergy + restrainGroupEnergy + restrainTorsionEnergy + ncsEnergy;
+          + ncsEnergy + comRestraintEnergy
+          + restrainDistanceEnergy + restrainPositionEnergy + restrainGroupEnergy + restrainTorsionEnergy ;
 
       totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
       totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;

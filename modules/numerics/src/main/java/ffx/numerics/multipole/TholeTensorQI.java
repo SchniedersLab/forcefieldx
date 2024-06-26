@@ -79,7 +79,7 @@ public class TholeTensorQI extends CoulombTensorQI {
     super(order);
     this.thole = thole;
     this.AiAk = AiAk;
-    this.operator = OPERATOR.THOLE_FIELD;
+    this.operator = Operator.THOLE_FIELD;
 
     assert (order <= 4);
   }

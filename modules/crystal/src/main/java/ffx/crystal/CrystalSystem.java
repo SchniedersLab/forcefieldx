@@ -54,11 +54,32 @@ package ffx.crystal;
  * @since 1.0
  */
 public enum CrystalSystem {
+  /**
+   * Triclinic crystal system.
+   */
   TRICLINIC,
+  /**
+   * Monoclinic crystal system.
+   */
   MONOCLINIC,
+  /**
+   * Orthorhombic crystal system.
+   */
   ORTHORHOMBIC,
+  /**
+   * Tetragonal crystal system.
+   */
   TETRAGONAL,
+  /**
+   * Trigonal crystal system.
+   */
   TRIGONAL,
+  /**
+   * Hexagonal crystal system.
+   */
   HEXAGONAL,
+  /**
+   * Cubic crystal system.
+   */
   CUBIC
 }

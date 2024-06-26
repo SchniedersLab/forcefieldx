@@ -6,7 +6,7 @@
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>forcefieldx</artifactId>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>ffx-openmm</artifactId>

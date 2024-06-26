@@ -139,7 +139,7 @@ public class BornRadiiRegion extends ParallelRegion {
    */
   private final boolean neckCorrection;
   /**
-   * Boolean indicating whether or not to use the tanh volume correction for the implicit solvent
+   * Boolean indicating whether to use the tanh volume correction for the implicit solvent
    */
   private final boolean tanhCorrection;
   /**

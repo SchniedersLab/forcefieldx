@@ -46,8 +46,8 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
     GKTensorGlobalTest.class,
     GKTensorQITest.class,
-    GlobalMultipoleTensorTest.class,
+    MultipoleTensorGlobalTest.class,
     MultipoleTensorTest.class,
-    QIMultipoleTensorTest.class,
+    MultipoleTensorQITest.class,
 })
 public class MultipoleTestSuite {}

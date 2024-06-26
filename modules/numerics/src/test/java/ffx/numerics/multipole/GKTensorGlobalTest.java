@@ -533,7 +533,7 @@ public class GKTensorGlobalTest extends FFXTest {
 
     GKTensorGlobal gkTensorGlobal = new GKTensorGlobal(MONOPOLE, order, gkSource, Eh, Es);
 
-    int tensorCount = MultipoleTensor.tensorCount(order);
+    int tensorCount = MultipoleUtilities.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorGlobal.setR(r);
     gkTensorGlobal.noStorageRecursion(tensor);
@@ -613,7 +613,7 @@ public class GKTensorGlobalTest extends FFXTest {
     gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
 
     GKTensorGlobal gkTensorGlobal = new GKTensorGlobal(DIPOLE, order, gkSource, Eh, Es);
-    int tensorCount = MultipoleTensor.tensorCount(order);
+    int tensorCount = MultipoleUtilities.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorGlobal.setR(r);
     gkTensorGlobal.noStorageRecursion(tensor);
