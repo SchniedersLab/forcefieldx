@@ -38,11 +38,11 @@
 package ffx.numerics.multipole;
 
 import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorOperators;
 
 import static ffx.numerics.multipole.EwaldTensorGlobal.initEwaldSource;
 import static ffx.numerics.special.Erf.erfc;
 import static java.lang.Math.PI;
-import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -128,12 +128,7 @@ public class EwaldTensorGlobalSIMD extends CoulombTensorGlobalSIMD {
     DoubleVector betaR2 = betaR.mul(betaR);
     DoubleVector iBetaR2 = DoubleVector.broadcast(R.species(), 1.0);
     iBetaR2 = iBetaR2.div(betaR2.mul(2.0));
-    // Serial portion to handle the exponential.
-    betaR2.intoArray(work, 0);
-    for (int i = 0; i < R.length(); i++) {
-      work[i] = exp(-work[i]);
-    }
-    DoubleVector expBR2 = DoubleVector.fromArray(R.species(), work, 0);
+    DoubleVector expBR2 = betaR2.neg().lanewise(VectorOperators.EXP);
     // Fnc(x^2) = Sqrt(PI) * erfc(x) / (2*x)
     // where x = Beta*R
     // Serial portion to handle the erfc.
@@ -142,6 +137,7 @@ public class EwaldTensorGlobalSIMD extends CoulombTensorGlobalSIMD {
       work[i] = erfc(work[i]);
     }
     DoubleVector Fnc = DoubleVector.fromArray(R.species(), work, 0);
+
     Fnc = Fnc.mul(sqrtPI).div(betaR.mul(2.0));
     for (int n = 0; n <= order; n++) {
       T000[n] = Fnc.mul(ewaldSource[n]);
