@@ -507,4 +507,59 @@ public class CoulombTensorQISIMD extends MultipoleTensorSIMD {
     }
   }
 
+  /**
+   * Compute the induced dipole field components due to site K at site I.
+   *
+   * @param uxk   X-dipole component.
+   * @param uyk   Y-dipole component.
+   * @param uzk   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order){
+    switch (order) {
+      default:
+      case 3: // Never runs since this is for dipole-dipole interactions
+      case 2:
+        E200 = uzk.mul(R201);
+        E020 = uzk.mul(R021);
+        E002 = uzk.mul(R003);
+        E110 = DoubleVector.broadcast(DoubleVector.SPECIES_PREFERRED, 0.0);
+        E101 = uxk.mul(R201);
+        E011 = uyk.mul(R021);
+      case 1:
+        E100 = uxk.mul(R200).neg();
+        E010 = uyk.mul(R020).neg();
+        E001 = uzk.mul(R002).neg();
+      case 0:
+        E000 = uzk.mul(R001);
+    }
+  }
+
+    /**
+     * Compute the induced dipole field components due to site I at site K.
+     *
+     * @param uxi   X-dipole component.
+     * @param uyi   Y-dipole component.
+     * @param uzi   Z-dipole component.
+     * @param order Potential order.
+     */
+    protected void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order){
+      switch (order) {
+        default:
+        case 3: // Never runs since this is for dipole-dipole interactions
+        case 2:
+          E200 = uzi.mul(R201.neg());
+          E020 = uzi.mul(R021.neg());
+          E002 = uzi.mul(R003.neg());
+          E110 = DoubleVector.broadcast(DoubleVector.SPECIES_PREFERRED, 0.0);
+          E101 = uxi.mul(R201.neg());
+          E011 = uyi.mul(R021.neg());
+        case 1:
+          E100 = uxi.mul(R200.neg());
+          E010 = uyi.mul(R020.neg());
+          E001 = uzi.mul(R002.neg());
+        case 0:
+          E000 = uzi.mul(R001.neg());
+      }
+    }
 }
