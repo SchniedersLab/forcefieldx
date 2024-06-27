@@ -209,7 +209,7 @@ public class PolarizableMultipoleSIMD {
    * @param scaleInduction Induction mask scale factor.
    * @param scaleEnergy    Energy mask scale factor.
    */
-  public final void applyMasks(double scaleInduction, double scaleEnergy) {
+  public final void applyMasks(DoubleVector scaleInduction, DoubleVector scaleEnergy) {
     // [Ux, Uy, Uz] resulted from induction masking rules, and we now apply the energy mask.
     // [Px, Py, Pz] resulted from energy masking rules, and we now apply the induction mask.
     sx = ux.mul(scaleEnergy).add(px.mul(scaleInduction)).mul(0.5);

@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static java.lang.Math.fma;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
@@ -414,6 +415,231 @@ public abstract class MultipoleTensorSIMD {
         }
       }
     }
+  }
+
+  /**
+   * Contract a multipole with the potential and its derivatives.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @return The permanent multipole energy.
+   */
+  protected final DoubleVector multipoleEnergy(PolarizableMultipoleSIMD m) {
+    DoubleVector total = m.q.mul(E000);
+    total = m.dx.fma(E100, total);
+    total = m.dy.fma(E010, total);
+    total = m.dz.fma(E001, total);
+    total = m.qxx.fma(E200, total);
+    total = m.qyy.fma(E020, total);
+    total = m.qzz.fma(E002, total);
+    total = m.qxy.fma(E110, total);
+    total = m.qxz.fma(E101, total);
+    total = m.qyz.fma(E011, total);
+    return total;
+  }
+
+  public DoubleVector multipoleEnergy(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK) {
+    multipoleIPotentialAtK(mI, 2);
+    return multipoleEnergy(mK);
+  }
+
+  /**
+   * Compute the permanent multipole gradient.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @param g The atomic gradient.
+   */
+  protected final void multipoleGradient(PolarizableMultipoleSIMD m, DoubleVector[] g) {
+    // dEnergy/dX
+    DoubleVector total = m.q.mul(E100);
+    total = m.dx.fma(E200, total);
+    total = m.dy.fma(E110, total);
+    total = m.dz.fma(E101, total);
+    total = m.qxx.fma(E300, total);
+    total = m.qyy.fma(E120, total);
+    total = m.qzz.fma(E102, total);
+    total = m.qxy.fma(E210, total);
+    total = m.qxz.fma(E201, total);
+    total = m.qyz.fma(E111, total);
+    g[0] = total;
+
+    // dEnergy/dY
+    total = m.q.mul(E010);
+    total = m.dx.fma(E110, total);
+    total = m.dy.fma(E020, total);
+    total = m.dz.fma(E011, total);
+    total = m.qxx.fma(E210, total);
+    total = m.qyy.fma(E030, total);
+    total = m.qzz.fma(E012, total);
+    total = m.qxy.fma(E120, total);
+    total = m.qxz.fma(E111, total);
+    total = m.qyz.fma(E021, total);
+    g[1] = total;
+
+    // dEnergy/dZ
+    total = m.q.mul(E001);
+    total = m.dx.fma(E101, total);
+    total = m.dy.fma(E011, total);
+    total = m.dz.fma(E002, total);
+    total = m.qxx.fma(E201, total);
+    total = m.qyy.fma(E021, total);
+    total = m.qzz.fma(E003, total);
+    total = m.qxy.fma(E111, total);
+    total = m.qxz.fma(E102, total);
+    total = m.qyz.fma(E012, total);
+    g[2] = total;
+  }
+
+  /**
+   * Compute the torque on a permanent multipole.
+   *
+   * @param m      PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void multipoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
+    // Torque on the permanent dipole due to the field.
+    DoubleVector dx = m.dy.mul(E001).sub(m.dz.mul(E010));
+    DoubleVector dy = m.dz.mul(E100).sub(m.dx.mul(E001));
+    DoubleVector dz = m.dx.mul(E010).sub(m.dy.mul(E100));
+
+    // Torque on the permanent quadrupole due to the gradient of the field.
+    DoubleVector qx = m.qxy.mul(E101).add(m.qyy.mul(E011).mul(2.0)).add(m.qyz.mul(E002))
+            .sub(m.qxz.mul(E110).add(m.qyz.mul(E020)).add(m.qzz.mul(E011).mul(2.0)));
+    DoubleVector qy = m.qxz.mul(E200).add(m.qyz.mul(E110)).add(m.qzz.mul(E101).mul(2.0))
+            .sub(m.qxx.mul(E101).mul(2.0).add(m.qxy.mul(E011)).add(m.qxz.mul(E002)));
+    DoubleVector qz = m.qxx.mul(E110).mul(2.0).add(m.qxy.mul(E020)).add(m.qxz.mul(E011))
+            .sub(m.qxy.mul(E200).add(m.qyy.mul(E110).mul(2.0)).add(m.qyz.mul(E101)));
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] = torque[0].sub(dx.add(qx));
+    torque[1] = torque[1].sub(dy.add(qy));
+    torque[2] = torque[2].sub(dz.add(qz));
+  }
+
+  /**
+   * Contract an induced dipole with the potential and its derivatives.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @return The polarization energy.
+   */
+  protected final DoubleVector polarizationEnergy(PolarizableMultipoleSIMD m) {
+    // E = -1/2 * u.E
+    // No negative sign because the field E = [-E100, -E010, -E001].
+    return (m.ux.mul(E100).add(m.uy.mul(E010)).add(m.uz.mul(E001))).mul(.5);
+  }
+
+  /**
+   * Contract an induced dipole with the potential and its derivatives.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @return The polarization energy.
+   */
+  protected final DoubleVector polarizationEnergyS(PolarizableMultipoleSIMD m) {
+    // E = -1/2 * u.E
+    // No negative sign because the field E = [-E100, -E010, -E001].
+    return (m.sx.mul(E100).add(m.sy.mul(E010)).add(m.sz.mul(E001))).mul(.5);
+  }
+
+  /**
+   * Polarization Energy and Gradient.
+   *
+   * @param mI            PolarizableMultipole at site I.
+   * @param mK            PolarizableMultipole at site K.
+   * @param inductionMask a double.
+   * @param energyMask    a double.
+   * @param mutualMask    a double.
+   * @param Gi            an array of {@link double} objects.
+   * @param Ti            an array of {@link double} objects.
+   * @param Tk            an array of {@link double} objects.
+   * @return a double.
+   */
+  public DoubleVector polarizationEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
+                                              DoubleVector inductionMask, DoubleVector energyMask, DoubleVector mutualMask,
+                                              DoubleVector[] Gi, DoubleVector[] Ti, DoubleVector[] Tk) {
+
+    // Add the induction and energy masks to create an "averaged" induced dipole (sx, sy, sz).
+    mI.applyMasks(inductionMask, energyMask);
+    mK.applyMasks(inductionMask, energyMask);
+
+    // Find the permanent multipole potential and derivatives at site k.
+    multipoleIPotentialAtK(mI, 2);
+    // Energy of induced dipole k in the field of multipole i.
+    // The field E_x = -E100.
+    DoubleVector eK = polarizationEnergy(mK);
+    // Derivative with respect to moving atom k.
+    Gi[0] = mK.sx.mul(E200).add(mK.sy.mul(E110)).add(mK.sz.mul(E101)).neg();
+    Gi[1] = mK.sx.mul(E110).add(mK.sy.mul(E020)).add(mK.sz.mul(E011)).neg();
+    Gi[2] = mK.sx.mul(E101).add(mK.sy.mul(E011)).add(mK.sz.mul(E002)).neg();
+
+    // Find the permanent multipole potential and derivatives at site i.
+    multipoleKPotentialAtI(mK, 2);
+    // Energy of induced dipole i in the field of multipole k.
+    DoubleVector eI = polarizationEnergy(mI);
+    // Derivative with respect to moving atom i.
+    Gi[0] = Gi[0].add(mI.sx.mul(E200).add(mI.sy.mul(E110)).add(mI.sz.mul(E101)));
+    Gi[1] = Gi[1].add(mI.sx.mul(E110).add(mI.sy.mul(E020)).add(mI.sz.mul(E011)));
+    Gi[2] = Gi[2].add(mI.sx.mul(E101).add(mI.sy.mul(E011)).add(mI.sz.mul(E002)));
+
+    // Total polarization energy.
+    DoubleVector energy = eI.add(eK).mul(energyMask);
+
+    // Get the induced-induced portion of the force (Ud . dC/dX . Up).
+    // This contribution does not exist for direct polarization (mutualMask == 0.0).
+    // For SIMD code, we are unable to hide this in an if statement, calculation is still correct with it
+    // Find the potential and its derivatives at k due to induced dipole i.
+    dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
+    Gi[0] = Gi[0].sub(mK.px.mul(E200).add(mK.py.mul(E110)).add(mK.pz.mul(E101)).mul(0.5).mul(mutualMask));
+    Gi[1] = Gi[1].sub(mK.px.mul(E110).add(mK.py.mul(E020)).add(mK.pz.mul(E011)).mul(0.5).mul(mutualMask));
+    Gi[2] = Gi[2].sub(mK.px.mul(E101).add(mK.py.mul(E011)).add(mK.pz.mul(E002)).mul(0.5).mul(mutualMask));
+
+    // Find the potential and its derivatives at i due to induced dipole k.
+    dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
+    Gi[0] = Gi[0].add(mI.px.mul(E200).add(mI.py.mul(E110)).add(mI.pz.mul(E101)).mul(0.5).mul(mutualMask));
+    Gi[1] = Gi[1].add(mI.px.mul(E110).add(mI.py.mul(E020)).add(mI.pz.mul(E011)).mul(0.5).mul(mutualMask));
+    Gi[2] = Gi[2].add(mI.px.mul(E101).add(mI.py.mul(E011)).add(mI.pz.mul(E002)).mul(0.5).mul(mutualMask));
+
+    // Find the potential and its derivatives at K due to the averaged induced dipole at site i.
+    dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
+    multipoleTorque(mK, Tk);
+
+    // Find the potential and its derivatives at I due to the averaged induced dipole at site k.
+    dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
+    multipoleTorque(mI, Ti);
+
+    return energy;
+  }
+
+  /**
+   * Permanent multipole energy and gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole energy.
+   */
+  public DoubleVector multipoleEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
+                                           DoubleVector[] Gi, DoubleVector[] Gk, DoubleVector[] Ti, DoubleVector[] Tk) {
+    multipoleIPotentialAtK(mI, 3);
+    DoubleVector energy = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    Gi[0] = Gi[0].sub(Gk[0]);
+    Gi[1] = Gi[1].sub(Gk[1]);
+    Gi[2] = Gi[2].sub(Gk[2]);
+
+    // Torques
+    multipoleTorque(mK, Tk);
+    multipoleKPotentialAtI(mK, 2);
+    multipoleTorque(mI, Ti);
+
+    // dEdZ = -Gi[2];
+    // if (order >= 6) {
+    //  multipoleIdZ2(mI);
+    //  d2EdZ2 = dotMultipole(mK);
+    // }
+
+    return energy;
   }
 
   /**
@@ -835,4 +1061,25 @@ public abstract class MultipoleTensorSIMD {
 
   @SuppressWarnings("fallthrough")
   protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
+
+  /**
+   * Compute the induced dipole field components due to site K at site I.
+   *
+   * @param uxk   X-dipole component.
+   * @param uyk   Y-dipole component.
+   * @param uzk   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected abstract void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order);
+
+  /**
+   * Compute the induced dipole field components due to site I at site K.
+   *
+   * @param uxi   X-dipole component.
+   * @param uyi   Y-dipole component.
+   * @param uzi   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected abstract void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order);
+
 }

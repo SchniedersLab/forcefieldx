@@ -3,6 +3,7 @@ package ffx.numerics.multipole;
 import jdk.incubator.vector.DoubleVector;
 
 import static ffx.numerics.multipole.CoordinateSystem.GLOBAL;
+import static java.lang.Math.fma;
 
 /**
  * The CoulombTensorGlobal class computes derivatives of 1/|<b>r</b>| via recursion to arbitrary
@@ -1020,4 +1021,128 @@ public class CoulombTensorGlobalSIMD extends MultipoleTensorSIMD {
     }
   }
 
+  /**
+   * Compute the induced dipole field components due to site K at site I.
+   *
+   * @param uxk   X-dipole component.
+   * @param uyk   Y-dipole component.
+   * @param uzk   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order){
+    switch (order) {
+      default:
+      case 3: // Never Runs since this is for dipole-dipole interactions.
+      case 2:
+        // Order 2.
+        DoubleVector term200 = uxk.mul(R300);
+        term200 = uyk.fma(R210, term200);
+        term200 = uzk.fma(R201, term200);
+        E200 = term200;
+        DoubleVector term020 = uxk.mul(R120);
+        term020 = uyk.fma(R030, term020);
+        term020 = uzk.fma(R021, term020);
+        E020 = term020;
+        DoubleVector term002 = uxk.mul(R102);
+        term002 = uyk.fma(R012, term002);
+        term002 = uzk.fma(R003, term002);
+        E002 = term002;
+        DoubleVector term110 = uxk.mul(R210);
+        term110 = uyk.fma(R120, term110);
+        term110 = uzk.fma(R111, term110);
+        E110 = term110;
+        DoubleVector term101 = uxk.mul(R201);
+        term101 = uyk.fma(R111, term101);
+        term101 = uzk.fma(R102, term101);
+        E101 = term101;
+        DoubleVector term011 = uxk.mul(R111);
+        term011 = uyk.fma(R021, term011);
+        term011 = uzk.fma(R012, term011);
+        E011 = term011;
+      case 1:
+        // Order 1 (need a minus sign).
+        DoubleVector term100 = uxk.mul(R200);
+        term100 = uyk.fma(R110, term100);
+        term100 = uzk.fma(R101, term100);
+        E100 = term100.neg();
+        DoubleVector term010 = uxk.mul(R110);
+        term010 = uyk.fma(R020, term010);
+        term010 = uzk.fma(R011, term010);
+        E010 = term010.neg();
+        DoubleVector term001 = uxk.mul(R101);
+        term001 = uyk.fma(R011, term001);
+        term001 = uzk.fma(R002, term001);
+        E001 = term001.neg();
+      case 0:
+        DoubleVector term000 = uxk.mul(R100);
+        term000 = uyk.fma(R010, term000);
+        term000 = uzk.fma(R001, term000);
+        E000 = term000;
+    }
+  }
+
+  /**
+   * Compute the induced dipole field components due to site I at site K.
+   *
+   * @param uxi   X-dipole component.
+   * @param uyi   Y-dipole component.
+   * @param uzi   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order) {
+    switch (order) {
+      default:
+      case 3: // Never runs since this is for dipole-dipole interactions.
+      case 2:
+        // Order 2
+        DoubleVector term200 = uxi.mul(R300.neg());
+        term200 = uyi.fma(R210.neg(), term200);
+        term200 = uzi.fma(R201.neg(), term200);
+        E200 = term200;
+        DoubleVector term020 = uxi.mul(R120.neg());
+        term020 = uyi.fma(R030.neg(), term020);
+        term020 = uzi.fma(R021.neg(), term020);
+        E020 = term020;
+        DoubleVector term002 = uxi.mul(R102.neg());
+        term002 = uyi.fma(R012.neg(), term002);
+        term002 = uzi.fma(R003.neg(), term002);
+        E002 = term002;
+        DoubleVector term110 = uxi.mul(R210.neg());
+        term110 = uyi.fma(R120.neg(), term110);
+        term110 = uzi.fma(R111.neg(), term110);
+        E110 = term110;
+        DoubleVector term101 = uxi.mul(R201.neg());
+        term101 = uyi.fma(R111.neg(), term101);
+        term101 = uzi.fma(R102.neg(), term101);
+        E101 = term101;
+        DoubleVector term011 = uxi.mul(R111.neg());
+        term011 = uyi.fma(R021.neg(), term011);
+        term011 = uzi.fma(R012.neg(), term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        // This is d/dX of equation 3.1.3 in the Stone book.
+        DoubleVector term100 = uxi.mul(R200.neg());
+        term100 = uyi.fma(R110.neg(), term100);
+        term100 = uzi.fma(R101.neg(), term100);
+        E100 = term100;
+        // This is d/dY of equation 3.1.3 in the Stone book.
+        DoubleVector term010 = uxi.mul(R110.neg());
+        term010 = uyi.fma(R020.neg(), term010);
+        term010 = uzi.fma(R011.neg(), term010);
+        E010 = term010;
+        DoubleVector term001 = uxi.mul(R101.neg());
+        term001 = uyi.fma(R011.neg(), term001);
+        term001 = uzi.fma(R002.neg(), term001);
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book.
+        DoubleVector term000 = uxi.mul(R100.neg());
+        term000 = uyi.fma(R010.neg(), term000);
+        term000 = uzi.fma(R001.neg(), term000);
+        E000 = term000;
+    }
+  }
 }
