@@ -139,121 +139,121 @@ public abstract class MultipoleTensorSIMD {
   protected final DoubleVector[] work;
 
   // Cartesian tensor elements (for 1/R, erfc(Beta*R)/R or DoubleVectorhole damping.
-  DoubleVector R000;
+  protected DoubleVector R000;
   // l + m + n = 1 (3)   4
-  DoubleVector R100;
-  DoubleVector R010;
-  DoubleVector R001;
+  protected DoubleVector R100;
+  protected DoubleVector R010;
+  protected DoubleVector R001;
   // l + m + n = 2 (6)  10
-  DoubleVector R200;
-  DoubleVector R020;
-  DoubleVector R002;
-  DoubleVector R110;
-  DoubleVector R101;
-  DoubleVector R011;
+  protected DoubleVector R200;
+  protected DoubleVector R020;
+  protected DoubleVector R002;
+  protected DoubleVector R110;
+  protected DoubleVector R101;
+  protected DoubleVector R011;
   // l + m + n = 3 (10) 20
-  DoubleVector R300;
-  DoubleVector R030;
-  DoubleVector R003;
-  DoubleVector R210;
-  DoubleVector R201;
-  DoubleVector R120;
-  DoubleVector R021;
-  DoubleVector R102;
-  DoubleVector R012;
-  DoubleVector R111;
+  protected DoubleVector R300;
+  protected DoubleVector R030;
+  protected DoubleVector R003;
+  protected DoubleVector R210;
+  protected DoubleVector R201;
+  protected DoubleVector R120;
+  protected DoubleVector R021;
+  protected DoubleVector R102;
+  protected DoubleVector R012;
+  protected DoubleVector R111;
   // l + m + n = 4 (15) 35
-  DoubleVector R400;
-  DoubleVector R040;
-  DoubleVector R004;
-  DoubleVector R310;
-  DoubleVector R301;
-  DoubleVector R130;
-  DoubleVector R031;
-  DoubleVector R103;
-  DoubleVector R013;
-  DoubleVector R220;
-  DoubleVector R202;
-  DoubleVector R022;
-  DoubleVector R211;
-  DoubleVector R121;
-  DoubleVector R112;
+  protected DoubleVector R400;
+  protected DoubleVector R040;
+  protected DoubleVector R004;
+  protected DoubleVector R310;
+  protected DoubleVector R301;
+  protected DoubleVector R130;
+  protected DoubleVector R031;
+  protected DoubleVector R103;
+  protected DoubleVector R013;
+  protected DoubleVector R220;
+  protected DoubleVector R202;
+  protected DoubleVector R022;
+  protected DoubleVector R211;
+  protected DoubleVector R121;
+  protected DoubleVector R112;
   // l + m + n = 5 (21) 56
-  DoubleVector R500;
-  DoubleVector R050;
-  DoubleVector R005;
-  DoubleVector R410;
-  DoubleVector R401;
-  DoubleVector R140;
-  DoubleVector R041;
-  DoubleVector R104;
-  DoubleVector R014;
-  DoubleVector R320;
-  DoubleVector R302;
-  DoubleVector R230;
-  DoubleVector R032;
-  DoubleVector R203;
-  DoubleVector R023;
-  DoubleVector R311;
-  DoubleVector R131;
-  DoubleVector R113;
-  DoubleVector R221;
-  DoubleVector R212;
-  DoubleVector R122;
+  protected DoubleVector R500;
+  protected DoubleVector R050;
+  protected DoubleVector R005;
+  protected DoubleVector R410;
+  protected DoubleVector R401;
+  protected DoubleVector R140;
+  protected DoubleVector R041;
+  protected DoubleVector R104;
+  protected DoubleVector R014;
+  protected DoubleVector R320;
+  protected DoubleVector R302;
+  protected DoubleVector R230;
+  protected DoubleVector R032;
+  protected DoubleVector R203;
+  protected DoubleVector R023;
+  protected DoubleVector R311;
+  protected DoubleVector R131;
+  protected DoubleVector R113;
+  protected DoubleVector R221;
+  protected DoubleVector R212;
+  protected DoubleVector R122;
   // l + m + n = 6 (28) 84
-  DoubleVector R006;
-  DoubleVector R402;
-  DoubleVector R042;
-  DoubleVector R204;
-  DoubleVector R024;
-  DoubleVector R222;
-  DoubleVector R600;
-  DoubleVector R060;
-  DoubleVector R510;
-  DoubleVector R501;
-  DoubleVector R150;
-  DoubleVector R051;
-  DoubleVector R105;
-  DoubleVector R015;
-  DoubleVector R420;
-  DoubleVector R240;
-  DoubleVector R411;
-  DoubleVector R141;
-  DoubleVector R114;
-  DoubleVector R330;
-  DoubleVector R303;
-  DoubleVector R033;
-  DoubleVector R321;
-  DoubleVector R231;
-  DoubleVector R213;
-  DoubleVector R312;
-  DoubleVector R132;
-  DoubleVector R123;
+  protected DoubleVector R006;
+  protected DoubleVector R402;
+  protected DoubleVector R042;
+  protected DoubleVector R204;
+  protected DoubleVector R024;
+  protected DoubleVector R222;
+  protected DoubleVector R600;
+  protected DoubleVector R060;
+  protected DoubleVector R510;
+  protected DoubleVector R501;
+  protected DoubleVector R150;
+  protected DoubleVector R051;
+  protected DoubleVector R105;
+  protected DoubleVector R015;
+  protected DoubleVector R420;
+  protected DoubleVector R240;
+  protected DoubleVector R411;
+  protected DoubleVector R141;
+  protected DoubleVector R114;
+  protected DoubleVector R330;
+  protected DoubleVector R303;
+  protected DoubleVector R033;
+  protected DoubleVector R321;
+  protected DoubleVector R231;
+  protected DoubleVector R213;
+  protected DoubleVector R312;
+  protected DoubleVector R132;
+  protected DoubleVector R123;
 
   // Components of the potential, field and field gradient.
-  DoubleVector E000; // Potential
+  protected DoubleVector E000; // Potential
   // l + m + n = 1 (3)   4
-  DoubleVector E100; // d/dX
-  DoubleVector E010; // d/dY
-  DoubleVector E001; // d/dz
+  protected DoubleVector E100; // d/dX
+  protected DoubleVector E010; // d/dY
+  protected DoubleVector E001; // d/dz
   // l + m + n = 2 (6)  10
-  DoubleVector E200; // d^2/dXdX
-  DoubleVector E020; // d^2/dYdY
-  DoubleVector E002; // d^2/dZdZ
-  DoubleVector E110; // d^2/dXdY
-  DoubleVector E101; // d^2/dXdZ
-  DoubleVector E011; // d^2/dYdZ
+  protected DoubleVector E200; // d^2/dXdX
+  protected DoubleVector E020; // d^2/dYdY
+  protected DoubleVector E002; // d^2/dZdZ
+  protected DoubleVector E110; // d^2/dXdY
+  protected DoubleVector E101; // d^2/dXdZ
+  protected DoubleVector E011; // d^2/dYdZ
   // l + m + n = 3 (10) 20
-  DoubleVector E300; // d^3/dXdXdX
-  DoubleVector E030; // d^3/dYdYdY
-  DoubleVector E003; // d^3/dZdZdZ
-  DoubleVector E210; // d^3/dXdXdY
-  DoubleVector E201; // d^3/dXdXdZ
-  DoubleVector E120; // d^3/dXdYdY
-  DoubleVector E021; // d^3/dYdYdZ
-  DoubleVector E102; // d^3/dXdZdZ
-  DoubleVector E012; // d^3/dYdZdZ
-  DoubleVector E111; // d^3/dXdYdZ
+  protected DoubleVector E300; // d^3/dXdXdX
+  protected DoubleVector E030; // d^3/dYdYdY
+  protected DoubleVector E003; // d^3/dZdZdZ
+  protected DoubleVector E210; // d^3/dXdXdY
+  protected DoubleVector E201; // d^3/dXdXdZ
+  protected DoubleVector E120; // d^3/dXdYdY
+  protected DoubleVector E021; // d^3/dYdYdZ
+  protected DoubleVector E102; // d^3/dXdZdZ
+  protected DoubleVector E012; // d^3/dYdZdZ
+  protected DoubleVector E111; // d^3/dXdYdZ
 
   /**
    * Constructor for MultipoleTensor.
@@ -424,36 +424,44 @@ public abstract class MultipoleTensorSIMD {
   protected abstract void source(DoubleVector[] T000);
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 1st order.
+   * Hard coded tensor computation up to 1st order. This code is auto-generated for both Global and QI frames.
    */
   protected abstract void order1();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 2nd order.
+   * Hard coded tensor computation up to 2nd order. This code is auto-generated for both Global and QI frames.
    */
   protected abstract void order2();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 3rd order.
+   * Hard coded tensor computation up to 3rd order. This code is auto-generated for both Global and QI frames.
    */
   protected abstract void order3();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 4th order.
+   * Hard coded tensor computation up to 4th order. This code is auto-generated for both Global and QI frames.
    */
   protected abstract void order4();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 5th order, which is needed for
-   * quadrupole-quadrupole forces.
+   * Hard coded tensor computation up to 5th order. This code is auto-generated for both Global and QI frames.
+   * <br>
+   * The 5th order recursion is needed for quadrupole-quadrupole forces.
    */
   protected abstract void order5();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 6th order, which is needed for
-   * quadrupole-quadrupole forces and orthogonal space sampling.
+   * Hard coded tensor computation up to 6th order. This code is auto-generated for both Global and QI frames.
+   * <br>
+   * This is needed for quadrupole-quadrupole forces and orthogonal space sampling.
    */
   protected abstract void order6();
+
+  @SuppressWarnings("fallthrough")
+  protected abstract void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
+
+  @SuppressWarnings("fallthrough")
+  protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
 
   /**
    * The index is based on the idea of filling tetrahedron.
@@ -829,10 +837,4 @@ public abstract class MultipoleTensorSIMD {
    * Derivatives with respect to x, y and z.
    */
   protected final int t222;
-
-  @SuppressWarnings("fallthrough")
-  protected abstract void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
-
-  @SuppressWarnings("fallthrough")
-  protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
 }

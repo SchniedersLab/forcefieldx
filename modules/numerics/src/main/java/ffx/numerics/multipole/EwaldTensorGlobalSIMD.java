@@ -37,10 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import jdk.incubator.vector.DoubleVector;
+
+import static ffx.numerics.multipole.EwaldTensorGlobal.initEwaldSource;
 import static ffx.numerics.special.Erf.erfc;
 import static java.lang.Math.PI;
 import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -54,7 +56,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
-public class EwaldTensorGlobal extends CoulombTensorGlobal {
+public class EwaldTensorGlobalSIMD extends CoulombTensorGlobalSIMD {
 
   /**
    * Constant <code>sqrtPI = sqrt(PI)</code>
@@ -67,6 +69,11 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
   private final double[] ewaldSource;
 
   /**
+   * A work array for generation of source terms that cannot be vectorized (exp and erfc).
+   */
+  private final double[] work;
+
+  /**
    * The Ewald convergence parameter.
    */
   private final double beta;
@@ -77,29 +84,15 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
    * @param order Tensor order.
    * @param beta  The Ewald convergence parameter.
    */
-  public EwaldTensorGlobal(int order, double beta) {
+  public EwaldTensorGlobalSIMD(int order, double beta) {
     super(order);
     this.beta = beta;
     operator = Operator.SCREENED_COULOMB;
 
     // Auxiliary terms for screened Coulomb (Sagui et al. Eq. 2.28)
     ewaldSource = new double[o1];
+    work = new double[o1];
     initEwaldSource(order, beta, ewaldSource);
-  }
-
-  /**
-   * Initialize the Ewald source terms.
-   *
-   * @param order       Tensor order.
-   * @param beta        The Ewald convergence parameter.
-   * @param ewaldSource Location to store the source terms.
-   */
-  protected static void initEwaldSource(int order, double beta, double[] ewaldSource) {
-    double prefactor = 2.0 * beta / sqrtPI;
-    double twoBeta2 = -2.0 * beta * beta;
-    for (int n = 0; n <= order; n++) {
-      ewaldSource[n] = prefactor * pow(twoBeta2, n);
-    }
   }
 
   /**
@@ -108,10 +101,10 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
    * @param T000 Location to store the source terms.
    */
   @Override
-  protected void source(double[] T000) {
+  protected void source(DoubleVector[] T000) {
     // Generate source terms for real space Ewald summation.
     if (beta > 0.0) {
-      fillEwaldSource(order, beta, ewaldSource, R, T000);
+      fillEwaldSource(order, beta, ewaldSource, R, T000, work);
     } else {
       // For beta = 0, generate tensors for the Coulomb operator.
       super.source(T000);
@@ -126,22 +119,36 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
    * @param ewaldSource The source terms.
    * @param R           The separation distance.
    * @param T000        The location to store the source terms.
+   * @param work        A work array for generation of source terms that cannot be vectorized.
    */
-  protected static void fillEwaldSource(int order, double beta, double[] ewaldSource, double R, double[] T000) {
+  protected static void fillEwaldSource(int order, double beta, double[] ewaldSource,
+                                        DoubleVector R, DoubleVector[] T000, double[] work) {
     // Sagui et al. Eq. 2.22
-    double betaR = beta * R;
-    double betaR2 = betaR * betaR;
-    double iBetaR2 = 1.0 / (2.0 * betaR2);
-    double expBR2 = exp(-betaR2);
+    DoubleVector betaR = R.mul(beta);
+    DoubleVector betaR2 = betaR.mul(betaR);
+    DoubleVector iBetaR2 = DoubleVector.broadcast(R.species(), 1.0);
+    iBetaR2 = iBetaR2.div(betaR2.mul(2.0));
+    // Serial portion to handle the exponential.
+    betaR2.intoArray(work, 0);
+    for (int i = 0; i < R.length(); i++) {
+      work[i] = exp(-work[i]);
+    }
+    DoubleVector expBR2 = DoubleVector.fromArray(R.species(), work, 0);
     // Fnc(x^2) = Sqrt(PI) * erfc(x) / (2*x)
     // where x = Beta*R
-    double Fnc = sqrtPI * erfc(betaR) / (2.0 * betaR);
+    // Serial portion to handle the erfc.
+    betaR.intoArray(work, 0);
+    for (int i = 0; i < R.length(); i++) {
+      work[i] = erfc(work[i]);
+    }
+    DoubleVector Fnc = DoubleVector.fromArray(R.species(), work, 0);
+    Fnc = Fnc.mul(sqrtPI).div(betaR.mul(2.0));
     for (int n = 0; n <= order; n++) {
-      T000[n] = ewaldSource[n] * Fnc;
+      T000[n] = Fnc.mul(ewaldSource[n]);
       // Generate F(n+1)c from Fnc (Eq. 2.24 in Sagui et al.)
       // F(n+1)c = [(2*n+1) Fnc(x) + exp(-x)] / 2x
       // where x = (Beta*R)^2
-      Fnc = ((2.0 * n + 1.0) * Fnc + expBR2) * iBetaR2;
+      Fnc = ((Fnc.mul(2.0 * n + 1.0)).add(expBR2)).mul(iBetaR2);
     }
   }
 
