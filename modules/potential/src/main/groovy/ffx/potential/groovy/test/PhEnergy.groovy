@@ -151,6 +151,18 @@ class PhEnergy extends PotentialScript {
             description = "Run (restartable) energy evaluations for MBAR. Requires an ARC file to be passed in. Set the tautomer flag to true for tautomer parameterization.")
     boolean mbar = false
 
+    @Option(names = ["--numLambda", "--nL", "--nw"], paramLabel = "-1",
+            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
+    int numLambda = -1
+
+    @Option(names = ["--outputDir", "--oD"], paramLabel = "",
+            description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
+    String outputDirectory = ""
+
+    @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
+            description = "Perform dU/dL evaluations and save to mbarFiles.")
+    boolean derivatives = false
+
     @Option(names = ["--perturbTautomer"], paramLabel = "false",
             description = "Change tautomer instead of lambda state for MBAR energy evaluations.")
     boolean tautomer = false
@@ -408,32 +420,54 @@ class PhEnergy extends PotentialScript {
 
     void computeESVEnergiesAndWriteFile(SystemFilter systemFilter, ExtendedSystem esvSystem) {
         // Find all run directories to determine lambda states & make necessary files
-        File dir = new File(filename).getParentFile()
-        File parentDir = dir.getParentFile()
-        int thisRung = -1
-        dir.getName().find(/(\d+)/) { match ->
-            thisRung = match[0].toInteger()
-        }
-        assert thisRung != -1 : "Could not determine the rung number from the directory name."
-        File mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
-                + thisRung + ".mbar")
-        mbarFile.getParentFile().mkdir()
-        File[] lsFiles = parentDir.listFiles()
-        List<File> rungFiles = new ArrayList<>()
-        for (File file : lsFiles) {
-            if (file.isDirectory() && file.getName().matches(/\d+/)){
-                rungFiles.add(file)
+        File mbarFile;
+        File mbarGradFile;
+        double[] lambdas
+        if (outputDirectory.isEmpty()) {
+            File dir = new File(filename).getParentFile()
+            File parentDir = dir.getParentFile()
+            int thisRung = -1
+            dir.getName().find(/(\d+)/) { match ->
+                thisRung = match[0].toInteger()
+            }
+            assert thisRung != -1: "Could not determine the rung number from the directory name."
+            mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
+                    + thisRung + ".mbar")
+            mbarGradFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "derivative_"
+                    + thisRung + ".mbar")
+            mbarFile.getParentFile().mkdir()
+            File[] lsFiles = parentDir.listFiles()
+            List<File> rungFiles = new ArrayList<>()
+            for (File file : lsFiles) {
+                if (file.isDirectory() && file.getName().matches(/\d+/)) {
+                    rungFiles.add(file)
+                }
+            }
+            if (numLambda == -1) {
+                numLambda = rungFiles.size()
+            }
+            lambdas = new double[numLambda]
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
+            }
+
+
+            logger.info(" Computing energies for each lambda state for generation of mbar file.")
+            logger.info(" MBAR File: " + mbarFile)
+            logger.info(" Lambda States: " + lambdas)
+        } else {
+            mbarFile     = new File(outputDirectory + File.separator + "energy_0.mbar")
+            mbarGradFile = new File(outputDirectory + File.separator + "derivative_0.mbar")
+            lambdas = new double[numLambda]
+            if (numLambda == -1){
+                logger.severe("numLambda must be set when outputDirectory is set.")
+            }
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
             }
         }
-        double[] lambdas = new double[rungFiles.size()]
-        for (int i = 0; i < rungFiles.size(); i++) {
-            double dL = 1 / (rungFiles.size()-1)
-            lambdas[i] = i * dL
-        }
-
-        logger.info(" Computing energies for each lambda state for generation of mbar file.")
-        logger.info(" MBAR File: " + mbarFile)
-        logger.info(" Lambda States: " + lambdas)
 
         int progress = 1
         if (mbarFile.exists()){ // Restartable
@@ -450,19 +484,30 @@ class PhEnergy extends PotentialScript {
             int index = progress
             double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
             try(FileWriter fw = new FileWriter(mbarFile, mbarFile.exists())
-                BufferedWriter writer = new BufferedWriter(fw)){
+                BufferedWriter writer = new BufferedWriter(fw)
+                FileWriter fwGrad = new FileWriter(mbarGradFile, mbarGradFile.exists())
+                BufferedWriter writerGrad = new BufferedWriter(fwGrad)
+            ){
                 // Write header (Number of snaps, temp, and this.xyz)
                 StringBuilder sb = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
+                StringBuilder sbGrad = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
                 logger.info(" MBAR file temp is hardcoded to 298.0 K. Please change if necessary.")
                 sb.append("\n")
+                sbGrad.append("\n")
                 if (progress == 1) { // File didn't exist (more consistent than checking for existence)
                     writer.write(sb.toString())
                     writer.flush()
                     logger.info(" Header: " + sb.toString())
+                    if(derivatives){
+                       writerGrad.write(sbGrad.toString())
+                       writerGrad.flush()
+                       logger.info(" Header: " + sbGrad.toString())
+                    }
                 }
                 while (systemFilter.readNext()) {
                     // MBAR lines (\t index\t lambda0 lambda1 ... lambdaN)
                     sb = new StringBuilder("\t" + index + "\t")
+                    sbGrad = new StringBuilder("\t" + index + "\t")
                     index++
                     Crystal crystal = activeAssembly.getCrystal()
                     forceFieldEnergy.setCrystal(crystal)
@@ -473,13 +518,25 @@ class PhEnergy extends PotentialScript {
                             setESVLambda(lambda, esvSystem)
                         }
                         forceFieldEnergy.getCoordinates(x)
-                        energy = forceFieldEnergy.energy(x, false)
+                        if (derivatives) {
+                            energy = forceFieldEnergy.energyAndGradient(x, new double[x.length * 3])
+                            double grad = esvSystem.getDerivatives()[0] // Only one residue
+                            sbGrad.append(grad).append(" ")
+                        } else {
+                            energy = forceFieldEnergy.energy(x, false)
+                        }
                         sb.append(energy).append(" ")
                     }
                     sb.append("\n")
                     writer.write(sb.toString())
                     writer.flush() // Flush after each snapshot, otherwise it doesn't do it consistently
                     logger.info(sb.toString())
+                    if (derivatives) {
+                        sbGrad.append("\n")
+                        writerGrad.write(sbGrad.toString())
+                        writerGrad.flush()
+                        logger.info(sbGrad.toString())
+                    }
                 }
             } catch (IOException e) {
                 logger.severe("Error writing to MBAR file.")
@@ -495,7 +552,7 @@ class PhEnergy extends PotentialScript {
      */
     static void setESVLambda(double lambda, ExtendedSystem extendedSystem) {
         List<Residue> residueList = extendedSystem.getExtendedResidueList()
-        if (residueList.size() == 1) {
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))){
             extendedSystem.setTitrationLambda(residueList.get(0), lambda, false);
         } else {
             if (residueList.size() == 0) {
@@ -514,7 +571,7 @@ class PhEnergy extends PotentialScript {
      */
     static void setESVTautomer(double tautomer, ExtendedSystem extendedSystem) {
         List<Residue> residueList = extendedSystem.getExtendedResidueList()
-        if (residueList.size() == 1) {
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))) {
             extendedSystem.setTautomerLambda(residueList.get(0), tautomer, false);
         } else {
             if (residueList.size() == 0) {
