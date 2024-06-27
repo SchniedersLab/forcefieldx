@@ -149,6 +149,7 @@
           <configuration>
             <!-- forkCount>1</forkCount -->
             <trimStackTrace>false</trimStackTrace>
+            <argLine>--add-modules jdk.incubator.vector</argLine>
           </configuration>
           <dependencies>
             <dependency>
@@ -384,7 +385,7 @@
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
           <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
-          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules jdk.incubator.vector</argLine>
           <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
