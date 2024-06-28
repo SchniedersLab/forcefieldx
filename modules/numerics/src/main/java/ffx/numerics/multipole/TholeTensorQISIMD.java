@@ -37,45 +37,41 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static org.apache.commons.math3.util.FastMath.exp;
+import jdk.incubator.vector.DoubleVector;
+
+import static ffx.numerics.multipole.TholeTensorGlobalSIMD.tholeSource;
 
 /**
- * The TholeTensorGlobal class computes derivatives of Thole damping via recursion to order &lt;= 4 for
- * Cartesian multipoles in either a global frame.
+ * The TholeTensorQI class computes derivatives of Thole damping via recursion to order &lt;= 4 for
+ * Cartesian multipoles in a quasi-internal frame.
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
- *     Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
- *     computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
- *     Ed. J. Leczszynski, World Scientifc, 1996. </a>
+ * Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
+ * computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
+ * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
-public class TholeTensorGlobal extends CoulombTensorGlobal {
-
-  /** Constant <code>threeFifths=3.0 / 5.0</code> */
-  private static final double threeFifths = 3.0 / 5.0;
-
-  /** Constant <code>oneThirtyFifth=1.0 / 35.0</code> */
-  private static final double oneThirtyFifth = 1.0 / 35.0;
+public class TholeTensorQISIMD extends CoulombTensorQISIMD {
 
   /**
    * Thole damping parameter is set to min(pti,ptk)).
    */
-  private double thole;
+  private DoubleVector thole;
 
   /**
    * AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
-  private double AiAk;
+  private DoubleVector AiAk;
 
   /**
-   * Constructor for EwaldMultipoleTensorGlobal.
+   * Constructor for TholeTensorQI.
    *
    * @param order Tensor order.
    * @param thole Thole damping parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
+   * @param AiAk  parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
-  public TholeTensorGlobal(int order, double thole, double AiAk) {
+  public TholeTensorQISIMD(int order, DoubleVector thole, DoubleVector AiAk) {
     super(order);
     this.thole = thole;
     this.AiAk = AiAk;
@@ -89,9 +85,9 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * Set Thole damping parameters
    *
    * @param thole a double.
-   * @param AiAk a double.
+   * @param AiAk  a double.
    */
-  public void setThole(double thole, double AiAk) {
+  public void setThole(DoubleVector thole, DoubleVector AiAk) {
     this.thole = thole;
     this.AiAk = AiAk;
   }
@@ -103,22 +99,8 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * @param r The separation distance.
    * @return True if -thole*u^3 is greater than -50.0.
    */
-  public boolean checkThole(double r) {
-    return checkThole(thole, AiAk, r);
-  }
-
-  /**
-   * Check if the Thole damping is exponential is greater than zero (or the interaction can be
-   * neglected).
-   *
-   * @param thole Thole damping parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
-   * @param r The separation distance.
-   * @return True if -thole*u^3 is greater than -50.0.
-   */
-  protected static boolean checkThole(double thole, double AiAk, double r) {
-    double rAiAk = r * AiAk;
-    return (-thole * rAiAk * rAiAk * rAiAk > -50.0);
+  public boolean checkThole(DoubleVector r) {
+    return TholeTensorGlobalSIMD.checkThole(thole, AiAk, r);
   }
 
   /**
@@ -126,37 +108,12 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    *
    * @param T000 Location to store the source terms.
    */
-  @Override
-  protected void source(double[] T000) {
+  protected void source(DoubleVector[] T000) {
     // Compute the normal Coulomb auxiliary term.
     super.source(T000);
 
     // Add the Thole damping terms: edamp = exp(-thole*u^3).
     tholeSource(thole, AiAk, R, T000);
-  }
-
-  /**
-   * Generate source terms for the Challacombe et al. recursion.
-   *
-   * @param thole Thole damping parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
-   * @param R The separation distance.
-   * @param T000 Location to store the source terms.
-   */
-  protected static void tholeSource(double thole, double AiAk, double R, double[] T000) {
-    // Add the Thole damping terms: edamp = exp(-thole*u^3).
-    double u = R * AiAk;
-    double u3 = thole * u * u * u;
-    double u6 = u3 * u3;
-    double u9 = u6 * u3;
-    double expU3 = exp(-u3);
-
-    // The zeroth order term is not calculated for Thole damping.
-    T000[0] = 0.0;
-    T000[1] *= expU3;
-    T000[2] *= (1.0 + u3) * expU3;
-    T000[3] *= (1.0 + u3 + threeFifths * u6) * expU3;
-    T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) * oneThirtyFifth) * expU3;
   }
 
 }
