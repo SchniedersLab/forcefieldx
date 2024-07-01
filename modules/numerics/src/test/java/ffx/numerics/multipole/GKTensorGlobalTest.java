@@ -37,17 +37,17 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.length2;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
-import static org.junit.Assert.assertEquals;
-
 import ffx.utilities.FFXTest;
 import org.junit.Test;
+
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.multipole.GKMultipoleOrder.DIPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.MONOPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.QUADRUPOLE;
+import static ffx.numerics.multipole.GKTensorMode.BORN;
+import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test the GK tensor evaluated in the global coordinate frame.
@@ -682,10 +682,10 @@ public class GKTensorGlobalTest extends FFXTest {
   }
 
   private void tensorFiniteDifference(GKTensorGlobal multipoleTensor,
-      double delta2, int order, double[] tensor,
-      double[] tensorsPx, double[] tensorsNx,
-      double[] tensorsPy, double[] tensorsNy,
-      double[] tensorsPz, double[] tensorsNz) {
+                                      double delta2, int order, double[] tensor,
+                                      double[] tensorsPx, double[] tensorsNx,
+                                      double[] tensorsPy, double[] tensorsNy,
+                                      double[] tensorsPz, double[] tensorsNz) {
 
     int start = multipoleTensor.multipoleOrder.getOrder();
 

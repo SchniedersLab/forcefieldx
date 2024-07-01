@@ -43,7 +43,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
-import static java.lang.Math.fma;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
@@ -503,16 +502,55 @@ public abstract class MultipoleTensorSIMD {
 
     // Torque on the permanent quadrupole due to the gradient of the field.
     DoubleVector qx = m.qxy.mul(E101).add(m.qyy.mul(E011).mul(2.0)).add(m.qyz.mul(E002))
-            .sub(m.qxz.mul(E110).add(m.qyz.mul(E020)).add(m.qzz.mul(E011).mul(2.0)));
+        .sub(m.qxz.mul(E110).add(m.qyz.mul(E020)).add(m.qzz.mul(E011).mul(2.0)));
     DoubleVector qy = m.qxz.mul(E200).add(m.qyz.mul(E110)).add(m.qzz.mul(E101).mul(2.0))
-            .sub(m.qxx.mul(E101).mul(2.0).add(m.qxy.mul(E011)).add(m.qxz.mul(E002)));
+        .sub(m.qxx.mul(E101).mul(2.0).add(m.qxy.mul(E011)).add(m.qxz.mul(E002)));
     DoubleVector qz = m.qxx.mul(E110).mul(2.0).add(m.qxy.mul(E020)).add(m.qxz.mul(E011))
-            .sub(m.qxy.mul(E200).add(m.qyy.mul(E110).mul(2.0)).add(m.qyz.mul(E101)));
+        .sub(m.qxy.mul(E200).add(m.qyy.mul(E110).mul(2.0)).add(m.qyz.mul(E101)));
 
     // The field along X is -E001, so we need a negative sign.
     torque[0] = torque[0].sub(dx.add(qx));
     torque[1] = torque[1].sub(dy.add(qy));
     torque[2] = torque[2].sub(dz.add(qz));
+  }
+
+  /**
+   * Compute the torque on a permanent dipole.
+   *
+   * @param m      PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void dipoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
+    // Torque on the permanent dipole due to the field.
+    DoubleVector dx = m.dy.mul(E001).sub(m.dz.mul(E010));
+    DoubleVector dy = m.dz.mul(E100).sub(m.dx.mul(E001));
+    DoubleVector dz = m.dx.mul(E010).sub(m.dy.mul(E100));
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] = torque[0].sub(dx);
+    torque[1] = torque[1].sub(dy);
+    torque[2] = torque[2].sub(dz);
+  }
+
+  /**
+   * Compute the torque on a permanent quadrupole.
+   *
+   * @param m      PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void quadrupoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
+    // Torque on the permanent quadrupole due to the gradient of the field.
+    DoubleVector qx = m.qxy.mul(E101).add(m.qyy.mul(E011).mul(2.0)).add(m.qyz.mul(E002))
+        .sub(m.qxz.mul(E110).add(m.qyz.mul(E020)).add(m.qzz.mul(E011).mul(2.0)));
+    DoubleVector qy = m.qxz.mul(E200).add(m.qyz.mul(E110)).add(m.qzz.mul(E101).mul(2.0))
+        .sub(m.qxx.mul(E101).mul(2.0).add(m.qxy.mul(E011)).add(m.qxz.mul(E002)));
+    DoubleVector qz = m.qxx.mul(E110).mul(2.0).add(m.qxy.mul(E020)).add(m.qxz.mul(E011))
+        .sub(m.qxy.mul(E200).add(m.qyy.mul(E110).mul(2.0)).add(m.qyz.mul(E101)));
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] = torque[0].sub(qx);
+    torque[1] = torque[1].sub(qy);
+    torque[2] = torque[2].sub(qz);
   }
 
   /**
@@ -553,8 +591,8 @@ public abstract class MultipoleTensorSIMD {
    * @return a double.
    */
   public DoubleVector polarizationEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
-                                              DoubleVector inductionMask, DoubleVector energyMask, DoubleVector mutualMask,
-                                              DoubleVector[] Gi, DoubleVector[] Ti, DoubleVector[] Tk) {
+                                                    DoubleVector inductionMask, DoubleVector energyMask, DoubleVector mutualMask,
+                                                    DoubleVector[] Gi, DoubleVector[] Ti, DoubleVector[] Tk) {
 
     // Add the induction and energy masks to create an "averaged" induced dipole (sx, sy, sz).
     mI.applyMasks(inductionMask, energyMask);
@@ -620,7 +658,7 @@ public abstract class MultipoleTensorSIMD {
    * @return the permanent multipole energy.
    */
   public DoubleVector multipoleEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
-                                           DoubleVector[] Gi, DoubleVector[] Gk, DoubleVector[] Ti, DoubleVector[] Tk) {
+                                                 DoubleVector[] Gi, DoubleVector[] Gk, DoubleVector[] Ti, DoubleVector[] Tk) {
     multipoleIPotentialAtK(mI, 3);
     DoubleVector energy = multipoleEnergy(mK);
     multipoleGradient(mK, Gk);
@@ -682,6 +720,64 @@ public abstract class MultipoleTensorSIMD {
    * This is needed for quadrupole-quadrupole forces and orthogonal space sampling.
    */
   protected abstract void order6();
+
+  @SuppressWarnings("fallthrough")
+  protected abstract void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
+
+  @SuppressWarnings("fallthrough")
+  protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
+
+  /**
+   * Compute the field components due to site K charge at site I.
+   *
+   * @param mK    MultipoleTensorSIMD at site K.
+   * @param order Potential order.
+   */
+  protected abstract void chargeKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
+
+  /**
+   * Compute the induced dipole field components due to site K at site I.
+   *
+   * @param uxk   X-dipole component.
+   * @param uyk   Y-dipole component.
+   * @param uzk   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected abstract void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order);
+
+  /**
+   * Compute the field components due to site K quadrupole at site I.
+   *
+   * @param mK    MultipoleTensorSIMD at site K.
+   * @param order Potential order.
+   */
+  protected abstract void quadrupoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
+
+  /**
+   * Compute the field components due to site I charge at site K.
+   *
+   * @param mI    MultipoleTensorSIMD at site I.
+   * @param order Potential order.
+   */
+  protected abstract void chargeIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
+
+  /**
+   * Compute the induced dipole field components due to site I at site K.
+   *
+   * @param uxi   X-dipole component.
+   * @param uyi   Y-dipole component.
+   * @param uzi   Z-dipole component.
+   * @param order Potential order.
+   */
+  protected abstract void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order);
+
+  /**
+   * Compute the field components due to site I quadrupole at site K.
+   *
+   * @param mI    MultipoleTensorSIMD at site I.
+   * @param order Potential order.
+   */
+  protected abstract void quadrupoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
 
   /**
    * The index is based on the idea of filling tetrahedron.
@@ -1058,29 +1154,4 @@ public abstract class MultipoleTensorSIMD {
    */
   protected final int t222;
 
-  @SuppressWarnings("fallthrough")
-  protected abstract void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
-
-  @SuppressWarnings("fallthrough")
-  protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
-
-  /**
-   * Compute the induced dipole field components due to site K at site I.
-   *
-   * @param uxk   X-dipole component.
-   * @param uyk   Y-dipole component.
-   * @param uzk   Z-dipole component.
-   * @param order Potential order.
-   */
-  protected abstract void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order);
-
-  /**
-   * Compute the induced dipole field components due to site I at site K.
-   *
-   * @param uxi   X-dipole component.
-   * @param uyi   Y-dipole component.
-   * @param uzi   Z-dipole component.
-   * @param order Potential order.
-   */
-  protected abstract void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order);
 }

@@ -52,6 +52,8 @@ import jdk.incubator.vector.DoubleVector;
  */
 public class CoulombTensorQISIMD extends MultipoleTensorSIMD {
 
+  private static final DoubleVector zero = DoubleVector.zero(DoubleVector.SPECIES_PREFERRED);
+
   /**
    * Create a new CoulombTensorQI object.
    *
@@ -321,6 +323,247 @@ public class CoulombTensorQISIMD extends MultipoleTensorSIMD {
    */
   @SuppressWarnings("fallthrough")
   @Override
+  protected void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        DoubleVector term300 = mK.dx.mul(R400);
+        term300 = mK.qxz.fma(R401, term300);
+        E300 = term300.neg();
+        DoubleVector term030 = mK.dy.mul(R040);
+        term030 = mK.qyz.fma(R041, term030);
+        E030 = term030.neg();
+        DoubleVector term003 = mK.q.mul(R003);
+        term003 = mK.dz.fma(R004, term003);
+        term003 = mK.qxx.fma(R203, term003);
+        term003 = mK.qyy.fma(R023, term003);
+        term003 = mK.qzz.fma(R005, term003);
+        E003 = term003.neg();
+        DoubleVector term210 = mK.dy.mul(R220);
+        term210 = mK.qyz.fma(R221, term210);
+        E210 = term210.neg();
+        DoubleVector term201 = mK.q.mul(R201);
+        term201 = mK.dz.fma(R202, term201);
+        term201 = mK.qxx.fma(R401, term201);
+        term201 = mK.qyy.fma(R221, term201);
+        term201 = mK.qzz.fma(R203, term201);
+        E201 = term201.neg();
+        DoubleVector term120 = mK.dx.mul(R220);
+        term120 = mK.qxz.fma(R221, term120);
+        E120 = term120.neg();
+        DoubleVector term021 = mK.q.mul(R021);
+        term021 = mK.dz.fma(R022, term021);
+        term021 = mK.qxx.fma(R221, term021);
+        term021 = mK.qyy.fma(R041, term021);
+        term021 = mK.qzz.fma(R023, term021);
+        E021 = term021.neg();
+        DoubleVector term102 = mK.dx.mul(R202);
+        term102 = mK.qxz.fma(R203, term102);
+        E102 = term102.neg();
+        DoubleVector term012 = mK.dy.mul(R022);
+        term012 = mK.qyz.fma(R023, term012);
+        E012 = term012.neg();
+        DoubleVector term111 = mK.qxy.mul(R221);
+        E111 = term111.neg();
+      case 2:
+        DoubleVector term200 = mK.q.mul(R200);
+        term200 = mK.dz.fma(R201, term200);
+        term200 = mK.qxx.fma(R400, term200);
+        term200 = mK.qyy.fma(R220, term200);
+        term200 = mK.qzz.fma(R202, term200);
+        E200 = term200;
+        DoubleVector term020 = mK.q.mul(R020);
+        term020 = mK.dz.fma(R021, term020);
+        term020 = mK.qxx.fma(R220, term020);
+        term020 = mK.qyy.fma(R040, term020);
+        term020 = mK.qzz.fma(R022, term020);
+        E020 = term020;
+        DoubleVector term002 = mK.q.mul(R002);
+        term002 = mK.dz.fma(R003, term002);
+        term002 = mK.qxx.fma(R202, term002);
+        term002 = mK.qyy.fma(R022, term002);
+        term002 = mK.qzz.fma(R004, term002);
+        E002 = term002;
+        E110 = mK.qxy.mul(R220);
+        DoubleVector term101 = mK.dx.mul(R201);
+        term101 = mK.qxz.fma(R202, term101);
+        E101 = term101;
+        DoubleVector term011 = mK.dy.mul(R021);
+        term011 = mK.qyz.fma(R022, term011);
+        E011 = term011;
+      case 1:
+        DoubleVector term100 = mK.dx.mul(R200);
+        term100 = mK.qxz.fma(R201, term100);
+        E100 = term100.neg();
+        DoubleVector term010 = mK.dy.mul(R020);
+        term010 = mK.qyz.fma(R021, term010);
+        E010 = term010.neg();
+        DoubleVector term001 = mK.q.mul(R001);
+        term001 = mK.dz.fma(R002, term001);
+        term001 = mK.qxx.fma(R201, term001);
+        term001 = mK.qyy.fma(R021, term001);
+        term001 = mK.qzz.fma(R003, term001);
+        E001 = term001.neg();
+      case 0:
+        DoubleVector term000 = mK.q.mul(R000);
+        term000 = mK.dz.fma(R001, term000);
+        term000 = mK.qxx.fma(R200, term000);
+        term000 = mK.qyy.fma(R020, term000);
+        term000 = mK.qzz.fma(R002, term000);
+        E000 = term000;
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @SuppressWarnings("fallthrough")
+  @Override
+  protected void chargeKPotentialAtI(PolarizableMultipoleSIMD mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        E300 = zero;
+        E030 = zero;
+        E003 = mK.q.mul(R003).neg();
+        E210 = zero;
+        E201 = mK.q.mul(R201).neg();
+        E120 = zero;
+        E021 = mK.q.mul(R021).neg();
+        E102 = zero;
+        E012 = zero;
+        E111 = zero;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        E200 = mK.q.mul(R200);
+        E020 = mK.q.mul(R020);
+        E002 = mK.q.mul(R002);
+        E110 = zero;
+        E101 = zero;
+        E011 = zero;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        E100 = zero;
+        E010 = zero;
+        E001 = mK.q.mul(R001).neg();
+      case 0:
+        E000 = mK.q.mul(R000);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @SuppressWarnings("fallthrough")
+  @Override
+  protected void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        E300 = uxk.mul(R400).neg();
+        E030 = uyk.mul(R040).neg();
+        E003 = uzk.mul(R004).neg();
+        E210 = uyk.mul(R220).neg();
+        E201 = uzk.mul(R202).neg();
+        E120 = uxk.mul(R220).neg();
+        E021 = uzk.mul(R022).neg();
+        E102 = uxk.mul(R202).neg();
+        E012 = uyk.mul(R022).neg();
+        E111 = zero;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        E200 = uzk.mul(R201);
+        E020 = uzk.mul(R021);
+        E002 = uzk.mul(R003);
+        E110 = zero;
+        E101 = uxk.mul(R201);
+        E011 = uyk.mul(R021);
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        E100 = uxk.mul(R200).neg();
+        E010 = uyk.mul(R020).neg();
+        E001 = uzk.mul(R002).neg();
+        // Fall through to the potential.
+      case 0:
+        E000 = uzk.mul(R001);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @SuppressWarnings("fallthrough")
+  @Override
+  protected void quadrupoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        E300 = mK.qxz.mul(R401).neg();
+        E030 = mK.qyz.mul(R041).neg();
+        DoubleVector term003 = mK.qxx.mul(R203);
+        term003 = mK.qyy.fma(R023, term003);
+        term003 = mK.qzz.fma(R005, term003);
+        E003 = term003;
+        E210 = mK.qyz.mul(R221).neg();
+        DoubleVector term201 = mK.qxx.mul(R401);
+        term201 = mK.qyy.fma(R221, term201);
+        term201 = mK.qzz.fma(R203, term201);
+        E201 = term201.neg();
+        E120 = mK.qxz.mul(R221).neg();
+        DoubleVector term021 = mK.qxx.mul(R221);
+        term021 = mK.qyy.fma(R041, term021);
+        term021 = mK.qzz.fma(R023, term021);
+        E021 = term021.neg();
+        E102 = mK.qxz.mul(R203).neg();
+        E012 = mK.qyz.mul(R023).neg();
+        E111 = mK.qxy.mul(R221).neg();
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        DoubleVector term200 = mK.qxx.mul(R400);
+        term200 = mK.qyy.fma(R220, term200);
+        term200 = mK.qzz.fma(R202, term200);
+        E200 = term200;
+        DoubleVector term020 = mK.qxx.mul(R220);
+        term020 = mK.qyy.fma(R040, term020);
+        term020 = mK.qzz.fma(R022, term020);
+        E020 = term020;
+        DoubleVector term002 = mK.qxx.mul(R202);
+        term002 = mK.qyy.fma(R022, term002);
+        term002 = mK.qzz.fma(R004, term002);
+        E002 = term002;
+        E110 = mK.qxy.mul(R220);
+        E101 = mK.qxz.mul(R202);
+        E011 = mK.qyz.mul(R022);
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        E100 = mK.qxz.mul(R201).neg();
+        E010 = mK.qyz.mul(R021).neg();
+        DoubleVector term001 = mK.qxx.mul(R201);
+        term001 = mK.qyy.fma(R021, term001);
+        term001 = mK.qzz.fma(R003, term001);
+        E001 = term001.neg();
+      case 0:
+        DoubleVector term000 = mK.qxx.mul(R200);
+        term000 = mK.qyy.fma(R020, term000);
+        term000 = mK.qzz.fma(R002, term000);
+        E000 = term000;
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @SuppressWarnings("fallthrough")
+  @Override
   protected void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order) {
     switch (order) {
       default:
@@ -416,150 +659,87 @@ public class CoulombTensorQISIMD extends MultipoleTensorSIMD {
    */
   @SuppressWarnings("fallthrough")
   @Override
-  protected void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order) {
+  protected void chargeIPotentialAtK(PolarizableMultipoleSIMD mI, int order) {
     switch (order) {
       default:
       case 3:
-        DoubleVector term300 = mK.dx.mul(R400);
-        term300 = mK.qxz.fma(R401, term300);
-        E300 = term300.neg();
-        DoubleVector term030 = mK.dy.mul(R040);
-        term030 = mK.qyz.fma(R041, term030);
-        E030 = term030.neg();
-        DoubleVector term003 = mK.q.mul(R003);
-        term003 = mK.dz.fma(R004, term003);
-        term003 = mK.qxx.fma(R203, term003);
-        term003 = mK.qyy.fma(R023, term003);
-        term003 = mK.qzz.fma(R005, term003);
-        E003 = term003.neg();
-        DoubleVector term210 = mK.dy.mul(R220);
-        term210 = mK.qyz.fma(R221, term210);
-        E210 = term210.neg();
-        DoubleVector term201 = mK.q.mul(R201);
-        term201 = mK.dz.fma(R202, term201);
-        term201 = mK.qxx.fma(R401, term201);
-        term201 = mK.qyy.fma(R221, term201);
-        term201 = mK.qzz.fma(R203, term201);
-        E201 = term201.neg();
-        DoubleVector term120 = mK.dx.mul(R220);
-        term120 = mK.qxz.fma(R221, term120);
-        E120 = term120.neg();
-        DoubleVector term021 = mK.q.mul(R021);
-        term021 = mK.dz.fma(R022, term021);
-        term021 = mK.qxx.fma(R221, term021);
-        term021 = mK.qyy.fma(R041, term021);
-        term021 = mK.qzz.fma(R023, term021);
-        E021 = term021.neg();
-        DoubleVector term102 = mK.dx.mul(R202);
-        term102 = mK.qxz.fma(R203, term102);
-        E102 = term102.neg();
-        DoubleVector term012 = mK.dy.mul(R022);
-        term012 = mK.qyz.fma(R023, term012);
-        E012 = term012.neg();
-        DoubleVector term111 = mK.qxy.mul(R221);
-        E111 = term111.neg();
+        // Order 3.
+        E300 = zero;
+        E030 = zero;
+        E003 = mI.q.mul(R003);
+        E210 = zero;
+        E201 = mI.q.mul(R201);
+        E120 = zero;
+        E021 = mI.q.mul(R021);
+        E102 = zero;
+        E012 = zero;
+        E111 = zero;
+        // Fall through to 2nd order.
       case 2:
-        DoubleVector term200 = mK.q.mul(R200);
-        term200 = mK.dz.fma(R201, term200);
-        term200 = mK.qxx.fma(R400, term200);
-        term200 = mK.qyy.fma(R220, term200);
-        term200 = mK.qzz.fma(R202, term200);
-        E200 = term200;
-        DoubleVector term020 = mK.q.mul(R020);
-        term020 = mK.dz.fma(R021, term020);
-        term020 = mK.qxx.fma(R220, term020);
-        term020 = mK.qyy.fma(R040, term020);
-        term020 = mK.qzz.fma(R022, term020);
-        E020 = term020;
-        DoubleVector term002 = mK.q.mul(R002);
-        term002 = mK.dz.fma(R003, term002);
-        term002 = mK.qxx.fma(R202, term002);
-        term002 = mK.qyy.fma(R022, term002);
-        term002 = mK.qzz.fma(R004, term002);
-        E002 = term002;
-        E110 = mK.qxy.mul(R220);
-        DoubleVector term101 = mK.dx.mul(R201);
-        term101 = mK.qxz.fma(R202, term101);
-        E101 = term101;
-        DoubleVector term011 = mK.dy.mul(R021);
-        term011 = mK.qyz.fma(R022, term011);
-        E011 = term011;
+        // Order 2.
+        E200 = mI.q.mul(R200);
+        E020 = mI.q.mul(R020);
+        E002 = mI.q.mul(R002);
+        E110 = zero;
+        E101 = zero;
+        E011 = zero;
+        // Fall through to 1st order.
       case 1:
-        DoubleVector term100 = mK.dx.mul(R200);
-        term100 = mK.qxz.fma(R201, term100);
-        E100 = term100.neg();
-        DoubleVector term010 = mK.dy.mul(R020);
-        term010 = mK.qyz.fma(R021, term010);
-        E010 = term010.neg();
-        DoubleVector term001 = mK.q.mul(R001);
-        term001 = mK.dz.fma(R002, term001);
-        term001 = mK.qxx.fma(R201, term001);
-        term001 = mK.qyy.fma(R021, term001);
-        term001 = mK.qzz.fma(R003, term001);
-        E001 = term001.neg();
+        // Order 1.
+        E100 = zero;
+        E010 = zero;
+        E001 = mI.q.mul(R001);
+        // Fall through to the potential.
       case 0:
-        DoubleVector term000 = mK.q.mul(R000);
-        term000 = mK.dz.fma(R001, term000);
-        term000 = mK.qxx.fma(R200, term000);
-        term000 = mK.qyy.fma(R020, term000);
-        term000 = mK.qzz.fma(R002, term000);
-        E000 = term000;
+        E000 = mI.q.mul(R000);
     }
   }
 
   /**
-   * Compute the induced dipole field components due to site K at site I.
-   *
-   * @param uxk   X-dipole component.
-   * @param uyk   Y-dipole component.
-   * @param uzk   Z-dipole component.
-   * @param order Potential order.
+   * {@inheritDoc}
    */
-  protected void dipoleKPotentialAtI(DoubleVector uxk, DoubleVector uyk, DoubleVector uzk, int order){
+  @SuppressWarnings("fallthrough")
+  @Override
+  protected void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order) {
     switch (order) {
       default:
-      case 3: // Never runs since this is for dipole-dipole interactions
+      case 3:
+        // Order 3
+        E300 = uxi.mul(R400).neg();
+        E030 = uyi.mul(R040).neg();
+        E003 = uzi.mul(R004).neg();
+        E210 = uyi.mul(R220).neg();
+        E201 = uzi.mul(R202).neg();
+        E120 = uxi.mul(R220).neg();
+        E021 = uzi.mul(R022).neg();
+        E102 = uxi.mul(R202).neg();
+        E012 = uyi.mul(R022).neg();
+        E111 = zero;
+        // Fall through to 2nd order.
       case 2:
-        E200 = uzk.mul(R201);
-        E020 = uzk.mul(R021);
-        E002 = uzk.mul(R003);
-        E110 = DoubleVector.broadcast(DoubleVector.SPECIES_PREFERRED, 0.0);
-        E101 = uxk.mul(R201);
-        E011 = uyk.mul(R021);
+        E200 = uzi.mul(R201.neg());
+        E020 = uzi.mul(R021.neg());
+        E002 = uzi.mul(R003.neg());
+        E110 = zero;
+        E101 = uxi.mul(R201.neg());
+        E011 = uyi.mul(R021.neg());
+        // Fall through to 1st order.
       case 1:
-        E100 = uxk.mul(R200).neg();
-        E010 = uyk.mul(R020).neg();
-        E001 = uzk.mul(R002).neg();
+        E100 = uxi.mul(R200.neg());
+        E010 = uyi.mul(R020.neg());
+        E001 = uzi.mul(R002.neg());
+        // Fall through to the potential.
       case 0:
-        E000 = uzk.mul(R001);
+        E000 = uzi.mul(R001.neg());
     }
   }
 
-    /**
-     * Compute the induced dipole field components due to site I at site K.
-     *
-     * @param uxi   X-dipole component.
-     * @param uyi   Y-dipole component.
-     * @param uzi   Z-dipole component.
-     * @param order Potential order.
-     */
-    protected void dipoleIPotentialAtK(DoubleVector uxi, DoubleVector uyi, DoubleVector uzi, int order){
-      switch (order) {
-        default:
-        case 3: // Never runs since this is for dipole-dipole interactions
-        case 2:
-          E200 = uzi.mul(R201.neg());
-          E020 = uzi.mul(R021.neg());
-          E002 = uzi.mul(R003.neg());
-          E110 = DoubleVector.broadcast(DoubleVector.SPECIES_PREFERRED, 0.0);
-          E101 = uxi.mul(R201.neg());
-          E011 = uyi.mul(R021.neg());
-        case 1:
-          E100 = uxi.mul(R200.neg());
-          E010 = uyi.mul(R020.neg());
-          E001 = uzi.mul(R002.neg());
-        case 0:
-          E000 = uzi.mul(R001.neg());
-      }
-    }
+  /**
+   * {@inheritDoc}
+   */
+  @SuppressWarnings("fallthrough")
+  @Override
+  protected void quadrupoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order) {
+
+  }
 }

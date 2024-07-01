@@ -37,45 +37,47 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import jdk.incubator.vector.DoubleVector;
+
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
 import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.exp;
+import static jdk.incubator.vector.DoubleVector.SPECIES_PREFERRED;
+import static jdk.incubator.vector.VectorOperators.EXP;
 import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The GKSource class generates the source terms for the Generalized Kirkwood version of the tensor recursion.
  */
-public class GKSource {
+public class GKSourceSIMD {
 
   private GKTensorMode mode = POTENTIAL;
 
   /**
    * Born radius of atom i multiplied by the Born radius of atom j.
    */
-  private double rb2;
+  private DoubleVector rb2;
 
   /**
    * The GK term exp(-r2 / (gc * ai * aj)).
    */
-  private double expTerm;
+  private DoubleVector expTerm;
 
   /**
    * The GK effective separation distance.
    */
-  private double f;
+  private DoubleVector f;
 
   /**
    * f1 = 1.0 - expTerm * igc;
    */
-  private double f1;
+  private DoubleVector f1;
 
   /**
    * f2 = 2.0 * expTerm / (gc * gcAiAj);
    */
-  private double f2;
+  private DoubleVector f2;
 
   /**
    * Generalized Kirkwood constant.
@@ -90,22 +92,22 @@ public class GKSource {
   /**
    * The product: gc * Ai * Aj.
    */
-  private double gcAiAj;
+  private DoubleVector gcAiAj;
 
   /**
    * The ratio -r2 / (gc * Ai * Aj).
    */
-  private double ratio;
+  private DoubleVector ratio;
 
   /**
    * The quantity: -2.0 / (gc * Ai * Aj);
    */
-  private double fr;
+  private DoubleVector fr;
 
   /**
    * Separation distance squared.
    */
-  private double r2;
+  private DoubleVector r2;
 
   /**
    * Recursion order.
@@ -126,24 +128,27 @@ public class GKSource {
    * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to x,
    * y or z.
    */
-  private final double[] fn;
+  private final DoubleVector[] fn;
 
   /**
    * Chain rule terms from differentiating zeroth order born radii auxiliary functions (bn0) with respect to Ai
    * or Aj.
    */
-  protected final double[] bn;
+  protected final DoubleVector[] bn;
 
   /**
    * Source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
-  private final double[][] anm;
+  private final DoubleVector[][] anm;
 
   /**
    * Source terms for the Kirkwood version of the Challacombe et al. recursion for Born-chain rule
    * derivatives.
    */
-  private final double[][] bnm;
+  private final DoubleVector[][] bnm;
+
+  private final DoubleVector zero = DoubleVector.zero(SPECIES_PREFERRED);
+  private final DoubleVector one = zero.add(1.0);
 
   /**
    * Construct a new GKSource object.
@@ -151,7 +156,7 @@ public class GKSource {
    * @param order Recursion order.
    * @param gc    Generalized Kirkwood constant.
    */
-  public GKSource(int order, double gc) {
+  public GKSourceSIMD(int order, double gc) {
     this.order = order;
     this.gc = gc;
     this.igc = 1.0 / gc;
@@ -164,13 +169,13 @@ public class GKSource {
 
     anmc = new double[order + 1][];
     for (int n = 0; n <= order; n++) {
-      anmc[n] = anmc(n);
+      anmc[n] = GKSource.anmc(n);
     }
 
-    fn = new double[order + 1];
-    anm = new double[order + 1][order + 1];
-    bn = new double[order + 1];
-    bnm = new double[order + 1][order + 1];
+    fn = new DoubleVector[order + 1];
+    anm = new DoubleVector[order + 1][order + 1];
+    bn = new DoubleVector[order + 1];
+    bnm = new DoubleVector[order + 1][order + 1];
   }
 
   /**
@@ -179,9 +184,9 @@ public class GKSource {
    * @param work           The array to store the source terms.
    * @param multipoleOrder The multipole order.
    */
-  protected void source(double[] work, GKMultipoleOrder multipoleOrder) {
+  protected void source(DoubleVector[] work, GKMultipoleOrder multipoleOrder) {
     int mpoleOrder = multipoleOrder.getOrder();
-    fill(work, 0, mpoleOrder, 0.0);
+    fill(work, 0, mpoleOrder, zero);
     if (mode == POTENTIAL) {
       // Max derivatives.
       int derivatives = order - mpoleOrder;
@@ -202,22 +207,20 @@ public class GKSource {
    * @param ai        Born radius of atom i.
    * @param aj        Born radius of atom j.
    */
-  public void generateSource(GKTensorMode mode, GKMultipoleOrder multipole, double r2,
-                             double ai, double aj) {
+  public void generateSource(GKTensorMode mode, GKMultipoleOrder multipole,
+                             DoubleVector r2, DoubleVector ai, DoubleVector aj) {
     int multipoleOrder = multipole.getOrder();
     this.mode = mode;
 
     this.r2 = r2;
-    rb2 = ai * aj;
-    gcAiAj = gc * rb2;
-    ratio = -r2 / gcAiAj;
-    expTerm = exp(ratio);
-    fr = -2.0 / gcAiAj;
-
-    f = sqrt(r2 + rb2 * expTerm);
-    f1 = 1.0 - expTerm * igc;
-    f2 = 2.0 * expTerm / (gc * gcAiAj);
-
+    rb2 = ai.mul(aj);
+    gcAiAj = rb2.mul(gc);
+    ratio = r2.neg().div(gcAiAj);
+    expTerm = ratio.lanewise(EXP);
+    fr = zero.sub(2.0).div(gcAiAj);
+    f = r2.add(rb2.mul(expTerm)).sqrt();
+    f1 = one.sub(expTerm.mul(igc));
+    f2 = zero.add(2.0).mul(expTerm).div(gcAiAj.mul(gc));
     if (mode == POTENTIAL) {
       // Prepare the GK Potential tensor.
       anm(order, order - multipoleOrder);
@@ -254,9 +257,9 @@ public class GKSource {
       for (int order = 0; order <= limit; order++) {
         // Compute this term from previous terms for 1 higher order.
         var terms = anm[order + 1];
-        var sum = 0.0;
+        var sum = zero;
         for (int i = 1; i <= d; i++) {
-          sum += coef[i - 1] * fn[i] * terms[d - i];
+          sum = sum.add(fn[i].mul(terms[d - i].mul(coef[i - 1])));
         }
         anm[order][d] = sum;
       }
@@ -290,10 +293,10 @@ public class GKSource {
         // Compute this term from previous terms for 1 higher order.
         var terma = anm[order + 1];
         var termb = bnm[order + 1];
-        var sum = 0.0;
+        var sum = zero;
         for (int i = 1; i <= d; i++) {
-          sum += coef[i - 1] * bn[i] * terma[d - i];
-          sum += coef[i - 1] * fn[i] * termb[d - i];
+          sum = sum.add(bn[i].mul(terma[d - i].mul(coef[i - 1])));
+          sum = sum.add(fn[i].mul(termb[d - i].mul(coef[i - 1])));
         }
         bnm[order][d] = sum;
       }
@@ -322,38 +325,38 @@ public class GKSource {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
-        fn[3] = fr * f2;
+        fn[3] = fr.mul(f2);
       }
       case 4 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
+        fn[3] = fr.mul(f2);
+        fn[4] = fr.mul(fn[3]);
       }
       case 5 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
-        fn[5] = fr * fn[4];
+        fn[3] = fr.mul(f2);
+        fn[4] = fr.mul(fn[3]);
+        fn[5] = fr.mul(fn[4]);
       }
       case 6 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
-        fn[5] = fr * fn[4];
-        fn[6] = fr * fn[5];
+        fn[3] = fr.mul(f2);
+        fn[4] = fr.mul(fn[3]);
+        fn[5] = fr.mul(fn[4]);
+        fn[6] = fr.mul(fn[5]);
       }
       default -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
         for (int i = 3; i <= n; i++) {
-          fn[i] = fr * fn[i - 1];
+          fn[i] = fr.mul(fn[i - 1]);
         }
       }
     }
@@ -366,31 +369,31 @@ public class GKSource {
    * @param n Multipole order.
    */
   protected void bn(int n) {
-    var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
+    var b2 = expTerm.mul(2.0).div(gcAiAj.mul(gcAiAj)).mul(ratio.neg().sub(1.0));
     switch (n) {
-      case 0 -> bn[0] = 0.5 * expTerm * (1.0 - ratio);
+      case 0 -> bn[0] = expTerm.mul(0.5).mul(ratio.neg().add(1.0));
       case 1 -> {
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[0] = expTerm.mul(0.5).mul(ratio.neg().add(1.0));
+        bn[1] = r2.mul(expTerm).div(gcAiAj.mul(gcAiAj)).neg();
       }
       case 2 -> {
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[0] = expTerm.mul(0.5).mul(ratio.neg().add(1.0));
+        bn[1] = r2.mul(expTerm).div(gcAiAj.mul(gcAiAj)).neg();
         bn[2] = b2;
       }
       default -> {
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[0] = expTerm.mul(0.5).mul(ratio.neg().add(1.0));
+        bn[1] = r2.mul(expTerm).div(gcAiAj.mul(gcAiAj)).neg();
         bn[2] = b2;
-        var br = 2.0 / (gcAiAj * rb2);
-        var f2 = 2.0 / (gc * gcAiAj) * expTerm;
-        var frA = 1.0;
+        var br = zero.add(2.0).div(gcAiAj.mul(rb2));
+        var f2 = zero.add(2.0).div(gcAiAj.mul(gc)).mul(expTerm);
+        var frA = one;
         var frB = fr;
         for (int i = 3; i < n; i++) {
           // bn[i] = (i - 2) * pow(fr, i - 3) * br * f2 + pow(fr, i - 2) * b2;
-          bn[i] = (i - 2) * frA * br * f2 + frB * b2;
-          frA *= fr;
-          frB *= fr;
+          bn[i] = frA.mul(i - 2).mul(br).mul(f2).add(frB.mul(b2));
+          frA = frA.mul(fr);
+          frB = frB.mul(fr);
         }
       }
     }
@@ -402,11 +405,11 @@ public class GKSource {
    * @param n order.
    */
   private void an0(int n) {
-    double inverseF = 1.0 / f;
-    double inverseF2 = inverseF * inverseF;
+    DoubleVector inverseF = one.div(f);
+    DoubleVector inverseF2 = inverseF.mul(inverseF);
     for (int i = 0; i <= n; i++) {
-      anm[i][0] = kirkwoodSource[i] * inverseF;
-      inverseF *= inverseF2;
+      anm[i][0] = inverseF.mul(kirkwoodSource[i]);
+      inverseF = inverseF.mul(inverseF2);
     }
   }
 
@@ -417,100 +420,8 @@ public class GKSource {
    */
   private void bn0(int n) {
     for (int i = 0; i <= n; i++) {
-      bnm[i][0] = bn[0] * anm[i + 1][0];
+      bnm[i][0] = bn[0].mul(anm[i + 1][0]);
     }
-  }
-
-  /**
-   * Return coefficients needed when taking derivatives of auxiliary functions.
-   *
-   * @param n Multipole order.
-   * @return Returns coefficients needed when taking derivatives of auxiliary functions.
-   */
-  protected static double[] anmc(int n) {
-    double[] ret = new double[n + 1];
-    ret[0] = 1.0;
-    switch (n) {
-      case 0 -> {
-        return ret;
-      }
-      case 1 -> {
-        ret[1] = 1.0;
-        return ret;
-      }
-      default -> {
-        ret[1] = 1.0;
-        var prev = new double[n];
-        prev[0] = 1.0;
-        prev[1] = 1.0;
-        for (int i = 3; i <= n; i++) {
-          for (int j = 2; j <= i - 1; j++) {
-            ret[j - 1] = prev[j - 2] + prev[j - 1];
-          }
-          ret[i - 1] = 1.0;
-          arraycopy(ret, 0, prev, 0, i);
-        }
-        return ret;
-      }
-    }
-  }
-
-  /**
-   * Compute the Kirkwood dielectric function for a multipole of order n.
-   *
-   * @param n  Multipole order.
-   * @param Eh Homogeneous dielectric.
-   * @param Es Solvent dielectric.
-   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh)) / Eh.
-   */
-  public static double cn(int n, double Eh, double Es) {
-    var ret = (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
-    return ret / Eh;
-  }
-
-  /**
-   * Compute the self-energy of a polarizable multipole.
-   *
-   * @param polarizableMultipole The polarizable multipole.
-   * @param ai                   Born radius of atom i.
-   * @param Eh                   Homogeneous dielectric.
-   * @param Es                   Solvent dielectric.
-   * @return Returns the self-energy of a polarizable multipole.
-   */
-  public static double selfEnergy(PolarizableMultipole polarizableMultipole,
-                                  double ai, double Eh, double Es) {
-    double q2 = polarizableMultipole.q * polarizableMultipole.q;
-    double dx = polarizableMultipole.dx;
-    double dy = polarizableMultipole.dy;
-    double dz = polarizableMultipole.dz;
-    double dx2 = dx * dx;
-    double dy2 = dy * dy;
-    double dz2 = dz * dz;
-    double ux = polarizableMultipole.ux;
-    double uy = polarizableMultipole.uy;
-    double uz = polarizableMultipole.uz;
-    double qxy2 = polarizableMultipole.qxy * polarizableMultipole.qxy;
-    double qxz2 = polarizableMultipole.qxz * polarizableMultipole.qxz;
-    double qyz2 = polarizableMultipole.qyz * polarizableMultipole.qyz;
-    double qxx2 = polarizableMultipole.qxx * polarizableMultipole.qxx;
-    double qyy2 = polarizableMultipole.qyy * polarizableMultipole.qyy;
-    double qzz2 = polarizableMultipole.qzz * polarizableMultipole.qzz;
-
-    double a2 = ai * ai;
-    double a3 = ai * a2;
-    double a5 = a2 * a3;
-
-    // Born partial charge
-    double e0 = cn(0, Eh, Es) * q2 / ai;
-    // Permanent Dipole
-    double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
-    // Permanent Quadrupole
-    double e2 = cn(2, Eh, Es) * (3.0 * (qxy2 + qxz2 + qyz2) + 6.0 * (qxx2 + qyy2 + qzz2)) / a5;
-
-    // Induced self-energy
-    double ei = cn(1, Eh, Es) * (dx * ux + dy * uy + dz * uz) / a3;
-
-    return 0.5 * (e0 + e1 + e2 + ei);
   }
 
 }

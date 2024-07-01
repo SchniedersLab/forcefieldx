@@ -888,8 +888,7 @@ public class CoulombTensorQI extends MultipoleTensor {
    * {@inheritDoc}
    */
   @Override
-  protected double Tlmnj(
-      final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
+  protected double Tlmnj(final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
     double z = r[2];
     assert (r[0] == 0.0 && r[1] == 0.0);
 

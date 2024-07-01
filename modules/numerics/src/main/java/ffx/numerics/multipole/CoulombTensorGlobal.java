@@ -1840,8 +1840,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * {@inheritDoc}
    */
   @Override
-  protected double Tlmnj(
-      final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
+  protected double Tlmnj(final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
     if (m == 0 && n == 0) {
       if (l > 1) {
         return r[0] * Tlmnj(l - 1, 0, 0, j + 1, r, T000)

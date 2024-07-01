@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
+import static ffx.numerics.multipole.GKMultipoleOrder.DIPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.MONOPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.QUADRUPOLE;
+import static ffx.numerics.multipole.GKTensorMode.BORN;
+import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
 import static java.util.Arrays.fill;
 
 /**

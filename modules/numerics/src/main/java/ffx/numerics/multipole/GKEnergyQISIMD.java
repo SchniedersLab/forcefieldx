@@ -37,31 +37,35 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import jdk.incubator.vector.DoubleVector;
+
 import static ffx.numerics.multipole.GKMultipoleOrder.DIPOLE;
 import static ffx.numerics.multipole.GKMultipoleOrder.MONOPOLE;
 import static ffx.numerics.multipole.GKMultipoleOrder.QUADRUPOLE;
 import static ffx.numerics.multipole.GKTensorMode.BORN;
 import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
-import static java.util.Arrays.fill;
 
 /**
- * GKEnergyGlobal computes the generalized Kirkwood energy and forces in a global frame.
+ * The GKEnergyQI class computes the Generalized Kirkwood energy and forces using a QI frame.
  */
-public class GKEnergyGlobal {
+public class GKEnergyQISIMD {
 
-  private final GKSource gkSource;
-  private final GKTensorGlobal gkMonopole;
-  private final GKTensorGlobal gkDipole;
-  private final GKTensorGlobal gkQuadrupole;
+  private final GKSourceSIMD gkSource;
+  private final GKTensorQISIMD gkMonopole;
+  private final GKTensorQISIMD gkDipole;
+  private final GKTensorQISIMD gkQuadrupole;
+
+  private final DoubleVector one = DoubleVector.zero(DoubleVector.SPECIES_PREFERRED).add(1.0);
 
   /**
-   * Constructor for GKEnergyGlobal.
+   * Compute the GK Energy using a QI frame.
    *
-   * @param gkc      The GK generalizing function constant.
-   * @param epsilon  The solvent dielectric.
-   * @param gradient If true, compute the gradient and torque.
+   * @param soluteDielectric  Solute dielectric constant.
+   * @param solventDielectric Solvent dielectric constant.
+   * @param gkc               The GK interaction parameter.
+   * @param gradient          If true, the gradient will be computed.
    */
-  public GKEnergyGlobal(double gkc, double epsilon, boolean gradient) {
+  public GKEnergyQISIMD(double soluteDielectric, double solventDielectric, double gkc, boolean gradient) {
     int monopoleOrder = 2;
     int dipoleOrder = 3;
     int quadrupoleOrder = 4;
@@ -70,10 +74,10 @@ public class GKEnergyGlobal {
       dipoleOrder = 4;
       quadrupoleOrder = 5;
     }
-    gkSource = new GKSource(quadrupoleOrder, gkc);
-    gkMonopole = new GKTensorGlobal(MONOPOLE, monopoleOrder, gkSource, 1.0, epsilon);
-    gkDipole = new GKTensorGlobal(DIPOLE, dipoleOrder, gkSource, 1.0, epsilon);
-    gkQuadrupole = new GKTensorGlobal(QUADRUPOLE, quadrupoleOrder, gkSource, 1.0, epsilon);
+    gkSource = new GKSourceSIMD(quadrupoleOrder, gkc);
+    gkMonopole = new GKTensorQISIMD(MONOPOLE, monopoleOrder, gkSource, soluteDielectric, solventDielectric);
+    gkDipole = new GKTensorQISIMD(DIPOLE, dipoleOrder, gkSource, soluteDielectric, solventDielectric);
+    gkQuadrupole = new GKTensorQISIMD(QUADRUPOLE, quadrupoleOrder, gkSource, soluteDielectric, solventDielectric);
   }
 
   /**
@@ -84,7 +88,7 @@ public class GKEnergyGlobal {
    * @param rbi The Born radius of atom i.
    * @param rbk The Born radius of atom k.
    */
-  public void initPotential(double[] r, double r2, double rbi, double rbk) {
+  public void initPotential(DoubleVector[] r, DoubleVector r2, DoubleVector rbi, DoubleVector rbk) {
     gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, rbi, rbk);
     gkMonopole.setR(r);
     gkDipole.setR(r);
@@ -102,7 +106,7 @@ public class GKEnergyGlobal {
    * @param rbi The Born radius of atom i.
    * @param rbk The Born radius of atom k.
    */
-  public void initBorn(double[] r, double r2, double rbi, double rbk) {
+  public void initBorn(DoubleVector[] r, DoubleVector r2, DoubleVector rbi, DoubleVector rbk) {
     gkSource.generateSource(BORN, QUADRUPOLE, r2, rbi, rbk);
     gkMonopole.setR(r);
     gkDipole.setR(r);
@@ -119,11 +123,11 @@ public class GKEnergyGlobal {
    * @param mK The polarizable multipole of atom k.
    * @return The multipole energy.
    */
-  public double multipoleEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
-    double em = gkMonopole.multipoleEnergy(mI, mK);
-    double ed = gkDipole.multipoleEnergy(mI, mK);
-    double eq = gkQuadrupole.multipoleEnergy(mI, mK);
-    return em + ed + eq;
+  public DoubleVector multipoleEnergy(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK) {
+    DoubleVector em = gkMonopole.multipoleEnergy(mI, mK);
+    DoubleVector ed = gkDipole.multipoleEnergy(mI, mK);
+    DoubleVector eq = gkQuadrupole.multipoleEnergy(mI, mK);
+    return em.add(ed).add(eq);
   }
 
   /**
@@ -133,57 +137,30 @@ public class GKEnergyGlobal {
    * @param mK The polarizable multipole of atom k.
    * @return The polarization energy.
    */
-  public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
-    double emp = gkMonopole.polarizationEnergy(mI, mK);
-    double edp = gkDipole.polarizationEnergy(mI, mK);
-    double eqp = gkQuadrupole.polarizationEnergy(mI, mK);
-    return emp + edp + eqp;
+  public DoubleVector polarizationEnergy(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK) {
+    DoubleVector emp = gkMonopole.polarizationEnergy(mI, mK);
+    DoubleVector edp = gkDipole.polarizationEnergy(mI, mK);
+    DoubleVector eqp = gkQuadrupole.polarizationEnergy(mI, mK);
+    return emp.add(edp).add(eqp);
   }
 
   /**
    * Compute the multipole energy and gradient.
    *
-   * @param mI      The polarizable multipole of atom i.
-   * @param mK      The polarizable multipole of atom k.
-   * @param gradI   The gradient for atom i.
-   * @param torqueI The torque on atom i.
-   * @param torqueK The torque on atom k.
+   * @param mI The polarizable multipole of atom i.
+   * @param mK The polarizable multipole of atom k.
+   * @param gI The gradient for atom i.
+   * @param tI The torque on atom i.
+   * @param tK The torque on atom k.
    * @return The multipole energy.
    */
-  public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-                                           double[] gradI, double[] torqueI, double[] torqueK) {
-    double[] gI = new double[3];
-    double[] gK = new double[3];
-    double[] tI = new double[3];
-    double[] tK = new double[3];
-    double em = gkMonopole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] = gI[j];
-      torqueI[j] = tI[j];
-      torqueK[j] = tK[j];
-    }
-    fill(gI, 0.0);
-    fill(gK, 0.0);
-    fill(tI, 0.0);
-    fill(tK, 0.0);
-    double ed = gkDipole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] += gI[j];
-      torqueI[j] += tI[j];
-      torqueK[j] += tK[j];
-    }
-    fill(gI, 0.0);
-    fill(gK, 0.0);
-    fill(tI, 0.0);
-    fill(tK, 0.0);
-    double eq = gkQuadrupole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] += gI[j];
-      torqueI[j] += tI[j];
-      torqueK[j] += tK[j];
-    }
-
-    return em + ed + eq;
+  public DoubleVector multipoleEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
+                                                 DoubleVector[] gI, DoubleVector[] tI, DoubleVector[] tK) {
+    DoubleVector[] gK = new DoubleVector[3];
+    DoubleVector em = gkMonopole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
+    DoubleVector ed = gkDipole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
+    DoubleVector eq = gkQuadrupole.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
+    return em.add(ed).add(eq);
   }
 
   /**
@@ -192,43 +169,18 @@ public class GKEnergyGlobal {
    * @param mI         The polarizable multipole of atom i.
    * @param mK         The polarizable multipole of atom k.
    * @param mutualMask The mutual polarization mask.
-   * @param gradI      The gradient for atom i.
-   * @param torqueI    The torque on atom i.
-   * @param torqueK    The torque on atom k.
+   * @param gI         The gradient for atom i.
+   * @param tI         The torque on atom i.
+   * @param tK         The torque on atom k.
    * @return The polarization energy.
    */
-  public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK, double mutualMask,
-                                              double[] gradI, double[] torqueI, double[] torqueK) {
-    double[] gI = new double[3];
-    double[] tI = new double[3];
-    double[] tK = new double[3];
-    double emp = gkMonopole.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] = gI[j];
-      torqueI[j] = tI[j];
-      torqueK[j] = tK[j];
-    }
-    fill(gI, 0.0);
-    fill(tI, 0.0);
-    fill(tK, 0.0);
-    double edp = gkDipole.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] += gI[j];
-      torqueI[j] += tI[j];
-      torqueK[j] += tK[j];
-    }
-    fill(gI, 0.0);
-    fill(tI, 0.0);
-    fill(tK, 0.0);
-    double eqp = gkQuadrupole.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI, tI, tK);
-    for (int j = 0; j < 3; j++) {
-      gradI[j] += gI[j];
-      torqueI[j] += tI[j];
-      torqueK[j] += tK[j];
-    }
-
+  public DoubleVector polarizationEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK, DoubleVector mutualMask,
+                                                    DoubleVector[] gI, DoubleVector[] tI, DoubleVector[] tK) {
+    DoubleVector emp = gkMonopole.polarizationEnergyAndGradient(mI, mK, one, one, mutualMask, gI, tI, tK);
+    DoubleVector edp = gkDipole.polarizationEnergyAndGradient(mI, mK, one, one, mutualMask, gI, tI, tK);
+    DoubleVector eqp = gkQuadrupole.polarizationEnergyAndGradient(mI, mK, one, one, mutualMask, gI, tI, tK);
     // Sum the GK polarization interaction energy.
-    return emp + edp + eqp;
+    return emp.add(edp).add(eqp);
   }
 
   /**
@@ -238,10 +190,10 @@ public class GKEnergyGlobal {
    * @param mK The polarizable multipole of atom k.
    * @return The Born chain-rule term.
    */
-  public double multipoleEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
-    double db = gkMonopole.multipoleEnergyBornGrad(mI, mK);
-    db += gkDipole.multipoleEnergyBornGrad(mI, mK);
-    db += gkQuadrupole.multipoleEnergyBornGrad(mI, mK);
+  public DoubleVector multipoleEnergyBornGrad(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK) {
+    DoubleVector db = gkMonopole.multipoleEnergyBornGrad(mI, mK);
+    db = db.add(gkDipole.multipoleEnergyBornGrad(mI, mK));
+    db = db.add(gkQuadrupole.multipoleEnergyBornGrad(mI, mK));
     return db;
   }
 
@@ -253,15 +205,14 @@ public class GKEnergyGlobal {
    * @param mutual If true, compute the mutual polarization contribution.
    * @return The Born chain-rule term.
    */
-  public double polarizationEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK,
-                                           boolean mutual) {
+  public DoubleVector polarizationEnergyBornGrad(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK, boolean mutual) {
     // Compute the GK polarization Born chain-rule term.
-    double db = gkMonopole.polarizationEnergyBornGrad(mI, mK);
-    db += gkDipole.polarizationEnergyBornGrad(mI, mK);
-    db += gkQuadrupole.polarizationEnergyBornGrad(mI, mK);
+    DoubleVector db = gkMonopole.polarizationEnergyBornGrad(mI, mK);
+    db = db.add(gkDipole.polarizationEnergyBornGrad(mI, mK));
+    db = db.add(gkQuadrupole.polarizationEnergyBornGrad(mI, mK));
     // Add the mutual polarization contribution to Born chain-rule term.
     if (mutual) {
-      db += gkDipole.mutualPolarizationEnergyBornGrad(mI, mK);
+      db = db.add(gkDipole.mutualPolarizationEnergyBornGrad(mI, mK));
     }
     return db;
   }

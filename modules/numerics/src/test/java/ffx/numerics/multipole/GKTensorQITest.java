@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import ffx.utilities.FFXTest;
+import org.junit.Test;
+
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.length2;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
+import static ffx.numerics.multipole.GKMultipoleOrder.DIPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.MONOPOLE;
+import static ffx.numerics.multipole.GKMultipoleOrder.QUADRUPOLE;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornK;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multI;
@@ -68,10 +69,9 @@ import static ffx.numerics.multipole.GKTensorGlobalTest.uKDirect;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPermEnergy;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPolDirect;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPolEnergy;
+import static ffx.numerics.multipole.GKTensorMode.BORN;
+import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
 import static org.junit.Assert.assertEquals;
-
-import ffx.utilities.FFXTest;
-import org.junit.Test;
 
 /**
  * Test the GK tensor evaluated in the quasi-internal coordinate frame.
@@ -226,7 +226,7 @@ public class GKTensorQITest extends FFXTest {
     double[] torqueK = new double[3];
 
     double r2 = length2(rWater);
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc,true);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, true);
     gkEnergyQI.initPotential(rWater, r2, bornI, bornK);
     var e = gkEnergyQI.polarizationEnergyAndGradient(mI, mK, 0.0, gradI, torqueI, torqueK);
 
@@ -247,9 +247,9 @@ public class GKTensorQITest extends FFXTest {
     assertEquals("GK Polarization Torque K X", polTorqueKDirect[0], torqueK[0], tolerance);
     assertEquals("GK Polarization Torque K Y", polTorqueKDirect[1], torqueK[1], tolerance);
     assertEquals("GK Polarization Torque K Z", polTorqueKDirect[2], torqueK[2], tolerance);
-    assertEquals("GK Born Grad I", polGradBornDirect,db * bornI, tolerance);
+    assertEquals("GK Born Grad I", polGradBornDirect, db * bornI, tolerance);
   }
-  
+
   @Test
   public void tensorAuxiliaryTest() {
     int order = 6;
@@ -257,7 +257,7 @@ public class GKTensorQITest extends FFXTest {
     double r2 = length2(r);
     GKSource gkSource = new GKSource(order, gc);
     gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, Ai, Aj);
-    
+
     GKTensorQI tensorQI = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
     tensorQI.setR(r);
     double[] work = new double[order + 1];
@@ -629,7 +629,7 @@ public class GKTensorQITest extends FFXTest {
   }
 
   private void tensorFiniteDifference(GKTensorQI gkTensorQI, double delta2, int order,
-      double[] tensor, double[] tensorsPz, double[] tensorsNz) {
+                                      double[] tensor, double[] tensorsPz, double[] tensorsNz) {
 
     int start = gkTensorQI.multipoleOrder.getOrder();
 
