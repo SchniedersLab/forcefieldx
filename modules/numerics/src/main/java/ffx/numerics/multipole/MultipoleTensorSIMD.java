@@ -417,6 +417,14 @@ public abstract class MultipoleTensorSIMD {
   }
 
   /**
+   * Return the source terms.
+   */
+  public DoubleVector[] getSource() {
+    source(work);
+    return work;
+  }
+
+  /**
    * Contract a multipole with the potential and its derivatives.
    *
    * @param m PolarizableMultipole at the site of the potential.
