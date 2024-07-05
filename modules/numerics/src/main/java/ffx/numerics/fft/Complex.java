@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.fma;
 import static java.lang.System.arraycopy;
-import static jdk.incubator.vector.DoubleVector.SPECIES_256;
+import static jdk.incubator.vector.DoubleVector.SPECIES_512;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -95,14 +95,22 @@ public class Complex {
   private static final double cos4PI_7 = cos(4.0 * PI / 7.0);
   private static final double cos6PI_7 = cos(6.0 * PI / 7.0);
 
+  private static final boolean useSIMD;
   private static final VectorMask<Double> mask;
   private static final VectorShuffle<Double> shuffle;
 
   static {
-    boolean[] negateMask = {false, true, false, true};
-    mask = VectorMask.fromArray(SPECIES_256, negateMask, 0);
-    int[] shuffleMask = {1, 0, 3, 2};
-    shuffle = VectorShuffle.fromArray(SPECIES_256, shuffleMask, 0);
+    if (DoubleVector.SPECIES_PREFERRED == SPECIES_512) {
+      useSIMD = true;
+      boolean[] negateMask = {false, true, false, true, false, true, false, true};
+      mask = VectorMask.fromArray(SPECIES_512, negateMask, 0);
+      int[] shuffleMask = {1, 0, 3, 2, 5, 4, 7, 6};
+      shuffle = VectorShuffle.fromArray(SPECIES_512, shuffleMask, 0);
+    } else {
+      useSIMD = false;
+      mask = null;
+      shuffle = null;
+    }
   }
 
   /**
@@ -448,24 +456,26 @@ public class Complex {
     final int product_1 = product / factor;
 
     /**
-     * If the inner loop limit is odd, use the non-SIMD method.
+     * If the preferred SIMD vector size is not 512,
+     * or the inner loop limit is not divisible by 4, use the non-SIMD method.
      */
-    if (product_1 % 2 != 0) {
+    if (!useSIMD || product_1 % 4 != 0) {
       pass2(product, passData, twiddles);
       return;
     }
 
+    // logger.info("Using SIMD for pass2 with inner loop cycles: " + product_1 / 4);
     final int di = 2 * m;
     final int dj = 2 * product_1;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < q; k++, j += dj) {
       final double[] twids = twiddles[k];
-      DoubleVector w_r = DoubleVector.broadcast(SPECIES_256, twids[0]);
-      DoubleVector w_i = DoubleVector.broadcast(SPECIES_256, -sign * twids[1]).mul(-1.0, mask);
-      for (int k1 = 0; k1 < product_1; k1 += 2, i += 4, j += 4) {
-        DoubleVector z0 = DoubleVector.fromArray(SPECIES_256, data, i);
-        DoubleVector z1 = DoubleVector.fromArray(SPECIES_256, data, i + di);
+      DoubleVector w_r = DoubleVector.broadcast(SPECIES_512, twids[0]);
+      DoubleVector w_i = DoubleVector.broadcast(SPECIES_512, -sign * twids[1]).mul(-1.0, mask);
+      for (int k1 = 0; k1 < product_1; k1 += 4, i += 8, j += 8) {
+        DoubleVector z0 = DoubleVector.fromArray(SPECIES_512, data, i);
+        DoubleVector z1 = DoubleVector.fromArray(SPECIES_512, data, i + di);
         DoubleVector sum = z0.add(z1);
         sum.intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
