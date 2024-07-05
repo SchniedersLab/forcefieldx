@@ -17,19 +17,8 @@
     and multipole tensor recursions.
   </description>
   <build>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/numerics/fft
-        </directory>
-        <targetPath>ffx/numerics/fft</targetPath>
-        <includes>
-          <include>*.ptx</include>
-          <include>*.cl</include>
-        </includes>
-      </resource>
-    </resources>
     <plugins>
-      <!-- plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec.version}</version>
@@ -46,17 +35,17 @@
           <arguments>
             <argument>-ms2G</argument>
             <argument>-mx2G</argument>
-            <argument>-Djava.library.path=/Data/ffx-project/ffx/bin/64-bit</argument>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>ffx.numerics.multipole.MultipoleTensor</argument>
-            <argument>6</argument>
-            <argument>1.1</argument>
-            <argument>1.2</argument>
-            <argument>1.3</argument>
+            <argument>--add-modules</argument>
+            <argument>jdk.incubator.vector</argument>
+            <argument>ffx.numerics.fft.Complex3DParallel</argument>
+            <argument>128</argument>
+            <argument>1</argument>
+            <argument>10</argument>
           </arguments>
         </configuration>
-      </plugin -->
+      </plugin>
     </plugins>
   </build>
   <dependencies>

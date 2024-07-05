@@ -37,16 +37,22 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorShuffle;
+
+import java.util.Random;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static java.lang.Math.fma;
 import static java.lang.System.arraycopy;
+import static jdk.incubator.vector.DoubleVector.SPECIES_128;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Compute the FFT of complex, double precision data of arbitrary length n. This class uses a mixed
@@ -54,19 +60,19 @@ import java.util.logging.Logger;
  * larger prime factors.
  *
  * @author Michal J. Schnieders<br> Derived from: <br> Bruce R. Miller (bruce.miller@nist.gov) <br>
- *     Contribution of the National Institute of Standards and Technology, not subject to copyright.
- *     <br>
- *     Derived from:<br> GSL (Gnu Scientific Library) FFT Code by Brian Gough
- *     (bjg@network-theory.co.uk)
+ * Contribution of the National Institute of Standards and Technology, not subject to copyright.
+ * <br>
+ * Derived from:<br> GSL (Gnu Scientific Library) FFT Code by Brian Gough
+ * (bjg@network-theory.co.uk)
  * @see <ul>
- *     <li><a href="http://dx.doi.org/10.1016/0021-9991(83)90013-X" target="_blank"> Clive
- *     Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of Computational
- *     Physics, 52(1):1-23, 1983. </a>
- *     <li><a href="http://www.jstor.org/stable/2003354" target="_blank"> J. W. Cooley and J. W.
- *     Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
- *     <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
- *     Wikipedia </a>
- *     </ul>
+ * <li><a href="http://dx.doi.org/10.1016/0021-9991(83)90013-X" target="_blank"> Clive
+ * Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of Computational
+ * Physics, 52(1):1-23, 1983. </a>
+ * <li><a href="http://www.jstor.org/stable/2003354" target="_blank"> J. W. Cooley and J. W.
+ * Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
+ * <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
+ * Wikipedia </a>
+ * </ul>
  * @since 1.0
  */
 public class Complex {
@@ -88,6 +94,17 @@ public class Complex {
   private static final double cos2PI_7 = cos(2.0 * PI / 7.0);
   private static final double cos4PI_7 = cos(4.0 * PI / 7.0);
   private static final double cos6PI_7 = cos(6.0 * PI / 7.0);
+
+  private static final VectorMask<Double> mask;
+  private static final VectorShuffle<Double> shuffle;
+
+  static {
+    boolean[] negateMask = {false, true};
+    mask = VectorMask.fromArray(SPECIES_128, negateMask, 0);
+    int[] shuffleMask = {1, 0};
+    shuffle = VectorShuffle.fromArray(SPECIES_128, shuffleMask, 0);
+  }
+
   /**
    * Number of complex numbers in the transform.
    */
@@ -108,6 +125,7 @@ public class Complex {
    * Scratch space for the transform.
    */
   private final double[] scratch;
+
 
   /**
    * Sign of negative -1 is for forward transform. Sign of 1 is for inverse transform.
@@ -165,10 +183,11 @@ public class Complex {
    * contain the data points in the following locations:
    *
    * <PRE>
-   * Re(d[i]) = data[offset + stride*i] Im(d[i]) = data[offset + stride*i+1]
+   * Re(d[i]) = data[offset + stride*i]
+   * Im(d[i]) = data[offset + stride*i+1]
    * </PRE>
    *
-   * @param data an array of double.
+   * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
    */
@@ -181,10 +200,11 @@ public class Complex {
    * must be in wrap-around order, and be stored in the following locations:
    *
    * <PRE>
-   * Re(D[i]) = data[offset + stride*i] Im(D[i]) = data[offset + stride*i+1]
+   * Re(D[i]) = data[offset + stride*i]
+   * Im(D[i]) = data[offset + stride*i+1]
    * </PRE>
    *
-   * @param data an array of double.
+   * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
    */
@@ -197,10 +217,11 @@ public class Complex {
    * be stored in the following locations:
    *
    * <PRE>
-   * Re(D[i]) = data[offset + stride*i] Im(D[i]) = data[offset + stride*i+1]
+   * Re(D[i]) = data[offset + stride*i]
+   * Im(D[i]) = data[offset + stride*i+1]
    * </PRE>
    *
-   * @param data an array of double.
+   * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
    */
@@ -284,9 +305,9 @@ public class Complex {
   /**
    * References to the input and output data arrays.
    *
-   * @param in Input data for the current pass.
-   * @param inOffset Offset into the input data.
-   * @param out Output data for the current pass.
+   * @param in        Input data for the current pass.
+   * @param inOffset  Offset into the input data.
+   * @param out       Output data for the current pass.
    * @param outOffset Offset into output array.
    */
   private record PassData(double[] in, int inOffset, double[] out, int outOffset) {
@@ -296,13 +317,13 @@ public class Complex {
   /**
    * Compute the Fast Fourier Transform of data leaving the result in data.
    *
-   * @param data data an array of double.
+   * @param data   data an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
-   * @param sign the sign to apply.
+   * @param sign   the sign to apply.
    */
   private void transformInternal(final double[] data,
-      final int offset, final int stride, final int sign) {
+                                 final int offset, final int stride, final int sign) {
 
     PassData[] passData;
     boolean packed = false;
@@ -315,11 +336,11 @@ public class Complex {
       }
       PassData evenPass = new PassData(packedData, 0, scratch, 0);
       PassData oddPass = new PassData(scratch, 0, packedData, 0);
-      passData = new PassData[] {evenPass, oddPass};
+      passData = new PassData[]{evenPass, oddPass};
     } else {
       PassData evenPass = new PassData(data, offset, scratch, 0);
       PassData oddPass = new PassData(scratch, 0, data, offset);
-      passData = new PassData[] {evenPass, oddPass};
+      passData = new PassData[]{evenPass, oddPass};
     }
 
     this.sign = sign;
@@ -332,6 +353,7 @@ public class Complex {
       product *= factor;
       switch (factor) {
         case 2 -> pass2(product, passData[pass], twiddle[i]);
+        // case 2 -> pass2SIMD(product, passData[pass], twiddle[i]);
         case 3 -> pass3(product, passData[pass], twiddle[i]);
         case 4 -> pass4(product, passData[pass], twiddle[i]);
         case 5 -> pass5(product, passData[pass], twiddle[i]);
@@ -374,7 +396,7 @@ public class Complex {
   /**
    * Handle factors of 2.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -411,9 +433,43 @@ public class Complex {
   }
 
   /**
+   * Handle factors of 2.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass2SIMD(int product, PassData passData, double[][] twiddles) {
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int factor = 2;
+    final int m = n / factor;
+    final int q = n / product;
+    final int product_1 = product / factor;
+    final int di = 2 * m;
+    final int dj = 2 * product_1;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < q; k++, j += dj) {
+      final double[] twids = twiddles[k];
+      DoubleVector w_r = DoubleVector.broadcast(SPECIES_128, twids[0]);
+      DoubleVector w_i = DoubleVector.broadcast(SPECIES_128, -sign * twids[1]).mul(-1.0, mask);
+      for (int k1 = 0; k1 < product_1; k1++, i += 2, j += 2) {
+        DoubleVector z0 = DoubleVector.fromArray(SPECIES_128, data, i);
+        DoubleVector z1 = DoubleVector.fromArray(SPECIES_128, data, i + di);
+        DoubleVector sum = z0.add(z1);
+        sum.intoArray(ret, j);
+        DoubleVector x = z0.sub(z1);
+        DoubleVector sum2 = x.fma(w_r, x.mul(w_i).rearrange(shuffle));
+        sum2.intoArray(ret, j + dj);
+      }
+    }
+  }
+
+  /**
    * Handle factors of 3.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -470,7 +526,7 @@ public class Complex {
   /**
    * Handle factors of 4.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -538,7 +594,7 @@ public class Complex {
   /**
    * Handle factors of 5.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -633,7 +689,7 @@ public class Complex {
   /**
    * Handle factors of 6.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -738,7 +794,7 @@ public class Complex {
   /**
    * Handle factors of 7.
    *
-   * @param product Product to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -902,8 +958,8 @@ public class Complex {
   /**
    * Note that passOdd is only intended for odd factors (and fails for even factors).
    *
-   * @param factor Factor to apply.
-   * @param product Product to apply.
+   * @param factor   Factor to apply.
+   * @param product  Product to apply.
    * @param passData the data.
    * @param twiddles the twiddle factors.
    */
@@ -912,7 +968,6 @@ public class Complex {
     final int dataOffset = passData.inOffset;
     final double[] ret = passData.out;
     final int retOffset = passData.outOffset;
-
     final int m = n / factor;
     final int q = n / product;
     final int p_1 = product / factor;
@@ -1066,7 +1121,7 @@ public class Complex {
   /**
    * Static DFT method used to test the FFT.
    *
-   * @param in input array.
+   * @param in  input array.
    * @param out output array.
    */
   public static void dft(double[] in, double[] out) {
@@ -1089,4 +1144,53 @@ public class Complex {
       out[im] = simImag;
     }
   }
+
+  /**
+   * Test the Complex FFT.
+   *
+   * @param args an array of {@link java.lang.String} objects.
+   * @throws java.lang.Exception if any.
+   * @since 1.0
+   */
+  public static void main(String[] args) throws Exception {
+    int dimNotFinal = 128;
+    int reps = 5;
+    try {
+      dimNotFinal = Integer.parseInt(args[0]);
+      if (dimNotFinal < 1) {
+        dimNotFinal = 100;
+      }
+      reps = Integer.parseInt(args[1]);
+      if (reps < 1) {
+        reps = 5;
+      }
+    } catch (Exception e) {
+      //
+    }
+    final int dim = dimNotFinal;
+    System.out.printf("Initializing a 1D array of length %d.\n"
+        + "The best timing out of %d repetitions will be used.%n", dim, reps);
+    Complex complex = new Complex(dim);
+    final double[] data = new double[dim * 2];
+    Random random = new Random(1);
+    for (int i = 0; i < dim; i++) {
+      data[2 * i] = random.nextDouble();
+    }
+    double toSeconds = 0.000000001;
+    long seqTime = Long.MAX_VALUE;
+    for (int i = 0; i < reps; i++) {
+      System.out.printf("Iteration %d%n", i + 1);
+      long time = System.nanoTime();
+      complex.fft(data, 0, 2);
+      complex.ifft(data, 0, 2);
+      time = (System.nanoTime() - time);
+      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
+      if (time < seqTime) {
+        seqTime = time;
+      }
+    }
+    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
+  }
+
+
 }
