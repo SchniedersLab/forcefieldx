@@ -169,6 +169,10 @@ public class Complex {
    */
   private final PassData[] passData;
   /**
+   * Constants for each pass.
+   */
+  private final PassConstants[] passConstants;
+  /**
    * Sign of negative -1 is for forward transform. Sign of 1 is for inverse transform.
    */
   private int sign = -1;
@@ -190,6 +194,25 @@ public class Complex {
     packedData = new double[2 * n];
     scratch = new double[2 * n];
     passData = new PassData[2];
+
+    // Compute the constants for each pass.
+    passConstants = new PassConstants[factors.length];
+    int product = 1;
+    for (int i = 0; i < factors.length; i++) {
+      final int factor = factors[i];
+      product *= factor;
+      // Create pass constants only for factors [2, 3, 4, 5, 6, 7].
+      if (factor > 7) {
+        passConstants[i] = null;
+        continue;
+      }
+      final int outerLoopLimit = n / product;
+      final int innerLoopLimit = product / factor;
+      final int nextInput = n / factor;
+      final int di = 2 * nextInput;
+      final int dj = 2 * innerLoopLimit;
+      passConstants[i] = new PassConstants(factor, outerLoopLimit, innerLoopLimit, nextInput, di, dj, twiddle[i]);
+    }
 
     // Use SIMD by default only for AVX-512.
     useSIMD = SPECIES_LENGTH == 8;
@@ -377,6 +400,22 @@ public class Complex {
   }
 
   /**
+   * Constant factors needed for each pass.
+   *
+   * @param factor         The factor.
+   * @param outerLoopLimit The outer loop limit (n / product).
+   * @param innerLoopLimit The inner loop limit (product / factor).
+   * @param nextInput      The next input (n / factor).
+   * @param di             Twice the next input to account for complex numbers.
+   * @param dj             Twice the inner loop limit to account for complex numbers.
+   * @param twiddles       The twiddle factors for this pass.
+   */
+  private record PassConstants(int factor, int outerLoopLimit, int innerLoopLimit, int nextInput,
+                               int di, int dj, double[][] twiddles) {
+    // Empty.
+  }
+
+  /**
    * Compute the Fast Fourier Transform of data leaving the result in data.
    *
    * @param data   data an array of double.
@@ -412,22 +451,22 @@ public class Complex {
       product *= factor;
       if (useSIMD) {
         switch (factor) {
-          case 2 -> pass2SIMD(product, passData[pass], twiddle[i]);
-          case 3 -> pass3SIMD(product, passData[pass], twiddle[i]);
-          case 4 -> pass4SIMD(product, passData[pass], twiddle[i]);
-          case 5 -> pass5SIMD(product, passData[pass], twiddle[i]);
-          case 6 -> pass6SIMD(product, passData[pass], twiddle[i]);
-          case 7 -> pass7SIMD(product, passData[pass], twiddle[i]);
+          case 2 -> pass2SIMD(passConstants[i], passData[pass]);
+          case 3 -> pass3SIMD(passConstants[i], passData[pass]);
+          case 4 -> pass4SIMD(passConstants[i], passData[pass]);
+          case 5 -> pass5SIMD(passConstants[i], passData[pass]);
+          case 6 -> pass6SIMD(passConstants[i], passData[pass]);
+          case 7 -> pass7SIMD(passConstants[i], passData[pass]);
           default -> passOdd(factor, product, passData[pass], twiddle[i]);
         }
       } else {
         switch (factor) {
-          case 2 -> pass2(product, passData[pass], twiddle[i]);
-          case 3 -> pass3(product, passData[pass], twiddle[i]);
-          case 4 -> pass4(product, passData[pass], twiddle[i]);
-          case 5 -> pass5(product, passData[pass], twiddle[i]);
-          case 6 -> pass6(product, passData[pass], twiddle[i]);
-          case 7 -> pass7(product, passData[pass], twiddle[i]);
+          case 2 -> pass2(passConstants[i], passData[pass]);
+          case 3 -> pass3(passConstants[i], passData[pass]);
+          case 4 -> pass4(passConstants[i], passData[pass]);
+          case 5 -> pass5(passConstants[i], passData[pass]);
+          case 6 -> pass6(passConstants[i], passData[pass]);
+          case 7 -> pass7(passConstants[i], passData[pass]);
           default -> passOdd(factor, product, passData[pass], twiddle[i]);
         }
       }
@@ -466,21 +505,19 @@ public class Complex {
   /**
    * Handle factors of 2.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass2(int product, PassData passData, double[][] twiddles) {
-    final int factor = 2;
-    final int innerLoopLimit = product / factor;
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int outerLoopLimit = n / product;
-    final int nextInput = n / factor;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
+  private void pass2(PassConstants passConstants, PassData passData) {
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
       final double w_r = twids[0];
@@ -505,28 +542,24 @@ public class Complex {
   /**
    * Handle factors of 2.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass2SIMD(int product, PassData passData, double[][] twiddles) {
-    final int factor = 2;
-    final int innerLoopLimit = product / factor;
+  private void pass2SIMD(PassConstants passConstants, PassData passData) {
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
       // System.out.printf("Scalar %d product=%d innerLoopLimit=%d increment=%d%n",
       // factor, product, innerLoopLimit, LOOP_INCREMENT);
-      pass2(product, passData, twiddles);
+      pass2(passConstants, passData);
       return;
     }
-    // System.out.printf("SIMD   %d product=%d innerLoopLimit=%d increment=%d%n",
-    // factor, product, innerLoopLimit, LOOP_INCREMENT);
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int outerLoopLimit = n / product;
-    final int nextInput = n / factor;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += dj) {
@@ -548,21 +581,20 @@ public class Complex {
   /**
    * Handle factors of 3.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass3(int product, PassData passData, double[][] twiddles) {
+  private void pass3(PassConstants passConstants, PassData passData) {
     final int factor = 3;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final double[][] twiddles = passConstants.twiddles;
+    final double tau = sign * sqrt3_2;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final int jstep = (factor - 1) * dj;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final double tau = sign * sqrt3_2;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
-    final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
@@ -605,30 +637,29 @@ public class Complex {
   /**
    * Handle factors of 3.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass3SIMD(int product, PassData passData, double[][] twiddles) {
+  private void pass3SIMD(PassConstants passConstants, PassData passData) {
     final int factor = 3;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
-      pass3(product, passData, twiddles);
+      pass3(passConstants, passData);
       return;
     }
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final double tau = sign * sqrt3_2;
-    final int di = 2 * nextInput;
     final int di2 = 2 * di;
-    final int dj = 2 * innerLoopLimit;
     final int dj2 = 2 * dj;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
@@ -657,22 +688,21 @@ public class Complex {
   /**
    * Handle factors of 4.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass4(int product, PassData passData, double[][] twiddles) {
+  private void pass4(PassConstants passConstants, PassData passData) {
     final int factor = 4;
-    final int innerLoopLimit = product / factor;
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1_r = twids[0];
@@ -725,33 +755,30 @@ public class Complex {
   /**
    * Handle factors of 4.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass4SIMD(int product, PassData passData, double[][] twiddles) {
+  private void pass4SIMD(PassConstants passConstants, PassData passData) {
     final int factor = 4;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
       // System.out.printf("Scalar %d product=%d innerLoopLimit=%d increment=%d%n",
       // factor, product, innerLoopLimit, LOOP_INCREMENT);
-      pass4(product, passData, twiddles);
+      pass4(passConstants, passData);
       return;
     }
-    // System.out.printf("SIMD   %d product=%d innerLoopLimit=%d increment=%d%n",
-    // factor, product, innerLoopLimit, LOOP_INCREMENT);
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final int di = 2 * nextInput;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final int di2 = 2 * di;
     final int di3 = 3 * di;
-    final int dj = 2 * innerLoopLimit;
     final int dj2 = 2 * dj;
     final int dj3 = 3 * dj;
     final int jstep = (factor - 1) * dj;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
@@ -788,25 +815,24 @@ public class Complex {
   /**
    * Handle factors of 5.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass5(int product, PassData passData, double[][] twiddles) {
+  private void pass5(PassConstants passConstants, PassData passData) {
     final int factor = 5;
-    final int innerLoopLimit = product / factor;
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final double tau = sqrt5_4;
     final double sin2PI_5s = sign * sin2PI_5;
     final double sinPI_5s = sign * sinPI_5;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
@@ -883,34 +909,33 @@ public class Complex {
   /**
    * Handle factors of 5.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass5SIMD(int product, PassData passData, double[][] twiddles) {
+  private void pass5SIMD(PassConstants passConstants, PassData passData) {
     final int factor = 5;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
-      pass5(product, passData, twiddles);
+      pass5(passConstants, passData);
       return;
     }
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final double tau = sqrt5_4;
-    final double sin2PI_5s = sign * sin2PI_5;
-    final double sinPI_5s = sign * sinPI_5;
-    final int di = 2 * nextInput;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final int di2 = 2 * di;
     final int di3 = 3 * di;
     final int di4 = 4 * di;
-    final int dj = 2 * innerLoopLimit;
     final int dj2 = 2 * dj;
     final int dj3 = 3 * dj;
     final int dj4 = 4 * dj;
+    final double tau = sqrt5_4;
+    final double sin2PI_5s = sign * sin2PI_5;
+    final double sinPI_5s = sign * sinPI_5;
     final int jstep = (factor - 1) * dj;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
@@ -959,23 +984,22 @@ public class Complex {
   /**
    * Handle factors of 6.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass6(int product, PassData passData, double[][] twiddles) {
+  private void pass6(PassConstants passConstants, PassData passData) {
     final int factor = 6;
-    final int innerLoopLimit = product / factor;
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final double tau = sign * sqrt3_2;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final int jstep = (factor - 1) * dj;
+    final double tau = sign * sqrt3_2;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
@@ -1064,34 +1088,33 @@ public class Complex {
   /**
    * Handle factors of 6.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass6SIMD(int product, PassData passData, double[][] twiddles) {
+  private void pass6SIMD(PassConstants passConstants, PassData passData) {
     final int factor = 6;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
-      pass6(product, passData, twiddles);
+      pass6(passConstants, passData);
       return;
     }
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outerLoopLimit = n / product;
-    final double tau = sign * sqrt3_2;
-    final int di = 2 * nextInput;
+    final int outerLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final int di2 = 2 * di;
     final int di3 = 3 * di;
     final int di4 = 4 * di;
     final int di5 = 5 * di;
-    final int dj = 2 * innerLoopLimit;
     final int dj2 = 2 * dj;
     final int dj3 = 3 * dj;
     final int dj4 = 4 * dj;
     final int dj5 = 5 * dj;
+    final double tau = sign * sqrt3_2;
     final int jstep = (factor - 1) * dj;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
@@ -1146,17 +1169,16 @@ public class Complex {
   /**
    * Handle factors of 7.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass7(int product, PassData passData, double[][] twiddles) {
+  private void pass7(PassConstants passConstants, PassData passData) {
     final int factor = 7;
-    final int innerLoopLimit = product / factor;
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outLoopLimit = n / product;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
+    final int outLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final double c1 = cos2PI_7;
     final double c2 = cos4PI_7;
     final double c3 = cos6PI_7;
@@ -1171,11 +1193,11 @@ public class Complex {
     final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
     final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
     final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
-    final int di = 2 * nextInput;
-    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     for (int k = 0; k < outLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
@@ -1310,22 +1332,21 @@ public class Complex {
   /**
    * Handle factors of 7.
    *
-   * @param product  Product to apply.
-   * @param passData the data.
-   * @param twiddles the twiddle factors.
+   * @param passConstants the constants.
+   * @param passData      the data.
    */
-  private void pass7SIMD(int product, PassData passData, double[][] twiddles) {
+  private void pass7SIMD(PassConstants passConstants, PassData passData) {
     final int factor = 7;
-    final int innerLoopLimit = product / factor;
+    final int innerLoopLimit = passConstants.innerLoopLimit;
     // If the inner loop limit is not divisible by the loop increment, use the scalar method.
     if (innerLoopLimit % LOOP_INCREMENT != 0) {
-      pass7(product, passData, twiddles);
+      pass7(passConstants, passData);
       return;
     }
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
-    final int nextInput = n / factor;
-    final int outLoopLimit = n / product;
+    final int outLoopLimit = passConstants.outerLoopLimit;
+    final int di = passConstants.di;
+    final int dj = passConstants.dj;
+    final double[][] twiddles = passConstants.twiddles;
     final double c1 = cos2PI_7;
     final double c2 = cos4PI_7;
     final double c3 = cos6PI_7;
@@ -1340,19 +1361,19 @@ public class Complex {
     final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
     final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
     final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
-    final int di = 2 * nextInput;
     final int di2 = 2 * di;
     final int di3 = 3 * di;
     final int di4 = 4 * di;
     final int di5 = 5 * di;
     final int di6 = 6 * di;
-    final int dj = 2 * innerLoopLimit;
     final int dj2 = 2 * dj;
     final int dj3 = 3 * dj;
     final int dj4 = 4 * dj;
     final int dj5 = 5 * dj;
     final int dj6 = 6 * dj;
     final int jstep = (factor - 1) * dj;
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
     int i = passData.inOffset;
     int j = passData.outOffset;
     for (int k = 0; k < outLoopLimit; k++, j += jstep) {
