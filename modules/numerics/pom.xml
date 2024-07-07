@@ -39,9 +39,10 @@
             <classpath/>
             <argument>--add-modules</argument>
             <argument>jdk.incubator.vector</argument>
-            <argument>ffx.numerics.fft.Complex3DParallel</argument>
+            <argument>-Dfft.useSIMD=true</argument>
+            <argument>-Dffx.log=ALL</argument>
+            <argument>ffx.numerics.fft.Complex</argument>
             <argument>128</argument>
-            <argument>1</argument>
             <argument>10</argument>
           </arguments>
         </configuration>

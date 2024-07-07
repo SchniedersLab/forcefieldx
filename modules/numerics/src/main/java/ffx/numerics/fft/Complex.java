@@ -40,6 +40,7 @@ package ffx.numerics.fft;
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorShuffle;
+import jdk.incubator.vector.VectorSpecies;
 
 import java.util.Random;
 import java.util.Vector;
@@ -48,7 +49,6 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.fma;
 import static java.lang.System.arraycopy;
-import static jdk.incubator.vector.DoubleVector.SPECIES_512;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -95,22 +95,53 @@ public class Complex {
   private static final double cos4PI_7 = cos(4.0 * PI / 7.0);
   private static final double cos6PI_7 = cos(6.0 * PI / 7.0);
 
-  private static final boolean useSIMD;
-  private static final VectorMask<Double> mask;
-  private static final VectorShuffle<Double> shuffle;
+  /**
+   * The preferred SIMD vector size.
+   */
+  private static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_PREFERRED;
+  // private static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_512;
+  /**
+   * Mask to select only imaginary members of the vector.
+   */
+  private static final VectorMask<Double> maskSelectIm;
+  /**
+   * Mask to select only real members of the vector.
+   */
+  private static final VectorMask<Double> maskSelectRe;
+  /**
+   * Shuffle used to swap real and imaginary members of the vector.
+   */
+  private static final VectorShuffle<Double> shuffleReIm;
+  /**
+   * The number of contiguous elements that will be read from the input data array.
+   */
+  private static final int SPECIES_LENGTH = DOUBLE_SPECIES.length();
+  /**
+   * The number of complex elements that will be processed in each inner loop iteration.
+   * The number of elements to process in the inner loop must be evenly divisible by this loop increment.
+   */
+  private static final int LOOP_INCREMENT = SPECIES_LENGTH / 2;
 
   static {
-    if (DoubleVector.SPECIES_PREFERRED == SPECIES_512) {
-      useSIMD = true;
-      boolean[] negateMask = {false, true, false, true, false, true, false, true};
-      mask = VectorMask.fromArray(SPECIES_512, negateMask, 0);
-      int[] shuffleMask = {1, 0, 3, 2, 5, 4, 7, 6};
-      shuffle = VectorShuffle.fromArray(SPECIES_512, shuffleMask, 0);
+    boolean[] negateMaskRe;
+    boolean[] negateMaskIm;
+    int[] shuffleMask;
+    if (DOUBLE_SPECIES == DoubleVector.SPECIES_512) {
+      negateMaskRe = new boolean[]{true, false, true, false, true, false, true, false};
+      negateMaskIm = new boolean[]{false, true, false, true, false, true, false, true};
+      shuffleMask = new int[]{1, 0, 3, 2, 5, 4, 7, 6};
+    } else if (DOUBLE_SPECIES == DoubleVector.SPECIES_256) {
+      negateMaskRe = new boolean[]{true, false, true, false};
+      negateMaskIm = new boolean[]{false, true, false, true};
+      shuffleMask = new int[]{1, 0, 3, 2};
     } else {
-      useSIMD = false;
-      mask = null;
-      shuffle = null;
+      negateMaskRe = new boolean[]{true, false};
+      negateMaskIm = new boolean[]{false, true};
+      shuffleMask = new int[]{1, 0};
     }
+    maskSelectRe = VectorMask.fromArray(DOUBLE_SPECIES, negateMaskRe, 0);
+    maskSelectIm = VectorMask.fromArray(DOUBLE_SPECIES, negateMaskIm, 0);
+    shuffleReIm = VectorShuffle.fromArray(DOUBLE_SPECIES, shuffleMask, 0);
   }
 
   /**
@@ -133,12 +164,16 @@ public class Complex {
    * Scratch space for the transform.
    */
   private final double[] scratch;
-
-
+  /**
+   * References to the input and output data arrays.
+   */
+  private final PassData[] passData;
   /**
    * Sign of negative -1 is for forward transform. Sign of 1 is for inverse transform.
    */
   private int sign = -1;
+
+  private boolean useSIMD;
 
   /**
    * Construct a Complex instance for data of length n. Factorization of n is designed to use special
@@ -149,12 +184,31 @@ public class Complex {
    */
   public Complex(int n) {
     assert (n > 1);
-
     this.n = n;
     factors = factor();
     twiddle = wavetable();
     packedData = new double[2 * n];
     scratch = new double[2 * n];
+    passData = new PassData[2];
+
+    // Use SIMD by default only for AVX-512.
+    boolean useSIMD = SPECIES_LENGTH == 8;
+    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+    try {
+      useSIMD = Boolean.parseBoolean(simd);
+    } catch (Exception e) {
+      logger.info(" Invalid value for fft.useSIMD: " + simd);
+      useSIMD = false;
+    }
+  }
+
+  /**
+   * Configure use of SIMD operators.
+   *
+   * @param useSIMD True to use SIMD operators.
+   */
+  public void setUseSIMD(boolean useSIMD) {
+    this.useSIMD = useSIMD;
   }
 
   /**
@@ -304,7 +358,7 @@ public class Complex {
           sb.append(" * ");
         }
         sb.append(ret[nf - 1]);
-        logger.fine(sb.toString());
+        logger.finest(sb.toString());
       }
     }
     return ret;
@@ -333,7 +387,6 @@ public class Complex {
   private void transformInternal(final double[] data,
                                  final int offset, final int stride, final int sign) {
 
-    PassData[] passData;
     boolean packed = false;
     if (stride != 2) {
       // Pack non-contiguous (stride > 2) data into a contiguous array.
@@ -342,13 +395,11 @@ public class Complex {
         packedData[i2] = data[index];
         packedData[i2 + 1] = data[index + 1];
       }
-      PassData evenPass = new PassData(packedData, 0, scratch, 0);
-      PassData oddPass = new PassData(scratch, 0, packedData, 0);
-      passData = new PassData[]{evenPass, oddPass};
+      passData[0] = new PassData(packedData, 0, scratch, 0);
+      passData[1] = new PassData(scratch, 0, packedData, 0);
     } else {
-      PassData evenPass = new PassData(data, offset, scratch, 0);
-      PassData oddPass = new PassData(scratch, 0, data, offset);
-      passData = new PassData[]{evenPass, oddPass};
+      passData[0] = new PassData(data, offset, scratch, 0);
+      passData[1] = new PassData(scratch, 0, data, offset);
     }
 
     this.sign = sign;
@@ -359,15 +410,26 @@ public class Complex {
       final int pass = i % 2;
       final int factor = factors[i];
       product *= factor;
-      switch (factor) {
-        case 2 -> pass2(product, passData[pass], twiddle[i]);
-        // case 2 -> pass2SIMD(product, passData[pass], twiddle[i]);
-        case 3 -> pass3(product, passData[pass], twiddle[i]);
-        case 4 -> pass4(product, passData[pass], twiddle[i]);
-        case 5 -> pass5(product, passData[pass], twiddle[i]);
-        case 6 -> pass6(product, passData[pass], twiddle[i]);
-        case 7 -> pass7(product, passData[pass], twiddle[i]);
-        default -> passOdd(factor, product, passData[pass], twiddle[i]);
+      if (useSIMD) {
+        switch (factor) {
+          case 2 -> pass2SIMD(product, passData[pass], twiddle[i]);
+          case 3 -> pass3SIMD(product, passData[pass], twiddle[i]);
+          case 4 -> pass4SIMD(product, passData[pass], twiddle[i]);
+          case 5 -> pass5SIMD(product, passData[pass], twiddle[i]);
+          case 6 -> pass6SIMD(product, passData[pass], twiddle[i]);
+          case 7 -> pass7SIMD(product, passData[pass], twiddle[i]);
+          default -> passOdd(factor, product, passData[pass], twiddle[i]);
+        }
+      } else {
+        switch (factor) {
+          case 2 -> pass2(product, passData[pass], twiddle[i]);
+          case 3 -> pass3(product, passData[pass], twiddle[i]);
+          case 4 -> pass4(product, passData[pass], twiddle[i]);
+          case 5 -> pass5(product, passData[pass], twiddle[i]);
+          case 6 -> pass6(product, passData[pass], twiddle[i]);
+          case 7 -> pass7(product, passData[pass], twiddle[i]);
+          default -> passOdd(factor, product, passData[pass], twiddle[i]);
+        }
       }
     }
 
@@ -409,21 +471,21 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass2(int product, PassData passData, double[][] twiddles) {
+    final int factor = 2;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 2;
-    final int m = n / factor;
-    final int q = n / product;
-    final int product_1 = product / factor;
-    final int di = 2 * m;
-    final int dj = 2 * product_1;
+    final int outerLoopLimit = n / product;
+    final int nextInput = n / factor;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += dj) {
+    for (int k = 0; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
       final double w_r = twids[0];
       final double w_i = -sign * twids[1];
-      for (int k1 = 0; k1 < product_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0_r = data[i];
         final double z0_i = data[i + 1];
         final int idi = i + di;
@@ -448,39 +510,37 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass2SIMD(int product, PassData passData, double[][] twiddles) {
-    final double[] data = passData.in;
-    final double[] ret = passData.out;
     final int factor = 2;
-    final int m = n / factor;
-    final int q = n / product;
-    final int product_1 = product / factor;
-
-    /**
-     * If the preferred SIMD vector size is not 512,
-     * or the inner loop limit is not divisible by 4, use the non-SIMD method.
-     */
-    if (!useSIMD || product_1 % 4 != 0) {
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      // System.out.printf("Scalar %d product=%d innerLoopLimit=%d increment=%d%n",
+      // factor, product, innerLoopLimit, LOOP_INCREMENT);
       pass2(product, passData, twiddles);
       return;
     }
-
-    // logger.info("Using SIMD for pass2 with inner loop cycles: " + product_1 / 4);
-    final int di = 2 * m;
-    final int dj = 2 * product_1;
+    // System.out.printf("SIMD   %d product=%d innerLoopLimit=%d increment=%d%n",
+    // factor, product, innerLoopLimit, LOOP_INCREMENT);
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int outerLoopLimit = n / product;
+    final int nextInput = n / factor;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += dj) {
+    for (int k = 0; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
-      DoubleVector w_r = DoubleVector.broadcast(SPECIES_512, twids[0]);
-      DoubleVector w_i = DoubleVector.broadcast(SPECIES_512, -sign * twids[1]).mul(-1.0, mask);
-      for (int k1 = 0; k1 < product_1; k1 += 4, i += 8, j += 8) {
-        DoubleVector z0 = DoubleVector.fromArray(SPECIES_512, data, i);
-        DoubleVector z1 = DoubleVector.fromArray(SPECIES_512, data, i + di);
-        DoubleVector sum = z0.add(z1);
-        sum.intoArray(ret, j);
+      DoubleVector
+          wr = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          wi = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di);
+        z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        DoubleVector sum2 = x.fma(w_r, x.mul(w_i).rearrange(shuffle));
-        sum2.intoArray(ret, j + dj);
+        x.fma(wr, x.mul(wi).rearrange(shuffleReIm)).intoArray(ret, j + dj);
       }
     }
   }
@@ -493,25 +553,25 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass3(int product, PassData passData, double[][] twiddles) {
+    final int factor = 3;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 3;
-    final int m = n / factor;
-    final int q = n / product;
-    final int product_1 = product / factor;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
     final double tau = sign * sqrt3_2;
-    final int di = 2 * m;
-    final int dj = 2 * product_1;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += jstep) {
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1_r = twids[0];
       final double w1_i = -sign * twids[1];
       final double w2_r = twids[2];
       final double w2_i = -sign * twids[3];
-      for (int k1 = 0; k1 < product_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0_r = data[i];
         final double z0_i = data[i + 1];
         int idi = i + di;
@@ -543,6 +603,58 @@ public class Complex {
   }
 
   /**
+   * Handle factors of 3.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass3SIMD(int product, PassData passData, double[][] twiddles) {
+    final int factor = 3;
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      pass3(product, passData, twiddles);
+      return;
+    }
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
+    final double tau = sign * sqrt3_2;
+    final int di = 2 * nextInput;
+    final int di2 = 2 * di;
+    final int dj = 2 * innerLoopLimit;
+    final int dj2 = 2 * dj;
+    final int jstep = (factor - 1) * dj;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2);
+        DoubleVector
+            t1 = z1.add(z2),
+            t2 = t1.mul(-0.5).add(z0),
+            t3 = z1.sub(z2).mul(tau).rearrange(shuffleReIm);
+        z0.add(t1).intoArray(ret, j);
+        DoubleVector x = t2.add(t3.mul(-1.0, maskSelectRe));
+        w1r.fma(x, x.mul(w1i).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x = t2.add(t3.mul(-1.0, maskSelectIm));
+        w2r.fma(x, x.mul(w2i).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
+      }
+    }
+  }
+
+  /**
    * Handle factors of 4.
    *
    * @param product  Product to apply.
@@ -550,18 +662,18 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass4(int product, PassData passData, double[][] twiddles) {
+    final int factor = 4;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 4;
-    final int m = n / factor;
-    final int q = n / product;
-    final int p_1 = product / factor;
-    final int di = 2 * m;
-    final int dj = 2 * p_1;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += jstep) {
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1_r = twids[0];
       final double w1_i = -sign * twids[1];
@@ -569,7 +681,7 @@ public class Complex {
       final double w2_i = -sign * twids[3];
       final double w3_r = twids[4];
       final double w3_i = -sign * twids[5];
-      for (int k1 = 0; k1 < p_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0_r = data[i];
         final double z0_i = data[i + 1];
         int idi = i + di;
@@ -611,6 +723,69 @@ public class Complex {
   }
 
   /**
+   * Handle factors of 4.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass4SIMD(int product, PassData passData, double[][] twiddles) {
+    final int factor = 4;
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      // System.out.printf("Scalar %d product=%d innerLoopLimit=%d increment=%d%n",
+      // factor, product, innerLoopLimit, LOOP_INCREMENT);
+      pass4(product, passData, twiddles);
+      return;
+    }
+    // System.out.printf("SIMD   %d product=%d innerLoopLimit=%d increment=%d%n",
+    // factor, product, innerLoopLimit, LOOP_INCREMENT);
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
+    final int di = 2 * nextInput;
+    final int di2 = 2 * di;
+    final int di3 = 3 * di;
+    final int dj = 2 * innerLoopLimit;
+    final int dj2 = 2 * dj;
+    final int dj3 = 3 * dj;
+    final int jstep = (factor - 1) * dj;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3);
+        DoubleVector
+            t1 = z0.add(z2),
+            t2 = z1.add(z3),
+            t3 = z0.sub(z2),
+            t4 = z1.sub(z3).mul(sign).rearrange(shuffleReIm);
+        t1.add(t2).intoArray(ret, j);
+        DoubleVector x = t3.add(t4.mul(-1.0, maskSelectRe));
+        w1r.fma(x, x.mul(w1i).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x = t1.sub(t2);
+        w2r.fma(x, x.mul(w2i).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
+        x = t3.add(t4.mul(-1.0, maskSelectIm));
+        w3r.fma(x, x.mul(w3i).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
+      }
+    }
+  }
+
+  /**
    * Handle factors of 5.
    *
    * @param product  Product to apply.
@@ -618,21 +793,21 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass5(int product, PassData passData, double[][] twiddles) {
+    final int factor = 5;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 5;
-    final int m = n / factor;
-    final int q = n / product;
-    final int p_1 = product / factor;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
     final double tau = sqrt5_4;
     final double sin2PI_5s = sign * sin2PI_5;
     final double sinPI_5s = sign * sinPI_5;
-    final int di = 2 * m;
-    final int dj = 2 * p_1;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += jstep) {
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
       final double w1i = -sign * twids[1];
@@ -642,7 +817,7 @@ public class Complex {
       final double w3i = -sign * twids[5];
       final double w4r = twids[6];
       final double w4i = -sign * twids[7];
-      for (int k1 = 0; k1 < p_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0r = data[i];
         final double z0i = data[i + 1];
         int idi = i + di;
@@ -706,6 +881,82 @@ public class Complex {
   }
 
   /**
+   * Handle factors of 5.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass5SIMD(int product, PassData passData, double[][] twiddles) {
+    final int factor = 5;
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      pass5(product, passData, twiddles);
+      return;
+    }
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
+    final double tau = sqrt5_4;
+    final double sin2PI_5s = sign * sin2PI_5;
+    final double sinPI_5s = sign * sinPI_5;
+    final int di = 2 * nextInput;
+    final int di2 = 2 * di;
+    final int di3 = 3 * di;
+    final int di4 = 4 * di;
+    final int dj = 2 * innerLoopLimit;
+    final int dj2 = 2 * dj;
+    final int dj3 = 3 * dj;
+    final int dj4 = 4 * dj;
+    final int jstep = (factor - 1) * dj;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
+            z4 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4);
+        DoubleVector
+            t1 = z1.add(z4),
+            t2 = z2.add(z3),
+            t3 = z1.sub(z4),
+            t4 = z2.sub(z3),
+            t5 = t1.add(t2),
+            t6 = t1.sub(t2).mul(tau),
+            t7 = t5.mul(-0.25).add(z0),
+            t8 = t7.add(t6),
+            t9 = t7.sub(t6),
+            t10 = t3.mul(sin2PI_5s).add(t4.mul(sinPI_5s)).rearrange(shuffleReIm),
+            t11 = t4.mul(-sin2PI_5s).add(t3.mul(sinPI_5s)).rearrange(shuffleReIm);
+        z0.add(t5).intoArray(ret, j);
+        DoubleVector x = t8.add(t10.mul(-1.0, maskSelectRe));
+        w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x = t9.add(t11.mul(-1.0, maskSelectRe));
+        w2r.mul(x).add(w2i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
+        x = t9.add(t11.mul(-1.0, maskSelectIm));
+        w3r.mul(x).add(w3i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
+        x = t8.add(t10.mul(-1.0, maskSelectIm));
+        w4r.mul(x).add(w4i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj4);
+      }
+    }
+  }
+
+  /**
    * Handle factors of 6.
    *
    * @param product  Product to apply.
@@ -713,19 +964,19 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass6(int product, PassData passData, double[][] twiddles) {
+    final int factor = 6;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 6;
-    final int m = n / factor;
-    final int q = n / product;
-    final int p_1 = product / factor;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
     final double tau = sign * sqrt3_2;
-    final int di = 2 * m;
-    final int dj = 2 * p_1;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += jstep) {
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
       final double w1i = -sign * twids[1];
@@ -737,7 +988,7 @@ public class Complex {
       final double w4i = -sign * twids[7];
       final double w5r = twids[8];
       final double w5i = -sign * twids[9];
-      for (int k1 = 0; k1 < p_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0r = data[i];
         final double z0i = data[i + 1];
         int idi = i + di;
@@ -811,6 +1062,88 @@ public class Complex {
   }
 
   /**
+   * Handle factors of 6.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass6SIMD(int product, PassData passData, double[][] twiddles) {
+    final int factor = 6;
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      pass6(product, passData, twiddles);
+      return;
+    }
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int nextInput = n / factor;
+    final int outerLoopLimit = n / product;
+    final double tau = sign * sqrt3_2;
+    final int di = 2 * nextInput;
+    final int di2 = 2 * di;
+    final int di3 = 3 * di;
+    final int di4 = 4 * di;
+    final int di5 = 5 * di;
+    final int dj = 2 * innerLoopLimit;
+    final int dj2 = 2 * dj;
+    final int dj3 = 3 * dj;
+    final int dj4 = 4 * dj;
+    final int dj5 = 5 * dj;
+    final int jstep = (factor - 1) * dj;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm),
+          w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
+          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
+            z4 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
+            z5 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5);
+        DoubleVector
+            ta1 = z2.add(z4),
+            ta2 = ta1.mul(-0.5).add(z0),
+            ta3 = z2.sub(z4).mul(tau).rearrange(shuffleReIm),
+            a0 = z0.add(ta1),
+            a1 = ta2.add(ta3.mul(-1.0, maskSelectRe)),
+            a2 = ta2.add(ta3.mul(-1.0, maskSelectIm)),
+            tb1 = z5.add(z1),
+            tb2 = tb1.mul(-0.5).add(z3),
+            tb3 = z5.sub(z1).mul(tau).rearrange(shuffleReIm),
+            b0 = z3.add(tb1),
+            b1 = tb2.add(tb3.mul(-1.0, maskSelectRe)),
+            b2 = tb2.add(tb3.mul(-1.0, maskSelectIm));
+        a0.add(b0).intoArray(ret, j);
+        DoubleVector x = a1.sub(b1);
+        w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x = a2.add(b2);
+        w2r.mul(x).add(w2i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
+        x = a0.sub(b0);
+        w3r.mul(x).add(w3i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
+        x = a1.add(b1);
+        w4r.mul(x).add(w4i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj4);
+        x = a2.sub(b2);
+        w5r.mul(x).add(w5i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj5);
+      }
+    }
+  }
+
+  /**
    * Handle factors of 7.
    *
    * @param product  Product to apply.
@@ -818,24 +1151,32 @@ public class Complex {
    * @param twiddles the twiddle factors.
    */
   private void pass7(int product, PassData passData, double[][] twiddles) {
+    final int factor = 7;
+    final int innerLoopLimit = product / factor;
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    final int factor = 7;
-    final int m = n / factor;
-    final int q = n / product;
-    final int p_1 = product / factor;
+    final int nextInput = n / factor;
+    final int outLoopLimit = n / product;
     final double c1 = cos2PI_7;
     final double c2 = cos4PI_7;
     final double c3 = cos6PI_7;
     final double s1 = (-sign) * sin2PI_7;
     final double s2 = (-sign) * sin4PI_7;
     final double s3 = (-sign) * sin6PI_7;
-    final int di = 2 * m;
-    final int dj = 2 * p_1;
+    final double v1 = (c1 + c2 + c3) * oneThird - 1.0;
+    final double v2 = (2.0 * c1 - c2 - c3) * oneThird;
+    final double v3 = (c1 - 2.0 * c2 + c3) * oneThird;
+    final double v4 = (c1 + c2 - 2.0 * c3) * oneThird;
+    final double v5 = (s1 + s2 - s3) * oneThird;
+    final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+    final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+    final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
+    final int di = 2 * nextInput;
+    final int dj = 2 * innerLoopLimit;
     final int jstep = (factor - 1) * dj;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    for (int k = 0; k < q; k++, j += jstep) {
+    for (int k = 0; k < outLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       final double w1r = twids[0];
       final double w1i = -sign * twids[1];
@@ -849,7 +1190,7 @@ public class Complex {
       final double w5i = -sign * twids[9];
       final double w6r = twids[10];
       final double w6i = -sign * twids[11];
-      for (int k1 = 0; k1 < p_1; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         final double z0r = data[i];
         final double z0i = data[i + 1];
         int idi = i + di;
@@ -888,14 +1229,6 @@ public class Complex {
         final double t7i = t5i + t3i;
         final double b0r = z0r + t6r + t4r;
         final double b0i = z0i + t6i + t4i;
-        final double v1 = (c1 + c2 + c3) * oneThird - 1.0;
-        final double v2 = (2.0 * c1 - c2 - c3) * oneThird;
-        final double v3 = (c1 - 2.0 * c2 + c3) * oneThird;
-        final double v4 = (c1 + c2 - 2.0 * c3) * oneThird;
-        final double v5 = (s1 + s2 - s3) * oneThird;
-        final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
-        final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
-        final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
         final double b1r = v1 * (t6r + t4r);
         final double b1i = v1 * (t6i + t4i);
         final double b2r = v2 * (t0r - t4r);
@@ -970,6 +1303,128 @@ public class Complex {
         jdj += dj;
         ret[jdj] = fma(w6r, xr, -w6i * xi);
         ret[jdj + 1] = fma(w6r, xi, w6i * xr);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 7.
+   *
+   * @param product  Product to apply.
+   * @param passData the data.
+   * @param twiddles the twiddle factors.
+   */
+  private void pass7SIMD(int product, PassData passData, double[][] twiddles) {
+    final int factor = 7;
+    final int innerLoopLimit = product / factor;
+    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
+    if (innerLoopLimit % LOOP_INCREMENT != 0) {
+      pass7(product, passData, twiddles);
+      return;
+    }
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    final int nextInput = n / factor;
+    final int outLoopLimit = n / product;
+    final double c1 = cos2PI_7;
+    final double c2 = cos4PI_7;
+    final double c3 = cos6PI_7;
+    final double s1 = (-sign) * sin2PI_7;
+    final double s2 = (-sign) * sin4PI_7;
+    final double s3 = (-sign) * sin6PI_7;
+    final double v1 = (c1 + c2 + c3) * oneThird - 1.0;
+    final double v2 = (2.0 * c1 - c2 - c3) * oneThird;
+    final double v3 = (c1 - 2.0 * c2 + c3) * oneThird;
+    final double v4 = (c1 + c2 - 2.0 * c3) * oneThird;
+    final double v5 = (s1 + s2 - s3) * oneThird;
+    final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+    final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+    final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
+    final int di = 2 * nextInput;
+    final int di2 = 2 * di;
+    final int di3 = 3 * di;
+    final int di4 = 4 * di;
+    final int di5 = 5 * di;
+    final int di6 = 6 * di;
+    final int dj = 2 * innerLoopLimit;
+    final int dj2 = 2 * dj;
+    final int dj3 = 3 * dj;
+    final int dj4 = 4 * dj;
+    final int dj5 = 5 * dj;
+    final int dj6 = 6 * dj;
+    final int jstep = (factor - 1) * dj;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
+    for (int k = 0; k < outLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm),
+          w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
+          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(-1.0, maskSelectIm),
+          w6r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[10]),
+          w6i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[11]).mul(-1.0, maskSelectIm);
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
+            z4 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
+            z5 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5),
+            z6 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di6);
+        DoubleVector
+            t0 = z1.add(z6),
+            t1 = z1.sub(z6),
+            t2 = z2.add(z5),
+            t3 = z2.sub(z5),
+            t4 = z4.add(z3),
+            t5 = z4.sub(z3),
+            t6 = t2.add(t0),
+            t7 = t5.add(t3);
+        DoubleVector
+            b0 = z0.add(t6).add(t4),
+            b1 = t6.add(t4).mul(v1),
+            b2 = t0.sub(t4).mul(v2),
+            b3 = t4.sub(t2).mul(v3),
+            b4 = t2.sub(t0).mul(v4),
+            b5 = t7.add(t1).mul(v5),
+            b6 = t1.sub(t5).mul(v6),
+            b7 = t5.sub(t3).mul(v7),
+            b8 = t3.sub(t1).mul(v8);
+        DoubleVector
+            u0 = b0.add(b1),
+            u1 = b2.add(b3),
+            u2 = b4.sub(b3),
+            u3 = b2.add(b4).neg(),
+            u4 = b6.add(b7),
+            u5 = b8.sub(b7),
+            u6 = b8.add(b6).neg(),
+            u7 = u0.add(u1),
+            u8 = u0.add(u2),
+            u9 = u0.add(u3),
+            u10 = u4.add(b5).rearrange(shuffleReIm),
+            u11 = u5.add(b5).rearrange(shuffleReIm),
+            u12 = u6.add(b5).rearrange(shuffleReIm);
+        b0.intoArray(ret, j);
+        DoubleVector x = u7.add(u10.mul(-1.0, maskSelectIm));
+        w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x = u9.add(u12.mul(-1.0, maskSelectIm));
+        w2r.mul(x).add(w2i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
+        x = u8.add(u11.mul(-1.0, maskSelectRe));
+        w3r.mul(x).add(w3i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
+        x = u8.add(u11.mul(-1.0, maskSelectIm));
+        w4r.mul(x).add(w4i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj4);
+        x = u9.add(u12.mul(-1.0, maskSelectRe));
+        w5r.mul(x).add(w5i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj5);
+        x = u7.add(u10.mul(-1.0, maskSelectRe));
+        w6r.mul(x).add(w6i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj6);
       }
     }
   }
@@ -1203,12 +1658,12 @@ public class Complex {
       complex.fft(data, 0, 2);
       complex.ifft(data, 0, 2);
       time = (System.nanoTime() - time);
-      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
+      System.out.printf("Sequential: %12.9f%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
     }
-    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
+    System.out.printf("Best Sequential Time:  %12.9f%n", toSeconds * seqTime);
   }
 
 
