@@ -192,7 +192,7 @@ public class Complex {
     passData = new PassData[2];
 
     // Use SIMD by default only for AVX-512.
-    boolean useSIMD = SPECIES_LENGTH == 8;
+    useSIMD = SPECIES_LENGTH == 8;
     String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
     try {
       useSIMD = Boolean.parseBoolean(simd);
