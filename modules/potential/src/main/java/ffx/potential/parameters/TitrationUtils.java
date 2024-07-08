@@ -1576,8 +1576,6 @@ public class TitrationUtils {
     } else if(proteinDielectric == 2.0){
       fMod = Titration.ASHtoASP.freeEnergyDiff2;
     }
-    logger.info("This is the tanh correction: " + tanhCorrection);
-    logger.info("The fmod is: " + fMod);
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
 
 

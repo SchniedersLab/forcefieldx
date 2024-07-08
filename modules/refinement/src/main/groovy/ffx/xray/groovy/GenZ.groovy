@@ -1,6 +1,6 @@
 package ffx.xray.groovy
 
-import edu.rit.pj.ParallelTeam
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
@@ -27,10 +27,6 @@ import java.util.stream.Collectors
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 import static java.lang.String.format
-import static java.lang.String.valueOf
-import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
 
 @CommandLine.Command(description = " Run GenZ function for free energy change.", name = "ffxc xray.GenZ")
 class GenZ extends AlgorithmsScript {
@@ -234,7 +230,7 @@ class GenZ extends AlgorithmsScript {
         int[] currentRotamers = new int[selectedResidues.size()]
 
         //Calculate possible permutations for assembly
-        rotamerOptimization.getPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+        rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
         //Collect the Bolztmann weights and calculated offset of each assembly
         boltzmannWeights = rotamerOptimization.getTotalBoltzmann()

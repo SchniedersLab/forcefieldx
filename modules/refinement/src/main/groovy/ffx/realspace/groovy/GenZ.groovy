@@ -16,8 +16,6 @@ import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize
-import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine
 
@@ -214,7 +212,7 @@ class GenZ extends AlgorithmsScript  {
         int[] currentRotamers = new int[selectedResidues.size()]
 
         //Calculate possible permutations for assembly
-        rotamerOptimization.getPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+        rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
         //Collect the Bolztmann weights and calculated offset of each assembly
         boltzmannWeights = rotamerOptimization.getTotalBoltzmann()

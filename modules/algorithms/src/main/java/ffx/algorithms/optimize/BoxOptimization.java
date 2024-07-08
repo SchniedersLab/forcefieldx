@@ -170,9 +170,11 @@ class BoxOptimization {
                     }
                     long currentTime = System.nanoTime();
                     boxTime += currentTime;
-
-                    int[] currentRotamers = new int[rotamerOptimization.optimumSubset.length];
-                    rotamerOptimization.partitionFunction(residueSubsetArray,0,currentRotamers);
+                    if(rotamerOptimization.genZ){
+                        int[] currentRotamers = new int[rotamerOptimization.optimumSubset.length];
+                        rotamerOptimization.getFractions(residueSubsetArray,0,currentRotamers, true);
+                        rotamerOptimization.getProtonationPopulations(residueSubsetArray);
+                    }
                     rotamerOptimization.logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
                     rotamerOptimization.logIfRank0(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
                 } else {

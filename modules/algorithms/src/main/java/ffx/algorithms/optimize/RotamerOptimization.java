@@ -268,6 +268,7 @@ public class RotamerOptimization implements Terminatable {
     private double pHRestraint = 0;
     private boolean onlyProtons = false;
     private boolean recomputeSelf = false;
+    boolean genZ = false;
     /**
      * List of residues to optimize; they may not be contiguous or all members of the same chain.
      */
@@ -981,6 +982,16 @@ public class RotamerOptimization implements Terminatable {
   public void setResidues(List<Residue> residueList) {
     this.residueList = residueList;
   }
+
+  /**
+     * Init fraction array
+     *
+     * @param residueList a {@link java.util.List} object.
+   */
+    public void initFraction(List<Residue> residueList) {
+        fraction = new double[residueList.size()][55];
+        genZ = true;
+    }
 
   /**
    * Returns the restart file.
@@ -2415,25 +2426,138 @@ public class RotamerOptimization implements Terminatable {
      * @param currentRotamers empty array
      * @throws Exception too many permutations to continue
      */
-    public void getPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
-        fraction = new double[residues.length][55];
+    public void getFractions(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+        populationBoltzmann = new double[residues.length][55];
+
+        if(usingBoxOptimization){
+            logger.info("Do this for box optimzation");
+        } else {
+            partitionFunction(residues, i, currentRotamers);
+            optimum = new int[residues.length];
+            for (int m = 0; m < fraction.length; m++) {
+                for (int n = 0; n < 55; n++) {
+                    fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+                    if(n > 0 && fraction[m][n] > fraction[m][n-1]){
+                        optimum[m] = n;
+                    } else if(n == 0){
+                        optimum[m] = n;
+                    }
+                }
+                Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
+                RotamerLibrary.applyRotamer(residues[m],highestPopRot);
+            }
+        }
+
+        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+    }
+
+    /**
+     * Calculate Populations for Residues
+     *
+     * @param residues        residue array
+     * @param i               int
+     * @param currentRotamers empty array
+     * @throws Exception too many permutations to continue
+     */
+    public void getFractions(Residue[] residues, int i, int[] currentRotamers, boolean usingBoxOptimization) throws Exception {
+        double [][] fractionSubset = new double[residues.length][55];
         populationBoltzmann = new double[residues.length][55];
         partitionFunction(residues, i, currentRotamers);
-        optimum = new int[residues.length];
-        for (int m = 0; m < fraction.length; m++) {
+        optimumSubset = new int[residues.length];
+        for (int m = 0; m < fractionSubset.length; m++) {
             for (int n = 0; n < 55; n++) {
-                fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
-
-                if(n > 0 && fraction[m][n] > fraction[m][n-1]){
-                    optimum[m] = n;
+                fractionSubset[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+                if(n > 0 && fractionSubset[m][n] > fractionSubset[m][n-1]){
+                    optimumSubset[m] = n;
                 } else if(n == 0){
-                    optimum[m] = n;
+                    optimumSubset[m] = n;
                 }
             }
-            Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
+            Rotamer highestPopRot = residues[m].getRotamers()[optimumSubset[m]];
             RotamerLibrary.applyRotamer(residues[m],highestPopRot);
+            Residue residue = residues[m];
+            int index = residueList.indexOf(residue);
+            fraction[index] = fractionSubset[m];
+            optimum[index] = optimumSubset[m];
         }
         logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+    }
+
+    public double[][] getProtonationPopulations(Residue[] residues){
+        double[][] populations = new double[residues.length][3];
+        int residueIndex = 0;
+        for (Residue residue : residues) {
+            int index = residueList.indexOf(residue);
+            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+            double protSum = 0;
+            double deprotSum = 0;
+            double tautomerSum = 0;
+            Rotamer[] rotamers = residue.getRotamers();
+            for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
+                    switch (rotamers[rotIndex].getName()) {
+                        case "HIS":
+                        case "LYS":
+                        case "GLH":
+                        case "ASH":
+                        case "CYS":
+                            protSum += fraction[index][rotIndex];
+                            populations[residueIndex][0] = protSum;
+                            break;
+                        case "HIE":
+                        case "LYD":
+                        case "GLU":
+                        case "ASP":
+                        case "CYD":
+                            deprotSum += fraction[index][rotIndex];
+                            populations[residueIndex][1] = deprotSum;
+                            break;
+                        case "HID":
+                            tautomerSum += fraction[index][rotIndex];
+                            populations[residueIndex][2] = tautomerSum;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            String formatedProtSum = format("%.6f", protSum);
+            String formatedDeprotSum = format("%.6f", deprotSum);
+            String formatedTautomerSum = format("%.6f", tautomerSum);
+            switch (residue.getName()) {
+                case "HIS":
+                case "HIE":
+                case "HID":
+                    logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
+                            "HIE" + "\t" + formatedDeprotSum + "\t" +
+                            "HID" + "\t" + formatedTautomerSum);
+                    break;
+                case "LYS":
+                case "LYD":
+                    logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
+                            "LYD" + "\t" + formatedDeprotSum);
+                    break;
+                case "ASH":
+                case "ASP":
+                    logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
+                            "ASH" + "\t" + formatedProtSum);
+                    break;
+                case "GLH":
+                case "GLU":
+                    logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
+                            "GLH" + "\t" + formatedProtSum);
+                    break;
+                case "CYS":
+                case "CYD":
+                    logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
+                            "CYD" + "\t" + formatedDeprotSum);
+                    break;
+                default:
+                    break;
+            }
+                residueIndex++;
+            }
+
+
+        return populations;
     }
 
     public int[][] getConformers() throws Exception{

@@ -202,7 +202,7 @@ class GenZ extends AlgorithmsScript {
         int[] optimalRotamers
         Set<Atom> excludeAtoms = new HashSet<>()
         boolean isTitrating = false
-
+        double[][] protonationPopulations = new double[selectedResidues.size()][3]
         //Calculate all possible permutations for the number of assembles
         for (int j = 0; j < numLoop; j++) {
 
@@ -291,6 +291,7 @@ class GenZ extends AlgorithmsScript {
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
             selectedResidues = rotamerOptimization.getResidues()
+            rotamerOptimization.initFraction(selectedResidues)
 
             logger.info("\n Initial Potential Energy:")
             potentialEnergy.energy(false, true)
@@ -304,7 +305,7 @@ class GenZ extends AlgorithmsScript {
             int[] currentRotamers = new int[selectedResidues.size()]
 
             //Calculate possible permutations for assembly
-            rotamerOptimization.getPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+            rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
             //Collect the Bolztmann weights and calculated offset of each assembly
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
@@ -321,6 +322,7 @@ class GenZ extends AlgorithmsScript {
             if (manyBodyOptions.getTitration()) {
                 isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
             }
+            protonationPopulations = rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
 
         }
 
