@@ -48,6 +48,10 @@ class GenZ extends AlgorithmsScript {
             description = "Write to an energy restart file and ensemble file.")
     private boolean printFiles = false
 
+    @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
+            description = "Calculating protonation populations for pKa shift.")
+    private boolean pKa = false
+
     /**
      * One or more filenames.
      */
@@ -231,6 +235,10 @@ class GenZ extends AlgorithmsScript {
 
         //Calculate possible permutations for assembly
         rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+        if(pKa){
+            rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+        }
+
 
         //Collect the Bolztmann weights and calculated offset of each assembly
         boltzmannWeights = rotamerOptimization.getTotalBoltzmann()
@@ -248,78 +256,16 @@ class GenZ extends AlgorithmsScript {
         int residueIndex = 0
         for (Residue residue : selectedResidues) {
             fileWriter.write("\n")
-            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-            double protSum = 0
-            double deprotSum = 0
-            double tautomerSum = 0
             Rotamer[] rotamers = residue.getRotamers()
             for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
                 String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
                 fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
                         rotamers[rotIndex].toString() + "\t" + rotPop + "\n")
-                if (manyBodyOptions.titration) {
-                    switch (rotamers[rotIndex].getName()) {
-                        case "HIS":
-                        case "LYS":
-                        case "GLH":
-                        case "ASH":
-                        case "CYS":
-                            protSum += populationArray[residueIndex][rotIndex]
-                            break
-                        case "HIE":
-                        case "LYD":
-                        case "GLU":
-                        case "ASP":
-                        case "CYD":
-                            deprotSum += populationArray[residueIndex][rotIndex]
-                            break
-                        case "HID":
-                            tautomerSum += populationArray[residueIndex][rotIndex]
-                            break
-                        default:
-                            break
-                    }
-                }
-
-            }
-            if (manyBodyOptions.titration){
-                String formatedProtSum = format("%.6f", protSum)
-                String formatedDeprotSum = format("%.6f", deprotSum)
-                String formatedTautomerSum = format("%.6f", tautomerSum)
-                switch (residue.getName()) {
-                    case "HIS":
-                    case "HIE":
-                    case "HID":
-                        logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
-                                "HIE" + "\t" + formatedDeprotSum + "\t" +
-                                "HID" + "\t" + formatedTautomerSum)
-                        break
-                    case "LYS":
-                    case "LYD":
-                        logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
-                                "LYD" + "\t" + formatedDeprotSum)
-                        break
-                    case "ASH":
-                    case "ASP":
-                        logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
-                                "ASH" + "\t" + formatedProtSum)
-                        break
-                    case "GLH":
-                    case "GLU":
-                        logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
-                                "GLH" + "\t" + formatedProtSum)
-                        break
-                    case "CYS":
-                    case "CYD":
-                        logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
-                                "CYD" + "\t" + formatedDeprotSum)
-                        break
-                    default:
-                        break
-                }
             }
             residueIndex += 1
         }
+
+
         fileWriter.close()
         System.out.println("\n Successfully wrote to the populations file.")
 
@@ -370,11 +316,7 @@ class GenZ extends AlgorithmsScript {
 
         PDBFilter pdbFilter = new PDBFilter(structureFile, Arrays.asList(conformerAssemblies), forceField, properties)
         pdbFilter.writeFile(structureFile, false, excludeAtoms, true, true)
-        /*if (titrationPH > 0) {
-            diffractionDataFinal.writeModel(removeExtension(filenames[0]) + ".pdb", excludeAtoms, titrationPH)
-        } else {
 
-        }*/
         System.setProperty("standardizeAtomNames", "false")
 
 

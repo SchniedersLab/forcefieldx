@@ -202,7 +202,6 @@ class GenZ extends AlgorithmsScript {
         int[] optimalRotamers
         Set<Atom> excludeAtoms = new HashSet<>()
         boolean isTitrating = false
-        double[][] protonationPopulations = new double[selectedResidues.size()][3]
         //Calculate all possible permutations for the number of assembles
         for (int j = 0; j < numLoop; j++) {
 
@@ -255,11 +254,6 @@ class GenZ extends AlgorithmsScript {
                 List<Integer> resNumberList = new ArrayList<>()
                 for (Residue residue : residues) {
                     resNumberList.add(residue.getResidueNumber())
-                    if (pKa) {
-                        if (titratableResiudesList.contains(residue.getName())) {
-                            titrateResidues.add(residue)
-                        }
-                    }
                 }
 
                 // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
@@ -322,7 +316,11 @@ class GenZ extends AlgorithmsScript {
             if (manyBodyOptions.getTitration()) {
                 isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
             }
-            protonationPopulations = rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+
+            if(pKa){
+                rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+            }
+
 
         }
 
@@ -334,9 +332,6 @@ class GenZ extends AlgorithmsScript {
             fileWriter.write("\n")
             protonationBoltzmannSums = new double[selectedResidues.size()]
             // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-            double protSum = 0
-            double deprotSum = 0
-            double tautomerSum = 0
             Rotamer[] rotamers = residue.getRotamers()
             for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
                 String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
@@ -349,20 +344,9 @@ class GenZ extends AlgorithmsScript {
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += populationArray[residueIndex][rotIndex]
                             if (printBoltzmann) {
                                 protonationBoltzmannSums[residueIndex] += titrateBoltzmann[residueIndex][rotIndex]
                             }
-                            break
-                        case "HIE":
-                        case "LYD":
-                        case "GLU":
-                        case "ASP":
-                        case "CYD":
-                            deprotSum += populationArray[residueIndex][rotIndex]
-                            break
-                        case "HID":
-                            tautomerSum += populationArray[residueIndex][rotIndex]
                             break
                         default:
                             break
@@ -374,42 +358,6 @@ class GenZ extends AlgorithmsScript {
                 logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
                         protonationBoltzmannSums[residueIndex])
                 logger.info("\n Total Boltzmann: " + totalBoltzmann)
-            }
-            if (pKa){
-                String formatedProtSum = format("%.6f", protSum)
-                String formatedDeprotSum = format("%.6f", deprotSum)
-                String formatedTautomerSum = format("%.6f", tautomerSum)
-                switch (residue.getName()) {
-                    case "HIS":
-                    case "HIE":
-                    case "HID":
-                        logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
-                                "HIE" + "\t" + formatedDeprotSum + "\t" +
-                                "HID" + "\t" + formatedTautomerSum)
-                        break
-                    case "LYS":
-                    case "LYD":
-                        logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
-                                "LYD" + "\t" + formatedDeprotSum)
-                        break
-                    case "ASH":
-                    case "ASP":
-                        logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
-                                "ASH" + "\t" + formatedProtSum)
-                        break
-                    case "GLH":
-                    case "GLU":
-                        logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
-                                "GLH" + "\t" + formatedProtSum)
-                        break
-                    case "CYS":
-                    case "CYD":
-                        logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
-                                "CYD" + "\t" + formatedDeprotSum)
-                        break
-                    default:
-                        break
-                }
             }
             residueIndex += 1
         }
