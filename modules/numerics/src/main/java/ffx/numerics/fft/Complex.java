@@ -38,7 +38,6 @@
 package ffx.numerics.fft;
 
 import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorSpecies;
 
@@ -101,13 +100,13 @@ public class Complex {
   private static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_PREFERRED;
   // private static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_512;
   /**
-   * Mask to select only imaginary members of the vector.
+   * Vector used to change the sign of the imaginary members of the vector via multiplication.
    */
-  private static final VectorMask<Double> maskSelectIm;
+  private static final DoubleVector negateIm;
   /**
-   * Mask to select only real members of the vector.
+   * Vector used to change the sign of the real members of the vector via multiplication.
    */
-  private static final VectorMask<Double> maskSelectRe;
+  private static final DoubleVector negateRe;
   /**
    * Shuffle used to swap real and imaginary members of the vector.
    */
@@ -123,24 +122,12 @@ public class Complex {
   private static final int LOOP_INCREMENT = SPECIES_LENGTH / 2;
 
   static {
-    boolean[] negateMaskRe;
-    boolean[] negateMaskIm;
-    int[] shuffleMask;
-    if (DOUBLE_SPECIES == DoubleVector.SPECIES_512) {
-      negateMaskRe = new boolean[]{true, false, true, false, true, false, true, false};
-      negateMaskIm = new boolean[]{false, true, false, true, false, true, false, true};
-      shuffleMask = new int[]{1, 0, 3, 2, 5, 4, 7, 6};
-    } else if (DOUBLE_SPECIES == DoubleVector.SPECIES_256) {
-      negateMaskRe = new boolean[]{true, false, true, false};
-      negateMaskIm = new boolean[]{false, true, false, true};
-      shuffleMask = new int[]{1, 0, 3, 2};
-    } else {
-      negateMaskRe = new boolean[]{true, false};
-      negateMaskIm = new boolean[]{false, true};
-      shuffleMask = new int[]{1, 0};
-    }
-    maskSelectRe = VectorMask.fromArray(DOUBLE_SPECIES, negateMaskRe, 0);
-    maskSelectIm = VectorMask.fromArray(DOUBLE_SPECIES, negateMaskIm, 0);
+    // Assume that 512 is the largest vector size.
+    assert (SPECIES_LENGTH <= 8);
+    double[] negateReal = {-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0};
+    int[] shuffleMask = {1, 0, 3, 2, 5, 4, 7, 6};
+    negateRe = DoubleVector.fromArray(DOUBLE_SPECIES, negateReal, 0);
+    negateIm = negateRe.mul(-1.0);
     shuffleReIm = VectorShuffle.fromArray(DOUBLE_SPECIES, shuffleMask, 0);
   }
 
@@ -514,10 +501,10 @@ public class Complex {
     final int di = passConstants.di;
     final int dj = passConstants.dj;
     final double[][] twiddles = passConstants.twiddles;
-    int i = passData.inOffset;
-    int j = passData.outOffset;
     final double[] data = passData.in;
     final double[] ret = passData.out;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
       final double w_r = twids[0];
@@ -564,16 +551,15 @@ public class Complex {
     int j = passData.outOffset;
     for (int k = 0; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
-      DoubleVector
-          wr = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          wi = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm);
+      DoubleVector wr = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]);
+      DoubleVector wi = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
             z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di);
         z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        x.fma(wr, x.mul(wi).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x.mul(wr).add(x.mul(wi).rearrange(shuffleReIm)).intoArray(ret, j + dj);
       }
     }
   }
@@ -664,9 +650,9 @@ public class Complex {
       final double[] twids = twiddles[k];
       DoubleVector
           w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm),
           w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm);
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
@@ -677,9 +663,9 @@ public class Complex {
             t2 = t1.mul(-0.5).add(z0),
             t3 = z1.sub(z2).mul(tau).rearrange(shuffleReIm);
         z0.add(t1).intoArray(ret, j);
-        DoubleVector x = t2.add(t3.mul(-1.0, maskSelectRe));
+        DoubleVector x = t2.add(t3.mul(negateRe));
         w1r.fma(x, x.mul(w1i).rearrange(shuffleReIm)).intoArray(ret, j + dj);
-        x = t2.add(t3.mul(-1.0, maskSelectIm));
+        x = t2.add(t3.mul(negateIm));
         w2r.fma(x, x.mul(w2i).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
       }
     }
@@ -785,11 +771,11 @@ public class Complex {
       final double[] twids = twiddles[k];
       DoubleVector
           w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm),
           w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(negateIm),
           w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm);
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
@@ -802,11 +788,11 @@ public class Complex {
             t3 = z0.sub(z2),
             t4 = z1.sub(z3).mul(sign).rearrange(shuffleReIm);
         t1.add(t2).intoArray(ret, j);
-        DoubleVector x = t3.add(t4.mul(-1.0, maskSelectRe));
+        DoubleVector x = t3.add(t4.mul(negateRe));
         w1r.fma(x, x.mul(w1i).rearrange(shuffleReIm)).intoArray(ret, j + dj);
         x = t1.sub(t2);
         w2r.fma(x, x.mul(w2i).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
-        x = t3.add(t4.mul(-1.0, maskSelectIm));
+        x = t3.add(t4.mul(negateIm));
         w3r.fma(x, x.mul(w3i).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
       }
     }
@@ -942,13 +928,13 @@ public class Complex {
       final double[] twids = twiddles[k];
       DoubleVector
           w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm),
           w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(negateIm),
           w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(negateIm),
           w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm);
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
@@ -969,13 +955,13 @@ public class Complex {
             t10 = t3.mul(sin2PI_5s).add(t4.mul(sinPI_5s)).rearrange(shuffleReIm),
             t11 = t4.mul(-sin2PI_5s).add(t3.mul(sinPI_5s)).rearrange(shuffleReIm);
         z0.add(t5).intoArray(ret, j);
-        DoubleVector x = t8.add(t10.mul(-1.0, maskSelectRe));
+        DoubleVector x = t8.add(t10.mul(negateRe));
         w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
-        x = t9.add(t11.mul(-1.0, maskSelectRe));
+        x = t9.add(t11.mul(negateRe));
         w2r.mul(x).add(w2i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
-        x = t9.add(t11.mul(-1.0, maskSelectIm));
+        x = t9.add(t11.mul(negateIm));
         w3r.mul(x).add(w3i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
-        x = t8.add(t10.mul(-1.0, maskSelectIm));
+        x = t8.add(t10.mul(negateIm));
         w4r.mul(x).add(w4i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj4);
       }
     }
@@ -1121,15 +1107,15 @@ public class Complex {
       final double[] twids = twiddles[k];
       DoubleVector
           w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm),
           w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(negateIm),
           w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(negateIm),
           w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm),
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(negateIm),
           w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(-1.0, maskSelectIm);
+          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
@@ -1143,14 +1129,14 @@ public class Complex {
             ta2 = ta1.mul(-0.5).add(z0),
             ta3 = z2.sub(z4).mul(tau).rearrange(shuffleReIm),
             a0 = z0.add(ta1),
-            a1 = ta2.add(ta3.mul(-1.0, maskSelectRe)),
-            a2 = ta2.add(ta3.mul(-1.0, maskSelectIm)),
+            a1 = ta2.add(ta3.mul(negateRe)),
+            a2 = ta2.add(ta3.mul(negateIm)),
             tb1 = z5.add(z1),
             tb2 = tb1.mul(-0.5).add(z3),
             tb3 = z5.sub(z1).mul(tau).rearrange(shuffleReIm),
             b0 = z3.add(tb1),
-            b1 = tb2.add(tb3.mul(-1.0, maskSelectRe)),
-            b2 = tb2.add(tb3.mul(-1.0, maskSelectIm));
+            b1 = tb2.add(tb3.mul(negateRe)),
+            b2 = tb2.add(tb3.mul(negateIm));
         a0.add(b0).intoArray(ret, j);
         DoubleVector x = a1.sub(b1);
         w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
@@ -1380,17 +1366,17 @@ public class Complex {
       final double[] twids = twiddles[k];
       DoubleVector
           w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(-1.0, maskSelectIm),
+          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm),
           w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(-1.0, maskSelectIm),
+          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(negateIm),
           w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(-1.0, maskSelectIm),
+          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(negateIm),
           w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(-1.0, maskSelectIm),
+          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(negateIm),
           w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(-1.0, maskSelectIm),
+          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(negateIm),
           w6r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[10]),
-          w6i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[11]).mul(-1.0, maskSelectIm);
+          w6i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[11]).mul(negateIm);
       for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
         DoubleVector
             z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
@@ -1434,17 +1420,17 @@ public class Complex {
             u11 = u5.add(b5).rearrange(shuffleReIm),
             u12 = u6.add(b5).rearrange(shuffleReIm);
         b0.intoArray(ret, j);
-        DoubleVector x = u7.add(u10.mul(-1.0, maskSelectIm));
+        DoubleVector x = u7.add(u10.mul(negateIm));
         w1r.mul(x).add(w1i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj);
-        x = u9.add(u12.mul(-1.0, maskSelectIm));
+        x = u9.add(u12.mul(negateIm));
         w2r.mul(x).add(w2i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj2);
-        x = u8.add(u11.mul(-1.0, maskSelectRe));
+        x = u8.add(u11.mul(negateRe));
         w3r.mul(x).add(w3i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj3);
-        x = u8.add(u11.mul(-1.0, maskSelectIm));
+        x = u8.add(u11.mul(negateIm));
         w4r.mul(x).add(w4i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj4);
-        x = u9.add(u12.mul(-1.0, maskSelectRe));
+        x = u9.add(u12.mul(negateRe));
         w5r.mul(x).add(w5i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj5);
-        x = u7.add(u10.mul(-1.0, maskSelectRe));
+        x = u7.add(u10.mul(negateRe));
         w6r.mul(x).add(w6i.mul(x).rearrange(shuffleReIm)).intoArray(ret, j + dj6);
       }
     }
