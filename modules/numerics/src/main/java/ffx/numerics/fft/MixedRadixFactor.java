@@ -41,6 +41,8 @@ import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorSpecies;
 
+import static jdk.incubator.vector.DoubleVector.SPECIES_128;
+
 public abstract class MixedRadixFactor {
 
   /**
@@ -50,15 +52,15 @@ public abstract class MixedRadixFactor {
   /**
    * Vector used to change the sign of the imaginary members of the vector via multiplication.
    */
-  protected static final DoubleVector negateIm;
+  protected static final DoubleVector NEGATE_IM;
   /**
    * Vector used to change the sign of the real members of the vector via multiplication.
    */
-  protected static final DoubleVector negateRe;
+  protected static final DoubleVector NEGATE_RE;
   /**
    * Shuffle used to swap real and imaginary members of the vector.
    */
-  protected static final VectorShuffle<Double> shuffleReIm;
+  protected static final VectorShuffle<Double> SHUFFLE_RE_IM;
   /**
    * The number of contiguous elements that will be read from the input data array.
    */
@@ -69,6 +71,75 @@ public abstract class MixedRadixFactor {
    */
   protected static final int LOOP_INCREMENT = SPECIES_LENGTH / 2;
 
+  protected static final VectorSpecies<Double> DOUBLE_SPECIES_128 = DoubleVector.SPECIES_PREFERRED;
+  /**
+   * Vector used to change the sign of the imaginary members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_IM_128;
+  /**
+   * Vector used to change the sign of the real members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_RE_128;
+  /**
+   * Shuffle used to swap real and imaginary members of the vector.
+   */
+  protected static final VectorShuffle<Double> SHUFFLE_RE_IM_128;
+  /**
+   * The number of contiguous elements that will be read from the input data array.
+   */
+  protected static final int SPECIES_LENGTH_128 = SPECIES_128.length();
+  /**
+   * The number of complex elements that will be processed in each inner loop iteration.
+   * The number of elements to process in the inner loop must be evenly divisible by this loop increment.
+   */
+  protected static final int LOOP_INCREMENT_128 = SPECIES_LENGTH_128 / 2;
+
+  protected static final VectorSpecies<Double> DOUBLE_SPECIES_256 = DoubleVector.SPECIES_PREFERRED;
+  /**
+   * Vector used to change the sign of the imaginary members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_IM_256;
+  /**
+   * Vector used to change the sign of the real members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_RE_256;
+  /**
+   * Shuffle used to swap real and imaginary members of the vector.
+   */
+  protected static final VectorShuffle<Double> SHUFFLE_RE_IM_256;
+  /**
+   * The number of contiguous elements that will be read from the input data array.
+   */
+  protected static final int SPECIES_LENGTH_256 = DoubleVector.SPECIES_256.length();
+  /**
+   * The number of complex elements that will be processed in each inner loop iteration.
+   * The number of elements to process in the inner loop must be evenly divisible by this loop increment.
+   */
+  protected static final int LOOP_INCREMENT_256 = SPECIES_LENGTH_256 / 2;
+
+  protected static final VectorSpecies<Double> DOUBLE_SPECIES_512 = DoubleVector.SPECIES_PREFERRED;
+  /**
+   * Vector used to change the sign of the imaginary members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_IM_512;
+  /**
+   * Vector used to change the sign of the real members of the vector via multiplication.
+   */
+  protected static final DoubleVector NEGATE_RE_512;
+  /**
+   * Shuffle used to swap real and imaginary members of the vector.
+   */
+  protected static final VectorShuffle<Double> SHUFFLE_RE_IM_512;
+  /**
+   * The number of contiguous elements that will be read from the input data array.
+   */
+  protected static final int SPECIES_LENGTH_512 = DoubleVector.SPECIES_512.length();
+  /**
+   * The number of complex elements that will be processed in each inner loop iteration.
+   * The number of elements to process in the inner loop must be evenly divisible by this loop increment.
+   */
+  protected static final int LOOP_INCREMENT_512 = SPECIES_LENGTH_512 / 2;
+
   static {
     // Assume that 512 is the largest vector size.
     if (SPECIES_LENGTH > 8) {
@@ -76,9 +147,38 @@ public abstract class MixedRadixFactor {
     }
     double[] negateReal = {-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0};
     int[] shuffleMask = {1, 0, 3, 2, 5, 4, 7, 6};
-    negateRe = DoubleVector.fromArray(DOUBLE_SPECIES, negateReal, 0);
-    negateIm = negateRe.mul(-1.0);
-    shuffleReIm = VectorShuffle.fromArray(DOUBLE_SPECIES, shuffleMask, 0);
+
+    NEGATE_RE_128 = DoubleVector.fromArray(SPECIES_128, negateReal, 0);
+    NEGATE_IM_128 = NEGATE_RE_128.mul(-1.0);
+    SHUFFLE_RE_IM_128 = VectorShuffle.fromArray(SPECIES_128, shuffleMask, 0);
+
+    NEGATE_RE_256 = DoubleVector.fromArray(DoubleVector.SPECIES_256, negateReal, 0);
+    NEGATE_IM_256 = NEGATE_RE_256.mul(-1.0);
+    SHUFFLE_RE_IM_256 = VectorShuffle.fromArray(DoubleVector.SPECIES_256, shuffleMask, 0);
+
+    NEGATE_RE_512 = DoubleVector.fromArray(DoubleVector.SPECIES_512, negateReal, 0);
+    NEGATE_IM_512 = NEGATE_RE_512.mul(-1.0);
+    SHUFFLE_RE_IM_512 = VectorShuffle.fromArray(DoubleVector.SPECIES_512, shuffleMask, 0);
+
+    switch (SPECIES_LENGTH) {
+      case 2:
+        NEGATE_RE = NEGATE_RE_128;
+        NEGATE_IM = NEGATE_IM_128;
+        SHUFFLE_RE_IM = SHUFFLE_RE_IM_128;
+        break;
+      case 4:
+        NEGATE_RE = NEGATE_RE_256;
+        NEGATE_IM = NEGATE_IM_256;
+        SHUFFLE_RE_IM = SHUFFLE_RE_IM_256;
+        break;
+      case 8:
+        NEGATE_RE = NEGATE_RE_512;
+        NEGATE_IM = NEGATE_IM_512;
+        SHUFFLE_RE_IM = SHUFFLE_RE_IM_512;
+        break;
+      default:
+        throw new IllegalStateException("Unsupported SIMD DoubleVector size: " + SPECIES_LENGTH);
+    }
   }
 
   protected final int factor;

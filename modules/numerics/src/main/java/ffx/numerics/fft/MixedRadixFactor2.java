@@ -52,6 +52,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
    *
    * @param passData the data.
    */
+  @Override
   protected void pass(PassData passData) {
     final int sign = passData.sign();
     final double[] data = passData.in();
@@ -96,37 +97,62 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   }
 
   /**
-   * Handle factors of 2.
+   * Handle factors of 2 using SIMD vectors.
    *
    * @param passData the data.
    */
+  @Override
   protected void passSIMD(PassData passData) {
-    // If the inner loop limit is not divisible by the loop increment, use the scalar method.
-    if (innerLoopLimit % LOOP_INCREMENT != 0) {
-      // System.out.printf("Scalar %d product=%d innerLoopLimit=%d increment=%d%n",
-      // factor, product, innerLoopLimit, LOOP_INCREMENT);
-      pass(passData);
-      return;
+    if (innerLoopLimit % LOOP_INCREMENT == 0) {
+      switch (SPECIES_LENGTH) {
+        case 2:
+          passSIMD_128(passData);
+          break;
+        case 4:
+          passSIMD_256(passData);
+          break;
+        case 8:
+          passSIMD_512(passData);
+          break;
+      }
+    } else {
+      // If the inner loop limit is not divisible by the loop increment, use largest SIMD vector that fits.
+      switch (innerLoopLimit) {
+        case 1:
+          // Use the scalar method.
+          pass(passData);
+          break;
+        case 2:
+          passSIMD_128(passData);
+          break;
+        case 4:
+          passSIMD_256(passData);
+          break;
+        case 8:
+          passSIMD_512(passData);
+          break;
+        default:
+          throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
+      }
     }
-    passSIMDPreferred(passData);
   }
 
   /**
-   * Handle factors of 2 using the preferred SIMD vector size.
+   * Handle factors of 2 using the 128-bit SIMD vectors.
    *
    * @param passData the data.
    */
-  private void passSIMDPreferred(PassData passData) {
+  private void passSIMD_128(PassData passData) {
     final int sign = passData.sign();
     final double[] data = passData.in();
     final double[] ret = passData.out();
     int i = passData.inOffset();
     int j = passData.outOffset();
     // First pass of the 2-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_128, i += SPECIES_LENGTH_128, j += SPECIES_LENGTH_128) {
       DoubleVector
-          z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-          z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di);
+          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i),
+          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di);
       z0.add(z1).intoArray(ret, j);
       z0.sub(z1).intoArray(ret, j + dj);
     }
@@ -134,15 +160,87 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
       final double[] twids = twiddles[k];
-      DoubleVector wr = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]);
-      DoubleVector wi = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(negateIm);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT, i += SPECIES_LENGTH, j += SPECIES_LENGTH) {
+      DoubleVector wr = DoubleVector.broadcast(DOUBLE_SPECIES_128, twids[0]);
+      DoubleVector wi = DoubleVector.broadcast(DOUBLE_SPECIES_128, -sign * twids[1]).mul(NEGATE_IM_128);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_128, i += SPECIES_LENGTH_128, j += SPECIES_LENGTH_128) {
         DoubleVector
-            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di);
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di);
         z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        x.mul(wr).add(x.mul(wi).rearrange(shuffleReIm)).intoArray(ret, j + dj);
+        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 2 using the 256-bit SIMD vectors.
+   *
+   * @param passData the data.
+   */
+  private void passSIMD_256(PassData passData) {
+    final int sign = passData.sign();
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    // First pass of the 2-point FFT has no twiddle factors.
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_256, i += SPECIES_LENGTH_256, j += SPECIES_LENGTH_256) {
+      DoubleVector
+          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i),
+          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di);
+      z0.add(z1).intoArray(ret, j);
+      z0.sub(z1).intoArray(ret, j + dj);
+    }
+
+    j += dj;
+    for (int k = 1; k < outerLoopLimit; k++, j += dj) {
+      final double[] twids = twiddles[k];
+      DoubleVector wr = DoubleVector.broadcast(DOUBLE_SPECIES_256, twids[0]);
+      DoubleVector wi = DoubleVector.broadcast(DOUBLE_SPECIES_256, -sign * twids[1]).mul(NEGATE_IM_256);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_256, i += SPECIES_LENGTH_256, j += SPECIES_LENGTH_256) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di);
+        z0.add(z1).intoArray(ret, j);
+        DoubleVector x = z0.sub(z1);
+        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 2 using the 512-bit SIMD vectors.
+   *
+   * @param passData the data.
+   */
+  private void passSIMD_512(PassData passData) {
+    final int sign = passData.sign();
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    // First pass of the 2-point FFT has no twiddle factors.
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_512, i += SPECIES_LENGTH_512, j += SPECIES_LENGTH_512) {
+      DoubleVector
+          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i),
+          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di);
+      z0.add(z1).intoArray(ret, j);
+      z0.sub(z1).intoArray(ret, j + dj);
+    }
+
+    j += dj;
+    for (int k = 1; k < outerLoopLimit; k++, j += dj) {
+      final double[] twids = twiddles[k];
+      DoubleVector wr = DoubleVector.broadcast(DOUBLE_SPECIES_512, twids[0]);
+      DoubleVector wi = DoubleVector.broadcast(DOUBLE_SPECIES_512, -sign * twids[1]).mul(NEGATE_IM_512);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_512, i += SPECIES_LENGTH_512, j += SPECIES_LENGTH_512) {
+        DoubleVector
+            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i),
+            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di);
+        z0.add(z1).intoArray(ret, j);
+        DoubleVector x = z0.sub(z1);
+        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
       }
     }
   }
