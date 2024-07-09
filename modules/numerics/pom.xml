@@ -42,8 +42,8 @@
             <argument>-Dfft.useSIMD=true</argument>
             <argument>-Dffx.log=ALL</argument>
             <argument>ffx.numerics.fft.Complex</argument>
-            <argument>128</argument>
-            <argument>10</argument>
+            <argument>32</argument>
+            <argument>1</argument>
           </arguments>
         </configuration>
       </plugin>
