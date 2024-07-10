@@ -40,6 +40,9 @@ package ffx.numerics.fft;
 import jdk.incubator.vector.DoubleVector;
 
 import static java.lang.Math.fma;
+import static jdk.incubator.vector.DoubleVector.SPECIES_128;
+import static jdk.incubator.vector.DoubleVector.SPECIES_256;
+import static jdk.incubator.vector.DoubleVector.SPECIES_512;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 public class MixedRadixFactor3 extends MixedRadixFactor {
@@ -47,6 +50,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   private static final double sqrt3_2 = sqrt(3.0) / 2.0;
   private final int di2;
   private final int dj2;
+  private double tau;
 
   public MixedRadixFactor3(PassConstants passConstants) {
     super(passConstants);
@@ -54,28 +58,24 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     dj2 = 2 * dj;
   }
 
+  @Override
+  protected void initRadixSpecificConstants() {
+    tau = sign * sqrt3_2;
+  }
+
   /**
    * Handle factors of 3.
-   *
-   * @param passData the data.
    */
-  protected void pass(PassData passData) {
-    final int sign = passData.sign();
-    final double tau = sign * sqrt3_2;
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+  @Override
+  protected void passScalar() {
     // First pass of the 3-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
       final double z0_r = data[i];
-      final double z0_i = data[i + 1];
-      int idi = i + di;
-      final double z1_r = data[idi];
-      final double z1_i = data[idi + 1];
-      idi += di;
-      final double z2_r = data[idi];
-      final double z2_i = data[idi + 1];
+      final double z1_r = data[i + di];
+      final double z2_r = data[i + di2];
+      final double z0_i = data[i + im];
+      final double z1_i = data[i + di + im];
+      final double z2_i = data[i + di2 + im];
       final double t1_r = z1_r + z2_r;
       final double t1_i = z1_i + z2_i;
       final double t2_r = fma(-0.5, t1_r, z0_r);
@@ -83,13 +83,11 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
       final double t3_r = tau * (z1_r - z2_r);
       final double t3_i = tau * (z1_i - z2_i);
       ret[j] = z0_r + t1_r;
-      ret[j + 1] = z0_i + t1_i;
-      int jdj = j + dj;
-      ret[jdj] = t2_r - t3_i;
-      ret[jdj + 1] = t2_i + t3_r;
-      jdj += dj;
-      ret[jdj] = t2_r + t3_i;
-      ret[jdj + 1] = t2_i - t3_r;
+      ret[j + im] = z0_i + t1_i;
+      ret[j + dj] = t2_r - t3_i;
+      ret[j + dj + im] = t2_i + t3_r;
+      ret[j + dj2] = t2_r + t3_i;
+      ret[j + dj2 + im] = t2_i - t3_r;
     }
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
@@ -98,15 +96,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
       final double w1_i = -sign * twids[1];
       final double w2_r = twids[2];
       final double w2_i = -sign * twids[3];
-      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += 2, j += 2) {
+      for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
         final double z0_r = data[i];
-        final double z0_i = data[i + 1];
-        int idi = i + di;
-        final double z1_r = data[idi];
-        final double z1_i = data[idi + 1];
-        idi += di;
-        final double z2_r = data[idi];
-        final double z2_i = data[idi + 1];
+        final double z1_r = data[i + di];
+        final double z2_r = data[i + di2];
+        final double z0_i = data[i + im];
+        final double z1_i = data[i + di + im];
+        final double z2_i = data[i + di2 + im];
         final double t1_r = z1_r + z2_r;
         final double t1_i = z1_i + z2_i;
         final double t2_r = fma(-0.5, t1_r, z0_r);
@@ -114,54 +110,92 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
         final double t3_r = tau * (z1_r - z2_r);
         final double t3_i = tau * (z1_i - z2_i);
         ret[j] = z0_r + t1_r;
-        ret[j + 1] = z0_i + t1_i;
-        double x_r = t2_r - t3_i;
-        double x_i = t2_i + t3_r;
-        int jdj = j + dj;
-        ret[jdj] = fma(w1_r, x_r, -w1_i * x_i);
-        ret[jdj + 1] = fma(w1_r, x_i, w1_i * x_r);
-        x_r = t2_r + t3_i;
-        x_i = t2_i - t3_r;
-        jdj += dj;
-        ret[jdj] = fma(w2_r, x_r, -w2_i * x_i);
-        ret[jdj + 1] = fma(w2_r, x_i, w2_i * x_r);
+        ret[j + im] = z0_i + t1_i;
+        multiplyAndStore(t2_r - t3_i, t2_i + t3_r, w1_r, w1_i, ret, j + dj, j + dj + im);
+        multiplyAndStore(t2_r + t3_i, t2_i - t3_r, w2_r, w2_i, ret, j + dj2, j + dj2 + im);
       }
     }
   }
 
   /**
-   * Handle factors of 3.
-   *
-   * @param passData the data.
+   * Handle factors of 2 using SIMD vectors.
    */
-  protected void passSIMD(PassData passData) {
-    if (innerLoopLimit % LOOP_INCREMENT == 0) {
-      switch (SPECIES_LENGTH) {
+  @Override
+  protected void passSIMD() {
+    if (im == 1) {
+      interleaved();
+    } else {
+      blocked();
+    }
+  }
+
+  private void interleaved() {
+    if (innerLoopLimit % LOOP == 0) {
+      // Use the preferred SIMD vector.
+      switch (LENGTH) {
         case 2:
-          passSIMD_128(passData);
+          interleaved128();
           break;
         case 4:
-          passSIMD_256(passData);
+          interleaved256();
           break;
         case 8:
-          passSIMD_512(passData);
+          interleaved512();
           break;
       }
     } else {
       // If the inner loop limit is not divisible by the loop increment, use largest SIMD vector that fits.
       switch (innerLoopLimit) {
         case 1:
-          // Use the scalar method.
-          pass(passData);
+          // 1 Complex
+          interleaved128();
           break;
         case 2:
-          passSIMD_128(passData);
+          // 2 Complex
+          interleaved256();
           break;
         case 4:
-          passSIMD_256(passData);
+          // 4 Complex
+          interleaved512();
+          break;
+        default:
+          throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
+      }
+    }
+  }
+
+  private void blocked() {
+    if (innerLoopLimit % BLOCK_LOOP == 0) {
+      // The preferred SIMD vector length is a multiple of the inner loop limit and can be used.
+      switch (LENGTH) {
+        case 2:
+          blocked128();
+          break;
+        case 4:
+          blocked256();
           break;
         case 8:
-          passSIMD_512(passData);
+          blocked512();
+          break;
+      }
+    } else {
+      // If the inner loop limit is not divisible by the preferred loop increment, use largest SIMD vector that fits.
+      switch (innerLoopLimit) {
+        case 1:
+          // Use the scalar method.
+          passScalar();
+          break;
+        case 2:
+          // 2 Real and 2 Imaginary per loop iteration.
+          blocked128();
+          break;
+        case 4:
+          // 4 Real and 4 Imaginary per loop iteration.
+          blocked256();
+          break;
+        case 8:
+          // 8 Real and 8 Imaginary per loop iteration.
+          blocked512();
           break;
         default:
           throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
@@ -171,23 +205,191 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
 
   /**
    * Handle factors of 3 using the 128-bit SIMD vectors.
-   *
-   * @param passData the data.
    */
-  private void passSIMD_128(PassData passData) {
-    final int sign = passData.sign();
-    final double tau = sign * sqrt3_2;
-    int i = passData.inOffset();
-    int j = passData.outOffset();
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-
+  private void blocked128() {
     // First pass of the 3-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_128, i += SPECIES_LENGTH_128, j += SPECIES_LENGTH_128) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
+      final DoubleVector
+          z0_r = DoubleVector.fromArray(SPECIES_128, data, i),
+          z1_r = DoubleVector.fromArray(SPECIES_128, data, i + di),
+          z2_r = DoubleVector.fromArray(SPECIES_128, data, i + di2),
+          z0_i = DoubleVector.fromArray(SPECIES_128, data, i + im),
+          z1_i = DoubleVector.fromArray(SPECIES_128, data, i + di + im),
+          z2_i = DoubleVector.fromArray(SPECIES_128, data, i + di2 + im);
+      final DoubleVector
+          t1_r = z1_r.add(z2_r),
+          t1_i = z1_i.add(z2_i),
+          t2_r = t1_r.mul(-0.5).add(z0_r),
+          t2_i = t1_i.mul(-0.5).add(z0_i),
+          t3_r = t1_r.sub(z0_r).mul(tau),
+          t3_i = t1_i.sub(z0_i).mul(tau);
+      z0_r.add(t1_r).intoArray(ret, j);
+      z0_i.add(t1_i).intoArray(ret, j + im);
+      t2_r.sub(t3_i).intoArray(ret, j + dj);
+      t2_i.add(t3_r).intoArray(ret, j + dj + im);
+      t2_r.add(t3_i).intoArray(ret, j + dj2);
+      t2_i.sub(t3_r).intoArray(ret, j + dj2 + im);
+    }
+
+    j += jstep;
+    for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
       DoubleVector
-          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i),
-          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di),
-          z2 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di2);
+          w1_r = DoubleVector.broadcast(SPECIES_128, twids[0]),
+          w1_i = DoubleVector.broadcast(SPECIES_128, -sign * twids[1]),
+          w2_r = DoubleVector.broadcast(SPECIES_128, twids[2]),
+          w2_i = DoubleVector.broadcast(SPECIES_128, -sign * twids[3]);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
+        final DoubleVector
+            z0_r = DoubleVector.fromArray(SPECIES_128, data, i),
+            z1_r = DoubleVector.fromArray(SPECIES_128, data, i + di),
+            z2_r = DoubleVector.fromArray(SPECIES_128, data, i + di2),
+            z0_i = DoubleVector.fromArray(SPECIES_128, data, i + im),
+            z1_i = DoubleVector.fromArray(SPECIES_128, data, i + di + im),
+            z2_i = DoubleVector.fromArray(SPECIES_128, data, i + di2 + im);
+        final DoubleVector
+            t1_r = z1_r.add(z2_r),
+            t1_i = z1_i.add(z2_i),
+            t2_r = t1_r.mul(-0.5).add(z0_r),
+            t2_i = t1_i.mul(-0.5).add(z0_i),
+            t3_r = t1_r.sub(z0_r).mul(tau),
+            t3_i = t1_i.sub(z0_i).mul(tau);
+        z0_r.add(t1_r).intoArray(ret, j);
+        z0_i.add(t1_i).intoArray(ret, j + im);
+        multiplyAndStoreBlocked(t2_r.sub(t3_i), t2_i.add(t3_r), w1_r, w1_i, ret, j + dj, j + dj + im);
+        multiplyAndStoreBlocked(t2_r.add(t3_i), t2_i.sub(t3_r), w2_r, w2_i, ret, j + dj2, j + dj2 + im);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 3 using the 256-bit SIMD vectors.
+   */
+  private void blocked256() {
+    // First pass of the 3-point FFT has no twiddle factors.
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
+      final DoubleVector
+          z0_r = DoubleVector.fromArray(SPECIES_256, data, i),
+          z1_r = DoubleVector.fromArray(SPECIES_256, data, i + di),
+          z2_r = DoubleVector.fromArray(SPECIES_256, data, i + di2),
+          z0_i = DoubleVector.fromArray(SPECIES_256, data, i + im),
+          z1_i = DoubleVector.fromArray(SPECIES_256, data, i + di + im),
+          z2_i = DoubleVector.fromArray(SPECIES_256, data, i + di2 + im);
+      final DoubleVector
+          t1_r = z1_r.add(z2_r),
+          t1_i = z1_i.add(z2_i),
+          t2_r = t1_r.mul(-0.5).add(z0_r),
+          t2_i = t1_i.mul(-0.5).add(z0_i),
+          t3_r = t1_r.sub(z0_r).mul(tau),
+          t3_i = t1_i.sub(z0_i).mul(tau);
+      z0_r.add(t1_r).intoArray(ret, j);
+      z0_i.add(t1_i).intoArray(ret, j + im);
+      t2_r.sub(t3_i).intoArray(ret, j + dj);
+      t2_i.add(t3_r).intoArray(ret, j + dj + im);
+      t2_r.add(t3_i).intoArray(ret, j + dj2);
+      t2_i.sub(t3_r).intoArray(ret, j + dj2 + im);
+    }
+
+    j += jstep;
+    for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1_r = DoubleVector.broadcast(SPECIES_256, twids[0]),
+          w1_i = DoubleVector.broadcast(SPECIES_256, -sign * twids[1]),
+          w2_r = DoubleVector.broadcast(SPECIES_256, twids[2]),
+          w2_i = DoubleVector.broadcast(SPECIES_256, -sign * twids[3]);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
+        final DoubleVector
+            z0_r = DoubleVector.fromArray(SPECIES_256, data, i),
+            z1_r = DoubleVector.fromArray(SPECIES_256, data, i + di),
+            z2_r = DoubleVector.fromArray(SPECIES_256, data, i + di2),
+            z0_i = DoubleVector.fromArray(SPECIES_256, data, i + im),
+            z1_i = DoubleVector.fromArray(SPECIES_256, data, i + di + im),
+            z2_i = DoubleVector.fromArray(SPECIES_256, data, i + di2 + im);
+        final DoubleVector
+            t1_r = z1_r.add(z2_r),
+            t1_i = z1_i.add(z2_i),
+            t2_r = t1_r.mul(-0.5).add(z0_r),
+            t2_i = t1_i.mul(-0.5).add(z0_i),
+            t3_r = t1_r.sub(z0_r).mul(tau),
+            t3_i = t1_i.sub(z0_i).mul(tau);
+        z0_r.add(t1_r).intoArray(ret, j);
+        z0_i.add(t1_i).intoArray(ret, j + im);
+        multiplyAndStoreBlocked(t2_r.sub(t3_i), t2_i.add(t3_r), w1_r, w1_i, ret, j + dj, j + dj + im);
+        multiplyAndStoreBlocked(t2_r.add(t3_i), t2_i.sub(t3_r), w2_r, w2_i, ret, j + dj2, j + dj2 + im);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 3 using the 512-bit SIMD vectors.
+   */
+  private void blocked512() {
+    // First pass of the 3-point FFT has no twiddle factors.
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
+      final DoubleVector
+          z0_r = DoubleVector.fromArray(SPECIES_512, data, i),
+          z1_r = DoubleVector.fromArray(SPECIES_512, data, i + di),
+          z2_r = DoubleVector.fromArray(SPECIES_512, data, i + di2),
+          z0_i = DoubleVector.fromArray(SPECIES_512, data, i + im),
+          z1_i = DoubleVector.fromArray(SPECIES_512, data, i + di + im),
+          z2_i = DoubleVector.fromArray(SPECIES_512, data, i + di2 + im);
+      final DoubleVector
+          t1_r = z1_r.add(z2_r),
+          t1_i = z1_i.add(z2_i),
+          t2_r = t1_r.mul(-0.5).add(z0_r),
+          t2_i = t1_i.mul(-0.5).add(z0_i),
+          t3_r = t1_r.sub(z0_r).mul(tau),
+          t3_i = t1_i.sub(z0_i).mul(tau);
+      z0_r.add(t1_r).intoArray(ret, j);
+      z0_i.add(t1_i).intoArray(ret, j + im);
+      t2_r.sub(t3_i).intoArray(ret, j + dj);
+      t2_i.add(t3_r).intoArray(ret, j + dj + im);
+      t2_r.add(t3_i).intoArray(ret, j + dj2);
+      t2_i.sub(t3_r).intoArray(ret, j + dj2 + im);
+    }
+
+    j += jstep;
+    for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
+      final double[] twids = twiddles[k];
+      DoubleVector
+          w1_r = DoubleVector.broadcast(SPECIES_512, twids[0]),
+          w1_i = DoubleVector.broadcast(SPECIES_512, -sign * twids[1]),
+          w2_r = DoubleVector.broadcast(SPECIES_512, twids[2]),
+          w2_i = DoubleVector.broadcast(SPECIES_512, -sign * twids[3]);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
+        final DoubleVector
+            z0_r = DoubleVector.fromArray(SPECIES_512, data, i),
+            z1_r = DoubleVector.fromArray(SPECIES_512, data, i + di),
+            z2_r = DoubleVector.fromArray(SPECIES_512, data, i + di2),
+            z0_i = DoubleVector.fromArray(SPECIES_512, data, i + im),
+            z1_i = DoubleVector.fromArray(SPECIES_512, data, i + di + im),
+            z2_i = DoubleVector.fromArray(SPECIES_512, data, i + di2 + im);
+        final DoubleVector
+            t1_r = z1_r.add(z2_r),
+            t1_i = z1_i.add(z2_i),
+            t2_r = t1_r.mul(-0.5).add(z0_r),
+            t2_i = t1_i.mul(-0.5).add(z0_i),
+            t3_r = t1_r.sub(z0_r).mul(tau),
+            t3_i = t1_i.sub(z0_i).mul(tau);
+        z0_r.add(t1_r).intoArray(ret, j);
+        z0_i.add(t1_i).intoArray(ret, j + im);
+        multiplyAndStoreBlocked(t2_r.sub(t3_i), t2_i.add(t3_r), w1_r, w1_i, ret, j + dj, j + dj + im);
+        multiplyAndStoreBlocked(t2_r.add(t3_i), t2_i.sub(t3_r), w2_r, w2_i, ret, j + dj2, j + dj2 + im);
+      }
+    }
+  }
+
+  /**
+   * Handle factors of 3 using the 128-bit SIMD vectors.
+   */
+  private void interleaved128() {
+    // First pass of the 3-point FFT has no twiddle factors.
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_128, i += LENGTH_128, j += LENGTH_128) {
+      DoubleVector
+          z0 = DoubleVector.fromArray(SPECIES_128, data, i),
+          z1 = DoubleVector.fromArray(SPECIES_128, data, i + di),
+          z2 = DoubleVector.fromArray(SPECIES_128, data, i + di2);
       DoubleVector
           t1 = z1.add(z2),
           t2 = t1.mul(-0.5).add(z0),
@@ -201,47 +403,37 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
-          w1r = DoubleVector.broadcast(DOUBLE_SPECIES_128, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES_128, -sign * twids[1]).mul(NEGATE_IM_128),
-          w2r = DoubleVector.broadcast(DOUBLE_SPECIES_128, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES_128, -sign * twids[3]).mul(NEGATE_IM_128);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_128, i += SPECIES_LENGTH_128, j += SPECIES_LENGTH_128) {
+          w1r = DoubleVector.broadcast(SPECIES_128, twids[0]),
+          w1i = DoubleVector.broadcast(SPECIES_128, -sign * twids[1]).mul(NEGATE_IM_128),
+          w2r = DoubleVector.broadcast(SPECIES_128, twids[2]),
+          w2i = DoubleVector.broadcast(SPECIES_128, -sign * twids[3]).mul(NEGATE_IM_128);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_128, i += LENGTH_128, j += LENGTH_128) {
         DoubleVector
-            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i),
-            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di),
-            z2 = DoubleVector.fromArray(DOUBLE_SPECIES_128, data, i + di2);
+            z0 = DoubleVector.fromArray(SPECIES_128, data, i),
+            z1 = DoubleVector.fromArray(SPECIES_128, data, i + di),
+            z2 = DoubleVector.fromArray(SPECIES_128, data, i + di2);
         DoubleVector
             t1 = z1.add(z2),
             t2 = t1.mul(-0.5).add(z0),
             t3 = z1.sub(z2).mul(tau).rearrange(SHUFFLE_RE_IM_128);
         z0.add(t1).intoArray(ret, j);
-        DoubleVector x = t2.add(t3.mul(NEGATE_RE_128));
-        w1r.fma(x, x.mul(w1i).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
-        x = t2.add(t3.mul(NEGATE_IM_128));
-        w2r.fma(x, x.mul(w2i).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj2);
+        z0.add(t1).intoArray(ret, j);
+        multiplyAndStore128(t2.add(t3.mul(NEGATE_RE_128)), w1r, w1i, ret, j + dj);
+        multiplyAndStore128(t2.add(t3.mul(NEGATE_IM_128)), w2r, w2i, ret, j + dj2);
       }
     }
   }
 
   /**
    * Handle factors of 3 using the 256-bit SIMD vectors.
-   *
-   * @param passData the data.
    */
-  private void passSIMD_256(PassData passData) {
-    final int sign = passData.sign();
-    final double tau = sign * sqrt3_2;
-    int i = passData.inOffset();
-    int j = passData.outOffset();
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-
+  private void interleaved256() {
     // First pass of the 3-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_256, i += SPECIES_LENGTH_256, j += SPECIES_LENGTH_256) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       DoubleVector
-          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i),
-          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di),
-          z2 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di2);
+          z0 = DoubleVector.fromArray(SPECIES_256, data, i),
+          z1 = DoubleVector.fromArray(SPECIES_256, data, i + di),
+          z2 = DoubleVector.fromArray(SPECIES_256, data, i + di2);
       DoubleVector
           t1 = z1.add(z2),
           t2 = t1.mul(-0.5).add(z0),
@@ -255,47 +447,36 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
-          w1r = DoubleVector.broadcast(DOUBLE_SPECIES_256, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES_256, -sign * twids[1]).mul(NEGATE_IM_256),
-          w2r = DoubleVector.broadcast(DOUBLE_SPECIES_256, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES_256, -sign * twids[3]).mul(NEGATE_IM_256);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_256, i += SPECIES_LENGTH_256, j += SPECIES_LENGTH_256) {
+          w1r = DoubleVector.broadcast(SPECIES_256, twids[0]),
+          w1i = DoubleVector.broadcast(SPECIES_256, -sign * twids[1]).mul(NEGATE_IM_256),
+          w2r = DoubleVector.broadcast(SPECIES_256, twids[2]),
+          w2i = DoubleVector.broadcast(SPECIES_256, -sign * twids[3]).mul(NEGATE_IM_256);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_256, i += LENGTH_256, j += LENGTH_256) {
         DoubleVector
-            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i),
-            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di),
-            z2 = DoubleVector.fromArray(DOUBLE_SPECIES_256, data, i + di2);
+            z0 = DoubleVector.fromArray(SPECIES_256, data, i),
+            z1 = DoubleVector.fromArray(SPECIES_256, data, i + di),
+            z2 = DoubleVector.fromArray(SPECIES_256, data, i + di2);
         DoubleVector
             t1 = z1.add(z2),
             t2 = t1.mul(-0.5).add(z0),
             t3 = z1.sub(z2).mul(tau).rearrange(SHUFFLE_RE_IM_256);
         z0.add(t1).intoArray(ret, j);
-        DoubleVector x = t2.add(t3.mul(NEGATE_RE_256));
-        w1r.fma(x, x.mul(w1i).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
-        x = t2.add(t3.mul(NEGATE_IM_256));
-        w2r.fma(x, x.mul(w2i).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj2);
+        multiplyAndStore256(t2.add(t3.mul(NEGATE_RE_256)), w1r, w1i, ret, j + dj);
+        multiplyAndStore256(t2.add(t3.mul(NEGATE_IM_256)), w2r, w2i, ret, j + dj2);
       }
     }
   }
 
   /**
    * Handle factors of 3 using the 512-bit SIMD vectors.
-   *
-   * @param passData the data.
    */
-  private void passSIMD_512(PassData passData) {
-    final int sign = passData.sign();
-    final double tau = sign * sqrt3_2;
-    int i = passData.inOffset();
-    int j = passData.outOffset();
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-
+  private void interleaved512() {
     // First pass of the 3-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_512, i += SPECIES_LENGTH_512, j += SPECIES_LENGTH_512) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_512, i += LENGTH_512, j += LENGTH_512) {
       DoubleVector
-          z0 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i),
-          z1 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di),
-          z2 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di2);
+          z0 = DoubleVector.fromArray(SPECIES_512, data, i),
+          z1 = DoubleVector.fromArray(SPECIES_512, data, i + di),
+          z2 = DoubleVector.fromArray(SPECIES_512, data, i + di2);
       DoubleVector
           t1 = z1.add(z2),
           t2 = t1.mul(-0.5).add(z0),
@@ -309,24 +490,22 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
-          w1r = DoubleVector.broadcast(DOUBLE_SPECIES_512, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES_512, -sign * twids[1]).mul(NEGATE_IM_512),
-          w2r = DoubleVector.broadcast(DOUBLE_SPECIES_512, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES_512, -sign * twids[3]).mul(NEGATE_IM_512);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_INCREMENT_512, i += SPECIES_LENGTH_512, j += SPECIES_LENGTH_512) {
+          w1r = DoubleVector.broadcast(SPECIES_512, twids[0]),
+          w1i = DoubleVector.broadcast(SPECIES_512, -sign * twids[1]).mul(NEGATE_IM_512),
+          w2r = DoubleVector.broadcast(SPECIES_512, twids[2]),
+          w2i = DoubleVector.broadcast(SPECIES_512, -sign * twids[3]).mul(NEGATE_IM_512);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_512, i += LENGTH_512, j += LENGTH_512) {
         DoubleVector
-            z0 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i),
-            z1 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di),
-            z2 = DoubleVector.fromArray(DOUBLE_SPECIES_512, data, i + di2);
+            z0 = DoubleVector.fromArray(SPECIES_512, data, i),
+            z1 = DoubleVector.fromArray(SPECIES_512, data, i + di),
+            z2 = DoubleVector.fromArray(SPECIES_512, data, i + di2);
         DoubleVector
             t1 = z1.add(z2),
             t2 = t1.mul(-0.5).add(z0),
             t3 = z1.sub(z2).mul(tau).rearrange(SHUFFLE_RE_IM_512);
         z0.add(t1).intoArray(ret, j);
-        DoubleVector x = t2.add(t3.mul(NEGATE_RE_512));
-        w1r.fma(x, x.mul(w1i).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
-        x = t2.add(t3.mul(NEGATE_IM_512));
-        w2r.fma(x, x.mul(w2i).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj2);
+        multiplyAndStore512(t2.add(t3.mul(NEGATE_RE_512)), w1r, w1i, ret, j + dj);
+        multiplyAndStore512(t2.add(t3.mul(NEGATE_IM_512)), w2r, w2i, ret, j + dj2);
       }
     }
   }

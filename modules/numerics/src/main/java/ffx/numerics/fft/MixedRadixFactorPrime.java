@@ -47,15 +47,13 @@ public class MixedRadixFactorPrime extends MixedRadixFactor {
 
   /**
    * Handle a general prime number.
-   *
-   * @param passData the data.
    */
-  protected void pass(PassData passData) {
-    final double[] data = passData.in();
-    final int dataOffset = passData.inOffset();
-    final double[] ret = passData.out();
-    final int retOffset = passData.outOffset();
-    final int sign = passData.sign();
+  protected void passScalar() {
+    if (im != 1) {
+      throw new IllegalArgumentException(" Support for large prime factors requires interleaved data.");
+    }
+    final int dataOffset = i;
+    final int retOffset = j;
     final int jump = (factor - 1) * innerLoopLimit;
     for (int i = 0; i < nextInput; i++) {
       ret[retOffset + 2 * i] = data[dataOffset + 2 * i];
@@ -166,11 +164,9 @@ public class MixedRadixFactorPrime extends MixedRadixFactor {
 
   /**
    * There is no SIMD support for general prime numbers, so the scalar method is used.
-   *
-   * @param passData the data.
    */
-  protected void passSIMD(PassData passData) {
-    pass(passData);
+  protected void passSIMD() {
+    passScalar();
   }
 
 }

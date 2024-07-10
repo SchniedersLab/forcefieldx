@@ -37,20 +37,21 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Random;
-
 import ffx.utilities.FFXTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** @author Michael J. Schnieders */
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author Michael J. Schnieders
+ */
 @RunWith(Parameterized.class)
 public class ComplexTest extends FFXTest {
 
@@ -58,7 +59,9 @@ public class ComplexTest extends FFXTest {
   private final String info;
   private final boolean preferred;
   private final double[] data;
+  private final double[] dataBlocked;
   private final double[] orig;
+  private final double[] origBlocked;
   private final double[] dft;
 
   public ComplexTest(String info, int n, boolean preferred) {
@@ -66,20 +69,24 @@ public class ComplexTest extends FFXTest {
     this.n = n;
     this.preferred = preferred;
     data = new double[n * 2];
+    dataBlocked = new double[n * 2];
     orig = new double[n * 2];
+    origBlocked = new double[n * 2];
     dft = new double[n * 2];
     Random r = new Random();
     for (int i = 0; i < n; i++) {
       double d = r.nextDouble();
       data[i * 2] = d;
       orig[i * 2] = d;
+      dataBlocked[i] = d;
+      origBlocked[i] = d;
     }
   }
 
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
+        new Object[][]{
             {"Test n = 162 with factors [6, 3, 3, 3]", 162, true},
             {"Test n = 160 with factors [5, 4, 4, 2]", 160, true},
             {"Test n = 120 with factors [6, 5, 4]", 120, true},
@@ -91,14 +98,17 @@ public class ComplexTest extends FFXTest {
         });
   }
 
-  /** Test of fft method, of class Complex. */
+  /**
+   * Test of fft method, of class Complex.
+   */
   @Test
-  public void testFft() {
+  public void testFftInterleavedScalar() {
     double tolerance = 1.0e-11;
 
     int offset = 0;
     int stride = 2;
     Complex complex = new Complex(n);
+    complex.setUseSIMD(false);
 
     // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
 
@@ -130,7 +140,97 @@ public class ComplexTest extends FFXTest {
     }
   }
 
-  /** Test of preferredDimension method, of class Complex. */
+  /**
+   * Test of fft method, of class Complex.
+   */
+  @Test
+  public void testFftInterleavedSIMD() {
+    double tolerance = 1.0e-11;
+
+    int offset = 0;
+    int stride = 2;
+    Complex complex = new Complex(n);
+    complex.setUseSIMD(true);
+
+    // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
+
+    long dftTime = System.nanoTime();
+    Complex.dft(data, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    complex.fft(data, offset, stride);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    for (int i = 0; i < 2 * n; i++) {
+      assertEquals(" Forward " + info + " at position: " + i, dft[i], data[i], tolerance);
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data, offset, stride);
+    for (int i = 0; i < n; i++) {
+      double orig = this.orig[i * 2];
+      double actual = data[i * 2];
+      assertEquals(" IFFT(FFT(X)) " + info + " at position: " + i, orig, actual, tolerance);
+    }
+  }
+
+  /**
+   * Test of fft method, of class Complex.
+   */
+  @Test
+  public void testFftBlockedScalar() {
+    if (!this.preferred) {
+      return;
+    }
+
+    double tolerance = 1.0e-11;
+
+    int offset = 0;
+    int stride = 1;
+    Complex complex = new Complex(n, n);
+    complex.setUseSIMD(false);
+
+    // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
+
+    long dftTime = System.nanoTime();
+    Complex.dftBlocked(dataBlocked, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    complex.fft(dataBlocked, offset, stride);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    for (int i = 0; i < 2 * n; i++) {
+      assertEquals(" Forward " + info + " at position: " + i, dft[i], dataBlocked[i], tolerance);
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(dataBlocked, offset, stride);
+    for (int i = 0; i < n; i++) {
+      double orig = this.origBlocked[i];
+      double actual = dataBlocked[i];
+      assertEquals(" IFFT(FFT(X)) " + info + " at position: " + i, orig, actual, tolerance);
+    }
+  }
+
+  /**
+   * Test of preferredDimension method, of class Complex.
+   */
   @Test
   public void testPreferredDimension() {
     boolean result = Complex.preferredDimension(n);

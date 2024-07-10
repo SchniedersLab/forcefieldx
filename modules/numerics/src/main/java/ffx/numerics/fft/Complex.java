@@ -42,6 +42,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Integer.max;
 import static java.lang.Math.fma;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -86,6 +87,10 @@ public class Complex {
    */
   private final int n;
   /**
+   * Offset to the imaginary part of the input (1 or n).
+   */
+  private final int im;
+  /**
    * Factorization of n.
    */
   private final int[] factors;
@@ -110,7 +115,14 @@ public class Complex {
    */
   private final MixedRadixFactor[] mixedRadixFactors;
 
-  private boolean useSIMD;
+  /**
+   * Use SIMD operators.
+   */
+  private boolean useSIMD = false;
+  /**
+   * Minimum SIMD loop length set to the preferred SIMD vector length.
+   */
+  private int minSIMDLoopLength = MixedRadixFactor.LENGTH;
 
   /**
    * Construct a Complex instance for data of length n. Factorization of n is designed to use special
@@ -120,8 +132,22 @@ public class Complex {
    * @param n Number of complex numbers (n .GT. 1).
    */
   public Complex(int n) {
+    this(n, 1);
+  }
+
+  /**
+   * Construct a Complex instance for data of length n. Factorization of n is designed to use special
+   * methods for small factors, and a general routine for large odd prime factors. Scratch memory is
+   * created of length 2*n, which is reused each time a transform is computed.
+   *
+   * @param n  Number of complex numbers (n .GT. 1).
+   * @param im Offset to the imaginary part of the input (1 or n).
+   */
+  public Complex(int n, int im) {
     assert (n > 1);
+    assert (im == 1 || im == n);
     this.n = n;
+    this.im = im;
     factors = factor();
     twiddle = wavetable();
     packedData = new double[2 * n];
@@ -134,12 +160,7 @@ public class Complex {
     for (int i = 0; i < factors.length; i++) {
       final int factor = factors[i];
       product *= factor;
-      final int outerLoopLimit = n / product;
-      final int innerLoopLimit = product / factor;
-      final int nextInput = n / factor;
-      final int di = 2 * nextInput;
-      final int dj = 2 * innerLoopLimit;
-      PassConstants passConstants = new PassConstants(factor, product, outerLoopLimit, innerLoopLimit, nextInput, di, dj, twiddle[i]);
+      PassConstants passConstants = new PassConstants(n, im, factor, product, twiddle[i]);
       switch (factor) {
         case 2 -> mixedRadixFactors[i] = new MixedRadixFactor2(passConstants);
         case 3 -> mixedRadixFactors[i] = new MixedRadixFactor3(passConstants);
@@ -147,12 +168,18 @@ public class Complex {
         case 5 -> mixedRadixFactors[i] = new MixedRadixFactor5(passConstants);
         case 6 -> mixedRadixFactors[i] = new MixedRadixFactor6(passConstants);
         case 7 -> mixedRadixFactors[i] = new MixedRadixFactor7(passConstants);
-        default -> mixedRadixFactors[i] = new MixedRadixFactorPrime(passConstants);
+        default -> {
+          if (this.im != 1) {
+            throw new IllegalArgumentException(
+                " Prime factors greater than 7 are only supported for interleaved data: " + factor);
+          }
+          mixedRadixFactors[i] = new MixedRadixFactorPrime(passConstants);
+        }
       }
     }
 
-    // Use SIMD by default only for AVX-512.
-    useSIMD = MixedRadixFactor.SPECIES_LENGTH == 8;
+    // Do not use SIMD by default for now.
+    useSIMD = false;
     String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
     try {
       useSIMD = Boolean.parseBoolean(simd);
@@ -160,6 +187,37 @@ public class Complex {
       logger.info(" Invalid value for fft.useSIMD: " + simd);
       useSIMD = false;
     }
+
+    // Minimum SIMD inner loop length.
+    // For interleaved data, the default minimum SIMD loop length is 1 using AVX-128 (1 Real and 1 Imaginary per load).
+    // For blocked data, the default minimum SIMD loop length is 2 using AVX-128 (2 Real or 2 Imaginary per load).
+    // Setting this value higher than one reverts to scalar operations for short inner loop lengths.
+    if (im == 1) {
+      // Interleaved data.
+      minSIMDLoopLength = 1;
+    } else {
+      // Blocked data.
+      minSIMDLoopLength = 2;
+    }
+    String loop = System.getProperty("fft.minLoop", Integer.toString(minSIMDLoopLength));
+    try {
+      minSIMDLoopLength = max(minSIMDLoopLength, Integer.parseInt(loop));
+    } catch (Exception e) {
+      logger.info(" Invalid value for fft.minLoop: " + loop);
+      if (im == 1) {
+        // Interleaved data.
+        minSIMDLoopLength = 1;
+      } else {
+        // Blocked data.
+        minSIMDLoopLength = 2;
+      }
+    }
+
+    for (int i = 0; i < factors.length; i++) {
+      mixedRadixFactors[i].setMinSIMDLoopLength(minSIMDLoopLength);
+      mixedRadixFactors[i].setUseSIMD(useSIMD);
+    }
+
   }
 
   /**
@@ -169,6 +227,30 @@ public class Complex {
    */
   public void setUseSIMD(boolean useSIMD) {
     this.useSIMD = useSIMD;
+    for (int i = 0; i < factors.length; i++) {
+      mixedRadixFactors[i].setUseSIMD(useSIMD);
+    }
+  }
+
+  /**
+   * Configure the minimum SIMD inner loop length.
+   * For interleaved data, the default minimum SIMD loop length is 1 using AVX-128 (1 Real and 1 Imaginary per load).
+   * For blocked data, the default minimum SIMD loop length is 1 using AVX-128 (2 Real or 2 Imaginary per load).
+   * Setting this value higher than one reverts to scalar operations for short inner loop lengths.
+   *
+   * @param minSIMDLoopLength Minimum SIMD inner loop length.
+   */
+  public void setMinSIMDLoopLength(int minSIMDLoopLength) {
+    if (im == 1 && minSIMDLoopLength < 1) {
+      throw new IllegalArgumentException(" Minimum SIMD loop length for interleaved data is 1 or greater.");
+    }
+    if (im == n && minSIMDLoopLength < 2) {
+      throw new IllegalArgumentException(" Minimum SIMD loop length for blocked data is 2 or greater.");
+    }
+    this.minSIMDLoopLength = minSIMDLoopLength;
+    for (int i = 0; i < factors.length; i++) {
+      mixedRadixFactors[i].setMinSIMDLoopLength(minSIMDLoopLength);
+    }
   }
 
   /**
@@ -255,7 +337,7 @@ public class Complex {
     for (int i = 0; i < n; i++) {
       final int index = offset + stride * i;
       data[index] *= norm;
-      data[index + 1] *= norm;
+      data[index + im] *= norm;
     }
   }
 
@@ -334,8 +416,12 @@ public class Complex {
    */
   private void transformInternal(final double[] data, final int offset, final int stride, final int sign) {
 
+    if (im == n && stride != 1) {
+      throw new IllegalArgumentException(" Stride must be 1 for blocked data.");
+    }
+
     boolean packed = false;
-    if (stride != 2) {
+    if (stride > 2) {
       // Pack non-contiguous (stride > 2) data into a contiguous array.
       packed = true;
       for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
@@ -352,17 +438,13 @@ public class Complex {
     final int nfactors = factors.length;
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
-      if (useSIMD) {
-        mixedRadixFactors[i].passSIMD(passData[pass]);
-      } else {
-        mixedRadixFactors[i].pass(passData[pass]);
-      }
+      mixedRadixFactors[i].pass(passData[pass]);
     }
 
     // If the number of factors is odd, the final result is in the scratch array.
     if (nfactors % 2 == 1) {
       // Copy the scratch array to the data array.
-      if (stride == 2) {
+      if (stride <= 2) {
         arraycopy(scratch, 0, data, offset, 2 * n);
       } else {
         for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
@@ -463,6 +545,33 @@ public class Complex {
       }
       int re = 2 * k;
       int im = 2 * k + 1;
+      out[re] = sumReal;
+      out[im] = simImag;
+    }
+  }
+
+  /**
+   * Static DFT method used to test the FFT.
+   *
+   * @param in  input array.
+   * @param out output array.
+   */
+  public static void dftBlocked(double[] in, double[] out) {
+    int n = in.length / 2;
+    for (int k = 0; k < n; k++) { // For each output element
+      double sumReal = 0;
+      double simImag = 0;
+      for (int t = 0; t < n; t++) { // For each input element
+        double angle = (2 * PI * t * k) / n;
+        int re = t;
+        int im = t + n;
+        sumReal = fma(in[re], cos(angle), sumReal);
+        sumReal = fma(in[im], sin(angle), sumReal);
+        simImag = fma(-in[re], sin(angle), simImag);
+        simImag = fma(in[im], cos(angle), simImag);
+      }
+      int re = k;
+      int im = k + n;
       out[re] = sumReal;
       out[im] = simImag;
     }
