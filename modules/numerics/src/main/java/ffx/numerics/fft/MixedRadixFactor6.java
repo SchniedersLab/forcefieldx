@@ -40,6 +40,8 @@ package ffx.numerics.fft;
 import jdk.incubator.vector.DoubleVector;
 
 import static java.lang.Math.fma;
+import static jdk.incubator.vector.DoubleVector.broadcast;
+import static jdk.incubator.vector.DoubleVector.fromArray;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 public class MixedRadixFactor6 extends MixedRadixFactor {
@@ -221,12 +223,12 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
       DoubleVector
-          z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-          z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
-          z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
-          z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
-          z4 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
-          z5 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5);
+          z0 = fromArray(DOUBLE_SPECIES, data, i),
+          z1 = fromArray(DOUBLE_SPECIES, data, i + di),
+          z2 = fromArray(DOUBLE_SPECIES, data, i + di2),
+          z3 = fromArray(DOUBLE_SPECIES, data, i + di3),
+          z4 = fromArray(DOUBLE_SPECIES, data, i + di4),
+          z5 = fromArray(DOUBLE_SPECIES, data, i + di5);
       DoubleVector
           ta1 = z2.add(z4),
           ta2 = ta1.mul(-0.5).add(z0),
@@ -252,24 +254,24 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
-          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(NEGATE_IM),
-          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(NEGATE_IM),
-          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(NEGATE_IM),
-          w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(NEGATE_IM),
-          w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(NEGATE_IM);
+          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(NEGATE_IM),
+          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(NEGATE_IM),
+          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(NEGATE_IM),
+          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
+          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(NEGATE_IM),
+          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
+          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(NEGATE_IM);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
         DoubleVector
-            z0 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-            z1 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
-            z2 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
-            z3 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
-            z4 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
-            z5 = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5);
+            z0 = fromArray(DOUBLE_SPECIES, data, i),
+            z1 = fromArray(DOUBLE_SPECIES, data, i + di),
+            z2 = fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3 = fromArray(DOUBLE_SPECIES, data, i + di3),
+            z4 = fromArray(DOUBLE_SPECIES, data, i + di4),
+            z5 = fromArray(DOUBLE_SPECIES, data, i + di5);
         DoubleVector
             ta1 = z2.add(z4),
             ta2 = ta1.mul(-0.5).add(z0),
@@ -284,11 +286,17 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
             b1 = tb2.add(tb3.mul(NEGATE_RE)),
             b2 = tb2.add(tb3.mul(NEGATE_IM));
         a0.add(b0).intoArray(ret, j);
-        multiplyAndStoreInterleaved(a1.sub(b1), w1r, w1i, ret, j + dj);
-        multiplyAndStoreInterleaved(a2.add(b2), w2r, w2i, ret, j + dj2);
-        multiplyAndStoreInterleaved(a0.sub(b0), w3r, w3i, ret, j + dj3);
-        multiplyAndStoreInterleaved(a1.add(b1), w4r, w4i, ret, j + dj4);
-        multiplyAndStoreInterleaved(a2.sub(b2), w5r, w5i, ret, j + dj5);
+        DoubleVector
+            x1 = a1.sub(b1),
+            x2 = a2.add(b2),
+            x3 = a0.sub(b0),
+            x4 = a1.add(b1),
+            x5 = a2.sub(b2);
+        w1r.mul(x1).add(w1i.mul(x1).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj);
+        w2r.mul(x2).add(w2i.mul(x2).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj2);
+        w3r.mul(x3).add(w3i.mul(x3).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj3);
+        w4r.mul(x4).add(w4i.mul(x4).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj4);
+        w5r.mul(x5).add(w5i.mul(x5).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj5);
       }
     }
   }
@@ -300,18 +308,18 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
       final DoubleVector
-          z0r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-          z1r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
-          z2r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
-          z3r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
-          z4r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
-          z5r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5),
-          z0i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + im),
-          z1i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di + im),
-          z2i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2 + im),
-          z3i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3 + im),
-          z4i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4 + im),
-          z5i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5 + im);
+          z0r = fromArray(DOUBLE_SPECIES, data, i),
+          z1r = fromArray(DOUBLE_SPECIES, data, i + di),
+          z2r = fromArray(DOUBLE_SPECIES, data, i + di2),
+          z3r = fromArray(DOUBLE_SPECIES, data, i + di3),
+          z4r = fromArray(DOUBLE_SPECIES, data, i + di4),
+          z5r = fromArray(DOUBLE_SPECIES, data, i + di5),
+          z0i = fromArray(DOUBLE_SPECIES, data, i + im),
+          z1i = fromArray(DOUBLE_SPECIES, data, i + di + im),
+          z2i = fromArray(DOUBLE_SPECIES, data, i + di2 + im),
+          z3i = fromArray(DOUBLE_SPECIES, data, i + di3 + im),
+          z4i = fromArray(DOUBLE_SPECIES, data, i + di4 + im),
+          z5i = fromArray(DOUBLE_SPECIES, data, i + di5 + im);
       final DoubleVector
           ta1r = z2r.add(z4r),
           ta1i = z2i.add(z4i),
@@ -355,30 +363,30 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final double[] twids = twiddles[k];
       DoubleVector
-          w1r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[1]),
-          w2r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[3]),
-          w3r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[5]),
-          w4r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[7]),
-          w5r = DoubleVector.broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = DoubleVector.broadcast(DOUBLE_SPECIES, -sign * twids[9]);
+          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
+          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]),
+          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
+          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]),
+          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
+          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]),
+          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
+          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]),
+          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
+          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
         final DoubleVector
-            z0r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i),
-            z1r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di),
-            z2r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2),
-            z3r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3),
-            z4r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4),
-            z5r = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5),
-            z0i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + im),
-            z1i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di + im),
-            z2i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di2 + im),
-            z3i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di3 + im),
-            z4i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di4 + im),
-            z5i = DoubleVector.fromArray(DOUBLE_SPECIES, data, i + di5 + im);
+            z0r = fromArray(DOUBLE_SPECIES, data, i),
+            z1r = fromArray(DOUBLE_SPECIES, data, i + di),
+            z2r = fromArray(DOUBLE_SPECIES, data, i + di2),
+            z3r = fromArray(DOUBLE_SPECIES, data, i + di3),
+            z4r = fromArray(DOUBLE_SPECIES, data, i + di4),
+            z5r = fromArray(DOUBLE_SPECIES, data, i + di5),
+            z0i = fromArray(DOUBLE_SPECIES, data, i + im),
+            z1i = fromArray(DOUBLE_SPECIES, data, i + di + im),
+            z2i = fromArray(DOUBLE_SPECIES, data, i + di2 + im),
+            z3i = fromArray(DOUBLE_SPECIES, data, i + di3 + im),
+            z4i = fromArray(DOUBLE_SPECIES, data, i + di4 + im),
+            z5i = fromArray(DOUBLE_SPECIES, data, i + di5 + im);
         final DoubleVector
             ta1r = z2r.add(z4r),
             ta1i = z2i.add(z4i),
@@ -406,11 +414,22 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
             b2i = tb2i.sub(tb3r);
         a0r.add(b0r).intoArray(ret, j);
         a0i.add(b0i).intoArray(ret, j + im);
-        multiplyAndStoreBlocked(a1r.sub(b1r), a1i.sub(b1i), w1r, w1i, ret, j + dj, j + dj + im);
-        multiplyAndStoreBlocked(a2r.add(b2r), a2i.add(b2i), w2r, w2i, ret, j + dj2, j + dj2 + im);
-        multiplyAndStoreBlocked(a0r.sub(b0r), a0i.sub(b0i), w3r, w3i, ret, j + dj3, j + dj3 + im);
-        multiplyAndStoreBlocked(a1r.add(b1r), a1i.add(b1i), w4r, w4i, ret, j + dj4, j + dj4 + im);
-        multiplyAndStoreBlocked(a2r.sub(b2r), a2i.sub(b2i), w5r, w5i, ret, j + dj5, j + dj5 + im);
+        DoubleVector
+            x1r = a1r.sub(b1r), x1i = a1i.sub(b1i),
+            x2r = a2r.add(b2r), x2i = a2i.add(b2i),
+            x3r = a0r.sub(b0r), x3i = a0i.sub(b0i),
+            x4r = a1r.add(b1r), x4i = a1i.add(b1i),
+            x5r = a2r.sub(b2r), x5i = a2i.sub(b2i);
+        w1r.mul(x1r).add(w1i.neg().mul(x1i)).intoArray(ret, j + dj);
+        w2r.mul(x2r).add(w2i.neg().mul(x2i)).intoArray(ret, j + dj2);
+        w3r.mul(x3r).add(w3i.neg().mul(x3i)).intoArray(ret, j + dj3);
+        w4r.mul(x4r).add(w4i.neg().mul(x4i)).intoArray(ret, j + dj4);
+        w5r.mul(x5r).add(w5i.neg().mul(x5i)).intoArray(ret, j + dj5);
+        w1r.mul(x1i).add(w1i.mul(x1r)).intoArray(ret, j + dj + im);
+        w2r.mul(x2i).add(w2i.mul(x2r)).intoArray(ret, j + dj2 + im);
+        w3r.mul(x3i).add(w3i.mul(x3r)).intoArray(ret, j + dj3 + im);
+        w4r.mul(x4i).add(w4i.mul(x4r)).intoArray(ret, j + dj4 + im);
+        w5r.mul(x5i).add(w5i.mul(x5r)).intoArray(ret, j + dj5 + im);
       }
     }
   }
