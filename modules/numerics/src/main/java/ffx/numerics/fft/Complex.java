@@ -194,10 +194,10 @@ public class Complex {
     // Setting this value higher than one reverts to scalar operations for short inner loop lengths.
     if (im == 1) {
       // Interleaved data.
-      minSIMDLoopLength = 1;
+      minSIMDLoopLength = MixedRadixFactor.LENGTH / 2;
     } else {
       // Blocked data.
-      minSIMDLoopLength = 2;
+      minSIMDLoopLength = MixedRadixFactor.LENGTH;
     }
     String loop = System.getProperty("fft.minLoop", Integer.toString(minSIMDLoopLength));
     try {
@@ -206,10 +206,10 @@ public class Complex {
       logger.info(" Invalid value for fft.minLoop: " + loop);
       if (im == 1) {
         // Interleaved data.
-        minSIMDLoopLength = 1;
+        minSIMDLoopLength = MixedRadixFactor.LENGTH / 2;
       } else {
         // Blocked data.
-        minSIMDLoopLength = 2;
+        minSIMDLoopLength = MixedRadixFactor.LENGTH;
       }
     }
 

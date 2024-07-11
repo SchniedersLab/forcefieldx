@@ -56,7 +56,6 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
   private final int dj3;
   private final int dj4;
   private final int dj5;
-  private double tau;
 
   public MixedRadixFactor6(PassConstants passConstants) {
     super(passConstants);
@@ -70,17 +69,17 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     dj5 = 5 * dj;
   }
 
-  @Override
-  protected void initRadixSpecificConstants() {
-    tau = sign * sqrt3_2;
-  }
-
   /**
    * Handle factors of 6.
    */
   @Override
-  protected void passScalar() {
-
+  protected void passScalar(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
       final double z0r = data[i];
@@ -198,20 +197,20 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
    * Handle factors of 6 using SIMD vectors.
    */
   @Override
-  protected void passSIMD() {
+  protected void passSIMD(PassData passData) {
     if (im == 1) {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        interleaved();
+        interleaved(passData);
       }
     } else {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % BLOCK_LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        blocked();
+        blocked(passData);
       }
     }
   }
@@ -219,7 +218,13 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
   /**
    * Handle factors of 6.
    */
-  private void interleaved() {
+  private void interleaved(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
       DoubleVector
@@ -304,7 +309,13 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
   /**
    * Handle factors of 6.
    */
-  private void blocked() {
+  private void blocked(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
       final DoubleVector

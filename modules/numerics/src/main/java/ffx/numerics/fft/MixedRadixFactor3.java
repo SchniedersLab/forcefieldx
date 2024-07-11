@@ -52,7 +52,6 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   private static final double sqrt3_2 = sqrt(3.0) / 2.0;
   private final int di2;
   private final int dj2;
-  private double tau;
 
   public MixedRadixFactor3(PassConstants passConstants) {
     super(passConstants);
@@ -60,16 +59,17 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     dj2 = 2 * dj;
   }
 
-  @Override
-  protected void initRadixSpecificConstants() {
-    tau = sign * sqrt3_2;
-  }
-
   /**
    * Handle factors of 3.
    */
   @Override
-  protected void passScalar() {
+  protected void passScalar(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
       final double z0_r = data[i];
@@ -120,29 +120,29 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   }
 
   /**
-   * Handle factors of 2 using SIMD vectors.
+   * Handle factors of 3 using SIMD vectors.
    */
   @Override
-  protected void passSIMD() {
+  protected void passSIMD(PassData passData) {
     if (im == 1) {
-      interleaved();
+      interleaved(passData);
     } else {
-      blocked();
+      blocked(passData);
     }
   }
 
-  private void interleaved() {
+  private void interleaved(PassData passData) {
     if (innerLoopLimit % LOOP == 0) {
       // Use the preferred SIMD vector.
       switch (LENGTH) {
         case 2:
-          interleaved128();
+          interleaved128(passData);
           break;
         case 4:
-          interleaved256();
+          interleaved256(passData);
           break;
         case 8:
-          interleaved512();
+          interleaved512(passData);
           break;
       }
     } else {
@@ -150,15 +150,15 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
       switch (innerLoopLimit) {
         case 1:
           // 1 Complex
-          interleaved128();
+          interleaved128(passData);
           break;
         case 2:
           // 2 Complex
-          interleaved256();
+          interleaved256(passData);
           break;
         case 4:
           // 4 Complex
-          interleaved512();
+          interleaved512(passData);
           break;
         default:
           throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
@@ -166,18 +166,18 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     }
   }
 
-  private void blocked() {
+  private void blocked(PassData passData) {
     if (innerLoopLimit % BLOCK_LOOP == 0) {
       // The preferred SIMD vector length is a multiple of the inner loop limit and can be used.
       switch (LENGTH) {
         case 2:
-          blocked128();
+          blocked128(passData);
           break;
         case 4:
-          blocked256();
+          blocked256(passData);
           break;
         case 8:
-          blocked512();
+          blocked512(passData);
           break;
       }
     } else {
@@ -185,19 +185,19 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
       switch (innerLoopLimit) {
         case 1:
           // Use the scalar method.
-          passScalar();
+          passScalar(passData);
           break;
         case 2:
           // 2 Real and 2 Imaginary per loop iteration.
-          blocked128();
+          blocked128(passData);
           break;
         case 4:
           // 4 Real and 4 Imaginary per loop iteration.
-          blocked256();
+          blocked256(passData);
           break;
         case 8:
           // 8 Real and 8 Imaginary per loop iteration.
-          blocked512();
+          blocked512(passData);
           break;
         default:
           throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
@@ -208,7 +208,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 128-bit SIMD vectors.
    */
-  private void blocked128() {
+  private void blocked128(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
       final DoubleVector
@@ -272,7 +278,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 256-bit SIMD vectors.
    */
-  private void blocked256() {
+  private void blocked256(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       final DoubleVector
@@ -336,7 +348,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 512-bit SIMD vectors.
    */
-  private void blocked512() {
+  private void blocked512(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
       final DoubleVector
@@ -400,7 +418,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 128-bit SIMD vectors.
    */
-  private void interleaved128() {
+  private void interleaved128(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_128, i += LENGTH_128, j += LENGTH_128) {
       DoubleVector
@@ -447,7 +471,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 256-bit SIMD vectors.
    */
-  private void interleaved256() {
+  private void interleaved256(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       DoubleVector
@@ -493,7 +523,13 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
   /**
    * Handle factors of 3 using the 512-bit SIMD vectors.
    */
-  private void interleaved512() {
+  private void interleaved512(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double tau = sign * sqrt3_2;
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_512, i += LENGTH_512, j += LENGTH_512) {
       DoubleVector

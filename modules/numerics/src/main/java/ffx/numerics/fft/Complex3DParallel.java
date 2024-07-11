@@ -227,14 +227,14 @@ public class Complex3DParallel {
       complexDoubleFFT3D.fft(data);
       complexDoubleFFT3D.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
+      System.out.printf("Sequential: %9.6f%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
       time = System.nanoTime();
       complexDoubleFFT3D.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.printf("Sequential: %8.3f (Convolution)%n", toSeconds * time);
+      System.out.printf("Sequential: %9.6f (Convolution)%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
@@ -242,20 +242,20 @@ public class Complex3DParallel {
       parallelComplexDoubleFFT3D.fft(data);
       parallelComplexDoubleFFT3D.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.printf("Parallel:   %8.3f%n", toSeconds * time);
+      System.out.printf("Parallel:   %9.6f%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
       time = System.nanoTime();
       parallelComplexDoubleFFT3D.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.printf("Parallel:   %8.3f (Convolution)\n%n", toSeconds * time);
+      System.out.printf("Parallel:   %9.6f (Convolution)\n%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
     }
-    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
-    System.out.printf("Best Parallel Time:    %8.3f%n", toSeconds * parTime);
+    System.out.printf("Best Sequential Time:  %9.6f%n", toSeconds * seqTime);
+    System.out.printf("Best Parallel Time:    %9.6f%n", toSeconds * parTime);
     System.out.printf("Speedup: %15.5f%n", (double) seqTime / parTime);
     parallelTeam.shutdown();
   }

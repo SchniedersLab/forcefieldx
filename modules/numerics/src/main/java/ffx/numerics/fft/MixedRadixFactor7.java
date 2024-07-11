@@ -61,6 +61,7 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   private static final double v2 = (2.0 * c1 - c2 - c3) * oneThird;
   private static final double v3 = (c1 - 2.0 * c2 + c3) * oneThird;
   private static final double v4 = (c1 + c2 - 2.0 * c3) * oneThird;
+
   private final int di2;
   private final int di3;
   private final int di4;
@@ -71,13 +72,6 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   private final int dj4;
   private final int dj5;
   private final int dj6;
-  private double s1;
-  private double s2;
-  private double s3;
-  private double v5;
-  private double v6;
-  private double v7;
-  private double v8;
 
   public MixedRadixFactor7(PassConstants passConstants) {
     super(passConstants);
@@ -93,21 +87,22 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
     dj6 = 6 * dj;
   }
 
-  @Override
-  protected void initRadixSpecificConstants() {
-    s1 = (-sign) * sin2PI_7;
-    s2 = (-sign) * sin4PI_7;
-    s3 = (-sign) * sin6PI_7;
-    v5 = (s1 + s2 - s3) * oneThird;
-    v6 = (2.0 * s1 - s2 + s3) * oneThird;
-    v7 = (s1 - 2.0 * s2 - s3) * oneThird;
-    v8 = (s1 + s2 + 2.0 * s3) * oneThird;
-  }
-
   /**
    * Handle factors of 7.
    */
-  protected void passScalar() {
+  protected void passScalar(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double s1 = (-sign) * sin2PI_7;
+    final double s2 = (-sign) * sin4PI_7;
+    final double s3 = (-sign) * sin6PI_7;
+    final double v5 = (s1 + s2 - s3) * oneThird;
+    final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+    final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+    final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
     // First pass of the 7-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
       final double z0r = data[i];
@@ -306,20 +301,20 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
    * Handle factors of 6 using SIMD vectors.
    */
   @Override
-  protected void passSIMD() {
+  protected void passSIMD(PassData passData) {
     if (im == 1) {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        interleaved();
+        interleaved(passData);
       }
     } else {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % BLOCK_LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        blocked();
+        blocked(passData);
       }
     }
   }
@@ -327,7 +322,19 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   /**
    * Handle factors of 7.
    */
-  private void interleaved() {
+  private void interleaved(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double s1 = (-sign) * sin2PI_7;
+    final double s2 = (-sign) * sin4PI_7;
+    final double s3 = (-sign) * sin6PI_7;
+    final double v5 = (s1 + s2 - s3) * oneThird;
+    final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+    final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+    final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
     // First pass of the 7-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
       DoubleVector
@@ -459,7 +466,19 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   /**
    * Handle factors of 7.
    */
-  private void blocked() {
+  private void blocked(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    final int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double s1 = (-sign) * sin2PI_7;
+    final double s2 = (-sign) * sin4PI_7;
+    final double s3 = (-sign) * sin6PI_7;
+    final double v5 = (s1 + s2 - s3) * oneThird;
+    final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+    final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+    final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
     // First pass of the 7-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
       final DoubleVector

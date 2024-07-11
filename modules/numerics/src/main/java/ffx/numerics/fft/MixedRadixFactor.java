@@ -252,11 +252,13 @@ public abstract class MixedRadixFactor {
    */
   protected final int jstep;
 
-  protected double[] data;
-  protected double[] ret;
-  protected int sign;
-  protected int i;
-  protected int j;
+  /*
+    data = passData.in();
+    ret = passData.out();
+    sign = passData.sign();
+    i = passData.inOffset();
+    j = passData.outOffset();
+   */
 
   private boolean useSIMD = false;
   private int minSIMDLoopLength = 1;
@@ -292,35 +294,22 @@ public abstract class MixedRadixFactor {
    * @param passData the pass data.
    */
   protected void pass(PassData passData) {
-    data = passData.in();
-    ret = passData.out();
-    sign = passData.sign();
-    i = passData.inOffset();
-    j = passData.outOffset();
-    initRadixSpecificConstants();
     if (useSIMD && innerLoopLimit >= minSIMDLoopLength) {
-      passSIMD();
+      passSIMD(passData);
     } else {
-      passScalar();
+      passScalar(passData);
     }
-  }
-
-  /**
-   * Initialize radix factor specific constants.
-   */
-  protected void initRadixSpecificConstants() {
-    // Override this method to initialize any constants specific to the radix factor.
   }
 
   /**
    * Apply the mixed radix factor using scalar operations.
    */
-  protected abstract void passScalar();
+  protected abstract void passScalar(PassData passData);
 
   /**
    * Apply the mixed radix factor using SIMD operations.
    */
-  protected abstract void passSIMD();
+  protected abstract void passSIMD(PassData passData);
 
   /**
    * Minimum SIMD inner loop length.

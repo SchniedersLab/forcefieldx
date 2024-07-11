@@ -59,8 +59,6 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
   private final int dj3;
   private final int dj4;
   private final double tau = sqrt5_4;
-  private double sin2PI_5s;
-  private double sinPI_5s;
 
   public MixedRadixFactor5(PassConstants passConstants) {
     super(passConstants);
@@ -72,17 +70,18 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
     dj4 = 4 * dj;
   }
 
-  @Override
-  protected void initRadixSpecificConstants() {
-    sin2PI_5s = sign * sin2PI_5;
-    sinPI_5s = sign * sinPI_5;
-  }
-
   /**
    * Handle factors of 5.
    */
   @Override
-  protected void passScalar() {
+  protected void passScalar(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double sin2PI_5s = sign * sin2PI_5;
+    final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
       final double z0r = data[i];
@@ -189,20 +188,20 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
    * Handle factors of 5 using SIMD vectors.
    */
   @Override
-  protected void passSIMD() {
+  protected void passSIMD(PassData passData) {
     if (im == 1) {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        interleaved();
+        interleaved(passData);
       }
     } else {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % BLOCK_LOOP != 0) {
-        passScalar();
+        passScalar(passData);
       } else {
-        blocked();
+        blocked(passData);
       }
     }
   }
@@ -211,7 +210,14 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
   /**
    * Handle factors of 5.
    */
-  protected void interleaved() {
+  protected void interleaved(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double sin2PI_5s = sign * sin2PI_5;
+    final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
       DoubleVector
@@ -287,7 +293,14 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
   /**
    * Handle factors of 5.
    */
-  protected void blocked() {
+  protected void blocked(PassData passData) {
+    final double[] data = passData.in();
+    final double[] ret = passData.out();
+    int sign = passData.sign();
+    int i = passData.inOffset();
+    int j = passData.outOffset();
+    final double sin2PI_5s = sign * sin2PI_5;
+    final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
       final DoubleVector
