@@ -618,6 +618,14 @@ public class Complex3DParallel {
     complexDoubleFFT3D.setRecip(work);
     parallelComplexDoubleFFT3D.setRecip(work);
 
+    // Warm-up
+    System.out.println("Warm Up Sequential FFT");
+    complexDoubleFFT3D.fft(data);
+    System.out.println("Warm Up Sequential IFFT");
+    complexDoubleFFT3D.ifft(data);
+    System.out.println("Warm Up Sequential Convolution");
+    complexDoubleFFT3D.convolution(data);
+
     for (int i = 0; i < reps; i++) {
       System.out.printf(" Iteration %d%n", i + 1);
       long time = System.nanoTime();
@@ -636,6 +644,14 @@ public class Complex3DParallel {
         seqTimeConv = time;
       }
     }
+
+    // Warm-up
+    System.out.println("Warm up Parallel FFT");
+    parallelComplexDoubleFFT3D.fft(data);
+    System.out.println("Warm up Parallel IFFT");
+    parallelComplexDoubleFFT3D.ifft(data);
+    System.out.println("Warm up Parallel Convolution");
+    parallelComplexDoubleFFT3D.convolution(data);
 
     for (int i = 0; i < reps; i++) {
       System.out.printf(" Iteration %d%n", i + 1);
