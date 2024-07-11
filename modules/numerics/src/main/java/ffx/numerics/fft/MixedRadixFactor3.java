@@ -146,6 +146,12 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           break;
       }
     } else {
+      // If the inner loop limit is odd, use the scalar method unless our inner loop limit is 1.
+      if (innerLoopLimit % 2 != 0 && innerLoopLimit != 1) {
+        passScalar(passData);
+        return;
+      }
+
       // If the inner loop limit is not divisible by the loop increment, use largest SIMD vector that fits.
       switch (innerLoopLimit) {
         case 1:
@@ -161,7 +167,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           interleaved512(passData);
           break;
         default:
-          throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
+          // This should never happen.
+          throw new IllegalArgumentException(" Invalid inner loop limit: " + innerLoopLimit);
       }
     }
   }
@@ -181,12 +188,14 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           break;
       }
     } else {
-      // If the inner loop limit is not divisible by the preferred loop increment, use largest SIMD vector that fits.
+      // If the inner loop limit is odd, use the scalar method.
+      if (innerLoopLimit % 2 != 0) {
+        passScalar(passData);
+        return;
+      }
+
+      // Fall back to a smaller SIMD vector that fits the inner loop limit.
       switch (innerLoopLimit) {
-        case 1:
-          // Use the scalar method.
-          passScalar(passData);
-          break;
         case 2:
           // 2 Real and 2 Imaginary per loop iteration.
           blocked128(passData);
@@ -195,12 +204,9 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           // 4 Real and 4 Imaginary per loop iteration.
           blocked256(passData);
           break;
-        case 8:
-          // 8 Real and 8 Imaginary per loop iteration.
-          blocked512(passData);
-          break;
         default:
-          throw new IllegalStateException(" Unsupported inner loop limit: " + innerLoopLimit);
+          // This should never happen.
+          throw new IllegalArgumentException(" Invalid inner loop limit: " + innerLoopLimit);
       }
     }
   }

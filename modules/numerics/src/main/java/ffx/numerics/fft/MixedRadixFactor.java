@@ -252,14 +252,6 @@ public abstract class MixedRadixFactor {
    */
   protected final int jstep;
 
-  /*
-    data = passData.in();
-    ret = passData.out();
-    sign = passData.sign();
-    i = passData.inOffset();
-    j = passData.outOffset();
-   */
-
   private boolean useSIMD = false;
   private int minSIMDLoopLength = 1;
 
