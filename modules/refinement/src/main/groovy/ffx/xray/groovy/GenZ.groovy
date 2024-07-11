@@ -135,6 +135,7 @@ class GenZ extends AlgorithmsScript {
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
         potentialEnergy = activeAssembly.getPotentialEnergy()
         forceField = activeAssembly.getForceField()
+
         if(forceField == null){
             logger.info("This force field is null")
         }
@@ -144,7 +145,6 @@ class GenZ extends AlgorithmsScript {
         List<Residue> titrateResidues = new ArrayList<>()
 
         //Prepare variables for saving out the highest population rotamers (optimal rotamers)
-        int[] optimalRotamers
         Set<Atom> excludeAtoms = new HashSet<>()
         boolean isTitrating = false
 
@@ -154,21 +154,25 @@ class GenZ extends AlgorithmsScript {
             xrayOptions.refinementMode = RefinementMinimize.RefinementMode.COORDINATES
         }
 
-        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
-        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
-        double[] boltzmannWeights = new double[1]
-        double[] offsets = new double[1]
-        double[][] populationArray = new double[1][55]
-        double[][] titrateBoltzmann
-        double[] protonationBoltzmannSums
-        double totalBoltzmann = 0
-        List<Residue> residueList = activeAssembly.getResidueList()
-
         // Collect residues to optimize.
         List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
         if (residues == null || residues.isEmpty()) {
             logger.info(" There are no residues in the active system to optimize.")
             return this
+        }
+
+        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
+        List<String> titratableResiudesList = Arrays.asList(titratableResidues)
+        double[] boltzmannWeights = new double[1]
+        double[] offsets = new double[1]
+        double[][] titrateBoltzmann
+        double[] protonationBoltzmannSums
+        double totalBoltzmann = 0
+        List<Residue> residueList = activeAssembly.getResidueList()
+
+        List<Integer> residueNumber = new ArrayList<>()
+        for (Residue residue : residueList) {
+            residueNumber.add(residue.getResidueNumber())
         }
 
         // Application of rotamers uses side-chain atom naming from the PDB.
@@ -196,7 +200,7 @@ class GenZ extends AlgorithmsScript {
 
         // Load parsed X-ray properties.
         xrayOptions.setProperties(parseResult, properties)
-
+        molecularAssemblies = [activeAssembly]
         // Set up the diffraction data, which could be multiple files.
         DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
         refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
@@ -210,31 +214,31 @@ class GenZ extends AlgorithmsScript {
             lambdaInterface.setLambda(lambda)
         }
 
+
         RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
+        manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
         rotamerOptimization.setPrintFiles(printFiles)
         rotamerOptimization.setWriteEnergyRestart(printFiles)
         rotamerOptimization.setPHRestraint(pHRestraint)
         rotamerOptimization.setOnlyProtons(onlyProtons)
         rotamerOptimization.setpH(titrationPH)
-
-        manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
         double[] x = new double[refinementEnergy.getNumberOfVariables()]
         x = refinementEnergy.getCoordinates(x)
         double e = refinementEnergy.energy(x, true)
         logger.info(format("\n Initial target energy: %16.8f ", e))
 
-
-        RotamerLibrary.measureRotamers(residueList, false)
-
-        rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
-
         selectedResidues = rotamerOptimization.getResidues()
+        rotamerOptimization.initFraction(selectedResidues)
+
+        RotamerLibrary.measureRotamers(selectedResidues, false)
+
+        rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(selectedResidues.size()))
 
         int[] currentRotamers = new int[selectedResidues.size()]
 
         //Calculate possible permutations for assembly
         rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+
         if(pKa){
             rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
         }
@@ -245,12 +249,12 @@ class GenZ extends AlgorithmsScript {
         offsets = rotamerOptimization.getRefEnergy()
 
         //Calculate the populations for the all residue rotamers
-        populationArray = rotamerOptimization.getFraction()
+        double[][] populationArray = rotamerOptimization.getFraction()
 
-        optimalRotamers = rotamerOptimization.getOptimumRotamers()
-        if (manyBodyOptions.getTitration()) {
-            isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
-        }
+        //optimalRotamers = rotamerOptimization.getOptimumRotamers()
+        //if (manyBodyOptions.getTitration()) {
+        //    isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
+        //}
 
         FileWriter fileWriter = new FileWriter("populations.txt")
         int residueIndex = 0
@@ -279,22 +283,50 @@ class GenZ extends AlgorithmsScript {
         }
 
         File structureFile = new File(filename)
+        List<String> rotNames = new ArrayList<>()
+        int[] optimalRotamers = new int[selectedResidues.size()]
         int assemblyIndex = 0
         for(int confIndex=2; confIndex > -1; confIndex--){
+            List<Residue> conformerResidueList = new ArrayList<>()
             MolecularAssembly conformerAssembly = algorithmFunctions.open(filename)
+            if(manyBodyOptions.getTitration()){
+                logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+
+                // Collect residue numbers.
+                List<Integer> resNumberList = new ArrayList<>()
+                for (Residue residue : residues) {
+                    resNumberList.add(residue.getResidueNumber())
+                }
+
+                // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
+                titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+                        resNumberList, titrationPH)
+                conformerAssembly = titrationManyBody.getProtonatedAssembly()
+                potentialEnergy = conformerAssembly.getPotentialEnergy()
+            }
             for(int resIndex = 0; resIndex < selectedResidues.size(); resIndex++){
                 Residue residueSelect = selectedResidues.get(resIndex)
                 String resChainNum = String.valueOf(residueSelect.getChainID()) + String.valueOf(residueSelect.getResidueNumber())
                 int index = residueChainNum.indexOf(resChainNum)
                 Residue residue = conformerAssembly.getResidueList().get(index)
+                conformerResidueList.add(residue)
                 residue.setRotamers(manyBodyOptions.getRotamerLibrary(true))
                 Rotamer[] rotamers = residue.getRotamers()
                 int rotIndex = conformers[resIndex][confIndex]
                 if(populationArray[resIndex][rotIndex]  != 0){
+                    optimalRotamers[resIndex] = rotIndex
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
-                        for(Atom atom: residue.getAtomList()){
-                            if(!residue.getBackboneAtoms().contains(atom)){
-                                double occupancy = populationArray[resIndex][rotIndex]
+                    double occupancy = populationArray[resIndex][rotIndex]
+                    boolean diffStates = false
+                    if(confIndex < 2 && occupancy != 0 && !rotNames.get(resIndex).contains(residue.getRotamer().getName())){
+                        diffStates = true
+                        String newString = rotNames.get(resIndex) + residue.getRotamer().getName()
+                        rotNames.set(resIndex, newString)
+                    } else {
+                        rotNames.add(residue.getRotamer().getName())
+                    }
+                    for(Atom atom: residue.getAtomList()){
+                            if(!residue.getBackboneAtoms().contains(atom) || diffStates){
                                 if(occupancy == 1){
                                     atom.setOccupancy(occupancy)
                                     atom.setAltLoc(' ' as Character)
@@ -306,11 +338,14 @@ class GenZ extends AlgorithmsScript {
                                 atom.setOccupancy(1.0)
                                 atom.setAltLoc(' ' as Character)
                             }
-                        }
+                    }
                 }
 
             }
+
             conformerAssemblies[assemblyIndex] = conformerAssembly
+            titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, conformerAssemblies[assemblyIndex], conformerResidueList, manyBodyOptions)
+            excludeAtoms.addAll(titrationManyBody.getExcludeAtoms())
             assemblyIndex++
         }
 

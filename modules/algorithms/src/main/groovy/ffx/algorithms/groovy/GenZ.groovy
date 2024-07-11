@@ -151,8 +151,6 @@ class GenZ extends AlgorithmsScript {
             setActiveAssembly(getActiveAssembly(unfoldedFileName))
         }
 
-        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
-        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
         double[][] populationArray = new double[1][55]

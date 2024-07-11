@@ -42,6 +42,10 @@ class GenZ extends AlgorithmsScript  {
             description = "Write to an energy restart file and ensemble file.")
     private boolean printFiles = false
 
+    @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
+            description = "Calculating protonation populations for pKa shift.")
+    private boolean pKa = false
+
     /**
      * One or more filenames.
      */
@@ -133,7 +137,6 @@ class GenZ extends AlgorithmsScript  {
         List<Residue> titrateResidues = new ArrayList<>()
 
         //Prepare variables for saving out the highest population rotamers (optimal rotamers)
-        int[] optimalRotamers
         Set<Atom> excludeAtoms = new HashSet<>()
         boolean isTitrating = false
 
@@ -177,8 +180,9 @@ class GenZ extends AlgorithmsScript  {
             setActiveAssembly(protonatedAssembly)
             potentialEnergy = protonatedAssembly.getPotentialEnergy()
         }
-
+        molecularAssemblies = [activeAssembly]
         refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+
 
         if (lambdaTerm) {
             alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
@@ -203,16 +207,22 @@ class GenZ extends AlgorithmsScript  {
         double e = refinementEnergy.energy(x, true)
         logger.info(format("\n Initial target energy: %16.8f ", e))
 
+        selectedResidues = rotamerOptimization.getResidues()
+        rotamerOptimization.initFraction(selectedResidues)
+
         RotamerLibrary.measureRotamers(residueList, false)
 
         rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
 
-        selectedResidues = rotamerOptimization.getResidues()
+
 
         int[] currentRotamers = new int[selectedResidues.size()]
 
         //Calculate possible permutations for assembly
         rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+        if(pKa){
+            rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+        }
 
         //Collect the Bolztmann weights and calculated offset of each assembly
         boltzmannWeights = rotamerOptimization.getTotalBoltzmann()
@@ -221,84 +231,16 @@ class GenZ extends AlgorithmsScript  {
         //Calculate the populations for the all residue rotamers
         populationArray = rotamerOptimization.getFraction()
 
-        optimalRotamers = rotamerOptimization.getOptimumRotamers()
-        if (manyBodyOptions.getTitration()) {
-            isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
-        }
-
         FileWriter fileWriter = new FileWriter("populations.txt")
         int residueIndex = 0
         for (Residue residue : selectedResidues) {
             fileWriter.write("\n")
-            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-            double protSum = 0
-            double deprotSum = 0
-            double tautomerSum = 0
             Rotamer[] rotamers = residue.getRotamers()
             for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
                 String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
                 fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
                         rotamers[rotIndex].toString() + "\t" + rotPop + "\n")
-                if (manyBodyOptions.titration) {
-                    switch (rotamers[rotIndex].getName()) {
-                        case "HIS":
-                        case "LYS":
-                        case "GLH":
-                        case "ASH":
-                        case "CYS":
-                            protSum += populationArray[residueIndex][rotIndex]
-                            break
-                        case "HIE":
-                        case "LYD":
-                        case "GLU":
-                        case "ASP":
-                        case "CYD":
-                            deprotSum += populationArray[residueIndex][rotIndex]
-                            break
-                        case "HID":
-                            tautomerSum += populationArray[residueIndex][rotIndex]
-                            break
-                        default:
-                            break
-                    }
-                }
 
-            }
-            if (manyBodyOptions.titration){
-                String formatedProtSum = format("%.6f", protSum)
-                String formatedDeprotSum = format("%.6f", deprotSum)
-                String formatedTautomerSum = format("%.6f", tautomerSum)
-                switch (residue.getName()) {
-                    case "HIS":
-                    case "HIE":
-                    case "HID":
-                        logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
-                                "HIE" + "\t" + formatedDeprotSum + "\t" +
-                                "HID" + "\t" + formatedTautomerSum)
-                        break
-                    case "LYS":
-                    case "LYD":
-                        logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
-                                "LYD" + "\t" + formatedDeprotSum)
-                        break
-                    case "ASH":
-                    case "ASP":
-                        logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
-                                "ASH" + "\t" + formatedProtSum)
-                        break
-                    case "GLH":
-                    case "GLU":
-                        logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
-                                "GLH" + "\t" + formatedProtSum)
-                        break
-                    case "CYS":
-                    case "CYD":
-                        logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
-                                "CYD" + "\t" + formatedDeprotSum)
-                        break
-                    default:
-                        break
-                }
             }
             residueIndex += 1
         }
@@ -315,22 +257,50 @@ class GenZ extends AlgorithmsScript  {
         }
 
         File structureFile = new File(filename)
+        List<String> rotNames = new ArrayList<>()
+        int[] optimalRotamers = new int[selectedResidues.size()]
         int assemblyIndex = 0
         for(int confIndex=2; confIndex > -1; confIndex--){
+            List<Residue> conformerResidueList = new ArrayList<>()
             MolecularAssembly conformerAssembly = algorithmFunctions.open(filename)
+            if(manyBodyOptions.getTitration()){
+                logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+
+                // Collect residue numbers.
+                List<Integer> resNumberList = new ArrayList<>()
+                for (Residue residue : residues) {
+                    resNumberList.add(residue.getResidueNumber())
+                }
+
+                // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
+                titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+                        resNumberList, titrationPH)
+                conformerAssembly = titrationManyBody.getProtonatedAssembly()
+                potentialEnergy = conformerAssembly.getPotentialEnergy()
+            }
             for(int resIndex = 0; resIndex < selectedResidues.size(); resIndex++){
                 Residue residueSelect = selectedResidues.get(resIndex)
                 String resChainNum = String.valueOf(residueSelect.getChainID()) + String.valueOf(residueSelect.getResidueNumber())
                 int index = residueChainNum.indexOf(resChainNum)
                 Residue residue = conformerAssembly.getResidueList().get(index)
+                conformerResidueList.add(residue)
                 residue.setRotamers(manyBodyOptions.getRotamerLibrary(true))
                 Rotamer[] rotamers = residue.getRotamers()
                 int rotIndex = conformers[resIndex][confIndex]
                 if(populationArray[resIndex][rotIndex]  != 0){
+                    optimalRotamers[resIndex] = rotIndex
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
+                    double occupancy = populationArray[resIndex][rotIndex]
+                    boolean diffStates = false
+                    if(confIndex < 2 && occupancy != 0 && !rotNames.get(resIndex).contains(residue.getRotamer().getName())){
+                        diffStates = true
+                        String newString = rotNames.get(resIndex) + residue.getRotamer().getName()
+                        rotNames.set(resIndex, newString)
+                    } else {
+                        rotNames.add(residue.getRotamer().getName())
+                    }
                     for(Atom atom: residue.getAtomList()){
-                        if(!residue.getBackboneAtoms().contains(atom)){
-                            double occupancy = populationArray[resIndex][rotIndex]
+                        if(!residue.getBackboneAtoms().contains(atom) || diffStates){
                             if(occupancy == 1){
                                 atom.setOccupancy(occupancy)
                                 atom.setAltLoc(' ' as Character)
@@ -346,7 +316,10 @@ class GenZ extends AlgorithmsScript  {
                 }
 
             }
+
             conformerAssemblies[assemblyIndex] = conformerAssembly
+            titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, conformerAssemblies[assemblyIndex], conformerResidueList, manyBodyOptions)
+            excludeAtoms.addAll(titrationManyBody.getExcludeAtoms())
             assemblyIndex++
         }
 

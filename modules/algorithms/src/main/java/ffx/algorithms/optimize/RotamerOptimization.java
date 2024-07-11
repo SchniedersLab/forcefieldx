@@ -989,7 +989,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residueList a {@link java.util.List} object.
    */
     public void initFraction(List<Residue> residueList) {
-        fraction = new double[residueList.size()][55];
+        fraction = new double[residueList.size()][56];
         genZ = true;
     }
 
@@ -2427,7 +2427,7 @@ public class RotamerOptimization implements Terminatable {
      * @throws Exception too many permutations to continue
      */
     public void getFractions(Residue[] residues, int i, int[] currentRotamers) throws Exception {
-        populationBoltzmann = new double[residues.length][55];
+        populationBoltzmann = new double[residues.length][56];
 
         if(usingBoxOptimization){
             logger.info("Do this for box optimzation");
@@ -2435,7 +2435,7 @@ public class RotamerOptimization implements Terminatable {
             partitionFunction(residues, i, currentRotamers);
             optimum = new int[residues.length];
             for (int m = 0; m < fraction.length; m++) {
-                for (int n = 0; n < 55; n++) {
+                for (int n = 0; n < 56; n++) {
                     fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
                     if(n > 0 && fraction[m][n] > fraction[m][n-1]){
                         optimum[m] = n;
@@ -2460,12 +2460,12 @@ public class RotamerOptimization implements Terminatable {
      * @throws Exception too many permutations to continue
      */
     public void getFractions(Residue[] residues, int i, int[] currentRotamers, boolean usingBoxOptimization) throws Exception {
-        double [][] fractionSubset = new double[residues.length][55];
-        populationBoltzmann = new double[residues.length][55];
+        double [][] fractionSubset = new double[residues.length][56];
+        populationBoltzmann = new double[residues.length][56];
         partitionFunction(residues, i, currentRotamers);
         optimumSubset = new int[residues.length];
         for (int m = 0; m < fractionSubset.length; m++) {
-            for (int n = 0; n < 55; n++) {
+            for (int n = 0; n < 56; n++) {
                 fractionSubset[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
                 if(n > 0 && fractionSubset[m][n] > fractionSubset[m][n-1]){
                     optimumSubset[m] = n;
