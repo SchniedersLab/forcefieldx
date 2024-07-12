@@ -36,7 +36,7 @@ public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
         this.alpha2 = alpha2;
         this.operator = abs(alpha - alpha2) < 1e-5 ?
                 Operator.AMOEBA_PLUS_SYM_DAMP_FIELD : Operator.AMOEBA_PLUS_DAMP_FIELD;
-        assert (order <= 2); // Nuclear charge is a point charge
+        assert (order <= 3); // Nuclear charge is a point charge
     }
 
     /**

@@ -441,13 +441,13 @@ public abstract class MultipoleTensor {
     double energy = mK.Z*mI.Z/R;
 
     // Cores contract with multipole moments
-    multipoleIPotentialAtK(mI, 1);
+    multipoleIPotentialAtK(mI, 0);
     energy += mK.Z * E000;
     if (this.operator != Operator.AMOEBA_PLUS_SYM_DAMP_FIELD){
       // Generate tensor with alpha2 for term 2 -> Zi * T(damp)ij * Mj
       this.generateTensor();
     }
-    multipoleKPotentialAtI(mK, 1);
+    multipoleKPotentialAtI(mK, 0);
     energy += mI.Z * E000;
 
     return energy;
@@ -462,21 +462,21 @@ public abstract class MultipoleTensor {
     Gk[2] = -mK.Z * mI.Z * z * pow(R, -3);
 
     // Cores contract with multipole moments
-    multipoleIPotentialAtK(mI, 2);
+    multipoleIPotentialAtK(mI, 1);
     energy += mK.Z * E000;
-    multipoleKPotentialAtI(mI, 2); // Correct sign?
-    Gk[0] -= mK.Z * E100;// + 2 * mK.Z * (mI.dx*R200 + mI.dy*R110 + mI.dz*R101);
-    Gk[1] -= mK.Z * E010;
-    Gk[2] -= mK.Z * E001;
+    Gk[0] += mK.Z * E100;
+    Gk[1] += mK.Z * E010;
+    Gk[2] += mK.Z * E001;
     if (this.operator != Operator.AMOEBA_PLUS_SYM_DAMP_FIELD){
       // Generate tensor with alpha2 for term 2 -> Zi * T(damp)ij * Mj
       // R = |Rj - Ri| = Rji --> T(damp)ij != T(damp)ji after first order?
       this.generateTensor();
     }
-    multipoleKPotentialAtI(mK, 2);
+    multipoleKPotentialAtI(mK, 1);
     energy += mI.Z * E000;
-    Gk[0] -= mI.Z * E100 + 2 * mI.Z * (mK.dx*R200 + mK.dy*R110 + mK.dz*R101);
-    Gk[1] -= mI.Z * E010 + 2 * mI.Z * (mK.dx*R110 + mK.dy*R020 + mK.dz*R011);
+    // mI.Z * EXXX = derivative Gi[X], so flip sign
+    Gk[0] -= mI.Z * E100;
+    Gk[1] -= mI.Z * E010;
     Gk[2] -= mI.Z * E001;
 
     Gi[0] = -Gk[0];
@@ -570,6 +570,11 @@ public abstract class MultipoleTensor {
                                               double inductionMask, double energyMask, double mutualMask,
                                               double[] Gi, double[] Ti, double[] Tk) {
 
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q += mI.Z;
+      mK.q += mK.Z;
+    }
+
     // Add the induction and energy masks to create an "averaged" induced dipole (sx, sy, sz).
     mI.applyMasks(inductionMask, energyMask);
     mK.applyMasks(inductionMask, energyMask);
@@ -619,6 +624,11 @@ public abstract class MultipoleTensor {
     // Find the potential and its derivatives at I due to the averaged induced dipole at site k.
     dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
+
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q -= mI.Z;
+      mK.q -= mK.Z;
+    }
 
     return energy;
   }
