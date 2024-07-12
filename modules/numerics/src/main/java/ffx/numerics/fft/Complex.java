@@ -87,7 +87,16 @@ public class Complex {
    */
   private final int n;
   /**
-   * Offset to the imaginary part of the input (1 or n).
+   * Offset to the imaginary part of the input
+   * This is 1 for interleaved data.
+   * For blocked data, a typical offset is n in 1-dimension (or nX*nY + n in 2D).
+   */
+  private final int externalIm;
+  /**
+   * Offset to the imaginary part of the input.
+   * Internally this is 1 (for interleaved data) or n (for blocked data).
+   * <p>
+   * The internal imaginary offset cannot be larger than n due to use of a single scratch array of length 2n.
    */
   private final int im;
   /**
@@ -114,45 +123,76 @@ public class Complex {
    * Constants for each pass.
    */
   private final MixedRadixFactor[] mixedRadixFactors;
-
   /**
    * Use SIMD operators.
    */
-  private boolean useSIMD = false;
+  private boolean useSIMD;
   /**
    * Minimum SIMD loop length set to the preferred SIMD vector length.
    */
-  private int minSIMDLoopLength = MixedRadixFactor.LENGTH;
+  private int minSIMDLoopLength;
 
   /**
-   * Construct a Complex instance for data of length n. Factorization of n is designed to use special
+   * Cache the last input dimension.
+   */
+  private static int lastN = -1;
+  /**
+   * Cache the last set tiddle factors.
+   */
+  private static double[][][] twiddleCache = null;
+
+  /**
+   * Construct a Complex instance for interleaved data of length n. Factorization of n is designed to use special
    * methods for small factors, and a general routine for large odd prime factors. Scratch memory is
    * created of length 2*n, which is reused each time a transform is computed.
    *
    * @param n Number of complex numbers (n .GT. 1).
    */
   public Complex(int n) {
-    this(n, 1);
+    this(n, DataLayout1D.INTERLEAVED, 1);
   }
 
   /**
-   * Construct a Complex instance for data of length n. Factorization of n is designed to use special
-   * methods for small factors, and a general routine for large odd prime factors. Scratch memory is
-   * created of length 2*n, which is reused each time a transform is computed.
+   * Construct a Complex instance for data of length n.
+   * The offset to each imaginary part relative to the real part is given by im.
+   * Factorization of n is designed to use special methods for small factors.
+   * Scratch memory is created of length 2*n, which is reused each time a transform is computed.
    *
-   * @param n  Number of complex numbers (n .GT. 1).
-   * @param im Offset to the imaginary part of the input (1 or n).
+   * @param n          Number of complex numbers (n .GT. 1).
+   * @param dataLayout Data layout (interleaved or blocked).
+   * @param imOffset   Offset to the imaginary part of each complex number relative to its real part.
    */
-  public Complex(int n, int im) {
+  public Complex(int n, DataLayout1D dataLayout, int imOffset) {
     assert (n > 1);
-    assert (im == 1 || im == n);
     this.n = n;
-    this.im = im;
-    factors = factor();
-    twiddle = wavetable();
+    this.externalIm = imOffset;
+
+    // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created. This helps conserve memory.
+    // Synchronize the creation of the twiddle factors.
+    synchronized (Complex.class) {
+      if (this.n == lastN && twiddleCache != null) {
+        factors = factor();
+        twiddle = twiddleCache;
+      } else {
+        factors = factor();
+        twiddle = wavetable();
+        lastN = n;
+        twiddleCache = twiddle;
+      }
+    }
+
     packedData = new double[2 * n];
     scratch = new double[2 * n];
     passData = new PassData[2];
+
+    /**
+     * The internal imaginary offset is always 1 or n.
+     */
+    if (dataLayout == DataLayout1D.INTERLEAVED) {
+      im = 1;
+    } else {
+      im = n;
+    }
 
     // Create mixed radix instances for each factor.
     mixedRadixFactors = new MixedRadixFactor[factors.length];
@@ -169,7 +209,7 @@ public class Complex {
         case 6 -> mixedRadixFactors[i] = new MixedRadixFactor6(passConstants);
         case 7 -> mixedRadixFactors[i] = new MixedRadixFactor7(passConstants);
         default -> {
-          if (this.im != 1) {
+          if (dataLayout == DataLayout1D.BLOCKED) {
             throw new IllegalArgumentException(
                 " Prime factors greater than 7 are only supported for interleaved data: " + factor);
           }
@@ -288,8 +328,10 @@ public class Complex {
    *
    * <PRE>
    * Re(d[i]) = data[offset + stride*i]
-   * Im(d[i]) = data[offset + stride*i+1]
+   * Im(d[i]) = data[offset + stride*i + im]
    * </PRE>
+   * <p>
+   * where im is 1 for interleaved data or a constant set when the class was constructed.
    *
    * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
@@ -415,18 +457,14 @@ public class Complex {
    * @param sign   the sign to apply (forward -1 and inverse 1).
    */
   private void transformInternal(final double[] data, final int offset, final int stride, final int sign) {
-
-    if (im == n && stride != 1) {
-      throw new IllegalArgumentException(" Stride must be 1 for blocked data.");
-    }
-
     boolean packed = false;
-    if (stride > 2) {
+    if (stride > 2 || externalIm > n) {
       // Pack non-contiguous (stride > 2) data into a contiguous array.
       packed = true;
+      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
       for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
         packedData[i2] = data[index];
-        packedData[i2 + 1] = data[index + 1];
+        packedData[i2 + im] = data[index + externalIm];
       }
       passData[0] = new PassData(sign, packedData, 0, scratch, 0);
       passData[1] = new PassData(sign, scratch, 0, packedData, 0);
@@ -444,19 +482,19 @@ public class Complex {
     // If the number of factors is odd, the final result is in the scratch array.
     if (nfactors % 2 == 1) {
       // Copy the scratch array to the data array.
-      if (stride <= 2) {
+      if (stride <= 2 && (im == externalIm)) {
         arraycopy(scratch, 0, data, offset, 2 * n);
       } else {
         for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
           data[index] = scratch[i2];
-          data[index + 1] = scratch[i2 + 1];
+          data[index + externalIm] = scratch[i2 + im];
         }
       }
       // If the number of factors is even, the data may need to be unpacked.
     } else if (packed) {
       for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
         data[index] = packedData[i2];
-        data[index + 1] = packedData[i2 + 1];
+        data[index + externalIm] = packedData[i2 + im];
       }
     }
   }

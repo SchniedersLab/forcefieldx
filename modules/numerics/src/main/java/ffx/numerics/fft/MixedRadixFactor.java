@@ -201,6 +201,10 @@ public abstract class MixedRadixFactor {
    */
   protected final int n;
   /**
+   * The imaginary offset.
+   */
+  protected final int im;
+  /**
    * The mixed radix factor.
    */
   protected final int factor;
@@ -236,12 +240,6 @@ public abstract class MixedRadixFactor {
    */
   protected final double[][] twiddles;
   /**
-   * The offset for the imaginary part of the input.
-   * For interleaved complex data, this is 1.
-   * For separate real and imaginary arrays, this is n (the size of the input).
-   */
-  protected final int im;
-  /**
    * The increment for input data within the inner loop.
    * This is equal to 2 for interleaved complex data.
    * This is equal to 1 for separate real and imaginary arrays.
@@ -257,9 +255,9 @@ public abstract class MixedRadixFactor {
 
   public MixedRadixFactor(PassConstants passConstants) {
     n = passConstants.n();
+    im = passConstants.im();
     factor = passConstants.factor();
     product = passConstants.product();
-    im = passConstants.im();
     twiddles = passConstants.twiddles();
     outerLoopLimit = n / product;
     innerLoopLimit = product / factor;

@@ -38,14 +38,20 @@
 package ffx.numerics.fft;
 
 /**
- * Constant factors needed for each pass.
- *
- * @param n        The size of the input.
- * @param im       The imaginary offset.
- * @param factor   The factor.
- * @param product  The product of all factors applied so far.
- * @param twiddles The twiddle factors for this pass.
+ * The Complex FFT supports interleaved or blocked data.
+ * <p>
+ * For interleaved data, the complex data is stored in the following way:
+ * <PRE>
+ * Re(d[i]) = data[offset + stride*i]
+ * Im(d[i]) = data[offset + stride*i + 1]
+ * </PRE>
+ * <p>
+ * For blocked data, the complex data is stored in the following way:
+ * <PRE>
+ * Re(d[i]) = data[offset + stride*i]
+ * Im(d[i]) = data[offset + stride*i + im]
+ * </PRE>
  */
-public record PassConstants(int n, int im, int factor, int product, double[][] twiddles) {
-  // Empty.
+public enum DataLayout1D {
+  INTERLEAVED, BLOCKED
 }

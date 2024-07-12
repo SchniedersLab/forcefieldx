@@ -53,3 +53,5 @@ src/site/asciidoc/keywords
 src/site/asciidoc/properties
 
 ffx_venv/
+
+modules/numerics/fft.txt

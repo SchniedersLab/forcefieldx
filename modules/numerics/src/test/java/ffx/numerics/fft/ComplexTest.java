@@ -190,12 +190,10 @@ public class ComplexTest extends FFXTest {
     if (!this.preferred) {
       return;
     }
-
     double tolerance = 1.0e-11;
-
     int offset = 0;
     int stride = 1;
-    Complex complex = new Complex(n, n);
+    Complex complex = new Complex(n, DataLayout1D.BLOCKED, n);
     complex.setUseSIMD(false);
 
     // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
