@@ -42,10 +42,11 @@ package ffx.numerics.fft;
  *
  * @param n        The size of the input.
  * @param im       The imaginary offset.
+ * @param nFFTs    The number of FFTs to process (default = 1).
  * @param factor   The factor.
  * @param product  The product of all factors applied so far.
  * @param twiddles The twiddle factors for this pass.
  */
-public record PassConstants(int n, int im, int factor, int product, double[][] twiddles) {
+public record PassConstants(int n, int im, int nFFTs, int factor, int product, double[][] twiddles) {
   // Empty.
 }

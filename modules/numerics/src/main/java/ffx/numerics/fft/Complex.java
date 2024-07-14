@@ -87,6 +87,10 @@ public class Complex {
    */
   private final int n;
   /**
+   * The number of FFTs to process (default = 1).
+   */
+  private final int nFFTs;
+  /**
    * Offset to the imaginary part of the input
    * This is 1 for interleaved data.
    * For blocked data, a typical offset is n in 1-dimension (or nX*nY + n in 2D).
@@ -99,6 +103,10 @@ public class Complex {
    * The internal imaginary offset cannot be larger than n due to use of a single scratch array of length 2n.
    */
   private final int im;
+  /**
+   * Internal increment for packing data (1 for blocked and 2 for interleaved data).
+   */
+  private final int ii;
   /**
    * Factorization of n.
    */
@@ -131,7 +139,6 @@ public class Complex {
    * Minimum SIMD loop length set to the preferred SIMD vector length.
    */
   private int minSIMDLoopLength;
-
   /**
    * Cache the last input dimension.
    */
@@ -175,38 +182,57 @@ public class Complex {
    * @param imOffset   Offset to the imaginary part of each complex number relative to its real part.
    */
   public Complex(int n, DataLayout1D dataLayout, int imOffset) {
+    this(n, dataLayout, imOffset, 1);
+  }
+
+  /**
+   * Construct a Complex instance for data of length n.
+   * The offset to each imaginary part relative to the real part is given by im.
+   * Factorization of n is designed to use special methods for small factors.
+   * Scratch memory is created of length 2*n, which is reused each time a transform is computed.
+   *
+   * @param n          Number of complex numbers (n .GT. 1).
+   * @param dataLayout Data layout (interleaved or blocked).
+   * @param imOffset   Offset to the imaginary part of each complex number relative to its real part.
+   * @param nFFTs      Number of FFTs to process (default = 1).
+   */
+  public Complex(int n, DataLayout1D dataLayout, int imOffset, int nFFTs) {
     assert (n > 1);
     this.n = n;
+    this.nFFTs = 1;
     this.externalIm = imOffset;
 
     /*
      * The internal imaginary offset is always 1 or n.
      *
-     * If the external imaginary offset is greater than n, the data is packed into a contiguous array.
+     * If the external imaginary offset is greater than n,
+     * the data will be packed into a contiguous array.
      */
     if (dataLayout == DataLayout1D.INTERLEAVED) {
       im = 1;
+      ii = 2;
     } else {
       im = n;
+      ii = 1;
     }
-    packedData = new double[2 * n];
-    scratch = new double[2 * n];
+    packedData = new double[2 * n * nFFTs];
+    scratch = new double[2 * n * nFFTs];
     passData = new PassData[2];
 
-    // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created. This helps conserve memory.
+    // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created.
+    // To conserve memory, the most recent set of twiddles and mixed radix factors are cached.
+    // Successive transforms with the same dimension and imaginary offset will reuse the cached values.
     // Synchronize the creation of the twiddle factors.
-
     synchronized (Complex.class) {
-      /*
-       * Reuse the last set of radix factors if the dimension and imaginary offset are the same.
-       */
+      // The last set of factors, twiddles and mixed radix factors will be reused.
       if (this.n == lastN && this.im == lastIm) {
         factors = factorsCache;
         twiddle = twiddleCache;
         mixedRadixFactors = mixedRadixFactorsCache;
       } else {
-        factors = factor();
-        twiddle = wavetable();
+        // The cache cannot be reused and will be updated.
+        factors = factor(n);
+        twiddle = wavetable(n, factors);
         mixedRadixFactors = new MixedRadixFactor[factors.length];
         lastN = this.n;
         lastIm = this.im;
@@ -218,7 +244,7 @@ public class Complex {
         for (int i = 0; i < factors.length; i++) {
           final int factor = factors[i];
           product *= factor;
-          PassConstants passConstants = new PassConstants(n, im, factor, product, twiddle[i]);
+          PassConstants passConstants = new PassConstants(n, im, nFFTs, factor, product, twiddle[i]);
           switch (factor) {
             case 2 -> mixedRadixFactors[i] = new MixedRadixFactor2(passConstants);
             case 3 -> mixedRadixFactors[i] = new MixedRadixFactor3(passConstants);
@@ -346,7 +372,29 @@ public class Complex {
    * @param stride the stride between data points.
    */
   public void fft(double[] data, int offset, int stride) {
-    transformInternal(data, offset, stride, -1);
+    transformInternal(data, offset, stride, -1, 2 * n);
+  }
+
+  /**
+   * Compute the Fast Fourier Transform of data leaving the result in data.
+   * The array data must contain the data points in the following locations:
+   *
+   * <PRE>
+   * Re(d[i]) = data[offset + stride*i] + k * nextFFT
+   * Im(d[i]) = data[offset + stride*i + im] + k * nextFFT
+   * </PRE>
+   * <p>
+   * where im is 1 for interleaved data or a constant set when the class was constructed.
+   * The value of k is the FFT number (0 to nFFTs-1).
+   * The value of nextFFT is the stride between FFT data sets. The nextFFT value is ignored if the number of FFTs is 1.
+   *
+   * @param data    an array of double.
+   * @param offset  the offset to the beginning of the data.
+   * @param stride  the stride between data points.
+   * @param nextFFT the offset to the beginning of the next FFT when nFFTs > 1.
+   */
+  public void fft(double[] data, int offset, int stride, int nextFFT) {
+    transformInternal(data, offset, stride, -1, nextFFT);
   }
 
   /**
@@ -355,7 +403,7 @@ public class Complex {
    *
    * <PRE>
    * Re(D[i]) = data[offset + stride*i]
-   * Im(D[i]) = data[offset + stride*i+1]
+   * Im(D[i]) = data[offset + stride*i + im]
    * </PRE>
    *
    * @param data   an array of double.
@@ -363,7 +411,29 @@ public class Complex {
    * @param stride the stride between data points.
    */
   public void ifft(double[] data, int offset, int stride) {
-    transformInternal(data, offset, stride, +1);
+    transformInternal(data, offset, stride, +1, 2 * n);
+  }
+
+  /**
+   * Compute the (un-normalized) inverse FFT of data, leaving it in place. The frequency domain data
+   * must be in wrap-around order, and be stored in the following locations:
+   *
+   * <PRE>
+   * Re(d[i]) = data[offset + stride*i] + k * nextFFT
+   * Im(d[i]) = data[offset + stride*i + im] + k * nextFFT
+   * </PRE>
+   * <p>
+   * where im is 1 for interleaved data or a constant set when the class was constructed.
+   * The value of k is the FFT number (0 to nFFTs-1).
+   * The value of nextFFT is the stride between FFT data sets. The nextFFT value is ignored if the number of FFTs is 1.
+   *
+   * @param data    an array of double.
+   * @param offset  the offset to the beginning of the data.
+   * @param stride  the stride between data points.
+   * @param nextFFT the offset to the beginning of the next FFT when nFFTs > 1.
+   */
+  public void ifft(double[] data, int offset, int stride, int nextFFT) {
+    transformInternal(data, offset, stride, +1, nextFFT);
   }
 
   /**
@@ -371,33 +441,161 @@ public class Complex {
    * be stored in the following locations:
    *
    * <PRE>
-   * Re(D[i]) = data[offset + stride*i]
-   * Im(D[i]) = data[offset + stride*i+1]
+   * Re(d[i]) = data[offset + stride*i]
+   * Im(d[i]) = data[offset + stride*i + im]
    * </PRE>
+   * <p>
+   * where im is 1 for interleaved data or a constant set when the class was constructed.
    *
    * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
    */
   public void inverse(double[] data, int offset, int stride) {
-    ifft(data, offset, stride);
+    inverse(data, offset, stride, 2 * n);
+  }
+
+  /**
+   * Compute the normalized inverse FFT of data, leaving it in place. The frequency domain data must
+   * be stored in the following locations:
+   *
+   * <PRE>
+   * Re(d[i]) = data[offset + stride*i] + k * nextFFT
+   * Im(d[i]) = data[offset + stride*i + im] + k * nextFFT
+   * </PRE>
+   * <p>
+   * where im is 1 for interleaved data or a constant set when the class was constructed.
+   * The value of k is the FFT number (0 to nFFTs-1).
+   * The value of nextFFT is the stride between FFT data sets. The nextFFT value is ignored if the number of FFTs is 1.
+   *
+   * @param data   an array of double.
+   * @param offset the offset to the beginning of the data.
+   * @param stride the stride between data points.
+   */
+  public void inverse(double[] data, int offset, int stride, int nextFFT) {
+    ifft(data, offset, stride, nextFFT);
 
     // Normalize inverse FFT with 1/n.
     double norm = normalization();
-    for (int i = 0; i < n; i++) {
-      final int index = offset + stride * i;
-      data[index] *= norm;
-      data[index + im] *= norm;
+    for (int f = 0; f < nFFTs; f++) {
+      int fftOffset = f * nextFFT;
+      for (int i = 0; i < n; i++) {
+        final int index = offset + stride * i + fftOffset;
+        data[index] *= norm;
+        data[index + im] *= norm;
+      }
     }
+  }
+
+  /**
+   * Compute the Fast Fourier Transform of data leaving the result in data.
+   *
+   * @param data    data an array of double.
+   * @param offset  the offset to the beginning of the data.
+   * @param stride  the stride between data points.
+   * @param sign    the sign to apply (forward -1 and inverse 1).
+   * @param nextFFT the offset to the beginning of the next FFT when nFFTs > 1.
+   */
+  private void transformInternal(
+      final double[] data, final int offset, final int stride, final int sign, final int nextFFT) {
+
+    // Configure the pass data for the transform.
+    boolean packed = false;
+    if (stride > 2 || externalIm > n) {
+      // Pack non-contiguous (stride > 2) data into a contiguous array.
+      packed = true;
+      pack(data, offset, stride, nextFFT);
+      passData[0] = new PassData(sign, packedData, 0, scratch, 0);
+      passData[1] = new PassData(sign, scratch, 0, packedData, 0);
+    } else {
+      passData[0] = new PassData(sign, data, offset, scratch, 0);
+      passData[1] = new PassData(sign, scratch, 0, data, offset);
+    }
+
+    // Perform the FFT by looping over the factors.
+    final int nfactors = factors.length;
+    for (int i = 0; i < nfactors; i++) {
+      final int pass = i % 2;
+      MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
+      if (useSIMD && mixedRadixFactor.innerLoopLimit >= minSIMDLoopLength) {
+        mixedRadixFactor.passSIMD(passData[pass]);
+      } else {
+        mixedRadixFactor.passScalar(passData[pass]);
+      }
+    }
+
+    // If the number of factors is odd, the final result is in the scratch array.
+    if (nfactors % 2 == 1) {
+      // Copy the scratch array to the data array.
+      if (stride <= 2 && (im == externalIm)) {
+        arraycopy(scratch, 0, data, offset, 2 * n);
+      } else {
+        unpack(scratch, data, offset, stride, nextFFT);
+      }
+      // If the number of factors is even, the data may need to be unpacked.
+    } else if (packed) {
+      unpack(packedData, data, offset, stride, nextFFT);
+    }
+  }
+
+  /**
+   * Pack the data into a contiguous array.
+   *
+   * @param data    the data to pack.
+   * @param offset  the offset to the first point data.
+   * @param stride  the stride between data points.
+   * @param nextFFT the stride between FFTs.
+   */
+  private void pack(double[] data, int offset, int stride, int nextFFT) {
+    for (int f = 0; f < nFFTs; f++) {
+      int packedOffset = f * n;
+      int inputOffset = offset + f * nextFFT;
+      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
+      for (int i = packedOffset, index = inputOffset, k = 0; k < n; k++, i += ii, index += stride) {
+        packedData[i] = data[index];
+        packedData[i + im] = data[index + externalIm];
+      }
+    }
+  }
+
+  /**
+   * Pack the data into a contiguous array.
+   *
+   * @param data    the location to unpack the data to.
+   * @param offset  the offset to the first point data.
+   * @param stride  the stride between data points.
+   * @param nextFFT the stride between FFTs.
+   */
+  private void unpack(double[] source, double[] data, int offset, int stride, int nextFFT) {
+    for (int f = 0; f < nFFTs; f++) {
+      int packedOffset = f * n;
+      int outputOffset = offset + f * nextFFT;
+      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
+      for (int i = packedOffset, index = outputOffset, k = 0; k < n; k++, i += ii, index += stride) {
+        data[index] = source[i];
+        data[index + externalIm] = source[i + im];
+      }
+    }
+  }
+
+  /**
+   * Return the normalization factor. Multiply the elements of the back-transformed data to get the
+   * normalized inverse.
+   *
+   * @return a double.
+   */
+  private double normalization() {
+    return 1.0 / n;
   }
 
   /**
    * Factor the data length into preferred factors (those with special methods), falling back to odd
    * primes that the general routine must handle.
    *
+   * @param n the length of the data.
    * @return integer factors
    */
-  private int[] factor() {
+  private static int[] factor(int n) {
     if (n < 2) {
       return null;
     }
@@ -457,76 +655,13 @@ public class Complex {
   }
 
   /**
-   * Compute the Fast Fourier Transform of data leaving the result in data.
-   *
-   * @param data   data an array of double.
-   * @param offset the offset to the beginning of the data.
-   * @param stride the stride between data points.
-   * @param sign   the sign to apply (forward -1 and inverse 1).
-   */
-  private void transformInternal(final double[] data, final int offset, final int stride, final int sign) {
-    boolean packed = false;
-    if (stride > 2 || externalIm > n) {
-      // Pack non-contiguous (stride > 2) data into a contiguous array.
-      packed = true;
-      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
-      for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
-        packedData[i2] = data[index];
-        packedData[i2 + im] = data[index + externalIm];
-      }
-      passData[0] = new PassData(sign, packedData, 0, scratch, 0);
-      passData[1] = new PassData(sign, scratch, 0, packedData, 0);
-    } else {
-      passData[0] = new PassData(sign, data, offset, scratch, 0);
-      passData[1] = new PassData(sign, scratch, 0, data, offset);
-    }
-
-    final int nfactors = factors.length;
-    for (int i = 0; i < nfactors; i++) {
-      final int pass = i % 2;
-      MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
-      if (useSIMD && mixedRadixFactor.innerLoopLimit >= minSIMDLoopLength) {
-        mixedRadixFactor.passSIMD(passData[pass]);
-      } else {
-        mixedRadixFactor.passScalar(passData[pass]);
-      }
-    }
-    // If the number of factors is odd, the final result is in the scratch array.
-    if (nfactors % 2 == 1) {
-      // Copy the scratch array to the data array.
-      if (stride <= 2 && (im == externalIm)) {
-        arraycopy(scratch, 0, data, offset, 2 * n);
-      } else {
-        for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
-          data[index] = scratch[i2];
-          data[index + externalIm] = scratch[i2 + im];
-        }
-      }
-      // If the number of factors is even, the data may need to be unpacked.
-    } else if (packed) {
-      for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
-        data[index] = packedData[i2];
-        data[index + externalIm] = packedData[i2 + im];
-      }
-    }
-  }
-
-  /**
-   * Return the normalization factor. Multiply the elements of the back-transformed data to get the
-   * normalized inverse.
-   *
-   * @return a double.
-   */
-  private double normalization() {
-    return 1.0 / n;
-  }
-
-  /**
    * Compute twiddle factors. These are trigonometric constants that depend on the factoring of n.
    *
+   * @param n       the length of the data.
+   * @param factors the factors of n.
    * @return twiddle factors.
    */
-  private double[][][] wavetable() {
+  private static double[][][] wavetable(int n, int[] factors) {
     if (n < 2) {
       return null;
     }

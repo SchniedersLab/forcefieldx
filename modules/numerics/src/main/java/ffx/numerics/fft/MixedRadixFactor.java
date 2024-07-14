@@ -260,7 +260,7 @@ public abstract class MixedRadixFactor {
     product = passConstants.product();
     twiddles = passConstants.twiddles();
     outerLoopLimit = n / product;
-    innerLoopLimit = product / factor;
+    innerLoopLimit = product / factor * passConstants.nFFTs();
     nextInput = n / factor;
     if (im == 1) {
       ii = 2;
