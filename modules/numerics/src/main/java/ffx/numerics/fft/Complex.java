@@ -137,9 +137,21 @@ public class Complex {
    */
   private static int lastN = -1;
   /**
+   * Cache the last set of radix factors.
+   */
+  private static int[] factorsCache;
+  /**
    * Cache the last set tiddle factors.
    */
   private static double[][][] twiddleCache = null;
+  /**
+   * Cache the last imaginary offset.
+   */
+  private static int lastIm = -1;
+  /**
+   * Cache the last set of radix factors. These classes are static and thread-safe.
+   */
+  private static MixedRadixFactor[] mixedRadixFactorsCache = null;
 
   /**
    * Construct a Complex instance for interleaved data of length n. Factorization of n is designed to use special
@@ -167,83 +179,78 @@ public class Complex {
     this.n = n;
     this.externalIm = imOffset;
 
-    // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created. This helps conserve memory.
-    // Synchronize the creation of the twiddle factors.
-    synchronized (Complex.class) {
-      if (this.n == lastN && twiddleCache != null) {
-        factors = factor();
-        twiddle = twiddleCache;
-      } else {
-        factors = factor();
-        twiddle = wavetable();
-        lastN = n;
-        twiddleCache = twiddle;
-      }
-    }
-
-    packedData = new double[2 * n];
-    scratch = new double[2 * n];
-    passData = new PassData[2];
-
-    /**
+    /*
      * The internal imaginary offset is always 1 or n.
+     *
+     * If the external imaginary offset is greater than n, the data is packed into a contiguous array.
      */
     if (dataLayout == DataLayout1D.INTERLEAVED) {
       im = 1;
     } else {
       im = n;
     }
+    packedData = new double[2 * n];
+    scratch = new double[2 * n];
+    passData = new PassData[2];
 
-    // Create mixed radix instances for each factor.
-    mixedRadixFactors = new MixedRadixFactor[factors.length];
-    int product = 1;
-    for (int i = 0; i < factors.length; i++) {
-      final int factor = factors[i];
-      product *= factor;
-      PassConstants passConstants = new PassConstants(n, im, factor, product, twiddle[i]);
-      switch (factor) {
-        case 2 -> mixedRadixFactors[i] = new MixedRadixFactor2(passConstants);
-        case 3 -> mixedRadixFactors[i] = new MixedRadixFactor3(passConstants);
-        case 4 -> mixedRadixFactors[i] = new MixedRadixFactor4(passConstants);
-        case 5 -> mixedRadixFactors[i] = new MixedRadixFactor5(passConstants);
-        case 6 -> mixedRadixFactors[i] = new MixedRadixFactor6(passConstants);
-        case 7 -> mixedRadixFactors[i] = new MixedRadixFactor7(passConstants);
-        default -> {
-          if (dataLayout == DataLayout1D.BLOCKED) {
-            throw new IllegalArgumentException(
-                " Prime factors greater than 7 are only supported for interleaved data: " + factor);
+    // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created. This helps conserve memory.
+    // Synchronize the creation of the twiddle factors.
+
+    synchronized (Complex.class) {
+      /*
+       * Reuse the last set of radix factors if the dimension and imaginary offset are the same.
+       */
+      if (this.n == lastN && this.im == lastIm) {
+        factors = factorsCache;
+        twiddle = twiddleCache;
+        mixedRadixFactors = mixedRadixFactorsCache;
+      } else {
+        factors = factor();
+        twiddle = wavetable();
+        mixedRadixFactors = new MixedRadixFactor[factors.length];
+        lastN = this.n;
+        lastIm = this.im;
+        factorsCache = factors;
+        twiddleCache = twiddle;
+        mixedRadixFactorsCache = mixedRadixFactors;
+        // Allocate space for each pass and radix instances for each factor.
+        int product = 1;
+        for (int i = 0; i < factors.length; i++) {
+          final int factor = factors[i];
+          product *= factor;
+          PassConstants passConstants = new PassConstants(n, im, factor, product, twiddle[i]);
+          switch (factor) {
+            case 2 -> mixedRadixFactors[i] = new MixedRadixFactor2(passConstants);
+            case 3 -> mixedRadixFactors[i] = new MixedRadixFactor3(passConstants);
+            case 4 -> mixedRadixFactors[i] = new MixedRadixFactor4(passConstants);
+            case 5 -> mixedRadixFactors[i] = new MixedRadixFactor5(passConstants);
+            case 6 -> mixedRadixFactors[i] = new MixedRadixFactor6(passConstants);
+            case 7 -> mixedRadixFactors[i] = new MixedRadixFactor7(passConstants);
+            default -> {
+              if (dataLayout == DataLayout1D.BLOCKED) {
+                throw new IllegalArgumentException(
+                    " Prime factors greater than 7 are only supported for interleaved data: " + factor);
+              }
+              mixedRadixFactors[i] = new MixedRadixFactorPrime(passConstants);
+            }
           }
-          mixedRadixFactors[i] = new MixedRadixFactorPrime(passConstants);
         }
       }
-    }
 
-    // Do not use SIMD by default for now.
-    useSIMD = false;
-    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
-    try {
-      useSIMD = Boolean.parseBoolean(simd);
-    } catch (Exception e) {
-      logger.info(" Invalid value for fft.useSIMD: " + simd);
+      // Do not use SIMD by default for now.
       useSIMD = false;
-    }
+      String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+      try {
+        useSIMD = Boolean.parseBoolean(simd);
+      } catch (Exception e) {
+        logger.info(" Invalid value for fft.useSIMD: " + simd);
+        useSIMD = false;
+      }
 
-    // Minimum SIMD inner loop length.
-    // For interleaved data, the default minimum SIMD loop length is 1 using AVX-128 (1 Real and 1 Imaginary per load).
-    // For blocked data, the default minimum SIMD loop length is 2 using AVX-128 (2 Real or 2 Imaginary per load).
-    // Setting this value higher than one reverts to scalar operations for short inner loop lengths.
-    if (im == 1) {
-      // Interleaved data.
-      minSIMDLoopLength = MixedRadixFactor.LENGTH / 2;
-    } else {
-      // Blocked data.
-      minSIMDLoopLength = MixedRadixFactor.LENGTH;
-    }
-    String loop = System.getProperty("fft.minLoop", Integer.toString(minSIMDLoopLength));
-    try {
-      minSIMDLoopLength = max(minSIMDLoopLength, Integer.parseInt(loop));
-    } catch (Exception e) {
-      logger.info(" Invalid value for fft.minLoop: " + loop);
+      // Minimum SIMD inner loop length.
+      // For interleaved data, the default minimum SIMD loop length is 1 using AVX-128 (1 Real and 1 Imaginary per load).
+      // For blocked data, the default minimum SIMD loop length is 2 using AVX-128 (2 Real or 2 Imaginary per load).
+      // Setting this value higher than one reverts to scalar operations for short inner loop lengths.
       if (im == 1) {
         // Interleaved data.
         minSIMDLoopLength = MixedRadixFactor.LENGTH / 2;
@@ -251,13 +258,20 @@ public class Complex {
         // Blocked data.
         minSIMDLoopLength = MixedRadixFactor.LENGTH;
       }
+      String loop = System.getProperty("fft.minLoop", Integer.toString(minSIMDLoopLength));
+      try {
+        minSIMDLoopLength = max(minSIMDLoopLength, Integer.parseInt(loop));
+      } catch (Exception e) {
+        logger.info(" Invalid value for fft.minLoop: " + loop);
+        if (im == 1) {
+          // Interleaved data.
+          minSIMDLoopLength = MixedRadixFactor.LENGTH / 2;
+        } else {
+          // Blocked data.
+          minSIMDLoopLength = MixedRadixFactor.LENGTH;
+        }
+      }
     }
-
-    for (int i = 0; i < factors.length; i++) {
-      mixedRadixFactors[i].setMinSIMDLoopLength(minSIMDLoopLength);
-      mixedRadixFactors[i].setUseSIMD(useSIMD);
-    }
-
   }
 
   /**
@@ -267,9 +281,6 @@ public class Complex {
    */
   public void setUseSIMD(boolean useSIMD) {
     this.useSIMD = useSIMD;
-    for (int i = 0; i < factors.length; i++) {
-      mixedRadixFactors[i].setUseSIMD(useSIMD);
-    }
   }
 
   /**
@@ -284,13 +295,10 @@ public class Complex {
     if (im == 1 && minSIMDLoopLength < 1) {
       throw new IllegalArgumentException(" Minimum SIMD loop length for interleaved data is 1 or greater.");
     }
-    if (im == n && minSIMDLoopLength < 2) {
+    if (im > 2 && minSIMDLoopLength < 2) {
       throw new IllegalArgumentException(" Minimum SIMD loop length for blocked data is 2 or greater.");
     }
     this.minSIMDLoopLength = minSIMDLoopLength;
-    for (int i = 0; i < factors.length; i++) {
-      mixedRadixFactors[i].setMinSIMDLoopLength(minSIMDLoopLength);
-    }
   }
 
   /**
@@ -476,9 +484,13 @@ public class Complex {
     final int nfactors = factors.length;
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
-      mixedRadixFactors[i].pass(passData[pass]);
+      MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
+      if (useSIMD && mixedRadixFactor.innerLoopLimit >= minSIMDLoopLength) {
+        mixedRadixFactor.passSIMD(passData[pass]);
+      } else {
+        mixedRadixFactor.passScalar(passData[pass]);
+      }
     }
-
     // If the number of factors is odd, the final result is in the scratch array.
     if (nfactors % 2 == 1) {
       // Copy the scratch array to the data array.

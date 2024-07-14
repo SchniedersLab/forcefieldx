@@ -43,6 +43,9 @@ import jdk.incubator.vector.VectorSpecies;
 
 import static java.lang.Math.fma;
 
+/**
+ * Mixed radix factor is extended by the pass classes to apply the mixed radix factor.
+ */
 public abstract class MixedRadixFactor {
 
   private static final double[] negateReal = {-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0};
@@ -250,9 +253,6 @@ public abstract class MixedRadixFactor {
    */
   protected final int jstep;
 
-  private boolean useSIMD = false;
-  private int minSIMDLoopLength = 1;
-
   public MixedRadixFactor(PassConstants passConstants) {
     n = passConstants.n();
     im = passConstants.im();
@@ -278,20 +278,6 @@ public abstract class MixedRadixFactor {
   }
 
   /**
-   * Apply the mixed radix factor.
-   * SIMD operations will be used if enabled.
-   *
-   * @param passData the pass data.
-   */
-  protected void pass(PassData passData) {
-    if (useSIMD && innerLoopLimit >= minSIMDLoopLength) {
-      passSIMD(passData);
-    } else {
-      passScalar(passData);
-    }
-  }
-
-  /**
    * Apply the mixed radix factor using scalar operations.
    */
   protected abstract void passScalar(PassData passData);
@@ -300,27 +286,6 @@ public abstract class MixedRadixFactor {
    * Apply the mixed radix factor using SIMD operations.
    */
   protected abstract void passSIMD(PassData passData);
-
-  /**
-   * Minimum SIMD inner loop length.
-   * For interleaved data, the default minimum SIMD loop length is 1 using AVX-128 (1 Real and 1 Imaginary per load).
-   * For blocked data, the default minimum SIMD loop length is 1 using AVX-128 (2 Real or 2 Imaginary per load).
-   * Setting this value above 1 reverts to scalar operations for short inner loop lengths.
-   *
-   * @param minSIMDLoopLength the minimum SIMD inner loop length.
-   */
-  public void setMinSIMDLoopLength(int minSIMDLoopLength) {
-    this.minSIMDLoopLength = minSIMDLoopLength;
-  }
-
-  /**
-   * Use SIMD instructions.
-   *
-   * @param useSIMD true to use SIMD instructions, false to use scalar instructions.
-   */
-  public void setUseSIMD(boolean useSIMD) {
-    this.useSIMD = useSIMD;
-  }
 
   /**
    * Multiply two complex numbers [x_r, x_i] and [w_r, w_i] and store the result.
