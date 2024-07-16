@@ -46,9 +46,11 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
+import javax.management.InvalidAttributeValueException
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -71,14 +73,21 @@ import static org.apache.commons.math3.util.FastMath.PI
 class ReadXML extends PotentialScript {
 
     /**
-     * The final argument(s) should be two filenames.
+     * -c or --charmm enables reading the XML in as a Charmm forcefield.
+     */
+    @Option(names = ['-c', '--charmm'], paramLabel = "", defaultValue = "false",
+    description = "Parse forcefield file as Charmm instead of Amber")
+    private boolean charmmRead = false;
+
+    /**
+     * The final argument(s) should be three filenames.
      */
     @Parameters(arity = "1", paramLabel = "file",
             description = 'XML FF file to be read.')
-    List<String> filenames = null
+    List<String> arguments = null
 
-    final double ANGperNM = 10.0;
-    final double KJperKCal = 4.184;
+    final double ANGperNM = 10.0
+    final double KJperKCal = 4.184
 
     LinkedHashMap<String, Integer> atomTypeMap
     LinkedHashMap<String, Integer> atomClassMap
@@ -100,9 +109,9 @@ class ReadXML extends PotentialScript {
         biotypeMap = new LinkedHashMap<>()
 
         // specify files coming in
-        File biotypeClasses = new File(filenames[0])  // biotype description to xml Residue Map TODO - could we use residuesFinal.xml
-        File inputFile = new File(filenames[1]) // main xml FF file
-        File watFile = new File(filenames[2]) // water xml FF file (e.g. TIP3P)
+        File biotypeClasses = new File(arguments[0])  // biotype description to xml Residue Map TODO - could we use residuesFinal.xml
+        File inputFile = new File(arguments[1]) // main xml FF file
+        File watFile = new File(arguments[2]) // water xml FF file (e.g. TIP3P)
 
         // Read and create hash map of biotype molecule descriptions and XML residue names
         Scanner myReader = new Scanner(biotypeClasses)
@@ -115,7 +124,7 @@ class ReadXML extends PotentialScript {
         myReader.close()
 
         // Instantiate Document building objects
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance()
         DocumentBuilder dBuilder = null;
         Document doc = null;
         Document watDoc = null;
@@ -125,13 +134,15 @@ class ReadXML extends PotentialScript {
         doc = dBuilder.parse(inputFile)
         watDoc = dBuilder.parse(watFile)
 
-        readAmber(doc, watDoc)
-//        readCharmm(doc, watDoc)
+        //check flag
+        if (charmmRead){readCharmm(doc,watDoc)}
+        else {readAmber(doc,watDoc)}
 
         return this
     }
 
     private void readAmber(Document doc, Document watDoc) {
+        logger.info("Reading in XML as Amber FF")
         CompositeConfiguration properties = Keyword.loadProperties(null)
 //        properties.addProperty("renumberPatch", "FALSE")
         properties.addProperty("FORCEFIELD", "AMBER_1999_SB_XML")
@@ -575,6 +586,7 @@ class ReadXML extends PotentialScript {
     }
 
     private void readCharmm(Document doc, Document watDoc) {
+        logger.info("Reading in XML as Charmm FF")
         CompositeConfiguration properties = Keyword.loadProperties(null)
         properties.addProperty("FORCEFIELD", "CHARMM_36_CMAP_XML")
         properties.addProperty("VDWTYPE", "LENNARD-JONES")
@@ -825,15 +837,42 @@ class ReadXML extends PotentialScript {
                         }
                         break
 
-                    case "AmoebaUreyBradleyForce": //TODO
+                    case "AmoebaUreyBradleyForce":
                         logger.info("At AmoebaUreyBradleyForce")
-
                         // Import additional (water) atom types
+                        // Note: don't need this for water_ions_default xml, but here for other potential water models
                         for (int i = 0; i < watDoc.getElementsByTagName("UreyBradley").length; i++) {
                             Node watNode = doc.importNode(watDoc.getElementsByTagName("UreyBradley").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
 
+                        NodeList ureybradleys = parentNode.item(0).getChildNodes()
+
+                        for (Node ub : ureybradleys) {
+                            //public UreyBradleyType(int[] atomClasses, double forceConstant, double distance)
+                            String class1 = ub.getAttribute("class1")
+                            String class2 = ub.getAttribute("class2")
+                            String class3 = ub.getAttribute("class3")
+                            double d = Double.parseDouble(ub.getAttribute("d"))
+                            double k = Double.parseDouble(ub.getAttribute("k"))
+
+                            if (!atomClassMap.containsKey(class1)) {
+                                atomClassMap.put(class1, atomClassMap.size()+1)
+                            }
+                            if (!atomClassMap.containsKey(class2)) {
+                                atomClassMap.put(class2, atomClassMap.size()+1)
+                            }
+                            if (!atomClassMap.containsKey(class3)) {
+                                atomClassMap.put(class3, atomClassMap.size()+1)
+                            }
+
+                            int[] classes = new int[3]
+                            classes[0] = atomClassMap.get(class1)
+                            classes[1] = atomClassMap.get(class2)
+                            classes[2] = atomClassMap.get(class3)
+
+                            forceField.addForceFieldType(new UreyBradleyType(classes, k, d))
+                        }
                         break
 
                     case "PeriodicTorsionForce":
@@ -844,8 +883,8 @@ class ReadXML extends PotentialScript {
                             Node watNode = doc.importNode(ele.getElementsByTagName("Proper").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
-                        for (int i = 0; i < ele.getElementsByTagName("Imroper").length; i++) {
-                            Node watNode = doc.importNode(ele.getElementsByTagName("Imroper").item(i), true)
+                        for (int i = 0; i < ele.getElementsByTagName("Improper").length; i++) {
+                            Node watNode = doc.importNode(ele.getElementsByTagName("Improper").item(i), true)
                             parentNode.item(0).appendChild(watNode)
                         }
 
@@ -945,60 +984,79 @@ class ReadXML extends PotentialScript {
                         // <Torsion> : map="0-11", class1-5
 
                         NodeList cmaps = parentNode.item(0).getChildNodes()
-                        double[][] energiesMaps
-                        for (Node cmap : cmaps) {
-//                            public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
+                        int numMap = 0;
+                        double[] energiesMap
+                        for (Node map : cmaps) {
+                            //public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
                             // int[5] atomClasses come from <Torsion>
                             // int[2] gridPoints - 25 25 in CHARMM_22_CMAP; should be length(torsion1) length(torsion2)
-                            int numMaps
-                            // double[] energy
-                            if (cmap.getNodeName() == "Map") {
-                                String nodeData = cmap.getChildNodes().item(0).getNodeValue() // gets data in <Map> node
+                            String nodeData = null;
+                            if (map.getNodeName() == "Map") {
+                                nodeData = map.getChildNodes().item(0).getNodeValue()
+                                // gets data in <Map> node
+                                //length should be how many lists there are in Map node
+                                String[] arr = nodeData.split('[\\n\\r]+')
+                                //remove leading space from the first list in Map node
+                                arr[0] = arr[0].trim()
+                                if (arr != null) {
+                                    logger.info("CHECK ARR")
+                                }
 
-                                int nx
-                                int ny
-                                String[] arr = nodeData.split('[\\n\\r]')
-//                                for(int i=0; i<1; i++) {
-//                                    String[] arr = nodeData.split('[\\n\\r]');
-//                                    nx = arr.length;
-//                                    //splits the string stored in each index of arr into its own index delimited on spaces, and
-//                                    //parses it as doubles at the same time
-//                                    ny = Arrays.stream(arr[i].split('\\s')).mapToDouble(Double::parseDouble).toArray().length;
-//                                }
-//                                energiesMaps[numMaps]=  Arrays.stream(nodeData.split("[\\n\\s\\r]")).mapToDouble(Double::parseDouble).toArray();
-//
-//                                int[] gridPoints = new int[]{nx,ny};
-//                                double[] torsion1;
-//                                double[] torsion2;
-//                                double phi = -180.0;
-//                                double psi = -180;
-//                                for (int i=0; i<nx; i++) {
-//                                    //reset psi to -180.0 each outer iteration, increment phi
-//                                    psi = -180.0;
-//                                    phi = phi + (15*i);
-//                                    for (int j=0; j<ny; j++){
-//                                        //torsion1 says constant ny times
-//                                        torsion1[j] = phi
-//                                        //iterate through psi from -180 to 180 each outer loop
-//                                        torsion2[j] = psi + (15*j);
-//                                    }
-//                                }
-//                                numMaps++;
-                            } else if (cmap.getNodeName() == "Torsion") {
+                                int nx = arr.length
+                                //get how many nums are in one line
+                                String[] arrIndiv = arr[0].split(' +');
+                                int ny = arrIndiv.length
+
+                                if (nx != ny) {
+                                    throw new InvalidAttributeValueException("nx and ny not the same length")
+                                }
+                                ArrayList<Double> nodeList = new ArrayList<Double>()
+                                try {
+                                    //split on all delimiters, new line, carriage return, and space
+                                    String[] nodeStrings = nodeData.split("[\\n \\r]+");
+                                    //get rid of extraneous white space
+                                    for (int i = 0; i < nodeStrings.length; i++) {
+                                        nodeStrings[i] = nodeStrings[i].trim()
+                                        if (nodeStrings[i] != null && nodeStrings[i] != "") {
+                                            double num = parseDouble(nodeStrings[i])
+                                            nodeList.add(num)
+                                        }
+                                    }
+                                }
+                                catch (NumberFormatException e) {
+                                    logger.info("cmap energies issue in full array")
+                                    throw e;
+                                }
+                                energiesMap = nodeList.stream().mapToDouble(d -> d).toArray();
+                                logger.info(energiesMap.length.toString())
+
+                                int[] gridPoints = new int[]{nx, ny};
+                                double[] torsion1 = new double[nx];
+                                double[] torsion2 = new double[ny];
+                                double phi = -180.0;
+                                double psi = -180.0;
+                                for (int i = 0; i < nx; i++) {
+                                    torsion1[i] = phi + (15 * i);
+                                    torsion2[i] = psi+ (15*i);
+                                }
+                                logger.info(torsion1.length.toString())
+                                logger.info(torsion2.length.toString())
+                                Element torsionNode = (Element) cmaps.getElementsByTagName("Torsion").item(numMap)
                                 int[] classes = new int[5]
-                                String map = cmap.getAttribute("map")
-                                classes[0] = atomClassMap(cmap.getAttribute("type1"))
-                                classes[1] = atomClassMap(cmap.getAttribute("type2"))
-                                classes[2] = atomClassMap(cmap.getAttribute("type3"))
-                                classes[3] = atomClassMap(cmap.getAttribute("type4"))
-                                classes[4] = atomClassMap(cmap.getAttribute("type5"))
-                                //TODO
-                            } else if (cmap.hasAttributes()) {
-                                logger.info("CHECK")
+                                String torsionMapNum = torsionNode.getAttribute("map") //should equal numMap
+                                classes[0] = atomClassMap.get(torsionNode.getAttribute("class1"))
+                                classes[1] = atomClassMap.get(torsionNode.getAttribute("class2"))
+                                classes[2] = atomClassMap.get(torsionNode.getAttribute("class3"))
+                                classes[3] = atomClassMap.get(torsionNode.getAttribute("class4"))
+                                classes[4] = atomClassMap.get(torsionNode.getAttribute("class5"))
+
+                                forceField.addForceFieldType(new TorsionTorsionType(classes, gridPoints, torsion1, torsion2, energiesMap))
+                                logger.info("x")
+                                //public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy)
+
+                                numMap++
                             }
                         }
-
-                        //TODO: make actual torsiontorsiontype objects
                         break
 
                     case "NonbondedForce":
