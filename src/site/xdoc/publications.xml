@@ -9,6 +9,16 @@
     <section name="Selected Recent Publications with Force Field X">
       <table>
         <tr>
+          <td>
+            <img src="images/Thiel-JCTC-2024-Cover.jpg" alt="CpHMD" width="400"/>
+          </td>
+          <td>
+            <img src="images/Nessler-CGD-2024-Cover.jpg" alt="CSP" width="400"/>
+          </td>
+        </tr>
+      </table>
+      <table>
+        <tr>
           <th>Year</th>
           <th>Publication</th>
         </tr>
@@ -17,12 +27,27 @@
             <b>2024</b>
           </td>
           <td>
+            Gogal, R., Nessler, A., Thiel, A., Bernabe H., Corrigan Grove, R., Cousineau, L., Litman, J.,
+            Miller J., Qi G., Speranza M., Tollefson M., Fenn T., Michaelson, J., Okada, O., Piquemal, JP., Ponder,  J.,
+            Shen, J., Smith, R., Yang, W., Ren P. and Schnieders M.
+            Force Field X: A Computational Microscope to Study Genetic Variation and Organic Crystals Using Theory and Experiment
+            <a href="https://doi.org/10.1063/5.0214652">
+              <i>Journal of Chemical Physics</i>
+              <b>2024</b>, 161, 012501.
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <b><!-- BLANK --></b>
+          </td>
+          <td>
             Thiel, A., Speranza, M., Jadhav, S., Stevens, L., Unruh, D., Ren, P., Ponder, J., Shen, J. and Schnieders,
             M.
             Constant-pH Simulations with the Polarizable Atomic Multipole AMOEBA Force Field.
-            <a href="https://doi.org/10.26434/chemrxiv-2023-96z34">
-              <i>ChemRxiv. Cambridge: Cambridge Open Engage</i>
-              <b>2023</b>
+            <a href="https://doi.org/10.1021/acs.jctc.3c01180">
+              <i>Journal of Chemical Theory and Computation</i>
+              <b>2024</b>, 20(7), 2921-2933.
             </a>
           </td>
         </tr>
@@ -35,13 +60,15 @@
             Schnieders, M.
             Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
             <a href="https://pubs.acs.org/doi/10.1021/acs.cgd.3c01358">
-              <i>Crystal Growth and Design</i>
-              <b>2024</b>
+              <i>Crystal Growth &amp; Design</i>
+              <b>2024</b> 24(8), 3205-3217.
             </a>
           </td>
         </tr>
         <tr>
-          <td>2023</td>
+          <td>
+            <b>2023</b>
+          </td>
           <td>Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
             J.,
             A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.

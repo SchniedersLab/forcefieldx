@@ -43,6 +43,7 @@ import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Residue
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
@@ -58,6 +59,8 @@ import picocli.CommandLine.Parameters
 
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
+import static java.lang.Double.parseDouble
+import static java.lang.Double.parseDouble
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 import static org.apache.commons.math3.util.FastMath.pow
@@ -144,6 +147,26 @@ class PhEnergy extends PotentialScript {
             description = 'A file containing snapshots to evaluate on when using a PDB as a reference to build from. There is currently no default.')
     private String arcFileName = null
 
+    @Option(names = ["--bar", "--mbar"], paramLabel = "false",
+            description = "Run (restartable) energy evaluations for MBAR. Requires an ARC file to be passed in. Set the tautomer flag to true for tautomer parameterization.")
+    boolean mbar = false
+
+    @Option(names = ["--numLambda", "--nL", "--nw"], paramLabel = "-1",
+            description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
+    int numLambda = -1
+
+    @Option(names = ["--outputDir", "--oD"], paramLabel = "",
+            description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
+    String outputDirectory = ""
+
+    @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
+            description = "Perform dU/dL evaluations and save to mbarFiles.")
+    boolean derivatives = false
+
+    @Option(names = ["--perturbTautomer"], paramLabel = "false",
+            description = "Change tautomer instead of lambda state for MBAR energy evaluations.")
+    boolean tautomer = false
+
     /**
      * --testEndStateEnergies
      */
@@ -188,6 +211,9 @@ class PhEnergy extends PotentialScript {
         // Init the context and bind variables.
         if (!init()) {
             return this
+        }
+        if (mbar){ // This is probably set to true since parameterization requires locked lambda states
+            System.setProperty("lock.esv.states", "false")
         }
 
         // Load the MolecularAssembly.
@@ -280,6 +306,11 @@ class PhEnergy extends PotentialScript {
                 forceFieldEnergy.getCoordinates(x)
                 forceFieldEnergy.energy(x, true)
             } 
+        }
+
+        if (mbar){
+            computeESVEnergiesAndWriteFile(systemFilter, esvSystem)
+            return this
         }
 
         if (systemFilter instanceof XPHFilter || systemFilter instanceof PDBFilter) {
@@ -387,5 +418,168 @@ class PhEnergy extends PotentialScript {
         }
     }
 
+    void computeESVEnergiesAndWriteFile(SystemFilter systemFilter, ExtendedSystem esvSystem) {
+        // Find all run directories to determine lambda states & make necessary files
+        File mbarFile;
+        File mbarGradFile;
+        double[] lambdas
+        if (outputDirectory.isEmpty()) {
+            File dir = new File(filename).getParentFile()
+            File parentDir = dir.getParentFile()
+            int thisRung = -1
+            dir.getName().find(/(\d+)/) { match ->
+                thisRung = match[0].toInteger()
+            }
+            assert thisRung != -1: "Could not determine the rung number from the directory name."
+            mbarFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "energy_"
+                    + thisRung + ".mbar")
+            mbarGradFile = new File(parentDir.getAbsolutePath() + File.separator + "mbarFiles" + File.separator + "derivative_"
+                    + thisRung + ".mbar")
+            mbarFile.getParentFile().mkdir()
+            File[] lsFiles = parentDir.listFiles()
+            List<File> rungFiles = new ArrayList<>()
+            for (File file : lsFiles) {
+                if (file.isDirectory() && file.getName().matches(/\d+/)) {
+                    rungFiles.add(file)
+                }
+            }
+            if (numLambda == -1) {
+                numLambda = rungFiles.size()
+            }
+            lambdas = new double[numLambda]
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
+            }
+
+
+            logger.info(" Computing energies for each lambda state for generation of mbar file.")
+            logger.info(" MBAR File: " + mbarFile)
+            logger.info(" Lambda States: " + lambdas)
+        } else {
+            mbarFile     = new File(outputDirectory + File.separator + "energy_0.mbar")
+            mbarGradFile = new File(outputDirectory + File.separator + "derivative_0.mbar")
+            lambdas = new double[numLambda]
+            if (numLambda == -1){
+                logger.severe("numLambda must be set when outputDirectory is set.")
+            }
+            for (int i = 0; i < numLambda; i++) {
+                double dL = 1 / (numLambda - 1)
+                lambdas[i] = i * dL
+            }
+        }
+
+        int progress = 1
+        if (mbarFile.exists()){ // Restartable
+            // Count lines in mbarFile
+            progress = mbarFile.readLines().size() - 1 // Subtract header
+            for(int i = 0; i < progress; i++){
+                systemFilter.readNext()
+            }
+            progress += 1 // Increment to next snapshot
+            logger.info("\n Restarting MBAR file at snapshot " + progress)
+        }
+
+        if (systemFilter instanceof XPHFilter || systemFilter instanceof PDBFilter) {
+            int index = progress
+            double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
+            try(FileWriter fw = new FileWriter(mbarFile, mbarFile.exists())
+                BufferedWriter writer = new BufferedWriter(fw)
+                FileWriter fwGrad = new FileWriter(mbarGradFile, mbarGradFile.exists())
+                BufferedWriter writerGrad = new BufferedWriter(fwGrad)
+            ){
+                // Write header (Number of snaps, temp, and this.xyz)
+                StringBuilder sb = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
+                StringBuilder sbGrad = new StringBuilder(systemFilter.countNumModels() + "\t" + "298.0" + "\t" + getBaseName(filename))
+                logger.info(" MBAR file temp is hardcoded to 298.0 K. Please change if necessary.")
+                sb.append("\n")
+                sbGrad.append("\n")
+                if (progress == 1) { // File didn't exist (more consistent than checking for existence)
+                    writer.write(sb.toString())
+                    writer.flush()
+                    logger.info(" Header: " + sb.toString())
+                    if(derivatives){
+                       writerGrad.write(sbGrad.toString())
+                       writerGrad.flush()
+                       logger.info(" Header: " + sbGrad.toString())
+                    }
+                }
+                while (systemFilter.readNext()) {
+                    // MBAR lines (\t index\t lambda0 lambda1 ... lambdaN)
+                    sb = new StringBuilder("\t" + index + "\t")
+                    sbGrad = new StringBuilder("\t" + index + "\t")
+                    index++
+                    Crystal crystal = activeAssembly.getCrystal()
+                    forceFieldEnergy.setCrystal(crystal)
+                    for(double lambda : lambdas) {
+                        if (tautomer){
+                            setESVTautomer(lambda, esvSystem)
+                        } else {
+                            setESVLambda(lambda, esvSystem)
+                        }
+                        forceFieldEnergy.getCoordinates(x)
+                        if (derivatives) {
+                            energy = forceFieldEnergy.energyAndGradient(x, new double[x.length * 3])
+                            double grad = esvSystem.getDerivatives()[0] // Only one residue
+                            sbGrad.append(grad).append(" ")
+                        } else {
+                            energy = forceFieldEnergy.energy(x, false)
+                        }
+                        sb.append(energy).append(" ")
+                    }
+                    sb.append("\n")
+                    writer.write(sb.toString())
+                    writer.flush() // Flush after each snapshot, otherwise it doesn't do it consistently
+                    logger.info(sb.toString())
+                    if (derivatives) {
+                        sbGrad.append("\n")
+                        writerGrad.write(sbGrad.toString())
+                        writerGrad.flush()
+                        logger.info(sbGrad.toString())
+                    }
+                }
+            } catch (IOException e) {
+                logger.severe("Error writing to MBAR file.")
+            }
+        }
+    }
+
+    /**
+     * Sets lambda values for the extended system. Note that it is expected that the
+     * tautomer is set correctly from dynamics.
+     * @param lambda
+     * @param extendedSystem
+     */
+    static void setESVLambda(double lambda, ExtendedSystem extendedSystem) {
+        List<Residue> residueList = extendedSystem.getExtendedResidueList()
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))){
+            extendedSystem.setTitrationLambda(residueList.get(0), lambda, false);
+        } else {
+            if (residueList.size() == 0) {
+                logger.severe("No residues found in the extended system.")
+            } else {
+                logger.severe("Only one lambda path is allowed for MBAR energy evaluations.")
+            }
+        }
+    }
+
+    /**
+     * Sets tautomer values for the extended system. Note that it is expected that the
+     * lambda is set correctly from dynamics.
+     * @param tautomer
+     * @param extendedSystem
+     */
+    static void setESVTautomer(double tautomer, ExtendedSystem extendedSystem) {
+        List<Residue> residueList = extendedSystem.getExtendedResidueList()
+        if (residueList.size() == 1 || (residueList.size() == 2 && extendedSystem.isTautomer(residueList.get(0)))) {
+            extendedSystem.setTautomerLambda(residueList.get(0), tautomer, false);
+        } else {
+            if (residueList.size() == 0) {
+                logger.severe("No residues found in the extended system.")
+            } else {
+                logger.severe("Only one lambda path is allowed for MBAR energy evaluations.")
+            }
+        }
+    }
 }
 

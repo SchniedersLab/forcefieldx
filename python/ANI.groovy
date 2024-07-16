@@ -151,11 +151,12 @@ class ANI extends PotentialScript {
                 grad[i] = ret.getArrayElement(i).asDouble()
             }
             energy = ret.getArrayElement(nAtoms * 3).asDouble()
+            logger.info(" ANI-2x Energy (Hartree): " + energy)
+            // Context close does not return.
+            // context.close(true)
         } catch (Exception e) {
             logger.info(" Exception:\n" + e.toString())
         }
-
-        logger.info(" ANI-2x Energy (Hartree): " + energy)
 
         return this
     }

@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
-import static java.lang.String.format;
-import static java.util.Arrays.stream;
-
 import ffx.numerics.math.RunningStatistics;
 import ffx.numerics.math.SummaryStatistics;
+
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.stream;
 
 /**
  * Bootstrap Free Energy Estimate.
@@ -59,6 +60,11 @@ public class EstimateBootstrapper {
   private final SummaryStatistics[] bootstrapFEResults;
   private final SummaryStatistics[] bootstrapEnthalpyResults;
 
+  /**
+   * Constructor.
+   *
+   * @param estimator Estimator to bootstrap.
+   */
   public EstimateBootstrapper(BootstrappableEstimator estimator) {
     this.estimate = estimator;
     nWindows = estimate.numberOfBins();
@@ -90,8 +96,8 @@ public class EstimateBootstrapper {
   /**
    * Gets randomized bootstrap indices; ensures there are at least a few distinct indices.
    *
-   * @param length Number of random indices to generate in range [0,length)
-   * @param random Source of randomness.
+   * @param length      Number of random indices to generate in range [0,length)
+   * @param random      Source of randomness.
    * @param minDistinct Minimum number of distinct indices.
    * @return Randomized indices.
    */
@@ -102,7 +108,7 @@ public class EstimateBootstrapper {
         return new int[0];
       }
       case 1 -> {
-        return new int[] {0};
+        return new int[]{0};
       }
       case 2 -> {
         int[] indices = new int[2];
@@ -148,7 +154,7 @@ public class EstimateBootstrapper {
   /**
    * Perform bootstrap analysis.
    *
-   * @param trials Number of trials.
+   * @param trials      Number of trials.
    * @param logInterval Interval between logging statements.
    */
   public void bootstrap(long trials, long logInterval) {

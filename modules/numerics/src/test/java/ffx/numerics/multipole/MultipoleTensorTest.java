@@ -108,7 +108,7 @@ public class MultipoleTensorTest extends FFXTest {
   public MultipoleTensorTest(String info, int order) {
     this.info = info;
     this.order = order;
-    this.tensorCount = MultipoleTensor.tensorCount(order);
+    this.tensorCount = MultipoleUtilities.tensorCount(order);
   }
 
   @Parameters
@@ -134,7 +134,7 @@ public class MultipoleTensorTest extends FFXTest {
    */
   @Test
   public void tensorCountTest() {
-    int result = MultipoleTensor.tensorCount(order);
+    int result = MultipoleUtilities.tensorCount(order);
     assertEquals(info, tensorCount, result);
   }
 
@@ -145,7 +145,7 @@ public class MultipoleTensorTest extends FFXTest {
     int dy = 0;
     int dz = 0;
     int expResult = 1;
-    int result = MultipoleTensor.ti(dx, dy, dz, order);
+    int result = MultipoleUtilities.ti(dx, dy, dz, order);
     assertEquals(info, expResult, result);
   }
 

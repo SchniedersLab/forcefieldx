@@ -47,6 +47,10 @@ package ffx.numerics.math;
  */
 public final class MatrixMath {
 
+  private MatrixMath() {
+    // Prevent instantiation.
+  }
+
   /**
    * Returns the determinant for a 3x3 matrix.
    *
@@ -90,7 +94,7 @@ public final class MatrixMath {
   /**
    * mat3inverse
    *
-   * @param m an array of double.
+   * @param m   an array of double.
    * @param res an array of double.
    * @return Returns the matrix res.
    */
@@ -122,8 +126,8 @@ public final class MatrixMath {
   /**
    * mat3mat3
    *
-   * @param m1 an array of double.
-   * @param m2 an array of double.
+   * @param m1  an array of double.
+   * @param m2  an array of double.
    * @param res an array of double.
    * @return Returns the matrix res.
    */
@@ -154,8 +158,8 @@ public final class MatrixMath {
   /**
    * Multiply two 4x4 matrices.
    *
-   * @param m1 an array of double (first matrix).
-   * @param m2 an array of double (second matrix).
+   * @param m1  an array of double (first matrix).
+   * @param m2  an array of double (second matrix).
    * @param res Resultant matrix.
    * @return Returns the matrix res.
    */
@@ -215,8 +219,8 @@ public final class MatrixMath {
   /**
    * mat3SymVec6
    *
-   * @param m an array of double.
-   * @param v an array of double.
+   * @param m   an array of double.
+   * @param v   an array of double.
    * @param res an array of double.
    * @return Returns the matrix res.
    */
@@ -247,8 +251,8 @@ public final class MatrixMath {
   /**
    * mat3vec3
    *
-   * @param v an array of double.
-   * @param m an array of double.
+   * @param v   an array of double.
+   * @param m   an array of double.
    * @param res an array of double.
    * @return Returns the matrix res.
    */
@@ -263,8 +267,8 @@ public final class MatrixMath {
    * scalar times a matrix times a matrix.
    *
    * @param scalar Input scalar.
-   * @param m1 First input matrix.
-   * @param m2 Second input matrix.
+   * @param m1     First input matrix.
+   * @param m2     Second input matrix.
    * @return Returns the matrix product.
    */
   public static double[][] scalarMat3Mat3(double scalar, double[][] m1, double[][] m2) {
@@ -275,9 +279,9 @@ public final class MatrixMath {
    * scalarMat3mat3
    *
    * @param scalar a double.
-   * @param m1 an array of double.
-   * @param m2 an array of double.
-   * @param res an array of double.
+   * @param m1     an array of double.
+   * @param m2     an array of double.
+   * @param res    an array of double.
    * @return Returns the matrix res.
    */
   public static double[][] scalarMat3Mat3(
@@ -337,8 +341,8 @@ public final class MatrixMath {
   /**
    * symVec6mat3
    *
-   * @param v an array of double.
-   * @param m an array of double.
+   * @param v   an array of double.
+   * @param m   an array of double.
    * @param res an array of double.
    * @return Returns the matrix res.
    */
@@ -399,8 +403,8 @@ public final class MatrixMath {
   /**
    * vec3mat3
    *
-   * @param v an array of double.
-   * @param m an array of double.
+   * @param v   an array of double.
+   * @param m   an array of double.
    * @param res an array of double.
    * @return Returns the array res.
    */
@@ -414,8 +418,8 @@ public final class MatrixMath {
   /**
    * Multiply coordinates by the transpose of a matrix.
    *
-   * @param in input coordinates.
-   * @param out output coordinates.
+   * @param in     input coordinates.
+   * @param out    output coordinates.
    * @param matrix multiply by the transpose of this matrix.
    */
   public static void applyMatrixTranspose(double[] in, double[] out, double[][] matrix) {

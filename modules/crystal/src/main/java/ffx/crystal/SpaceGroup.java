@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static ffx.crystal.SpaceGroupInfo.isSohnckeGroup;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static ffx.crystal.SpaceGroupInfo.isSohnckeGroup;
 
 /**
  * The Spacegroup class defines the symmetry of a crystal. There are 230 distinct space groups in
@@ -49,58 +49,83 @@ import java.util.List;
  *
  * @author Michael J. Schnieders
  * @see <ul>
- *     <li><a href="http://it.iucr.org/Ab/" target="_blank"> International Tables for
- *     Crystallography Volume A: Space-group symmetry </a>
- *     <li><a href="http://legacy.ccp4.ac.uk/html/symmetry.html" target="_blank"> CCP4 Symlib </a>
- *     </ul>
+ * <li><a href="http://it.iucr.org/Ab/" target="_blank"> International Tables for
+ * Crystallography Volume A: Space-group symmetry </a>
+ * <li><a href="http://legacy.ccp4.ac.uk/html/symmetry.html" target="_blank"> CCP4 Symlib </a>
+ * </ul>
  * @since 1.0
  */
 public class SpaceGroup {
 
-  /** Space group number. */
+  /**
+   * Space group number.
+   */
   public final int number;
-  /** Number of primitive symmetry equivalents. */
+  /**
+   * Number of primitive symmetry equivalents.
+   */
   public final int numPrimitiveSymEquiv;
-  /** Space group name. */
+  /**
+   * Space group name.
+   */
   public final String shortName;
   /**
    * Point group name. There are 32 distinct points groups, or crystal classes in three dimensions.
    */
   public final String pointGroupName;
-  /** Crystal system. */
+  /**
+   * Crystal system.
+   */
   public final CrystalSystem crystalSystem;
-  /** Laue group */
+  /**
+   * Laue group
+   */
   public final LaueSystem laueSystem;
-  /** Space group name under the PDB convention. */
+  /**
+   * Space group name under the PDB convention.
+   */
   public final String pdbName;
-  /** A List of SymOp instances. */
+  /**
+   * A List of SymOp instances.
+   */
   public final List<SymOp> symOps;
-  /** True for a Sohncke group (non-enantiogenic). */
+  /**
+   * True for a Sohncke group (non-enantiogenic).
+   */
   public final boolean respectsChirality;
-  /** Real space ASU limit operators. */
+  /**
+   * Real space ASU limit operators.
+   */
   public final ASULimit[] asuLimitOperators;
-  /** Lattice system. */
+  /**
+   * Lattice system.
+   */
   public final LatticeSystem latticeSystem;
-  /** Number of symmetry equivalents. */
+  /**
+   * Number of symmetry equivalents.
+   */
   private final int numSymEquiv;
-  /** Real space ASU limit values. */
+  /**
+   * Real space ASU limit values.
+   */
   private final double[] asuLimits;
 
   /**
    * Immutable SpaceGroup instances are made available only through the factory method so this
    * constructor is private.
    *
-   * @param number Space group number.
-   * @param numSymEquiv Number of symmetry equivalents.
+   * @param number               Space group number.
+   * @param numSymEquiv          Number of symmetry equivalents.
    * @param numPrimitiveSymEquiv Number of primitive symmetry equivalents.
-   * @param shortName Short PDB name.
-   * @param pointGroupName Point group name.
-   * @param pdbName PDB space group name.
-   * @param crystalSystem Crystal system.
-   * @param laueSystem Laue System.
-   * @param symOps Symmetry operators.
-   * @param asuLimits Assymetric unit limit.
-   * @param asuLimitOperators ASULimit instance.
+   * @param shortName            Short PDB name.
+   * @param pointGroupName       Point group name.
+   * @param pdbName              PDB space group name.
+   * @param crystalSystem        Crystal system.
+   * @param latticeSystem        Lattice system.
+   * @param laueSystem           Laue System.
+   * @param symOps               Symmetry operators.
+   * @param asuLimits            Asymmetric unit limit.
+   * @param asuLimitOperators    ASULimit instance.
    * @since 1.0
    */
   protected SpaceGroup(

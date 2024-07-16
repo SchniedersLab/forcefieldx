@@ -37,6 +37,16 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import ffx.utilities.FFXTest;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qi;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qk;
@@ -52,32 +62,21 @@ import static ffx.numerics.multipole.MultipoleTensorTest.permanentEnergy;
 import static ffx.numerics.multipole.MultipoleTensorTest.permanentEnergyEwald;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarGradICoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueICoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKCoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyCoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyEwald;
-import static ffx.numerics.multipole.MultipoleTensorTest.scaleMutual;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKThole;
+import static ffx.numerics.multipole.MultipoleTensorTest.scaleMutual;
 import static ffx.numerics.multipole.MultipoleTensorTest.xyz;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.junit.Assert.assertEquals;
-
-import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.logging.Logger;
-
-import ffx.utilities.FFXTest;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Parameterized Test of the MultipoleTensor class.
@@ -86,10 +85,12 @@ import org.junit.runners.Parameterized.Parameters;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class QIMultipoleTensorTest extends FFXTest {
+public class MultipoleTensorQITest extends FFXTest {
 
-  /** Logger for the MultipoleTensor class. */
-  private static final Logger logger = Logger.getLogger(QIMultipoleTensorTest.class.getName());
+  /**
+   * Logger for the MultipoleTensor class.
+   */
+  private static final Logger logger = Logger.getLogger(MultipoleTensorQITest.class.getName());
 
   private final double tolerance = 1.0e-13;
   private final double fdTolerance = 1.0e-6;
@@ -100,21 +101,21 @@ public class QIMultipoleTensorTest extends FFXTest {
   private final int order;
   private final int tensorCount;
   private final String info;
-  private final OPERATOR operator;
+  private final Operator operator;
   private final double beta = 0.545;
   private final double thole = 0.39;
   private final double AiAk = 1.061104559485911;
 
-  public QIMultipoleTensorTest(
+  public MultipoleTensorQITest(
       String info,
       int order,
-      OPERATOR operator) {
+      Operator operator) {
     this.info = info;
     this.order = order;
     r[0] = xyz[0];
     r[1] = xyz[1];
     r[2] = xyz[2];
-    this.tensorCount = MultipoleTensor.tensorCount(order);
+    this.tensorCount = MultipoleUtilities.tensorCount(order);
     tensor = new double[tensorCount];
     noStorageTensor = new double[tensorCount];
     fastTensor = new double[tensorCount];
@@ -124,21 +125,21 @@ public class QIMultipoleTensorTest extends FFXTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
+        new Object[][]{
             {
                 "Order 5 Coulomb",
                 5,      // Order
-                OPERATOR.COULOMB
+                Operator.COULOMB
             },
             {
                 "Order 5 Screened Coulomb",
                 5,
-                OPERATOR.SCREENED_COULOMB
+                Operator.SCREENED_COULOMB
             },
             {
                 "Order 4 Thole Field",
                 4,
-                OPERATOR.THOLE_FIELD
+                Operator.THOLE_FIELD
             }
         });
   }
@@ -146,7 +147,7 @@ public class QIMultipoleTensorTest extends FFXTest {
   @Test
   public void codeGenerationTest() {
     // Only run code generation for the Coulomb operator.
-    if (operator != OPERATOR.COULOMB) {
+    if (operator != Operator.COULOMB) {
       return;
     }
 
@@ -154,7 +155,7 @@ public class QIMultipoleTensorTest extends FFXTest {
     double[] r = {2.11, 2.12, 2.13};
 
     double[] tensor = new double[tensorCount];
-    MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
+    CoulombTensorQI multipoleTensor = new CoulombTensorQI(order);
     logger.info(format(" Writing QI Order %d tensor recursion code:", order));
 
     r[2] = length(r);
@@ -163,29 +164,44 @@ public class QIMultipoleTensorTest extends FFXTest {
     String code = multipoleTensor.codeTensorRecursion(r, tensor);
     logger.info(format("\n%s", code));
 
+    logger.info(format(" Writing QI Order %d vectorized tensor recursion code:", order));
+    code = multipoleTensor.codeVectorTensorRecursion(r, tensor);
+    logger.info(format("\n%s", code));
+
     PolarizableMultipole polarizableMultipole = new PolarizableMultipole(Qi, Ui, Ui);
     QIFrame qiFrame = new QIFrame(r);
     qiFrame.rotatePolarizableMultipole(polarizableMultipole);
     StringBuilder sb = new StringBuilder();
     logger.info(" Writing QI potential code due to multipole I:");
     multipoleTensor.codePotentialMultipoleI(polarizableMultipole, tensor, 0, 0, 0, sb);
-    logger.info("\n" + sb);
+    logger.info("\n\n" + sb);
+
+    sb = new StringBuilder();
+    logger.info(" Writing QI potential vectorized code due to multipole I:");
+    multipoleTensor.codePotentialMultipoleISIMD(polarizableMultipole, tensor, 0, 0, 0, sb);
+    logger.info("\n\n" + sb);
 
     sb = new StringBuilder();
     logger.info(" Writing QI potential code due to multipole K:");
     multipoleTensor.codePotentialMultipoleK(polarizableMultipole, tensor, 0, 0, 0, sb);
-    logger.info("\n" + sb);
+    logger.info("\n\n" + sb);
+
+    sb = new StringBuilder();
+    logger.info(" Writing QI potential vectorized code due to multipole K:");
+    multipoleTensor.codePotentialMultipoleKSIMD(polarizableMultipole, tensor, 0, 0, 0, sb);
+    logger.info("\n\n" + sb);
+
   }
 
   @Test
   public void permanentMultipoleEnergyAndGradTest() {
     // Thole damping is not used for permanent AMOEBA electrostatics.
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       return;
     }
 
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    if (operator == OPERATOR.SCREENED_COULOMB) {
+    if (operator == Operator.SCREENED_COULOMB) {
       multipoleTensor = new EwaldTensorQI(order, beta);
     }
 
@@ -209,11 +225,11 @@ public class QIMultipoleTensorTest extends FFXTest {
     qiFrame.toGlobal(Ti);
     qiFrame.toGlobal(Tk);
 
-    if (operator == OPERATOR.COULOMB) {
+    if (operator == Operator.COULOMB) {
       assertEquals(info + " QI Permanent Energy", permanentEnergy, e, tolerance);
       assertEquals(info + " QI Multipole Torque I", permTorqueI[1], Ti[1], tolerance);
       assertEquals(info + " QI Multipole Torque K", permTorqueK[1], Tk[1], tolerance);
-    } else if (operator == OPERATOR.SCREENED_COULOMB) {
+    } else if (operator == Operator.SCREENED_COULOMB) {
       assertEquals(info + " QI Ewald Permanent Energy", permanentEnergyEwald, e, tolerance);
       assertEquals(info + " QI Ewald Multipole Torque I", permTorqueIEwald[1], Ti[1], tolerance);
       assertEquals(info + " QI Ewald Multipole Torque K", permTorqueKEwald[1], Tk[1], tolerance);
@@ -284,9 +300,9 @@ public class QIMultipoleTensorTest extends FFXTest {
   public void polarizationEnergyAndGradTest() {
 
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       multipoleTensor = new TholeTensorQI(order, thole, AiAk);
-    } else if (operator == OPERATOR.SCREENED_COULOMB) {
+    } else if (operator == Operator.SCREENED_COULOMB) {
       multipoleTensor = new EwaldTensorQI(order, beta);
     }
 
@@ -301,7 +317,7 @@ public class QIMultipoleTensorTest extends FFXTest {
 
     PolarizableMultipole mI = new PolarizableMultipole(Qi, Ui, Ui);
     PolarizableMultipole mK = new PolarizableMultipole(Qk, Uk, Uk);
-    if (operator == OPERATOR.SCREENED_COULOMB) {
+    if (operator == Operator.SCREENED_COULOMB) {
       mI.setInducedDipole(UiEwald, UiEwald);
       mK.setInducedDipole(UkEwald, UkEwald);
     }
@@ -327,12 +343,12 @@ public class QIMultipoleTensorTest extends FFXTest {
     double[] gradI = polarGradICoulomb;
     double[] torqueI = polarTorqueICoulomb;
     double[] torqueK = polarTorqueKCoulomb;
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       energy = polarizationEnergyThole;
       gradI = polarGradIThole;
       torqueI = polarTorqueIThole;
       torqueK = polarTorqueKThole;
-    } else if (operator == OPERATOR.SCREENED_COULOMB) {
+    } else if (operator == Operator.SCREENED_COULOMB) {
       energy = polarizationEnergyEwald;
       gradI = polarGradIEwald;
       torqueI = polarTorqueIEwald;
@@ -414,9 +430,9 @@ public class QIMultipoleTensorTest extends FFXTest {
   public void finiteDifferenceTest() {
 
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       multipoleTensor = new TholeTensorQI(order, thole, AiAk);
-    } else if (operator == OPERATOR.SCREENED_COULOMB) {
+    } else if (operator == Operator.SCREENED_COULOMB) {
       multipoleTensor = new EwaldTensorQI(order, beta);
     }
 
@@ -450,9 +466,9 @@ public class QIMultipoleTensorTest extends FFXTest {
   public void multipoleTensorTest() {
 
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       multipoleTensor = new TholeTensorQI(order, thole, AiAk);
-    } else if (operator == OPERATOR.SCREENED_COULOMB) {
+    } else if (operator == Operator.SCREENED_COULOMB) {
       multipoleTensor = new EwaldTensorQI(order, beta);
     }
 
@@ -505,7 +521,7 @@ public class QIMultipoleTensorTest extends FFXTest {
     int start = 0;
 
     // We do not calculate the zeroth term for Thole damping.
-    if (operator == OPERATOR.THOLE_FIELD) {
+    if (operator == Operator.THOLE_FIELD) {
       start = 1;
     }
 

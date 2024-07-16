@@ -6,7 +6,7 @@
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>forcefieldx</artifactId>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>ffx-numerics</artifactId>
@@ -17,19 +17,8 @@
     and multipole tensor recursions.
   </description>
   <build>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/numerics/fft
-        </directory>
-        <targetPath>ffx/numerics/fft</targetPath>
-        <includes>
-          <include>*.ptx</include>
-          <include>*.cl</include>
-        </includes>
-      </resource>
-    </resources>
     <plugins>
-      <!-- plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec.version}</version>
@@ -41,22 +30,30 @@
             </goals>
           </execution>
         </executions>
+        <!-- Flags to try:
+             -XX:ObjectAlignmentInBytes=8 (does a value larger than the default of 8 reduce cache line interference)
+             -XX:-UseNeon (default is off on MacOS with an M2 chip)
+        -->
         <configuration>
           <executable>java</executable>
           <arguments>
             <argument>-ms2G</argument>
             <argument>-mx2G</argument>
-            <argument>-Djava.library.path=/Data/ffx-project/ffx/bin/64-bit</argument>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>ffx.numerics.multipole.MultipoleTensor</argument>
-            <argument>6</argument>
-            <argument>1.1</argument>
-            <argument>1.2</argument>
-            <argument>1.3</argument>
+            <argument>--add-modules</argument>
+            <argument>jdk.incubator.vector</argument>
+            <argument>-Dfft.useSIMD=false</argument>
+            <!-- argument>-XX:ObjectAlignmentInBytes=8</argument -->
+            <!-- argument>-XX:+UseNeon</argument -->
+            <argument>-Dffx.log=ALL</argument>
+            <argument>ffx.numerics.fft.Complex3DParallel</argument>
+            <argument>256</argument>
+            <argument>8</argument>
+            <argument>20</argument>
           </arguments>
         </configuration>
-      </plugin -->
+      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -65,11 +62,6 @@
       <artifactId>commons-math3</artifactId>
       <version>${commons-math3.version}</version>
     </dependency>
-    <!-- dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons-io.version}</version>
-    </dependency -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-pj</artifactId>
@@ -78,13 +70,8 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-utilities</artifactId>
-      <version>1.0.0-beta</version>
+      <version>1.0.0</version>
     </dependency>
-    <!-- dependency>
-      <groupId>org.jogamp</groupId>
-      <artifactId>jogamp-fat</artifactId>
-      <version>${jogamp-fat.version}</version>
-    </dependency -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

@@ -39,6 +39,7 @@ package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.optimize.TorsionSearch
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -50,7 +51,6 @@ import org.apache.commons.math3.util.FastMath
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import ffx.algorithms.optimize.TorsionSearch
 
 import static java.lang.String.format
 
@@ -86,9 +86,9 @@ class TorsionScan extends AlgorithmsScript {
   /**
    * --elimMax
    */
-  @Option(names = ['--elimMax', "--em"], paramLabel = '2', defaultValue = '2',
+  @Option(names = ['--elimMax', "--em"], paramLabel = '0', defaultValue = '0',
       description = 'Eliminate bonds where one torsion causes high energies. Reduces the complexity of the search.')
-  private int elimMax = 2
+  private int elimMax = 0
 
   /**
    * --saveAll
@@ -232,6 +232,7 @@ class TorsionScan extends AlgorithmsScript {
       xyzFilter.writeFile(saveLocation, true)
       count++
     }
+    logger.info("\n -1 indices come from static torsion scan.")
 
     // Create properties/key file
     File key = new File(FilenameUtils.removeExtension(filename) + ".key")

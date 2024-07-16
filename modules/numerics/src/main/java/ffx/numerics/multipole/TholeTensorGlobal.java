@@ -79,8 +79,9 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
     super(order);
     this.thole = thole;
     this.AiAk = AiAk;
-    this.operator = OPERATOR.THOLE_FIELD;
+    this.operator = Operator.THOLE_FIELD;
 
+    // Source terms are currently defined up to order 4.
     assert (order <= 4);
   }
 
@@ -103,6 +104,19 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * @return True if -thole*u^3 is greater than -50.0.
    */
   public boolean checkThole(double r) {
+    return checkThole(thole, AiAk, r);
+  }
+
+  /**
+   * Check if the Thole damping is exponential is greater than zero (or the interaction can be
+   * neglected).
+   *
+   * @param thole Thole damping parameter is set to min(pti,ptk)).
+   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
+   * @param r The separation distance.
+   * @return True if -thole*u^3 is greater than -50.0.
+   */
+  protected static boolean checkThole(double thole, double AiAk, double r) {
     double rAiAk = r * AiAk;
     return (-thole * rAiAk * rAiAk * rAiAk > -50.0);
   }
@@ -115,13 +129,21 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
   @Override
   protected void source(double[] T000) {
     // Compute the normal Coulomb auxiliary term.
-    double ir = 1.0 / R;
-    double ir2 = ir * ir;
-    for (int n = 0; n < o1; n++) {
-      T000[n] = coulombSource[n] * ir;
-      ir *= ir2;
-    }
+    super.source(T000);
 
+    // Add the Thole damping terms: edamp = exp(-thole*u^3).
+    tholeSource(thole, AiAk, R, T000);
+  }
+
+  /**
+   * Generate source terms for the Challacombe et al. recursion.
+   *
+   * @param thole Thole damping parameter is set to min(pti,ptk)).
+   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
+   * @param R The separation distance.
+   * @param T000 Location to store the source terms.
+   */
+  protected static void tholeSource(double thole, double AiAk, double R, double[] T000) {
     // Add the Thole damping terms: edamp = exp(-thole*u^3).
     double u = R * AiAk;
     double u3 = thole * u * u * u;

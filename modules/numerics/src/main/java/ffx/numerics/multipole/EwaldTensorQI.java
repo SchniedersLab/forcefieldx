@@ -37,11 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static ffx.numerics.special.Erf.erfc;
-import static java.lang.Math.PI;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+import static ffx.numerics.multipole.EwaldTensorGlobal.fillEwaldSource;
+import static ffx.numerics.multipole.EwaldTensorGlobal.initEwaldSource;
 
 /**
  * The EwaldTensorQI class computes derivatives of erfc(<b>r</b>)/|<b>r</b>| via recursion to
@@ -49,15 +46,12 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
- *     Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
- *     computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
- *     Ed. J. Leczszynski, World Scientifc, 1996. </a>
+ * Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
+ * computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
+ * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
 public class EwaldTensorQI extends CoulombTensorQI {
-
-  /** Constant <code>sqrtPI = sqrt(PI)</code> */
-  private static final double sqrtPI = sqrt(PI);
 
   /**
    * These are the "source" terms for the recursion for the screened Coulomb operator erfc(R)/R.
@@ -73,21 +67,16 @@ public class EwaldTensorQI extends CoulombTensorQI {
    * Constructor for EwaldTensorQI.
    *
    * @param order Tensor order.
-   * @param beta The Ewald convergence parameter.
+   * @param beta  The Ewald convergence parameter.
    */
   public EwaldTensorQI(int order, double beta) {
     super(order);
     this.beta = beta;
-    operator = OPERATOR.SCREENED_COULOMB;
+    operator = Operator.SCREENED_COULOMB;
 
     // Auxiliary terms for screened Coulomb (Sagui et al. Eq. 2.28)
     ewaldSource = new double[o1];
-    double prefactor = 2.0 * beta / sqrtPI;
-    double twoBeta2 = -2.0 * beta * beta;
-    for (int n = 0; n <= order; n++) {
-      ewaldSource[n] = prefactor * pow(twoBeta2, n);
-    }
-
+    initEwaldSource(order, beta, ewaldSource);
   }
 
   /**
@@ -95,24 +84,11 @@ public class EwaldTensorQI extends CoulombTensorQI {
    *
    * @param T000 Location to store the source terms.
    */
+  @Override
   protected void source(double[] T000) {
     // Generate source terms for real space Ewald summation.
     if (beta > 0.0) {
-      // Sagui et al. Eq. 2.22
-      double betaR = beta * R;
-      double betaR2 = betaR * betaR;
-      double iBetaR2 = 1.0 / (2.0 * betaR2);
-      double expBR2 = exp(-betaR2);
-      // Fnc(x^2) = Sqrt(PI) * erfc(x) / (2*x)
-      // where x = Beta*R
-      double Fnc = sqrtPI * erfc(betaR) / (2.0 * betaR);
-      for (int n = 0; n < o1; n++) {
-        T000[n] = ewaldSource[n] * Fnc;
-        // Generate F(n+1)c from Fnc (Eq. 2.24 in Sagui et al.)
-        // F(n+1)c = [(2*n+1) Fnc(x) + exp(-x)] / 2x
-        // where x = (Beta*R)^2
-        Fnc = ((2.0 * n + 1.0) * Fnc + expBR2) * iBetaR2;
-      }
+      fillEwaldSource(order, beta, ewaldSource, R, T000);
     } else {
       // For beta = 0, generate tensors for the Coulomb operator.
       super.source(T000);

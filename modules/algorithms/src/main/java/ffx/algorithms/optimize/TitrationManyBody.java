@@ -37,7 +37,10 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
@@ -52,8 +55,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import java.lang.String;
 
 public class TitrationManyBody {
 
@@ -67,7 +69,7 @@ public class TitrationManyBody {
   private ForceFieldEnergy potentialEnergy;
 
   public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
-                           double pH) {
+      double pH) {
     this.filename = filename;
     this.forceField = forceField;
     this.resNumberList = resNumberList;
@@ -113,19 +115,17 @@ public class TitrationManyBody {
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
     int locs = 1;
-    if (altLocs != null) {
+    if(altLocs!=null){
       locs = altLocs.size();
       for (int i = 0; i < locs; i++) {
-        if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
-          logger.info("");
-        } else {
+        if (altLocs.get(i) == null) {
           altLocs.remove(altLocs.get(i));
         }
       }
     }
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[locs];
     molecularAssemblies[0] = molecularAssembly;
-    for (int i = 0; i < locs; i++) {
+    for (int i = 0; i < altLocs.size(); i++) {
       if (i != 0) {
         logger.info(filename);
         MolecularAssembly newAssembly = new MolecularAssembly(filename);
@@ -164,7 +164,7 @@ public class TitrationManyBody {
 
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
-                                    List<Residue> residueList) {
+      List<Residue> residueList) {
     boolean isTitrating = false;
     int i = 0;
     for (Residue residue : residueList) {

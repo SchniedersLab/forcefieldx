@@ -50,6 +50,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class ModifiedBessel {
 
+  private ModifiedBessel() {
+    // Prevent instantiation.
+  }
+
   /**
    * Chebyshev coefficients for exp(-x) i0(x) in the interval [0,8].
    * <br>
@@ -263,9 +267,9 @@ public class ModifiedBessel {
    * <p>
    * NOTE: Coefficients are in reverse; zero-order term is last.
    *
-   * @param x argument to the polynomial.
+   * @param x            argument to the polynomial.
    * @param coefficients the coefficients of the polynomial.
-   * @param N the number of coefficients.
+   * @param N            the number of coefficients.
    * @return the result
    */
   private static double evaluateChebyshev(double x, double[] coefficients, int N) {

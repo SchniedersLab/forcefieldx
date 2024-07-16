@@ -54,7 +54,7 @@ import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static ffx.numerics.fft.Complex3D.iComplex3D;
+import static ffx.numerics.fft.Complex3D.interleavedIndex;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.numerics.spline.UniformBSpline.bSpline;
 import static ffx.numerics.spline.UniformBSpline.bSplineDerivatives;
@@ -1107,7 +1107,7 @@ public class ReciprocalSpace {
           expterm *= (1.0 - cos(PI * crystal.a * sqrt(sSquared)));
         }
       }
-      int ii = iComplex3D(kX, kY, kZ, fftX, fftY) / 2;
+      int ii = interleavedIndex(kX, kY, kZ, fftX, fftY) / 2;
       influenceFunction[ii] = expterm;
     }
 
@@ -1491,7 +1491,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             final double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -1526,7 +1526,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             final double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -1613,7 +1613,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
@@ -1749,7 +1749,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -1813,7 +1813,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -1912,7 +1912,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
@@ -2057,7 +2057,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -2114,7 +2114,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             double current = splineBuffer.get(ii);
             double updated = fma(splxi[0], term0, current);
@@ -2208,7 +2208,7 @@ public class ReciprocalSpace {
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
-            final int ii = iComplex3D(i, j, k, fftX, fftY);
+            final int ii = interleavedIndex(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
@@ -2351,7 +2351,7 @@ public class ReciprocalSpace {
               double t3 = 0.0;
               for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                 final int i = mod(++i0, fftX);
-                final int ii = iComplex3D(i, j, k, fftX, fftY);
+                final int ii = interleavedIndex(i, j, k, fftX, fftY);
                 final double tq = splineBuffer.get(ii);
                 final double[] splxi = splx[ith1];
                 t0 = fma(tq, splxi[0], t0);
@@ -2596,7 +2596,7 @@ public class ReciprocalSpace {
               double t3p = 0.0;
               for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                 final int i = mod(++i0, fftX);
-                final int ii = iComplex3D(i, j, k, fftX, fftY);
+                final int ii = interleavedIndex(i, j, k, fftX, fftY);
                 final double tq = splineBuffer.get(ii);
                 final double tp = splineBuffer.get(ii + 1);
                 final double[] splxi = splx[ith1];

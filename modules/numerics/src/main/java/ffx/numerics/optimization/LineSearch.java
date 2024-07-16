@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.optimization;
 
+import ffx.numerics.OptimizationInterface;
+
 import static ffx.numerics.optimization.LBFGS.DEFAULT_ANGLEMAX;
 import static ffx.numerics.optimization.LBFGS.DEFAULT_CAPPA;
 import static ffx.numerics.optimization.LBFGS.DEFAULT_INTMAX;
@@ -52,8 +54,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-
-import ffx.numerics.OptimizationInterface;
 
 /**
  * This class implements an algorithm for uni-dimensional line search. This file is a translation of
@@ -424,11 +424,29 @@ public class LineSearch {
    * Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln
    */
   public enum LineSearchResult {
+    /**
+     * Successful line search.
+     */
     Success,
+    /**
+     * Angle between gradient and search direction is too wide.
+     */
     WideAngle,
+    /**
+     * Scale the step size.
+     */
     ScaleStep,
+    /**
+     * Interpolation error.
+     */
     IntplnErr,
+    /**
+     * Restart the search.
+     */
     ReSearch,
+    /**
+     * Bad interpolation.
+     */
     BadIntpln
   }
 }

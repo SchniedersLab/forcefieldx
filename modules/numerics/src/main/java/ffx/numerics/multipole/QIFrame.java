@@ -163,7 +163,7 @@ public class QIFrame {
   /**
    * Update the QIFrame rotation matrix and rotate the multipoles.
    *
-   * @param r Separation along each axis.
+   * @param r  Separation along each axis.
    * @param mI PolarizableMultipole for site I.
    * @param mK PolarizableMultipole for site K.
    */
@@ -181,7 +181,7 @@ public class QIFrame {
    * @param mK PolarizableMultipole for site K.
    */
   public void setAndRotate(double dx, double dy, double dz,
-      PolarizableMultipole mI, PolarizableMultipole mK) {
+                           PolarizableMultipole mI, PolarizableMultipole mK) {
     setQIVector(dx, dy, dz);
     rotatePolarizableMultipole(mI);
     rotatePolarizableMultipole(mK);
