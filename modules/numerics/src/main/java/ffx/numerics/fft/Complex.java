@@ -124,13 +124,14 @@ public class Complex {
    */
   private final double[] scratch;
   /**
-   * References to the input and output data arrays.
-   */
-  private final PassData[] passData;
-  /**
    * Constants for each pass.
    */
   private final MixedRadixFactor[] mixedRadixFactors;
+  /**
+   * Pass specific data for the transform with
+   * references to the input and output data arrays.
+   */
+  private final PassData[] passData;
   /**
    * Use SIMD operators.
    */
@@ -139,10 +140,19 @@ public class Complex {
    * Minimum SIMD loop length set to the preferred SIMD vector length.
    */
   private int minSIMDLoopLength;
+
   /**
    * Cache the last input dimension.
    */
   private static int lastN = -1;
+  /**
+   * Cache the last imaginary offset.
+   */
+  private static int lastIm = -1;
+  /**
+   * Cache the last nFFT size.
+   */
+  private static int lastNFFTs = -1;
   /**
    * Cache the last set of radix factors.
    */
@@ -151,10 +161,6 @@ public class Complex {
    * Cache the last set tiddle factors.
    */
   private static double[][][] twiddleCache = null;
-  /**
-   * Cache the last imaginary offset.
-   */
-  private static int lastIm = -1;
   /**
    * Cache the last set of radix factors. These classes are static and thread-safe.
    */
@@ -199,7 +205,7 @@ public class Complex {
   public Complex(int n, DataLayout1D dataLayout, int imOffset, int nFFTs) {
     assert (n > 1);
     this.n = n;
-    this.nFFTs = 1;
+    this.nFFTs = nFFTs;
     this.externalIm = imOffset;
 
     /*
@@ -218,6 +224,8 @@ public class Complex {
     packedData = new double[2 * n * nFFTs];
     scratch = new double[2 * n * nFFTs];
     passData = new PassData[2];
+    passData[0] = new PassData(1, packedData, 0, scratch, 0);
+    passData[1] = new PassData(1, packedData, 0, scratch, 0);
 
     // For a 3D transform with 64 threads, there will be 3 * 64 = 192 transforms created.
     // To conserve memory, the most recent set of twiddles and mixed radix factors are cached.
@@ -225,7 +233,7 @@ public class Complex {
     // Synchronize the creation of the twiddle factors.
     synchronized (Complex.class) {
       // The last set of factors, twiddles and mixed radix factors will be reused.
-      if (this.n == lastN && this.im == lastIm) {
+      if (this.n == lastN && this.im == lastIm && this.nFFTs == lastNFFTs) {
         factors = factorsCache;
         twiddle = twiddleCache;
         mixedRadixFactors = mixedRadixFactorsCache;
@@ -236,6 +244,7 @@ public class Complex {
         mixedRadixFactors = new MixedRadixFactor[factors.length];
         lastN = this.n;
         lastIm = this.im;
+        lastNFFTs = this.nFFTs;
         factorsCache = factors;
         twiddleCache = twiddle;
         mixedRadixFactorsCache = mixedRadixFactors;
@@ -499,21 +508,36 @@ public class Complex {
   private void transformInternal(
       final double[] data, final int offset, final int stride, final int sign, final int nextFFT) {
 
+    // Even pass data.
+    passData[0].sign = sign;
+    passData[0].in = data;
+    passData[0].inOffset = offset;
+    passData[0].out = scratch;
+    passData[0].outOffset = 0;
+    // Odd pass data.
+    passData[1].sign = sign;
+    passData[1].in = scratch;
+    passData[1].inOffset = 0;
+    passData[1].out = data;
+    passData[1].outOffset = offset;
+
     // Configure the pass data for the transform.
     boolean packed = false;
     if (stride > 2 || externalIm > n) {
       // Pack non-contiguous (stride > 2) data into a contiguous array.
       packed = true;
       pack(data, offset, stride, nextFFT);
-      passData[0] = new PassData(sign, packedData, 0, scratch, 0);
-      passData[1] = new PassData(sign, scratch, 0, packedData, 0);
-    } else {
-      passData[0] = new PassData(sign, data, offset, scratch, 0);
-      passData[1] = new PassData(sign, scratch, 0, data, offset);
+      // The even pass input data is in the packedData array with no offset.
+      passData[0].in = packedData;
+      passData[0].inOffset = 0;
+      // The odd pass input data is in the scratch array with no offset.
+      passData[1].out = packedData;
+      passData[1].outOffset = 0;
     }
 
     // Perform the FFT by looping over the factors.
     final int nfactors = factors.length;
+
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
       MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
@@ -527,8 +551,8 @@ public class Complex {
     // If the number of factors is odd, the final result is in the scratch array.
     if (nfactors % 2 == 1) {
       // Copy the scratch array to the data array.
-      if (stride <= 2 && (im == externalIm)) {
-        arraycopy(scratch, 0, data, offset, 2 * n);
+      if (stride <= 2 && (im == externalIm) && nextFFT == 2 * n) {
+        arraycopy(scratch, 0, data, offset, 2 * n * nFFTs);
       } else {
         unpack(scratch, data, offset, stride, nextFFT);
       }

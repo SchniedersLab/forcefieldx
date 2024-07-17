@@ -141,6 +141,71 @@ public class ComplexTest extends FFXTest {
   }
 
   /**
+   * Test of fft method, of class Complex, using 2 FFTs packed next to each other.
+   */
+  @Test
+  public void testFftInterleavedScalar2FFT() {
+    double tolerance = 1.0e-11;
+
+    int nFFTs = 2;
+    int nextFFT = 2 * n;
+    int offset = 0;
+    int stride = 2;
+    int im = 1;
+    Complex complex = new Complex(n, DataLayout1D.INTERLEAVED, im, nFFTs);
+    complex.setUseSIMD(false);
+
+    long dftTime = System.nanoTime();
+    Complex.dft(data, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    double[] data2 = new double[2 * n * nFFTs];
+    int index = 0;
+    for (int ii = 0; ii < 2 * n; ii += stride) {
+      for (int i = 0; i < nFFTs; i++) {
+        data2[index] = data[ii];
+        //data2[index + im] = data[ii + im];
+        index += stride;
+      }
+    }
+
+    complex.fft(data2, offset, stride, nextFFT);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < n; ii++) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii], data2[index], tolerance);
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii + 1], data2[index + 1], tolerance);
+        index += 2;
+      }
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data2, offset, stride, nextFFT);
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < nextFFT; ii += 2) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" IFFT(FFT(X)) " + info + " at position: " + ii + " FFT " + i,
+            orig[ii], data2[index], tolerance);
+        index += 2;
+      }
+    }
+  }
+
+  /**
    * Test of fft method, of class Complex.
    */
   @Test

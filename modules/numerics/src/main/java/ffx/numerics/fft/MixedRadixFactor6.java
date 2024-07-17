@@ -74,11 +74,11 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
    */
   @Override
   protected void passScalar(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
@@ -219,11 +219,11 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
    * Handle factors of 6.
    */
   private void interleaved(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
@@ -310,11 +310,11 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
    * Handle factors of 6.
    */
   private void blocked(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
     // First pass of the 6-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {

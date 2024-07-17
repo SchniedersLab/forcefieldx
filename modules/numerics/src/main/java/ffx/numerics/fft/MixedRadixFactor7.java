@@ -91,11 +91,11 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
    * Handle factors of 7.
    */
   protected void passScalar(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double s1 = (-sign) * sin2PI_7;
     final double s2 = (-sign) * sin4PI_7;
     final double s3 = (-sign) * sin6PI_7;
@@ -323,11 +323,11 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
    * Handle factors of 7.
    */
   private void interleaved(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double s1 = (-sign) * sin2PI_7;
     final double s2 = (-sign) * sin4PI_7;
     final double s3 = (-sign) * sin6PI_7;
@@ -467,11 +467,11 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
    * Handle factors of 7.
    */
   private void blocked(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    final int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double s1 = (-sign) * sin2PI_7;
     final double s2 = (-sign) * sin4PI_7;
     final double s3 = (-sign) * sin6PI_7;
