@@ -198,6 +198,7 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
    */
   @Override
   protected void passSIMD(PassData passData) {
+    // Interleaved.
     if (im == 1) {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % LOOP != 0) {
@@ -205,6 +206,7 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
       } else {
         interleaved(passData);
       }
+      // Blocked.
     } else {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
       if (innerLoopLimit % BLOCK_LOOP != 0) {

@@ -206,7 +206,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           break;
         default:
           // This should never happen.
-          throw new IllegalArgumentException(" Invalid inner loop limit: " + innerLoopLimit);
+          throw new IllegalArgumentException("  Invalid inner loop limit: " + innerLoopLimit);
       }
     }
   }
@@ -221,6 +221,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
+
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
       final DoubleVector
@@ -235,8 +236,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           t1_i = z1_i.add(z2_i),
           t2_r = t1_r.mul(-0.5).add(z0_r),
           t2_i = t1_i.mul(-0.5).add(z0_i),
-          t3_r = t1_r.sub(z0_r).mul(tau),
-          t3_i = t1_i.sub(z0_i).mul(tau);
+          t3_r = z1_r.sub(z2_r).mul(tau),
+          t3_i = z1_i.sub(z2_i).mul(tau);
       z0_r.add(t1_r).intoArray(ret, j);
       z0_i.add(t1_i).intoArray(ret, j + im);
       t2_r.sub(t3_i).intoArray(ret, j + dj);
@@ -266,8 +267,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
             t1_i = z1_i.add(z2_i),
             t2_r = t1_r.mul(-0.5).add(z0_r),
             t2_i = t1_i.mul(-0.5).add(z0_i),
-            t3_r = t1_r.sub(z0_r).mul(tau),
-            t3_i = t1_i.sub(z0_i).mul(tau);
+            t3_r = z1_r.sub(z2_r).mul(tau),
+            t3_i = z1_i.sub(z2_i).mul(tau);
         z0_r.add(t1_r).intoArray(ret, j);
         z0_i.add(t1_i).intoArray(ret, j + im);
         DoubleVector
@@ -291,6 +292,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
+
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       final DoubleVector
@@ -305,8 +307,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           t1_i = z1_i.add(z2_i),
           t2_r = t1_r.mul(-0.5).add(z0_r),
           t2_i = t1_i.mul(-0.5).add(z0_i),
-          t3_r = t1_r.sub(z0_r).mul(tau),
-          t3_i = t1_i.sub(z0_i).mul(tau);
+          t3_r = z1_r.sub(z2_r).mul(tau),
+          t3_i = z1_i.sub(z2_i).mul(tau);
       z0_r.add(t1_r).intoArray(ret, j);
       z0_i.add(t1_i).intoArray(ret, j + im);
       t2_r.sub(t3_i).intoArray(ret, j + dj);
@@ -336,8 +338,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
             t1_i = z1_i.add(z2_i),
             t2_r = t1_r.mul(-0.5).add(z0_r),
             t2_i = t1_i.mul(-0.5).add(z0_i),
-            t3_r = t1_r.sub(z0_r).mul(tau),
-            t3_i = t1_i.sub(z0_i).mul(tau);
+            t3_r = z1_r.sub(z2_r).mul(tau),
+            t3_i = z1_i.sub(z2_i).mul(tau);
         z0_r.add(t1_r).intoArray(ret, j);
         z0_i.add(t1_i).intoArray(ret, j + im);
         DoubleVector
@@ -361,6 +363,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     final double tau = sign * sqrt3_2;
+
     // First pass of the 3-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
       final DoubleVector
@@ -375,8 +378,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
           t1_i = z1_i.add(z2_i),
           t2_r = t1_r.mul(-0.5).add(z0_r),
           t2_i = t1_i.mul(-0.5).add(z0_i),
-          t3_r = t1_r.sub(z0_r).mul(tau),
-          t3_i = t1_i.sub(z0_i).mul(tau);
+          t3_r = z1_r.sub(z2_r).mul(tau),
+          t3_i = z1_i.sub(z2_i).mul(tau);
       z0_r.add(t1_r).intoArray(ret, j);
       z0_i.add(t1_i).intoArray(ret, j + im);
       t2_r.sub(t3_i).intoArray(ret, j + dj);
@@ -406,8 +409,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
             t1_i = z1_i.add(z2_i),
             t2_r = t1_r.mul(-0.5).add(z0_r),
             t2_i = t1_i.mul(-0.5).add(z0_i),
-            t3_r = t1_r.sub(z0_r).mul(tau),
-            t3_i = t1_i.sub(z0_i).mul(tau);
+            t3_r = z1_r.sub(z2_r).mul(tau),
+            t3_i = z1_i.sub(z2_i).mul(tau);
         z0_r.add(t1_r).intoArray(ret, j);
         z0_i.add(t1_i).intoArray(ret, j + im);
         DoubleVector

@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -218,7 +219,7 @@ public class Complex {
       im = 1;
       ii = 2;
     } else {
-      im = n;
+      im = n * nFFTs;
       ii = 1;
     }
     packedData = new double[2 * n * nFFTs];
@@ -307,6 +308,18 @@ public class Complex {
         }
       }
     }
+  }
+
+  /**
+   * String representation of the Complex FFT.
+   *
+   * @return a String.
+   */
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder(" Complex FFT: n = " + n + ", nFFTs = " + nFFTs + ", im = " + externalIm);
+    sb.append("\n  Factors: ").append(Arrays.toString(factors));
+    return sb.toString();
   }
 
   /**
@@ -486,12 +499,10 @@ public class Complex {
 
     // Normalize inverse FFT with 1/n.
     double norm = normalization();
+    int index = 0;
     for (int f = 0; f < nFFTs; f++) {
-      int fftOffset = f * nextFFT;
-      for (int i = 0; i < n; i++) {
-        final int index = offset + stride * i + fftOffset;
-        data[index] *= norm;
-        data[index + im] *= norm;
+      for (int i = 0; i < 2 * n; i++) {
+        data[index++] *= norm;
       }
     }
   }
@@ -523,7 +534,8 @@ public class Complex {
 
     // Configure the pass data for the transform.
     boolean packed = false;
-    if (stride > 2 || externalIm > n) {
+    if (stride > 2 || externalIm > n * nFFTs) {
+      // System.out.println(" Packing data: " + n + " offset " + offset + " stride " + stride + " nextFFT " + nextFFT + " n * nFFTs " + (n * nFFTs) + " externalIm " + externalIm);
       // Pack non-contiguous (stride > 2) data into a contiguous array.
       packed = true;
       pack(data, offset, stride, nextFFT);
@@ -537,7 +549,6 @@ public class Complex {
 
     // Perform the FFT by looping over the factors.
     final int nfactors = factors.length;
-
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
       MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
@@ -546,6 +557,7 @@ public class Complex {
       } else {
         mixedRadixFactor.passScalar(passData[pass]);
       }
+
     }
 
     // If the number of factors is odd, the final result is in the scratch array.
@@ -571,11 +583,10 @@ public class Complex {
    * @param nextFFT the stride between FFTs.
    */
   private void pack(double[] data, int offset, int stride, int nextFFT) {
+    int i = 0;
     for (int f = 0; f < nFFTs; f++) {
-      int packedOffset = f * n;
       int inputOffset = offset + f * nextFFT;
-      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
-      for (int i = packedOffset, index = inputOffset, k = 0; k < n; k++, i += ii, index += stride) {
+      for (int index = inputOffset, k = 0; k < n; k++, i += ii, index += stride) {
         packedData[i] = data[index];
         packedData[i + im] = data[index + externalIm];
       }
@@ -591,11 +602,10 @@ public class Complex {
    * @param nextFFT the stride between FFTs.
    */
   private void unpack(double[] source, double[] data, int offset, int stride, int nextFFT) {
+    int i = 0;
     for (int f = 0; f < nFFTs; f++) {
-      int packedOffset = f * n;
       int outputOffset = offset + f * nextFFT;
-      // Internal imaginary offset is always 1 for interleaved or n for blocked data.
-      for (int i = packedOffset, index = outputOffset, k = 0; k < n; k++, i += ii, index += stride) {
+      for (int index = outputOffset, k = 0; k < n; k++, i += ii, index += stride) {
         data[index] = source[i];
         data[index + externalIm] = source[i + im];
       }
