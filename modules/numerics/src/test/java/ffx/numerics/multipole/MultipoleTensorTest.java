@@ -105,6 +105,57 @@ public class MultipoleTensorTest extends FFXTest {
   protected final static double[] polarTorqueIEwald = {0.0, -0.000003385814434, 0.0};
   protected final static double[] polarTorqueKEwald = {0.0, 0.000080790360336, 0.0};
 
+  // AMOEBA+ Water Dimer O-O interaction
+  protected final static double amoebaPlusMPoleEnergyOO = 8.6959247973876330E-002;
+  protected final static double amoebaPlusMPoleEnergyOH = -3.3755171537654061E-002;
+  protected final static double amoebaPlusIndDipoleEnergyOO = 1.4935109017088957E-003/2;
+  protected final static double amoebaPlusIndDipoleEnergyOH = -0.2283;
+  protected final static double amoebaPlusChargeTransferEnergy = -0.0427;
+  protected final static double chargePenAlphaOx = 4.0047;
+  protected final static double chargePenAlphaHyd = 3.2541;
+  protected final static double[] chrgTranParamsOx = new double[]{9.4879, 3.8982}; // alpha, beta?
+  // Multipole & Induced dipoles (undo what PolarizableMultipole Applies - 1/3
+  // (tinker doesn't double, so we need to))
+  protected final static double[] QiXYZ = {1.467089, 0.067722, 0.000000};
+  protected final static double Zi = 8.0;
+  // Oxygen 1
+  protected final static double[] QiAmoebaP = {
+          -0.50316456711796764, // charge
+          -4.8391389372990617E-002,  -9.9697768378871676E-002,  0.0000000000000000, // dipole
+          1.2064199052004655E-002*3,   1.7432698501819319E-002*3,  -2.9496897553823977E-002*3, // trace
+          3.4088807853371586E-003*3,   0.0000000000000000,        0.0000000000000000 // off diag
+  };
+  protected final static double[] QiInduced = {
+          -1.9757159038393233E-002,
+          -1.1052620863319413E-002,
+          -2.8861245105701660E-021,
+  };
+  protected final static double[] QkXYZ = {-1.405210, -0.064738, 0.000000};
+  protected final static double Zk = 8.0;
+  // Oxygen 2
+  protected final static double[] QkAmoebaP = {
+          -0.50645532267523641,
+          -5.6497094042130665E-002,   9.5338606817858315E-002,   0.0000000000000000,
+          -1.6869890623243792E-002*3,   6.4602970864044542E-003*3,   1.0409593536839330E-002*3,
+          -2.1308020694714599E-002*3,   -8.9034686819118132E-019*3,
+          3.2464171803135626E-018*3
+  };
+  protected final static double[] QkInduced = {
+          -5.3919378773639018E-002,
+           6.6658070142521734E-003,
+          -9.1447209902403356E-022,
+  };
+  // Hydrogen 2 (H-O interaction)
+  protected final static double[] QjAmoebaP = {
+          0.25152712323368620,
+          0.11140287316108205,       -4.7139571392261465E-002,   0.0000000000000000,
+          1.1431494801174508E-004*3,   3.6656033650649092E-003*3,  -3.7799183130766555E-003*3,
+          9.0058239922283824E-003*3,   0.0000000000000000,        0.0000000000000000
+  };
+  protected final static double[] QjInduced = {-0.0461,0.0348,-0.0000};
+  protected final static double[] QjXYZ = {1.887074, -0.783266, 0.000000};
+  protected final static double Zj = 1.0;
+
   public MultipoleTensorTest(String info, int order) {
     this.info = info;
     this.order = order;

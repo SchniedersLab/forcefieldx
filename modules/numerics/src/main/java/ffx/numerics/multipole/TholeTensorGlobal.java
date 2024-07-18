@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static java.lang.Math.pow;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
@@ -67,6 +68,7 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   private double AiAk;
+  private boolean directDamping;
 
   /**
    * Constructor for EwaldMultipoleTensorGlobal.
@@ -83,6 +85,14 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
 
     // Source terms are currently defined up to order 4.
     assert (order <= 4);
+  }
+
+  public TholeTensorGlobal(int order, double thole, double AiAk, boolean directDamping) {
+    this(order, thole, AiAk);
+    this.directDamping = directDamping;
+    if(directDamping) {
+      this.operator = Operator.THOLE_DIRECT_FIELD;
+    }
   }
 
   /**
@@ -132,7 +142,7 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
     super.source(T000);
 
     // Add the Thole damping terms: edamp = exp(-thole*u^3).
-    tholeSource(thole, AiAk, R, T000);
+    tholeSource(thole, AiAk, R, directDamping, T000);
   }
 
   /**
@@ -143,20 +153,34 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * @param R The separation distance.
    * @param T000 Location to store the source terms.
    */
-  protected static void tholeSource(double thole, double AiAk, double R, double[] T000) {
-    // Add the Thole damping terms: edamp = exp(-thole*u^3).
-    double u = R * AiAk;
-    double u3 = thole * u * u * u;
-    double u6 = u3 * u3;
-    double u9 = u6 * u3;
-    double expU3 = exp(-u3);
+  protected static void tholeSource(double thole, double AiAk, double R, boolean direct, double[] T000) {
+    if (!direct) { // Add the Thole damping terms: edamp = exp(-thole*u^3).
+      double u = R * AiAk;
+      double u3 = thole * u * u * u;
+      double u6 = u3 * u3;
+      double u9 = u6 * u3;
+      double expU3 = exp(-u3);
 
-    // The zeroth order term is not calculated for Thole damping.
-    T000[0] = 0.0;
-    T000[1] *= expU3;
-    T000[2] *= (1.0 + u3) * expU3;
-    T000[3] *= (1.0 + u3 + threeFifths * u6) * expU3;
-    T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) * oneThirtyFifth) * expU3;
+      // The zeroth order term is not calculated for Thole damping.
+      T000[0] = 0.0;
+      T000[1] *= expU3;
+      T000[2] *= (1.0 + u3) * expU3;
+      T000[3] *= (1.0 + u3 + threeFifths * u6) * expU3;
+      T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) * oneThirtyFifth) * expU3;
+
+    } else { // Damping for direct dipole edamp = 1-exp(-thole*u^(3/2)).
+      double u = R * AiAk;
+      double u32 = thole * pow(u, 3.0/2.0);
+      double u62 = u32 * u32;
+      double expU32 = exp(-u32);
+
+      // The zeroth order term is not calculated for direct Thole damping either.
+      T000[0] = 0.0;
+      T000[1] *= 1 - expU32;
+      T000[2] *= 1 - (1.0 + .5 * u32) * expU32;
+      T000[3] *= 1 - (1.0 + (39.0 * u32 + 9.0 * u62)/60.0) * expU32;
+      T000[4] *= 1 - (1.0 + (609.0*u32 + 189.0*u62 + 27*u62*u32)/840.0) * expU32;
+    }
   }
 
 }

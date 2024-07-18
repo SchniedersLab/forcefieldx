@@ -476,16 +476,25 @@ public abstract class MultipoleTensor {
    */
   public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK,
                                    double scaleEnergy) {
+    // Incorporate core charges into multipole potential
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q += mI.Z;
+      mK.q += mK.Z;
+    }
 
     // Find the permanent multipole potential and derivatives at k.
     multipoleIPotentialAtK(mI, 1);
     // Energy of induced dipole k in the field of permanent multipole i.
     double eK = polarizationEnergy(mK);
-
     // Find the permanent multipole potential and derivatives at site i.
     multipoleKPotentialAtI(mK, 1);
     // Energy of induced dipole i in the field of permanent multipole k.
     double eI = polarizationEnergy(mI);
+
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q -= mI.Z;
+      mK.q -= mK.Z;
+    }
 
     return scaleEnergy * (eI + eK);
   }
@@ -506,6 +515,11 @@ public abstract class MultipoleTensor {
   public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
                                               double inductionMask, double energyMask, double mutualMask,
                                               double[] Gi, double[] Ti, double[] Tk) {
+
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q += mI.Z;
+      mK.q += mK.Z;
+    }
 
     // Add the induction and energy masks to create an "averaged" induced dipole (sx, sy, sz).
     mI.applyMasks(inductionMask, energyMask);
@@ -556,6 +570,11 @@ public abstract class MultipoleTensor {
     // Find the potential and its derivatives at I due to the averaged induced dipole at site k.
     dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
+
+    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+      mI.q -= mI.Z;
+      mK.q -= mK.Z;
+    }
 
     return energy;
   }

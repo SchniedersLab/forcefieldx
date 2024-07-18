@@ -111,7 +111,7 @@ public class TholeTensorQI extends CoulombTensorQI {
     super.source(T000);
 
     // Add the Thole damping terms: edamp = exp(-thole*u^3).
-    tholeSource(thole, AiAk, R, T000);
+    tholeSource(thole, AiAk, R, false, T000);
   }
 
 }
