@@ -206,7 +206,6 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
     }
   }
 
-
   /**
    * Handle factors of 5.
    */

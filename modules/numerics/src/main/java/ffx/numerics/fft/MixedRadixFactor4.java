@@ -144,82 +144,113 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
     }
   }
 
+  /**
+   * Available SIMD sizes for Pass 4.
+   */
+  private static int[] simdSizes = {8, 4, 2};
+
+  /**
+   * Handle factors of 4 using the chosen SIMD vector.
+   * @param passData The pass data.
+   * @param simdLength The SIMD vector length.
+   */
+  private void interleaved(PassData passData, int simdLength) {
+    // Use the preferred SIMD vector.
+    switch (simdLength) {
+      case 2:
+        // 1 complex number per loop iteration.
+        interleaved128(passData);
+        break;
+      case 4:
+        // 2 complex numbers per loop iteration.
+        interleaved256(passData);
+        break;
+      case 8:
+        // 4 complex numbers per loop iteration.
+        interleaved512(passData);
+        break;
+      default:
+        passScalar(passData);
+    }
+  }
+
+  /**
+   * Handle factors of 4 using the chosen SIMD vector.
+   * @param passData The pass data.
+   * @param simdLength The SIMD vector length.
+   */
+  private void blocked(PassData passData, int simdLength) {
+    // Use the preferred SIMD vector.
+    switch (simdLength) {
+      case 2:
+        // 2 complex numbers per loop iteration.
+        blocked128(passData);
+        break;
+      case 4:
+        // 4 complex numbers per loop iteration.
+        blocked256(passData);
+        break;
+      case 8:
+        // 8 complex numbers per loop iteration.
+        blocked512(passData);
+        break;
+      default:
+        passScalar(passData);
+    }
+  }
+
+  /**
+   * Handle factors of 4 using the 128-bit SIMD vectors.
+   * @param passData The interleaved pass data.
+   */
   private void interleaved(PassData passData) {
     if (innerLoopLimit % LOOP == 0) {
       // Use the preferred SIMD vector.
-      switch (LENGTH) {
-        case 2:
-          interleaved128(passData);
-          break;
-        case 4:
-          interleaved256(passData);
-          break;
-        case 8:
-          interleaved512(passData);
-          break;
-      }
+      interleaved(passData, LENGTH);
     } else {
-      // If the inner loop limit is odd, use the scalar method unless our inner loop limit is 1.
+      // If the inner loop limit is odd, use the scalar method unless the inner loop limit is 1.
       if (innerLoopLimit % 2 != 0 && innerLoopLimit != 1) {
         passScalar(passData);
         return;
       }
-
-      // If the inner loop limit is not divisible by the loop increment, use largest SIMD vector that fits.
-      switch (innerLoopLimit) {
-        case 1:
-          // 1 Complex
-          interleaved128(passData);
-          break;
-        case 2:
-          // 2 Complex
-          interleaved256(passData);
-          break;
-        case 4:
-          // 4 Complex
-          interleaved512(passData);
-          break;
-        default:
-          // This should never happen.
-          throw new IllegalArgumentException(" Invalid inner loop limit: " + innerLoopLimit);
+      // Fall back to a smaller SIMD vector that fits the inner loop limit.
+      for (int size : simdSizes) {
+        if (size >= LENGTH) {
+          // Skip anything greater than or equal to the preferred SIMD vector size (which was too big).
+          continue;
+        }
+        // Divide the SIMD size by two because for interleaved a single SIMD vectors stores both real and imaginary parts.
+        if (innerLoopLimit % (size / 2) == 0) {
+          interleaved(passData, size);
+        }
       }
     }
   }
 
+  /**
+   * Handle factors of 4 using the 128-bit SIMD vectors.
+   * @param passData The pass blocked data.
+   */
   private void blocked(PassData passData) {
     if (innerLoopLimit % BLOCK_LOOP == 0) {
-      // The preferred SIMD vector length is a multiple of the inner loop limit and can be used.
-      switch (LENGTH) {
-        case 2:
-          blocked128(passData);
-          break;
-        case 4:
-          blocked256(passData);
-          break;
-        case 8:
-          blocked512(passData);
-          break;
-      }
+      // Use the preferred SIMD vector.
+      blocked(passData, LENGTH);
     } else {
-      // If the inner loop limit is odd, use the scalar method.
+      // If the inner loop limit is odd, use the scalar method unless the inner loop limit is 1.
       if (innerLoopLimit % 2 != 0) {
         passScalar(passData);
         return;
       }
-
       // Fall back to a smaller SIMD vector that fits the inner loop limit.
-      switch (innerLoopLimit) {
-        case 2:
-          // 2 Real and 2 Imaginary per loop iteration.
-          blocked128(passData);
-          break;
-        case 4:
-          // 4 Real and 4 Imaginary per loop iteration.
-          blocked256(passData);
-          break;
-        default:
-          // This should never happen.
-          throw new IllegalArgumentException(" Invalid inner loop limit: " + innerLoopLimit);
+      for (int size : simdSizes) {
+        if (size >= LENGTH) {
+          // Skip anything greater than or equal to the preferred SIMD vector size (which was too big).
+          continue;
+        }
+        // Divide the SIMD size by two because for interleaved a single SIMD vectors stores both real and imaginary parts.
+        if (innerLoopLimit % size == 0) {
+          blocked(passData, size);
+        }
       }
     }
   }
