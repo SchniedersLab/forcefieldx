@@ -50,6 +50,13 @@ public enum Operator {
    */
   SCREENED_COULOMB,
   /**
+   * Charge-Penetration nucleus-multipole operator.
+   */
+  AMOEBA_PLUS_DAMP_FIELD,
+  AMOEBA_PLUS_OVERLAP_FIELD,
+  THOLE_DIRECT_FIELD,
+    AMOEBA_PLUS_SYM_DAMP_FIELD,
+    /**
    * Thole field operator.
    */
   THOLE_FIELD
