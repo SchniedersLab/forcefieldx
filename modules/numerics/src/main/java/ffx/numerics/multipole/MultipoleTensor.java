@@ -429,64 +429,6 @@ public abstract class MultipoleTensor {
   }
 
   /**
-   * Terms 1, 2, 3 in Eq. 5 of AMOEBA+ paper. Uses a swap of alpha -> alpha2
-   * that takes place in the first call to the source method to generate a new
-   * tensor with the second alpha.
-   * @param mI
-   * @param mK
-   * @return
-   */
-  public double coreInteraction(PolarizableMultipole mI, PolarizableMultipole mK) {
-    // Coulomb energy of core charges (No damping)
-    double energy = mK.Z*mI.Z/R;
-
-    // Cores contract with multipole moments
-    multipoleIPotentialAtK(mI, 0);
-    energy += mK.Z * E000;
-    if (this.operator != Operator.AMOEBA_PLUS_SYM_DAMP_FIELD){
-      // Generate tensor with alpha2 for term 2 -> Zi * T(damp)ij * Mj
-      this.generateTensor();
-    }
-    multipoleKPotentialAtI(mK, 0);
-    energy += mI.Z * E000;
-
-    return energy;
-  }
-
-  public double coreInteractionAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
-                                           double[] Gi, double[] Gk){
-    // Coulomb energy of core charges (No damping -> cant use tensor terms)
-    double energy = mK.Z*mI.Z/R;
-    Gk[0] = -mK.Z * mI.Z * x * pow(R, -3);
-    Gk[1] = -mK.Z * mI.Z * y * pow(R, -3);
-    Gk[2] = -mK.Z * mI.Z * z * pow(R, -3);
-
-    // Cores contract with multipole moments
-    multipoleIPotentialAtK(mI, 1);
-    energy += mK.Z * E000;
-    Gk[0] += mK.Z * E100;
-    Gk[1] += mK.Z * E010;
-    Gk[2] += mK.Z * E001;
-    if (this.operator != Operator.AMOEBA_PLUS_SYM_DAMP_FIELD){
-      // Generate tensor with alpha2 for term 2 -> Zi * T(damp)ij * Mj
-      // R = |Rj - Ri| = Rji --> T(damp)ij != T(damp)ji after first order?
-      this.generateTensor();
-    }
-    multipoleKPotentialAtI(mK, 1);
-    energy += mI.Z * E000;
-    // mI.Z * EXXX = derivative Gi[X], so flip sign
-    Gk[0] -= mI.Z * E100;
-    Gk[1] -= mI.Z * E010;
-    Gk[2] -= mI.Z * E001;
-
-    Gi[0] = -Gk[0];
-    Gi[1] = -Gk[1];
-    Gi[2] = -Gk[2];
-
-    return energy;
-  }
-
-  /**
    * Permanent multipole energy and gradient.
    *
    * @param mI PolarizableMultipole at site I.

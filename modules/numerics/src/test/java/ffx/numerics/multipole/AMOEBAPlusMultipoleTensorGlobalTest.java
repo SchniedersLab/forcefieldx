@@ -144,9 +144,9 @@ public class AMOEBAPlusMultipoleTensorGlobalTest {
         Arrays.fill(Fk, 0);
 
         // Oxygen-Oxygen Core-Multipole interaction
-        multipoleTensor = new AmoebaPlusDampTensorGlobal(3, chargePenAlphaOx, chargePenAlphaOx);
-        multipoleTensor.generateTensor(r);
-        double eProton = multipoleTensor.coreInteractionAndGradient(mI, mK, Fi, Fk);
+        AmoebaPlusDampTensorGlobal multipoleTensorDamp = new AmoebaPlusDampTensorGlobal(3, chargePenAlphaOx, chargePenAlphaOx);
+        multipoleTensorDamp.generateTensor(r);
+        double eProton = multipoleTensorDamp.coreInteractionAndGradient(mI, mK, Fi, Fk);
         double e = eOverlap + eProton;
         assertEquals(" Oxygen-Oxygen Perm Multipole Coulomb Energy", amoebaPlusMPoleEnergyOO, e, tolerance);
 
@@ -156,25 +156,25 @@ public class AMOEBAPlusMultipoleTensorGlobalTest {
         aZ = Fk[2];
 
         r[0] += delta;
-        multipoleTensor.generateTensor(r);
-        posX = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        posX = multipoleTensorDamp.coreInteraction(mI, mK);
         r[0] -= delta2;
-        multipoleTensor.generateTensor(r);
-        negX = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        negX = multipoleTensorDamp.coreInteraction(mI, mK);
         r[0] += delta;
         r[1] += delta;
-        multipoleTensor.generateTensor(r);
-        posY = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        posY = multipoleTensorDamp.coreInteraction(mI, mK);
         r[1] -= delta2;
-        multipoleTensor.generateTensor(r);
-        negY = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        negY = multipoleTensorDamp.coreInteraction(mI, mK);
         r[1] += delta;
         r[2] += delta;
-        multipoleTensor.generateTensor(r);
-        posZ = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        posZ = multipoleTensorDamp.coreInteraction(mI, mK);
         r[2] -= delta2;
-        multipoleTensor.generateTensor(r);
-        negZ = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r);
+        negZ = multipoleTensorDamp.coreInteraction(mI, mK);
         r[2] += delta;
 
         expect = aX;
@@ -237,10 +237,10 @@ public class AMOEBAPlusMultipoleTensorGlobalTest {
 
         // Hydrogen-Oxygen Core-Multipole interaction
         // Order of args matter here first alpha -> mI, second alpha -> mK
-        multipoleTensor = new AmoebaPlusDampTensorGlobal(3, chargePenAlphaOx, chargePenAlphaHyd);
-        multipoleTensor.generateTensor(r2);
+        multipoleTensorDamp = new AmoebaPlusDampTensorGlobal(3, chargePenAlphaOx, chargePenAlphaHyd);
+        multipoleTensorDamp.generateTensor(r2);
         // Order of args matter here first alpha -> mI, second alpha -> mK
-        eProton = multipoleTensor.coreInteractionAndGradient(mI, mK, Fi, Fk);
+        eProton = multipoleTensorDamp.coreInteractionAndGradient(mI, mK, Fi, Fk);
         e = eOverlap + eProton;
         assertEquals(" Hydrogen-Oxygen Perm Multipole Damped Coulomb Energy", amoebaPlusMPoleEnergyOH, e, tolerance);
 
@@ -250,25 +250,25 @@ public class AMOEBAPlusMultipoleTensorGlobalTest {
         aZ = Fk[2];
 
         r2[0] += delta;
-        multipoleTensor.generateTensor(r2);
-        posX = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        posX = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[0] -= delta2;
-        multipoleTensor.generateTensor(r2);
-        negX = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        negX = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[0] += delta;
         r2[1] += delta;
-        multipoleTensor.generateTensor(r2);
-        posY = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        posY = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[1] -= delta2;
-        multipoleTensor.generateTensor(r2);
-        negY = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        negY = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[1] += delta;
         r2[2] += delta;
-        multipoleTensor.generateTensor(r2);
-        posZ = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        posZ = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[2] -= delta2;
-        multipoleTensor.generateTensor(r2);
-        negZ = multipoleTensor.coreInteraction(mI, mK);
+        multipoleTensorDamp.generateTensor(r2);
+        negZ = multipoleTensorDamp.coreInteraction(mI, mK);
         r2[2] += delta;
 
         expect = aX;
@@ -285,7 +285,6 @@ public class AMOEBAPlusMultipoleTensorGlobalTest {
     @Test
     public void inducedDipoleEnergyAndGradient() {
         double[] Fi = new double[3];
-        double[] Fk = new double[3];
         double[] Ti = new double[3];
         double[] Tk = new double[3];
         double thole = .7;
