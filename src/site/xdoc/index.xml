@@ -9,12 +9,12 @@
   </properties>
   <body>
     <section name="Welcome to Force Field X">
-      <subsection name="Introduction">
+      <subsection
+          name="A Computational Microscope to Study Genetic Variation and Organic Crystals Using Theory and Experiment">
         <table>
           <tr>
-            <td width="600">
-              <p>Force Field X is an open source polyglot software for molecular biophysics
-                that targets open research questions in the areas of:
+            <td width="500">
+              <p>The FFX platform targets open research questions in the areas of:
               </p>
               <ul>
                 <li>Understanding the effect of missense variants on protein structure, thermodynamics and molecular
@@ -24,10 +24,6 @@
                 </li>
                 <li>Designing biomolecules in both soluble and crystalline environments.</li>
               </ul>
-              <p>
-                The graphical user interface (GUI) screenshot to the right shows "Compound 23",
-                which was the 23rd molecule predicted as part of the CCDC crystal structure prediction series.
-              </p>
               <p>
                 <b>Performance</b>
               </p>
@@ -42,10 +38,10 @@
                 </li>
               </ul>
             </td>
-            <td width="600">
+            <td width="500">
               <p>
                 <a href="manual.html">
-                  <img src="images/ffx-gui.png" alt="Force Field X" width="600" align="right"/>
+                  <img src="images/FFX_Cover_Art.jpg" alt="Force Field X" width="500" align="middle"/>
                 </a>
               </p>
             </td>

@@ -111,6 +111,12 @@
             <author>true</author>
             <defaultAuthor>Michael J. Schnieders</defaultAuthor>
             <defaultSince>1.0</defaultSince>
+            <failOnError>false</failOnError>
+            <quiet>false</quiet>
+            <debug>true</debug>
+            <additionalOptions>
+              <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+            </additionalOptions>
             <!-- doclint>all,-missing</doclint -->
           </configuration>
           <version>${javadoc.version}</version>
@@ -1160,7 +1166,11 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <failOnError>false</failOnError>
-          <quiet>true</quiet>
+          <quiet>false</quiet>
+          <debug>true</debug>
+          <additionalOptions>
+            <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+          </additionalOptions>
           <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
         </configuration>
         <inherited>true</inherited>

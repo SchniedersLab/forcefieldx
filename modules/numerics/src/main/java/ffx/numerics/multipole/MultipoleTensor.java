@@ -37,12 +37,16 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static ffx.numerics.multipole.MultipoleUtilities.lmn;
+import static ffx.numerics.multipole.MultipoleUtilities.loadTensor;
+import static ffx.numerics.multipole.MultipoleUtilities.storePotential;
+import static ffx.numerics.multipole.MultipoleUtilities.storePotentialNeg;
 import static ffx.numerics.multipole.MultipoleUtilities.term;
-import static ffx.numerics.multipole.MultipoleUtilities.tlmn;
 import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -776,39 +780,39 @@ public abstract class MultipoleTensor {
     double term = mI.q * T[ti(l, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, tlmn(l, m, n), name));
+      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, lmn(l, m, n), name));
     }
     term = mI.dx * T[ti(l + 1, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, lmn(l + 1, m, n), name));
     }
     term = mI.dy * T[ti(l, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, lmn(l, m + 1, n), name));
     }
     term = mI.dz * T[ti(l, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, lmn(l, m, n + 1), name));
     }
     StringBuilder traceSB = new StringBuilder();
     double trace = 0.0;
     term = mI.qxx * T[ti(l + 2, m, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, lmn(l + 2, m, n), name));
     }
     term = mI.qyy * T[ti(l, m + 2, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, lmn(l, m + 2, n), name));
     }
     term = mI.qzz * T[ti(l, m, n + 2)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, lmn(l, m, n + 2), name));
     }
     total += trace;
     if (total != 0) {
@@ -820,20 +824,21 @@ public abstract class MultipoleTensor {
     term = mI.qxy * T[ti(l + 1, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, lmn(l + 1, m + 1, n), name));
     }
     term = mI.qxz * T[ti(l + 1, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, lmn(l + 1, m, n + 1), name));
     }
     term = mI.qyz * T[ti(l, m + 1, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, lmn(l, m + 1, n + 1), name));
     }
     return total;
   }
+
 
   /**
    * Contract multipole moments with their respective electrostatic potential derivatives
@@ -848,48 +853,55 @@ public abstract class MultipoleTensor {
    * @return the contracted interaction.
    */
   private double codeContractMultipoleISIMD(PolarizableMultipole mI, double[] T, int l, int m, int n,
-                                            StringBuilder sb) {
+                                            StringBuilder sb, HashMap<Integer, String> tensorMap) {
     double total = 0.0;
     String name = term(l, m, n);
     StringBuilder sb1 = new StringBuilder();
     double term = mI.q * T[ti(l, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("DoubleVector %s = mI.q.mul(R%s);\n", name, tlmn(l, m, n)));
+      sb1.append(loadTensor(l, m, n, tensorMap));
+      sb1.append(format("\tDoubleVector %s = q.mul(t%s);\n", name, lmn(l, m, n)));
     } else {
-      sb.append(format("DoubleVector %s = DoubleVector.broadcast(R.species(), 0.0);\n", name));
+      sb.append(format("\tDoubleVector %s = zero;\n", name));
     }
     term = mI.dx * T[ti(l + 1, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mI.dx.fma(R%s.neg(), %s);\n", name, tlmn(l + 1, m, n), name));
+      sb1.append(loadTensor(l + 1, m, n, tensorMap));
+      sb1.append(format("\t%s = dx.fma(t%s.neg(), %s);\n", name, lmn(l + 1, m, n), name));
     }
     term = mI.dy * T[ti(l, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mI.dy.fma(R%s.neg(), %s);\n", name, tlmn(l, m + 1, n), name));
+      sb1.append(loadTensor(l, m + 1, n, tensorMap));
+      sb1.append(format("\t%s = dy.fma(t%s.neg(), %s);\n", name, lmn(l, m + 1, n), name));
     }
     term = mI.dz * T[ti(l, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mI.dz.fma(R%s.neg(), %s);\n", name, tlmn(l, m, n + 1), name));
+      sb1.append(loadTensor(l, m, n + 1, tensorMap));
+      sb1.append(format("\t%s = dz.fma(t%s.neg(), %s);\n", name, lmn(l, m, n + 1), name));
     }
     StringBuilder traceSB = new StringBuilder();
     double trace = 0.0;
     term = mI.qxx * T[ti(l + 2, m, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mI.qxx.fma(R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+      traceSB.append(loadTensor(l + 2, m, n, tensorMap));
+      traceSB.append(format("\t%s = qxx.fma(t%s, %s);\n", name, lmn(l + 2, m, n), name));
     }
     term = mI.qyy * T[ti(l, m + 2, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mI.qyy.fma(R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+      traceSB.append(loadTensor(l, m + 2, n, tensorMap));
+      traceSB.append(format("\t%s = qyy.fma(t%s, %s);\n", name, lmn(l, m + 2, n), name));
     }
     term = mI.qzz * T[ti(l, m, n + 2)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mI.qzz.fma(R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+      traceSB.append(loadTensor(l, m, n + 2, tensorMap));
+      traceSB.append(format("\t%s = qzz.fma(t%s, %s);\n", name, lmn(l, m, n + 2), name));
     }
     total += trace;
     if (total != 0) {
@@ -901,17 +913,20 @@ public abstract class MultipoleTensor {
     term = mI.qxy * T[ti(l + 1, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mI.qxy.fma(R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+      sb.append(loadTensor(l + 1, m + 1, n, tensorMap));
+      sb.append(format("\t%s = qxy.fma(t%s, %s);\n", name, lmn(l + 1, m + 1, n), name));
     }
     term = mI.qxz * T[ti(l + 1, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mI.qxz.fma(R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+      sb.append(loadTensor(l + 1, m, n + 1, tensorMap));
+      sb.append(format("\t%s = qxz.fma(t%s, %s);\n", name, lmn(l + 1, m, n + 1), name));
     }
     term = mI.qyz * T[ti(l, m + 1, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mI.qyz.fma(R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+      sb.append(loadTensor(l, m + 1, n + 1, tensorMap));
+      sb.append(format("\t%s = qyz.fma(t%s, %s);\n", name, lmn(l, m + 1, n + 1), name));
     }
     return total;
   }
@@ -936,39 +951,39 @@ public abstract class MultipoleTensor {
     double term = mK.q * T[ti(l, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mK.q, R%s, %s);\n", name, tlmn(l, m, n), name));
+      sb1.append(format("%s = fma(mK.q, R%s, %s);\n", name, lmn(l, m, n), name));
     }
     term = mK.dx * T[ti(l + 1, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mK.dx, R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+      sb1.append(format("%s = fma(mK.dx, R%s, %s);\n", name, lmn(l + 1, m, n), name));
     }
     term = mK.dy * T[ti(l, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mK.dy, R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+      sb1.append(format("%s = fma(mK.dy, R%s, %s);\n", name, lmn(l, m + 1, n), name));
     }
     term = mK.dz * T[ti(l, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = fma(mK.dz, R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+      sb1.append(format("%s = fma(mK.dz, R%s, %s);\n", name, lmn(l, m, n + 1), name));
     }
     StringBuilder traceSB = new StringBuilder();
     double trace = 0.0;
     term = mK.qxx * T[ti(l + 2, m, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mK.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+      traceSB.append(format("%s = fma(mK.qxx, R%s, %s);\n", name, lmn(l + 2, m, n), name));
     }
     term = mK.qyy * T[ti(l, m + 2, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mK.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+      traceSB.append(format("%s = fma(mK.qyy, R%s, %s);\n", name, lmn(l, m + 2, n), name));
     }
     term = mK.qzz * T[ti(l, m, n + 2)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = fma(mK.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+      traceSB.append(format("%s = fma(mK.qzz, R%s, %s);\n", name, lmn(l, m, n + 2), name));
     }
     total += trace;
     if (total != 0) {
@@ -980,17 +995,17 @@ public abstract class MultipoleTensor {
     term = mK.qxy * T[ti(l + 1, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mK.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+      sb.append(format("%s = fma(mK.qxy, R%s, %s);\n", name, lmn(l + 1, m + 1, n), name));
     }
     term = mK.qxz * T[ti(l + 1, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mK.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+      sb.append(format("%s = fma(mK.qxz, R%s, %s);\n", name, lmn(l + 1, m, n + 1), name));
     }
     term = mK.qyz * T[ti(l, m + 1, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = fma(mK.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+      sb.append(format("%s = fma(mK.qyz, R%s, %s);\n", name, lmn(l, m + 1, n + 1), name));
     }
     return total;
   }
@@ -1008,48 +1023,55 @@ public abstract class MultipoleTensor {
    * @return the contracted interaction.
    */
   private double codeContractMultipoleKSIMD(PolarizableMultipole mK, double[] T, int l, int m, int n,
-                                            StringBuilder sb) {
+                                            StringBuilder sb, HashMap<Integer, String> tensorHash) {
     double total = 0.0;
     String name = term(l, m, n);
     StringBuilder sb1 = new StringBuilder();
     double term = mK.q * T[ti(l, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("DoubleVector %s = mK.q.mul(R%s);\n", name, tlmn(l, m, n)));
+      sb1.append(loadTensor(l, m, n, tensorHash));
+      sb1.append(format("\tDoubleVector %s = q.mul(t%s);\n", name, lmn(l, m, n)));
     } else {
-      sb.append(format("DoubleVector %s = DoubleVector.broadcast(R.species(), 0.0);\n", name));
+      sb.append(format("\tDoubleVector %s = zero;\n", name));
     }
     term = mK.dx * T[ti(l + 1, m, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mK.dx.fma(R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+      sb1.append(loadTensor(l + 1, m, n, tensorHash));
+      sb1.append(format("\t%s = dx.fma(t%s, %s);\n", name, lmn(l + 1, m, n), name));
     }
     term = mK.dy * T[ti(l, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mK.dy.fma(R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+      sb1.append(loadTensor(l, m + 1, n, tensorHash));
+      sb1.append(format("\t%s = dy.fma(t%s, %s);\n", name, lmn(l, m + 1, n), name));
     }
     term = mK.dz * T[ti(l, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb1.append(format("%s = mK.dz.fma(R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+      sb1.append(loadTensor(l, m, n + 1, tensorHash));
+      sb1.append(format("\t%s = dz.fma(t%s, %s);\n", name, lmn(l, m, n + 1), name));
     }
     StringBuilder traceSB = new StringBuilder();
     double trace = 0.0;
     term = mK.qxx * T[ti(l + 2, m, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mK.qxx.fma(R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+      traceSB.append(loadTensor(l + 2, m, n, tensorHash));
+      traceSB.append(format("\t%s = qxx.fma(t%s, %s);\n", name, lmn(l + 2, m, n), name));
     }
     term = mK.qyy * T[ti(l, m + 2, n)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mK.qyy.fma(R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+      traceSB.append(loadTensor(l, m + 2, n, tensorHash));
+      traceSB.append(format("\t%s = qyy.fma(t%s, %s);\n", name, lmn(l, m + 2, n), name));
     }
     term = mK.qzz * T[ti(l, m, n + 2)];
     if (term != 0) {
       trace += term;
-      traceSB.append(format("%s = mK.qzz.fma(R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+      traceSB.append(loadTensor(l, m, n + 2, tensorHash));
+      traceSB.append(format("\t%s = qzz.fma(t%s, %s);\n", name, lmn(l, m, n + 2), name));
     }
     total += trace;
     if (total != 0) {
@@ -1061,17 +1083,20 @@ public abstract class MultipoleTensor {
     term = mK.qxy * T[ti(l + 1, m + 1, n)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mK.qxy.fma(R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+      sb.append(loadTensor(l + 1, m + 1, n, tensorHash));
+      sb.append(format("\t%s = qxy.fma(t%s, %s);\n", name, lmn(l + 1, m + 1, n), name));
     }
     term = mK.qxz * T[ti(l + 1, m, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mK.qxz.fma(R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+      sb.append(loadTensor(l + 1, m, n + 1, tensorHash));
+      sb.append(format("\t%s = qxz.fma(t%s, %s);\n", name, lmn(l + 1, m, n + 1), name));
     }
     term = mK.qyz * T[ti(l, m + 1, n + 1)];
     if (term != 0) {
       total += term;
-      sb.append(format("%s = mK.qyz.fma(R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+      sb.append(loadTensor(l, m + 1, n + 1, tensorHash));
+      sb.append(format("\t%s = qyz.fma(t%s, %s);\n", name, lmn(l, m + 1, n + 1), name));
     }
     return total;
   }
@@ -1184,96 +1209,98 @@ public abstract class MultipoleTensor {
    * @param sb Append the code to the StringBuilder.
    */
   protected void codePotentialMultipoleISIMD(PolarizableMultipole mI, double[] T, int l, int m, int n, StringBuilder sb) {
-    sb.append("switch (order) {\n");
-    sb.append("default:\n");
-    sb.append("case 3:\n");
-    // Order 3
-    E300 = codeContractMultipoleISIMD(mI, T, l + 3, m, n, sb);
-    if (E300 != 0) {
-      sb.append(format("\tE300 = %s;\n", term(l + 3, m, n)));
-    }
-    E030 = codeContractMultipoleISIMD(mI, T, l, m + 3, n, sb);
-    if (E030 != 0) {
-      sb.append(format("\tE030 = %s;\n", term(l, m + 3, n)));
-    }
-    E003 = codeContractMultipoleISIMD(mI, T, l, m, n + 3, sb);
-    if (E003 != 0) {
-      sb.append(format("\tE003 = %s;\n", term(l, m, n + 3)));
-    }
-    E210 = codeContractMultipoleISIMD(mI, T, l + 2, m + 1, n, sb);
-    if (E210 != 0) {
-      sb.append(format("\tE210 = %s;\n", term(l + 2, m + 1, n)));
-    }
-    E201 = codeContractMultipoleISIMD(mI, T, l + 2, m, n + 1, sb);
-    if (E201 != 0) {
-      sb.append(format("\tE201 = %s;\n", term(l + 2, m, n + 1)));
-    }
-    E120 = codeContractMultipoleISIMD(mI, T, l + 1, m + 2, n, sb);
-    if (E120 != 0) {
-      sb.append(format("\tE120 = %s;\n", term(l + 1, m + 2, n)));
-    }
-    E021 = codeContractMultipoleISIMD(mI, T, l, m + 2, n + 1, sb);
-    if (E021 != 0) {
-      sb.append(format("\tE021 = %s;\n", term(l, m + 2, n + 1)));
-    }
-    E102 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 2, sb);
-    if (E102 != 0) {
-      sb.append(format("\tE102 = %s;\n", term(l + 1, m, n + 2)));
-    }
-    E012 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 2, sb);
-    if (E012 != 0) {
-      sb.append(format("\tE012 = %s;\n", term(l, m + 1, n + 2)));
-    }
-    E111 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n + 1, sb);
-    if (E111 != 0) {
-      sb.append(format("\tE111 = %s;\n", term(l + 1, m + 1, n + 1)));
-    }
-    sb.append("case 2:\n");
-    // Order 2
-    E200 = codeContractMultipoleISIMD(mI, T, l + 2, m, n, sb);
-    if (E200 != 0) {
-      sb.append(format("\tE200 = %s;\n", term(l + 2, m, n)));
-    }
-    E020 = codeContractMultipoleISIMD(mI, T, l, m + 2, n, sb);
-    if (E020 != 0) {
-      sb.append(format("\tE020 = %s;\n", term(l, m + 2, n)));
-    }
-    E002 = codeContractMultipoleISIMD(mI, T, l, m, n + 2, sb);
-    if (E002 != 0) {
-      sb.append(format("\tE002 = %s;\n", term(l, m, n + 2)));
-    }
-    E110 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n, sb);
-    if (E110 != 0) {
-      sb.append(format("\tE110 = %s;\n", term(l + 1, m + 1, n)));
-    }
-    E101 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 1, sb);
-    if (E101 != 0) {
-      sb.append(format("\tE101 = %s;\n", term(l + 1, m, n + 1)));
-    }
-    E011 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 1, sb);
-    if (E011 != 0) {
-      sb.append(format("\tE011 = %s;\n", term(l, m + 1, n + 1)));
-    }
-    sb.append("case 1:\n");
-    // Order 1
-    E100 = codeContractMultipoleISIMD(mI, T, l + 1, m, n, sb);
-    if (E100 != 0) {
-      sb.append(format("\tE100 = %s;\n", term(l + 1, m, n)));
-    }
-    E010 = codeContractMultipoleISIMD(mI, T, l, m + 1, n, sb);
-    if (E100 != 0) {
-      sb.append(format("\tE010 = %s;\n", term(l, m + 1, n)));
-    }
-    E001 = codeContractMultipoleISIMD(mI, T, l, m, n + 1, sb);
-    if (E001 != 0) {
-      sb.append(format("\tE001 = %s;\n", term(l, m, n + 1)));
-    }
-    sb.append("case 0:\n");
-    E000 = codeContractMultipoleISIMD(mI, T, l, m, n, sb);
+    String to = "e";
+    HashMap<Integer, String> tensorHash = new HashMap<>();
+    sb.append("\n// Order 0\n");
+    E000 = codeContractMultipoleISIMD(mI, T, l, m, n, sb, tensorHash);
     if (E000 != 0) {
-      sb.append(format("\tE000 = %s;\n", term(l, m, n)));
+      sb.append(storePotential(to, l, m, n));
     }
-    sb.append("}\n");
+
+    // Order 1
+    sb.append("\n// Order 1\n");
+    E100 = codeContractMultipoleISIMD(mI, T, l + 1, m, n, sb, tensorHash);
+    if (E100 != 0) {
+      sb.append(storePotential(to, l + 1, m, n));
+    }
+    E010 = codeContractMultipoleISIMD(mI, T, l, m + 1, n, sb, tensorHash);
+    if (E100 != 0) {
+      sb.append(storePotential(to, l, m + 1, n));
+    }
+    E001 = codeContractMultipoleISIMD(mI, T, l, m, n + 1, sb, tensorHash);
+    if (E001 != 0) {
+      sb.append(storePotential(to, l, m, n + 1));
+    }
+
+    // Order 2
+    sb.append("\n// Order 2\n");
+    E200 = codeContractMultipoleISIMD(mI, T, l + 2, m, n, sb, tensorHash);
+    if (E200 != 0) {
+      sb.append(storePotential(to, l + 2, m, n));
+    }
+    E020 = codeContractMultipoleISIMD(mI, T, l, m + 2, n, sb, tensorHash);
+    if (E020 != 0) {
+      sb.append(storePotential(to, l, m + 2, n));
+    }
+    E002 = codeContractMultipoleISIMD(mI, T, l, m, n + 2, sb, tensorHash);
+    if (E002 != 0) {
+      sb.append(storePotential(to, l, m, n + 2));
+    }
+    E110 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n, sb, tensorHash);
+    if (E110 != 0) {
+      sb.append(storePotential(to, l + 1, m + 1, n));
+    }
+    E101 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 1, sb, tensorHash);
+    if (E101 != 0) {
+      sb.append(storePotential(to, l + 1, m, n + 1));
+    }
+    E011 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 1, sb, tensorHash);
+    if (E011 != 0) {
+      sb.append(storePotential(to, l, m + 1, n + 1));
+    }
+
+    // Order 3
+    sb.append("\n// Order 3\n");
+    E300 = codeContractMultipoleISIMD(mI, T, l + 3, m, n, sb, tensorHash);
+    if (E300 != 0) {
+      sb.append(storePotential(to, l + 3, m, n));
+    }
+    E030 = codeContractMultipoleISIMD(mI, T, l, m + 3, n, sb, tensorHash);
+    if (E030 != 0) {
+      sb.append(storePotential(to, l, m + 3, n));
+    }
+    E003 = codeContractMultipoleISIMD(mI, T, l, m, n + 3, sb, tensorHash);
+    if (E003 != 0) {
+      sb.append(storePotential(to, l, m, n + 3));
+    }
+    E210 = codeContractMultipoleISIMD(mI, T, l + 2, m + 1, n, sb, tensorHash);
+    if (E210 != 0) {
+      sb.append(storePotential(to, l + 2, m + 1, n));
+    }
+    E201 = codeContractMultipoleISIMD(mI, T, l + 2, m, n + 1, sb, tensorHash);
+    if (E201 != 0) {
+      sb.append(storePotential(to, l + 2, m, n + 1));
+    }
+    E120 = codeContractMultipoleISIMD(mI, T, l + 1, m + 2, n, sb, tensorHash);
+    if (E120 != 0) {
+      sb.append(storePotential(to, l + 1, m + 2, n));
+    }
+    E021 = codeContractMultipoleISIMD(mI, T, l, m + 2, n + 1, sb, tensorHash);
+    if (E021 != 0) {
+      sb.append(storePotential(to, l, m + 2, n + 1));
+    }
+    E102 = codeContractMultipoleISIMD(mI, T, l + 1, m, n + 2, sb, tensorHash);
+    if (E102 != 0) {
+      sb.append(storePotential(to, l + 1, m, n + 2));
+    }
+    E012 = codeContractMultipoleISIMD(mI, T, l, m + 1, n + 2, sb, tensorHash);
+    if (E012 != 0) {
+      sb.append(storePotential(to, l, m + 1, n + 2));
+    }
+    E111 = codeContractMultipoleISIMD(mI, T, l + 1, m + 1, n + 1, sb, tensorHash);
+    if (E111 != 0) {
+      sb.append(storePotential(to, l + 1, m + 1, n + 1));
+    }
   }
 
   /**
@@ -1384,97 +1411,101 @@ public abstract class MultipoleTensor {
    * @param sb Append the code to the StringBuilder.
    */
   protected void codePotentialMultipoleKSIMD(PolarizableMultipole mK, double[] T, int l, int m, int n, StringBuilder sb) {
-    sb.append("switch (order) {\n");
-    sb.append("default:\n");
-    sb.append("case 3:\n");
-    // Order 3 (need a minus sign)
-    E300 = codeContractMultipoleKSIMD(mK, T, l + 3, m, n, sb);
-    if (E300 != 0) {
-      sb.append(format("E300 = %s.neg();\n", term(l + 3, m, n)));
-    }
-    E030 = codeContractMultipoleKSIMD(mK, T, l, m + 3, n, sb);
-    if (E030 != 0) {
-      sb.append(format("E030 = %s.neg();\n", term(l, m + 3, n)));
-    }
-    E003 = codeContractMultipoleKSIMD(mK, T, l, m, n + 3, sb);
-    if (E003 != 0) {
-      sb.append(format("E003 = %s.neg();\n", term(l, m, n + 3)));
-    }
-    E210 = codeContractMultipoleKSIMD(mK, T, l + 2, m + 1, n, sb);
-    if (E210 != 0) {
-      sb.append(format("E210 = %s.neg();\n", term(l + 2, m + 1, n)));
-    }
-    E201 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n + 1, sb);
-    if (E201 != 0) {
-      sb.append(format("E201 = %s.neg();\n", term(l + 2, m, n + 1)));
-    }
-    E120 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 2, n, sb);
-    if (E120 != 0) {
-      sb.append(format("E120 = %s.neg();\n", term(l + 1, m + 2, n)));
-    }
-    E021 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n + 1, sb);
-    if (E021 != 0) {
-      sb.append(format("E021 = %s.neg();\n", term(l, m + 2, n + 1)));
-    }
-    E102 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 2, sb);
-    if (E102 != 0) {
-      sb.append(format("E102 = %s.neg();\n", term(l + 1, m, n + 2)));
-    }
-    E012 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 2, sb);
-    if (E012 != 0) {
-      sb.append(format("E012 = %s.neg();\n", term(l, m + 1, n + 2)));
-    }
-    E111 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n + 1, sb);
-    if (E111 != 0) {
-      sb.append(format("E111 = %s.neg();\n", term(l + 1, m + 1, n + 1)));
-    }
-    // Order 2
-    sb.append("case 2:\n");
-    E200 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n, sb);
-    if (E200 != 0) {
-      sb.append(format("E200 = %s;\n", term(l + 2, m, n)));
-    }
-    E020 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n, sb);
-    if (E020 != 0) {
-      sb.append(format("E020 = %s;\n", term(l, m + 2, n)));
-    }
-    E002 = codeContractMultipoleKSIMD(mK, T, l, m, n + 2, sb);
-    if (E002 != 0) {
-      sb.append(format("E002 = %s;\n", term(l, m, n + 2)));
-    }
-    E110 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n, sb);
-    if (E110 != 0) {
-      sb.append(format("E110 = %s;\n", term(l + 1, m + 1, n)));
-    }
-    E101 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 1, sb);
-    if (E101 != 0) {
-      sb.append(format("E101 = %s;\n", term(l + 1, m, n + 1)));
-    }
-    E011 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 1, sb);
-    if (E011 != 0) {
-      sb.append(format("E011 = %s;\n", term(l, m + 1, n + 1)));
-    }
-    // Order 1 (need a minus sign)
-    sb.append("case 1:\n");
-    E100 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n, sb);
-    if (E100 != 0) {
-      sb.append(format("E100 = %s.neg();\n", term(l + 1, m, n)));
-    }
-    E010 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n, sb);
-    if (E100 != 0) {
-      sb.append(format("E010 = %s.neg();\n", term(l, m + 1, n)));
-    }
-    E001 = codeContractMultipoleKSIMD(mK, T, l, m, n + 1, sb);
-    if (E001 != 0) {
-      sb.append(format("E001 = %s.neg();\n", term(l, m, n + 1)));
-    }
+    String to = "e";
+
     // Order 0.
-    sb.append("case 0:\n");
-    E000 = codeContractMultipoleKSIMD(mK, T, l, m, n, sb);
+    sb.append("\n// Order 0\n");
+    // Store tensor names to avoid reloading them.
+    HashMap<Integer, String> tensorHash = new HashMap<>();
+    E000 = codeContractMultipoleKSIMD(mK, T, l, m, n, sb, tensorHash);
     if (E000 != 0) {
-      sb.append(format("E000 = %s;\n", term(l, m, n)));
+      sb.append(storePotential(to, l, m, n));
     }
-    sb.append("}\n");
+
+    // Order 1 (need a minus sign)
+    sb.append("\n// Order 1\n");
+    E100 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n, sb, tensorHash);
+    if (E100 != 0) {
+      sb.append(storePotentialNeg(to, l + 1, m, n));
+    }
+    E010 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n, sb, tensorHash);
+    if (E010 != 0) {
+      sb.append(storePotentialNeg(to, l, m + 1, n));
+    }
+    E001 = codeContractMultipoleKSIMD(mK, T, l, m, n + 1, sb, tensorHash);
+    if (E001 != 0) {
+      sb.append(storePotentialNeg(to, l, m, n + 1));
+    }
+
+    // Order 2
+    sb.append("\n// Order 2\n");
+    E200 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n, sb, tensorHash);
+    if (E200 != 0) {
+      sb.append(storePotential(to, l + 2, m, n));
+    }
+    E020 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n, sb, tensorHash);
+    if (E020 != 0) {
+      sb.append(storePotential(to, l, m + 2, n));
+    }
+    E002 = codeContractMultipoleKSIMD(mK, T, l, m, n + 2, sb, tensorHash);
+    if (E002 != 0) {
+      sb.append(storePotential(to, l, m, n + 2));
+    }
+    E110 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n, sb, tensorHash);
+    if (E110 != 0) {
+      sb.append(storePotential(to, l + 1, m + 1, n));
+    }
+    E101 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 1, sb, tensorHash);
+    if (E101 != 0) {
+      sb.append(storePotential(to, l + 1, m, n + 1));
+    }
+    E011 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 1, sb, tensorHash);
+    if (E011 != 0) {
+      sb.append(storePotential(to, l, m + 1, n + 1));
+    }
+
+    // Order 3 (need a minus sign)
+    sb.append("\n// Order 3\n");
+    E300 = codeContractMultipoleKSIMD(mK, T, l + 3, m, n, sb, tensorHash);
+    if (E300 != 0) {
+      sb.append(storePotentialNeg(to, l + 3, m, n));
+    }
+    E030 = codeContractMultipoleKSIMD(mK, T, l, m + 3, n, sb, tensorHash);
+    if (E030 != 0) {
+      sb.append(storePotentialNeg(to, l, m + 3, n));
+    }
+    E003 = codeContractMultipoleKSIMD(mK, T, l, m, n + 3, sb, tensorHash);
+    if (E003 != 0) {
+      sb.append(storePotentialNeg(to, l, m, n + 3));
+    }
+    E210 = codeContractMultipoleKSIMD(mK, T, l + 2, m + 1, n, sb, tensorHash);
+    if (E210 != 0) {
+      sb.append(storePotentialNeg(to, l + 2, m + 1, n));
+    }
+    E201 = codeContractMultipoleKSIMD(mK, T, l + 2, m, n + 1, sb, tensorHash);
+    if (E201 != 0) {
+      sb.append(storePotentialNeg(to, l + 2, m, n + 1));
+    }
+    E120 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 2, n, sb, tensorHash);
+    if (E120 != 0) {
+      sb.append(storePotentialNeg(to, l + 1, m + 2, n));
+    }
+    E021 = codeContractMultipoleKSIMD(mK, T, l, m + 2, n + 1, sb, tensorHash);
+    if (E021 != 0) {
+      sb.append(storePotentialNeg(to, l, m + 2, n + 1));
+    }
+    E102 = codeContractMultipoleKSIMD(mK, T, l + 1, m, n + 2, sb, tensorHash);
+    if (E102 != 0) {
+      sb.append(storePotentialNeg(to, l + 1, m, n + 2));
+    }
+    E012 = codeContractMultipoleKSIMD(mK, T, l, m + 1, n + 2, sb, tensorHash);
+    if (E012 != 0) {
+      sb.append(storePotentialNeg(to, l, m + 1, n + 2));
+    }
+    E111 = codeContractMultipoleKSIMD(mK, T, l + 1, m + 1, n + 1, sb, tensorHash);
+    if (E111 != 0) {
+      sb.append(storePotentialNeg(to, l + 1, m + 1, n + 1));
+    }
   }
 
   /**
@@ -2172,7 +2203,6 @@ public abstract class MultipoleTensor {
    * Derivatives with respect to x, y and z.
    */
   protected final int t112;
-
   // l + m + n = 5 (21) 56
   /**
    * Fifth derivative with respect to x.

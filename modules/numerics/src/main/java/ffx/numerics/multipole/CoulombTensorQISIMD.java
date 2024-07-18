@@ -740,6 +740,62 @@ public class CoulombTensorQISIMD extends MultipoleTensorSIMD {
   @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order) {
-
+    switch (order) {
+      default:
+      case 3:
+        // Order 3.
+        E300 = mI.qxz.mul(R401);
+        E030 = mI.qyz.mul(R041);
+        DoubleVector term003 = mI.qxx.mul(R203);
+        term003 = mI.qyy.fma(R023, term003);
+        term003 = mI.qzz.fma(R005, term003);
+        E003 = term003;
+        E210 = mI.qyz.mul(R221);
+        DoubleVector term201 = mI.qxx.mul(R401);
+        term201 = mI.qyy.fma(R221, term201);
+        term201 = mI.qzz.fma(R203, term201);
+        E201 = term201;
+        E120 = mI.qxz.mul(R221);
+        DoubleVector term021 = mI.qxx.mul(R221);
+        term021 = mI.qyy.fma(R041, term021);
+        term021 = mI.qzz.fma(R023, term021);
+        E021 = term021;
+        E102 = mI.qxz.mul(R203);
+        E012 = mI.qyz.mul(R023);
+        E111 = mI.qxy.mul(R221);
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2.
+        DoubleVector term200 = mI.qxx.mul(R400);
+        term200 = mI.qyy.fma(R220, term200);
+        term200 = mI.qzz.fma(R202, term200);
+        E200 = term200;
+        DoubleVector term020 = mI.qxx.mul(R220);
+        term020 = mI.qyy.fma(R040, term020);
+        term020 = mI.qzz.fma(R022, term020);
+        E020 = term020;
+        DoubleVector term002 = mI.qxx.mul(R202);
+        term002 = mI.qyy.fma(R022, term002);
+        term002 = mI.qzz.fma(R004, term002);
+        E002 = term002;
+        E110 = mI.qxy.mul(R220);
+        E101 = mI.qxz.mul(R202);
+        E011 = mI.qyz.mul(R022);
+        // Fall through to 1st order.
+      case 1:
+        // Order 1.
+        E100 = mI.qxz.mul(R201);
+        E010 = mI.qyz.mul(R021);
+        DoubleVector term001 = mI.qxx.mul(R201);
+        term001 = mI.qyy.fma(R021, term001);
+        term001 = mI.qzz.fma(R003, term001);
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        DoubleVector term000 = mI.qxx.mul(R200);
+        term000 = mI.qyy.fma(R020, term000);
+        term000 = mI.qzz.fma(R002, term000);
+        E000 = term000;
+    }
   }
 }

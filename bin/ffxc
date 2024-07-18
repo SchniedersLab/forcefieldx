@@ -115,7 +115,7 @@ if [ -n "$FFX_STACKSIZE" ]; then
   JVM_SS="$FFX_STACKSIZE"
 fi
 
-EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS}"
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS} --add-modules jdk.incubator.vector"
 
 if [ -z "$TMPDIR" ]; then
     if [ -z "$TMP" ]; then
