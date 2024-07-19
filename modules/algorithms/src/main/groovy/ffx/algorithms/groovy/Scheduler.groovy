@@ -229,6 +229,10 @@ class Scheduler extends AlgorithmsScript {
     if (v) {
       arg += " -Dpj.verbose=true"
     }
+
+    // Add support for vector instructions.
+    arg += " --add-modules jdk.incubator.vector"
+    
     // Create an entry for each process
     int i = 0
     for (p = 0; p < processes; p++) {
