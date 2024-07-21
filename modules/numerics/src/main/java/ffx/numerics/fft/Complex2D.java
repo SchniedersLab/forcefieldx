@@ -67,18 +67,74 @@ package ffx.numerics.fft;
  */
 public class Complex2D {
 
+  /**
+   * The 2D data layout.
+   */
   private final DataLayout2D layout;
+  /**
+   * The external imaginary offset.
+   */
   private final int externalIm;
-  private final int nX, nY;
-  private final int nextX, nextY;
-  private final Complex fftX, fftY;
+  /**
+   * The X-dimension.
+   */
+  private final int nX;
+  /**
+   * The Y-dimension.
+   */
+  private final int nY;
+  /**
+   * The next real value along the X dimension.
+   */
+  private final int nextX;
+  /**
+   * The next real value along the Y dimension.
+   */
+  private final int nextY;
+  /**
+   * Compute FFTs along X one at a time.
+   */
+  private final Complex fftX;
+  /**
+   * Compute FFTs along Y one at a time.
+   */
+  private final Complex fftY;
+  /**
+   * If true, pack FFTs along X (or Y) into a contiguous array to compute all FFTs along X (or Y) at once.
+   */
   private boolean packFFTs;
+  /**
+   * If true, use SIMD instructions.
+   */
   private boolean useSIMD;
-  private final Complex packedFFTX, packedFFTY;
+  /**
+   * Compute nY FFTs along the X dimension all at once.
+   */
+  private final Complex packedFFTX;
+  /**
+   * Compute nX FFTs along the Y dimension all at once.
+   */
+  private final Complex packedFFTY;
+  /**
+   * Working array for packed FFTs.
+   */
   private final double[] packedData;
+  /**
+   * The offset between real values in the packed data.
+   */
   private final int ii;
+  /**
+   * The offset between any real value and its corresponding imaginary value for the packed data.
+   */
   private final int im;
-  private final int trNextX, trNextY;
+  /**
+   * The offset between real values along the X-dimension in the transposed packed data.
+   */
+  private final int trNextX;
+  /**
+   * The offset between real values along the Y-dimension in the transposed packed data.
+   */
+  private final int trNextY;
 
   /**
    * Create a new 2D Complex FFT for interleaved data.
@@ -226,11 +282,11 @@ public class Complex2D {
    */
   private void transpose(final double[] input, int offset) {
     // Input order:
-    // real_xy = input[offset + x*nextX + y*nextY]
-    // imag_xy = input[offset + x*nextX + y*nextY + im]
+    // real(x,y) = input[offset + x*nextX + y*nextY]
+    // imag(x,y) = input[offset + x*nextX + y*nextY + im]
     // Output order:
-    // real_xy = packedData[y*trNextY + x*trNextX]
-    // imag_xy = packedData[y*trNextY + x*trXextX + im]
+    // real(x,y) = packedData[y*trNextY + x*trNextX]
+    // imag(x,y) = packedData[y*trNextY + x*trXextX + im]
 
     int index = 0;
     // Outer loop over the X dimension.
