@@ -283,6 +283,27 @@ public abstract class MixedRadixFactor {
   }
 
   /**
+   * Return a string representation of the mixed radix factor.
+   * @return a string representation of the mixed radix factor.
+   */
+  public String toString() {
+    return "MixedRadixFactor {" +
+        "n=" + n +
+        ", nFFTs=" + nFFTs +
+        ", im=" + im +
+        ", factor=" + factor +
+        ", product=" + product +
+        ", outerLoopLimit=" + outerLoopLimit +
+        ", innerLoopLimit=" + innerLoopLimit +
+        ", nextInput=" + nextInput +
+        ", di=" + di +
+        ", dj=" + dj +
+        ", ii=" + ii +
+        ", jstep=" + jstep +
+        '}';
+  }
+
+  /**
    * Apply the mixed radix factor using scalar operations.
    */
   protected abstract void passScalar(PassData passData);
