@@ -470,7 +470,26 @@ public class Complex3DParallel {
    * @param recip an array of double.
    */
   public void setRecip(double[] recip) {
-    System.arraycopy(recip, 0, this.recip, 0, recip.length);
+    // Reorder the reciprocal space data for convolution.
+    // Input
+    // trNextY = ii
+    // trNextZ = nY*ii
+    // real[y, z] = work[y*trNextY + z*trNextZ]
+    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
+    int recipNextY = nX;
+    int recipNextZ = nY * nX;
+    int index = 0;
+    for (int x = 0; x < nX; x++) {
+      int dx = x;
+      for (int z = 0; z < nZ; z++) {
+        int dz = dx + z * recipNextZ;
+        for (int y = 0; y < nY; y++) {
+          int conv = y * recipNextY + dz;
+          this.recip[index] = recip[conv];
+          index++;
+        }
+      }
+    }
   }
 
   /**
@@ -716,7 +735,7 @@ public class Complex3DParallel {
       for (int x = lb; x <= ub; x++) {
         selectYZPlane(input, offset, localWork);
         localFFTZ.fft(localWork, 0, ii);
-        recipConv(offset, localWork);
+        recipConv(x, localWork);
         localFFTZ.ifft(localWork, 0, ii);
         replaceYZPlane(localWork, offset, input);
         offset += nextX;
@@ -799,25 +818,15 @@ public class Complex3DParallel {
   /**
    * Perform a multiplication by the reciprocal space data.
    *
-   * @param offset The offset into the recip array.
-   * @param work   The input array.
+   * @param x    The X-value for this Y-Z plane.
+   * @param work The input array.
    */
-  private void recipConv(int offset, double[] work) {
-    // Input
-    // trNextY = ii
-    // trNextZ = nY*ii
-    // real[y, z] = work[y*trNextY + z*trNextZ]
-    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
-    // Perform a convolution.
-    int recipOffset = offset / ii;
-    int recipNextY = nX;
-    int recipNextZ = nY * nX;
+  private void recipConv(int x, double[] work) {
     int index = 0;
+    int rindex = x * (nY * nZ);
     for (int z = 0; z < nZ; z++) {
-      int dzRecip = recipOffset + z * recipNextZ;
       for (int y = 0; y < nY; y++) {
-        int conv = y * recipNextY + dzRecip;
-        double r = recip[conv];
+        double r = recip[rindex++];
         work[index] *= r;
         work[index + internalImZ] *= r;
         index += ii;

@@ -49,7 +49,7 @@
             <!-- argument>-XX:+UseNeon</argument -->
             <argument>-Dffx.log=ALL</argument>
             <argument>ffx.numerics.fft.Complex3DParallel</argument>
-            <argument>256</argument>
+            <argument>128</argument>
             <argument>8</argument>
             <argument>100</argument>
           </arguments>
