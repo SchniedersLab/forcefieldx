@@ -1,5 +1,7 @@
 package ffx.numerics.multipole;
 
+import java.util.Arrays;
+
 import static java.lang.Math.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -21,9 +23,11 @@ import static org.apache.commons.math3.util.FastMath.pow;
  */
 public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
 
+    private double beta = 0.0;
     private double alpha;
     private double alpha2;
     private static final double oneThird = 1.0 / 3.0;
+    private double[] ewaldSource;
 
     /**
      * Constructor for CoulombTensorGlobal.
@@ -39,6 +43,12 @@ public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
         assert (order <= 3); // Nuclear charge is a point charge
     }
 
+    public AmoebaPlusDampTensorGlobal(int order, double alpha1, double alpha2, double ewaldA) {
+        this(order, alpha1, alpha2);
+        this.beta = ewaldA;
+    }
+
+
     /**
      * Generate source terms for the Challacombe et al. recursion.
      *
@@ -48,9 +58,17 @@ public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
     protected void source(double[] T000) {
         // Compute the normal Coulomb auxiliary term.
         super.source(T000);
-
+        double[] copy = Arrays.copyOf(T000, o1);
         // Add the damping term: edamp = 1-exp(-alpha*r).
         dampSource(alpha, R, T000);
+        if(beta > 1e-3){
+            this.ewaldSource = new double[this.order+1];
+            EwaldTensorGlobal.fillEwaldSource(this.order, beta,
+                    EwaldTensorGlobal.initEwaldSource(this.order, beta, new double[o1]),
+                    this.R, ewaldSource);
+            // T000 = Ewald - Coulomb + Core
+            for(int i = 0; i < ewaldSource.length; i++){ T000[i] += ewaldSource[i] - copy[i]; }
+        }
     }
 
     /**
@@ -83,7 +101,7 @@ public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
      */
     public double coreInteraction(PolarizableMultipole mI, PolarizableMultipole mK) {
         // Coulomb energy of core charges (No damping)
-        double energy = mK.Z*mI.Z/R;
+        double energy = beta >= 1e-3 ? mK.Z*mI.Z * ewaldSource[0] : mK.Z*mI.Z/R;
 
         // Cores contract with multipole moments
         multipoleIPotentialAtK(mI, 0);
@@ -107,10 +125,11 @@ public class AmoebaPlusDampTensorGlobal extends CoulombTensorGlobal {
     public double coreInteractionAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
                                              double[] Gi, double[] Gk){
         // Coulomb energy of core charges (No damping -> cant use tensor terms)
-        double energy = mK.Z*mI.Z/R;
-        Gk[0] = -mK.Z * mI.Z * x * pow(R, -3);
-        Gk[1] = -mK.Z * mI.Z * y * pow(R, -3);
-        Gk[2] = -mK.Z * mI.Z * z * pow(R, -3);
+        double energy = this.beta >= 1e-3 ?  mK.Z*mI.Z * this.ewaldSource[0] : mK.Z*mI.Z/R;
+        double tensorElement = this.beta >= 1e-3 ? this.ewaldSource[1]: -pow(R,-3);
+        Gk[0] = mK.Z * mI.Z * x * tensorElement;
+        Gk[1] = mK.Z * mI.Z * y * tensorElement;
+        Gk[2] = mK.Z * mI.Z * z * tensorElement;
 
         // Cores contract with multipole moments
         multipoleIPotentialAtK(mI, 1);

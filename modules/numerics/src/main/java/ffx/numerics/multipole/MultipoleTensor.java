@@ -516,7 +516,7 @@ public abstract class MultipoleTensor {
                                               double inductionMask, double energyMask, double mutualMask,
                                               double[] Gi, double[] Ti, double[] Tk) {
 
-    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+    if (mI.Z != 0 && mK.Z != 0) {
       mI.q += mI.Z;
       mK.q += mK.Z;
     }
@@ -571,7 +571,7 @@ public abstract class MultipoleTensor {
     dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
 
-    if (mI.Z != 0 && mK.Z != 0 && operator == Operator.THOLE_DIRECT_FIELD) {
+    if (mI.Z != 0 && mK.Z != 0) {
       mI.q -= mI.Z;
       mK.q -= mK.Z;
     }

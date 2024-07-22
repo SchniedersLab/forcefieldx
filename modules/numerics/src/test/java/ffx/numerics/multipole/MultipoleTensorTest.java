@@ -156,6 +156,19 @@ public class MultipoleTensorTest extends FFXTest {
   protected final static double[] QjXYZ = {1.887074, -0.783266, 0.000000};
   protected final static double Zj = 1.0;
 
+  // Oxy - 1
+  protected final static double[] QlAPlusEwal = {-0.51294009372635441,
+          -4.7449978254291744E-002,  -2.3671746096901102E-002,   9.7311456599758192E-002,
+          5.8029182615047855E-003*3,  -1.6704434050841255E-002*3,   1.0901515789336465E-002*3,
+          -1.2263684370259969E-002*3, -9.4608247580866937E-003*3, -1.4686497793089748E-002*3};
+  // Hydrogen - 536
+  protected final static double[] QmAplusEwal = {0.26162508784642219,
+          -0.10389679865169722,       -2.6854217213802947E-002,  -5.5830507675936697E-002,
+          3*-6.6549319715359873E-003,  9.8396726583062210E-003*3.0,  -3.1847406867702320E-003*3.0,
+          3*-7.8527872497808878E-004,  -1.5585386297907382E-003*3,   4.0376954110960461E-003*3};
+  protected final static double[] xyzEwaldAPlus = new double[]
+          {-3.2149529999999999,        2.1452700000000000,       -2.0970249999999999};
+
   public MultipoleTensorTest(String info, int order) {
     this.info = info;
     this.order = order;
