@@ -650,7 +650,7 @@ public class ReciprocalSpace {
             + splineInducedTotal + inducedPhiTotal) * toSeconds;
 
         logger.fine(format("\n Reciprocal Space: %7.4f (sec)", total));
-        long[] convTime = complex3DFFT.getTimings();
+        long[] convTime = complex3DFFT.getTiming();
         logger.fine("                           Direct Field    SCF Field");
         logger.fine(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
 

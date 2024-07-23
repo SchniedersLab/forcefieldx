@@ -49,9 +49,10 @@
             <!-- argument>-XX:+UseNeon</argument -->
             <argument>-Dffx.log=ALL</argument>
             <argument>ffx.numerics.fft.Complex3DParallel</argument>
-            <argument>128</argument>
+            <argument>64</argument>
             <argument>8</argument>
-            <argument>100</argument>
+            <argument>1000</argument>
+            <argument>true</argument>
           </arguments>
         </configuration>
       </plugin>
