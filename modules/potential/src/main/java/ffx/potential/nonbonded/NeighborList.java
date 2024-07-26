@@ -158,6 +158,8 @@ public class NeighborList extends ParallelRegion {
    * Time to build the Verlet lists.
    */
   private long verletListTime;
+  /** Time to build groups and associated lists */
+  private long groupingTime;
   /** Total number of interactions. */
   private final SharedInteger sharedCount;
   /** Optimal pairwise ranges. */
@@ -309,7 +311,9 @@ public class NeighborList extends ParallelRegion {
     try {
       parallelTeam.execute(this);
       if(M > 1 && N > 1) {
+        groupingTime -= System.nanoTime();
         groups();
+        groupingTime += System.nanoTime();
       } else {
         groupLists = lists;
       }
@@ -381,6 +385,9 @@ public class NeighborList extends ParallelRegion {
       sb.append(format("   Create Vertlet Lists:   %6.4f sec\n", verletListTime * 1e-9));
       sb.append(format("   Parallel Schedule:      %6.4f sec\n", scheduleTime * 1e-9));
       sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
+      if ( M > 1 && N > 1) {
+        sb.append(format("   M x N List Total:       %6.4f sec\n", groupingTime * 1e-9));
+      }
       logger.fine(sb.toString());
     }
   }
@@ -1513,7 +1520,7 @@ public class NeighborList extends ParallelRegion {
    */
   public static void main(String[] args){
     PotentialsUtils potentialsUtils = new PotentialsUtils();
-    File xyzFile = new File("/home/matthew-speranza/Programs/forcefieldx/examples/trypsin.P21212.xyz");
+    File xyzFile = new File("./examples/trypsin.P21212.xyz");
     if(!xyzFile.exists()){
       System.out.println("File does not exist");
     }
