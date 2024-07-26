@@ -46,8 +46,11 @@ import edu.rit.pj.reduction.SharedBoolean;
 import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.util.Range;
 import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.utils.PotentialsUtils;
 
+import java.io.File;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,8 +58,7 @@ import java.util.logging.Logger;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static java.util.Arrays.fill;
+import static java.util.Arrays.*;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -175,14 +177,16 @@ public class NeighborList extends ParallelRegion {
   private double[] previous;
   /** The Verlet lists. [nSymm][nAtoms][nNeighbors] */
   private int[][][] lists;
-  /** Lists of groups */
-  private ArrayList<AtomIndex[]> groups;
-  /** Span of each group across zCell indices (each at most length M ) */
-  private ArrayList<HashSet<Integer>> zSets;
+  /** Lists of groups. Can't know # groups beforehand. [nSymm][group][atom] */
+  private int[][][] groups;
+  private int nGroups;
   /** Lists of interactions between groups of atoms. nGroups is not known until after groups are built. */
   private int[][][] groupLists;
+  private boolean[][][] groupBitMasks;
   /** Size of each group of atoms */
   private int M = -1;
+  /** Number of group interactions */
+  private int N = -1;
   /** Number of interactions per atom. */
   private int[] listCount;
   /** Pairwise ranges for load balancing. */
@@ -290,19 +294,25 @@ public class NeighborList extends ParallelRegion {
     }
   }
 
-  public void buildMxNList(int M, final double[][] coordinates, final int[][][] lists, boolean[] use, boolean forceRebuild, boolean print){
+  public void buildMxNList(int M, int N, final double[][] coordinates, final int[][][] lists, boolean[] use, boolean forceRebuild, boolean print){
     if (disableUpdates) {
       return;
     }
     this.coordinates = coordinates;
     this.lists = lists;
     this.M = M;
+    this.N = N;
     this.use = use;
     this.forceRebuild = forceRebuild;
     this.print = print;
 
     try {
       parallelTeam.execute(this);
+      if(M > 1 && N > 1) {
+        groups();
+      } else {
+        groupLists = lists;
+      }
     } catch (Exception e) {
       String message = "Fatal exception building neighbor list.\n";
       logger.log(Level.SEVERE, message, e);
@@ -448,10 +458,6 @@ public class NeighborList extends ParallelRegion {
         if (threadIndex == 0) {
           assignAtomsToCellsTime += System.nanoTime();
         }
-        // Create groups of M and allocate mem
-        if (M != -1){
-          groups();
-        }
         // Build the Verlet list.
         if (threadIndex == 0) {
           verletListTime = -System.nanoTime();
@@ -470,10 +476,10 @@ public class NeighborList extends ParallelRegion {
 
   /**
    * Build groups of size M by walking up Z columns. Must be called
-   * after domain decomposition & assignments of atoms into cells.
+   * after all the other neighbor-list code.
    * <p></p>
-   * Allocates memory for groupLists builds groups and zSets array.
-   * Assigns groups to cells.
+   * Builds groups, then builds group neighbor-lists from existing
+   * M=1 neighbor-lists.
    */
   private void groups() {
     // Use cells to build groups
@@ -481,159 +487,97 @@ public class NeighborList extends ParallelRegion {
     int nB = domainDecomposition.nB;
     int nC = domainDecomposition.nC;
     // Allocate more than needed i.e. nAtoms always >= nGroups
-    groups = new ArrayList<>(nAtoms);
-    zSets = new ArrayList<>(nAtoms);
+    groups = new int[nSymm][nAtoms][M];
+    int[] symmGroups = new int[nSymm];
     for(int i = 0; i < nA; i++){
       for(int j = 0; j < nB; j++){
-        HashSet<Integer> zSet = new HashSet<>();
-        AtomIndex[] group = new AtomIndex[M];
+        int[] group = new int[M];
         // Slow in-order add, but typically fast due to small # zCol atoms
-        PriorityQueue<AtomIndex> atomQueue = new PriorityQueue<>();
+        PriorityQueue<AtomIndex>[] atomQueue = new PriorityQueue[nSymm];
+        for(int k = 0; k < nSymm; k++){
+          atomQueue[k] = new PriorityQueue<>();
+        }
         for(int k = 0; k < nC; k++){
           // Walk up z-columns adding to groups of size M
           Cell cell = domainDecomposition.getCell(i, j, k);
           assert(cell != null); // after domain decomposition
-          atomQueue.addAll(cell.list);
-          while(atomQueue.size() >= M){
-            for(int l = 0; l < M; l++){
-              AtomIndex atom = atomQueue.poll();
-              assert(atom != null); // with while-loop cond.
-              // Unique index for every atom
-              group[l] = atom;
-              double[] xyz = new double[]{ coordinates[atom.iSymm][atom.i + XX],
-                      coordinates[atom.iSymm][atom.i + YY],
-                      coordinates[atom.iSymm][atom.i + ZZ]};
-              double[] frac = new double[3];
-              crystal.toFractionalCoordinates(xyz, frac);
-              // Group stored as a set so this happening multiple times
-              domainDecomposition.addGroupToCell(groups.size(), frac);
-              // Keep track of groups across multiple z cells
-              int c = (int) floor(frac[ZZ]*nC);
-              zSet.add(c);
+          for(int l = 0; l < cell.list.size(); l++){
+            int iSymm = cell.list.get(l).iSymm;
+            // Sort by z height
+            atomQueue[iSymm].add(cell.list.get(l));
+            // Flush queue into groups
+            while(atomQueue[iSymm].size() >= M){
+              for(int m = 0; m < M; m++){
+                AtomIndex atom = atomQueue[iSymm].poll();
+                assert(atom != null); // with while-loop cond.
+                group[m] = atom.i;
+              }
+              groups[iSymm][symmGroups[iSymm]++] = group;
+              group = new int[M];
             }
-            groups.add(group);
-            group = new AtomIndex[M];
-            zSets.add(zSet);
-            zSet.clear();
           }
         }
-        if(atomQueue.isEmpty()){ continue; }
-        // Fill in last group with -1 filler
+        for(int k = 0; k < nSymm; k++) {
+          if (atomQueue[k].isEmpty()) {
+            continue;
+          }
+          // Fill in last group with -1 filler
+          for (int l = 0; l < M; l++) {
+            if (!atomQueue[k].isEmpty()) {
+              AtomIndex atom = atomQueue[k].poll();
+              assert (atom != null);
+              group[l] = atom.i;
+            } else {
+              group[l] = -1;
+            }
+            groups[k][symmGroups[k]++] = group;
+          }
+        }
+      }
+    }
+    nGroups = symmGroups[0]; // symmGroups is uniform array
+    groupLists = new int[nSymm][nGroups][]; // Last will be union of N atoms' list * N
+    groupBitMasks = new boolean[nSymm][nGroups][];
+    // Build lists
+    for(int i = 0; i < nSymm; i++){
+      for(int j = 0; j < nGroups; j++){
+        int[] group = groups[i][j];
+        // Fill out union and mask
+        HashSet<Integer> groupUnion = new HashSet<>();
+        ArrayList<boolean[]> groupMasks = new ArrayList<>();
+        HashMap<Integer, Integer> neighborIDToMaskIndex = new HashMap<>();
         for(int k = 0; k < M; k++){
-          if(!atomQueue.isEmpty()){
-            AtomIndex atom = atomQueue.poll();
-            assert(atom != null);
-            group[k] = atom;
-            double[] xyz = new double[]{ coordinates[atom.iSymm][atom.i + XX],
-                    coordinates[atom.iSymm][atom.i + YY],
-                    coordinates[atom.iSymm][atom.i + ZZ]};
-            double[] frac = new double[3];
-            crystal.toFractionalCoordinates(xyz, frac);
-            domainDecomposition.addGroupToCell(groups.size(), frac);
-            int c = (int) floor(frac[ZZ]*nC);
-            zSet.add(c);
-          } else{
-            group[k] = null;
+          int atomID = group[k];
+          if (atomID == -1) {
+            continue;
           }
-          groups.add(group);
-          zSets.add(zSet);
-          zSet.clear();
+          int[] neighborList = lists[i][atomID];
+          for(int l = 0; l < neighborList.length; l++){
+            boolean newInteraction = groupUnion.add(neighborList[l]);
+            if(newInteraction){
+              groupMasks.add(new boolean[M]);
+              groupMasks.getLast()[k] = true;
+              neighborIDToMaskIndex.put(neighborList[l], groupMasks.size()-1);
+            } else {
+              int maskIndex = neighborIDToMaskIndex.get(neighborList[l]);
+              groupMasks.get(maskIndex)[k] = true;
+            }
+          }
         }
+        int[] groupNeighborListExpanded = new int[groupUnion.size()*N];
+        boolean[] groupNeighborMasks = new boolean[groupUnion.size()*N];
+        List<Integer> groupNeighborList = groupUnion.stream().toList();
+        for(int k = 0; k < groupNeighborList.size(); k++){
+          int atomID = groupNeighborList.get(k);
+          for(int l = 0; l < N; l++){
+            groupNeighborListExpanded[k*N+l] = atomID;
+            groupNeighborMasks[k*N+l] = groupMasks.get(k)[l];
+          }
+        }
+        groupLists[i][j] = groupNeighborListExpanded;
+        groupBitMasks[i][j] = groupNeighborMasks;
       }
     }
-    // Old implementation that doesn't use pre-built cells
-    /*
-    final SortedMap<Double, Integer>[][] map = new SortedMap[nA][nB];
-    int[] groupZ = new int[nAtoms*nSymm];
-    for(int i = 0; i < nA; i++) {
-      for(int j = 0; j < nB; j++) {
-        map[i][j] = new TreeMap<>(); // Sorted map
-        for(int m = 0; m < nSymm; m++) {
-          final double[] xyz = coordinates[m];
-          for (int k = 0; k < nAtoms; k++) { // For every atom (including nSymm atoms)
-            final double[] pos = new double[3];
-            final double[] posFrac = new double[3];
-            pos[0] = xyz[k + XX];
-            pos[1] = xyz[k + YY];
-            pos[2] = xyz[k + ZZ];
-            crystal.toFractionalCoordinates(pos, posFrac);
-            // Shift into 0.0 <= x,y,z <= 1.0 fractional coords
-            for(int ii = 0; ii < posFrac.length; ii++)
-              while(posFrac[ii] < 0.0 || posFrac[ii] > 1.0)
-                posFrac[ii] += posFrac[ii] < 0.0 ? 1.0 : -1.0;
-
-            int xIndex = (int) floor(posFrac[0]*nA);
-            int yIndex = (int) floor(posFrac[1]*nB);
-            // Unique index for every atom including symm atoms
-            int atomIndex = nSymm > nAtoms ? m*nSymm + k : k*nAtoms + m;
-            groupZ[atomIndex] = (int) floor(posFrac[2]*nC);
-            // log((n/(nA*nB)) put onto map complexity -> still very fast if uniform density
-            map[xIndex][yIndex].put(posFrac[2], atomIndex);
-          }
-        }
-      }
-    }
-    // Place most into groups of M (others < M with -1 as filler)
-    groups = new ArrayList<>((int) ((double)(nSymm*nAtoms)/M*1.01)); // 1% room for extra groups
-    zSets = new HashSet[(int) ((double)(nSymm*nAtoms)/M*1.01)]; // Dynamic reallocation if required
-    for (int i = 0; i < nA; i++) {
-      for (int j = 0; j < nB; j++) {
-        if (map[i][j].isEmpty()) continue;
-        // This is a list of atomIndex as defined 14 lines above
-        List<Integer> columnAtoms = map[i][j].values().stream().toList();
-        map[i][j].clear();
-        int[] group = new int[M];
-        int count = 0;
-        while (columnAtoms.size() - count >= M) {
-          // Keep span of group across z
-          HashSet<Integer> zSet = new HashSet<>();
-          for (int k = 0; k < M; k++) {
-            group[k] = columnAtoms.get(count);
-            zSet.add(groupZ[group[k]]);
-            count++;
-          }
-          // Store & reset
-          groups.add(group);
-          if (groups.size() - 1 == zSets.length){ // Dynamic allocation
-            HashSet<Integer>[] temp = new HashSet[(int) (zSets.length*1.25)];
-            System.arraycopy(zSets, 0, temp, 0, zSets.length);
-            zSets = temp;
-          }
-          else {
-            zSets[groups.size() - 1] = zSet;
-          }
-          group = new int[M];
-        }
-        if (columnAtoms.size() - count == 0) {
-          continue;
-        }
-        // Handle any left behind with -1 as filler
-        HashSet<Integer> zSet = new HashSet<>();
-        for (int k = 0; k < M; k++) {
-          if (k <= (columnAtoms.size() - count)) {
-            group[k] = columnAtoms.get(count);
-            zSet.add(groupZ[group[k]]);
-          } else {
-            group[k] = -1;
-          }
-        }
-        groups.add(group);
-        // Place group into respective cells
-        if (groups.size() - 1 == zSets.length){ // Dynamic allocation
-          HashSet<Integer>[] temp = new HashSet[(int) (zSets.length*1.25)];
-          System.arraycopy(zSets, 0, temp, 0, zSets.length);
-          zSets = temp;
-        }
-        else {
-          zSets[groups.size() - 1] = zSet;
-        }
-      }
-    }
-    groups.trimToSize();
-     */
-    zSets.trimToSize();
-    groups.trimToSize();
-    groupLists = new int[nSymm][groups.size()][];
   }
 
   /**
@@ -953,13 +897,13 @@ public class NeighborList extends ParallelRegion {
               for (int bi = b1; bi <= bStop; bi++) {
                 atomCellPairs(domainDecomposition.image(a, bi, c));
               }
-              // (a, b-nE..b+nE, c+1..c+nE) -> semicircle in in z,y plane
+              // (a, b-nE..b+nE, c+1..c+nE) -> cube in in z,y plane
               for (int bi = bStart; bi <= bStop; bi++) {
                 for (int ci = c1; ci <= cStop; ci++) {
                   atomCellPairs(domainDecomposition.image(a, bi, ci));
                 }
               }
-              // (a+1..a+nE, b-nE..b+nE, c-nE..c+nE) -> hemisphere pushed in x-dir
+              // (a+1..a+nE, b-nE..b+nE, c-nE..c+nE) -> cube pushed in x-dir
               for (int bi = bStart; bi <= bStop; bi++) {
                 for (int ci = cStart; ci <= cStop; ci++) {
                   for (int ai = a1; ai <= aStop; ai++) {
@@ -967,7 +911,7 @@ public class NeighborList extends ParallelRegion {
                   }
                 }
               }
-            } else { // Full circle because????
+            } else {
               // Interactions with all adjacent symmetry mate cells.
               for (int ai = aStart; ai <= aStop; ai++) {
                 for (int bi = bStart; bi <= bStop; bi++) {
@@ -983,48 +927,6 @@ public class NeighborList extends ParallelRegion {
           listCount[atomIndex] += n;
           count += n;
           arraycopy(pairs, 0, list[atomIndex], 0, n);
-        }
-
-        // TODO: Separate call for this -> better thread saturation
-        // Either way we need to do atom based to get masking rules
-        if( M != -1) {
-          int[][] groupList = groupLists[iSymm];
-          int bottom = groups.size() > lb ? lb : 0;
-          int top = groups.size() > ub ? ub : 0;
-          assert (lb <= ub);
-          int cubesA = nA == 1 ? 0 : domainDecomposition.nEdge;
-          int cubesB = nB == 1 ? 0 : domainDecomposition.nEdge;
-          int cubesC = nC == 1 ? 0 : domainDecomposition.nEdge;
-          for (int i = bottom; i <= top; i++) {
-            Cell groupCell = domainDecomposition.getCellForGroup(i);
-            int a = groupCell.a;
-            int b = groupCell.b;
-            int c = groupCell.c;
-            boolean[] assigned = new boolean[groups.size()];
-            ArrayList<Integer> neighbors = new ArrayList<>();
-            for (int j = -cubesA + a; j <= cubesA + a; j++) {
-              for (int k = -cubesB + b; k <= cubesB + b; k++) {
-                // Bump search in z direction by number of cells this group spans in z direction
-                cubesC += zSets.get(i).size() == 1 ? 0 : zSets.get(i).size() - 1;
-                cubesC = nC == 1 ? 0 : cubesC;
-                for (int l = -cubesC + c; l <= cubesC + c; l++) {
-                  Cell target = domainDecomposition.image(j, k, l);
-                  for (Integer group : target.groupList) {
-                    if (!assigned[group]) { // No duplicates due to z cell uncertainty
-                      assigned[group] = true;
-                      neighbors.add(group);
-                    }
-                  }
-                }
-                cubesC -= zSets.get(i).size() == 1 ? 0 : zSets.get(i).size() - 1;
-              }
-            }
-            neighbors.trimToSize();
-            groupList[i] = new int[neighbors.size()];
-            for (int j = 0; j < neighbors.size(); j++) {
-              groupList[j][j] = neighbors.get(j);
-            }
-          }
         }
       }
     }
@@ -1476,16 +1378,13 @@ public class NeighborList extends ParallelRegion {
     }
 
     public void addGroupToCell(int groupID, double[] frac) {
-      for(int j = 0; j < frac.length; j++)
-        while(frac[j] < 0.0 || frac[j] > 1.0)
-          frac[j] = frac[j] < 0.0 ? frac[j]+1.0 : frac[j]-1.0;
-      final int a = (int) floor(frac[XX] * nA);
-      final int b = (int) floor(frac[YY] * nB);
-      final int c = (int) floor(frac[ZZ] * nC);
-      groupCellA[groupID] = a;
-      groupCellB[groupID] = b;
-      groupCellC[groupID] = c;
-      cells[a][b][c].groupAdd(groupID);
+      for(int i = 0; i < frac.length; i++)
+        while(frac[i] < 0.0 || frac[i] >= 1.0)
+          frac[i] = frac[i] < 0.0 ? frac[i] + 1.0 : frac[i] - 1.0;
+      groupCellA[groupID] = (int)floor(frac[XX]*nA);
+      groupCellB[groupID] = (int)floor(frac[YY]*nB);
+      groupCellC[groupID] = (int)floor(frac[ZZ]*nC);
+      cells[groupCellA[groupID]][groupCellB[groupID]][groupCellC[groupID]].groupAdd(groupID);
     }
 
     public Cell getCellForGroup(int i) {
@@ -1496,7 +1395,7 @@ public class NeighborList extends ParallelRegion {
   /**
    * Hold the atom index and its symmetry operator.
    */
-  public static class AtomIndex implements Comparator<Double> {
+  public static class AtomIndex implements Comparable<AtomIndex> {
 
     public final int iSymm;
     public final int i;
@@ -1509,8 +1408,8 @@ public class NeighborList extends ParallelRegion {
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-      return Double.compare(o1, o2);
+    public int compareTo(AtomIndex o) {
+      return Double.compare(this.z, o.z);
     }
   }
 
@@ -1539,14 +1438,14 @@ public class NeighborList extends ParallelRegion {
     /**
      * List of groupIDs that contain at least one atom in this cell.
      */
-    final List<Integer> groupList;
+    final Set<Integer> groupList;
 
     public Cell(int a, int b, int c) {
       this.a = a;
       this.b = b;
       this.c = c;
       list = Collections.synchronizedList(new ArrayList<>());
-      groupList = Collections.synchronizedList(new ArrayList<>());
+      groupList = Collections.synchronizedSet(new HashSet<>());
     }
 
     /**
@@ -1568,13 +1467,6 @@ public class NeighborList extends ParallelRegion {
         return null;
       }
       return list.get(index);
-    }
-
-    public int getGroup(int index){
-      if(index >= groupList.size()){
-        return -1;
-      }
-      return groupList.get(index);
     }
 
     public int getCount() {
@@ -1613,5 +1505,19 @@ public class NeighborList extends ParallelRegion {
       list.clear();
     }
 
+  }
+
+  /**
+   * Debugging method.
+   * @param args
+   */
+  public static void main(String[] args){
+    PotentialsUtils potentialsUtils = new PotentialsUtils();
+    File xyzFile = new File("/home/matthew-speranza/Programs/forcefieldx/examples/trypsin.P21212.xyz");
+    if(!xyzFile.exists()){
+      System.out.println("File does not exist");
+    }
+    MolecularAssembly molecularAssembly = potentialsUtils.open(xyzFile);
+    molecularAssembly.getPotentialEnergy().energy(null, true);
   }
 }
