@@ -372,7 +372,7 @@ public class NeighborList extends ParallelRegion {
     pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
     scheduleTime += System.nanoTime();
 
-    if (logger.isLoggable(Level.WARNING)) {
+    if (logger.isLoggable(Level.FINE)) {
       time = System.nanoTime() - time;
       StringBuilder sb = new StringBuilder();
       sb.append(format("   Motion Check:           %6.4f sec\n", motionTime * 1e-9));
@@ -384,7 +384,7 @@ public class NeighborList extends ParallelRegion {
         sb.append(format("   M x N List Total:       %6.4f sec\n", groupingTime * 1e-9));
       }
       sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
-      logger.warning(sb.toString());
+      logger.fine(sb.toString());
     }
   }
 
@@ -554,48 +554,6 @@ public class NeighborList extends ParallelRegion {
     nGroups = symmGroups[0]; // symmGroups is uniform array
     groupLists = new int[nSymm][nGroups][]; // Last will be union of N atoms' list * N
     groupBitMasks = new boolean[nSymm][nGroups][];
-    /*
-    // Build lists
-    for(int i = 0; i < nSymm; i++){
-      for(int j = 0; j < nGroups; j++){
-        int[] group = groups[i][j];
-        // Fill out union and mask
-        HashSet<Integer> groupUnion = new HashSet<>();
-        ArrayList<boolean[]> groupMasks = new ArrayList<>();
-        HashMap<Integer, Integer> neighborIDToMaskIndex = new HashMap<>();
-        for(int k = 0; k < M; k++){
-          int atomID = group[k];
-          if (atomID == -1) {
-            continue;
-          }
-          int[] neighborList = lists[i][atomID];
-          for(int l = 0; l < neighborList.length; l++){
-            boolean newInteraction = groupUnion.add(neighborList[l]);
-            if(newInteraction){
-              groupMasks.add(new boolean[M]);
-              groupMasks.getLast()[k] = true;
-              neighborIDToMaskIndex.put(neighborList[l], groupMasks.size()-1);
-            } else {
-              int maskIndex = neighborIDToMaskIndex.get(neighborList[l]);
-              groupMasks.get(maskIndex)[k] = true;
-            }
-          }
-        }
-        int[] groupNeighborListExpanded = new int[groupUnion.size()*N];
-        boolean[] groupNeighborMasks = new boolean[groupUnion.size()*N];
-        List<Integer> groupNeighborList = groupUnion.stream().toList();
-        for(int k = 0; k < groupNeighborList.size(); k++){
-          int atomID = groupNeighborList.get(k);
-          for(int l = 0; l < N; l++){
-            groupNeighborListExpanded[k*N+l] = atomID;
-            groupNeighborMasks[k*N+l] = groupMasks.get(k)[l];
-          }
-        }
-        groupLists[i][j] = groupNeighborListExpanded;
-        groupBitMasks[i][j] = groupNeighborMasks;
-      }
-    }
-     */
   }
 
   /**
@@ -1580,7 +1538,7 @@ public class NeighborList extends ParallelRegion {
    */
   public static void main(String[] args){
     PotentialsUtils potentialsUtils = new PotentialsUtils();
-    File xyzFile = new File("./examples/dhfr2.xyz");
+    File xyzFile = new File("./examples/waterbox.xyz");
     if(!xyzFile.exists()){
       System.out.println("File does not exist");
     }
