@@ -142,6 +142,7 @@ public class NeighborList extends ParallelRegion {
   private final AssignAtomsToCellsLoop[] assignAtomsToCellsLoops;
   /** A Verlet list loop for each thread. */
   private final NeighborListLoop[] verletListLoop;
+  private final MxNListLoop[] mxNListLoop;
   /**
    * Time to check for motion.
    */
@@ -254,10 +255,12 @@ public class NeighborList extends ParallelRegion {
     listInitBarrierAction = new ListInitBarrierAction();
     verletListLoop = new NeighborListLoop[threadCount];
     assignAtomsToCellsLoops = new AssignAtomsToCellsLoop[threadCount];
+    mxNListLoop = new MxNListLoop[threadCount];
     for (int i = 0; i < threadCount; i++) {
       motionLoops[i] = new MotionLoop();
       verletListLoop[i] = new NeighborListLoop();
       assignAtomsToCellsLoops[i] = new AssignAtomsToCellsLoop();
+      mxNListLoop[i] = new MxNListLoop();
     }
 
     // Initialize the neighbor list builder subcells.
@@ -310,13 +313,6 @@ public class NeighborList extends ParallelRegion {
 
     try {
       parallelTeam.execute(this);
-      if(M > 1 && N > 1) {
-        groupingTime -= System.nanoTime();
-        groups();
-        groupingTime += System.nanoTime();
-      } else {
-        groupLists = lists;
-      }
     } catch (Exception e) {
       String message = "Fatal exception building neighbor list.\n";
       logger.log(Level.SEVERE, message, e);
@@ -376,7 +372,7 @@ public class NeighborList extends ParallelRegion {
     pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
     scheduleTime += System.nanoTime();
 
-    if (logger.isLoggable(Level.FINE)) {
+    if (logger.isLoggable(Level.WARNING)) {
       time = System.nanoTime() - time;
       StringBuilder sb = new StringBuilder();
       sb.append(format("   Motion Check:           %6.4f sec\n", motionTime * 1e-9));
@@ -384,11 +380,11 @@ public class NeighborList extends ParallelRegion {
       sb.append(format("   Assign Atoms to Cells:  %6.4f sec\n", assignAtomsToCellsTime * 1e-9));
       sb.append(format("   Create Vertlet Lists:   %6.4f sec\n", verletListTime * 1e-9));
       sb.append(format("   Parallel Schedule:      %6.4f sec\n", scheduleTime * 1e-9));
-      sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
       if ( M > 1 && N > 1) {
         sb.append(format("   M x N List Total:       %6.4f sec\n", groupingTime * 1e-9));
       }
-      logger.fine(sb.toString());
+      sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
+      logger.warning(sb.toString());
     }
   }
 
@@ -473,6 +469,19 @@ public class NeighborList extends ParallelRegion {
         if (threadIndex == 0) {
           verletListTime += System.nanoTime();
         }
+        // Build MxN Loop if desired
+        if ( M > 1 && N > 1) {
+          if(threadIndex == 0){
+            groupingTime = -System.nanoTime();
+          }
+          // Fast build of groups
+          if (threadIndex == 0) { groups(); }
+          barrier();
+          execute(0, nGroups - 1, mxNListLoop[threadIndex]);
+          if(threadIndex == 0){
+            groupingTime += System.nanoTime();
+          }
+        }
       }
     } catch (Exception e) {
       String message =
@@ -545,6 +554,7 @@ public class NeighborList extends ParallelRegion {
     nGroups = symmGroups[0]; // symmGroups is uniform array
     groupLists = new int[nSymm][nGroups][]; // Last will be union of N atoms' list * N
     groupBitMasks = new boolean[nSymm][nGroups][];
+    /*
     // Build lists
     for(int i = 0; i < nSymm; i++){
       for(int j = 0; j < nGroups; j++){
@@ -585,6 +595,7 @@ public class NeighborList extends ParallelRegion {
         groupBitMasks[i][j] = groupNeighborMasks;
       }
     }
+     */
   }
 
   /**
@@ -1059,6 +1070,55 @@ public class NeighborList extends ParallelRegion {
 
   }
 
+  private class MxNListLoop extends IntegerForLoop {
+
+    @Override
+    public void run(final int lb, final int ub) throws Exception {
+      // Build lists
+      for(int i = 0; i < nSymm; i++){
+        for(int j = lb; j < ub; j++){
+          int[] group = groups[i][j];
+          // Fill out union and mask
+          ArrayList<Integer> groupUnion = new ArrayList<>();
+          boolean[] exists = new boolean[nAtoms];
+          ArrayList<boolean[]> groupMasks = new ArrayList<>();
+          HashMap<Integer, Integer> neighborIDToMaskIndex = new HashMap<>();
+          for(int k = 0; k < M; k++){
+            int atomID = group[k];
+            if (atomID == -1) {
+              continue;
+            }
+            int[] neighborList = lists[i][atomID];
+            for(int l = 0; l < neighborList.length; l++){
+              boolean newInteraction = !exists[neighborList[l]];
+              if(newInteraction){ // Mark down and save location of mask
+                groupUnion.add(neighborList[l]);
+                exists[neighborList[l]] = true;
+                groupMasks.add(new boolean[M]);
+                groupMasks.getLast()[k] = true;
+                neighborIDToMaskIndex.put(neighborList[l], groupMasks.size()-1);
+              } else { // mark down
+                int maskIndex = neighborIDToMaskIndex.get(neighborList[l]);
+                groupMasks.get(maskIndex)[k] = true;
+              }
+            }
+          }
+          int[] groupNeighborListExpanded = new int[groupUnion.size()*N];
+          boolean[] groupNeighborMasks = new boolean[groupUnion.size()*N];
+          for(int k = 0; k < groupUnion.size(); k++){
+            int atomID = groupUnion.get(k);
+            for(int l = 0; l < N; l++){
+              groupNeighborListExpanded[k*N+l] = atomID;
+              groupNeighborMasks[k*N+l] = groupMasks.get(k)[l];
+            }
+          }
+          groupLists[i][j] = groupNeighborListExpanded;
+          groupBitMasks[i][j] = groupNeighborMasks;
+        }
+      }
+    }
+  }
+
   /**
    * Break down the simulation domain into a 3D grid of cells.
    */
@@ -1520,7 +1580,7 @@ public class NeighborList extends ParallelRegion {
    */
   public static void main(String[] args){
     PotentialsUtils potentialsUtils = new PotentialsUtils();
-    File xyzFile = new File("./examples/trypsin.P21212.xyz");
+    File xyzFile = new File("./examples/dhfr2.xyz");
     if(!xyzFile.exists()){
       System.out.println("File does not exist");
     }
