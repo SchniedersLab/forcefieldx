@@ -1428,7 +1428,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         coords[0][i * 3 + 2] = atoms[i].getZ();
       }
       boolean print = logger.isLoggable(Level.FINE);
-      vacuumNeighborList.buildList(coords, alchemicalParameters.vaporLists, isSoft,
+      vacuumNeighborList.buildMxNList(1, 1, coords, alchemicalParameters.vaporLists, isSoft,
           true, print);
       alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
       alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
@@ -1510,7 +1510,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         coords[0][i * 3 + 2] = atoms[i].getZ();
       }
       boolean print = logger.isLoggable(Level.FINE);
-      vacuumNeighborList.buildList(coords, alchemicalParameters.vaporLists, nnAtoms, true, print);
+      vacuumNeighborList.buildMxNList(1, 1, coords, alchemicalParameters.vaporLists, nnAtoms, true, print);
       alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
       alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
       alchemicalParameters.vacuumRanges = new Range[maxThreads];
