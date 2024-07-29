@@ -104,6 +104,11 @@ class MinimizeCrystals extends AlgorithmsScript {
       description = "End minimization if it starts to cycle between small coordinate and lattice parameter fluctuations.")
   private int minIterations
 
+  /** --cy or --cycles End minimization if it has cycled between lattice parameters and coordinates more than this value. */
+  @Option(names = ["--cy", "--cycles"], paramLabel = "-1", defaultValue = "-1",
+          description = "End minimization if it has cycled between lattice parameters and coordinates more than this value.")
+  private int cycles
+
   /**
    * The final argument(s) should be an XYZ or PDB filename.
    */
@@ -243,6 +248,7 @@ class MinimizeCrystals extends AlgorithmsScript {
     if (coords) {
       ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
       Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      int numCycles = 0
       while (true) {
         // Complete a round of coordinate optimization.
         minimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
@@ -268,38 +274,23 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
-        if (minIterations > 0 && minimize.getIterations() < minIterations && crystalMinimize.getIterations() < minIterations) {
-          // Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
+        if (minIterations > 0) {
+          int coordIters = minimize.getIterations()
+          int latticeIters = crystalMinimize.getIterations()
+          if (coordIters < minIterations && latticeIters < minIterations) {
+            // Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
+            logger.info(format(" Current iteration (coords: %3d, lattice: %3d) has exceeded maximum allowable iterations (%3d).", coordIters, latticeIters, minIterations));
+            break
+          }
+        }
+        // Minimization has cycled between lattice and coords. Therefore increase number of cycles and check if done.
+        if (cycles > 0 && ++numCycles >= cycles) {
+          logger.info(format(" Current cycle (%3d) has exceeded maximum allowable cycles (%3d).", numCycles, cycles))
           break
         }
       }
     }
-    // Replace existing energy and density label if present
-    String oldName = activeAssembly.getName()
-    double density = activeAssembly.getCrystal().getDensity(activeAssembly.getMass())
-    if (oldName.containsIgnoreCase("Energy:")) {
-      String[] tokens = oldName.trim().split(" +")
-      int numTokens = tokens.length
-      // First element should always be number of atoms in XYZ.
-      StringBuilder sb = new StringBuilder()
-      for (int i = 1; i < numTokens; i++) {
-        if (tokens[i].containsIgnoreCase("Energy:")) {
-          // i++ skips current entry (value associated with "Energy")
-          tokens[i++] = energy
-        } else if (tokens[i].containsIgnoreCase("Density:")) {
-          // i++ skips current entry (value associated with "Density")
-          tokens[i++] = density
-        } else {
-          // Accrue previous name.
-          sb.append(tokens[i] + " ")
-        }
-      }
-      // Opted to add energy/density after to preserve formatting.
-      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f", sb.toString(), energy, density))
-    } else {
-      // Append energy and density to structure name (line 1 of XYZ).
-      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f", oldName, energy, density))
-    }
+    updateTitle(energy)
   }
 
   /**
