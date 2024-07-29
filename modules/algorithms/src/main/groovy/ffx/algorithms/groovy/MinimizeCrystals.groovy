@@ -79,7 +79,7 @@ class MinimizeCrystals extends AlgorithmsScript {
    * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
    */
   @Option(names = ["-c", "--coords"], paramLabel = 'false', defaultValue = "false",
-      description = 'Cycle between lattice and coordinate optimization until both satisfy the convergence criteria.')
+      description = 'Cycle between lattice and coordinate optimization instead of optimizing both together.')
   boolean coords
   /**
    * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
@@ -96,13 +96,13 @@ class MinimizeCrystals extends AlgorithmsScript {
 
   /** --et or --energyTolerance End minimization if new energy deviates less than this tolerance. */
   @Option(names = ["--et", "--energyTolerance"], paramLabel = "1.0e-10", defaultValue = "1.0e-10",
-          description = "End minimization if new energy deviates less than this tolerance.")
-  private double tolerance;
+      description = "End minimization if new energy deviates less than this tolerance.")
+  private double tolerance
 
   /** --mi or --minimumIterations End minimization if fewer iterations were taken for both coordinate and lattice minimization. */
   @Option(names = ["--mi", "--minimumIterations"], paramLabel = "-1", defaultValue = "-1",
-          description = "End minimization if it starts to cycle between small coordinate and lattice parameter fluctuations.")
-  private int minIterations;
+      description = "End minimization if it starts to cycle between small coordinate and lattice parameter fluctuations.")
+  private int minIterations
 
   /**
    * The final argument(s) should be an XYZ or PDB filename.
@@ -155,9 +155,8 @@ class MinimizeCrystals extends AlgorithmsScript {
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)
+    xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly, coords)
     xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE)
-
     SystemFilter systemFilter = algorithmFunctions.getFilter()
 
     // Apply fractional coordinate mode.
@@ -234,8 +233,10 @@ class MinimizeCrystals extends AlgorithmsScript {
   }
 
   void runMinimize() {
+    logger.info("\n Crystal Minimizing " + activeAssembly.getName())
     crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
     crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
+    logger.info("\n Crystal Minimization Complete.")
     double energy = crystalMinimize.getEnergy()
 
     // Complete rounds of coordinate and lattice optimization.
@@ -254,7 +255,7 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
-        minimizeOptions.getIterations();
+        minimizeOptions.getIterations()
 
         // Complete a round of lattice optimization.
         crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
@@ -267,39 +268,37 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
-        if(minIterations > 0 && minimize.getIterations() < minIterations && crystalMinimize.getIterations() < minIterations){
-          //Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
-          break;
+        if (minIterations > 0 && minimize.getIterations() < minIterations && crystalMinimize.getIterations() < minIterations) {
+          // Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
+          break
         }
       }
     }
     // Replace existing energy and density label if present
-    String oldName = activeAssembly.getName();
-    double density = activeAssembly.getCrystal().getDensity(activeAssembly.getMass());
+    String oldName = activeAssembly.getName()
+    double density = activeAssembly.getCrystal().getDensity(activeAssembly.getMass())
     if (oldName.containsIgnoreCase("Energy:")) {
-      String[] tokens = oldName.trim().split(" +");
-      int numTokens = tokens.length;
+      String[] tokens = oldName.trim().split(" +")
+      int numTokens = tokens.length
       // First element should always be number of atoms in XYZ.
-      StringBuilder sb = new StringBuilder();
+      StringBuilder sb = new StringBuilder()
       for (int i = 1; i < numTokens; i++) {
-        if (tokens[i].containsIgnoreCase("Energy:")){
+        if (tokens[i].containsIgnoreCase("Energy:")) {
           // i++ skips current entry (value associated with "Energy")
-          tokens[i++] = energy;
-        }else if (tokens[i].containsIgnoreCase("Density:")){
+          tokens[i++] = energy
+        } else if (tokens[i].containsIgnoreCase("Density:")) {
           // i++ skips current entry (value associated with "Density")
-          tokens[i++] = density;
-        }else{
+          tokens[i++] = density
+        } else {
           // Accrue previous name.
-          sb.append(tokens[i] + " ");
+          sb.append(tokens[i] + " ")
         }
       }
       // Opted to add energy/density after to preserve formatting.
-      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
-              sb.toString(), energy, density));
+      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f", sb.toString(), energy, density))
     } else {
       // Append energy and density to structure name (line 1 of XYZ).
-      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
-              oldName, energy, density));
+      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f", oldName, energy, density))
     }
   }
 
