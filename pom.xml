@@ -1037,7 +1037,7 @@
     <!-- Versions of commons-configuration beyond 2.10.1 are not compatible with the IJava ipynb -->
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
     <commons-io.version>2.16.1</commons-io.version>
-    <commons-lang3.version>3.14.0</commons-lang3.version>
+    <commons-lang3.version>3.15.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
     <commons-text.version>1.12.0</commons-text.version>
@@ -1054,9 +1054,9 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>9.0.0</git-commit-id.version>
+    <git-commit-id.version>9.0.1</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>24.0.1</graal.version>
+    <graal.version>24.0.2</graal.version>
     <groovy-all.version>5.0.0-alpha-9</groovy-all.version>
     <guava.version>33.2.1-jre</guava.version>
     <install.version>3.1.2</install.version>
@@ -1066,7 +1066,7 @@
     <jarsigner.version>3.0.0</jarsigner.version>
     <javaparser.version>3.26.1</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.7.0</javadoc.version>
+    <javadoc.version>3.8.0</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
@@ -1082,17 +1082,17 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.23.0</pmd.version>
+    <pmd.version>3.24.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.6.1</project-info-reports.version>
+    <project-info-reports.version>3.6.2</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.1.0</release.version>
+    <release.version>3.1.1</release.version>
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.13</slf4j-nop.version>
@@ -1106,7 +1106,7 @@
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.3.0</surefire.version>
+    <surefire.version>3.3.1</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
@@ -1115,7 +1115,7 @@
     <tornado.version>1.0.1</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.17.0</versions.version>
+    <versions.version>2.17.1</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
