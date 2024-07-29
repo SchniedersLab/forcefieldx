@@ -870,39 +870,40 @@ public class Complex3DParallel {
     }
   }
 
+  /**
+   * The input data order is X,Y,Z (X varies most quickly)
+   * real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
+   * imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
+   * The output data order is Y,Z,X (Y varies most quickly)
+   * real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
+   * imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
+   */
   private class TransposeLoop extends IntegerForLoop {
 
     private long time;
 
     @Override
     public void run(final int lb, final int ub) {
-      // The input data order is X,Y,Z (X varies most quickly)
-      // real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
-      // imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
-      // The output data order is Y,Z,X (Y varies most quickly)
-      // real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
-      // imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
-
-      // Starting output index.
-      int index = lb * nY * nZ * ii;
       for (int x = lb; x <= ub; x++) {
-        int dx = x * nextX;
         for (int z = 0; z < nZ; z++) {
-          int dz = dx + z * nextZ;
           for (int y = 0; y < nY; y++) {
-            double real = input[y * nextY + dz];
-            double imag = input[y * nextY + dz + im];
-            work3D[index] = real;
-            work3D[index + internalImZ] = imag;
-            index += ii;
+            double real = input[x * nextX + y * nextY + z * nextZ];
+            double imag = input[x * nextX + y * nextY + z * nextZ + im];
+            work3D[y * trNextY + z * trNextZ + x * trNextX] = real;
+            work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ] = imag;
           }
         }
       }
     }
 
+    /**
+     * Use a fixed schedule to minimize cache interference.
+     *
+     * @return A fixed IntegerSchedule.
+     */
     @Override
     public IntegerSchedule schedule() {
-      return schedule;
+      return IntegerSchedule.fixed();
     }
 
     public long getTime() {
@@ -920,38 +921,41 @@ public class Complex3DParallel {
     }
   }
 
+  /**
+   * The transposed input data order is Y,Z,X (Y varies most quickly)
+   * real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
+   * imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
+   * <p>
+   * The output data order is X,Y,Z (X varies most quickly)
+   * real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
+   * imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
+   */
   private class UnTransposeLoop extends IntegerForLoop {
 
     private long time;
 
     @Override
     public void run(final int lb, final int ub) {
-      // The transposed input data order is Y,Z,X (Y varies most quickly)
-      // real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
-      // imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
-      // The output data order is X,Y,Z (X varies most quickly)
-      // real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
-      // imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
-      int index = lb * nextZ;
-      for (int z = lb; z <= ub; z++) {
-        int dz = z * trNextZ;
+      for (int x = 0; x < nX; x++) {
         for (int y = 0; y < nY; y++) {
-          int dy = y * trNextY + dz;
-          for (int x = 0; x < nX; x++) {
-            int dx = x * trNextX + dy;
-            double real = work3D[dx];
-            double imag = work3D[dx + internalImZ];
-            input[index] = real;
-            input[index + im] = imag;
-            index += ii;
+          for (int z = lb; z <= ub; z++) {
+            double real = work3D[y * trNextY + z * trNextZ + x * trNextX];
+            double imag = work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ];
+            input[x * nextX + y * nextY + z * nextZ] = real;
+            input[x * nextX + y * nextY + z * nextZ + im] = imag;
           }
         }
       }
     }
 
+    /**
+     * Use a dynamic schedule to account mitigate latency reading from the work array.
+     *
+     * @return A dynamic IntegerSchedule.
+     */
     @Override
     public IntegerSchedule schedule() {
-      return schedule;
+      return IntegerSchedule.fixed();
     }
 
     public long getTime() {
@@ -968,7 +972,7 @@ public class Complex3DParallel {
       time -= System.nanoTime();
     }
   }
-  
+
   /**
    * Perform a multiplication by the reciprocal space data.
    *
