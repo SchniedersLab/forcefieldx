@@ -1092,8 +1092,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       } else {
         try {
           maxR = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
           // If Convex Hull approach fails (e.g., coplanar input, brute force...
+          logger.info(" Convex Hull operation failed with message " + ex + "\n Trying brute force approach...");
+          if(logger.isLoggable(Level.FINE)){
+            logger.fine(Utilities.stackTraceToString(ex));
+          }
           for (int i = 0; i < nAtoms - 1; i++) {
             Double3 xi = atoms[i].getXYZ();
             for (int j = 1; j < nAtoms; j++) {

@@ -331,37 +331,6 @@ public class CIFFilter extends SystemFilter {
   }
 
   /**
-   * Find the maximum index that is less than those contained in current model.
-   *
-   * @param xyzAtomLists ArrayList containing ArrayList of atoms in each entity
-   * @param currentList Entity of currently being used.
-   * @return Maximum index that is less than indices in current entity.
-   */
-  public int findMaxLessIndex(ArrayList<ArrayList<Atom>> xyzAtomLists, int currentList) {
-    // If no less indices are found, want to return 0.
-    int lessIndex = 0;
-    int minIndex = Integer.MAX_VALUE;
-    for (Atom atom : xyzAtomLists.get(currentList)) {
-      int temp = atom.getIndex();
-      if (temp < minIndex) {
-        minIndex = temp;
-      }
-    }
-    int xyzSize = xyzAtomLists.size();
-    for (int i = 0; i < xyzSize; i++) {
-      if (i != currentList) {
-        for (Atom atom : xyzAtomLists.get(i)) {
-          int temp = atom.getIndex();
-          if (temp < minIndex && temp > lessIndex) {
-            lessIndex = temp;
-          }
-        }
-      }
-    }
-    return lessIndex;
-  }
-
-  /**
    * Parse atom name to determine atomic element.
    *
    * @param atom Atom whose element we desire
@@ -626,13 +595,11 @@ public class CIFFilter extends SystemFilter {
     for (CifCoreBlock block : cifFile.getBlocks()) {
       Atom[] atoms = parseBlock(block);
       logger.info(crystal.toString());
-      if(atoms == null){
-        return false;
-      }
-      if(atoms.length == 0){
+      if(atoms == null || atoms.length == 0){
         logger.warning(" Atoms could not be obtained from CIF.");
         return false;
       }
+
       int nAtoms = atoms.length;
 
       // Define assembly object to contain CIF info.
@@ -654,7 +621,6 @@ public class CIFFilter extends SystemFilter {
       }
       ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
       int atomIndex = 1;
-      int shiftIndex = 0;
       int[] moleculeNumbers = activeMolecularAssembly.getMoleculeNumbers();
       if(logger.isLoggable(Level.FINER)) {
         for (int i = 0; i < moleculeNumbers.length; i++) {
@@ -664,14 +630,16 @@ public class CIFFilter extends SystemFilter {
       // For each entity (protein, molecule, ion, etc) in the XYZ
       for (int i = 0; i < numEntitiesInput; i++) {
         MSNode mol = entitiesInput.get(i);
+        int shiftIndex = mol.getAtomList().get(0).getXyzIndex() - 1;
         logger.info(format(" Size of Entity: %2d", mol.getAtomList().size()));
         xyzatoms.add((ArrayList<Atom>) mol.getAtomList());
+        ArrayList<Atom> currentAtoms = xyzatoms.get(i);
         // Set up input (XYZ) file contents as CDK variable
         AtomContainer xyzCDKAtoms = new AtomContainer();
         // Number of hydrogen in an entity from the XYZ.
         int numMolHydrogen = 0;
         int atomCount = 0;
-        for (Atom atom : xyzatoms.get(i)) {
+        for (Atom atom : currentAtoms) {
           if (atom.isHydrogen()) {
             numMolHydrogen++;
           }
@@ -681,7 +649,7 @@ public class CIFFilter extends SystemFilter {
           atomCount++;
         }
         logger.info(format(" Number of atoms in XYZ CDK: %2d", atomCount));
-        int numInputMolAtoms = xyzatoms.get(i).size();
+        int numInputMolAtoms = currentAtoms.size();
         if (logger.isLoggable(Level.FINE)) {
           logger.fine(format(" Current entity number of atoms: %d (%d + %dH)", numInputMolAtoms,
                   numInputMolAtoms - numMolHydrogen, numMolHydrogen));
@@ -703,10 +671,9 @@ public class CIFFilter extends SystemFilter {
                 format(" Bonded atom 1: %d, Bonded atom 2: %d", atom0Index,
                     atom1Index));
           }
-          logger.fine(format(" Atom 0 index: %2d Atom 1 Index: %2d lessIndex: %2d Value 0: %2d Value 1: %2d",
+          logger.fine(format(" Atom 0 index: %2d Atom 1 Index: %2d shiftIndex: %2d Value 0: %2d Value 1: %2d",
                   atom0Index, atom1Index, shiftIndex, atom0Index - shiftIndex - 1, atom1Index - shiftIndex - 1));
-          xyzCDKAtoms.addBond(atom0Index - shiftIndex - 1,
-              atom1Index - shiftIndex - 1, order);
+          xyzCDKAtoms.addBond(atom0Index - shiftIndex - 1, atom1Index - shiftIndex - 1, order);
         }
 
         // Assign CDK atom types for the input molecule.
@@ -819,7 +786,7 @@ public class CIFFilter extends SystemFilter {
               logger.fine(format(" Number of CIF bonds: %d (%d in input)", cifMolBonds, xyzBonds));
             }
             // Number of bonds matches.
-            // If cifMolBonds == 0 then ion or atom with implicit hydrogens (e.g. water, methane, etc.)
+            // If cifMolBonds == 0 then ion or atom with implicit hydrogen (e.g. water, methane, etc.)
             if (cifMolBonds != 0 && cifMolBonds % xyzBonds == 0) {
               Pattern pattern = VentoFoggia.findIdentical(
                   xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny());
@@ -834,7 +801,7 @@ public class CIFFilter extends SystemFilter {
                             cifCDKAtomsArr[j].getAtom(p[k]).getSymbol()));
                   }
                   Point3d point3d = cifCDKAtomsArr[j].getAtom(p[k]).getPoint3d();
-                  xyzatoms.get(i).get(k).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
+                  currentAtoms.get(k).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
                 }
               } else {
                 if (logger.isLoggable(Level.FINE)) {
@@ -859,12 +826,12 @@ public class CIFFilter extends SystemFilter {
                 // Used matched atoms to update the positions of the input file atoms.
                 for (int k = 0; k < pLength; k++) {
                   Point3d point3d = cifCDKAtomsArr[j].getAtom(k).getPoint3d();
-                  xyzatoms.get(i).get(p[k]).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
+                  currentAtoms.get(p[k]).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
                 }
                 // Add in hydrogen atoms
                 Atom lastKnownAtom1 = null;
                 int knownCount = 0;
-                for (Atom hydrogen : xyzatoms.get(i)) {
+                for (Atom hydrogen : currentAtoms) {
                   if (hydrogen.isHydrogen()) {
                     Bond bond0 = hydrogen.getBonds().get(0);
                     Atom atom1 = bond0.get1_2(hydrogen);
@@ -994,7 +961,7 @@ public class CIFFilter extends SystemFilter {
               molecule = new Molecule(mol.getName());
             }
             List<Atom> atomList = new ArrayList<>();
-            for (Atom atom : xyzatoms.get(i)) {
+            for (Atom atom : currentAtoms) {
               if(logger.isLoggable(Level.FINER)) {
                 logger.finer(format(" Atom Residue: %s %2d", atom.getResidueName(), atom.getResidueNumber()));
               }
@@ -1057,7 +1024,6 @@ public class CIFFilter extends SystemFilter {
             }
           }
         }
-        shiftIndex += mol.getAtomList().size();
       }
       // If no atoms, then conversion has failed... use active assembly
       if (logger.isLoggable(Level.FINE)) {

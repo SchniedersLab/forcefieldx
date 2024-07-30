@@ -161,6 +161,12 @@ public final class PDBFilter extends SystemFilter {
   private boolean printMissingFields = true;
   /** Number of symmetry operators when expanding to a P1 unit cell (-1 saves as current spacegroup). */
   private int nSymOp = -1;
+  /** Number of replicates in A lattice direction (-1 defaults to unit cell). */
+  private int lValue = -1;
+  /** Number of replicates in B lattice direction (-1 defaults to unit cell). */
+  private int mValue = -1;
+  /** Number of replicates in C lattice direction (-1 defaults to unit cell). */
+  private int nValue = -1;
   /**
    * The serial field continues from the previous asymmetric unit when expanding to P1. This is not
    * used when saving as the current spacegroup.
@@ -176,12 +182,6 @@ public final class PDBFilter extends SystemFilter {
   private int modelsWritten = -1;
   /** Replicates vector dimensions if saving as expanded. */
   private int[] lmn = new int[]{1,1,1};
-  /** Replicates vector along a-axis. */
-  private int l = 0;
-  /** Replicates vector along b-axis. */
-  private int m = 0;
-  /** Replicates vector along c-axis. */
-  private int n = 0;
   private String versionFileName;
 
   private final File readFile;
@@ -325,11 +325,12 @@ public final class PDBFilter extends SystemFilter {
     sb.append(repeat(" ", 74));
 
     String name = atom.getName();
-    if (name.length() > 4) {
+    int nameLength = name.length();
+    if (nameLength > 4) {
       name = name.substring(0, 4);
-    } else if (name.length() == 1) {
+    } else if (nameLength == 1) {
       name = name + "  ";
-    } else if (name.length() == 2) {
+    } else if (nameLength == 2) {
       name = name + " ";
     }
     int serial = atom.getXyzIndex();
@@ -1648,11 +1649,15 @@ public final class PDBFilter extends SystemFilter {
    * @return Return true on a successful write.
    */
   public boolean writeFileAsP1(File file) {
-
+    // XYZ File First Line
+    final int l = lmn[0];
+    final int m = lmn[1];
+    final int n = lmn[2];
+    final int numReplicates = l * m * n;
     Crystal crystal = activeMolecularAssembly.getCrystal();
     int nSymOps = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
 
-    if (nSymOps == 1) {
+    if (nSymOps == 1 && l <= 1 && m <= 1 && n <= 1) {
       // This is a P1 system.
       if (!writeFile(file, false)) {
         logger.info(format(" Save failed for %s", activeMolecularAssembly));
@@ -1675,17 +1680,27 @@ public final class PDBFilter extends SystemFilter {
         logger.info(format(" Save failed for %s", activeMolecularAssembly));
         return false;
       } else {
-        for (int i = 1; i < nSymOps; i++) {
-          nSymOp = i;
-          for (Polymer polymer : polymers) {
-            Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
-            polymer.setChainID(chainID);
-            polymer.setSegID(chainID.toString());
-          }
-          writeEnd = i == nSymOps - 1;
-          if (!writeFile(file, true, false, writeEnd)) {
-            logger.info(format(" Save failed for %s", activeMolecularAssembly));
-            return false;
+        for (int i = 0; i < l; i++) {
+          for (int j = 0; j < m; j++) {
+            for (int k = 0; k < n; k++) {
+              lValue = i;
+              mValue = j;
+              nValue = k;
+              for (int iSym = 0; iSym < nSymOps; iSym++) {
+                nSymOp = iSym;
+                for (Polymer polymer : polymers) {
+                  Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
+                  polymer.setChainID(chainID);
+                  polymer.setSegID(chainID.toString());
+                }
+                // If the last sym op to be written.
+                writeEnd = iSym == nSymOps - 1 && i == l - 1 && j == m - 1 && k == n - 1;
+                if (!writeFile(file, true, false, writeEnd)) {
+                  logger.info(format(" Save failed for %s", activeMolecularAssembly));
+                  return false;
+                }
+              }
+            }
           }
         }
       }
@@ -1837,6 +1852,11 @@ public final class PDBFilter extends SystemFilter {
         Crystal crystal = activeMolecularAssembly.getCrystal();
         if (crystal != null && !crystal.aperiodic()) {
           Crystal c = crystal.getUnitCell();
+          if (lmn[0] > 0 || lmn[1] > 0 || lmn[2] > 0) {
+            c.a = c.a * lmn[0];
+            c.b = c.b * lmn[1];
+            c.c = c.c * lmn[2];
+          }
           bw.write(c.toCRYST1());
         }
       } else if (nSymOp == 0) {
@@ -1844,7 +1864,7 @@ public final class PDBFilter extends SystemFilter {
         Crystal crystal = activeMolecularAssembly.getCrystal();
         if (crystal != null && !crystal.aperiodic()) {
           Crystal c = crystal.getUnitCell();
-          Crystal p1 = new Crystal(c.a, c.b, c.c, c.alpha, c.beta, c.gamma, "P1");
+          Crystal p1 = new Crystal((lmn[0]>0)? c.a * lmn[0] : c.a, (lmn[1]>0)? c.b * lmn[1] : c.b, (lmn[2]>0)? c.c * lmn[2] : c.c, c.alpha, c.beta, c.gamma, "P1");
           bw.write(p1.toCRYST1());
         }
       }
@@ -2306,11 +2326,12 @@ public final class PDBFilter extends SystemFilter {
   private void writeAtom(Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB,
       BufferedWriter bw) throws IOException {
     String name = atom.getName();
-    if (name.length() > 4) {
+    int nameLength = name.length();
+    if (nameLength > 4) {
       name = name.substring(0, 4);
-    } else if (name.length() == 1) {
+    } else if (nameLength == 1) {
       name = name + "  ";
-    } else if (name.length() == 2) {
+    } else if (nameLength == 2) {
       if (atom.getAtomType().valence == 0) {
         name = name + "  ";
       } else {
@@ -2323,6 +2344,13 @@ public final class PDBFilter extends SystemFilter {
       SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
       double[] newXYZ = new double[xyz.length];
       crystal.applySymOp(xyz, newXYZ, symOp);
+      if (lValue > 0 || mValue > 0 || nValue > 0) {
+        double[] translation = new double[] {lValue, mValue, nValue};
+        crystal.getUnitCell().toCartesianCoordinates(translation, translation);
+        newXYZ[0] += translation[0];
+        newXYZ[1] += translation[1];
+        newXYZ[2] += translation[2];
+      }
       xyz = newXYZ;
     }
     sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
