@@ -179,6 +179,7 @@ public class Complex3DParallel {
    * Pack the FFTs for optimal use of SIMD instructions.
    */
   private boolean packFFTs;
+  private final boolean localZTranspose;
   /**
    * Work array used for transforms along the Z-axis.
    */
@@ -337,6 +338,15 @@ public class Complex3DParallel {
       packFFTs = false;
     }
 
+    String localTranspose = System.getProperty("fft.localZTranspose", "true");
+    boolean local;
+    try {
+      local = Boolean.parseBoolean(localTranspose);
+    } catch (Exception e) {
+      local = true;
+    }
+    localZTranspose = local;
+
     fftXY = new Complex2D[threadCount];
     for (int i = 0; i < threadCount; i++) {
       fftXY[i] = new Complex2D(nX, nY, dataLayout2D, im);
@@ -349,7 +359,11 @@ public class Complex3DParallel {
       fftZ[i] = new Complex(nZ, dataLayout1D, internalImZ, nY);
       fftZ[i].setUseSIMD(useSIMD);
     }
-    work3D = new double[2 * nX * nY * nZ];
+    if (!localZTranspose) {
+      work3D = new double[2 * nX * nY * nZ];
+    } else {
+      work3D = null;
+    }
     fftRegion = new FFTRegion();
     ifftRegion = new IFFTRegion();
     convRegion = new ConvolutionRegion();
@@ -524,13 +538,20 @@ public class Complex3DParallel {
     private FFTRegion() {
       fftXYLoop = new FFTXYLoop[threadCount];
       fftZLoop = new FFTZLoop[threadCount];
-      transposeLoop = new TransposeLoop[threadCount];
-      unTransposeLoop = new UnTransposeLoop[threadCount];
       for (int i = 0; i < threadCount; i++) {
         fftXYLoop[i] = new FFTXYLoop();
         fftZLoop[i] = new FFTZLoop();
-        transposeLoop[i] = new TransposeLoop();
-        unTransposeLoop[i] = new UnTransposeLoop();
+      }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
       }
     }
 
@@ -538,10 +559,15 @@ public class Complex3DParallel {
     public void run() {
       int threadIndex = getThreadIndex();
       try {
-        execute(0, nZm1, fftXYLoop[threadIndex]);
-        execute(0, nXm1, transposeLoop[threadIndex]);
-        execute(0, nXm1, fftZLoop[threadIndex]);
-        execute(0, nZm1, unTransposeLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, fftZLoop[threadIndex]);
+        } else {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, fftZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
@@ -568,14 +594,21 @@ public class Complex3DParallel {
 
     private IFFTRegion() {
       ifftXYLoop = new IFFTXYLoop[threadCount];
-      transposeLoop = new TransposeLoop[threadCount];
       ifftZLoop = new IFFTZLoop[threadCount];
-      unTransposeLoop = new UnTransposeLoop[threadCount];
       for (int i = 0; i < threadCount; i++) {
         ifftXYLoop[i] = new IFFTXYLoop();
-        transposeLoop[i] = new TransposeLoop();
         ifftZLoop[i] = new IFFTZLoop();
-        unTransposeLoop[i] = new UnTransposeLoop();
+      }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
       }
     }
 
@@ -583,10 +616,15 @@ public class Complex3DParallel {
     public void run() {
       int threadIndex = getThreadIndex();
       try {
-        execute(0, nXm1, transposeLoop[threadIndex]);
-        execute(0, nXm1, ifftZLoop[threadIndex]);
-        execute(0, nZm1, unTransposeLoop[threadIndex]);
-        execute(0, nZm1, ifftXYLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nXm1, ifftZLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        } else {
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, ifftZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
@@ -616,18 +654,24 @@ public class Complex3DParallel {
 
     private ConvolutionRegion() {
       fftXYLoop = new FFTXYLoop[threadCount];
-      transposeLoop = new TransposeLoop[threadCount];
       fftZIZLoop = new FFTZIZLoop[threadCount];
-      unTransposeLoop = new UnTransposeLoop[threadCount];
       ifftXYLoop = new IFFTXYLoop[threadCount];
       convTime = new long[threadCount];
       for (int i = 0; i < threadCount; i++) {
         fftXYLoop[i] = new FFTXYLoop();
-        transposeLoop[i] = new TransposeLoop();
         fftZIZLoop[i] = new FFTZIZLoop();
-        unTransposeLoop[i] = new UnTransposeLoop();
         ifftXYLoop[i] = new IFFTXYLoop();
-
+      }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
       }
     }
 
@@ -686,11 +730,17 @@ public class Complex3DParallel {
     public void run() {
       int threadIndex = getThreadIndex();
       try {
-        execute(0, nZm1, fftXYLoop[threadIndex]);
-        execute(0, nXm1, transposeLoop[threadIndex]);
-        execute(0, nXm1, fftZIZLoop[threadIndex]);
-        execute(0, nZm1, unTransposeLoop[threadIndex]);
-        execute(0, nZm1, ifftXYLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, fftZIZLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        } else {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, fftZIZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
@@ -767,16 +817,30 @@ public class Complex3DParallel {
 
     private Complex localFFTZ;
     private long time;
+    private final double[] work;
 
     private FFTZLoop() {
-      // Empty.
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
     }
 
     @Override
     public void run(final int lb, final int ub) {
-      for (int x = lb; x <= ub; x++) {
-        int offset = x * nY * nZ * ii;
-        localFFTZ.fft(work3D, offset, ii);
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.fft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
+        }
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          int offset = x * nY * nZ * ii;
+          localFFTZ.fft(work3D, offset, ii);
+        }
       }
     }
 
@@ -789,6 +853,7 @@ public class Complex3DParallel {
       return time;
     }
 
+    @Override
     public void finish() {
       time += System.nanoTime();
     }
@@ -804,16 +869,31 @@ public class Complex3DParallel {
   private class IFFTZLoop extends IntegerForLoop {
 
     private Complex localFFTZ;
+    private long time;
+    private final double[] work;
 
     private IFFTZLoop() {
-      // Empty.
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
     }
 
     @Override
     public void run(final int lb, final int ub) {
-      for (int x = lb; x <= ub; x++) {
-        int offset = x * nY * nZ * ii;
-        localFFTZ.ifft(work3D, offset, ii);
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.ifft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
+        }
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          int offset = x * nY * nZ * ii;
+          localFFTZ.ifft(work3D, offset, ii);
+        }
       }
     }
 
@@ -822,8 +902,18 @@ public class Complex3DParallel {
       return schedule;
     }
 
+    public long getTime() {
+      return time;
+    }
+
+    @Override
+    public void finish() {
+      time += System.nanoTime();
+    }
+
     @Override
     public void start() {
+      time -= System.nanoTime();
       int threadID = getThreadIndex();
       localFFTZ = fftZ[threadID];
     }
@@ -833,19 +923,37 @@ public class Complex3DParallel {
 
     private Complex localFFTZ;
     private long time;
+    private final double[] work;
 
     private FFTZIZLoop() {
-      // Empty.
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
     }
 
     @Override
     public void run(final int lb, final int ub) {
-      for (int x = lb; x <= ub; x++) {
-        // Offset into the work3D array.
-        int offset = x * nY * nZ * ii;
-        localFFTZ.fft(work3D, offset, ii);
-        recipConv(x, work3D);
-        localFFTZ.ifft(work3D, offset, ii);
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.fft(work, 0, ii);
+          int recipOffset = x * nY * nZ;
+          recipConv(recipOffset, work, 0);
+          localFFTZ.ifft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
+        }
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          // Offset into the work3D array.
+          int offset = x * nY * nZ * ii;
+          localFFTZ.fft(work3D, offset, ii);
+          int recipOffset = x * nY * nZ;
+          recipConv(recipOffset, work3D, offset);
+          localFFTZ.ifft(work3D, offset, ii);
+        }
       }
     }
 
@@ -976,17 +1084,60 @@ public class Complex3DParallel {
   /**
    * Perform a multiplication by the reciprocal space data.
    *
-   * @param x    The X-value for this Y-Z plane.
-   * @param work The input array.
+   * @param recipOffset The offset into the reciprocal space data (x * nY * nZ).
+   * @param work        The input array.
+   * @param workOffset  The offset into the data array (x * nY * nZ * ii).
    */
-  private void recipConv(int x, double[] work) {
-    int index = x * nY * nZ * ii;
-    int rindex = x * nY * nZ;
+  private void recipConv(int recipOffset, double[] work, int workOffset) {
+    int index = workOffset;
+    int rindex = recipOffset;
     for (int i = 0; i < nY * nZ; i++) {
       double r = recip[rindex++];
       work[index] *= r;
       work[index + internalImZ] *= r;
       index += ii;
+    }
+  }
+
+  /**
+   * Load the Y-Z plane at fixed X into the work array.
+   *
+   * @param input        The input array.
+   * @param inputOffset  The input offset (typically x * nextX).
+   * @param output       The output array.
+   * @param outputOffset The output offset (typically zero).
+   */
+  private void transpose(double[] input, int inputOffset, double[] output, int outputOffset) {
+    // Typically the inputOffset is x * nextX.
+    // Typically the outputOffset is 0.
+    for (int z = 0; z < nZ; z++) {
+      for (int y = 0; y < nY; y++) {
+        double real = input[inputOffset + y * nextY + z * nextZ];
+        double imag = input[inputOffset + y * nextY + z * nextZ + im];
+        output[outputOffset + y * trNextY + z * trNextZ] = real;
+        output[outputOffset + y * trNextY + z * trNextZ + internalImZ] = imag;
+      }
+    }
+  }
+
+  /**
+   * Load the Y-Z plane at fixed X back into the input array.
+   *
+   * @param input        The input array.
+   * @param inputOffset  The input offset (typically x * nextX).
+   * @param output       The output array.
+   * @param outputOffset The output offset (typically zero).
+   */
+  private void unTranspose(double[] input, int inputOffset, double[] output, int outputOffset) {
+    // Typically the inputOffset is x * nextX.
+    // Typically the outputOffset is 0.
+    for (int z = 0; z < nZ; z++) {
+      for (int y = 0; y < nY; y++) {
+        double real = output[outputOffset + y * trNextY + z * trNextZ];
+        double imag = output[outputOffset + y * trNextY + z * trNextZ + internalImZ];
+        input[inputOffset + y * nextY + z * nextZ] = real;
+        input[inputOffset + y * nextY + z * nextZ + im] = imag;
+      }
     }
   }
 
