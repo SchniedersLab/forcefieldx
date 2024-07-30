@@ -38,14 +38,13 @@
 package ffx.potential.utils;
 
 import ffx.numerics.math.DoubleMath;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+
+import java.util.*;
+import java.util.logging.Logger;
 
 public class GetProteinFeatures {
 
@@ -59,10 +58,12 @@ public class GetProteinFeatures {
   private double psi;
   private double omega;
   private double totalSurfaceArea = 0.0;
+  MolecularAssembly molecularAssembly;
+  private static final Logger logger = Logger.getLogger(GetProteinFeatures.class.getName());
 
 
-  public GetProteinFeatures() {
-
+  public GetProteinFeatures(MolecularAssembly molecularAssembly) {
+    this.molecularAssembly = molecularAssembly;
   }
 
   static {
@@ -200,15 +201,19 @@ public class GetProteinFeatures {
    * @param surfaceArea residue surface area
    * @param includeAngles select angles
    * @param includeStructure select structure annotation
+   * @param includePPI select protein-interface annotation
    * @return String array of features
    */
   public String[] saveFeatures(Residue residue, double surfaceArea, boolean includeAngles,
-      boolean includeStructure) {
+      boolean includeStructure, boolean includePPI) {
     int nFeat = 3;
     if (includeAngles) {
       nFeat += 3;
     }
     if (includeStructure) {
+      nFeat += 1;
+    }
+    if(includePPI){
       nFeat += 1;
     }
 
@@ -217,6 +222,7 @@ public class GetProteinFeatures {
     String phiString;
     String psiString;
     String omegaString;
+    String interfaceResString = "";
 
     if (residue.getNextResidue() == null) {
       //Since phi, psi angles are determined between two residues, the first and last residue will not have values
@@ -252,6 +258,13 @@ public class GetProteinFeatures {
       normalizedSA = String.valueOf(surfaceArea / standSurfaceArea);
     }
     String confidence = String.valueOf(getConfidenceScore(residue));
+    String interactingGene = " ";
+    if(includePPI){
+      interactingGene = getPPI(residue);
+      if(!interactingGene.equals(" ")){
+        interfaceResString = interactingGene;
+      }
+    }
 
     features[0] = surfaceAreaString;
     features[1] = normalizedSA;
@@ -263,8 +276,16 @@ public class GetProteinFeatures {
       if (includeStructure) {
         features[6] = structure;
       }
+      if(includePPI){
+        features[7] = interfaceResString;
+      }
     } else if (includeStructure) {
       features[3] = structure;
+      if(includePPI){
+        features[4] = interfaceResString;
+      }
+    } else if(includePPI){
+      features[3] = interfaceResString;
     }
     return features;
   }
@@ -473,6 +494,35 @@ public class GetProteinFeatures {
       polarityAndAcidity.add(value);
     }
     return polarityAndAcidity;
+  }
+
+  public String getPPI(Residue residue){
+    List<String> chainNames = Arrays.stream(molecularAssembly.getChainNames()).toList();
+    if(chainNames.size() == 1){
+      logger.info( " Only one chain in the structure.");
+      return " ";
+    }
+    String name = molecularAssembly.getFile().getName();
+    String[] geneSplit = name.split("_");
+    String[] genes = new String[chainNames.size()];
+    
+    for(int i=1; i < chainNames.size() + 1; i++){
+      genes[i-1] = geneSplit[i];
+    }
+
+    char chainID = residue.getChainID();
+    for(Atom atom: molecularAssembly.getAtomList()){
+      if(atom.getChainID() != chainID){
+        for(Atom resAtom: residue.getAtomList()){
+          if(resAtom.getXYZ().dist(atom.getXYZ()) <= 5.0){
+            int index = chainNames.indexOf(atom.getChainID().toString());
+            return genes[index];
+          }
+        }
+      }
+
+    }
+    return " ";
   }
 
 

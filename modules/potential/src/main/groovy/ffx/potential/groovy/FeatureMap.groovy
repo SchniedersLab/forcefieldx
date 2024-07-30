@@ -73,6 +73,14 @@ class FeatureMap extends PotentialScript {
             description = "Include secondary structure annotations in feature map.")
     private boolean includeStructure = false
 
+    @Option(names = ["--iPPI", "--includePPI"], paramLabel = "false",
+            description = "Mark residue as being part of an interaction interface.")
+    private boolean includePPI = false
+
+    @Option(names = ["--rR", "--reRun"], paramLabel = "false",
+            description = "Reading in a CSV a second time. Specifically for gathering ppi information")
+    private boolean rerun = false
+
     @Option(names = ["--mI", "--multiple isomers"], paramLabel = "false",
             description = "Set this flag if the variant list contains variants from multiple isomers. Isomer should be in name of pdb file")
     private boolean multipleIsomers = false
@@ -110,10 +118,11 @@ class FeatureMap extends PotentialScript {
             return null
         }
         System.setProperty("gkterm", "true")
-        System.setProperty("cavmodel", "CAV")
+        System.setProperty("cavmodel", "cav")
         System.setProperty("surface-tension", "1.0")
         // Load the MolecularAssembly.
         activeAssembly = getActiveAssembly(filenames[0])
+
         if (activeAssembly == null) {
             logger.info(helpString())
             return null
@@ -127,7 +136,7 @@ class FeatureMap extends PotentialScript {
         forceFieldEnergy.energy(x)
 
         residues = activeAssembly.getResidueList()
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures(activeAssembly)
 
         // Handles when variant files will have multiple isoforms and will need to isoform specific variants when
         // writing the file csv file
@@ -145,11 +154,12 @@ class FeatureMap extends PotentialScript {
         }
 
         List<String[]> featureList = new ArrayList<>()
+        String geneName = filenames[1].substring(0, filenames[1].length()-4)
         //Store all features for each residue in an array list called Features
-        for (int i = 0; i < residues.size(); i++) {
+        for (Residue residue: residues) {
             double residueSurfaceArea =
-                    forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
-            featureList.add(getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea, includeAngles, includeStructure))
+                    forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residue)
+            featureList.add(getProteinFeatures.saveFeatures(residue, residueSurfaceArea, includeAngles, includeStructure, includePPI))
         }
 
         BufferedReader txtReader = null
@@ -183,7 +193,6 @@ class FeatureMap extends PotentialScript {
                     includePolarity, includeAcidity)
         }
 
-
         BufferedReader br = null;
         BufferedWriter bw = null;
 
@@ -208,25 +217,31 @@ class FeatureMap extends PotentialScript {
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
                 if (i == 0 || i == 1) {
-                    if (updatedFile.length() == 0 && i == 1) {
-                        newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
-                                'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
-                        if(includeAcidity){
-                            newCSVLine.append(delimiter + 'Acidity Change')
+                    if(!rerun){
+                        if (updatedFile.length() == 0 && i == 1) {
+                            newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
+                                    'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
+                            if(includeAcidity){
+                                newCSVLine.append(delimiter + 'Acidity Change')
+                            }
+                            if(includePolarity){
+                                newCSVLine.append(delimiter + 'Polarity Change')
+                            }
+                            if(includeAngles){
+                                newCSVLine.append(delimiter + 'Phi' + delimiter + 'Psi' + delimiter + 'Omega')
+                            }
+                            if(includeStructure){
+                                newCSVLine.append(delimiter + 'Secondary Structure Annotation')
+                            }
+                            if(includePPI){
+                                newCSVLine.append(delimiter + 'Interface Residue')
+                            }
+                            bw.write(newCSVLine.toString())
+                        } else if (i == 0 && updatedFile.length() == 0) {
+                            bw.write(line + '\n')
                         }
-                        if(includePolarity){
-                            newCSVLine.append(delimiter + 'Polarity Change')
-                        }
-                        if(includeAngles){
-                            newCSVLine.append(delimiter + 'Phi' + delimiter + 'Psi' + delimiter + 'Omega')
-                        }
-                        if(includeStructure){
-                            newCSVLine.append(delimiter + 'Secondary Structure Annotation')
-                        }
-                        bw.write(newCSVLine.toString())
-                    } else if (i == 0 && updatedFile.length() == 0) {
-                        bw.write(line + '\n')
-                    }
+                }
+
                 } else {
                     String[] splits = line.split(delimiter)
                     if(i == 1 || i==2){
@@ -255,7 +270,7 @@ class FeatureMap extends PotentialScript {
                         String proteinChange = npChange.substring(npChange.indexOf('p'))
                         String splitstring = "p\\."
                         String sub = proteinChange.split(splitstring)[1]
-                        position = sub.replace(sub.substring(0,3),'').replace(sub.substring(sub.length()-3, sub.length()), '').toInteger()
+                        position = sub.replace(sub.substring(0,3),'').replace(sub.substring(sub.length()-4, sub.length()), '').toInteger()
                         if (position <= residues.size()) {
                             if (npChanges.indexOf(proteinChange) != -1) {
                                 ddG = ddGun.get(npChanges.indexOf(proteinChange))
@@ -285,20 +300,33 @@ class FeatureMap extends PotentialScript {
                                 continue
                             }
                         }
-                        newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2] + delimiter
-                                + String.valueOf(ddG[0]) + delimiter + String.valueOf(ddG[1]))
-                        if(includeAcidity){
+                        if(rerun){
+                            newCSVLine.append(line)
+                        } else {
+                            newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2] + delimiter
+                                    + String.valueOf(ddG[0]) + delimiter + String.valueOf(ddG[1]))
+                        }
+
+                        if(includeAcidity && !rerun){
                             newCSVLine.append(delimiter + pA[0])
                         }
-                        if(includePolarity){
+                        if(includePolarity && !rerun){
                             newCSVLine.append(delimiter + pA[1])
                         }
-                        if(includeAngles){
+                        if(includeAngles && !rerun){
                             newCSVLine.append(delimiter + feat[3] + delimiter + feat[4] + delimiter + feat[5])
                             if(includeStructure){
                                 newCSVLine.append(delimiter + feat[6])
                             }
-                        } else if(includeStructure){
+                            if(includePPI){
+                                newCSVLine.append(delimiter + feat[7])
+                            }
+                        } else if(includeStructure && !rerun){
+                            newCSVLine.append(delimiter + feat[3])
+                            if(includePPI){
+                                newCSVLine.append(delimiter + feat[4])
+                            }
+                        } else if(includePPI){
                             newCSVLine.append(delimiter + feat[3])
                         }
                         bw.newLine()
