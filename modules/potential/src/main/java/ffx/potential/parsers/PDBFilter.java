@@ -507,7 +507,6 @@ public final class PDBFilter extends SystemFilter {
     int xyzIndex = 1;
     setFileRead(false);
     systems.add(activeMolecularAssembly);
-
     List<String> conects = new ArrayList<>();
     List<String> links = new ArrayList<>();
     List<String> ssbonds = new ArrayList<>();
@@ -798,16 +797,17 @@ public final class PDBFilter extends SystemFilter {
                     fileStandard = VERSION3_2;
                   }
                   altLoc = line.substring(16, 17).toUpperCase().charAt(0);
+
                   if (!altLocs.contains(altLoc)) {
                     altLocs.add(altLoc);
                   }
-                  if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+
+                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
                     break;
                   }
-                  // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                  //  break;
-                  // }
+
                   resName = line.substring(17, 20).trim();
+
                   chainID = line.substring(21, 22).charAt(0);
                   segID = getSegID(chainID);
                   resSeq = Hybrid36.decode(4, line.substring(22, 26));
@@ -915,18 +915,19 @@ public final class PDBFilter extends SystemFilter {
                     newAtom.setModRes(true);
                   }
                   returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
-                  if (returnedAtom != newAtom) {
+//
+                  if (returnedAtom != null) {
                     // A previously added atom has been retained.
                     atoms.put(serial, returnedAtom);
                     if (logger.isLoggable(Level.FINE)) {
                       logger.fine(returnedAtom + " has been retained over\n" + newAtom);
                     }
                   } else {
-                    // The new atom has been added.
                     atoms.put(serial, newAtom);
                     // Check if the newAtom took the xyzIndex of a previous alternate conformer.
                     if (newAtom.getIndex() == 0) {
                       newAtom.setXyzIndex(xyzIndex++);
+
                     }
                     if (printAtom) {
                       logger.info(newAtom.toString());
@@ -1315,7 +1316,7 @@ public final class PDBFilter extends SystemFilter {
     // Record the number of atoms read in from the PDB file before applying
     // algorithms that may build new atoms.
     int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
-
+    removeExcessHydrogens();
     // Build missing backbone atoms in loops.
     buildMissingResidues(xyzIndex, activeMolecularAssembly, seqRes, dbRef);
 
@@ -1332,6 +1333,50 @@ public final class PDBFilter extends SystemFilter {
       numberAtoms(activeMolecularAssembly);
     }
     return true;
+  }
+
+  public void removeExcessHydrogens(){
+    logger.info(" Removing excess Hydrogens");
+    for(Residue residue: activeMolecularAssembly.getResidueList()){
+      String trueResName = residue.getAtomByName("CA", true).getResidueName();
+      Atom atom;
+      switch (trueResName) {
+        case "HID", "GLU" -> {
+          // No HE2
+          atom = residue.getAtomByName("HE2", true);
+        }
+        case "HIE" -> {
+          // No HD1
+          atom = residue.getAtomByName("HD1", true);
+        }
+        case "ASP" -> {
+          // No HD2
+          atom = residue.getAtomByName("HD2", true);
+        }
+        case "LYD" -> {
+          // No HZ3
+          atom = residue.getAtomByName("HZ3", true);
+        }
+        case "CYD" -> {
+          // No HG
+          atom = residue.getAtomByName("HG", true);
+        }
+        default -> {
+          atom = null;
+        }
+        // Do nothing.
+      }
+      if(atom != null){
+        int index = activeMolecularAssembly.getResidueList().indexOf(residue);
+        MSNode atoms = residue.getAtomNode();
+        atoms.remove(atom);
+        //residue.remove(atom);
+        residue.setName(trueResName);
+        logger.info(residue.toString());
+        activeMolecularAssembly.getResidueList().set(index, residue);
+        logger.info(format(" Removing %s from %s", atom.toString(), residue.toString()));
+      }
+    }
   }
 
   /** {@inheritDoc} */
