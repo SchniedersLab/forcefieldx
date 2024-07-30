@@ -48,6 +48,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElseGet;
 
 /**
@@ -678,51 +679,82 @@ public class Complex3DParallel {
     public void initTiming() {
       for (int i = 0; i < threadCount; i++) {
         fftXYLoop[i].time = 0;
-        transposeLoop[i].time = 0;
         fftZIZLoop[i].time = 0;
-        unTransposeLoop[i].time = 0;
         ifftXYLoop[i].time = 0;
+      }
+      if (!localZTranspose) {
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i].time = 0;
+          unTransposeLoop[i].time = 0;
+        }
       }
     }
 
     public long[] getTiming() {
-      for (int i = 0; i < threadCount; i++) {
-        convTime[i] = convRegion.fftXYLoop[i].time
-            + convRegion.transposeLoop[i].time
-            + convRegion.fftZIZLoop[i].time
-            + convRegion.unTransposeLoop[i].time
-            + convRegion.ifftXYLoop[i].time;
+      if (localZTranspose) {
+        for (int i = 0; i < threadCount; i++) {
+          convTime[i] = convRegion.fftXYLoop[i].time
+              + convRegion.fftZIZLoop[i].time
+              + convRegion.ifftXYLoop[i].time;
+        }
+      } else {
+        for (int i = 0; i < threadCount; i++) {
+          convTime[i] = convRegion.fftXYLoop[i].time
+              + convRegion.transposeLoop[i].time
+              + convRegion.fftZIZLoop[i].time
+              + convRegion.unTransposeLoop[i].time
+              + convRegion.ifftXYLoop[i].time;
+        }
       }
       return convTime;
     }
 
     public String timingString() {
       StringBuilder sb = new StringBuilder();
-      double xysum = 0.0;
-      double transsum = 0.0;
-      double zizsum = 0.0;
-      double untranssum = 0.0;
-      double ixysum = 0.0;
-      for (int i = 0; i < threadCount; i++) {
-        double fftxy = fftXYLoop[i].getTime() * 1e-9;
-        double trans = transposeLoop[i].getTime() * 1e-9;
-        double ziz = fftZIZLoop[i].getTime() * 1e-9;
-        double untrans = unTransposeLoop[i].getTime() * 1e-9;
-        double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
-        String s = String.format(
-            "  Thread %3d: FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
-            i, fftxy, trans, ziz, untrans, ifftxy);
+      if (localZTranspose) {
+        double xysum = 0.0;
+        double zizsum = 0.0;
+        double ixysum = 0.0;
+        for (int i = 0; i < threadCount; i++) {
+          double fftxy = fftXYLoop[i].getTime() * 1e-9;
+          double ziz = fftZIZLoop[i].getTime() * 1e-9;
+          double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
+          String s = format("  Thread %3d: FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
+              i, fftxy, ziz, ifftxy);
+          sb.append(s);
+          xysum += fftxy;
+          zizsum += ziz;
+          ixysum += ifftxy;
+        }
+        String s = format("  Sum       : FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
+            xysum, zizsum, ixysum);
         sb.append(s);
-        xysum += fftxy;
-        transsum += trans;
-        zizsum += ziz;
-        untranssum += untrans;
-        ixysum += ifftxy;
+      } else {
+        double xysum = 0.0;
+        double transsum = 0.0;
+        double zizsum = 0.0;
+        double untranssum = 0.0;
+        double ixysum = 0.0;
+        for (int i = 0; i < threadCount; i++) {
+          double fftxy = fftXYLoop[i].getTime() * 1e-9;
+          double trans = transposeLoop[i].getTime() * 1e-9;
+          double ziz = fftZIZLoop[i].getTime() * 1e-9;
+          double untrans = unTransposeLoop[i].getTime() * 1e-9;
+          double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
+          String s = format("  Thread %3d: FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
+              i, fftxy, trans, ziz, untrans, ifftxy);
+          sb.append(s);
+          xysum += fftxy;
+          transsum += trans;
+          zizsum += ziz;
+          untranssum += untrans;
+          ixysum += ifftxy;
+        }
+        String s = format("  Sum       : FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
+            xysum, transsum, zizsum, untranssum, ixysum);
+        sb.append(s);
       }
-      String s = String.format(
-          "  Sum       : FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
-          xysum, transsum, zizsum, untranssum, ixysum);
-      sb.append(s);
+
       return sb.toString();
     }
 
