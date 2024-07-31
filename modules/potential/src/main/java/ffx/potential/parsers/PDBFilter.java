@@ -1338,6 +1338,9 @@ public final class PDBFilter extends SystemFilter {
   public void removeExcessHydrogens(){
     logger.info(" Removing excess Hydrogens");
     for(Residue residue: activeMolecularAssembly.getResidueList()){
+      if(residue.getName().equals("ACE") || residue.getName().equals("NME")){
+        break;
+      }
       String trueResName = residue.getAtomByName("CA", true).getResidueName();
       Atom atom;
       switch (trueResName) {
@@ -1366,15 +1369,12 @@ public final class PDBFilter extends SystemFilter {
         }
         // Do nothing.
       }
-      if(atom != null){
+      if(atom != null && !atom.getResidueName().equals(trueResName)){
         int index = activeMolecularAssembly.getResidueList().indexOf(residue);
         MSNode atoms = residue.getAtomNode();
         atoms.remove(atom);
-        //residue.remove(atom);
         residue.setName(trueResName);
-        logger.info(residue.toString());
         activeMolecularAssembly.getResidueList().set(index, residue);
-        logger.info(format(" Removing %s from %s", atom.toString(), residue.toString()));
       }
     }
   }

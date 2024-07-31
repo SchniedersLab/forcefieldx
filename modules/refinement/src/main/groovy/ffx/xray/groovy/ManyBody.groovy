@@ -167,7 +167,7 @@ class ManyBody extends AlgorithmsScript {
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
-          resNumberList, titrationPH)
+          resNumberList, titrationPH, manyBodyOptions)
       MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
       setActiveAssembly(protonatedAssemblies[0])
       potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()

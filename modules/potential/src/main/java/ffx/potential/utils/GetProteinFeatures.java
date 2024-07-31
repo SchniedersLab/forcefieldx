@@ -505,7 +505,7 @@ public class GetProteinFeatures {
     String name = molecularAssembly.getFile().getName();
     String[] geneSplit = name.split("_");
     String[] genes = new String[chainNames.size()];
-    
+
     for(int i=1; i < chainNames.size() + 1; i++){
       genes[i-1] = geneSplit[i];
     }

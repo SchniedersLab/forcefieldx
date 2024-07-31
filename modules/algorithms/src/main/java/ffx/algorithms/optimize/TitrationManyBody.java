@@ -79,11 +79,20 @@ public class TitrationManyBody {
   private Set<Atom> excludeAtoms = new HashSet<>();
 
   public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
-      double pH) {
+                           double pH) {
     this.filename = filename;
     this.forceField = forceField;
     this.resNumberList = resNumberList;
     this.pH = pH;
+  }
+
+  public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
+      double pH, ManyBodyOptions manyBodyOptions) {
+    this.filename = filename;
+    this.forceField = forceField;
+    this.resNumberList = resNumberList;
+    this.pH = pH;
+    this.manyBodyOptions = manyBodyOptions;
   }
 
   public MolecularAssembly getProtonatedAssembly(){
@@ -245,9 +254,8 @@ public class TitrationManyBody {
   }
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
-                                    MolecularAssembly molecularAssembly, List<Residue> residueList, ManyBodyOptions manyBodyOptions){
+                                    MolecularAssembly molecularAssembly, List<Residue> residueList){
     boolean isTitrating = false;
-    this.manyBodyOptions = manyBodyOptions;
     double proteinDielectric = 1.0;
     boolean tanhCorrection = false;
     try {

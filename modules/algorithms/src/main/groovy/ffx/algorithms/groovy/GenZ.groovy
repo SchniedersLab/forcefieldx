@@ -256,7 +256,7 @@ class GenZ extends AlgorithmsScript {
 
                 // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
                 titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-                        resNumberList, titrationPH)
+                        resNumberList, titrationPH, manyBodyOptions)
                 MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
