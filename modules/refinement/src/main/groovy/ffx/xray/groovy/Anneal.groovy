@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -130,14 +130,14 @@ class Anneal extends AlgorithmsScript {
     }
 
     CompositeConfiguration properties = activeAssembly.getProperties()
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    xrayOptions.setProperties(parseResult, properties)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
     // Print the initial energy of each conformer.
     algorithmFunctions.energy(molecularAssemblies)
 
-    simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly, refinementEnergy, properties,
-        algorithmListener, dyn)
+    simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly, refinementEnergy, properties, algorithmListener, dyn)
     simulatedAnnealing.setPrintInterval(dynamics.report)
     simulatedAnnealing.setSaveFrequency(dynamics.write)
     simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)

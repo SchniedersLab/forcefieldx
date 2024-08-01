@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y wget unzip
+RUN apt-get install -y wget unzip curl
 RUN apt-get install -y libfreetype6 fontconfig fonts-dejavu
 RUN apt-get install -y python3-pip
 
@@ -10,21 +10,21 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         JDK=graalvm-jdk-21_linux-aarch64_bin.tar.gz; \
+         JDK=openjdk-21.0.2_linux-aarch64_bin.tar.gz; \
          ;; \
        amd64|i386:x86-64) \
-         JDK=graalvm-jdk-21_linux-x64_bin.tar.gz; \
+         JDK=openjdk-21.0.2_linux-x64_bin.tar.gz; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    echo $JDK; \
-    wget https://download.oracle.com/graalvm/21/archive/${JDK}; \
+    echo ${JDK}; \
+    wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/${JDK}; \
     tar xzf ${JDK};
 
-ENV JAVA_HOME=/graalvm-jdk-21+35.1
+ENV JAVA_HOME=/jdk-21.0.2
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Add requirements.txt and install them using pip3
@@ -64,19 +64,30 @@ ENV IJAVA_STARTUP_SCRIPTS_PATH $FFX_BIN/startup.jshell
 # Download Maven, unpack and build Force Field X
 RUN set -eux; \
   cd /home/ffx; \
-  wget https://dlcdn.apache.org/maven/maven-3/3.9.5/binaries/apache-maven-3.9.5-bin.tar.gz; \
-  tar xvzf apache-maven-3.9.5-bin.tar.gz; \
-  apache-maven-3.9.5/bin/mvn; \
-  rm apache-maven-3.9.5-bin.tar.gz; \
-  rm -rf apache-maven-3.9.5;
+  echo $JAVA_HOME; \
+  echo $PATH; \
+  wget https://dlcdn.apache.org/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz; \
+  tar xvzf apache-maven-3.9.8-bin.tar.gz; \
+  apache-maven-3.9.8/bin/mvn; \
+  rm apache-maven-3.9.8-bin.tar.gz; \
+  rm -rf apache-maven-3.9.8;
 
 # Download, Unpack and install the IJava kernel
+# RUN set -eux; \
+#  wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip; \
+#  unzip ijava-1.3.0.zip -d ijava-kernel; \
+#  cd ijava-kernel; \
+#  CLASSPATH=$(echo /home/ffx/lib/* | tr ' ' ':'); \
+#  python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH;
+
+
+# Download the kernel release
+ENV PATH="${HOME}/.jbang/bin:${HOME}/.local/bin:${PATH}"
 RUN set -eux; \
-  wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip; \
-  unzip ijava-1.3.0.zip -d ijava-kernel; \
-  cd ijava-kernel; \
-  CLASSPATH=$(echo /home/ffx/lib/* | tr ' ' ':'); \
-  python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH;
+  curl -Ls https://sh.jbang.dev | bash -s - app setup; \
+  jbang version; \
+  jbang trust add https://github.com/jupyter-java/; \
+  jbang install-kernel@jupyter-java rapaio --enable-preview --java=21 --jupyter-kernel-dir=/usr/local/share/jupyter/kernels --name="Java";
 
 # Set up the FFX Kotlin library
 # The allows the fillowing "magic" in Kotlin notebooks.

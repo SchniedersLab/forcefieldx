@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -46,10 +46,12 @@ import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.utilities.Resources;
+
 import java.awt.Cursor;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -76,7 +78,7 @@ public class UIFileOpener implements FileOpener {
    * Constructor for UIFileOpener.
    *
    * @param systemFilter a {@link ffx.potential.parsers.SystemFilter} object.
-   * @param mainPanel a {@link ffx.ui.MainPanel} object.
+   * @param mainPanel    a {@link ffx.ui.MainPanel} object.
    */
   UIFileOpener(SystemFilter systemFilter, MainPanel mainPanel) {
     this.systemFilter = systemFilter;
@@ -148,7 +150,9 @@ public class UIFileOpener implements FileOpener {
     return mainPanel.getHierarchy().getActive().getProperties();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void run() {
     if (mainPanel != null && systemFilter != null) {
@@ -176,10 +180,9 @@ public class UIFileOpener implements FileOpener {
       mainPanel.getHierarchy().addSystemNode(ffxSystem);
       ForceFieldEnergy energy;
       if (nThreads > 0) {
-        energy =
-            ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints(), nThreads);
+        energy = ForceFieldEnergy.energyFactory(ffxSystem, nThreads);
       } else {
-        energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints());
+        energy = ForceFieldEnergy.energyFactory(ffxSystem);
       }
       ffxSystem.setPotential(energy);
       mainPanel.getHierarchy().setActive(ffxSystem);
@@ -208,7 +211,7 @@ public class UIFileOpener implements FileOpener {
             continue;
           }
           FFXSystem newSystem = new FFXSystem(
-                  ffxSystem.getFile(), "Alternate Location " + c, ffxSystem.getProperties());
+              ffxSystem.getFile(), "Alternate Location " + c, ffxSystem.getProperties());
           newSystem.setForceField(ffxSystem.getForceField());
           pdbFilter.setAltID(newSystem, c);
           pdbFilter.clearSegIDs();
@@ -218,11 +221,9 @@ public class UIFileOpener implements FileOpener {
             newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
             mainPanel.getHierarchy().addSystemNode(newSystem);
             if (nThreads > 0) {
-              energy =
-                  ForceFieldEnergy.energyFactory(
-                      newSystem, systemFilter.getCoordRestraints(), nThreads);
+              energy = ForceFieldEnergy.energyFactory(newSystem, nThreads);
             } else {
-              energy = ForceFieldEnergy.energyFactory(newSystem, systemFilter.getCoordRestraints());
+              energy = ForceFieldEnergy.energyFactory(newSystem);
             }
             newSystem.setPotential(energy);
           }
@@ -255,7 +256,7 @@ public class UIFileOpener implements FileOpener {
     logger.log(
         Level.INFO,
         "\n Opened {0} in {1} sec.",
-        new Object[] {ffxSystem.toString(), time * 1.0e-9});
+        new Object[]{ffxSystem.toString(), time * 1.0e-9});
     Resources.logResources();
   }
 }

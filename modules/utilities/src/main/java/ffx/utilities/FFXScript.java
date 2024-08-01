@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -181,13 +181,13 @@ public abstract class FFXScript extends Script {
   public static void listGroovyScripts(boolean logScripts, boolean logTestScripts) {
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
     try {
-      logger.info("\n  Potential Commands:");
+      logger.info("\n  Potential Package Commands:");
       URL url = classLoader.getResource("ffx/potential");
       listScriptsForPackage(url, logScripts, logTestScripts);
-      logger.info("\n  Algorithms Commands:");
+      logger.info("\n  Algorithms Package Commands:");
       url = classLoader.getResource("ffx/algorithms");
       listScriptsForPackage(url, logScripts, logTestScripts);
-      logger.info("\n  Refinement Commands:");
+      logger.info("\n  Refinement Package Commands:");
       url = classLoader.getResource("ffx/xray");
       listScriptsForPackage(url, logScripts, logTestScripts);
     } catch (Exception e) {

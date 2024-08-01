@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -134,7 +134,7 @@ class Timer extends PotentialScript {
       double e = energy.energy(!timer.noGradient, timer.getVerbose())
       time += System.nanoTime()
       if (!timer.getVerbose()) {
-        logger.info(format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
+        logger.info(format(" Energy (step %4d) %16.8f in %6.3f (sec)", i, e, time * 1.0E-9))
       }
       minTime = time < minTime ? time : minTime
       if (i >= (int) (nEvals / 2)) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -56,12 +56,12 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class OSTGradientTest extends AlgorithmsTest {
 
-  private String info;
-  private String filename;
-  private int nAtoms;
-  private double tolerance = 1.0e-2;
+  private final String info;
+  private final String filename;
+  private final int nAtoms;
+  private final double tolerance = 1.0e-2;
 
-  public OSTGradientTest(String info, String filename, int nAtoms) {
+  public OSTGradientTest(final String info, final String filename, final int nAtoms) {
     this.info = info;
     this.filename = filename;
     this.nAtoms = nAtoms;
@@ -81,7 +81,7 @@ public class OSTGradientTest extends AlgorithmsTest {
 
   @Test
   public void testOSTBiasHelp() {
-    // Set-up the input arguments for the script.
+    // Set up the input arguments for the script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
@@ -91,12 +91,12 @@ public class OSTGradientTest extends AlgorithmsTest {
   }
 
   @Test
-  public void testDynamicsNVE() {
+  public void testOSTGradient() {
 
-    double lambda = random();
-    int atomID = (int) floor(FastMath.random() * nAtoms) + 1;
+    final double lambda = random();
+    final int atomID = (int) floor(FastMath.random() * nAtoms) + 1;
 
-    // Set-up the input arguments for the script.
+    // Set up the input arguments for the script.
     String[] args = {
         "--ac", "ALL",
         "-l", Double.toString(lambda),
@@ -113,7 +113,35 @@ public class OSTGradientTest extends AlgorithmsTest {
     double nFailures = ostGradient.nFailures;
 
     // Assert that energy is conserved at the end of the dynamics trajectory.
-    assertEquals(info + ": dUdL error: ", 0.0, dUdLError, tolerance);
-    assertEquals(info + ": Number of coordinate gradient errors: ", 0, nFailures, 0);
+    assertEquals(info + ": dUdL error for atom " + args[6] + " at lambda " + args[4] + ": ", 0.0, dUdLError, tolerance);
+    assertEquals(info + ": Number of coordinate gradient errors for atom " + args[6] + " at lambda " + args[4] + ": ", 0, nFailures, 0);
+  }
+
+  @Test
+  public void testMetaDynamicsGradient() {
+
+    double lambda = random();
+    int atomID = (int) floor(FastMath.random() * nAtoms) + 1;
+
+    // Set up the input arguments for the script.
+    String[] args = {
+        "--ac", "ALL",
+        "--meta",
+        "-l", Double.toString(lambda),
+        "--ga", Integer.toString(atomID),
+        getResourcePath(filename)
+    };
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the script.
+    OSTGradient ostGradient = new OSTGradient(binding).run();
+    algorithmsScript = ostGradient;
+
+    double dUdLError = ostGradient.dUdLError;
+    double nFailures = ostGradient.nFailures;
+
+    // Assert that energy is conserved at the end of the dynamics trajectory.
+    assertEquals(info + ": dUdL error for atom " + args[6] + " at lambda " + args[4] + ": ", 0.0, dUdLError, tolerance);
+    assertEquals(info + ": Number of coordinate gradient errors for atom " + args[6] + " at lambda " + args[4] + ": ", 0, nFailures, 0);
   }
 }

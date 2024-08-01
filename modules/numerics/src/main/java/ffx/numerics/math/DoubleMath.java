@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -61,6 +61,10 @@ import java.util.logging.Logger;
 public final class DoubleMath {
 
   private static final Logger logger = Logger.getLogger(DoubleMath.class.getName());
+
+  private DoubleMath() {
+    // Prevent instantiation.
+  }
 
   /**
    * Compute a * b + c and return the result in a new array.

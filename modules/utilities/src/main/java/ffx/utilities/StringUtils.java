@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -398,17 +398,13 @@ public class StringUtils {
       int start = parseInt(m.group(1)) - 1;
       int end = parseInt(m.group(2)) - 1;
       if (start > end) {
-        throw new IllegalArgumentException(
-            format(" %s input %s not valid: start > end.", keyType, atomRange));
+        throw new IllegalArgumentException(format(" %s input %s not valid: start > end.", keyType, atomRange));
       } else if (start < 0) {
         throw new IllegalArgumentException(
-            format(
-                " %s input %s not valid: atoms should be indexed starting from 1.",
-                keyType, atomRange));
+            format(" %s input %s not valid: atoms should be indexed starting from 1.", keyType, atomRange));
       } else if (start >= nAtoms) {
         throw new IllegalArgumentException(
-            format(
-                " %s input %s not valid: atom range is out of bounds for assembly of length %d.",
+            format(" %s input %s not valid: atom range is out of bounds for assembly of length %d.",
                 keyType, atomRange, nAtoms));
       } else {
         if (end >= nAtoms) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -46,8 +46,8 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
     GKTensorGlobalTest.class,
     GKTensorQITest.class,
-    GlobalMultipoleTensorTest.class,
+    MultipoleTensorGlobalTest.class,
     MultipoleTensorTest.class,
-    QIMultipoleTensorTest.class,
+    MultipoleTensorQITest.class,
 })
 public class MultipoleTestSuite {}

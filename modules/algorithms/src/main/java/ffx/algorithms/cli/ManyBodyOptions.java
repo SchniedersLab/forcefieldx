@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -41,17 +41,14 @@ import static java.lang.Integer.parseInt;
 
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.RotamerOptimization.Algorithm;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.*;
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.Logger;
+
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -71,13 +68,13 @@ public class ManyBodyOptions {
    * The ArgGroup keeps the ManyBodyOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Optimization Options%n", validate = false)
-  private final  ManyBodyOptionGroup group = new ManyBodyOptionGroup();
+  private final ManyBodyOptionGroup group = new ManyBodyOptionGroup();
 
   /**
    * The ArgGroup keeps the BoxOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
-  private final  BoxOptionGroup boxGroup = new BoxOptionGroup();
+  private final BoxOptionGroup boxGroup = new BoxOptionGroup();
 
   /**
    * The ArgGroup keeps the WindowOptionGroup together when printing help.
@@ -170,7 +167,7 @@ public class ManyBodyOptions {
     initRotamerLibrary(true);
 
     // First, interpret the residueGroup.listResidues flag if its set.
-    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+    if (!residueGroup.listResidues.isEmpty() && !residueGroup.listResidues.equalsIgnoreCase("none")) {
       List<String> stringList = new ArrayList<>();
       String[] tok = residueGroup.listResidues.split(",");
       Collections.addAll(stringList, tok);
@@ -399,6 +396,38 @@ public class ManyBodyOptions {
 
   public void setChain(String chain) {
     residueGroup.chain = chain;
+  }
+
+  public boolean getOnlyTitration() {
+    return residueGroup.onlyTitration;
+  }
+
+  public void setOnlyTitration(boolean onlyTitration) {
+    residueGroup.onlyTitration = onlyTitration;
+  }
+
+  public boolean getOnlyProtons() {
+    return residueGroup.onlyProtons;
+  }
+
+  public void setOnlyProtons(boolean onlyProtons) {
+    residueGroup.onlyProtons = onlyProtons;
+  }
+
+  public int getInterestedResidue() {
+    return residueGroup.interestedResidue;
+  }
+
+  public void setInterestedResidue(int interestedResidue) {
+    residueGroup.interestedResidue = interestedResidue;
+  }
+
+  public double getInclusionCutoff() {
+    return residueGroup.inclusionCutoff;
+  }
+
+  public void setInclusionCutoff(double inclusionCutoff) {
+    residueGroup.inclusionCutoff = inclusionCutoff;
   }
 
   /**
@@ -703,9 +732,103 @@ public class ManyBodyOptions {
     return group.titrationPH;
   }
 
+  public void setPHRestraint(double pHRestraint) {
+    energyGroup.pHRestraint = pHRestraint;
+  }
+
+  public double getPHRestraint() {
+    return energyGroup.pHRestraint;
+  }
+
   public boolean isTitrating() {
     return group.titrationPH == 0;
   }
+
+  public boolean getTitration() {
+    return group.titration;
+  }
+
+  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
+                                       double inclusionCutoff){
+    String listResidues = "";
+    if (mutatingResidue != -1 && inclusionCutoff != -1) {
+      List<Integer> residueNumber = new ArrayList<>();
+      for (Residue residue : residueList) {
+        residueNumber.add(residue.getResidueNumber());
+      }
+      double[] mutatingResCoor = new double[3];
+      int index = residueNumber.indexOf(mutatingResidue);
+      mutatingResCoor = residueList.get(index).getAtomByName("CA", true).getXYZ(mutatingResCoor);
+      for (Residue residue: residueList) {
+        double[] currentResCoor = new double[3];
+        currentResCoor = residue.getAtomByName("CA", true).getXYZ(currentResCoor);
+        double dist = DoubleMath.dist(mutatingResCoor, currentResCoor);
+        if (dist < inclusionCutoff) {
+          listResidues += "," + residue.getChainID() + residue.getResidueNumber();
+        }
+      }
+      listResidues = listResidues.substring(1);
+    } else if (onlyTitration || onlyProtons){
+      String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
+      List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+      for (Residue residue : residueList) {
+        if (titratableResiudesList.contains(residue.getName())) {
+          String titrateResNum = Integer.toString(residue.getResidueNumber());
+          if(!listResidues.contains(titrateResNum)){
+            listResidues += "," + residue.getChainID()+ titrateResNum;
+          }
+          if (inclusionCutoff != -1){
+            for (Residue residue2: residueList) {
+              boolean includeResidue = evaluateAllRotDist(residue, residue2, inclusionCutoff);
+              if(includeResidue){
+                String residue2Number = Integer.toString(residue2.getResidueNumber());
+                if(!listResidues.contains(residue2Number)){
+                  listResidues += "," + residue2.getChainID()+ residue2Number;
+                }
+              }
+            }
+          }
+
+        }
+
+      }
+
+      listResidues = listResidues.substring(1);
+    }
+    return listResidues;
+  }
+  private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double inclusionCutoff){
+    residueA.setRotamers(RotamerLibrary.getDefaultLibrary());
+    residueB.setRotamers(RotamerLibrary.getDefaultLibrary());
+    Rotamer[] rotamersA = residueA.getRotamers();
+    Rotamer[] rotamersB = residueB.getRotamers();
+    double[] aCoor = new double[3];
+    double[] bCoor = new double[3];
+    try {
+      int a = rotamersA.length;
+      int b = rotamersB.length;
+    } catch (Exception e){
+      return false;
+    }
+
+    for(Rotamer rotamerA: rotamersA){
+      residueA.setRotamer(rotamerA);
+      for(Rotamer rotamerB: rotamersB){
+        residueB.setRotamer(rotamerB);
+        for(Atom atomA: residueA.getAtomList()){
+          for(Atom atomB: residueB.getAtomList()){
+            double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor));
+            if(dist <= inclusionCutoff){
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
 
   /**
    * Collection of ManyBody Options.
@@ -767,6 +890,13 @@ public class ManyBodyOptions {
     @Option(names = {"--pH",
         "--titrationPH"}, paramLabel = "0", defaultValue = "0", description = " Optimize the titration state of ASP, GLU, HIS and LYS residues at the given pH (pH = 0 turns off titration")
     private double titrationPH;
+
+    /**
+     * --pH or --titrationPH Optimize the titration state of ASP, GLU, HIS and LYS residues.
+     */
+    @Option(names = {"--tR",
+            "--titration"}, paramLabel = "false", defaultValue = "false", description = " Turn on titration state optimization")
+    private boolean titration;
 
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all
@@ -903,6 +1033,12 @@ public class ManyBodyOptions {
     @Option(names = {
         "--pairClashThreshold"}, paramLabel = "25.0", defaultValue = "25.0", description = "The threshold for pruning pair clashes.")
     private double pairClashThreshold;
+
+    /** --radius The sliding window and box cutoff radius (Angstroms). */
+    @Option(names = {
+            "--kPH", "--pHRestraint"}, paramLabel = "0.0", defaultValue = "0.0", description = "Only allow titration state to change from" +
+            "standard state is self energy exceeds the restraint.")
+    private double pHRestraint = 0;
   }
 
   /**
@@ -934,6 +1070,26 @@ public class ManyBodyOptions {
     @Option(names = {"--lR",
         "--listResidues"}, paramLabel = "<list>", defaultValue = "none", description = "Select a list of residues to optimize (eg. A11,A24,B40).")
     private String listResidues;
+
+    /** --oT or --onlyTitrtaion Rotamer optimize only titratable residues. */
+    @Option(names = {"--oT",
+            "--onlyTitration"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only titratable residues.")
+    private boolean onlyTitration;
+
+    /** --oP or --onlyProtons Rotamer optimize only proton movement. */
+    @Option(names = {"--oP",
+            "--onlyProtons"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only proton movement.")
+    private boolean onlyProtons;
+
+    /** --iR or --interestedResidue Optimize rotamers within some distance of a specific residue. */
+    @Option(names = {"--iR",
+            "--interestedResidue"}, paramLabel = "", defaultValue = "-1", description = "Optimize rotamers within some distance of a specific residue.")
+    private int interestedResidue = -1;
+
+    /** --iC or --inclusionCutoff Distance which rotamers will be included when using only protons, titratable residues, or interested residue. */
+    @Option(names = {"--iC",
+            "--inclusionCutoff"}, paramLabel = "", defaultValue = "-1", description = "Distance which rotamers will be included when using only protons, titratable residues, or interested residue.")
+    private double inclusionCutoff = -1;
 
   }
 

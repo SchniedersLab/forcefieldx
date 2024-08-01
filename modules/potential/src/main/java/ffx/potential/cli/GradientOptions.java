@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -95,22 +95,30 @@ public class GradientOptions {
    */
   private static class GradientOptionGroup {
 
-    /** -d or --dx Finite-difference step size. */
+    /**
+     * -d or --dx Finite-difference step size.
+     */
     @Option(names = {"-d", "--dx"}, defaultValue = "1.0e-5", paramLabel = "1.0e-5 Å",
         description = "Finite-difference step size.")
-    public double dx;
+    public double dx = 1.0e-5;
 
-    /** --tol or --tolerance Gradient error tolerance (kcal/mol/Å). */
+    /**
+     * --tol or --tolerance Gradient error tolerance (kcal/mol/Å).
+     */
     @Option(names = {"--tol", "--tolerance"}, defaultValue = "1.0e-3",
         paramLabel = "1.0e-3 kcal/mol/Å", description = "Gradient error tolerance.")
-    public double tolerance;
+    public double tolerance = 1.0e-3;
 
-    /** --ga or --gradientAtoms Ranges of degrees of freedom to test [ALL, NONE, Range(s): 1-3,6-N]. */
+    /**
+     * --ga or --gradientAtoms Ranges of degrees of freedom to test [ALL, NONE, Range(s): 1-3,6-N].
+     */
     @Option(names = {"--ga", "--gradientAtoms"}, paramLabel = "ALL", defaultValue = "ALL",
         description = "Ranges of degrees of freedom to test [ALL, NONE, Range(s): 1-3,6-N].")
-    public String gradientAtoms;
+    public String gradientAtoms = "ALL";
 
-    /** -v or --verbose is a flag to print out energy at each step. */
+    /**
+     * -v or --verbose is a flag to print out energy at each step.
+     */
     @Option(names = {"-v", "--verbose"}, paramLabel = "false",
         description = "Print out the energy for each step.")
     public boolean verbose = false;

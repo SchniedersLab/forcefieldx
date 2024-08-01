@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,8 +49,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * <p>Adapted from an original program written by W. J. Cody, Mathematics and Computer Science
  * Division, Argonne National Laboratory, Argonne, IL 60439
- *
- * <p>
  *
  * @author Michael J. Schnieders
  * @since 1.0

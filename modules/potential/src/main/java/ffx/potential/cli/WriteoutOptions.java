@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,9 @@ package ffx.potential.cli;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
+
 import java.io.File;
+
 import picocli.CommandLine.Option;
 
 /**
@@ -51,9 +53,11 @@ import picocli.CommandLine.Option;
  */
 public class WriteoutOptions {
 
-  /** -F or --fileFormat Choose the file type to write [PDB/XYZ]. */
-  @Option(names = {"-F",
-      "--fileFormat"}, paramLabel = "XYZ", defaultValue = "XYZ", description = "Choose file type to write [PDB/XYZ].")
+  /**
+   * -F or --fileFormat Choose the file type to write [PDB/XYZ].
+   */
+  @Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ", defaultValue = "XYZ",
+      description = "Choose file type to write [PDB/XYZ].")
   public String fileType = "XYZ";
 
   public static String toArchiveExtension(String fileType) {
@@ -72,13 +76,13 @@ public class WriteoutOptions {
   /**
    * Saves a single-snapshot file to either .xyz or .pdb, depending on the value of fileType.
    *
-   * @param baseFileName Basic file name without extension.
+   * @param baseFileName        Basic file name without extension.
    * @param potentialsFunctions A PotentialFunctions object.
-   * @param molecularAssembly MolecularAssembly to save.
+   * @param molecularAssembly   MolecularAssembly to save.
    * @return File written to.
    */
   public File saveFile(String baseFileName, PotentialsFunctions potentialsFunctions,
-      MolecularAssembly molecularAssembly) {
+                       MolecularAssembly molecularAssembly) {
     String outFileName = baseFileName;
     File outFile;
     if (fileType.equalsIgnoreCase("XYZ")) {

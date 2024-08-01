@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -58,7 +58,7 @@ public interface Potential extends OptimizationInterface {
 
   /**
    * Returns the list of Constraints associated with this Potential. The default implementation
-   * returns an empty list. TODO: Implement for all Potentials.
+   * returns an empty list.
    *
    * @return All Constraints.
    */
@@ -148,9 +148,21 @@ public interface Potential extends OptimizationInterface {
    * Recognized variables currently include Cartesian coordinates and OTHER.
    */
   enum VARIABLE_TYPE {
+    /**
+     * X-coordinate.
+     */
     X,
+    /**
+     * Y-coordinate.
+     */
     Y,
+    /**
+     * Z-coordinate.
+     */
     Z,
+    /**
+     * Other variable type.
+     */
     OTHER
   }
 
@@ -159,8 +171,17 @@ public interface Potential extends OptimizationInterface {
    * or BOTH.
    */
   enum STATE {
+    /**
+     * Include FAST varying energy terms.
+     */
     FAST,
+    /**
+     * Include SLOW varying energy terms.
+     */
     SLOW,
+    /**
+     * Include both FAST and SLOW varying energy terms.
+     */
     BOTH
   }
 }

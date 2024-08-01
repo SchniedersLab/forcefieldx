@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -71,6 +71,7 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 import ffx.utilities.Resources;
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Cursor;
@@ -119,6 +120,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileSystemView;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -139,50 +141,88 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   @Serial
   private static final long serialVersionUID = 1L;
 
-  /** Constant <code>version="1.0.0-BETA"</code> */
-  public static final String version = "1.0.0-BETA";
-  /** Constant <code>date="May 2020"</code> */
-  public static final String date = "May 2020";
-  /** Constant */
+  /**
+   * Constant <code>version="1.0.0"</code>
+   */
+  public static final String version = "1.0.0";
+  /**
+   * Constant <code>date="June 2024"</code>
+   */
+  public static final String date = "June 2024";
+  /**
+   * Constant
+   */
   public static final String border =
       " _________________________________________________________________________\n";
-  /** Constant */
+  /**
+   * Constant
+   */
   public static final String title = "        FORCE FIELD X - Polyglot Software for Molecular Biophysics \n";
 
   public static final String aboutString;
-  /** Constant <code>KEYWORDS=1</code> */
+  /**
+   * Constant <code>KEYWORDS=1</code>
+   */
   static final int KEYWORDS = 1;
-  /** Constant <code>MODELING=2</code> */
+  /**
+   * Constant <code>MODELING=2</code>
+   */
   static final int MODELING = 2;
-  /** Constant <code>forceFieldFileFilter</code> */
+  /**
+   * Constant <code>forceFieldFileFilter</code>
+   */
   static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
-  /** Constant <code>keyFileFilter</code> */
+  /**
+   * Constant <code>keyFileFilter</code>
+   */
   static final KeyFileFilter keyFileFilter = new KeyFileFilter();
 
   private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
-  /** Constant <code>GRAPHICS=0</code> */
+  /**
+   * Constant <code>GRAPHICS=0</code>
+   */
   private static final int GRAPHICS = 0;
-  /** Constant <code>xyzFileFilter</code> */
+  /**
+   * Constant <code>xyzFileFilter</code>
+   */
   private static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
-  /** Constant <code>arcFileFilter</code> */
+  /**
+   * Constant <code>arcFileFilter</code>
+   */
   private static final ARCFileFilter arcFileFilter = new ARCFileFilter();
-  /** Constant <code>intFileFilter</code> */
+  /**
+   * Constant <code>intFileFilter</code>
+   */
   private static final INTFileFilter intFileFilter = new INTFileFilter();
-  /** Constant <code>indFileFilter</code> */
+  /**
+   * Constant <code>indFileFilter</code>
+   */
   private static final InducedFileFilter indFileFilter = new InducedFileFilter();
-  /** Constant <code>pdbFileFilter</code> */
+  /**
+   * Constant <code>pdbFileFilter</code>
+   */
   private static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
-  /** Constant <code>ffxFileFilter</code> */
+  /**
+   * Constant <code>ffxFileFilter</code>
+   */
   private static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
 
   private static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
-  /** Constant <code>classpath=""</code> */
+  /**
+   * Constant <code>classpath=""</code>
+   */
   static String classpath;
-  /** Constant <code>ffxDir</code> */
+  /**
+   * Constant <code>ffxDir</code>
+   */
   static File ffxDir;
-  /** Present working directory. */
+  /**
+   * Present working directory.
+   */
   private static File pwd;
-  /** JFileChooser for choosing a file. */
+  /**
+   * JFileChooser for choosing a file.
+   */
   private static JFileChooser fileChooser = null;
 
   static {
@@ -193,7 +233,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     var commitSCM = "";
     if (mvnProps.exists()) {
       try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
-        var ffxVersion = "1.0.0-BETA";
+        var ffxVersion = "1.0.0";
         var ffxVersionProp = "ffx.version=";
         var gitCommitsCount = "";
         var gitCommitsCountProp = "git.total.commit.count=";
@@ -237,33 +277,32 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
     aboutString = "        Version "
-            + commitVersion
-            + "  "
-            + commitDate
-            + " \n"
-            + commitSCM // Will contain its own spacing/newline, or be empty.
-            + " \n"
-            + """     
-                      Copyright (c)  Michael J. Schnieders  2001-2023
-                      Portions Copyright (c):
-                        Timothy D. Fenn      2009-2023
-                        Jacob M. Litman      2015-2023
-                        Rae A. Corrigan      2019-2023
-                        Guowei Qi            2019-2023
-                        Mallory R. Tollefson 2019-2023
-                        Aaron J. Nessler     2021-2023
-                        Andrew C. Thiel      2021-2023
-                                        
-                      All Rights Reserved
-                      
-                      Force Field X is distributed under the GPL v. 3 license
-                      with linking exception and is hosted by the Schnieders Lab
-                      at The University of Iowa.
-                        
-                      User manual:   https://ffx.biochem.uiowa.edu/manual.html
-                      Publications:  https://ffx.biochem.uiowa.edu/publications.html
-                      License:       https://ffx.biochem.uiowa.edu/licenses.html
-              """;
+        + commitVersion
+        + "  "
+        + commitDate
+        + " \n"
+        + commitSCM // Will contain its own spacing/newline, or be empty.
+        + " \n"
+        + """                
+                Please cite the following reference when using Force Field X:
+                
+                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove, 
+                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,  
+                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,  
+                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders, 
+                2024, Journal of Chemical Physics, 161 (1).
+                                
+                Copyright (c)  Michael J. Schnieders  2001-2024
+                All Rights Reserved
+        
+                Force Field X is distributed under the GPL v. 3 license
+                with linking exception and is hosted by the Schnieders Lab
+                at The University of Iowa.
+        
+                User Manual:   https://ffx.biochem.uiowa.edu/manual.html
+                Publications:  https://ffx.biochem.uiowa.edu/publications.html
+                License:       https://ffx.biochem.uiowa.edu/licenses.html
+        """;
 
     try {
       String ffxString = System.getProperty("ffx.dir", ".");
@@ -275,59 +314,113 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** Main FFX JFrame. */
+  /**
+   * Main FFX JFrame.
+   */
   private final JFrame frame;
-  /** Number of File Opener Threads. */
+  /**
+   * Number of File Opener Threads.
+   */
   private int fileOpenerThreads = -1;
-  /** Root of the structural hierarchy. */
+  /**
+   * Root of the structural hierarchy.
+   */
   private MSRoot dataRoot;
-  /** The structural hierarchy. */
+  /**
+   * The structural hierarchy.
+   */
   private Hierarchy hierarchy;
-  /** The FFX Main Menu. */
+  /**
+   * The FFX Main Menu.
+   */
   private MainMenu mainMenu;
-  /** The Graphics Panel. */
+  /**
+   * The Graphics Panel.
+   */
   private GraphicsPanel graphicsPanel;
-  /** The Modeling Panel. */
+  /**
+   * The Modeling Panel.
+   */
   private ModelingPanel modelingPanel;
-  /** The Keyword Panel. */
+  /**
+   * The Keyword Panel.
+   */
   private KeywordPanel keywordPanel;
-  /** A reference to the Modeling Shell. */
+  /**
+   * A reference to the Modeling Shell.
+   */
   private ModelingShell modelingShell = null;
-  /** The Java3D Graphics Canvas. */
+  /**
+   * The Java3D Graphics Canvas.
+   */
   private GraphicsCanvas graphicsCanvas;
-  /** The SplitPane holds the Hierarchy and JTabbedPane. */
+  /**
+   * The SplitPane holds the Hierarchy and JTabbedPane.
+   */
   private JSplitPane splitPane;
-  /** The value fo the Split Pane Divider. */
+  /**
+   * The value fo the Split Pane Divider.
+   */
   private int splitPaneDivider;
-  /** Status Label. */
+  /**
+   * Status Label.
+   */
   private JLabel statusLabel;
-  /** Filter to open a force field file. */
+  /**
+   * Filter to open a force field file.
+   */
   private ForceFieldFilter forceFieldFilter;
-  /** The FFX Locale. */
+  /**
+   * The FFX Locale.
+   */
   private FFXLocale locale = null;
-  /** The FFX About Dialog. */
+  /**
+   * The FFX About Dialog.
+   */
   private JDialog aboutDialog = null;
-  /** The FFX About Text Area. */
+  /**
+   * The FFX About Text Area.
+   */
   private JTextArea aboutTextArea = null;
-  /** Thread to open systems. */
+  /**
+   * Thread to open systems.
+   */
   private Thread openThread = null;
-  /** The active system filter. */
+  /**
+   * The active system filter.
+   */
   private SystemFilter activeFilter = null;
-  /** Flag to indicate oscillation. */
+  /**
+   * Flag to indicate oscillation.
+   */
   private boolean oscillate = false;
-  /** Reference to a Simulation Loader. */
+  /**
+   * Reference to a Simulation Loader.
+   */
   private SimulationLoader simulation;
-  /** IP of the simulation. */
+  /**
+   * IP of the simulation.
+   */
   private String ip = "";
-  /** Simulation port. */
+  /**
+   * Simulation port.
+   */
   private int port = 2000;
-  /** InetAddress of the simulation. */
+  /**
+   * InetAddress of the simulation.
+   */
   private InetAddress address = null;
-  /** InetSocketAddress of the simulation. */
+  /**
+   * InetSocketAddress of the simulation.
+   */
   private InetSocketAddress socketAddress = new InetSocketAddress(port);
-  /** Initialize all the sub-Panels and put them together */
+  /**
+   * Initialize all the sub-Panels and put them together
+   */
   private boolean init = false;
-  /** Exit status to describe how FFX is terminating. */
+  /**
+   * Exit status to describe how FFX is terminating.
+   */
   private ExitStatus exitType = ExitStatus.NORMAL;
 
   /**
@@ -339,7 +432,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     frame = f;
   }
 
-  /** Constructor for MainPanel. */
+  /**
+   * Constructor for MainPanel.
+   */
   public MainPanel() {
     frame = null;
   }
@@ -379,13 +474,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     return fileChooser;
   }
 
-  /** about */
+  /**
+   * about
+   */
   public void about() {
     if (aboutDialog == null) {
       aboutDialog = new JDialog(frame, "About... ", true);
       URL ffxURL = getClass().getClassLoader().getResource("ffx/ui/icons/splash.png");
       ImageIcon logoIcon = new ImageIcon(ffxURL);
       JLabel logoLabel = new JLabel(logoIcon);
+      logoLabel.setSize(600, 600);
       logoLabel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
       Container contentpane = aboutDialog.getContentPane();
       contentpane.setLayout(new BorderLayout());
@@ -415,125 +513,54 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
     // File Commands
     switch (arg) {
-      case "Open":
-        open();
-        break;
-      case "DownloadFromPDB":
-        openFromPDB();
-        break;
-      case "SaveAs":
-        saveAsXYZ(null);
-        break;
-      case "Close":
-        close();
-        break;
-      case "CloseAll":
-        closeAll();
-        break;
-      case "ChooseKeyFile":
-        chooseKey();
-        break;
-      case "ChooseLogFile":
-        chooseLog();
-        break;
-      case "LoadInducedData":
-        openInduced();
-        // Selection Commands
-        break;
-      case "SelectAll":
-        selectAll();
-        break;
-      case "MergeSelections":
-        merge();
-        break;
-      case "HighlightSelections":
-        highlightSelections(evt);
-        // Trajectory
-        break;
-      case "Play":
-        play();
-        break;
-      case "Stop":
-        stop();
-        break;
-      case "StepForward":
-        stepForward();
-        break;
-      case "StepBack":
-        stepBack();
-        break;
-      case "Reset":
-        reset();
-        break;
-      case "Oscillate":
-        oscillate(evt);
-        break;
-      case "Frame":
-        frame();
-        break;
-      case "Speed":
-        speed();
-        break;
-      case "Skip":
-        skip();
-        // Simulation
-        break;
-      case "ConnectToLocalJob":
-        connectToTINKER(null, null);
-        break;
-      case "ConnectToRemoteJob":
-        connect();
-        break;
-      case "ReleaseJob":
-        release();
-        break;
-      case "SetPort":
-        setPort();
-        break;
-      case "SetRemoteJobAddress":
-        setRemoteJobAddress();
-        // Window
-        break;
-      case "ShowToolBar":
-        showToolBar(evt);
-        break;
-      case "ShowTree":
-        showTree(evt);
-        break;
-      case "ShowGlobalAxes":
-        showGlobalAxes(evt);
-        break;
-      case "ResetPanes":
-        resetPanes();
-        break;
-      case "ResetConsole":
-        resetShell();
-        break;
-      case "OceanLookAndFeel":
-        oceanLookAndFeel();
-        break;
-      case "WindowsLookAndFeel":
-      case "MacOSXLookAndFeel":
-      case "MotifLookAndFeel":
-        platformLookAndFeel();
-        break;
-      case "ShrinkGraphicsWindow":
-        resizePanes(20);
-        break;
-      case "ExpandGraphicsWindow":
-        resizePanes(-20);
-        break;
-      case "About":
-        about();
-        // Others
-        break;
-      case "GarbageCollect":
-        Runtime.getRuntime().gc();
-        break;
-      case "Exit":
-        exit();
-        break;
-      default:
+      case "Open" -> open();
+      case "DownloadFromPDB" -> openFromPDB();
+      case "SaveAs" -> saveAsXYZ(null);
+      case "Close" -> close();
+      case "CloseAll" -> closeAll();
+      case "ChooseKeyFile" -> chooseKey();
+      case "ChooseLogFile" -> chooseLog();
+      case "LoadInducedData" -> openInduced();
+
+      // Selection Commands
+      case "SelectAll" -> selectAll();
+      case "MergeSelections" -> merge();
+      case "HighlightSelections" -> highlightSelections(evt);
+
+      // Trajectory
+      case "Play" -> play();
+      case "Stop" -> stop();
+      case "StepForward" -> stepForward();
+      case "StepBack" -> stepBack();
+      case "Reset" -> reset();
+      case "Oscillate" -> oscillate(evt);
+      case "Frame" -> frame();
+      case "Speed" -> speed();
+      case "Skip" -> skip();
+
+      // Simulation
+      case "ConnectToLocalJob" -> connectToTINKER(null, null);
+      case "ConnectToRemoteJob" -> connect();
+      case "ReleaseJob" -> release();
+      case "SetPort" -> setPort();
+      case "SetRemoteJobAddress" -> setRemoteJobAddress();
+
+      // Window
+      case "ShowToolBar" -> showToolBar(evt);
+      case "ShowTree" -> showTree(evt);
+      case "ShowGlobalAxes" -> showGlobalAxes(evt);
+      case "ResetPanes" -> resetPanes();
+      case "ResetConsole" -> resetShell();
+      case "OceanLookAndFeel" -> oceanLookAndFeel();
+      case "WindowsLookAndFeel", "MacOSXLookAndFeel", "MotifLookAndFeel" -> platformLookAndFeel();
+      case "ShrinkGraphicsWindow" -> resizePanes(20);
+      case "ExpandGraphicsWindow" -> resizePanes(-20);
+      case "About" -> about();
+
+      // Others
+      case "GarbageCollect" -> Runtime.getRuntime().gc();
+      case "Exit" -> exit();
+      default -> {
         try {
           ClassLoader cl = MainPanel.class.getClassLoader();
           URL url = cl.getResource(arg);
@@ -546,8 +573,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         } catch (Exception e) {
           System.err.println("MainPanel - Menu command not found: " + arg);
         }
-
-        break;
+      }
     }
   }
 
@@ -585,12 +611,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     return null;
   }
 
-  /** exit with current exit code (default: 0 (ExitStatus.NORMAL)) */
+  /**
+   * exit with current exit code (default: 0 (ExitStatus.NORMAL))
+   */
   public void exit() {
     exit(exitType);
   }
 
-  /** frame */
+  /**
+   * frame
+   */
   public void frame() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -655,7 +685,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     return modelingShell;
   }
 
-  /** initialize */
+  /**
+   * initialize
+   */
   public void initialize() {
     if (init) {
       return;
@@ -840,7 +872,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** reset */
+  /**
+   * reset
+   */
   public void reset() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -854,7 +888,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     keywordPanel.keySave(file);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void stateChanged(ChangeEvent evt) {
     JTabbedPane jtp = (JTabbedPane) evt.getSource();
@@ -868,7 +904,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** stop */
+  /**
+   * stop
+   */
   public void stop() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -877,13 +915,17 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     trajectory.stop();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "Program Control";
   }
 
-  /** Prompt the user to select an alternate key file. */
+  /**
+   * Prompt the user to select an alternate key file.
+   */
   private void chooseKey() {
     JFileChooser d = MainPanel.resetFileChooser();
     d.setFileFilter(new KeyFileFilter());
@@ -906,7 +948,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** Prompt the user to select an alternate log file */
+  /**
+   * Prompt the user to select an alternate log file
+   */
   private void chooseLog() {
     JFileChooser d = resetFileChooser();
     FFXSystem sys = getHierarchy().getActive();
@@ -931,7 +975,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** closeWait */
+  /**
+   * closeWait
+   */
   synchronized void closeWait() {
     FFXSystem active = hierarchy.getActive();
     if (active == null) {
@@ -949,14 +995,18 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** Close all open systems. */
+  /**
+   * Close all open systems.
+   */
   synchronized void closeAll() {
     while (hierarchy.getActive() != null) {
       closeWait();
     }
   }
 
-  /** Attempt to connect to a TINKER Simulation */
+  /**
+   * Attempt to connect to a TINKER Simulation
+   */
   private void connect() {
     if (simulation == null || simulation.isFinished()) {
       if (simulation != null) {
@@ -972,7 +1022,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * connectToTINKER
    *
-   * @param system a {@link ffx.ui.FFXSystem} object.
+   * @param system         a {@link ffx.ui.FFXSystem} object.
    * @param modelingThread a {@link java.lang.Thread} object.
    */
   void connectToTINKER(FFXSystem system, Thread modelingThread) {
@@ -1008,18 +1058,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    * @return a boolean.
    */
   boolean createKeyFile(FFXSystem system) {
-    String message =
-        new String("Please select a parameter file " + "and a TINKER Key file will be created.");
-    String params =
-        (String)
-            JOptionPane.showInputDialog(
-                this,
-                message,
-                "Parameter File",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                keywordPanel.getParamFiles(),
-                null);
+    String message = "Please select a parameter file " + "and a TINKER Key file will be created.";
+    String params = (String) JOptionPane.showInputDialog(this, message, "Parameter File",
+        JOptionPane.QUESTION_MESSAGE, null, keywordPanel.getParamFiles(), null);
     if (params != null) {
       if (params.equalsIgnoreCase("Use an existing TINKER Key file")) {
         JFileChooser fc = resetFileChooser();
@@ -1183,13 +1224,8 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    * @param evt a {@link java.awt.event.ActionEvent} object.
    */
   private void highlightSelections(ActionEvent evt) {
-    if (evt.getSource() instanceof JCheckBoxMenuItem) {
-      JCheckBoxMenuItem jcb = (JCheckBoxMenuItem) evt.getSource();
-      if (jcb.isSelected()) {
-        hierarchy.setHighlighting(true);
-      } else {
-        hierarchy.setHighlighting(false);
-      }
+    if (evt.getSource() instanceof JCheckBoxMenuItem jcb) {
+      hierarchy.setHighlighting(jcb.isSelected());
     } else {
       boolean highlighting = RendererCache.highlightSelections;
       if (highlighting) {
@@ -1220,7 +1256,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     return (openThread != null && openThread.isAlive());
   }
 
-  /** Load preferences from the user node */
+  /**
+   * Load preferences from the user node
+   */
   private void loadPrefs() {
     String c = MainPanel.class.getName();
     JFrame frame1 = (JFrame) SwingUtilities.getRoot(this);
@@ -1278,7 +1316,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** merge */
+  /**
+   * merge
+   */
   private void merge() {
     ArrayList<MSNode> activeNodes = hierarchy.getActiveNodes();
     if (activeNodes.size() >= 2) {
@@ -1364,7 +1404,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     thread.start();
   }
 
-  /** oceanLookAndFeel */
+  /**
+   * oceanLookAndFeel
+   */
   private void oceanLookAndFeel() {
     try {
       UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -1374,7 +1416,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** Trys to convert a file picked from a JFileChooser */
+  /**
+   * Trys to convert a file picked from a JFileChooser
+   */
   private Thread open() {
     if (openThread != null && openThread.isAlive()) {
       return null;
@@ -1406,7 +1450,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * Attempts to load the supplied file
    *
-   * @param file File to open
+   * @param file               File to open
    * @param commandDescription Description of the command that created this file.
    * @return a {@link java.lang.Thread} object.
    */
@@ -1472,7 +1516,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * Attempts to load the supplied file
    *
-   * @param files Files to open
+   * @param files              Files to open
    * @param commandDescription Description of the command that created this file.
    * @return a {@link java.lang.Thread} object.
    */
@@ -1483,9 +1527,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     File file = new File(FilenameUtils.normalize(files.get(0).getAbsolutePath()));
     // Set the Current Working Directory based on this file.
     setCWD(file.getParentFile());
-
-    // Get "filename" from "filename.extension".
-    String name = file.getName();
 
     // Create the CompositeConfiguration properties.
     CompositeConfiguration properties = Keyword.loadProperties(file);
@@ -1564,7 +1605,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * openWait
    *
-   * @param file a {@link java.lang.String} object.
+   * @param file     a {@link java.lang.String} object.
    * @param nThreads the number of threads.
    * @return an array of {@link ffx.ui.FFXSystem} objects.
    */
@@ -1609,7 +1650,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * openWait
    *
-   * @param files an array of {@link java.lang.String} objects.
+   * @param files    an array of {@link java.lang.String} objects.
    * @param nThreads the number of threads.
    * @return an array of {@link ffx.ui.FFXSystem} objects.
    */
@@ -1683,7 +1724,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     return openFromUtils(files, null);
   }
 
-  /** Opens a file from the PDB */
+  /**
+   * Opens a file from the PDB
+   */
   private void openFromPDB() {
     if (openThread != null && openThread.isAlive()) {
       return;
@@ -1823,9 +1866,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * openOn
    *
-   * @param f a {@link java.io.File} object.
+   * @param f         a {@link java.io.File} object.
    * @param oldSystem a {@link ffx.ui.FFXSystem} object.
-   * @param command a {@link java.lang.String} object.
+   * @param command   a {@link java.lang.String} object.
    */
   void openOn(File f, FFXSystem oldSystem, String command) {
     XYZFilter.readOnto(f, oldSystem);
@@ -1856,7 +1899,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** platformLookAndFeel */
+  /**
+   * platformLookAndFeel
+   */
   private void platformLookAndFeel() {
     try {
       if (SystemUtils.IS_OS_LINUX) {
@@ -1866,14 +1911,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
       SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(this));
     } catch (ClassNotFoundException
-        | InstantiationException
-        | IllegalAccessException
-        | UnsupportedLookAndFeelException e) {
+             | InstantiationException
+             | IllegalAccessException
+             | UnsupportedLookAndFeelException e) {
       logger.log(Level.WARNING, "Can''t set look and feel: {0}", e);
     }
   }
 
-  /** play */
+  /**
+   * play
+   */
   private void play() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -1882,7 +1929,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     trajectory.start();
   }
 
-  /** Close the connection to a running simulation */
+  /**
+   * Close the connection to a running simulation
+   */
   private void release() {
     if (simulation != null) {
       simulation.release();
@@ -1891,12 +1940,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** resetPanes */
+  /**
+   * resetPanes
+   */
   private void resetPanes() {
     resizePanes(0);
   }
 
-  /** resetShell */
+  /**
+   * resetShell
+   */
   void resetShell() {
     if (!GraphicsEnvironment.isHeadless()) {
       modelingShell = getModelingShell();
@@ -2009,7 +2062,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * Save the currently selected FFXSystem to a PDB file.
    *
-   * @param file File to save the system to.
+   * @param file     File to save the system to.
    * @param writeEnd Flag to indicate this is the last snapshot.
    * @since 1.0
    */
@@ -2020,9 +2073,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   /**
    * Save the currently selected FFXSystem to a PDB file.
    *
-   * @param file File to save the system to.
+   * @param file     File to save the system to.
    * @param writeEnd Flag to indicate this is the last snapshot.
-   * @param append Flag to indicate appending this snapshot.
+   * @param append   Flag to indicate appending this snapshot.
    * @since 1.0
    */
   void saveAsPDB(File file, boolean writeEnd, boolean append) {
@@ -2096,7 +2149,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    * saveAsPDB
    *
    * @param activeSystems an array of {@link ffx.potential.MolecularAssembly} objects.
-   * @param file a {@link java.io.File} object.
+   * @param file          a {@link java.io.File} object.
    */
   void saveAsPDB(MolecularAssembly[] activeSystems, File file) {
     File saveFile = file;
@@ -2118,7 +2171,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** Save preferences to the user node */
+  /**
+   * Save preferences to the user node
+   */
   private void savePrefs() {
     String c = MainPanel.class.getName();
     if (!GraphicsEnvironment.isHeadless()) {
@@ -2154,7 +2209,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** selectAll */
+  /**
+   * selectAll
+   */
   private void selectAll() {
     if (dataRoot.getChildCount() == 0) {
       return;
@@ -2183,7 +2240,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     // tabbedPane.setSelectedIndex(panel);
   }
 
-  /** Setter for the field <code>port</code>. */
+  /**
+   * Setter for the field <code>port</code>.
+   */
   private void setPort() {
     String s = "" + port;
     s = JOptionPane.showInputDialog("Enter a port number", s);
@@ -2200,7 +2259,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     socketAddress = new InetSocketAddress(address, port);
   }
 
-  /** setRemoteJobAddress */
+  /**
+   * setRemoteJobAddress
+   */
   private void setRemoteJobAddress() {
     if (address == null) {
       try {
@@ -2274,7 +2335,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** skip */
+  /**
+   * skip
+   */
   private void skip() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -2290,7 +2353,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** speed */
+  /**
+   * speed
+   */
   private void speed() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -2306,7 +2371,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
   }
 
-  /** stepBack */
+  /**
+   * stepBack
+   */
   private void stepBack() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -2316,7 +2383,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     trajectory.back();
   }
 
-  /** stepForward */
+  /**
+   * stepForward
+   */
   private void stepForward() {
     Trajectory trajectory = getTrajectory();
     if (trajectory == null) {
@@ -2332,7 +2401,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    * Presently, only 0, 1, 3, 100, and 200 have been defined for FFX.
    *
    * <p>When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130, 137, and 255 or
-   * greater (see http://tldp.org/LDP/abs/html/exitcodes.html and the C/C++ standard
+   * greater (see https://tldp.org/LDP/abs/html/exitcodes.html and the C/C++ standard
    * /usr/include/sysexits.h).
    */
   enum ExitStatus {

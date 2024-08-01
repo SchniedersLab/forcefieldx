@@ -40,10 +40,12 @@
             <compilerArgs>
               <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
               <arg>-proc:none</arg>
+              <arg>--add-modules</arg>
+              <arg>jdk.incubator.vector</arg>
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
-            <target>${targetVersion}</target>
+            <release>${compileVersion}</release>
             <useIncrementalCompilation>true</useIncrementalCompilation>
           </configuration>
           <version>${compiler.version}</version>
@@ -88,6 +90,11 @@
           <version>${install.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${jar.version}</version>
           <configuration>
@@ -104,6 +111,13 @@
             <author>true</author>
             <defaultAuthor>Michael J. Schnieders</defaultAuthor>
             <defaultSince>1.0</defaultSince>
+            <failOnError>false</failOnError>
+            <quiet>false</quiet>
+            <debug>true</debug>
+            <additionalOptions>
+              <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+            </additionalOptions>
+            <!-- doclint>all,-missing</doclint -->
           </configuration>
           <version>${javadoc.version}</version>
         </plugin>
@@ -139,8 +153,9 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <!-- forkCount>0</forkCount -->
+            <!-- forkCount>1</forkCount -->
             <trimStackTrace>false</trimStackTrace>
+            <argLine>--add-modules jdk.incubator.vector</argLine>
           </configuration>
           <dependencies>
             <dependency>
@@ -238,7 +253,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[21,21.1]</version>
+                  <version>[21,22.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -309,7 +324,7 @@
               <directory>groovy</directory>
             </fileset>
             <fileset>
-              <directory>src/site/asciidoc/keywords</directory>
+              <directory>src/site/asciidoc/properties</directory>
             </fileset>
             <fileset>
               <directory>src/site/asciidoc/commands</directory>
@@ -346,16 +361,16 @@
           <arguments>
             <argument>-ms1G</argument>
             <argument>-mx1G</argument>
-            <argument>-Djava.awt.headless=true</argument>
             <argument>-classpath</argument>
-            <argument>bin/ffx-all.jar</argument>
+            <argument>lib/*</argument>
+            <!-- argument>-Djava.awt.headless=true</argument>
+            <argument>-Dj3d.rend=noop</argument>
             <argument>ffx.Main</argument>
-            <argument>timer</argument>
+            <argument>Timer</argument>
             <argument>-n</argument>
-            <argument>100000</argument>
-            <argument>-c</argument>
-            <argument>1</argument>
-            <argument>examples/ubiquitin.xyz</argument>
+            <argument>1000</argument>
+            <argument>examples/ubiquitin.xyz</argument -->
+            <argument>ffx.numerics.estimator.MultistateBennettAcceptanceRatio</argument>
           </arguments>
           <executable>java</executable>
         </configuration>
@@ -375,8 +390,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
-          <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
-          <useSystemClassLoader>false</useSystemClassLoader>
+          <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules jdk.incubator.vector</argLine>
+          <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
           </excludes>
@@ -452,6 +468,34 @@
         <version>${properties.version}</version>
       </plugin>
       <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <destFile>target/jacoco.exec</destFile>
+          <!-- append>true</append -->
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+            <configuration>
+              <propertyName>jacoco.agent.ut.arg</propertyName>
+              <skip>${jacoco.skip}</skip>
+            </configuration>
+          </execution>
+          <!-- attached to Maven test phase -->
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <version>${antrun.version}</version>
         <inherited>false</inherited>
@@ -464,73 +508,80 @@
             </goals>
             <configuration>
               <target>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ElectrostaticsFunctionalForm.adoc">
                   <header>== Electrostatics Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ElectrostaticsFunctionalForm">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/EnergyUnitConversion.adoc">
                   <header>== Energy Unit Conversion</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion">
+                           dir="${project.basedir}/src/site/asciidoc/properties/EnergyUnitConversion">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ImplicitSolvent.adoc">
                   <header>== Implicit Solvent</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ImplicitSolvent">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/LocalGeometryFunctionalForm.adoc">
                   <header>== Local Geometry Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/LocalGeometryFunctionalForm">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/NonBondedCutoff.adoc">
                   <header>== Non-Bonded Cutoff</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff">
+                           dir="${project.basedir}/src/site/asciidoc/properties/NonBondedCutoff">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/ParticleMeshEwald.adoc">
                   <header>== Particle-Mesh Ewald</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald">
+                           dir="${project.basedir}/src/site/asciidoc/properties/ParticleMeshEwald">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionParameter.adoc">
                   <header>== Potential Function Parameter</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter">
+                           dir="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionParameter">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionSelection.adoc">
                   <header>== Potential Function Selection</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection">
+                           dir="${project.basedir}/src/site/asciidoc/properties/PotentialFunctionSelection">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/UnitCellAndSpaceGroup.adoc">
                   <header>== Unit Cell and Space Group</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup">
+                           dir="${project.basedir}/src/site/asciidoc/properties/UnitCellAndSpaceGroup">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
-                <concat destfile="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm.adoc">
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/VanDerWaalsFunctionalForm.adoc">
                   <header>== Van Der Waals Functional Form</header>
                   <fileset erroronmissingdir="false"
-                           dir="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm">
+                           dir="${project.basedir}/src/site/asciidoc/properties/VanDerWaalsFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat destfile="${project.basedir}/src/site/asciidoc/properties/StructuralRefinement.adoc">
+                  <header>== Structural Refinement</header>
+                  <fileset erroronmissingdir="false"
+                           dir="${project.basedir}/src/site/asciidoc/properties/StructuralRefinement">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
@@ -554,8 +605,8 @@
         <type>mail</type>
       </notifier>
     </notifiers>
-    <system>Travis CI</system>
-    <url>https://app.travis-ci.com/github/SchniedersLab/forcefieldx</url>
+    <system>Github Actions</system>
+    <url>https://github.com/SchniedersLab/forcefieldx/actions</url>
   </ciManagement>
   <contributors>
     <contributor>
@@ -910,12 +961,13 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>modules/algorithms</module>
+    <module>modules/codecov</module>
     <module>modules/crystal</module>
-    <module>modules/refinement</module>
+    <module>modules/openmm</module>
     <module>modules/numerics</module>
-    <module>modules/jopenmm</module>
     <module>modules/pj</module>
     <module>modules/potential</module>
+    <module>modules/refinement</module>
     <module>modules/ui</module>
     <module>modules/utilities</module>
   </modules>
@@ -969,99 +1021,101 @@
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.6.0</assembly.version>
-    <biojava.version>7.0.2</biojava.version>
+    <assembly.version>3.7.1</assembly.version>
+    <biojava.version>7.1.1</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.3.0</checkstyle.version>
-    <ciftools-java.version>5.0.2</ciftools-java.version>
-    <clean.version>3.3.1</clean.version>
+    <checkstyle.version>3.4.0</checkstyle.version>
+    <ciftools-java.version>6.0.0</ciftools-java.version>
+    <clean.version>3.4.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.9.0</commons-configuration2.version>
-    <commons-io.version>2.14.0</commons-io.version>
-    <commons-lang3.version>3.13.0</commons-lang3.version>
+    <!-- Versions of commons-configuration beyond 2.10.1 are not compatible with the IJava ipynb -->
+    <commons-configuration2.version>2.11.0</commons-configuration2.version>
+    <commons-io.version>2.16.1</commons-io.version>
+    <commons-lang3.version>3.15.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <!-- Control the source version version -->
+    <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
+    <commons-text.version>1.12.0</commons-text.version>
+    <!-- Control the source version -->
     <compileVersion>21</compileVersion>
-    <compiler.version>3.11.0</compiler.version>
-    <dependency.version>3.6.0</dependency.version>
+    <compiler.version>3.13.0</compiler.version>
+    <dependency.version>3.7.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.1.1</deploy.version>
-    <enforcer.version>3.4.1</enforcer.version>
-    <exec.version>3.1.0</exec.version>
+    <deploy.version>3.1.2</deploy.version>
+    <enforcer.version>3.5.0</enforcer.version>
+    <exec.version>3.3.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
-    <ffx.version>1.0.0-BETA</ffx.version>
+    <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>6.0.0</git-commit-id.version>
+    <git-commit-id.version>9.0.1</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>23.1.0</graal.version>
-    <groovy-all.version>4.0.15</groovy-all.version>
-    <!-- groovy-all.version>5.0.0-alpha-2</groovy-all.version -->
-    <guava.version>32.1.2-jre</guava.version>
-    <install.version>3.1.1</install.version>
-    <jar.version>3.3.0</jar.version>
+    <graal.version>24.0.2</graal.version>
+    <groovy-all.version>5.0.0-alpha-9</groovy-all.version>
+    <guava.version>33.2.1-jre</guava.version>
+    <install.version>3.1.2</install.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <jacoco.skip>true</jacoco.skip>
+    <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.25.5</javaparser.version>
+    <javaparser.version>3.26.1</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.6.0</javadoc.version>
-    <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+    <javadoc.version>3.8.0</javadoc.version>
+    <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
-    <jna.version>5.13.0</jna.version>
+    <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>7.5.0-v11</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.3.0</jxr.version>
+    <jxr.version>3.4.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.20.0</log4j.version>
+    <log4j.version>2.23.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.7.5</picocli.version>
+    <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <!-- PMD does not handle Java language version 21 yet. -->
-    <pmd.version>3.21.0</pmd.version>
+    <pmd.version>3.24.0</pmd.version>
+    <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.4.5</project-info-reports.version>
+    <project-info-reports.version>3.6.2</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <properties.version>1.2.0</properties.version>
+    <properties.version>1.2.1</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.0.1</release.version>
+    <release.version>3.1.1</release.version>
     <resources.version>3.3.1</resources.version>
-    <scm.version>2.0.1</scm.version>
-    <slf4j-nop.version>2.0.9</slf4j-nop.version>
-    <!-- The Shade plugin use of localRepository causes a validation message -->
-    <maven.plugin.validation>brief</maven.plugin.validation>
-    <!-- AsciiDoc is not compatible with site version 4.0.0-M9 yet -->
+    <scm.version>2.1.0</scm.version>
+    <slf4j-nop.version>2.0.13</slf4j-nop.version>
+    <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
     <site.version>3.12.1</site.version>
-    <!-- site.version>4.0.0-M9</site.version -->
+    <!-- site.version>4.0.0-M11</site.version -->
     <asciidoc.version>2.2.4</asciidoc.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
-    <source.version>3.3.0</source.version>
+    <source.version>3.3.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.1.2</surefire.version>
+    <surefire.version>3.3.1</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>0.15.2</tornado.version>
+    <tornado.version>1.0.1</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.16.1</versions.version>
+    <versions.version>2.17.1</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
@@ -1112,7 +1166,11 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <failOnError>false</failOnError>
-          <quiet>true</quiet>
+          <quiet>false</quiet>
+          <debug>true</debug>
+          <additionalOptions>
+            <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+          </additionalOptions>
           <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
         </configuration>
         <inherited>true</inherited>
@@ -1121,7 +1179,7 @@
             <id>aggregate</id>
             <reports>
               <report>aggregate</report>
-              <!--report>test-aggregate</report-->
+              <report>test-aggregate</report>
             </reports>
           </reportSet>
         </reportSets>
@@ -1138,11 +1196,11 @@
             </reports>
           </reportSet>
         </reportSets>
+        <configuration>
+          <linkJavadoc>true</linkJavadoc>
+          <javadocVersion>${compileVersion}</javadocVersion>
+        </configuration>
         <version>${jxr.version}</version>
-        <!-- configuration>
-            <goal>aggregate</goal>
-            <goal>test-aggregate</goal>
-        </configuration -->
       </plugin>
       <plugin>
         <artifactId>maven-surefire-report-plugin</artifactId>
@@ -1311,5 +1369,5 @@
     <url>https://github.com/SchniedersLab/forcefieldx</url>
   </scm>
   <url>https://ffx.biochem.uiowa.edu</url>
-  <version>1.0.0-beta</version>
+  <version>1.0.0</version>
 </project>

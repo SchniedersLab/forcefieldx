@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -97,6 +97,13 @@ public class AtomicDoubleArray3D {
     this.atomicDoubleArrayImpl = atomicDoubleArrayImpl;
   }
 
+  /**
+   * Construct an atomic 3D double array using the specified AtomicDoubleArray instances.
+   *
+   * @param x AtomicDoubleArray for the X dimension.
+   * @param y AtomicDoubleArray for the Y dimension.
+   * @param z AtomicDoubleArray for the Z dimension.
+   */
   public AtomicDoubleArray3D(AtomicDoubleArray x, AtomicDoubleArray y, AtomicDoubleArray z) {
     atomicDoubleArray = new AtomicDoubleArray[3];
     atomicDoubleArray[0] = x;

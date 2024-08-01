@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -158,16 +158,5 @@ public abstract class Integrator {
    * @param potential the Potential this integrator operates on.
    */
   public abstract void preForce(Potential potential);
-
-  public void removeConstraint(Constraint constraint) {
-    constraints.remove(constraint);
-    useConstraints = !constraints.isEmpty();
-  }
-
-  public void removeConstraints(Collection<Constraint> toRemove) {
-    constraints = constraints.stream().filter((Constraint c) -> !toRemove.contains(c))
-        .collect(Collectors.toList());
-    useConstraints = !constraints.isEmpty();
-  }
 
 }

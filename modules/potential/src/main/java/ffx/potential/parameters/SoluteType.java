@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,13 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Comparator;
@@ -60,7 +60,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+@FFXProperty(name = "solute", clazz = String.class, propertyGroup = PotentialFunctionParameter,
     description = """
         [integers and 4 reals]
         Provides values for a single implicit solvation parameter.

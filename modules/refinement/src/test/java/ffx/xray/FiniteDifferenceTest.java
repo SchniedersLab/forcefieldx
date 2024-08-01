@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -127,7 +127,7 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
 
     List<Atom> atomList = molecularAssembly.getAtomList();
     atomArray = atomList.toArray(new Atom[0]);
-    boolean use_3g = properties.getBoolean("use_3g", true);
+    boolean use_3g = properties.getBoolean("use-3g", true);
 
     // initialize atomic form factors
     for (Atom atom : atomArray) {

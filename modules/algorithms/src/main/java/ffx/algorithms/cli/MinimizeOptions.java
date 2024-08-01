@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -99,21 +99,27 @@ public class MinimizeOptions {
    */
   private static class MinimizeOptionGroup {
 
-    /** -i or --iterations Number of minimization steps. */
+    /**
+     * -i or --iterations Number of minimization steps.
+     */
     @Option(names = {"-I", "--iterations"}, paramLabel = "Unlimited",
         // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
         defaultValue = "2147483647", description = "Number of minimization steps.")
-    private int iterations;
+    private int iterations = Integer.MAX_VALUE;
 
-    /** -e or --eps Convergence criteria. */
-    @Option(names = {"-e",
-        "--eps"}, paramLabel = "1.0", defaultValue = "1.0", description = "Convergence criteria.")
-    private double eps;
+    /**
+     * -e or --eps Convergence criteria.
+     */
+    @Option(names = {"-e", "--eps"}, paramLabel = "1.0", defaultValue = "1.0",
+        description = "Convergence criteria.")
+    private double eps = 1.0;
 
-    /** --nbfgs The number of corrections used in the BFGS update (0 for steepest decent). */
-    @Option(names = {
-        "--nbfgs"}, paramLabel = "7", defaultValue = "7", description = "The number of correction vectors used by the L-BFGS optimization routine (0 for steepest-decent).")
-    private int nbfgs;
+    /**
+     * --nbfgs The number of corrections used in the BFGS update (0 for steepest decent).
+     */
+    @Option(names = {"--nbfgs"}, paramLabel = "7", defaultValue = "7",
+        description = "The number of correction vectors used by the L-BFGS optimization routine (0 for steepest-decent).")
+    private int nbfgs = 7;
 
   }
 }

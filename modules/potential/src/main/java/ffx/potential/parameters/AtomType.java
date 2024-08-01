@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,13 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ATOM;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -56,23 +57,32 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "atom", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[2 integers, name, quoted string, integer, real and integer] "
-        + "Provides the values needed to define a single force field atom type. "
-        + "The first two integer modifiers denote the atom type and class numbers. "
-        + "If the type and class are identical, only a single integer value is required. "
-        + "The next modifier is a three-character atom name, followed by an 24-character or less atom description contained in single quotes. "
-        + "The next two modifiers are the atomic number and atomic mass. "
-        + "The final integer modifier is the \"valence\" of the atom, defined as the expected number of attached or bonded atoms.")
+@FFXProperty(name = "atom", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [2 integers, name, quoted string, integer, real and integer]
+    Provides the values needed to define a single force field atom type.
+    The first two integer modifiers denote the atom type and class numbers.
+    If the type and class are identical, only a single integer value is required.
+    The next modifier is a three-character atom name, followed by an 24-character or less atom description contained in single quotes.
+    The next two modifiers are the atomic number and atomic mass.
+    The final integer modifier is the "valence" of the atom, defined as the expected number of attached or bonded atoms.
+    """)
 public final class AtomType extends BaseType implements Comparator<String> {
 
-  /** A Logger for the AngleType class. */
+  /**
+   * A Logger for the AngleType class.
+   */
   private static final Logger logger = Logger.getLogger(AtomType.class.getName());
-  /** Short name (ie CH3/CH2 etc). */
+  /**
+   * Short name (ie CH3/CH2 etc).
+   */
   public final String name;
-  /** Description of the atom's bonding environment. */
+  /**
+   * Description of the atom's bonding environment.
+   */
   public final String environment;
-  /** Atomic Number. */
+  /**
+   * Atomic Number.
+   */
   public final int atomicNumber;
   /**
    * Atomic weight. "An atomic weight (relative atomic weight) of an element from a specified source
@@ -80,26 +90,32 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * an atom of 12C"
    */
   public final double atomicWeight;
-  /** Valence number for this type. */
+  /**
+   * Valence number for this type.
+   */
   public final int valence;
-  /** Atom type. */
+  /**
+   * Atom type.
+   */
   public int type;
-  /** Atom class. */
+  /**
+   * Atom class.
+   */
   public int atomClass;
 
   /**
    * AtomType Constructor.
    *
-   * @param type int
-   * @param atomClass int
-   * @param name String
-   * @param environment String
+   * @param type         int
+   * @param atomClass    int
+   * @param name         String
+   * @param environment  String
    * @param atomicNumber int
    * @param atomicWeight double
-   * @param valence int
+   * @param valence      int
    */
   public AtomType(int type, int atomClass, String name, String environment, int atomicNumber,
-      double atomicWeight, int valence) {
+                  double atomicWeight, int valence) {
     super(ATOM, Integer.toString(type));
     this.type = type;
     this.atomClass = atomClass;
@@ -113,7 +129,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
   /**
    * Construct an AtomType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return an AtomType instance.
    */
@@ -184,7 +200,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String s1, String s2) {
     int t1 = parseInt(s1);
@@ -192,7 +210,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
     return Integer.compare(t1, t2);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -205,7 +225,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
     return atomType.type == this.type;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(type);
@@ -233,7 +255,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * incrementClassAndType
    *
    * @param classIncrement The value to increment the atom class by.
-   * @param typeIncrement The value to increment the atom type by.
+   * @param typeIncrement  The value to increment the atom type by.
    */
   void incrementClassAndType(int classIncrement, int typeIncrement) {
     atomClass += classIncrement;
@@ -248,9 +270,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * For atomic numbers outside the range 1 to 118, true always is returned.
    *
    * @param atomicNumber The atomic number.
-   * @param mass The atomic mass.
+   * @param mass         The atomic mass.
    * @return True if the given mass is within the given tolerance of the IUPAC value for the atomic
-   *     number.
+   * number.
    */
   public static boolean checkAtomicNumberAndMass(int atomicNumber, double mass) {
     return checkAtomicNumberAndMass(atomicNumber, mass, 0.1);
@@ -263,10 +285,10 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * For atomic numbers outside the range 1 to 118, true always is returned.
    *
    * @param atomicNumber The atomic number.
-   * @param mass The atomic mass.
-   * @param tolerance The error tolerance in AMU.
+   * @param mass         The atomic mass.
+   * @param tolerance    The error tolerance in AMU.
    * @return True if the given mass is within the given tolerance of the IUPAC value for the atomic
-   *     number.
+   * number.
    */
   public static boolean checkAtomicNumberAndMass(int atomicNumber, double mass, double tolerance) {
     // Ignore atomic numbers outside the range 1 to 118.
@@ -283,7 +305,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * Weights.
    * Retrieved on 1/24/22.
    */
-  private static final double[] atomicMass = { /* H Hydrogen */  1.008,
+  public static final double[] atomicMass = { /* H Hydrogen */  1.008,
       /* 2 He Helium */ 4.002,
       /* 3 Li Lithium */ 6.94,
       /* 4 Be Beryllium */ 9.012,

@@ -238,11 +238,11 @@ class Scheduler extends AlgorithmsScript {
     for (p = 0; p < processes; p++) {
       for (node in hostnames) {
         sb.append("backend node" + i + " "
-                + CPUs + " "
-                + node + " "
-                + java + " "
-                + classpath + " "
-                + arg + "\n")
+            + CPUs + " "
+            + node + " "
+            + java + " "
+            + classpath + " "
+            + arg + "\n")
         i++
       }
     }

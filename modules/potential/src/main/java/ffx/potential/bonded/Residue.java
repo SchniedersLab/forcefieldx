@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -732,6 +732,22 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       arraycopy(libRotamers, 0, rotamers, nOrig, libRots);
     }
 
+    return rotamers;
+  }
+
+  /**
+   * Sets the original coordinate rotamers for titratable residues
+   * RotamerLibrary's original coordinates rotamer flag has been set.
+   * <p>
+   * Any rotamers that were set previously are deleted.
+   *
+   * @return An array of Rotamer.
+   */
+  public Rotamer[] setRotamers(){
+    Rotamer[] originalRotamers = Rotamer.defaultRotamerFactory(this, titrationUtils);
+    int nOrig = originalRotamers.length;
+    rotamers = new Rotamer[nOrig];
+    arraycopy(originalRotamers, 0, rotamers, 0, nOrig);
     return rotamers;
   }
 

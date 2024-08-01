@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -398,7 +398,7 @@ public class ReflectionList {
 
   private void setResolutionBins(@Nullable CompositeConfiguration properties) {
     if (properties != null) {
-      nBins = properties.getInt("nbins", 10);
+      nBins = properties.getInt("reflection-bins", 10);
     }
     double nBinsDouble = nBins;
     for (HKL ih : hklList) {

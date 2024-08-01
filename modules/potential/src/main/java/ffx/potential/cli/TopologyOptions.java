@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -399,40 +399,40 @@ public class TopologyOptions {
   private static class TopologyOptionGroup {
 
     /** --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]. */
-    @Option(names = {"--ac2",
-        "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "", description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
-    String alchemicalAtoms2;
+    @Option(names = {"--ac2", "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "",
+        description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String alchemicalAtoms2 = "";
 
     /**
      * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s):
      * 1-3,6-N]."
      */
-    @Option(names = {"--uc2",
-        "--unchargedAtoms2"}, paramLabel = "<selection>", defaultValue = "", description = "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
-    String unchargedAtoms2;
+    @Option(names = {"--uc2", "--unchargedAtoms2"}, paramLabel = "<selection>", defaultValue = "",
+        description = "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    String unchargedAtoms2 = "";
 
     /**
      * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or
      * 4.
      */
-    @Option(names = {"--np",
-        "--nParallel"}, paramLabel = "1", description = "Number of topologies to evaluate in parallel")
+    @Option(names = {"--np", "--nParallel"}, paramLabel = "1",
+        description = "Number of topologies to evaluate in parallel")
     int nPar = 1;
 
     /**
      * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated
      * ranges or singletons.
      */
-    @Option(names = {"--uaA",
-        "--unsharedA"}, paramLabel = "-1", description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
+    @Option(names = {"--uaA", "--unsharedA"}, paramLabel = "-1",
+        description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
     String unsharedA = null;
 
     /**
      * --uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated
      * ranges or singletons.
      */
-    @Option(names = {"--uaB",
-        "--unsharedB"}, paramLabel = "-1", description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
+    @Option(names = {"--uaB", "--unsharedB"}, paramLabel = "-1",
+        description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
     String unsharedB = null;
 
     /**
@@ -460,8 +460,8 @@ public class TopologyOptions {
      * for lambda 0-1. The trigonometric switch can be restated thusly, since cos^2(pi/2*lambda) is
      * identical to sin^2(pi/2*(1-lambda)), f(1-l).
      */
-    @Option(names = {"--sf",
-        "--switchingFunction"}, paramLabel = "1.0", description = "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
+    @Option(names = {"--sf", "--switchingFunction"}, paramLabel = "1.0",
+        description = "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
     String lambdaFunction = "1.0";
   }
 }

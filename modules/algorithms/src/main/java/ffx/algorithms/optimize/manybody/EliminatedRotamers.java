@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,17 +37,18 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static ffx.potential.bonded.Residue.ResidueType.NA;
-import static java.lang.String.format;
-
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import static ffx.potential.bonded.Residue.ResidueType.NA;
+import static java.lang.String.format;
 
 public class EliminatedRotamers {
 
@@ -60,11 +61,17 @@ public class EliminatedRotamers {
    * subsets of this list.
    */
   private final List<Residue> allResiduesList;
-  /** Maximum depth to check if a rotamer can be eliminated. */
+  /**
+   * Maximum depth to check if a rotamer can be eliminated.
+   */
   private final int maxRotCheckDepth;
-  /** Clash energy threshold (kcal/mole). */
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
   private final double clashThreshold;
-  /** Clash energy threshold (kcal/mole). */
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
   private final double pairClashThreshold;
   /**
    * Clash energy threshold (kcal/mol) for MultiResidues, which can have much more variation in self
@@ -78,30 +85,46 @@ public class EliminatedRotamers {
   private final double nucleicPruningFactor;
 
   private final double nucleicPairsPruningFactor;
-  /** Pair clash energy threshold (kcal/mol) for MultiResidues. */
+  /**
+   * Pair clash energy threshold (kcal/mol) for MultiResidues.
+   */
   private final double multiResPairClashAddn;
-  /** Flag to prune clashes. */
+  /**
+   * Flag to prune clashes.
+   */
   private final boolean pruneClashes;
-  /** Flag to prune pair clashes. */
+  /**
+   * Flag to prune pair clashes.
+   */
   private final boolean prunePairClashes;
-  /** Flag to control the verbosity of printing. */
+  /**
+   * Flag to control the verbosity of printing.
+   */
   private final boolean print;
-  /** Eliminated rotamers. [residue][rotamer] */
+  /**
+   * Eliminated rotamers. [residue][rotamer]
+   */
   public boolean[][] eliminatedSingles;
-  /** Eliminated rotamer pairs. [residue1][rotamer1][residue2][rotamer2] */
+  /**
+   * Eliminated rotamer pairs. [residue1][rotamer1][residue2][rotamer2]
+   */
   public boolean[][][][] eliminatedPairs;
-  /** Pruned rotamers. Only for JUnit testing purposes. */
+  /**
+   * Pruned rotamers. Only for JUnit testing purposes.
+   */
   public boolean[][] onlyPrunedSingles;
-  /** Pruned rotamer pairs. Only for JUnit testing purposes. */
+  /**
+   * Pruned rotamer pairs. Only for JUnit testing purposes.
+   */
   public boolean[][][][] onlyPrunedPairs;
 
   private EnergyExpansion eE;
 
   public EliminatedRotamers(RotamerOptimization rO, DistanceMatrix dM, List<Residue> allResiduesList,
-      int maxRotCheckDepth, double clashThreshold, double pairClashThreshold,
-      double multiResClashThreshold, double nucleicPruningFactor, double nucleicPairsPruningFactor,
-      double multiResPairClashAddn, boolean pruneClashes, boolean prunePairClashes, boolean print,
-      Residue[] residues) {
+                            int maxRotCheckDepth, double clashThreshold, double pairClashThreshold,
+                            double multiResClashThreshold, double nucleicPruningFactor, double nucleicPairsPruningFactor,
+                            double multiResPairClashAddn, boolean pruneClashes, boolean prunePairClashes, boolean print,
+                            Residue[] residues) {
     this.rO = rO;
     this.dM = dM;
     this.allResiduesList = allResiduesList;
@@ -121,7 +144,7 @@ public class EliminatedRotamers {
   /**
    * Check for eliminated rotamer; true if eliminated.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri.
    * @return True if rotamer eliminated.
    */
@@ -135,9 +158,9 @@ public class EliminatedRotamers {
   /**
    * Check for eliminated rotamer pair; true if eliminated.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri.
-   * @param j Residue j.
+   * @param j  Residue j.
    * @param rj Rotamer rj.
    * @return True if eliminated pair.
    */
@@ -161,9 +184,9 @@ public class EliminatedRotamers {
   /**
    * Check for pruned rotamer pair; true if eliminated. Only used during testing.
    *
-   * @param i Residue i.
+   * @param i  Residue i.
    * @param ri Rotamer ri.
-   * @param j Residue j.
+   * @param j  Residue j.
    * @param rj Rotamer rj.
    * @return a boolean.
    */
@@ -186,7 +209,7 @@ public class EliminatedRotamers {
   /**
    * Check for pruned rotamer; true if eliminated. Only used during testing.
    *
-   * @param i The residue.
+   * @param i  The residue.
    * @param ri The rotamer.
    * @return a boolean.
    */
@@ -202,9 +225,9 @@ public class EliminatedRotamers {
    * checked. Checks j,rj self and i,ri,j,rj 2-Body. The intent is to be part of a loop over
    * i,ri,j,rj, and check for eliminations at the j,rj point.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer ri
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer rj
    * @return j eliminated with i
    */
@@ -218,11 +241,11 @@ public class EliminatedRotamers {
    * intent is to be part of a loop over i,ri,j,rj,k,rk, and check for eliminations at the k,rk
    * point.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer ri
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer rj
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer rk
    * @return k eliminated with i,j
    */
@@ -236,13 +259,13 @@ public class EliminatedRotamers {
    * 4-Body. The intent is to be part of a loop over i,ri,j,rj,k,rk,l,rl, and check for eliminations
    * at the l,rl point.
    *
-   * @param i Residue i
+   * @param i  Residue i
    * @param ri Rotamer ri
-   * @param j Residue j
+   * @param j  Residue j
    * @param rj Rotamer rj
-   * @param k Residue k
+   * @param k  Residue k
    * @param rk Rotamer rk
-   * @param l Residue l
+   * @param l  Residue l
    * @param rl Rotamer rl
    * @return l eliminated with i,j,k
    */
@@ -255,9 +278,9 @@ public class EliminatedRotamers {
    * residue i, or if i-ri is already eliminated.
    *
    * @param residues Residues under consideration.
-   * @param i A residue index based on the current residue list.
-   * @param ri A rotamer to attempt elimination of.
-   * @param verbose Request verbose logging.
+   * @param i        A residue index based on the current residue list.
+   * @param ri       A rotamer to attempt elimination of.
+   * @param verbose  Request verbose logging.
    * @return If the rotamer was eliminated.
    */
   public boolean eliminateRotamer(Residue[] residues, int i, int ri, boolean verbose) {
@@ -296,7 +319,7 @@ public class EliminatedRotamers {
   }
 
   public boolean eliminateRotamerPair(Residue[] residues, int i, int ri, int j, int rj,
-      boolean verbose) {
+                                      boolean verbose) {
     if (i > j) {
       int ii = i;
       int iri = ri;
@@ -342,8 +365,8 @@ public class EliminatedRotamers {
    * elimination by eliminating all ri-rj for some ri or some rj.
    *
    * @param residues Residues under consideration.
-   * @param i A residue index.
-   * @param j A residue index j!=i
+   * @param i        A residue index.
+   * @param j        A residue index j!=i
    * @return If any singletons were eliminated.
    */
   public boolean pairsToSingleElimination(Residue[] residues, int i, int j) {
@@ -712,12 +735,12 @@ public class EliminatedRotamers {
     eliminatedSingles = new boolean[nRes][];
     eliminatedPairs = new boolean[nRes][][][];
     // Loop over residues.
+    rO.logIfRank0("\n     Residue  Nrot");
     for (int i = 0; i < nRes; i++) {
       Residue residueI = residues[i];
       Rotamer[] rotamersI = residueI.getRotamers();
-      int lenRi = rotamersI.length; // Length rotamers i
-      rO.logIfRank0(format(" %3d Residue %7s with %2d rotamers.", i + 1,
-          residueI.toFormattedString(false, true), lenRi));
+      int lenRi = rotamersI.length;
+      rO.logIfRank0(format(" %3d %8s %4d", i + 1, residueI.toFormattedString(false, true), lenRi));
       eliminatedSingles[i] = new boolean[lenRi];
       eliminatedPairs[i] = new boolean[lenRi][][];
       // Loop over the set of rotamers for residue i.
@@ -741,8 +764,8 @@ public class EliminatedRotamers {
    * Validate residue i with rotamer ri.
    *
    * @param residues The residues being optimized.
-   * @param i The residue to validate.
-   * @param ri The rotamer to validate.
+   * @param i        The residue to validate.
+   * @param ri       The rotamer to validate.
    * @return The status of this rotamer.
    */
   private boolean validRotamer(Residue[] residues, int i, int ri) {
@@ -770,7 +793,7 @@ public class EliminatedRotamers {
    * Count the rotamers remaining for residue i.
    *
    * @param residues Residue array.
-   * @param i The residue number to examine.
+   * @param i        The residue number to examine.
    * @return The remaining valid rotamers.
    */
   private int[] rotamerCount(Residue[] residues, int i) {
@@ -806,10 +829,10 @@ public class EliminatedRotamers {
    * Validate rotamer pair (i, ri) and (j, rj).
    *
    * @param residues The residues being optimized.
-   * @param i The first residue to validate.
-   * @param ri The first rotamer to validate.
-   * @param j The 2nd residue to validate.
-   * @param rj The 2nd rotamer to validate.
+   * @param i        The first residue to validate.
+   * @param ri       The first rotamer to validate.
+   * @param j        The 2nd residue to validate.
+   * @param rj       The 2nd rotamer to validate.
    * @return The status of this rotamer.
    */
   private boolean validRotamerPair(Residue[] residues, int i, int ri, int j, int rj) {
@@ -850,9 +873,9 @@ public class EliminatedRotamers {
    * Count the rotamer pairs remaining for (residue i, rotamer ri) and residue j.
    *
    * @param residues Residue array.
-   * @param i The first residue to examine.
-   * @param ri The rotamer for the first residue.
-   * @param j The second residue to examine.
+   * @param i        The first residue to examine.
+   * @param ri       The rotamer for the first residue.
+   * @param j        The second residue to examine.
    * @return The remaining rotamer pair count.
    */
   private int rotamerPairCount(Residue[] residues, int i, int ri, int j) {
@@ -892,11 +915,11 @@ public class EliminatedRotamers {
    * residue k.
    *
    * @param residues Residue array.
-   * @param i The first residue to examine.
-   * @param ri The rotamer for the first residue.
-   * @param j The second residue to examine.
-   * @param rj The rotamer for the first residue.
-   * @param k The third residue.
+   * @param i        The first residue to examine.
+   * @param ri       The rotamer for the first residue.
+   * @param j        The second residue to examine.
+   * @param rj       The rotamer for the first residue.
+   * @param k        The third residue.
    * @return The remaining rotamer triples count.
    */
   private int rotamerTripleCount(Residue[] residues, int i, int ri, int j, int rj, int k) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,14 +38,18 @@
 package ffx.algorithms.cli;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.AlgorithmUtils;
+import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.FFXScript;
 import groovy.lang.Binding;
+
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +62,9 @@ import java.util.List;
  */
 public class AlgorithmsScript extends FFXScript {
 
-  /** An instance of AlgorithmFunctions passed into the current context. */
+  /**
+   * An instance of AlgorithmFunctions passed into the current context.
+   */
   public AlgorithmFunctions algorithmFunctions;
 
   /**
@@ -67,10 +73,14 @@ public class AlgorithmsScript extends FFXScript {
    */
   public MolecularAssembly activeAssembly;
 
-  /** An instance of the AlgorithmListener interface. */
+  /**
+   * An instance of the AlgorithmListener interface.
+   */
   public AlgorithmListener algorithmListener;
 
-  /** The directory in which to place output files. Mostly for tests. */
+  /**
+   * The directory in which to place output files. Mostly for tests.
+   */
   protected File baseDir;
 
   public AlgorithmsScript() {
@@ -180,7 +190,7 @@ public class AlgorithmsScript extends FFXScript {
    * @param filename Filename to open.
    * @return The active assembly.
    */
-  public MolecularAssembly getActiveAssembly(String filename) {
+  public MolecularAssembly getActiveAssembly(@Nullable String filename) {
     if (filename != null) {
       // Open the supplied file.
       MolecularAssembly[] assemblies = {algorithmFunctions.open(filename)};
@@ -196,7 +206,7 @@ public class AlgorithmsScript extends FFXScript {
    * @param filename Filename to open.
    * @return The active assemblies.
    */
-  public MolecularAssembly[] getActiveAssemblies(String filename) {
+  public MolecularAssembly[] getActiveAssemblies(@Nullable String filename) {
     MolecularAssembly[] assemblies;
     if (filename != null) {
       // Open the supplied file.
@@ -204,7 +214,7 @@ public class AlgorithmsScript extends FFXScript {
       activeAssembly = assemblies[0];
       return assemblies;
     } else {
-      assemblies = new MolecularAssembly[] {activeAssembly};
+      assemblies = new MolecularAssembly[]{activeAssembly};
     }
     return assemblies;
   }
@@ -220,4 +230,62 @@ public class AlgorithmsScript extends FFXScript {
     activeAssembly = molecularAssembly;
   }
 
+  /**
+   * Update the title line of the structure with Energy and Density.
+   * @param energy Newly minimized energy value.
+   */
+  public void updateTitle(double energy){
+    // Replace existing energy and density label if present
+    String oldName = activeAssembly.getName();
+    Crystal crystal = activeAssembly.getCrystal();
+    if(crystal != null && !crystal.aperiodic()){
+      double density = crystal.getDensity(activeAssembly.getMass());
+      if (containsIgnoreCase(oldName, "Energy:") || containsIgnoreCase(oldName, "Density:")) {
+        String[] tokens = oldName.trim().split(" +");
+        int numTokens = tokens.length;
+        // First element should always be number of atoms in XYZ.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < numTokens; i++) {
+          if (containsIgnoreCase(tokens[i], "Energy:")){
+            // i++ skips current entry (value associated with "Energy")
+            tokens[i++] = Double.toString(energy);
+          } else if (containsIgnoreCase(tokens[i], "Density:")){
+            // i++ skips current entry (value associated with "Density")
+            tokens[i++] = Double.toString(density);
+          } else {
+            // Accrue previous name.
+            sb.append(tokens[i]).append(" ");
+          }
+        }
+        // Opted to add energy/density after to preserve formatting.
+        activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+                sb, energy, density));
+      } else {
+        // Append energy and density to structure name (line 1 of XYZ).
+        activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+                oldName, energy, density));
+      }
+    } else {
+      if (containsIgnoreCase(oldName, "Energy:")) {
+        String[] tokens = oldName.trim().split(" +");
+        int numTokens = tokens.length;
+        // First element should always be number of atoms in XYZ.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < numTokens; i++) {
+          if (containsIgnoreCase(tokens[i], "Energy:")){
+            // i++ skips current entry (value associated with "Energy")
+            tokens[i++] = Double.toString(energy);
+          } else{
+            // Accrue previous name.
+            sb.append(tokens[i]).append(" ");
+          }
+        }
+        // Opted to add energy/density after to preserve formatting.
+        activeAssembly.setName(format("%s Energy: %9.4f", sb, energy));
+      } else {
+        // Append energy and density to structure name (line 1 of XYZ).
+        activeAssembly.setName(format("%s Energy: %9.4f", oldName, energy));
+      }
+    }
+  }
 }

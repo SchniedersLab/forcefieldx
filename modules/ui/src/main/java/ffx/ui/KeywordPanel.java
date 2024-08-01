@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -155,7 +155,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
   private LinkedHashMap<String, String> paramHashtable = null;
 
   /**
-   * Default Construtor where parent is the tinker Window Frame object.
+   * Default Construtor where parent is the FFX Window Frame object.
    *
    * @param f a {@link ffx.ui.MainPanel} object.
    */

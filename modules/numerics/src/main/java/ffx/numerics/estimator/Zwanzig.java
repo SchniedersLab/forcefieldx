@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,17 +37,19 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
-import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.log;
-
-import ffx.utilities.Constants;
-
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
+import static ffx.utilities.Constants.R;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * The Zwanzig class implements exponential averaging/free energy perturbation using the Zwanzig
@@ -60,6 +62,9 @@ import java.util.stream.IntStream;
 public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
 
   private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
+  /**
+   * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
+   */
   public final Directionality directionality;
   private final boolean forwards;
   /**
@@ -146,15 +151,14 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
 
     for (int i = 0; i < nWindows; i++) {
-      int windowIndex = forwards ? 0 : 1;
-      windowIndex += i;
-      double[] e1 = eAt[windowIndex];
-      double[] e2 = forwards ? eHigh[windowIndex] : eLow[windowIndex];
-      double sign = forwards ? 1.0 : -1.0;
-      double beta = -temperatures[windowIndex] * Constants.R;
-      double invBeta = 1.0 / beta;
+      final int windowIndex = i + (forwards ? 0 : 1);
+      final double[] e1 = eAt[windowIndex];
+      final double[] e2 = forwards ? eHigh[windowIndex] : eLow[windowIndex];
+      final double sign = forwards ? 1.0 : -1.0;
+      final double beta = -temperatures[windowIndex] * R;
+      final double invBeta = 1.0 / beta;
 
-      int len = e1.length;
+      final int len = e1.length;
       if (len == 0) {
         logger.log(warningLevel, " Skipping frame " + i + " due to lack of snapshots!");
         continue;
@@ -172,12 +176,12 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
         double dE = e2[j] - e1[j];
         if (sign > 0) {
           uAve += e1[j];
-          var term = exp(invBeta * dE);
+          final var term = exp(invBeta * dE);
           sum += term;
           num += e2[j] * term;
         } else {
           uAve += e2[j];
-          var term = exp(invBeta * dE);
+          final var term = exp(invBeta * dE);
           sum += term;
           num += e1[j] * term;
         }
@@ -186,6 +190,11 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
       uAve = uAve / len;
 
       double dG = sign * beta * log(sum / len);
+      if(isNaN(dG)||isInfinite(dG)){
+        logger.severe(format(" Change in free energy (%9.4f) for window (%2d of %2d) in Zwanzig is not permitted. " +
+                        "Sign: %9.4f, Beta: %9.4f (Temp: %9.4f R: %9.6f), Sum: %9.4f, Len: %3d, Log: %9.4f",
+                dG, i, nWindows, sign, beta, -temperatures[windowIndex], R, sum, len, log(sum/len)));
+      }
       windowFreeEnergyDifferences[i] = dG;
       windowEnthalpies[i] = sign * ((num / sum) - uAve);
       windowFreeEnergyUncertainties[i] = 0.0;
@@ -255,10 +264,15 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
   /**
    * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
-   * TODO: Implement bidirectional Zwanzig with simple estimation (i.e. 0.5*(forwards + backward)).
    */
   public enum Directionality {
+    /**
+     * Forwards perturbation.
+     */
     FORWARDS,
+    /**
+     * Backwards perturbation.
+     */
     BACKWARDS
   }
 }

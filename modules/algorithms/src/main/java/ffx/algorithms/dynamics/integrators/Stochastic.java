@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -65,21 +65,37 @@ import java.util.Random;
  */
 public class Stochastic extends Integrator {
 
-  /** Friction coefficient. */
+  /**
+   * Friction coefficient.
+   */
   private final double friction;
-  /** Random number generator. */
+  /**
+   * Random number generator.
+   */
   private final Random random;
-  /** Per degree of freedom friction. */
+  /**
+   * Per degree of freedom friction.
+   */
   private final double[] vFriction;
-  /** Per degree of freedom random velocity change. */
+  /**
+   * Per degree of freedom random velocity change.
+   */
   private final double[] vRandom;
-  /** Inverse friction coefficient. */
+  /**
+   * Inverse friction coefficient.
+   */
   private double inverseFriction;
-  /** Friction coefficient multiplied by time step. */
+  /**
+   * Friction coefficient multiplied by time step.
+   */
   private double fdt;
-  /** Exp(-fdt). */
+  /**
+   * Exp(-fdt).
+   */
   private double efdt;
-  /** Simulation temperature. */
+  /**
+   * Simulation temperature.
+   */
   private double temperature;
   private double[] xPrior;
   private final int nVariables;
@@ -89,7 +105,7 @@ public class Stochastic extends Integrator {
    * Constructor for Stochastic Dynamics.
    *
    * @param friction Friction coefficient.
-   * @param state The MDState to operate on.
+   * @param state    The MDState to operate on.
    */
   public Stochastic(double friction, SystemState state) {
     super(state);
@@ -121,8 +137,11 @@ public class Stochastic extends Integrator {
     double[] v = state.v();
     double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
-      a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
-      v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
+      double m = mass[i];
+      if (m > 0.0) {
+        a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / m;
+        v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
+      }
     }
   }
 
@@ -266,7 +285,9 @@ public class Stochastic extends Integrator {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "Stochastic";

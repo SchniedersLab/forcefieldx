@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -74,6 +74,10 @@ import static ffx.crystal.LaueSystem.LM3M;
  * @since 1.0
  */
 public class SpaceGroupDefinitions {
+
+  private SpaceGroupDefinitions () {
+    // Prevent instantiation.
+  }
 
   private static final double f12 = 1.0 / 2.0;
   private static final double f13 = 1.0 / 3.0;

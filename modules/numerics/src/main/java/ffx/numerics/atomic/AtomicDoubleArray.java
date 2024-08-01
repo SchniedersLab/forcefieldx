@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -52,8 +52,8 @@ public interface AtomicDoubleArray {
    * Factory method to create an AtomicDoubleArray instance.
    *
    * @param atomicDoubleArrayImpl The implementation to use.
-   * @param threads The number of threads.
-   * @param size The size of the array.
+   * @param threads               The number of threads.
+   * @param size                  The size of the array.
    * @return An AtomicDoubleArray instance.
    */
   static AtomicDoubleArray atomicDoubleArrayFactory(
@@ -70,8 +70,8 @@ public interface AtomicDoubleArray {
    * Add value to the double array at the specified index.
    *
    * @param threadID the thread ID.
-   * @param index the index.
-   * @param value the value to add.
+   * @param index    the index.
+   * @param value    the value to add.
    */
   void add(int threadID, int index, double value);
 
@@ -103,8 +103,8 @@ public interface AtomicDoubleArray {
    * Perform reduction between the given lower bound (lb) and upper bound (up) using a ParallelTeam.
    *
    * @param parallelTeam ParallelTeam to use.
-   * @param lb the lower bound.
-   * @param ub the upper bound.
+   * @param lb           the lower bound.
+   * @param ub           the upper bound.
    */
   void reduce(ParallelTeam parallelTeam, int lb, int ub);
 
@@ -112,8 +112,8 @@ public interface AtomicDoubleArray {
    * Reset the double array to Zero.
    *
    * @param threadID the thread ID.
-   * @param lb the lower bound.
-   * @param ub the upper bound.
+   * @param lb       the lower bound.
+   * @param ub       the upper bound.
    */
   void reset(int threadID, int lb, int ub);
 
@@ -121,8 +121,8 @@ public interface AtomicDoubleArray {
    * Reset the double array to Zero using a ParallelTeam.
    *
    * @param parallelTeam ParallelTeam to use.
-   * @param lb the lower bound.
-   * @param ub the upper bound.
+   * @param lb           the lower bound.
+   * @param ub           the upper bound.
    */
   void reset(ParallelTeam parallelTeam, int lb, int ub);
 
@@ -130,8 +130,8 @@ public interface AtomicDoubleArray {
    * Scale the double array at the specified index by the given value.
    *
    * @param threadID the thread ID.
-   * @param index the index.
-   * @param value the value to scale by.
+   * @param index    the index.
+   * @param value    the value to scale by.
    */
   void scale(int threadID, int index, double value);
 
@@ -139,8 +139,8 @@ public interface AtomicDoubleArray {
    * Set the double array at the specified index to the given value.
    *
    * @param threadID the thread ID.
-   * @param index the index.
-   * @param value the value to set.
+   * @param index    the index.
+   * @param value    the value to set.
    */
   void set(int threadID, int index, double value);
 
@@ -155,8 +155,8 @@ public interface AtomicDoubleArray {
    * Subtract value to the double array at the specified index.
    *
    * @param threadID the thread ID.
-   * @param index the index.
-   * @param value the value to subtract.
+   * @param index    the index.
+   * @param value    the value to subtract.
    */
   void sub(int threadID, int index, double value);
 
@@ -164,8 +164,17 @@ public interface AtomicDoubleArray {
    * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
    */
   enum AtomicDoubleArrayImpl {
+    /**
+     * A java.util.concurrent.atomic.DoubleAdder implementation.
+     */
     ADDER,
+    /**
+     * Each thread has its own array, and reduction is performed by the user.
+     */
     MULTI,
+    /**
+     * Parallel Java edu.rit.pj.reduction.SharedDoubleArray implementation.
+     */
     PJ
   }
 }

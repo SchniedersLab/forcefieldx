@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -120,6 +120,8 @@ public class ReplicatesCrystal extends Crystal {
 
   /**
    * The number of replicates along the a-axis.
+   *
+   * @return The number of replicates along the a-axis.
    */
   public int getL() {
     return l;
@@ -127,6 +129,8 @@ public class ReplicatesCrystal extends Crystal {
 
   /**
    * The number of replicates along the b-axis.
+   *
+   * @return The number of replicates along the b-axis.
    */
   public int getM() {
     return m;
@@ -134,6 +138,8 @@ public class ReplicatesCrystal extends Crystal {
 
   /**
    * The number of replicates along the c-axis.
+   *
+   * @return The number of replicates along the c-axis.
    */
   public int getN() {
     return n;
@@ -158,8 +164,9 @@ public class ReplicatesCrystal extends Crystal {
    * specified unit cell and cutoff criteria. If the unit cell is already sufficiently large, then it
    * is returned.
    *
-   * @param unitCell The unit cell of the crystal.
-   * @param cutOff2  Two times the cutoff distance.
+   * @param unitCell         The unit cell of the crystal.
+   * @param cutOff2          Two times the cutoff distance.
+   * @param replicatesVector The number of replicates along the a, b, and c axes.
    * @return A Crystal or ReplicatesCrystal large enough to satisfy the minimum image convention.
    */
   public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2, int[] replicatesVector) {

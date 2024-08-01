@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -113,6 +113,8 @@ public class Constants {
   public static final double KJ_TO_KCAL = 1.0 / KCAL_TO_KJ;
   /** Constant <code>METERS_TO_ANG=1E10</code> */
   public static final double METERS_TO_ANG = 1E10;
+  /** Constant <code>NM_TO_ANG=10</code> */
+  public static final double NM_TO_ANG = 10;
   /** Constant <code>SEC_TO_PSEC=1E12</code> */
   public static final double SEC_TO_PSEC = 1E12;
   /** Constant <code>KG_TO_GRAMS=1000</code> */

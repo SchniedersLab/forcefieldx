@@ -21,6 +21,7 @@ catalog.xml
 .classpath
 .project
 
+testing/
 target/
 scripts/
 /groovy/
@@ -30,7 +31,6 @@ website/
 .settings/
 .idea/
 .netbeans/
-.mvn/
 
 velocity.log
 build.log
@@ -50,5 +50,8 @@ bin/META-INF
 
 src/site/asciidoc/commands
 src/site/asciidoc/keywords
+src/site/asciidoc/properties
 
 ffx_venv/
+
+modules/numerics/fft.txt

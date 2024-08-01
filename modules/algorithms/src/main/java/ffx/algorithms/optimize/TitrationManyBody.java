@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -40,15 +40,17 @@ package ffx.algorithms.optimize;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
+
 import java.io.File;
 import java.util.List;
 import java.util.Set;
@@ -100,9 +102,9 @@ public class TitrationManyBody {
         }
       }
     }
-    if (potentialEnergy instanceof ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
+    if (potentialEnergy instanceof OpenMMEnergy openMMEnergy) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
-      forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
+      openMMEnergy.getSystem().setUpdateBondedTerms(updateBondedTerms);
     }
     potentialEnergy.energy();
     return protonatedAssembly;
@@ -112,14 +114,16 @@ public class TitrationManyBody {
     logger.info("Getting protonated assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
-    for (int i = 0; i < altLocs.size(); i++) {
-      if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
-        logger.info("");
-      } else {
-        altLocs.remove(altLocs.get(i));
+    int locs = 1;
+    if(altLocs!=null){
+      locs = altLocs.size();
+      for (int i = 0; i < locs; i++) {
+        if (altLocs.get(i) == null) {
+          altLocs.remove(altLocs.get(i));
+        }
       }
     }
-    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
+    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[locs];
     molecularAssemblies[0] = molecularAssembly;
     for (int i = 0; i < altLocs.size(); i++) {
       if (i != 0) {

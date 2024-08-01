@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -130,8 +130,8 @@ public class DiffractionRefinementData {
 
     int rflag = -1;
     if (properties != null) {
-      rflag = properties.getInt("rfreeflag", -1);
-      fSigFCutoff = properties.getDouble("fsigfcutoff", -1.0);
+      rflag = properties.getInt("rfree-flag", -1);
+      fSigFCutoff = properties.getDouble("f-sigf-cutoff", -1.0);
     } else {
       fSigFCutoff = -1.0;
     }

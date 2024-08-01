@@ -11,15 +11,14 @@
         <section name="Thermodynamic NPT Organic Crystal Polymorph Search">
             <p>The majority of polymorph search algorithms are based on searching a potential energy surface over
                 space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic
-                search procedure<sub>1</sub> that samples the phase space of polymorphs at a prescribed temperature and
-                pressure (<italic>i.e.</italic> NPT).
+                search procedure<sup>1</sup> that samples the phase space of polymorphs at a prescribed temperature and
+                pressure (<i>i.e.</i> NPT).
             </p>
             <p>The general procedure for the thermodynamic polymorph search is as follows:
             </p>
             <ol>
                 <li>Prepare space groups with random starting coordinates.</li>
-                <li>Setup and run a <i>Thermodynamics</i> command.
-                </li>
+                <li>Setup and run a <i>Thermodynamics</i> command.</li>
             </ol>
             <subsection name="Preparation of Space Group Simulation Directories">
                 <p>To perform the polymorph search in each target space group,
@@ -61,14 +60,15 @@
                 </source>
                 <p>The property file (analogous to a TINKER keyword file) specifies the space group, (starting) unit
                     cell information, and
-                    AMOEBA parameters for the molecule. The latter can be generated using the PolType 2<sub>2,3</sub>
+                    AMOEBA parameters for the molecule. The latter can be generated using the PolType 2<sup>2,3</sup>
                     program developed in the lab of Professor Pengyu Ren (in this case carbamazepine AMOEBA parameters are
                     contained in CBZ.patch).
                     It is important to specify a space group (e.g. P1) and unit cell parameters so that the FFX
                     PrepareSpaceGroups command recognizes the system as respecting periodic boundary conditions.
                 </p>
                 <source>
-                    parameters /Absolute/path/to/CBZ.patch
+                    forcefield AMOEBA_BIO_2018
+                    patch /ABSOLUTE/PATH/TO/CBZ.patch
                     spacegroup P1
                     a-axis 10.0
                     b-axis 10.0
@@ -90,8 +90,8 @@
                 <source>ffxc PrepareSpaceGroups --sg=P21/c CBZ.xyz</source>
                 <p>Each of the space groups identified by the PrepareSpaceGroups command should now have their own
                     subdirectories. Each subdirectory
-                    contains a space group specific property file and coordinate file. As long as an absolute path the
-                    CBZ.patch file was given,
+                    contains a space group specific property file and coordinate file. As long as an absolute path to
+                    the patch file (<i>i.e.</i>, CBZ.patch) file was given,
                     no further files are needed in each space group subdirectory.
                 </p>
             </subsection>
@@ -116,8 +116,8 @@
                     crystalline
                     state, while intermediate lambda values are alchemical.
                 </p>
-                <source>ffxc Thermodynamics -Dmdmove-full=true -Dlambda-bin-width=0.02 -Dost-opt-energy-window=10.0 --iW
-                    --minD=1.1 -Dpolarization=direct -d 2.0 -r 0.1 -l 0.0 -n 1000000 -Q 0 -i stochastic --rsym 2.0 --ruc
+                <source>ffxc Thermodynamics -Dlambda-bin-width=0.02 -Dost-opt-energy-window=10.0 -Dpolarization=none --iW
+                    --minD=1.1 -d 2.0 -r 0.1 -w 10.0 -l 0.0 -n 1000000 -Q 0 -i stochastic --rsym 2.0 --ruc
                     1.25 -t 298.5 --ac ALL -p 1.0 --bM=0.0001 -o CBZ.xyz
                 </source>
                 <table>
@@ -130,7 +130,7 @@
                     <tbody>
                         <tr>
                             <td>-Dmdmove-full=true</td>
-                            <td>Turns on the orthagonal space tempering algorithm.</td>
+                            <td>Utilizes orthagonal space tempering algorithm for Monte Carlo molecular dynamics.</td>
                         </tr>
                         <tr>
                             <td>-Dlambda-bin-width=0.02</td>
@@ -141,24 +141,28 @@
                             <td>Structures within 10.0 kcal/mol of the minimum energy will be saved.</td>
                         </tr>
                         <tr>
+                            <td>-Dpolarization=none</td>
+                            <td>Determines behavior for atomic polarizability (NONE, DIRECT, or MUTUAL).</td>
+                        </tr>
+                        <tr>
                             <td>--iW</td>
-                            <td>Enforces that each walker maintains its own histogram.</td>
+                            <td>Enforces that each walker maintains its own histogram (<i>i.e.</i>, independent).</td>
                         </tr>
                         <tr>
                             <td>--minD=1.1</td>
                             <td>Specify the minimum allowable density to be 1.1 (g/cc).</td>
                         </tr>
                         <tr>
-                            <td>-Dpolarization=direct</td>
-                            <td>Determines behavior for atomic polarizability.</td>
-                        </tr>
-                        <tr>
                             <td>-d 2.0</td>
                             <td>Time step in femtoseconds (2 assumes use of the heavy-hydrogen property).</td>
                         </tr>
                         <tr>
-                            <td>-r 0.1</td>
+                            <td>-r 1.0</td>
                             <td>Interval to report thermodynamics (psec).</td>
+                        </tr>
+                        <tr>
+                            <td>-w 10.0</td>
+                            <td>Interval to write coordinate snapshots (psec).</td>
                         </tr>
                         <tr>
                             <td>-l 0.0</td>
@@ -187,7 +191,7 @@
                             <td>Apply random unit cell axes to achieve the specified density (g/cc).</td>
                         </tr>
                         <tr>
-                            <td>-t 298.5</td>
+                            <td>-t 298.15</td>
                             <td>Temperature (kelvin).</td>
                         </tr>
                         <tr>
@@ -202,8 +206,8 @@
                             </td>
                         </tr>
                         <tr>
-                            <td>--bM 0.0001</td>
-                            <td>OST Gaussian bias magnitude (kcal/mol).</td>
+                            <td>--bM 0.0032</td>
+                            <td>Specify the OST Gaussian bias magnitude (kcal/mol).</td>
                         </tr>
                         <tr>
                             <td>-o</td>
@@ -221,7 +225,7 @@
                     energy well will optimize to similar potential energies. A minimization over coordinates and
                     unit cell parameters can be performed using the following command:
                 </p>
-                <source>ffxc CrystalMin -ce 0.001 CBZ.arc</source>
+                <source>ffxc MinimizeCrystals -ce 0.001 CBZ.arc</source>
                 <table>
                     <thead>
                         <tr>
@@ -232,11 +236,11 @@
                     <tbody>
                         <tr>
                             <td>-c</td>
-                            <td>Optimize coordinates in addition to lattice parameters.</td>
+                            <td>Alternate between optimization of coordinates and lattice parameters.</td>
                         </tr>
                         <tr>
                             <td>-e=0.001</td>
-                            <td>Specify convergence criteria.</td>
+                            <td>Specify convergence criteria (kcal/mol/A).</td>
                         </tr>
                     </tbody>
                 </table>
@@ -300,15 +304,15 @@
                 <ul>
                     <li>
                         <i>F_LU</i>
-                        is the partial derivative of the force field with respect to lambda.
+                        is the partial derivative of the potential energy with respect to lambda (<i>i.e.</i>, 1-D bias).
                     </li>
                     <li>
                         <i>F_LB</i>
-                        is the partial derivative of the orthogonal space bias with respect to lambda.
+                        is the partial derivative of the orthogonal space bias with respect to lambda (<i>i.e.</i>, 2-D bias).
                     </li>
                     <li>
                         <i>F_L</i>
-                        is the sum of F_LU and F_LB.
+                        is the sum of F_LU and F_LB (<i>i.e.</i>, total bias).
                     </li>
                     <li>
                         <i>V_L</i>
@@ -455,53 +459,60 @@
                         <tr>
                             <td>P21/c</td>
                             <td>
-                                <a href="/parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a>
+                                <a href="parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a>
+                                <a href="parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                                <a href="parameters/CBZ.patch">CBZ.patch</a>
                             </td>
                         </tr>
                         <tr>
                             <td>Pbca</td>
                             <td>
-                                <a href="/parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a>
+                                <a href="parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ_pbca.properties">CBZ_pbca.properties</a>
+                                <a href="parameters/CBZ_pbca.properties">CBZ_pbca.properties</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                                <a href="parameters/CBZ.patch">CBZ.patch</a>
                             </td>
                         </tr>
                         <tr>
                             <td>C2/c</td>
                             <td>
-                                <a href="/parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a>
+                                <a href="parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a>
+                                <a href="parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                                <a href="parameters/CBZ.patch">CBZ.patch</a>
                             </td>
                         </tr>
                         <tr>
                             <td>H-3</td>
                             <td>
-                                <a href="/parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a>
+                                <a href="parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ_h-3.properties">CBZ_h-3.properties</a>
+                                <a href="parameters/CBZ_h-3.properties">CBZ_h-3.properties</a>
                             </td>
                             <td>
-                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                                <a href="parameters/CBZ.patch">CBZ.patch</a>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </subsection>
+            <subsection name="Citation:">
+                <p>
+                    Nessler, Okada, Kinoshita, Nishimura, Nagata, Fukuzawa, Yonemochi, &amp; Schnieders. (2024).
+                    Crystal Polymorph Search in the NPT Ensemble via a Deposition/Sublimation Alchemical Path.
+                    Cryst. Growth Des. DOI: 10.1021/acs.cgd.3c01358
+                </p>
             </subsection>
             <subsection name="References:">
                 <p>

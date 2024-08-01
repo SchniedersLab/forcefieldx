@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -40,14 +40,14 @@ package ffx.potential.nonbonded;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
+import static ffx.utilities.PropertyGroup.VanDerWaalsFunctionalForm;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -137,7 +137,7 @@ public class VanDerWaalsForm {
   /**
    * First constant suggested by Halgren for the Buffered-14-7 potential.
    */
-  @FFXKeyword(name = "halgren-gamma", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.12",
+  @FFXProperty(name = "halgren-gamma", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.12",
       description = """
           Sets the value of the gamma parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
           In the absence of the gamma-halgren property, a default value of 0.12 is used."
@@ -148,7 +148,7 @@ public class VanDerWaalsForm {
   /**
    * Second constant suggested by Halgren for the Buffered-14-7 potential.
    */
-  @FFXKeyword(name = "halgren-delta", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.07",
+  @FFXProperty(name = "halgren-delta", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.07",
       description = """
           Sets the value of the delta parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
           In the absence of the delta-halgren property, a default value of 0.07 is used.
@@ -158,7 +158,7 @@ public class VanDerWaalsForm {
   /**
    * van der Waals functional form.
    */
-  @FFXKeyword(name = "vdwtype", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "LENNARD-JONES",
+  @FFXProperty(name = "vdwtype", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "LENNARD-JONES",
       description = """
           [LENNARD-JONES / BUFFERED-14-7]
           Sets the functional form for the van der Waals potential energy term.
@@ -170,7 +170,7 @@ public class VanDerWaalsForm {
   /**
    * Epsilon combining rule.
    */
-  @FFXKeyword(name = "epsilonrule", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "GEOMETRIC",
+  @FFXProperty(name = "epsilonrule", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "GEOMETRIC",
       description = """
           [GEOMETRIC / HHG / W-H]
           Selects the combining rule used to derive the epsilon value for van der Waals interactions.
@@ -182,7 +182,7 @@ public class VanDerWaalsForm {
   /**
    * Radius combining rule.
    */
-  @FFXKeyword(name = "radiusrule", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "ARITHMETIC",
+  @FFXProperty(name = "radiusrule", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "ARITHMETIC",
       description = """
           [ARITHMETIC / GEOMETRIC / CUBIC-MEAN]
           Sets the functional form of the radius combining rule for heteroatomic van der Waals potential energy interactions.
@@ -193,7 +193,7 @@ public class VanDerWaalsForm {
   /**
    * Radius size in the parameter file (radius or diameter).
    */
-  @FFXKeyword(name = "radiussize", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "RADIUS",
+  @FFXProperty(name = "radiussize", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "RADIUS",
       description = """
           [RADIUS / DIAMETER]
           Determines whether the atom size values given in van der Waals parameters read from
@@ -205,7 +205,7 @@ public class VanDerWaalsForm {
   /**
    * Radius type in the parameter file (R-Min or Sigma).
    */
-  @FFXKeyword(name = "radiustype", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "R-MIN",
+  @FFXProperty(name = "radiustype", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "R-MIN",
       description = """
           [R-MIN / SIGMA]
           Determines whether atom size values given in van der Waals parameters read from VDW keyword
@@ -217,7 +217,7 @@ public class VanDerWaalsForm {
   /**
    * Define scale factors between 1-2 atoms.
    */
-  @FFXKeyword(name = "vdw-12-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "vdw-12-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to van der Waals potential
           interactions between 1-2 connected atoms, i.e., atoms that are directly bonded.
@@ -229,7 +229,7 @@ public class VanDerWaalsForm {
   /**
    * Define scale factors between 1-3 atoms.
    */
-  @FFXKeyword(name = "vdw-13-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
+  @FFXProperty(name = "vdw-13-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "0.0",
       description = """
           Provides a multiplicative scale factor that is applied to van der Waals potential
           interactions between 1-3 connected atoms, i.e., atoms separated by two covalent bonds.
@@ -241,7 +241,7 @@ public class VanDerWaalsForm {
   /**
    * Define scale factors between 1-4 atoms.
    */
-  @FFXKeyword(name = "vdw-14-scale", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "1.0",
+  @FFXProperty(name = "vdw-14-scale", propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "1.0",
       description = """
           Provides a multiplicative scale factor that is applied to van der Waals potential
           interactions between 1-4 connected atoms, i.e., atoms separated by three covalent bonds.

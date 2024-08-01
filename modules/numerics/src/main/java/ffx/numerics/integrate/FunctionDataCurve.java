@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -61,6 +61,17 @@ public abstract class FunctionDataCurve implements DataSet {
   protected double[] x;
   /** If ends should have 1/2 regular separation. */
   protected boolean halfWidthEnd;
+
+  /**
+   * Constructor.
+   */
+  public FunctionDataCurve() {
+    lb = 0.0;
+    ub = 0.0;
+    points = new double[0];
+    x = new double[0];
+    halfWidthEnd = false;
+  }
 
   /**
    * Checks for equality to +/- 10 ulp.

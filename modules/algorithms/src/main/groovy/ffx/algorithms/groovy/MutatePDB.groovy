@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -206,8 +206,10 @@ class MutatePDB extends AlgorithmsScript {
       }
     }
     pdbFilter.writeFile(structureFile, false)
+    String versionFileName = pdbFilter.getVersionFileName()
 
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
+    binding.setVariable('versionFileName', versionFileName)
 
     return this
   }

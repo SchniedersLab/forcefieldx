@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,8 +38,8 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -47,7 +47,8 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.sort;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,56 +63,84 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "tortors", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description =
-    "[7 integers, then multiple lines of 2 integers and 1 real] "
-        + "Provides the values for a single torsion-torsion parameter. "
-        + "The first five integer modifiers give the atom class numbers for the atoms involved in the two adjacent torsional angles to be defined. "
-        + "The last two integer modifiers contain the number of data grid points that lie along each axis of the torsion-torsion map. "
-        + "For example, this value will be 13 for a 30 degree torsional angle spacing, i.e., 360/30 = 12, but 13 values are required since data values for -180 and +180 degrees must both be supplied. "
-        + "The subsequent lines contain the torsion-torsion map data as the integer values in degrees of each torsional angle and the target energy value in kcal/mole.")
+@FFXProperty(name = "tortors", clazz = String[].class, propertyGroup = PotentialFunctionParameter, description = """
+    [7 integers, then multiple lines of 2 integers and 1 real]
+    Provides the values for a single torsion-torsion parameter.
+    The first five integer modifiers give the atom class numbers for the atoms involved in the two adjacent torsional angles to be defined.
+    The last two integer modifiers contain the number of data grid points that lie along each axis of the torsion-torsion map.
+    For example, this value will be 13 for a 30 degree torsional angle spacing, i.e., 360/30 = 12, but 13
+    values are required since data values for -180 and +180 degrees must both be supplied.
+    The subsequent lines contain the torsion-torsion map data as the integer values in degrees of each
+    torsional angle and the target energy value in kcal/mole.
+    """)
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {
 
-  /** Default units to convert Torsion-Torsion energy to kcal/mole. */
+  /**
+   * Default units to convert Torsion-Torsion energy to kcal/mole.
+   */
   public static final double DEFAULT_TORTOR_UNIT = 1.0;
-  /** Convert Torsion-Torsion energy to kcal/mole. */
-  @FFXKeyword(name = "tortorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
-      "Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  /**
+   * Convert Torsion-Torsion energy to kcal/mole.
+   */
+  @FFXProperty(name = "tortorunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+      Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole.
+      The correct value is force field dependent and typically provided in the header of the master force field parameter file.
+      """)
   public double torTorUnit = DEFAULT_TORTOR_UNIT;
 
   private static final Logger logger = Logger.getLogger(TorsionTorsionType.class.getName());
-  /** Atom classes that form this Torsion-Torsion type. */
+  /**
+   * Atom classes that form this Torsion-Torsion type.
+   */
   public final int[] atomClasses;
-  /** Energy values. */
+  /**
+   * Energy values.
+   */
   public final double[] energy;
-  /** Number of points along x. */
+  /**
+   * Number of points along x.
+   */
   public final int nx;
-  /** Number of point along y. */
+  /**
+   * Number of point along y.
+   */
   public final int ny;
-  /** Torsion values along x. */
+  /**
+   * Torsion values along x.
+   */
   public final double[] tx;
-  /** Torsion values along y. */
+  /**
+   * Torsion values along y.
+   */
   public final double[] ty;
-  /** First derivative along x. */
+  /**
+   * First derivative along x.
+   */
   public final double[] dx;
-  /** First derivative along y. */
+  /**
+   * First derivative along y.
+   */
   public final double[] dy;
-  /** Second derivatives. */
+  /**
+   * Second derivatives.
+   */
   public final double[] dxy;
-  /** Grid points. */
+  /**
+   * Grid points.
+   */
   private final int[] gridPoints;
 
   /**
    * Constructor for TorsionTorsionType.
    *
    * @param atomClasses an array of int.
-   * @param gridPoints an array of int.
-   * @param torsion1 an array of double.
-   * @param torsion2 an array of double.
-   * @param energy an array of double.
+   * @param gridPoints  an array of int.
+   * @param torsion1    an array of double.
+   * @param torsion2    an array of double.
+   * @param energy      an array of double.
    */
   public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1,
-      double[] torsion2, double[] energy) {
+                            double[] torsion2, double[] energy) {
     super(TORTORS, sortKey(atomClasses));
     this.atomClasses = atomClasses;
     nx = gridPoints[0];
@@ -249,11 +278,11 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    *
    * @param torsionTorsionType1 a {@link ffx.potential.parameters.TorsionTorsionType} object.
    * @param torsionTorsionType2 a {@link ffx.potential.parameters.TorsionTorsionType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses         an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
    */
   public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
-      TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
+                                           TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
     if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -263,9 +292,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   /**
    * Construct a TorsionTorsionType from multiple input lines.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
-   * @param br a BufferedReader instance.
+   * @param br     a BufferedReader instance.
    * @return a TorsionTorsionType instance.
    */
   public static TorsionTorsionType parse(String input, String[] tokens, BufferedReader br) {
@@ -307,7 +336,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   /**
    * Construct a TorsionTorsionType from a single input line.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a TorsionTorsionType instance.
    */
@@ -500,7 +529,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String key1, String key2) {
     String[] keys1 = key1.split(" ");
@@ -515,7 +546,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -528,7 +561,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     return Arrays.equals(atomClasses, torsionTorsionType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);
@@ -611,7 +646,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param dmu
    */
   private void nspline(int n, double[] x0, double[] y0, double y21, double y2n, double[] s1,
-      double[] s2, double[] h, double[] g, double[] dy, double[] dla, double[] dmu) {
+                       double[] s2, double[] h, double[] g, double[] dy, double[] dla, double[] dmu) {
 
     // Calculate the intervals.
     for (int i = 0; i < n; i++) {
@@ -674,7 +709,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param rs
    */
   private void cspline(int n, double[] xn, double[] fn, double[] b, double[] c, double[] d,
-      double[] h, double[] du, double[] dm, double[] rc, double[] rs) {
+                       double[] h, double[] du, double[] dm, double[] rc, double[] rs) {
     double eps = 0.000001;
     if (abs(fn[n] - fn[0]) > eps) {
       logger.severe("TORTOR values are not periodic.");

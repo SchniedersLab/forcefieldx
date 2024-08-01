@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,8 +37,11 @@
 // ******************************************************************************
 package ffx.xray.cli;
 
+import ffx.utilities.FFXProperty;
 import ffx.xray.RefinementMinimize;
 import picocli.CommandLine.Option;
+
+import static ffx.utilities.PropertyGroup.StructuralRefinement;
 
 /**
  * Represents command line options for scripts that utilize some form of crystallographic data.
@@ -48,14 +51,17 @@ import picocli.CommandLine.Option;
  */
 public abstract class DataRefinementOptions {
 
-  /** The refinement mode to use. */
-  protected RefinementMinimize.RefinementMode refinementMode =
-      RefinementMinimize.RefinementMode.COORDINATES;
+  /**
+   * The refinement mode to use.
+   */
+  protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
 
-  /** --wA or --dataWeight The weight of the data (wA). */
-  @Option(
-      names = {"--wA", "--dataWeight"},
-      paramLabel = "1.0",
+  /**
+   * --wA or --dataWeight The weight of the data (wA).
+   */
+  @Option(names = {"--wA", "--dataWeight"}, paramLabel = "1.0",
+      description = "The weight of the experimental data (wA).")
+  @FFXProperty(name = "data-weight", propertyGroup = StructuralRefinement, defaultValue = "1.0",
       description = "The weight of the experimental data (wA).")
   protected double wA = 1.0;
 

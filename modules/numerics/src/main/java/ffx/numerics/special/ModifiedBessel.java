@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -49,6 +49,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <a href="http://sourceforge.net/projects/parallelcolt">ParallelColt library</a>.
  */
 public class ModifiedBessel {
+
+  private ModifiedBessel() {
+    // Prevent instantiation.
+  }
 
   /**
    * Chebyshev coefficients for exp(-x) i0(x) in the interval [0,8].
@@ -263,9 +267,9 @@ public class ModifiedBessel {
    * <p>
    * NOTE: Coefficients are in reverse; zero-order term is last.
    *
-   * @param x argument to the polynomial.
+   * @param x            argument to the polynomial.
    * @param coefficients the coefficients of the polynomial.
-   * @param N the number of coefficients.
+   * @param N            the number of coefficients.
    * @return the result
    */
   private static double evaluateChebyshev(double x, double[] coefficients, int N) {

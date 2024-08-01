@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.numerics.integrate;
 
-import static java.lang.String.format;
-
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import static java.lang.String.format;
 
 /**
  * This program integrates using four methods: rectangular integration, the trapezoidal method,
@@ -58,10 +58,18 @@ import java.util.stream.IntStream;
 public class Integrate1DNumeric {
 
   private static final Logger logger = Logger.getLogger(Integrate1DNumeric.class.getName());
-  /** Constant for used for Simpson's rule. */
+  /**
+   * Constant for used for Simpson's rule.
+   */
   private static final double ONE_THIRD = (1.0 / 3.0);
-  /** Constant for used for Boole's rule. */
+  /**
+   * Constant for used for Boole's rule.
+   */
   private static final double BOOLE_FACTOR = (2.0 / 45.0);
+
+  private Integrate1DNumeric() {
+    // Prevent instantiation
+  }
 
   /**
    * Numerically integrates a data set using Boole's rule.
@@ -88,8 +96,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double booles(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -154,8 +162,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double boolesParallel(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -207,9 +215,9 @@ public class Integrate1DNumeric {
   /**
    * Generates a set of points along x.
    *
-   * @param lb Beginning value, inclusive
-   * @param ub Ending value, inclusive
-   * @param nPoints Total number of points
+   * @param lb            Beginning value, inclusive
+   * @param ub            Ending value, inclusive
+   * @param nPoints       Total number of points
    * @param halfWidthEnds If ends should have 1/2 regular separation
    * @return an array of {@link double} objects.
    */
@@ -245,8 +253,8 @@ public class Integrate1DNumeric {
    * the N to N+2 parabola. N+4 is the full Boole's Rule from N to N+4, minus the N to N+3 4-point
    * integral.
    *
-   * @param data Data to integrate
-   * @param side Side to integrate from
+   * @param data    Data to integrate
+   * @param side    Side to integrate from
    * @param maxType Maximum rule to be used
    * @return Per-bin contributions to integral.
    */
@@ -383,8 +391,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double rectangular(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -464,8 +472,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double rectangularParallel(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -507,8 +515,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double simpsons(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -572,8 +580,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double simpsonsParallel(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -639,8 +647,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double trapezoidal(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -701,8 +709,8 @@ public class Integrate1DNumeric {
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
-   * @param lb First index to integrate over
-   * @param ub Last index to integrate over
+   * @param lb   First index to integrate over
+   * @param ub   Last index to integrate over
    * @return Area of integral
    */
   public static double trapezoidalParallel(DataSet data, IntegrationSide side, int lb, int ub) {
@@ -726,8 +734,8 @@ public class Integrate1DNumeric {
    *
    * @param data Finish numerical integration on
    * @param side Integration side
-   * @param lb Index of lower bound to complete integration on
-   * @param ub Index of upper bound to complete integration on
+   * @param lb   Index of lower bound to complete integration on
+   * @param ub   Index of upper bound to complete integration on
    * @param type Highest-order rule permitted to finish integration
    * @return Area of un-integrated region
    */
@@ -796,23 +804,53 @@ public class Integrate1DNumeric {
    * method is symmetrical.
    */
   public enum IntegrationSide {
+    /**
+     * Left-hand integration.
+     */
     LEFT,
+    /**
+     * Right-hand integration.
+     */
     RIGHT
   }
 
-  /** Enumeration of implemented integration methods, and the number of points required by them. */
+  /**
+   * Enumeration of implemented integration methods, and the number of points required by them.
+   */
   public enum IntegrationType {
+    /**
+     * Rectangular integration, requiring 1 point.
+     */
     RECTANGULAR(1),
+    /**
+     * Trapezoidal integration, requiring 2 points.
+     */
     TRAPEZOIDAL(2),
+    /**
+     * Simpson's Three Point Integration, requiring 3 points.
+     */
     SIMPSONS(3),
+    /**
+     * Boole's Five Point Integration, requiring 5 points.
+     */
     BOOLE(5);
 
     private final int pointsNeeded;
 
+    /**
+     * Constructor for IntegrationType.
+     *
+     * @param points Number of points required for integration.
+     */
     IntegrationType(int points) {
       pointsNeeded = points;
     }
 
+    /**
+     * Returns the number of points required for integration.
+     *
+     * @return Number of points required for integration.
+     */
     public final int pointsNeeded() {
       return pointsNeeded;
     }
@@ -829,8 +867,8 @@ public class Integrate1DNumeric {
      *
      * @param data x and f(x) data to integrate
      * @param side Side to integrate from
-     * @param lb Lower bound of x[] to integrate
-     * @param ub Upper bound of x[] to integrate
+     * @param lb   Lower bound of x[] to integrate
+     * @param ub   Upper bound of x[] to integrate
      * @return Area of integral f(x) dx, from point lb to point ub
      */
     double toArea(DataSet data, IntegrationSide side, int lb, int ub);

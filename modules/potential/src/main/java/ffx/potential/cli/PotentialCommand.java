@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -45,11 +45,15 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.FFXCommand;
 import ffx.utilities.FFXContext;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
 import org.apache.log4j.PropertyConfigurator;
+
+import javax.annotation.Nullable;
 
 /**
  * Base class for scripts in the Potentials package, providing some key functions.
@@ -59,7 +63,9 @@ import org.apache.log4j.PropertyConfigurator;
  */
 public abstract class PotentialCommand extends FFXCommand {
 
-  /** An instance of PotentialFunctions passed into the current context. */
+  /**
+   * An instance of PotentialFunctions passed into the current context.
+   */
   public PotentialsFunctions potentialFunctions;
 
   /**
@@ -178,9 +184,9 @@ public abstract class PotentialCommand extends FFXCommand {
    * supplied filename, including updating the script Binding instance.
    *
    * @param dirFromFilename Set the base directory variable <code>baseDir</code> using this
-   *     filename if its not set to a writeable directory.
+   *                        filename if its not set to a writeable directory.
    * @return Return the base directory as a String (including an appended
-   *     <code>File.separator</code>).
+   * <code>File.separator</code>).
    */
   public String getBaseDirString(String dirFromFilename) {
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
@@ -193,13 +199,13 @@ public abstract class PotentialCommand extends FFXCommand {
   }
 
   /**
-   * If a filename is supplied, open it and return the MolecularAssembly. Otherwise, the current
-   * activeAssembly is returned (which may be null).
+   * If a filename is supplied, open it and return the MolecularAssembly.
+   * Otherwise, the current activeAssembly is returned (which may be null).
    *
    * @param filename Filename to open.
    * @return The active assembly.
    */
-  public MolecularAssembly getActiveAssembly(String filename) {
+  public MolecularAssembly getActiveAssembly(@Nullable String filename) {
     if (filename != null) {
       // Open the supplied file.
       MolecularAssembly[] assemblies = {potentialFunctions.open(filename)};
@@ -215,7 +221,7 @@ public abstract class PotentialCommand extends FFXCommand {
    * @param filename Filename to open.
    * @return The active assemblies.
    */
-  public MolecularAssembly[] getActiveAssemblies(String filename) {
+  public MolecularAssembly[] getActiveAssemblies(@Nullable String filename) {
     MolecularAssembly[] assemblies;
     if (filename != null) {
       // Open the supplied file.
@@ -223,7 +229,7 @@ public abstract class PotentialCommand extends FFXCommand {
       activeAssembly = assemblies[0];
       return assemblies;
     } else {
-      assemblies = new MolecularAssembly[] {activeAssembly};
+      assemblies = new MolecularAssembly[]{activeAssembly};
     }
     return assemblies;
   }

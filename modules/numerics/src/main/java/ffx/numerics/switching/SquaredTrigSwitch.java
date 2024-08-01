@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -173,8 +173,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
   @Override
   public String toString() {
     if (cosine) {
-      return format(
-          "Cosine-squared switching function of form f(x) = cos^2(%8.4g * x)", multiplier);
+      return format("Cosine-squared switching function of form f(x) = cos^2(%8.4g * x)", multiplier);
     } else {
       return format("Sine-squared switching function of form f(x) = sin^2(%8.4g * x)", multiplier);
     }

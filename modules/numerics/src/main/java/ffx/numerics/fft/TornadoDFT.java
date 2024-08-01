@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
-import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
-
 import ffx.numerics.tornado.FFXTornado;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -49,6 +44,11 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.cos;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.floatPI;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sin;
 
 /**
  * Proof-of-concept use of the TornadoVM for parallelization of Java code.
@@ -61,6 +61,11 @@ public class TornadoDFT {
   float[] outImag;
   long time;
 
+  /**
+   * Constructor.
+   *
+   * @param size The size of the DFT.
+   */
   public TornadoDFT(int size) {
     inReal = new float[size];
     inImag = new float[size];
@@ -72,6 +77,14 @@ public class TornadoDFT {
     }
   }
 
+  /**
+   * Compute the Discrete Fourier Transform.
+   *
+   * @param inreal  Input real values.
+   * @param inimag  Input imaginary values.
+   * @param outreal Output real values.
+   * @param outimag Output imaginary values.
+   */
   public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
     int n = inreal.length;
     for (@Parallel int k = 0; k < n; k++) { // For each output element
@@ -87,6 +100,11 @@ public class TornadoDFT {
     }
   }
 
+  /**
+   * Execute the Discrete Fourier Transform on a TornadoDevice.
+   *
+   * @param device The TornadoDevice to use.
+   */
   public void execute(TornadoDevice device) {
     TaskGraph graph =
         new TaskGraph("DFT").transferToDevice(EVERY_EXECUTION, inReal, inImag)
@@ -101,16 +119,29 @@ public class TornadoDFT {
     time += System.nanoTime();
   }
 
+  /**
+   * Execute the Discrete Fourier Transform on the default TornadoDevice.
+   */
   public void execute() {
     TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
     execute(device);
   }
 
+  /**
+   * Validate the Discrete Fourier Transform on the default TornadoDevice.
+   *
+   * @param deviceID The device ID to use.
+   */
   public void validate(int deviceID) {
     TornadoDevice device = FFXTornado.getDevice(deviceID);
     validate(device);
   }
 
+  /**
+   * Validate the Discrete Fourier Transform on a TornadoDevice.
+   *
+   * @param device The TornadoDevice to use.
+   */
   public void validate(TornadoDevice device) {
     execute(device);
 

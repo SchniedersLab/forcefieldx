@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -47,7 +47,9 @@ import java.util.logging.Logger;
 /** Utility Routines to use the TornadoVM */
 public class FFXTornado {
 
-  private static final Logger logger = Logger.getLogger(FFXTornado.class.getName());
+  private FFXTornado() {
+    // Prevent instantiation.
+  }
 
   /**
    * Get the default Tornado Device.

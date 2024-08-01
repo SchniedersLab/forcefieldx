@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static org.apache.commons.math3.util.FastMath.abs;
-
 import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * The Resolution class encapsulates the sampling limits and resolution limits for a given crystal
@@ -50,15 +50,24 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  */
 public class Resolution {
 
+  /**
+   * The sampling limit for the data set.
+   */
   public final double sampling;
+  /**
+   * The resolution of the data set.
+   */
   public final double resolution;
+  /**
+   * The inverse resolution squared of the data set.
+   */
   private final double inverseResSq;
 
   /**
    * Constructor for Resolution.
    *
    * @param resolution a double.
-   * @param sampling a double.
+   * @param sampling   a double.
    */
   public Resolution(double resolution, double sampling) {
     this.resolution = resolution;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -119,20 +119,20 @@ public class LambdaGradientTest extends PotentialTest {
     // Set up the input arguments for the LambdaGradient script.
     String roy02path = getResourcePath("roy02_P1.xyz");
     String roy31path = getResourcePath("roy31.xyz");
-    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5", roy02path, roy31path};
+    String[] args = {"--ls", "-l", "0.5", roy02path, roy31path};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
     LambdaGradient lambdaGradient = new LambdaGradient(binding).run();
     potentialScript = lambdaGradient;
 
-    double expectedPotentialEnergyVac = -32.31574626689126;
-    double expectedPotentialEnergyXtal = -43.95639068837232;
-    double actualPotentialEnergyVac = lambdaGradient.e0;
-    double actualPotentialEnergyXtal = lambdaGradient.e1;
+    double expectedPotentialEnergyXtal1 = -30.47224322;
+    double expectedPotentialEnergyXtal2 = -43.95639068837232;
+    double actualPotentialEnergyXtal1 = lambdaGradient.e0;
+    double actualPotentialEnergyXtal2 = lambdaGradient.e1;
 
-    assertEquals(expectedPotentialEnergyVac, actualPotentialEnergyVac, 1E-6);
-    assertEquals(expectedPotentialEnergyXtal, actualPotentialEnergyXtal, 1E-6);
+    assertEquals(expectedPotentialEnergyXtal1, actualPotentialEnergyXtal1, 1E-6);
+    assertEquals(expectedPotentialEnergyXtal2, actualPotentialEnergyXtal2, 1E-6);
     assertEquals(0, lambdaGradient.ndEdLFailures);
     assertEquals(0, lambdaGradient.nd2EdL2Failures);
     assertEquals(0, lambdaGradient.ndEdXdLFailures);

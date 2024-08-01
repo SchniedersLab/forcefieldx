@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,13 +37,18 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.bonded.Atom;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * This class computes the energy and Cartesian coordinate gradient, plus finite difference
@@ -78,12 +83,12 @@ public class XtalEnergy implements Potential {
   private final int nParams;
 
   private final Crystal crystal;
+  private final boolean latticeOnly;
   private final VARIABLE_TYPE[] type;
   private final double[] mass;
   private final Crystal unitCell;
   private double[] scaling;
   private double totalEnergy;
-
   private FractionalMode fractionalMode = FractionalMode.OFF;
 
   /**
@@ -93,35 +98,48 @@ public class XtalEnergy implements Potential {
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
+    this(forceFieldEnergy, molecularAssembly, false);
+  }
+
+  /**
+   * Constructor for XtalEnergy.
+   *
+   * @param forceFieldEnergy  a {@link ffx.potential.ForceFieldEnergy} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param latticeOnly       if true, only lattice parameters are optimized.
+   */
+  public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly, boolean latticeOnly) {
     this.forceFieldEnergy = forceFieldEnergy;
     this.molecularAssembly = molecularAssembly;
-    Atom[] atoms = molecularAssembly.getAtomArray();
+    this.latticeOnly = latticeOnly;
 
-    int n = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        n++;
+    if (!latticeOnly) {
+      Atom[] atoms = molecularAssembly.getAtomArray();
+      List<Atom> active = new ArrayList<>();
+      for (Atom a : atoms) {
+        if (a.isActive()) {
+          active.add(a);
+        }
       }
-    }
-    nActive = n;
-
-    activeAtoms = new Atom[nActive];
-    int index = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        activeAtoms[index++] = a;
-      }
+      nActive = active.size();
+      activeAtoms = active.toArray(new Atom[0]);
+      xyz = new double[3 * nActive];
+      gr = new double[3 * nActive];
+    } else {
+      nActive = 0;
+      activeAtoms = null;
+      xyz = null;
+      gr = null;
     }
 
     nParams = 3 * nActive + 6;
     crystal = forceFieldEnergy.getCrystal();
     unitCell = crystal.getUnitCell();
-    xyz = new double[3 * nActive];
-    gr = new double[3 * nActive];
     type = new VARIABLE_TYPE[nParams];
     mass = new double[nParams];
 
-    index = 0;
+    // Load atomic masses and variable types for atomic coordinates.
+    int index = 0;
     for (int i = 0; i < nActive; i++) {
       double m = activeAtoms[i].getMass();
       mass[index] = m;
@@ -132,6 +150,7 @@ public class XtalEnergy implements Potential {
       type[index + 2] = VARIABLE_TYPE.Z;
       index += 3;
     }
+    // Load variable types for lattice parameters.
     for (int i = nActive * 3; i < nActive * 3 + 6; i++) {
       mass[i] = 1.0;
       type[i] = VARIABLE_TYPE.OTHER;
@@ -158,6 +177,7 @@ public class XtalEnergy implements Potential {
     // Set atomic coordinates & lattice parameters.
     setCoordinates(x);
 
+    // Compute energy.
     totalEnergy = forceFieldEnergy.energy(false, false);
 
     // Scale coordinates if applicable.
@@ -177,16 +197,20 @@ public class XtalEnergy implements Potential {
     // Set atomic coordinates & lattice parameters.
     setCoordinates(x);
 
-    // Calculate system energy and Cartesian coordinate gradient.
-    double e = forceFieldEnergy.energyAndGradient(xyz, gr);
+    if (latticeOnly) {
+      // Only lattice parameters are optimized.
+      totalEnergy = forceFieldEnergy.energy(false, false);
+    } else {
+      // Compute energy and gradient.
+      totalEnergy = forceFieldEnergy.energyAndGradient(xyz, gr);
+
+    }
 
     // Both coordinates and gradient are scaled if applicable.
     packGradient(x, g);
 
     // Calculate finite-difference partial derivatives of lattice parameters.
     unitCellParameterDerivatives(x, g);
-
-    totalEnergy = e;
 
     return totalEnergy;
   }
@@ -353,114 +377,106 @@ public class XtalEnergy implements Potential {
    * @param g gradient.
    */
   private void unitCellParameterDerivatives(double[] x, double[] g) {
-
-    double eps = 1.0e-5;
-    double deps = toDegrees(eps);
-    SpaceGroup spaceGroup = crystal.spaceGroup;
-
     int index = 3 * nActive;
-    switch (spaceGroup.latticeSystem) {
-      case TRICLINIC_LATTICE -> {
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, deps);
-        index++;
-        g[index] = finiteDifference(x, index, deps);
-        index++;
-        g[index] = finiteDifference(x, index, deps);
+      double eps = 1.0e-5;
+      double deps = toDegrees(eps);
+      SpaceGroup spaceGroup = crystal.spaceGroup;
+      switch (spaceGroup.latticeSystem) {
+        case TRICLINIC_LATTICE -> {
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, deps);
+          index++;
+          g[index] = finiteDifference(x, index, deps);
+          index++;
+          g[index] = finiteDifference(x, index, deps);
+        }
+        case MONOCLINIC_LATTICE -> {
+          // alpha = gamma = 90
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = finiteDifference(x, index, deps);
+          index++;
+          g[index] = 0.0;
+        }
+        case ORTHORHOMBIC_LATTICE -> {
+          // alpha = beta = gamma = 90
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+        }
+        case TETRAGONAL_LATTICE, // a = b, alpha = beta = gamma = 90
+             HEXAGONAL_LATTICE // a = b, alpha = beta = 90, gamma = 120
+            -> {
+          g[index] = finiteDifference2(x, index, index + 1, eps);
+          index++;
+          g[index] = g[index - 1];
+          index++;
+          g[index] = finiteDifference(x, index, eps);
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+        }
+        case RHOMBOHEDRAL_LATTICE -> {
+          // a = b = c, alpha = beta = gamma
+          g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
+          index++;
+          g[index] = g[index - 1];
+          index++;
+          g[index] = g[index - 2];
+          index++;
+          g[index] = finiteDifference3(x, index, index + 1, index + 2, deps);
+          index++;
+          g[index] = g[index - 1];
+          index++;
+          g[index] = g[index - 2];
+        }
+        // a = b, alpha = beta = 90, gamma = 120
+        case CUBIC_LATTICE -> {
+          // a = b = c, alpha = beta = gamma = 90
+          g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
+          index++;
+          g[index] = g[index - 1];
+          index++;
+          g[index] = g[index - 2];
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+          index++;
+          g[index] = 0.0;
+        }
       }
-      case MONOCLINIC_LATTICE -> {
-        // alpha = gamma = 90
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = finiteDifference(x, index, deps);
-        index++;
-        g[index] = 0.0;
-      }
-      case ORTHORHOMBIC_LATTICE -> {
-        // alpha = beta = gamma = 90
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-      }
-      case TETRAGONAL_LATTICE, // a = b, alpha = beta = gamma = 90
-          HEXAGONAL_LATTICE // a = b, alpha = beta = 90, gamma = 120
-          -> {
-        g[index] = finiteDifference2(x, index, index + 1, eps);
-        index++;
-        g[index] = g[index - 1];
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-      }
-      case RHOMBOHEDRAL_LATTICE -> {
-        // a = b = c, alpha = beta = gamma
-        g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
-        index++;
-        g[index] = g[index - 1];
-        index++;
-        g[index] = g[index - 2];
-        index++;
-        g[index] = finiteDifference3(x, index, index + 1, index + 2, deps);
-        index++;
-        g[index] = g[index - 1];
-        index++;
-        g[index] = g[index - 2];
-      }
-      // a = b, alpha = beta = 90, gamma = 120
-      case CUBIC_LATTICE -> {
-        // a = b = c, alpha = beta = gamma = 90
-        g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
-        index++;
-        g[index] = g[index - 1];
-        index++;
-        g[index] = g[index - 2];
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-      }
-    }
 
     // Scale finite-difference partial derivatives of lattice parameters.
+    // Coordinate scaling has already been applied.
     if (scaling != null) {
       index = 3 * nActive;
-      g[index] /= scaling[index];
-      index++;
-      g[index] /= scaling[index];
-      index++;
-      g[index] /= scaling[index];
-      index++;
-      g[index] /= scaling[index];
-      index++;
-      g[index] /= scaling[index];
-      index++;
-      g[index] /= scaling[index];
+      for (int i = 0; i < 6; i++) {
+        g[index] /= scaling[index];
+        index++;
+      }
     }
   }
 
@@ -510,7 +526,6 @@ public class XtalEnergy implements Potential {
     final double x2 = x[index2];
     final double param1 = x1 / scale1;
     final double param2 = x2 / scale2;
-
     x[index1] = (param1 + eps / 2.0) * scale1;
     x[index2] = (param2 + eps / 2.0) * scale2;
     double ePlus = energy(x);
@@ -579,8 +594,8 @@ public class XtalEnergy implements Potential {
         if (fractionalMode == FractionalMode.OFF) {
           g[i] /= scaling[i];
         } else {
-          // If we're maintaining fractional coordinates, so the atomic coordinate derivatives can
-          // be zero.
+          // If we're maintaining fractional coordinates,
+          // the atomic coordinate derivatives can be zero.
           g[i] = 0.0;
         }
         x[i] *= scaling[i];

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static java.util.Objects.hash;
-
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
@@ -51,17 +46,7 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.VDWType;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import ffx.potential.utils.EnergyException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BranchGroup;
@@ -77,6 +62,24 @@ import org.jogamp.vecmath.Color3f;
 import org.jogamp.vecmath.Point2d;
 import org.jogamp.vecmath.Point3d;
 import org.jogamp.vecmath.Vector3d;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static java.util.Objects.hash;
 
 /**
  * The Atom class represents a single atom and defines its alternate conformations and molecular
@@ -614,6 +617,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void addToXYZGradient(double x, double y, double z) {
     if (active) {
+      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(
+          z)) {
+        StringBuilder sb = new StringBuilder(
+            format("Adding gradient of atom %s to (%8.3f,%8.3f,%8.3f) is not permitted.", this, x, y, z));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+            format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[0] += x;
       xyzGradient[1] += y;
       xyzGradient[2] += z;
@@ -628,6 +645,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void addToXYZGradient(int axis, double value) {
     if (active) {
+      if (isNaN(value) || isInfinite(value)) {
+        StringBuilder sb = new StringBuilder(
+            format("Adding gradient of atom %s of value %8.3f to axis %2d is not permitted.", this, value, axis));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+            format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[axis] += value;
     }
   }
@@ -1857,7 +1888,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param xyz an array of double.
    * @return the original array with updated coordinates, or a new array if xyz was null.
    */
-  public double[] getXYZ(double[] xyz) {
+  public double[] getXYZ(@Nullable double[] xyz) {
     if (xyz == null) {
       xyz = copyOf(this.xyz, 3);
     } else {
@@ -2079,6 +2110,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
+   * Check if this atom is a Halogen (F, Cl, Br, I)
+   *
+   * @return a boolean.
+   */
+  public boolean isHalogen() {
+    if (atomType == null) {
+      return false;
+    }
+    return atomType.atomicNumber == 9 || atomType.atomicNumber == 17 ||
+        atomType.atomicNumber == 35 || atomType.atomicNumber == 53;
+  }
+
+  /**
    * isModRes
    *
    * @return a boolean.
@@ -2106,69 +2150,69 @@ public class Atom extends MSNode implements Comparable<Atom> {
   public boolean isRing(Atom a2) {
     boolean two = this.isBonded(a2);
     boolean three = this.is_1_3(a2);
-    if(two && three){
+    if (two && three) {
       return true;
     }
     boolean four = this.is_1_4(a2);
-    if(two && four){
+    if (two && four) {
       return true;
     }
-    if(three && four){
+    if (three && four) {
       return true;
     }
     boolean five = this.is_1_5(a2);
-    if(two && five){
+    if (two && five) {
       return true;
     }
-    if(three && five){
+    if (three && five) {
       return true;
     }
-    if(four && five){
+    if (four && five) {
       return true;
     }
     boolean six = this.is_1_6(a2);
-    if(two && six){
+    if (two && six) {
       return true;
     }
-    if(three && six){
+    if (three && six) {
       return true;
     }
-    if(four && six){
+    if (four && six) {
       return true;
     }
-    if(five && six){
+    if (five && six) {
       return true;
     }
     boolean seven = this.is_1_7(a2);
-    if(two && seven){
+    if (two && seven) {
       return true;
     }
-    if(three && seven){
+    if (three && seven) {
       return true;
     }
-    if(four && seven){
+    if (four && seven) {
       return true;
     }
-    if(five && seven){
+    if (five && seven) {
       return true;
     }
-    if(six && seven){
+    if (six && seven) {
       return true;
     }
     boolean eight = this.is_1_8(a2);
-    if(two && eight){
+    if (two && eight) {
       return true;
     }
-    if(three && eight){
+    if (three && eight) {
       return true;
     }
-    if(four && eight){
+    if (four && eight) {
       return true;
     }
-    if(five && eight){
+    if (five && eight) {
       return true;
     }
-    if(six && eight){
+    if (six && eight) {
       return true;
     }
     return seven && eight;
@@ -2238,21 +2282,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
     List<Atom> pathAtoms = new ArrayList<>();
     for (Angle angle : angles) {
       Atom[] angleAtoms = angle.getAtomArray();
-      if(angleAtoms[1] == this){
+      if (angleAtoms[1] == this) {
         continue;
       }
       Atom a1_3 = angle.get1_3(this);
-      if(a1_3 == null){
+      if (a1_3 == null) {
         continue;
       }
       pathAtoms.addAll(Arrays.asList(angleAtoms));
       List<Bond> bonds = a1_3.getBonds();
-      for(Bond bond : bonds){
+      for (Bond bond : bonds) {
         Atom a1_4 = bond.get1_2(a1_3);
-        if(a1_4 == null || pathAtoms.contains(a1_4)){
+        if (a1_4 == null || pathAtoms.contains(a1_4)) {
           continue;
         }
-        if(a1_4 == atom) {
+        if (a1_4 == atom) {
           return true;
         }
       }
@@ -2271,22 +2315,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
     List<Atom> pathAtoms = new ArrayList<>();
     for (Angle angle : angles) {
       Atom[] angleAtoms = angle.getAtomArray();
-      if(angleAtoms[1] == this){
+      if (angleAtoms[1] == this) {
         continue;
       }
       Atom a1_3 = angle.get1_3(this);
-      if(a1_3 == null){
+      if (a1_3 == null) {
         continue;
       }
       pathAtoms.addAll(Arrays.asList(angleAtoms));
       List<Angle> angles2 = a1_3.getAngles();
-      for(Angle angle2 : angles2){
+      for (Angle angle2 : angles2) {
         Atom[] angleAtoms2 = angle2.getAtomArray();
         Atom a1_5 = angle2.get1_3(a1_3);
-        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+        if (a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])) {
           continue;
         }
-        if(a1_5 == atom) {
+        if (a1_5 == atom) {
           return true;
         }
       }
@@ -2305,30 +2349,30 @@ public class Atom extends MSNode implements Comparable<Atom> {
     List<Atom> pathAtoms = new ArrayList<>();
     for (Angle angle : angles) {
       Atom[] angleAtoms = angle.getAtomArray();
-      if(angleAtoms[1] == this){
+      if (angleAtoms[1] == this) {
         continue;
       }
       Atom a1_3 = angle.get1_3(this);
-      if(a1_3 == null){
+      if (a1_3 == null) {
         continue;
       }
       pathAtoms.addAll(Arrays.asList(angleAtoms));
       List<Angle> angles2 = a1_3.getAngles();
-      for(Angle angle2 : angles2){
+      for (Angle angle2 : angles2) {
         Atom[] angleAtoms2 = angle2.getAtomArray();
         Atom a1_5 = angle2.get1_3(a1_3);
-        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+        if (a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])) {
           continue;
         }
         pathAtoms.add(angleAtoms2[1]);
         pathAtoms.add(a1_5);
         List<Bond> bonds = a1_5.getBonds();
-        for(Bond bond : bonds){
+        for (Bond bond : bonds) {
           Atom a1_6 = bond.get1_2(a1_5);
-          if(a1_6 == null || pathAtoms.contains(a1_6)){
+          if (a1_6 == null || pathAtoms.contains(a1_6)) {
             continue;
           }
-          if(a1_6 == atom) {
+          if (a1_6 == atom) {
             return true;
           }
         }
@@ -2350,31 +2394,31 @@ public class Atom extends MSNode implements Comparable<Atom> {
     List<Atom> pathAtoms = new ArrayList<>();
     for (Angle angle : angles) {
       Atom[] angleAtoms = angle.getAtomArray();
-      if(angleAtoms[1] == this){
+      if (angleAtoms[1] == this) {
         continue;
       }
       Atom a1_3 = angle.get1_3(this);
-      if(a1_3 == null){
+      if (a1_3 == null) {
         continue;
       }
       pathAtoms.addAll(Arrays.asList(angleAtoms));
       List<Angle> angles2 = a1_3.getAngles();
-      for(Angle angle2 : angles2){
+      for (Angle angle2 : angles2) {
         Atom[] angleAtoms2 = angle2.getAtomArray();
         Atom a1_5 = angle2.get1_3(a1_3);
-        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+        if (a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])) {
           continue;
         }
         pathAtoms.add(a1_5);
         pathAtoms.add(angleAtoms2[1]);
         List<Angle> angles3 = a1_5.getAngles();
-        for(Angle angle3 : angles3){
+        for (Angle angle3 : angles3) {
           Atom[] angleAtoms3 = angle3.getAtomArray();
           Atom a1_7 = angle3.get1_3(a1_5);
-          if(a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])){
+          if (a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])) {
             continue;
           }
-          if(a1_7 == atom) {
+          if (a1_7 == atom) {
             return true;
           }
         }
@@ -2387,6 +2431,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   // EXPERIMENTAL METHOD... triggers for O-C in benzenol...
+
   /**
    * Are these atoms 1-8 bonded?
    *
@@ -2399,46 +2444,46 @@ public class Atom extends MSNode implements Comparable<Atom> {
     for (Angle angle : angles) {
       Atom[] angleAtoms = angle.getAtomArray();
       // Trying to navigate 2 atoms at a time. Therefore, don't want atom in the center of angle.
-      if(angleAtoms[1] == this){
+      if (angleAtoms[1] == this) {
         continue;
       }
       Atom a1_3 = angle.get1_3(this);
       // If no 1-3 atom try next angle.
-      if(a1_3 == null){
+      if (a1_3 == null) {
         continue;
       }
       // Moving forward with this angle, therefore, add its atoms to current path.
       pathAtoms.addAll(Arrays.asList(angleAtoms));
       // Navigate another 2 atoms...
       List<Angle> angles2 = a1_3.getAngles();
-      for(Angle angle2 : angles2){
+      for (Angle angle2 : angles2) {
         Atom[] angleAtoms2 = angle2.getAtomArray();
         Atom a1_5 = angle2.get1_3(a1_3);
         // Need to have a third atom, need to not back track over the path.
-        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+        if (a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])) {
           continue;
         }
         // Moving forward with this angle, therefore, add its atoms to current path.
         pathAtoms.add(a1_5);
         pathAtoms.add(angleAtoms2[1]);
         List<Angle> angles3 = a1_5.getAngles();
-        for(Angle angle3 : angles3){
+        for (Angle angle3 : angles3) {
           Atom[] angleAtoms3 = angle3.getAtomArray();
           Atom a1_7 = angle3.get1_3(a1_5);
           // Don't want to back track.
-          if(a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])){
+          if (a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])) {
             continue;
           }
           // Moving forward with this angle, therefore, add its atoms to current path.
           pathAtoms.add(a1_7);
           pathAtoms.add(angleAtoms3[1]);
           List<Bond> bonds = a1_7.getBonds();
-          for(Bond bond : bonds){
+          for (Bond bond : bonds) {
             Atom a1_8 = bond.get1_2(a1_7);
-            if(a1_8 == null || pathAtoms.contains(a1_8)){
+            if (a1_8 == null || pathAtoms.contains(a1_8)) {
               continue;
             }
-            if(a1_8 == atom) {
+            if (a1_8 == atom) {
               return true;
             }
           }
@@ -3017,6 +3062,21 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void setXYZGradient(double x, double y, double z) {
     if (active) {
+      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(
+          z)) {
+        StringBuilder sb = new StringBuilder(
+            format("Setting gradient of atom %s to (%8.3f,%8.3f,%8.3f) is not permitted.", this, x, y, z));
+        double[] vals = new double[3];
+        this.getVelocity(vals);
+        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getAcceleration(vals);
+        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        this.getPreviousAcceleration(vals);
+        sb.append(
+            format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
+        throw new EnergyException(sb.toString());
+      }
       xyzGradient[0] = x;
       xyzGradient[1] = y;
       xyzGradient[2] = z;

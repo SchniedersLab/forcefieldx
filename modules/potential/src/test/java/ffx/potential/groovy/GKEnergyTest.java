@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -73,7 +73,7 @@ public class GKEnergyTest extends ParentEnergyTest {
                 new Object[][]{
                         /*
                          * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
-                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * published values (Corrigan et al. 2023) due to small multipole updates to the
                          * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
                          *
                          * The error magnitude is <2 kcal for each term

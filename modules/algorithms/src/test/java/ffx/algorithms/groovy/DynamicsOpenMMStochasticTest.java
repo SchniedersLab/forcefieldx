@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,7 @@ package ffx.algorithms.groovy;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,11 +79,11 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
     return Arrays.asList(
         new Object[][] {
             {
-                "System OpenMM Stochastic (Starting Potential Energy = -35661.8041)",
+                "System OpenMM Stochastic (Starting Potential Energy =  -35661.8205)",
                 "waterbox_eq.xyz",
-                11009.729434,
-                -36039.826268,
-                -25030.095644,
+                10604.3144,
+               -35701.8075,
+               -25097.4932,
             }
         });
   }
@@ -114,8 +114,7 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
     Dynamics dynamics = new Dynamics(binding).run();
     algorithmsScript = dynamics;
 
-    MolecularDynamicsOpenMM molDynOpenMM =
-        (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
+    MolecularDynamics molDynOpenMM = dynamics.getMolecularDynamics();
 
     // Assert that the end energies are within the threshold for the dynamics trajectory.
     assertEquals(info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",

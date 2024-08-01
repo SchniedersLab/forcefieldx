@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -62,19 +62,59 @@ import javax.annotation.Nullable;
 public class SummaryStatistics {
 
   // Weight-sensitive values.
+  /**
+   * Mean value.
+   */
   public final double mean;
+  /**
+   * Sample variance.
+   */
   public final double var;
+  /**
+   * Population variance.
+   */
   public final double varPopulation;
+  /**
+   * Sample standard deviation.
+   */
   public final double sd;
+  /**
+   * Population standard deviation.
+   */
   public final double sdPopulation;
+  /**
+   * Sum of weights.
+   */
   public final double sumWeights;
+
   // Weight-insensitive values.
+  /**
+   * Minimum value.
+   */
   public final double min;
+  /**
+   * Maximum value.
+   */
   public final double max;
+  /**
+   * Count of observations.
+   */
   public final long count;
+  /**
+   * Sum of observations.
+   */
   public final double sum;
+  /**
+   * Degrees of freedom.
+   */
   public final long dof;
+  /**
+   * T-distribution for confidence intervals.
+   */
   private final TDistribution tDist;
+  /**
+   * Description of the summary statistics.
+   */
   private final String descString;
 
   /**

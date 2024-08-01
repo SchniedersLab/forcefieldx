@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -56,7 +56,7 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
 
 import java.util.Arrays;
 import java.util.List;
@@ -64,8 +64,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.utilities.KeywordGroup.NonBondedCutoff;
-import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
+import static ffx.utilities.PropertyGroup.NonBondedCutoff;
+import static ffx.utilities.PropertyGroup.VanDerWaalsFunctionalForm;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -105,16 +105,19 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final SharedDouble sharedd2EdL2;
   private final VanDerWaalsRegion vanDerWaalsRegion;
   private final VanDerWaalsForm vdwForm;
-  @FFXKeyword(name = "vdwindex", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
-      description = "[CLASS / TYPE] "
-          + "Specifies whether van der Waals parameters are provided for atom classes or atom types. "
-          + "While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type. "
-          + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
+  @FFXProperty(name = "vdwindex", clazz = String.class, propertyGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
+      description = """ 
+          [CLASS / TYPE]
+          Specifies whether van der Waals parameters are provided for atom classes or atom types.
+          While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type.
+          The default in the absence of the vdwindex property is to index vdW parameters by atom class.
+          """)
   private final String vdwIndex;
-  @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9",
-      description =
-          "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
-              + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
+  @FFXProperty(name = "vdw-taper", propertyGroup = NonBondedCutoff, defaultValue = "0.9", description = """
+      Allows modification of the cutoff windows for van der Waals potential energy interactions. "
+      The default value in the absence of the vdw-taper keyword is to begin the cutoff window
+      at 0.9 of the vdw cutoff distance.
+      """)
   private final double vdwTaper;
 
   private final NonbondedCutoff nonbondedCutoff;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static org.apache.commons.math3.util.FastMath.PI;
-
 import java.util.Objects;
+
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * The HKL class represents a single reflection.
@@ -50,27 +50,52 @@ import java.util.Objects;
  */
 public class HKL {
 
-  /** Constant <code>ndiv=12.0</code> */
+  /**
+   * Constant <code>ndiv=12.0</code>
+   */
   static final double ndiv = 12.0;
 
+  /**
+   * The h-index of the reflection.
+   */
   protected int h;
+  /**
+   * The k-index of the reflection.
+   */
   protected int k;
+  /**
+   * The l-index of the reflection.
+   */
   protected int l;
+  /**
+   * The epsilon value of the reflection, which is used for systematic absences.
+   */
   protected int epsilon;
+  /**
+   * Allowed is used for centric reflections.
+   */
   protected int allowed;
+  /**
+   * The bin number of this reflection, which is used for resolution dependent R/Rfree.
+   */
   protected int bin;
+  /**
+   * The unique index of this reflection.
+   */
   protected int index;
 
-  /** Constructor for HKL. */
+  /**
+   * Constructor for HKL.
+   */
   public HKL() {
   }
 
   /**
    * Constructor for HKL.
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
+   * @param h The h-index of the reflection.
+   * @param k The k-index of the reflection.
+   * @param l The l-index of the reflection.
    */
   public HKL(int h, int k, int l) {
     this.h = h;
@@ -82,10 +107,10 @@ public class HKL {
   /**
    * Constructor for HKL.
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
-   * @param eps an int.
+   * @param h       The h-index of the reflection.
+   * @param k       The k-index of the reflection.
+   * @param l       The l-index of the reflection.
+   * @param eps     an int.
    * @param allowed an int.
    */
   public HKL(int h, int k, int l, int eps, int allowed) {
@@ -97,7 +122,7 @@ public class HKL {
   }
 
   /**
-   * neg
+   * Negate the reflection.
    *
    * @return a {@link ffx.crystal.HKL} object.
    */
@@ -106,7 +131,7 @@ public class HKL {
   }
 
   /**
-   * sysAbs
+   * Is this reflection a systematic absence?
    *
    * @return a boolean.
    */
@@ -145,25 +170,25 @@ public class HKL {
   }
 
   /**
-   * getBin
+   * The bin number of this reflection, which is used for resolution dependent R/Rfree.
    *
-   * @return an int.
+   * @return the bin number of this reflection.
    */
   public int getBin() {
     return bin;
   }
 
   /**
-   * setBin
+   * Set the bin number of this reflection, which is used for resolution dependent R/Rfree.
    *
-   * @param bin an int.
+   * @param bin the bin number of this reflection.
    */
   public void setBin(int bin) {
     this.bin = bin;
   }
 
   /**
-   * centric
+   * Is this reflection centric?
    *
    * @return a boolean.
    */
@@ -202,7 +227,9 @@ public class HKL {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -216,31 +243,33 @@ public class HKL {
   }
 
   /**
-   * h
+   * The h-index of the reflection.
    *
-   * @return an int.
+   * @return The h-index of the reflection.
    */
   public int getH() {
     return h;
   }
 
   /**
-   * h
+   * Set the h-index of the reflection.
    *
-   * @param h an int.
+   * @param h The h-index of the reflection.
    */
   public void setH(int h) {
     this.h = h;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(h, k, l);
   }
 
   /**
-   * index
+   * Get the index of this reflection.
    *
    * @return an int.
    */
@@ -249,16 +278,16 @@ public class HKL {
   }
 
   /**
-   * index
+   * Set the index of this reflection.
    *
-   * @param index an int.
+   * @param index The unique index of this reflection.
    */
   public void setIndex(int index) {
     this.index = index;
   }
 
   /**
-   * k
+   * Get the k-index of the reflection.
    *
    * @return an int.
    */
@@ -267,7 +296,7 @@ public class HKL {
   }
 
   /**
-   * k
+   * Set the k-index of the reflection.
    *
    * @param k an int.
    */
@@ -276,7 +305,7 @@ public class HKL {
   }
 
   /**
-   * l
+   * Get the l-index of the reflection.
    *
    * @return an int.
    */
@@ -285,7 +314,7 @@ public class HKL {
   }
 
   /**
-   * l
+   * Set the l-index of the reflection.
    *
    * @param l an int.
    */
@@ -293,7 +322,9 @@ public class HKL {
     this.l = l;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return h + " " + k + " " + l

@@ -6,33 +6,16 @@
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>forcefieldx</artifactId>
-    <version>1.0.0-beta</version>
+    <version>1.0.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>ffx-algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
   <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations,
-    and
-    calculation of free energy differences.
+    and calculation of free energy differences.
   </description>
   <build>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>${basedir}/../../groovy</targetPath>
-      </resource>
-      <resource>
-        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>${basedir}/src/site/resources/scripts</targetPath>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -85,12 +68,15 @@
             <argument>ffx.algorithms.groovy.Cluster</argument>
             <argument>ffx.algorithms.groovy.Dynamics</argument>
             <argument>ffx.algorithms.groovy.ForEachFile</argument>
+            <argument>ffx.algorithms.groovy.GenZ</argument>
             <argument>ffx.algorithms.groovy.Histogram</argument>
             <argument>ffx.algorithms.groovy.ManyBody</argument>
+            <argument>ffx.algorithms.groovy.MBAR</argument>
             <argument>ffx.algorithms.groovy.Minimize</argument>
             <argument>ffx.algorithms.groovy.MinimizeCrystals</argument>
             <argument>ffx.algorithms.groovy.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.groovy.MutatePDB</argument>
+            <argument>ffx.algorithms.groovy.SaveRotamers</argument>
             <argument>ffx.algorithms.groovy.Scheduler</argument>
             <argument>ffx.algorithms.groovy.SortArc</argument>
             <argument>ffx.algorithms.groovy.Superpose</argument>
@@ -106,10 +92,11 @@
             <argument>ffx.algorithms.groovy.test.MinimizePh</argument>
             <argument>ffx.algorithms.groovy.test.MostBar</argument>
             <argument>ffx.algorithms.groovy.test.OSTGradient</argument>
-            <argument>ffx.algorithms.groovy.test.PhBar</argument>
             <argument>ffx.algorithms.groovy.test.PhDynamics</argument>
+            <argument>ffx.algorithms.groovy.test.RaoBlackwellEstimator</argument>
             <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
             <argument>ffx.algorithms.groovy.test.SortXPH</argument>
+            <argument>ffx.algorithms.groovy.test.WeightedEnsemble</argument>
           </arguments>
         </configuration>
         <dependencies>
@@ -120,6 +107,50 @@
             <type>jar</type>
           </dependency>
         </dependencies>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${resources.version}</version>
+        <executions>
+          <execution>
+            <id>copy-groovy-scripts</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/../../groovy</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+                  <includes>
+                    <include>*</include>
+                  </includes>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-groovy-scripts-website</id>
+            <phase>site</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/site/resources/script</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+                  <includes>
+                    <include>*</include>
+                  </includes>
+                </resource>
+              </resources>
+              <overwrite>true</overwrite>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

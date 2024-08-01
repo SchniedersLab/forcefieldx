@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.PiOrbitalTorsionType;
 
 import java.io.Serial;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The Pi-Orbital Torsion class.
@@ -316,10 +317,8 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
    * Log details for this Pi-Orbital Torsion energy term.
    */
   public void log() {
-    logger.info(
-        String.format(" %s %6d-%s %6d-%s %10.4f %10.4f", "Pi-Orbital Torsion", atoms[2].getIndex(),
-            atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, value,
-            energy));
+    logger.info(format(" %s %6d-%s %6d-%s %10.4f %10.4f", "Pi-Orbital Torsion", atoms[2].getIndex(),
+        atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
   }
 
   /**
@@ -329,6 +328,6 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
    */
   @Override
   public String toString() {
-    return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+    return format("%s  (%7.1f,%7.2f)", id, value, energy);
   }
 }

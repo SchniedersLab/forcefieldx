@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -39,8 +39,6 @@ package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions.
- *
- * <p>
  *
  * @author Michal J. Schnieders
  * @see Real

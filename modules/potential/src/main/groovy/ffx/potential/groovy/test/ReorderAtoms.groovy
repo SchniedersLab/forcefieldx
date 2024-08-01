@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -37,10 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import ffx.crystal.Crystal
-import ffx.crystal.LatticeSystem
-import ffx.crystal.SpaceGroup
-import ffx.crystal.SpaceGroupDefinitions
 import ffx.potential.MolecularAssembly
 import ffx.potential.Utilities
 import ffx.potential.bonded.Angle
@@ -67,13 +63,6 @@ import org.openscience.cdk.isomorphism.AtomMatcher
 import org.openscience.cdk.isomorphism.BondMatcher
 import org.openscience.cdk.isomorphism.Pattern
 import org.openscience.cdk.isomorphism.VentoFoggia
-import org.rcsb.cif.model.Column
-import org.rcsb.cif.model.FloatColumn
-import org.rcsb.cif.schema.core.AtomSite
-import org.rcsb.cif.schema.core.Cell
-import org.rcsb.cif.schema.core.Chemical
-import org.rcsb.cif.schema.core.CifCoreBlock
-import org.rcsb.cif.schema.core.Symmetry
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -81,7 +70,6 @@ import picocli.CommandLine.Parameters
 import javax.vecmath.Point3d
 import java.util.logging.Level
 
-import static ffx.crystal.SpaceGroupConversions.hrConversion
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.utils.Superpose.applyTranslation;
@@ -91,6 +79,7 @@ import static ffx.potential.utils.Superpose.applyRotation;
 import static ffx.potential.utils.Superpose.rmsd;
 import static ffx.potential.utils.Superpose.superpose;
 import static java.lang.String.format
+import static java.lang.Double.MAX_VALUE
 import static org.apache.commons.io.FilenameUtils.getFullPath
 import static org.apache.commons.io.FilenameUtils.getName
 import static org.apache.commons.io.FilenameUtils.removeExtension
@@ -111,6 +100,13 @@ import static org.openscience.cdk.tools.periodictable.PeriodicTable.getSymbol
 class ReorderAtoms extends PotentialScript {
 
   /**
+   * -a or --atomType Change atom types of first file to match second.
+   */
+  @Option(names = ['-a', '--atomType'], paramLabel = "false", defaultValue = "false",
+          description = 'Change atom types of first file to match second.')
+  private static boolean atomType
+
+  /**
    * --sw or --swap Switch positions of all equivalent atoms (untested for >2 atoms).
    */
   @Option(names = ['--sw', '--swap'], paramLabel = "false", defaultValue = "false",
@@ -125,11 +121,11 @@ class ReorderAtoms extends PotentialScript {
   private static boolean match
 
   /**
-   * -o or --overwrite Attempt to replace original file with reordered coordinates.
+   * -r or --reorder Reorder atoms based on environment.
    */
-  @Option(names = ['-o', '--overwrite'], paramLabel = "false", defaultValue = "false",
-      description = 'Replace original file with output (CAUTION: deletes input file before write is complete).')
-  private static boolean overwrite
+  @Option(names = ['-r', '--reorder'], paramLabel = "false", defaultValue = "false",
+          description = 'Reorder atoms based on environment.')
+  private static boolean reorder
 
   /**
    * The final argument(s) should be two or more filenames.
@@ -156,7 +152,12 @@ class ReorderAtoms extends PotentialScript {
     if (!init()) {
       return null
     }
-    if (filenames.size() == 1) {
+    if (reorder || swap) {
+      if(match || atomType){
+        // TODO allow any allowable combination of flags at the same time.
+        // Atom reordering could be run every single time with the other two as auxiliary.
+        logger.warning(" Currently each flag (i.e., atomType, match, or reorder must be run individually. ");
+      }
       for (String filename : filenames) {
         potentialFunctions.openAll(filename)
         SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -164,12 +165,7 @@ class ReorderAtoms extends PotentialScript {
 
         // Save new xyz file with the converted crystal.
         File saveLocation = new File(filename)
-        File saveFile
-        if (overwrite) {
-          saveFile = saveLocation
-        } else {
-          saveFile = potentialFunctions.versionFile(saveLocation)
-        }
+        File saveFile = potentialFunctions.versionFile(saveLocation)
         for (int i = 0; i < numModels; i++) {
           MolecularAssembly assembly = systemFilter.getActiveMolecularSystem()
           Atom[] atoms = assembly.getAtomArray()
@@ -180,33 +176,32 @@ class ReorderAtoms extends PotentialScript {
 
           // OLD METHOD: based on atom environment... Breaks down with symmetry.
           // TODO handle sorting/exclusion better...
-          int alSize = atomList0.size()
-          for (int j = 0; j < alSize; j++) {
-            for (int k = 0; k < alSize; k++) {
-              if (atomList0[j].getIndex() != atomList0[k].getIndex()) {
-                AtomComparator ac = new AtomComparator()
-                if (logger.isLoggable(Level.FINER)) {
-                  logger.finer(
-                          " Compare atom: " + atomList0[j].toString() + " and " + atomList0[k].toString())
-                }
-                int value = ac.compare(atomList0[j], atomList0[k])
-                if (value == 0) {
-                  logger.info(" This " + atomList0[j].toString() + " and " + atomList0[k].toString() +
-                          " are \"equivalent\".")
-                  if (swap) {
+          int atomListSize = atomList0.size()
+          for (int j = 0; j < atomListSize; j++) {
+            for (int k = 0; k < atomListSize; k++) {
+              if (j != k) {
+                if (atomList0[j].getIndex() != atomList0[k].getIndex()) {
+                  AtomComparator ac = new AtomComparator()
+                  if (logger.isLoggable(Level.FINER)) {
+                    logger.finer(" Compare atom: " + atomList0[j].toString() + " and " + atomList0[k].toString())
+                  }
+                  int value = ac.compare(atomList0[j], atomList0[k])
+                  if (value == 0) {
+                    logger.info(" This " + atomList0[j].toString() + " and " + atomList0[k].toString() +
+                            " are \"equivalent\".")
+                    if (swap) {
+                      Atom temp = atomList0[j]
+                      atomList0[j] = atomList0[k]
+                      atomList0[k] = temp
+                    }
+                  } else if (value < 0 && reorder) {
+                    if (logger.isLoggable(Level.FINER)) {
+                      logger.finer(" Swapped " + atomList0[j].toString() + " and " + atomList0[k].toString() + ".")
+                    }
                     Atom temp = atomList0[j]
                     atomList0[j] = atomList0[k]
                     atomList0[k] = temp
                   }
-                } else if (value < 0) {
-                  if (logger.isLoggable(Level.FINER)) {
-                    logger.finer(
-                            " Swapped " + atomList0[j].toString() + " and " + atomList0[k].toString() +
-                                    ".")
-                  }
-                  Atom temp = atomList0[j]
-                  atomList0[j] = atomList0[k]
-                  atomList0[k] = temp
                 }
               }
             }
@@ -215,7 +210,7 @@ class ReorderAtoms extends PotentialScript {
           for (int j = 0; j < nAtoms; j++) {
             originalOrder[j] = atoms[j].getIndex()
             if (logger.isLoggable(Level.FINE)) {
-              logger.fine(format(" Original index (%3d): %3d New index: %3d", j, originalOrder[j],
+              logger.fine(format(" Original index for atom %3d: %3d New index: %3d", j, originalOrder[j],
                       atomList0[j].getIndex()))
             }
           }
@@ -260,13 +255,6 @@ class ReorderAtoms extends PotentialScript {
           newAssembly.setFile(assembly.getFile())
           Utilities.biochemistry(newAssembly, atomList)
 
-          if (overwrite && saveFile.exists()) {
-            if (saveFile.delete()) {
-              logger.info(" Original file deleted.")
-            } else {
-              logger.info(" Original file could not be deleted.")
-            }
-          }
           XYZFilter filter = new XYZFilter(saveFile, newAssembly, assembly.getForceField(),
                   assembly.getProperties())
           if (numModels > 1) {
@@ -283,49 +271,261 @@ class ReorderAtoms extends PotentialScript {
           }
         }
       }
-    } else {
-      potentialFunctions.openAll(filenames[0]);
-      SystemFilter systemFilter1 = potentialFunctions.getFilter()
-      potentialFunctions.openAll(filenames[1]);
-      SystemFilter systemFilter2 = potentialFunctions.getFilter()
-      logger.info(" Two models... Try new method.");
-      if(match) {
+    } else if (match && filenames.size() > 1) {
+        potentialFunctions.openAll(filenames[0]);
+        SystemFilter systemFilter1 = potentialFunctions.getFilter()
+        potentialFunctions.openAll(filenames[1]);
+        SystemFilter systemFilter2 = potentialFunctions.getFilter()
+        logger.info(" Matching atom order between files.");
         MolecularAssembly assembly1 = systemFilter1.getActiveMolecularSystem();
         MolecularAssembly assembly2 = systemFilter2.getActiveMolecularSystem();
-        Atom[] atoms1 = assembly1.getAtomArray();
-        double[] xyz1 = new double[atoms1.length * 3];
-        double[] mass = new double[atoms1.length];
-        int index = 0;
-        for (Atom a : atoms1) {
-          xyz1[index * 3] = a.getX();
-          xyz1[index * 3 + 1] = a.getY();
-          xyz1[index * 3 + 2] = a.getZ();
-          mass[index++] = a.getMass();
+        int[] molNum = assembly1.getMoleculeNumbers();
+        Molecule[] molecules = assembly1.getMolecules()
+      ArrayList<Atom> atomList = new ArrayList<>();
+      int atomIndex = 1
+      File saveLocation = new File(filenames[0])
+      File saveFile = potentialFunctions.versionFile(saveLocation)
+      //TODO Update assembly with new order and save file.
+      MolecularAssembly newAssembly = new MolecularAssembly(assembly1.getName());
+      // Construct the force field for the expanded set of molecules
+      newAssembly.setForceField(assembly1.getForceField());
+      newAssembly.setPotential(assembly1.potentialEnergy)
+      newAssembly.setCrystal(assembly1.getCrystal())
+      newAssembly.setFile(assembly1.getFile())
+
+      Molecule[] molecules2 = assembly2.getMolecules()
+      int numMol2 = molecules2.length;
+      boolean[] molDone = new boolean[numMol2];
+      int totalNumAtoms = 0;
+        for (Molecule mol : molecules) {
+          List<Atom> atoms1 = mol.getAtomList();
+          int numAtoms = atoms1.size();
+          logger.info(format(" Molecule1 with %3d atoms: %s", numAtoms, mol.toString()));
+
+          // Determine atoms that are unique (i.e., different environments).
+          List<List<Integer>> equivalents = new ArrayList<>();
+          boolean[] equivalent = new boolean[numAtoms];
+          int numEquiv = 0;
+          for (int i = 0; i < numAtoms; i++){
+            for (int j = 1; j < numAtoms; j++){
+              if(i==j){
+                continue;
+              }
+              AtomComparator ac = new AtomComparator()
+              int value = ac.compare(atoms1[i], atoms1[j])
+              if (value == 0){
+                equivalent[i] = true;
+                equivalent[j] = true;
+                // Add to object.
+                int iIndex = -1;
+                int jIndex = -1;
+                for (int k = 0; k < numEquiv; k++){
+                  List<Integer> list = equivalents.get(k)
+                  if (list.contains(i)){
+                    iIndex = k;
+                  }
+                  if(list.contains(j)){
+                    jIndex = k;
+                  }
+                  if(iIndex >= 0 && jIndex >= 0){
+                    break;
+                  }
+                }
+                if (iIndex == -1 && jIndex == -1){
+                  List<Integer> ij = new ArrayList<>();
+                  ij.add(i);
+                  ij.add(j);
+                  equivalents.add(ij);
+                  numEquiv++;
+                } else if (iIndex >= 0 && jIndex == -1){
+                  equivalents.get(iIndex).add(j)
+                } else if (iIndex == -1 && jIndex >= 0){
+                  equivalents.get(jIndex).add(i);
+                }
+              }
+            }
+          }
+          int numUnique = 0;
+          for( boolean value: equivalent){
+            if(!value){
+              numUnique++;
+            }
+          }
+          double[] xyz1 = new double[numAtoms * 3];
+          double[] mass = new double[numAtoms];
+
+          double[] compCoords1 = new double[numUnique * 3]
+          double[] compMass = new double[numUnique];
+          int index = 0;
+          int indexUnique = 0;
+          for (int i = 0; i < numAtoms; i++) {
+            Atom a = atoms1[i];
+            if(!equivalent[i]){
+              compCoords1[indexUnique * 3] = a.getX();
+              compCoords1[indexUnique * 3 + 1] = a.getY();
+              compCoords1[indexUnique * 3 + 2] = a.getZ();
+              compMass[indexUnique++] = a.getMass();
+            }
+            xyz1[index * 3] = a.getX();
+            xyz1[index * 3 + 1] = a.getY();
+            xyz1[index * 3 + 2] = a.getZ();
+            mass[index++] = a.getMass();
+          }
+          for (int l = 0; l < numMol2 ; l++) {
+            Molecule mol2 = molecules2[l];
+            List<Atom> atoms2 = mol2.getAtomList();
+            int numAtoms2 = atoms2.size();
+            logger.info(format(" Molecule2 with %3d atoms: %s", numAtoms2, mol2.toString()));
+            if (numAtoms != numAtoms2 || molDone[l]) {
+              continue;
+            }
+            double[] xyz2 = new double[numAtoms2 * 3];
+            double[] compCoords2 = new double[numUnique * 3]
+            index = 0;
+            indexUnique = 0;
+            for (int i = 0; i < numAtoms; i++) {
+              Atom a = atoms2[i];
+              if(!equivalent[i]){
+                compCoords2[indexUnique * 3] = a.getX();
+                compCoords2[indexUnique * 3 + 1] = a.getY();
+                compCoords2[indexUnique++ * 3 + 2] = a.getZ();
+              }
+              xyz2[index * 3] = a.getX();
+              xyz2[index * 3 + 1] = a.getY();
+              xyz2[index++ * 3 + 2] = a.getZ();
+            }
+            // If no atoms are unique, try to compare with all atoms.
+            if( compCoords1.length == 0 || compCoords2.length == 0){
+              logger.info(format(" Comparison Coordinates invalid (1: %3d 2: %3d) %3d of %3d unique atoms.", compCoords1.length, compCoords2.length, numUnique, numAtoms))
+              compCoords1 = xyz1;
+              compCoords2 = xyz2;
+              compMass = mass;
+            }
+            double[] translate1 = calculateTranslation(compCoords1, compMass);
+            double[] translate2 = calculateTranslation(compCoords2, compMass);
+            applyTranslation(compCoords1, translate1);
+            applyTranslation(compCoords2, translate2);
+            // Translate all coordinates based on unique atoms (redundant if no unique).
+            applyTranslation(xyz1, translate1);
+            applyTranslation(xyz2, translate2);
+            double[][] rotation = calculateRotation(compCoords1, compCoords2, compMass);
+            // Rotate all coordinates based on unique atoms (redundant if no unique).
+            applyRotation(compCoords2, rotation);
+            applyRotation(xyz2, rotation);
+            double compRMSD = superpose(compCoords1, compCoords2, compMass)
+            logger.info(format(" Unique atom RMSD: %9.4f A", compRMSD));
+            if(compRMSD > 1.0){
+              logger.warning(format(" Value of %9.3f A may lead to insufficient overlap. Double check produced ordering.", compRMSD));
+            }
+            // Loop through atoms that are not unique and try to find optimal match.
+            for (int i = 0; i < numAtoms; i++) {
+              if(equivalent[i]) {
+                int ind = i * 3;
+                double[] coord1 = new double[]{xyz1[ind], xyz1[ind + 1], xyz1[ind + 2]};
+                double[] coord2 = new double[]{xyz2[ind], xyz2[ind + 1], xyz2[ind + 2]}
+                double value = rmsd(coord1, coord2, mass[i]);
+                logger.info(format(" Atom %2d distance of %9.3f A", i, value));
+                // TODO update following loop to reasonably update atoms ordering.
+                for (List<Integer> list : equivalents) {
+                  if (list.contains(i)) {
+                    int minIndex = -1;
+                    double minValue = MAX_VALUE;
+                    for (Integer aIndex : list) {
+                      if (i != aIndex) {
+                        int ind2 = aIndex * 3;
+                        double[] tempCoord = new double[]{xyz1[ind2], xyz1[ind2 + 1], xyz1[ind2 + 2]};
+                        double value2 = rmsd(tempCoord, coord2, mass[i]);
+                        if (value2 < minValue.doubleValue()) {
+                          minIndex = aIndex
+                          minValue = value2
+                        }
+                      }
+                    }
+                    if (minValue < value) {
+                      // Update Atom
+                      Atom temp = atoms1.get(i);
+                      atoms1.set(i, atoms1.get(minIndex));
+                      atoms1.set(minIndex, temp);
+                      // Update Coords
+                      double[] tempCoord = new double[]{xyz1[ind], xyz1[ind + 1], xyz1[ind + 2]}
+                      int ind2 = minIndex * 3;
+                      xyz1[ind] = xyz1[ind2];
+                      xyz1[ind + 1] = xyz1[ind2 + 1];
+                      xyz1[ind + 2] = xyz1[ind2 + 2];
+                      xyz1[ind2] = tempCoord[0];
+                      xyz1[ind2 + 1] = tempCoord[1];
+                      xyz1[ind2 + 2] = tempCoord[2];
+                    }
+                    value = rmsd(new double[]{xyz1[ind], xyz1[ind + 1], xyz1[ind + 2]},
+                            new double[]{xyz2[ind], xyz2[ind + 1], xyz2[ind + 2]}, mass[i]);
+                    logger.info(format(" Atom %2d distance updated to %9.3f A", i, value));
+                    // Index was found. No need to check the rest.
+                    break;
+                  }
+                }
+              }
+            }
+            compRMSD = superpose(xyz1, xyz2, mass)
+            logger.info(format(" Final RMSD: %9.4f A", compRMSD));
+            // Current molecule
+            // Create a new set of Atoms for each molecule
+            for (int j = 0; j < numAtoms; j++) {
+              Atom a = atoms1[j]
+              double[] xyz = [a.getX(), a.getY(), a.getZ()]
+              Atom atom = new Atom(atomIndex++, a.getName(), a.getAtomType(), xyz)
+              atomList.add(atom)
+            }
+
+            // Create a new set of Bonds for each molecule
+            List<Bond> bondList = mol.getBondList();
+            for (Bond bond : bondList) {
+              Atom a1 = bond.getAtom(0)
+              Atom a2 = bond.getAtom(1)
+
+              int index1 = -1
+              int index2 = -1
+              int counter = 0
+              for (Atom atom : atoms1) {
+                int aIndex = atom.getIndex()
+                if (aIndex == a1.getIndex()) {
+                  index1 = counter
+                } else if (aIndex == a2.getIndex()) {
+                  index2 = counter
+                }
+                counter++
+              }
+              if(index1 == -1 || index2 == -1){
+                logger.severe(format(" Index1 (%3d) and Index2 (%3d) suggests error for bond: %s", index1, index2, bond))
+              }
+              Atom newA1 = atomList.get(index1 + totalNumAtoms)
+              Atom newA2 = atomList.get(index2 + totalNumAtoms)
+              logger.info(format(" index1 %3d Index2 %3d", index1, index2));
+              if(!newA1.isBonded(newA2)){
+                Bond b = new Bond(newA1, newA2)
+                b.setBondType(bond.getBondType())
+              }
+            }
+            molDone[l] = true;
+            totalNumAtoms += numAtoms;
+          }
+          if(!Arrays.asList(molDone).contains(false)){
+            break;
+          }
         }
-        Atom[] atoms2 = assembly2.getAtomArray();
-        double[] xyz2 = new double[atoms2.length * 3];
-        index = 0;
-        for (Atom a : atoms2) {
-          xyz1[index * 3] = a.getX();
-          xyz1[index * 3 + 1] = a.getY();
-          xyz1[index++ * 3 + 2] = a.getZ();
-        }
-        double[] translate1 = calculateTranslation(xyz1, mass);
-        double[] translate2 = calculateTranslation(xyz2, mass);
-        applyTranslation(xyz1, translate1);
-        applyTranslation(xyz2, translate2);
-        double[][] rotation = calculateRotation(xyz1, xyz2, mass);
-        applyRotation(xyz2, rotation);
-        double[] value = new double[atoms1.length];
-        logger.info(format(" RMSD: %9.4f", superpose(xyz1, xyz2, mass)));
-        for (int i = 0; i < atoms1.length; i++) {
-          value[i] = rmsd(new double[]{xyz1[i * 3], xyz1[i * 3 + 1], xyz1[i * 3 + 2]},
-                  new double[]{xyz2[i * 3], xyz2[i * 3 + 1], xyz2[i * 3 + 2]}, mass[i]);
-          logger.info(format(" Atom %2d: %9.3f", i, value[i]));
-        }
-        MolecularAssembly outputAssembly = new MolecularAssembly(assembly1.getName());
-      }else {
-        // Atoms from desired file.
+      Utilities.biochemistry(newAssembly, atomList)
+      XYZFilter filter = new XYZFilter(saveFile, newAssembly, newAssembly.getForceField(),
+              newAssembly.getProperties())
+      filter.writeFile(saveFile, true)
+      logger.info(format(" Saved to " + saveFile.name))
+
+      // Merge molecules into assembly and print out.
+      } else if (atomType && filenames.size() > 1){
+        potentialFunctions.openAll(filenames[0]);
+        SystemFilter systemFilter1 = potentialFunctions.getFilter()
+        potentialFunctions.openAll(filenames[1]);
+        SystemFilter systemFilter2 = potentialFunctions.getFilter()
+        logger.info(" Changing atom types in file 1 to match file 2.");
+        // Atom types from desired file.
         MolecularAssembly assembly1 = systemFilter1.getActiveMolecularSystem();
         do {
           MolecularAssembly assembly2 = systemFilter2.getActiveMolecularSystem();
@@ -342,7 +542,18 @@ class ReorderAtoms extends PotentialScript {
           }
 
           List<MSNode> entitiesInput = assembly2.getAllBondedEntities();
+          int[] molIndices = assembly2.getMoleculeNumbers();
           int numEntitiesInput = entitiesInput.size();
+          int[] shiftIndices = new int[numEntitiesInput];
+          int count = 0;
+          for(int i = 0; i < numEntitiesInput; i++){
+            for(int ind : molIndices){
+              if(ind == i){
+                count++;
+              }
+            }
+            shiftIndices[i] = count;
+          }
           if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Number of entities in input: %d", numEntitiesInput));
             for (MSNode entity : entitiesInput) {
@@ -396,11 +607,6 @@ class ReorderAtoms extends PotentialScript {
               zPrime = 1;
             }
             logger.info(" Original ZPrime: " + zPrime);
-            // Determine index between entities... use Assembly.getMoleculeNumbers() instead?
-            int lessIndex = (zPrime == 1) ? 0 : CIFFilter.findMaxLessIndex(xyzatoms, i);
-            if (logger.isLoggable(Level.FINE)) {
-              logger.fine(format(" Molecule Index: %d", lessIndex));
-            }
             // Add known input bonds; a limitation is that bonds all are given a Bond order of 1.
             List<Bond> bonds = mol.getBondList();
             IBond.Order order = IBond.Order.SINGLE;
@@ -409,16 +615,18 @@ class ReorderAtoms extends PotentialScript {
               logger.warning(" No bonds detected in input structure. Please check input.\n " +
                       "If correct, separate non-bonded entities into multiple CIFs.");
             }
+            int shiftIndex;
             for (Bond xyzBond : bonds) {
               int atom0Index = xyzBond.getAtom(0).getXyzIndex();
               int atom1Index = xyzBond.getAtom(1).getXyzIndex();
+              shiftIndex = (molIndices[atom0Index]==0)?0:shiftIndices[molIndices[atom0Index]-1];
               if (logger.isLoggable(Level.FINER)) {
-                logger.finer(
-                        format(" Bonded atom 1: %d, Bonded atom 2: %d", atom0Index,
-                                atom1Index));
+                logger.finer(format(" Bonded atom 1: %d, Bonded atom 2: %d", atom0Index, atom1Index));
+                logger.finer(format(" Atom0: %3d Atom1: %3d Shift: %3d final0,1: %3d, %3d MolIndex: %3d ShiftIndex: %3d",
+                        atom0Index, atom1Index, shiftIndex, atom0Index - shiftIndex - 1, atom1Index - shiftIndex - 1,
+                        molIndices[atom0Index],shiftIndices[molIndices[atom0Index]]))
               }
-              xyzCDKAtoms.addBond(atom0Index - lessIndex - 1,
-                      atom1Index - lessIndex - 1, order);
+              xyzCDKAtoms.addBond(atom0Index - shiftIndex - 1, atom1Index - shiftIndex - 1, order);
             }
 
             // Assign CDK atom types for the input molecule.
@@ -442,7 +650,7 @@ class ReorderAtoms extends PotentialScript {
             int cifBonds = CIFFilter.bondAtoms(atoms1, bondTolerance);
             if (logger.isLoggable(Level.FINE)) {
               logger.fine(
-                      format(" Created %d bonds between CIF atoms (%d in input).", cifBonds, xyzBonds));
+                      format(" Created %d bonds between input atoms (%d in input).", cifBonds, xyzBonds));
             }
             List<Atom> atomPool = new ArrayList<>(Arrays.asList(atoms1));
 
@@ -469,9 +677,7 @@ class ReorderAtoms extends PotentialScript {
                 counter++;
               }
             } catch (Exception e) {
-              logger.info(e + "\n" + Arrays.toString(e.getStackTrace()));
-              logger.warning(" Failed to separate copies within the asymmetric unit.");
-              return false;
+              logger.severe(" Failed to separate copies within the asymmetric unit." + e + "\n" + Utilities.stackTraceToString(e));
             }
             zPrime = zindices.size();
             logger.info(" Zprime: " + zPrime);
@@ -488,13 +694,11 @@ class ReorderAtoms extends PotentialScript {
                 logger.fine(format(" CIF atoms in current: %d", cifMolAtoms));
               }
               // Detect if CIF contains multiple copies (Z'>1)
-              if (cifMolAtoms % numInputMolAtoms == 0
-                      || cifMolAtoms % (numInputMolAtoms - numMolHydrogen) == 0) {
+              if (cifMolAtoms % numInputMolAtoms == 0 || cifMolAtoms % (numInputMolAtoms - numMolHydrogen) == 0) {
                 cifCDKAtomsArr[j] = new AtomContainer();
                 for (Integer integer : currentList) {
                   String atomName = getSymbol(atoms1[integer - 1].getAtomType().atomicNumber);
-                  cifCDKAtomsArr[j].addAtom(new org.openscience.cdk.Atom(atomName,
-                          new Point3d(atoms1[integer - 1].getXYZ(null))));
+                  cifCDKAtomsArr[j].addAtom(new org.openscience.cdk.Atom(atomName, new Point3d(atoms1[integer - 1].getXYZ(null))));
                 }
                 AtomContainer nullCDKAtoms = new AtomContainer();
 
@@ -507,15 +711,13 @@ class ReorderAtoms extends PotentialScript {
 
                 // Compute bonds for CIF molecule.
                 factory = AtomTypeFactory.getInstance(
-                        "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-                        cifCDKAtomsArr[j].getBuilder());
+                        "org/openscience/cdk/config/data/jmol_atomtypes.txt", cifCDKAtomsArr[j].getBuilder());
                 for (IAtom atom : cifCDKAtomsArr[j].atoms()) {
                   CIFFilter.setAtomTypes(factory, atom);
                   try {
                     factory.configure(atom);
                   } catch (Exception ex) {
-                    logger.info(" Failed to configure CIF atoms.\n" + ex + "\n" + Arrays.toString(
-                            ex.getStackTrace()));
+                    logger.info(" Failed to configure CIF atoms.\n" + ex + "\n" + Utilities.stackTraceToString(ex));
                   }
                 }
 
@@ -524,8 +726,7 @@ class ReorderAtoms extends PotentialScript {
                 try {
                   rebonder.rebond(cifCDKAtomsArr[j]);
                 } catch (Exception ex) {
-                  logger.info(
-                          "Failed to rebond CIF atoms.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
+                  logger.info("Failed to rebond CIF atoms.\n" + ex + "\n" + Utilities.stackTraceToString(ex));
                 }
 
                 int cifMolBonds = cifCDKAtomsArr[j].getBondCount();
@@ -540,7 +741,7 @@ class ReorderAtoms extends PotentialScript {
                   int[] p = pattern.match(cifCDKAtomsArr[j]);
                   int pLength = p.length;
                   if (p != null && pLength == numInputMolAtoms) {
-                    // Used matched atoms to update the positions of the input file atoms.
+                    // Use matched atoms to update the positions of the input file atoms.
                     for (int k = 0; k < pLength; k++) {
                       if (logger.isLoggable(Level.FINEST)) {
                         logger.finest(
@@ -558,8 +759,7 @@ class ReorderAtoms extends PotentialScript {
                     }
                     continue;
                   }
-                } else if ((xyzBonds - numMolHydrogen) == 0
-                        || cifMolBonds % ((xyzBonds - numMolHydrogen)) == 0) {
+                } else if ((xyzBonds - numMolHydrogen) == 0 || cifMolBonds % ((xyzBonds - numMolHydrogen)) == 0) {
                   // Hydrogen most likely missing from file. If zero, then potentially water/methane (implicit hydrogen atoms).
                   if (logger.isLoggable(Level.FINE)) {
                     logger.info(" CIF may contain implicit hydrogen -- attempting to patch.");
@@ -734,8 +934,8 @@ class ReorderAtoms extends PotentialScript {
                     logger.fine(format(" Bonded atom 1: %d, Bonded atom 2: %d", a1.getXyzIndex(),
                             a2.getXyzIndex()));
                   }
-                  Atom newA1 = atomList.get(a1.getIndex() - lessIndex - 1);
-                  Atom newA2 = atomList.get(a2.getIndex() - lessIndex - 1);
+                  Atom newA1 = atomList.get(a1.getIndex() - shiftIndex - 1);
+                  Atom newA2 = atomList.get(a2.getIndex() - shiftIndex - 1);
                   Bond bond2 = new Bond(newA1, newA2);
                   bond2.setBondType(bond.getBondType());
                 }
@@ -794,8 +994,6 @@ class ReorderAtoms extends PotentialScript {
           outputAssembly.destroy();
         } while (systemFilter1.readNext());
       }
-    }
-
     return this
   }
 
@@ -867,8 +1065,7 @@ class ReorderAtoms extends PotentialScript {
         logger.info("\n Saved properties file: " + propertyFile.getAbsolutePath() + "\n");
         bw.close();
       } catch (Exception ex) {
-        logger.info("Failed to write files.\n" + ex);
-        ex.printStackTrace();
+        logger.info("Failed to write files.\n" + Utilities.stackTraceToString(ex));
       }
     } else {
       logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n");
@@ -901,12 +1098,13 @@ class ReorderAtoms extends PotentialScript {
               a2.getResidueNumber()))
         }
         if (comp == 0) {
-          comp = Double.compare(a1.getMass(), a2.getMass()) * -1;
+          // Want heavier atoms first so * -1.
+          comp = -Double.compare(a1.getMass(), a2.getMass());
           if (logger.isLoggable(Level.FINER) && comp != 0) {
             logger.finer(format(" Different Masses %6.3f %6.3f", a1.getMass(), a2.getMass()))
           }
           if (comp == 0) {
-            comp = -Integer.compare(a1.atomType.type, a2.getAtomType().type)
+            comp = Integer.compare(a1.getAtomType().type, a2.getAtomType().type)
             if (logger.isLoggable(Level.FINER) && comp != 0) {
               logger.finer(
                   format(" Different Atom Types (%d vs %s)", a1.atomType.type, a2.atomType.type))

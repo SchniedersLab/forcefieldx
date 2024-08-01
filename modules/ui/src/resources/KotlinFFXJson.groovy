@@ -3,7 +3,7 @@
 // Constant header of the Kotlin ffx.json file.
 header = """{
   "properties": {
-    "v":"1.0.0-beta"
+    "v":"1.0.0"
   },
   "link": "https://ffx.biochem.uiowa.edu",
   "repositories": [
@@ -11,7 +11,8 @@ header = """{
   ],
   "imports": [
     "ffx.Main",
-    "ffx.Main.*"
+    "ffx.Main.*",
+    "ffx.utilities.DownloadUtils.*"
   ],
   "init": [
    "System.setProperty(\\\"java.awt.headless\\\",\\\"true\\\")",

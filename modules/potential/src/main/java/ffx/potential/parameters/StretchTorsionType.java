@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
 //
 // This file is part of Force Field X.
 //
@@ -38,14 +38,15 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.STRTORS;
-import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
-import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
-import ffx.utilities.FFXKeyword;
+import ffx.utilities.FFXProperty;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,33 +59,44 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "strtors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
-    "[2 integers and 1 real] "
-        + "Provides the values for a single stretch-torsion cross term potential parameter. "
-        + "The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angles to be parameterized. "
-        + "The real modifier gives the value of the stretch-torsion force constant for all torsional angles with the defined atom classes for the central bond. "
-        + "The default units for the stretch-torsion force constant can be controlled via the strtorunit keyword.")
+@FFXProperty(name = "strtors", clazz = String.class, propertyGroup = PotentialFunctionParameter, description = """
+    [2 integers and 1 real]
+    Provides the values for a single stretch-torsion cross term potential parameter.
+    The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angles to be parameterized.
+    The real modifier gives the value of the stretch-torsion force constant for all torsional angles with the defined atom classes for the central bond.
+    The default units for the stretch-torsion force constant can be controlled via the strtorunit keyword.
+    """)
 public final class StretchTorsionType extends BaseType implements Comparator<String> {
 
   public static final double DEFAULT_STRTOR_UNIT = 1.0;
 
-  /** Unit conversion. */
-  @FFXKeyword(name = "strtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
-      "Sets the scale factor needed to convert the energy value computed by the bond stretching-torsional angle cross term potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  /**
+   * Unit conversion.
+   */
+  @FFXProperty(name = "strtorunit", propertyGroup = EnergyUnitConversion, defaultValue = "1.0", description = """
+      Sets the scale factor needed to convert the energy value computed by the bond stretching-torsional
+      angle cross term potential into units of kcal/mole. The correct value is force field dependent and typically
+      provided in the header of the master force field parameter file.
+      """)
   public double strTorUnit = DEFAULT_STRTOR_UNIT;
 
-  /** A Logger for the StretchTorsionType class. */
+  /**
+   * A Logger for the StretchTorsionType class.
+   */
   private static final Logger logger = Logger.getLogger(StretchTorsionType.class.getName());
-  /** Atom classes for this stretch-torsion type. */
+  /**
+   * Atom classes for this stretch-torsion type.
+   */
   public final int[] atomClasses;
-  /** Force constants. */
+  /**
+   * Force constants.
+   */
   public final double[] forceConstants;
 
   /**
    * StretchTorsionType Constructor.
    *
-   * @param atomClasses Atom classes.
+   * @param atomClasses    Atom classes.
    * @param forceConstants Force constant.
    */
   public StretchTorsionType(int[] atomClasses, double[] forceConstants) {
@@ -99,11 +111,11 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
    *
    * @param stretchTorsionType1 a {@link ffx.potential.parameters.StretchTorsionType} object.
    * @param stretchTorsionType2 a {@link ffx.potential.parameters.StretchTorsionType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses         an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
    */
   public static StretchTorsionType average(StretchTorsionType stretchTorsionType1,
-      StretchTorsionType stretchTorsionType2, int[] atomClasses) {
+                                           StretchTorsionType stretchTorsionType2, int[] atomClasses) {
     if (stretchTorsionType1 == null || stretchTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -122,7 +134,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   /**
    * Construct an StretchTorsionType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return an StretchTorsionType instance.
    */
@@ -204,7 +216,9 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -217,7 +231,9 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
     return Arrays.equals(atomClasses, stretchTorsionType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);
