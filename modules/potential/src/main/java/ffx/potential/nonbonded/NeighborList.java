@@ -1059,7 +1059,6 @@ public class NeighborList extends ParallelRegion {
             }
           }
           groupLists[i][j] = copyOf(pairs, n);
-          Arrays.sort(groupLists[i][j]);
         }
       }
     }
