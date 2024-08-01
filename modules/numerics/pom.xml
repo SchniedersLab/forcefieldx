@@ -43,14 +43,14 @@
             <classpath/>
             <argument>--add-modules</argument>
             <argument>jdk.incubator.vector</argument>
-            <argument>-Dfft.useSIMD=false</argument>
+            <argument>-Dfft.useSIMD=true</argument>
             <argument>-Dfft.packFFTs=true</argument>
             <!-- argument>-XX:ObjectAlignmentInBytes=8</argument -->
             <!-- argument>-XX:+UseNeon</argument -->
             <argument>-Dffx.log=ALL</argument>
             <argument>ffx.numerics.fft.Complex3DParallel</argument>
             <argument>64</argument>
-            <argument>8</argument>
+            <argument>1</argument>
             <argument>1000</argument>
             <argument>true</argument>
           </arguments>

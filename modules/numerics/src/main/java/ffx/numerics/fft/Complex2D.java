@@ -276,18 +276,18 @@ public class Complex2D {
 
   /**
    * Pack the input array for Fourier transforms along the X dimension.
+   * <p>
+   * Input order:
+   * real(x,y) = input[offset + x*nextX + y*nextY]
+   * imag(x,y) = input[offset + x*nextX + y*nextY + im]
+   * Output order:
+   * real(x,y) = packedData[y*trNextY + x*trNextX]
+   * imag(x,y) = packedData[y*trNextY + x*trXextX + im]
    *
    * @param input  The input data.
    * @param offset The offset into the input data.
    */
   private void transpose(final double[] input, int offset) {
-    // Input order:
-    // real(x,y) = input[offset + x*nextX + y*nextY]
-    // imag(x,y) = input[offset + x*nextX + y*nextY + im]
-    // Output order:
-    // real(x,y) = packedData[y*trNextY + x*trNextX]
-    // imag(x,y) = packedData[y*trNextY + x*trXextX + im]
-
     int index = 0;
     // Outer loop over the X dimension.
     for (int x = 0; x < nX; x++) {
@@ -306,17 +306,18 @@ public class Complex2D {
 
   /**
    * Unpack the output array after Fourier transforms.
+   * <p>
+   * Input order:
+   * real_xy = packedData[y*trNextY + x*trNextX]
+   * imag_xy = packedData[y*trNextY + x*trXextX + im]
+   * Output order:
+   * real_xy = output[offset + x*nextX + y*nextY]
+   * imag_xy = output[offset + x*nextX + y*nextY + im]
    *
    * @param output The output data.
    * @param offset The offset into the output data.
    */
   private void untranspose(final double[] output, int offset) {
-    // Input order:
-    // real_xy = packedData[y*trNextY + x*trNextX]
-    // imag_xy = packedData[y*trNextY + x*trXextX + im]
-    // Output order:
-    // real_xy = output[offset + x*nextX + y*nextY]
-    // imag_xy = output[offset + x*nextX + y*nextY + im]
     int index = offset;
     // Outer loop over the Y dimension.
     for (int y = 0; y < nY; y++) {

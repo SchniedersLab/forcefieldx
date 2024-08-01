@@ -754,7 +754,7 @@ public class ReciprocalSpace {
       logger.info(this.crystal.toString());
       logger.info(crystal.toString());
       logger.severe(
-          " The reciprocal space class does not currently allow changes in the number of symmetry operators.");
+          " The reciprocal space class does not currently allow changes in the number of symmetry operators unless it is mapped by a user supplied symmetry operator.");
     }
     this.coordinates = particleMeshEwald.getCoordinates();
     initConvolution();

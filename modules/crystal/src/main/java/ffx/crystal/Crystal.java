@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.crystal.SpaceGroupDefinitions.spaceGroupFactory;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
@@ -289,7 +290,7 @@ public class Crystal {
    * @param sgNumber The space group number.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, int sgNumber) {
-    this(a, b, c, alpha, beta, gamma, SpaceGroupDefinitions.spaceGroupFactory(sgNumber).pdbName);
+    this(a, b, c, alpha, beta, gamma, spaceGroupFactory(sgNumber).pdbName);
   }
 
   /**
@@ -306,7 +307,7 @@ public class Crystal {
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
     // Crystal SpaceGroup and LatticeSystem are final variables. Temp variable to delay assigning.
-    SpaceGroup tempSG = SpaceGroupDefinitions.spaceGroupFactory(sg);
+    SpaceGroup tempSG = spaceGroupFactory(sg);
     LatticeSystem tempLS = tempSG.latticeSystem;
     this.a = a;
     this.b = b;
@@ -497,10 +498,10 @@ public class Crystal {
     }
 
     // check the space group name is valid
-    SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+    SpaceGroup spaceGroup = spaceGroupFactory(sg);
     if (spaceGroup == null) {
       sg = sg.replaceAll(" ", "");
-      spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+      spaceGroup = spaceGroupFactory(sg);
       if (spaceGroup == null) {
         return null;
       }
@@ -725,6 +726,7 @@ public class Crystal {
       mateY[i] = xc * rotmat[0][1] + yc * rotmat[1][1] + zc * rotmat[2][1];
       mateZ[i] = xc * rotmat[0][2] + yc * rotmat[1][2] + zc * rotmat[2][2];
     }
+
   }
 
   /**

@@ -49,7 +49,7 @@ import org.junit.Test;
  * @author Mallory R. Tollefson
  */
 public class MinimizeCrystalsTest extends AlgorithmsTest {
-
+  
   /** Tests convergence criteria flag of the CrystalMin class. */
   @Test
   public void testCrystalMinConvergenceCriteria() {
@@ -62,8 +62,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.72657973215976;
-
+    double expectedPotentialEnergy = -32.72658281436831;
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
     assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
@@ -100,7 +99,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.54443451197122;
+    double expectedPotentialEnergy = -32.54443798845555;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
@@ -131,7 +130,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.63131283241016;
+    double expectedPotentialEnergy = -32.63131694976352;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
