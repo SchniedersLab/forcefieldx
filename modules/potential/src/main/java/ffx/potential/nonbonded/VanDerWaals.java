@@ -331,17 +331,15 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.25);
       vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 3.0);
       if (vdwLambdaAlpha < 0.0) {
-        logger.warning(
-            format(
-                " Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.",
-                vdwLambdaAlpha));
+        logger.warning(format(
+            " Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.",
+            vdwLambdaAlpha));
         vdwLambdaAlpha = 0.25;
       }
       if (vdwLambdaExponent < 1.0) {
-        logger.warning(
-            format(
-                " Invalid value %8.3g for vdw-lambda-exponent; must be greater than or equal to 1. Resetting to 3.",
-                vdwLambdaExponent));
+        logger.warning(format(
+            " Invalid value %8.3g for vdw-lambda-exponent; must be greater than or equal to 1. Resetting to 3.",
+            vdwLambdaExponent));
         vdwLambdaExponent = 3.0;
       }
       intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
@@ -1195,9 +1193,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      */
     private long initLoopTotalTime, vdWLoopTotalTime, reductionLoopTimeTotal;
     private long neighborListTotalTime, vdwTimeTotal;
-    private final long[] initializationTime;
-    private final long[] energyTime;
-    private final long[] reductionTime;
 
     VanDerWaalsRegion() {
       initializationLoop = new InitializationLoop[threadCount];
@@ -1205,9 +1200,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
       reductionLoop = new ReductionLoop[threadCount];
       neighborListAction = new NeighborListBarrier();
-      initializationTime = new long[threadCount];
-      energyTime = new long[threadCount];
-      reductionTime = new long[threadCount];
     }
 
     @Override
@@ -1229,17 +1221,19 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         int countMax = 0;
         for (int i = 0; i < threadCount; i++) {
           int count = vanDerWaalsLoop[i].getCount();
-          long totalTime = initializationTime[i] + energyTime[i] + reductionTime[i];
-          logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
-              i, initializationTime[i] * 1e-9, energyTime[i] * 1e-9,
-              reductionTime[i] * 1e-9, totalTime * 1e-9, count));
-          initMax = max(initializationTime[i], initMax);
-          vdwMax = max(energyTime[i], vdwMax);
-          reductionMax = max(reductionTime[i], reductionMax);
+          long initTime = initializationLoop[i].time + expandLoop[i].time;
+          long vdWTime = vanDerWaalsLoop[i].time;
+          long reduceTime = reductionLoop[i].time;
+          long totalTime = initTime + vdWTime + reduceTime;
+          logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d", i,
+              initTime * 1e-9, vdWTime * 1e-9, reduceTime * 1e-9, totalTime * 1e-9, count));
+          initMax = max(initTime, initMax);
+          vdwMax = max(vdWTime, vdwMax);
+          reductionMax = max(reduceTime, reductionMax);
           countMax = max(countMax, count);
-          initMin = min(initializationTime[i], initMin);
-          vdwMin = min(energyTime[i], vdwMin);
-          reductionMin = min(reductionTime[i], reductionMin);
+          initMin = min(initTime, initMin);
+          vdwMin = min(vdWTime, vdwMin);
+          reductionMin = min(reduceTime, reductionMin);
           countMin = min(countMin, count);
         }
         long totalMin = initMin + vdwMin + reductionMin;
@@ -1376,6 +1370,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private class InitializationLoop extends IntegerForLoop {
 
       private int threadID;
+      protected long time;
 
       @Override
       public void run(int lb, int ub) {
@@ -1454,10 +1449,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
 
       @Override
+      public void finish() {
+        time += System.nanoTime();
+      }
+
+      @Override
       public void start() {
         threadID = getThreadIndex();
-        // The timing finished in the ExpandLoop.
-        initializationTime[threadID] = -System.nanoTime();
+        time = -System.nanoTime();
       }
     }
 
@@ -1465,12 +1464,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       private final double[] in = new double[3];
       private final double[] out = new double[3];
-      private int threadID;
+      private long time;
 
       @Override
       public void finish() {
-        // The timing started in the InitializationLoop.
-        initializationTime[threadID] += System.nanoTime();
+        time += System.nanoTime();
       }
 
       @Override
@@ -1554,7 +1552,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       @Override
       public void start() {
-        threadID = getThreadIndex();
+        time = -System.nanoTime();
       }
 
     }
@@ -1567,7 +1565,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      * @since 1.0
      */
     private class VanDerWaalsLoop extends IntegerForLoop {
-
+      protected long time;
       private final double[] dx_local;
       private final double[][] transOp;
       private int count;
@@ -1594,7 +1592,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           shareddEdL.addAndGet(dEdL);
           sharedd2EdL2.addAndGet(d2EdL2);
         }
-        energyTime[threadID] += System.nanoTime();
+        time += System.nanoTime();
       }
 
       public int getCount() {
@@ -2090,7 +2088,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       @Override
       public void start() {
         threadID = getThreadIndex();
-        energyTime[threadID] = -System.nanoTime();
+        time = -System.nanoTime();
         energy = 0.0;
         count = 0;
         if (lambdaTerm) {
@@ -2117,11 +2115,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      */
     private class ReductionLoop extends IntegerForLoop {
 
+      protected long time;
       int threadID;
 
       @Override
       public void finish() {
-        reductionTime[threadID] += System.nanoTime();
+        time += System.nanoTime();
       }
 
       @Override
@@ -2141,7 +2140,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       @Override
       public void start() {
         threadID = getThreadIndex();
-        reductionTime[threadID] = -System.nanoTime();
+        time = -System.nanoTime();
       }
 
     }
