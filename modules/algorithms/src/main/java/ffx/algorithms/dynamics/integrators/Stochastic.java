@@ -49,7 +49,6 @@ import ffx.potential.SystemState;
 import ffx.numerics.Potential;
 import ffx.potential.constraint.ShakeChargeConstraint;
 
-import java.util.Arrays;
 import java.util.Random;
 
 /**

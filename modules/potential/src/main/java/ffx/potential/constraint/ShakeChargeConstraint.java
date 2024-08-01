@@ -2,13 +2,11 @@ package ffx.potential.constraint;
 
 import ffx.numerics.Constraint;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-
 public class ShakeChargeConstraint implements Constraint {
     final int nConstraints;
     final double tol;
     final int c;
-    final double maxIters =150;
+    final double maxIters = 150;
 
     public ShakeChargeConstraint(int nConstraints, int c, double tol){
         this.nConstraints = nConstraints;
@@ -19,6 +17,16 @@ public class ShakeChargeConstraint implements Constraint {
     public void applyConstraintToStep(final double[] xPrior, double[] xNew, final double[] masses, double tol){
     }
 
+    /**
+     * This method follows the SHAKE Charge Constraint laid out in Appendix B of
+     * Donnini, Serena, et al. "Charge-neutral constant pH molecular dynamics simulations using a parsimonious proton buffer."
+     * Journal of chemical theory and computation 12.3 (2016): 1040-1051.
+     * https://pubs.acs.org/doi/epdf/10.1021/acs.jctc.5b01160
+     * @param x
+     * @param afric
+     * @param masses
+     * @param dt
+     */
     public void applyChargeConstraintToStep(final double[] x, final double[] afric, final double[] masses, final double dt){
         boolean done = false;
         int iter = 0;
