@@ -103,7 +103,8 @@ public class System {
    */
   public void addForce(Force force) {
     if (force != null) {
-      OpenMM_System_addForce(pointer, force.getPointer());
+      int forceIndex = OpenMM_System_addForce(pointer, force.getPointer());
+      force.setForceIndex(forceIndex);
     }
   }
 
