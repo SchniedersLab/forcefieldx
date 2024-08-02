@@ -283,9 +283,10 @@ class GenZ extends AlgorithmsScript {
         }
 
         File structureFile = new File(filename)
-        List<String> rotNames = new ArrayList<>()
+        //List<String> rotNames = new ArrayList<>()
         int[] optimalRotamers = new int[selectedResidues.size()]
         int assemblyIndex = 0
+        String[] rotNames = new String[selectedResidues.size()]
         for(int confIndex=2; confIndex > -1; confIndex--){
             List<Residue> conformerResidueList = new ArrayList<>()
             MolecularAssembly conformerAssembly = algorithmFunctions.open(filename)
@@ -318,21 +319,31 @@ class GenZ extends AlgorithmsScript {
                     RotamerLibrary.applyRotamer(residue, rotamers[rotIndex])
                     double occupancy = populationArray[resIndex][rotIndex]
                     boolean diffStates = false
-                    if(confIndex < 2 && occupancy != 0 && !rotNames.get(resIndex).contains(residue.getRotamer().getName())){
-                        diffStates = true
-                        String newString = rotNames.get(resIndex) + residue.getRotamer().getName()
-                        rotNames.set(resIndex, newString)
-                    } else {
-                        rotNames.add(residue.getRotamer().getName())
+                    for (int i = 2; i > -1; i--) {
+                        int rotamerInd = conformers[resIndex][i]
+                        String rotName = rotamers[rotamerInd].getName()
+                        double occupancyTest = populationArray[resIndex][rotamerInd]
+                        logger.info("Residue index: " + resIndex)
+                        if (i == 2 && rotNames[resIndex] != null) {
+                            rotNames[resIndex] = rotName
+                        } else if (i < 2 && occupancyTest != 0 && !rotNames[resIndex].contains(rotName)) {
+                            diffStates = true
+                            String newString = rotNames[resIndex] + rotName
+                            logger.info(newString)
+                            rotNames[resIndex] = newString
+                        } else if (i == 2) {
+                            rotNames[resIndex] = rotName
+                        }
                     }
+                    logger.info(rotNames.toString())
                     for(Atom atom: residue.getAtomList()){
                             if(!residue.getBackboneAtoms().contains(atom) || diffStates){
-                                if(occupancy == 1){
-                                    atom.setOccupancy(occupancy)
-                                    atom.setAltLoc(' ' as Character)
-                                } else {
+                                if(occupancy != 1){
                                     atom.setAltLoc(altLocs[confIndex])
                                     atom.setOccupancy(occupancy)
+                                } else {
+                                    atom.setOccupancy(occupancy)
+                                    atom.setAltLoc(' ' as Character)
                                 }
                             } else {
                                 atom.setOccupancy(1.0)
@@ -344,7 +355,7 @@ class GenZ extends AlgorithmsScript {
             }
 
             conformerAssemblies[assemblyIndex] = conformerAssembly
-            titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, conformerAssemblies[assemblyIndex], conformerResidueList, manyBodyOptions)
+            titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, conformerAssemblies[assemblyIndex], conformerResidueList)
             excludeAtoms.addAll(titrationManyBody.getExcludeAtoms())
             assemblyIndex++
         }

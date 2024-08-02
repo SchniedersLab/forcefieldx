@@ -916,7 +916,7 @@ public final class PDBFilter extends SystemFilter {
                   }
                   returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
 //
-                  if (returnedAtom != null) {
+                  if (returnedAtom != newAtom) {
                     // A previously added atom has been retained.
                     atoms.put(serial, returnedAtom);
                     if (logger.isLoggable(Level.FINE)) {
@@ -1369,7 +1369,7 @@ public final class PDBFilter extends SystemFilter {
         }
         // Do nothing.
       }
-      if(atom != null && !atom.getResidueName().equals(trueResName)){
+      if(atom != null){
         int index = activeMolecularAssembly.getResidueList().indexOf(residue);
         MSNode atoms = residue.getAtomNode();
         atoms.remove(atom);
