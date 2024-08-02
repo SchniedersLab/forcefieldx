@@ -1044,8 +1044,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         } else {
           for (int k = 0; k < 3; k++) {
             double[] localQuadrupolek = quadrupole[k];
-            quadrupolei[j] +=
-                rotmati[k] * (rotmatj[0] * localQuadrupolek[0] + rotmatj[1] * localQuadrupolek[1]
+            quadrupolei[j] += rotmati[k] * (rotmatj[0] * localQuadrupolek[0]
+                    + rotmatj[1] * localQuadrupolek[1]
                     + rotmatj[2] * localQuadrupolek[2]);
           }
         }
