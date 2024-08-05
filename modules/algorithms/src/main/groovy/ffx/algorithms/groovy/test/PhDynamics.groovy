@@ -257,7 +257,7 @@ class PhDynamics extends AlgorithmsScript {
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder,
-                dynamicsOptions.temperature, esvSystem, x)
+                dynamicsOptions.temperature, esvSystem, x, world.size())
 
         long totalSteps = dynamicsOptions.numSteps
         int nSteps = repEx.replicaSteps
@@ -326,7 +326,7 @@ class PhDynamics extends AlgorithmsScript {
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder,
-                dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+                dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential, world.size())
 
         pHReplicaExchange.
                 sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report,

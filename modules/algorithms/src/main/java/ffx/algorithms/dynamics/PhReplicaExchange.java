@@ -116,8 +116,8 @@ public class PhReplicaExchange implements Terminatable {
    * @param temp temperature of replica
    */
   public PhReplicaExchange(MolecularDynamics molecularDynamics, File structureFile, double pH,
-                           double[] pHLadder, double temp, ExtendedSystem extendedSystem, double[] x) {
-    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, x, null, null);
+                           double[] pHLadder, double temp, ExtendedSystem extendedSystem, double[] x, int worldSize) throws Exception {
+    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, x, null, null, worldSize);
   }
 
   /**
@@ -133,8 +133,8 @@ public class PhReplicaExchange implements Terminatable {
    */
   public PhReplicaExchange(MolecularDynamics molecularDynamics, File structureFile, double pH,
                            double[] pHLadder, double temp, ExtendedSystem extendedSystem, @Nullable double[] x,
-                           @Nullable MolecularDynamicsOpenMM molecularDynamicsOpenMM, @Nullable Potential potential) {
-
+                           @Nullable MolecularDynamicsOpenMM molecularDynamicsOpenMM, @Nullable Potential potential,
+                           int worldSize) throws Exception {
     this.replica = molecularDynamics;
     this.temp = temp;
     this.extendedSystem = extendedSystem;
@@ -148,7 +148,7 @@ public class PhReplicaExchange implements Terminatable {
     world = Comm.world();
 
     // Number of processes is equal to the number of replicas.
-    int numProc = world.size();
+    int numProc = worldSize;
     rank = world.rank();
 
     nReplicas = numProc;
@@ -186,18 +186,33 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Startup Successful! ");
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else {
-      logger.severe(" Unable to restart. Fix issues with restart files.");
+      throw new Exception("Failed to restart Replica Exchange.");
     }
   }
 
   /**
    * This deals with anything having to do with restarts and backup files. Is identical between CPU
    * and GPU.
+   * <p>
+   * Restart Rules:
+   * <p>
+   * 1. Checks for existence of primary restart files in all directories.
+   * <p>
+   * 2. Check for even sums of esv samples.
+   * <p>
+   * 3. Check for unique pH values in esv files.
+   * <p>
+   * 4. Fall back and repeat 1-3 with backup files if primary backup failed.
+   * <p>
+   * 5. Return true if all checks pass, false if any fail in both primary and backup.
+   * <p>
+   * Treats as fresh start if no restart files are found or if the primary are found, fail,
+   * and backups are not found.
    *
    * @param structureFile pdb file
    * @return whether the restart was successful or not
    */
-  private boolean manageFilesAndRestart(File structureFile) {
+  public boolean manageFilesAndRestart(File structureFile) {
     // My directory info
     File parent = structureFile.getParentFile();
     File rankDir = new File(parent + File.separator + rank);
@@ -216,7 +231,7 @@ public class PhReplicaExchange implements Terminatable {
     // Set restart files - does not do any reading yet
     extendedSystem.setRestartFile(esv);
     replica.setFallbackDynFile(dyn);
-    replica.setArchiveFiles(new File[] {new File(
+    replica.setArchiveFiles(new File[]{new File(
             rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName()))
                     + ".arc")});
     if (openMM != null) {
@@ -472,8 +487,8 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  private String pkaPred(int[][][] parametersHis) {// parametersHis shape explanation - [rank (w/ some pH)][residue][histogram --> len = 100]
-
+  private String pkaPred(int[][][] parametersHis) {
+    // parametersHis shape explanation - [rank (w/ some pH)][residue][histogram --> len = 100]
     // Calculate collapsed fractions of 10x10 histograms
     double[][][] collapsedSum = new double[parametersHis.length][parametersHis[0].length][10];
     double[][] collapsedRatio = new double[parametersHis.length][parametersHis[0].length];
@@ -690,15 +705,13 @@ public class PhReplicaExchange implements Terminatable {
     x = replica.getCoordinates();
     potential.energy(x);
     openMM.setCoordinates(x);
-
+    
     openMM.dynamic(confSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
-
     x = openMM.getCoordinates();
     replica.setCoordinates(x);
 
     double forceWriteInterval = titrSteps * .001;
     replica.dynamic(titrSteps, timeStep, printInterval, forceWriteInterval, temp, initVelocities, dyn);
-
     reEvaulateAcidostats();
 
     extendedSystem.getESVHistogram(parametersHis[rank]);
@@ -769,5 +782,32 @@ public class PhReplicaExchange implements Terminatable {
       logger.log(Level.WARNING, message);
       throw new RuntimeException(e);
     }
+  }
+
+  public int[] setTestingParametersAndExchangeOnce() {
+    // Copy parameters from validRestart directory
+    int[] temp = new int[]{2, 3, 0, 1, 6, 7, 4, 5};
+    System.arraycopy(temp, 0, pH2Rank, 0, temp.length);
+    System.arraycopy(temp, 0, rank2Ph, 0, temp.length);
+    double[][] temp1 = new double[][]{
+            {9.4, 43.26009292113161, 43.259888231035, 43.2596835409384, 43.259478850841795, 43.25927416074519, 43.25906947064859, 43.25886478055198, 43.25866009045538},
+            {9.9, 43.28675891594523, 43.286736736302245, 43.28671455665926, 43.28669237701629, 43.286670197373304, 43.28664801773032, 43.286625838087346, 43.28660365844436},
+            {8.4, 43.256007542834105, 43.25577488677315, 43.2555422307122, 43.25530957465124, 43.25507691859029, 43.25484426252933, 43.25461160646838, 43.25437895040743},
+            {8.9, 43.28985267712731, 43.28985166897153, 43.28985066081576, 43.28984965265999, 43.28984864450421, 43.28984763634844, 43.28984662819267, 43.28984562003689},
+            {11.4, 0.7237124623360065, 0.041741256298356136, -0.6402299497392943, -1.3222011557769446, -2.004172361814595, -2.686143567852245, -3.3681147738898956, -4.050085979927546},
+            {11.9, 0.7229705409794663, 0.0410229865156607, -0.6409245679481451, -1.3228721224119508, -2.0048196768757567, -2.6867672313395623, -3.368714785803368, -4.050662340267174},
+            {10.4, 0.7191692742214747, 0.037342984956673264, -0.6444833043081281, -1.3263095935729294, -2.0081358828377307, -2.689962172102532, -3.3717884613673337, -4.053614750632135},
+            {10.9, 0.6741663046798972, -0.006213315424885665, -0.6865929355296684, -1.3669725556344512, -2.047352175739234, -2.727731795844017, -3.4081114159487997, -4.088491036053583}
+    };
+    for(int i = 0; i < temp1.length; i++){
+      System.arraycopy(temp1[i], 0, parameters[i], 0, temp1[i].length);
+    }
+
+    exchange();
+    int[] temp2 = new int[pH2Rank.length + rank2Ph.length];
+    System.arraycopy(pH2Rank, 0, temp2, 0, pH2Rank.length);
+    System.arraycopy(rank2Ph, 0, temp2, pH2Rank.length, rank2Ph.length);
+
+    return temp2;
   }
 }
