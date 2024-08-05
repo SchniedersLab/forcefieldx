@@ -1202,8 +1202,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
       state.copyAccelerationsToPrevious();
     }
 
+    if(esvSystem != null){
+      SystemState esvState = esvSystem.getState();
+      double[] esvA = esvState.a();
+      double[] esvMass = esvState.getMass();
+      int nESVs = esvState.getNumberOfVariables();
+      double[] gradESV = esvSystem.postForce();
+      for (int i = 0; i < nESVs; i++) {
+        esvA[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradESV[i] / esvMass[i];
+      }
+    }
+
     // Compute the current kinetic energy.
     thermostat.computeKineticEnergy();
+    if (esvSystem != null) {
+      esvThermostat.computeKineticEnergy();
+      double kineticEnergy = thermostat.getKineticEnergy();
+      double esvKineticEnergy = esvThermostat.getKineticEnergy();
+      state.setKineticEnergy(kineticEnergy + esvKineticEnergy);
+    }
 
     // Store the initial state.
     initialState = new UnmodifiableState(state);

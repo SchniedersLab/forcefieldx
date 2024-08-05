@@ -89,7 +89,7 @@ class SortXPH extends AlgorithmsScript {
     private double pH = 7.4
 
     @Option(names = ['--pHGaps'], paramLabel = "1",
-            description = "Sets the size of the gaps in the pH latter")
+            description = "Sets the size of the gaps in the pH ladder")
     private double pHGap = 1
 
     @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",

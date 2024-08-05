@@ -1,0 +1,17 @@
+#$ -V                        # Inherit current environment
+#$ -r y                      # Restart
+#$ -ckpt user                # Restart under user
+#$ -cwd                      # Start job in submission directory
+#$ -N LYS-repEx              # Job Name
+#$ -j y                      # Combine stderr and stdout
+#$ -q MS,COE-GPU,UI-GPU,IVRVOLTA,all.q      # Queue
+#$ -pe 56cpn 112             # Request 16 tasks/node, 16 total
+##$ -l ngpus=2                # Num GPUs 
+#$ -l gpu=true
+#$ -o repEx.$JOB_ID.log      # Name of output file
+#$ -l h_rt=10000:00:00       # Run Time
+#$ -S /bin/bash              # Shell to use
+
+/Dedicated/schnieders/andthiel/forcefieldx/bin/ffxc Scheduler -p 14 > scheduler.log & sleep 30s
+
+/Dedicated/schnieders/andthiel/forcefieldx/bin/ffxc -Dpj.nn=8 -Dpj.nt=14 -DnumCudaDevices=1 test.PhDynamics -Dplatform=OMM --mdE OMM -i stochastic -x -Dguess.titration.state=true --cycles 40000 --titrationSteps 1000 --coordinateSteps 9000 -F xyz --initDynamics 2000 LYS_penta.pdb

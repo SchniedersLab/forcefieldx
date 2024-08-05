@@ -1869,17 +1869,17 @@ public class TitrationUtils {
    * HIE: 37.44
    */
   public enum Titration {
-
     ASHtoASP(3.94, -70.35, -35.35,-45.39, -23.15, 12.730, -107.430, 166.369, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
     ASH1toASH2(Double.NaN, 0.00,0,0,0, 0.0, -35.305, 35.305, 0.0, AminoAcid3.ASH, AminoAcid3.ASH),
-    GLHtoGLU(4.25, -81.90, -39.71, -55.74, -26.3,28.024, -131.270, 189.980, 0.0,  AminoAcid3.GLH, AminoAcid3.GLU),
+    GLHtoGLU(4.25, -81.90, -39.71, -55.74, -26.3, 28.024, -131.270, 189.980, 0.0,  AminoAcid3.GLH, AminoAcid3.GLU),
     GLH1toGLH2(Double.NaN, 0,0,0,0.00, 0.0, -29.395, 29.395, 0.0, AminoAcid3.GLH, AminoAcid3.GLH),
-    LYStoLYD(10.40, 41.35, 20.0, 41.31, 19.7,6.752, -78.804, 26.894, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.35, 20.0, 41.31, 19.7, 6.752, -78.804, 26.894, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     CYStoCYD(8.55, -53.1, 0.0, 0.0, 0.0,44.247, -183.990, 226.710, 0.0, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, 20.92, 36.65, 18.83, 0.0, -64.317, 30.350, 0.0,  AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
     HIStoHIE(6.60, 37.44, 18.14, 34.65, 17.95,0.0, -62.931, 32.000, 0.0,AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, 0.0, 0.0, 0.0,0.0, -36.830, 34.325, 0.0,AminoAcid3.HID, AminoAcid3.HIE);
+
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
@@ -1899,9 +1899,10 @@ public class TitrationUtils {
 
     /** Invoked by Enum; use the factory method to obtain instances. */
 
+
     Titration(double pKa, double freeEnergyDiff,double freeEnergyDiff2, double freeEnergyDiffGK,
               double freeEnergyDiffGK2, double cubic, double quadratic, double linear, double offset,
-        AminoAcid3 protForm, AminoAcid3 deprotForm) {
+              AminoAcid3 protForm, AminoAcid3 deprotForm) {
       this.pKa = pKa;
       this.freeEnergyDiff = freeEnergyDiff;
       this.freeEnergyDiff2 = freeEnergyDiff2;

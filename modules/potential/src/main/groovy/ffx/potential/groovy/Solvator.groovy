@@ -109,6 +109,12 @@ class Solvator extends PotentialScript {
   @Option(names = ['-b', '--boundary'], paramLabel = "2.5", defaultValue = "2.5",
       description = "Delete solvent molecules that infringe closer than this to the solute.")
   private double boundary = 2.5
+/**
+ * -x or --translate Move solute molecules to center of box.
+ */
+  @Option(names = ['-x', '--translate'], paramLabel = "true", defaultValue = "true",
+          description = "Move solute molecules to center of box. Turning off should only considered when specifying the unit cell box dimensions")
+  private boolean translate = true
 
   /**
    * --abc or --boxLengths Specify unit cell box lengths, instead of calculating them.
@@ -189,7 +195,7 @@ class Solvator extends PotentialScript {
 
     solute = activeAssembly
     ForceFieldEnergy soluteEnergy = activeAssembly.getPotentialEnergy()
-    Atom[] soluteAtoms = activeAssembly.getAtomArray()
+
 
     solvent = potentialFunctions.open(solventFileName)
     Atom[] baseSolventAtoms = solvent.getActiveAtomArray()
@@ -205,6 +211,10 @@ class Solvator extends PotentialScript {
       assert ionsFile != null && ionsFile.exists()
     }
 
+    Atom[] soluteAtoms = activeAssembly.getAtomArray()
+    int nSolute = soluteAtoms.length
+    double[][] soluteCoordinates = new double[nSolute][3]
+
     Crystal soluteCrystal = activeAssembly.getCrystal()
     Crystal solventCrystal = solvent.getCrystal()
     if (solventCrystal instanceof ReplicatesCrystal) {
@@ -212,20 +222,30 @@ class Solvator extends PotentialScript {
     }
 
     if (!soluteCrystal.aperiodic()) {
-      logger.severe(" Solute must be aperiodic to start!")
+      if (!soluteCrystal.spaceGroup.shortName.equalsIgnoreCase("P1")){
+       logger.severe(" Solute must be aperiodic or strictly P1 periodic")
+      }
     }
-    if (solventCrystal.aperiodic() || !soluteCrystal.spaceGroup.shortName.equalsIgnoreCase("P1")) {
+
+    if (solventCrystal.aperiodic() || !solventCrystal.spaceGroup.shortName.equalsIgnoreCase("P1")) {
       logger.severe(" Solvent box must be periodic (and P1)!")
     }
 
-    int nSolute = soluteAtoms.length
-    double[][] soluteCoordinates = new double[nSolute][3]
 
     for (int i = 0; i < nSolute; i++) {
       Atom ati = soluteAtoms[i]
       double[] xyzi = new double[3]
       xyzi = ati.getXYZ(xyzi)
       System.arraycopy(xyzi, 0, soluteCoordinates[i], 0, 3)
+    }
+
+    if(!soluteCrystal.aperiodic()){
+      for (int i = 0; i < nSolute; i++) {
+        Atom ati = soluteAtoms[i]
+        double[] xyzi = new double[3]
+        soluteCrystal.image(ati.getXYZ(xyzi))
+        ati.setXYZ(xyzi)
+      }
     }
 
     double[] minSoluteXYZ = new double[3]
@@ -290,16 +310,17 @@ class Solvator extends PotentialScript {
         format(" Molecule will be solvated in a periodic box of size %10.4g, %10.4g, %10.4g",
             newBox[0], newBox[1], newBox[2]))
 
-    double[] soluteTranslate = new double[3]
-    for (int i = 0; i < 3; i++) {
-      soluteTranslate[i] = 0.5 * newBox[i]
-      soluteTranslate[i] -= origCoM[i]
+    if(translate){
+      double[] soluteTranslate = new double[3]
+      for (int i = 0; i < 3; i++) {
+        soluteTranslate[i] = 0.5 * newBox[i]
+        soluteTranslate[i] -= origCoM[i]
+      }
+      for (Atom atom : soluteAtoms) {
+        atom.move(soluteTranslate)
+      }
+      logger.fine(format(" Solute translated by %s", Arrays.toString(soluteTranslate)))
     }
-    for (Atom atom : soluteAtoms) {
-      atom.move(soluteTranslate)
-    }
-
-    logger.fine(format(" Solute translated by %s", Arrays.toString(soluteTranslate)))
 
     solvent.moveAllIntoUnitCell()
 
@@ -645,6 +666,12 @@ class Solvator extends PotentialScript {
 
     String solvatedName = activeAssembly.getFile().getPath().replaceFirst(~/\.[^.]+$/, ".pdb")
     createdFile = new File(solvatedName)
+    if(!soluteCrystal.aperiodic()){
+      for (int i = 0; i < nSolute; i++) {
+        Atom ati = soluteAtoms[i]
+        ati.setXYZ(soluteCoordinates[i])
+      }
+    }
     potentialFunctions.saveAsPDB(activeAssembly, createdFile)
     time += System.nanoTime()
     logger.info(format(" Structure written to disc in %12.4g sec", time * Constants.NS2SEC))
@@ -695,7 +722,7 @@ class Solvator extends PotentialScript {
     private final Crystal crystal
 
     /**
-     * Seturn a set of integers corresponding to domains that may neighbor a current domain along an axis.
+     * Return a set of integers corresponding to domains that may neighbor a current domain along an axis.
      *
      * Checks for wraparound, out-of-bounds indices, and the final domain being subsized (and thus always
      * needing to include the penultimate domain).
