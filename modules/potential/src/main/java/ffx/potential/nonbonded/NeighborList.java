@@ -185,7 +185,6 @@ public class NeighborList extends ParallelRegion {
   private int nGroups;
   /** Lists of interactions between groups of atoms. nGroups is not known until after groups are built. */
   private int[][][] groupLists;
-  private boolean[][][] groupBitMasks;
   /** Size of each group of atoms */
   private int M = -1;
   /** Number of group interactions */
@@ -380,7 +379,7 @@ public class NeighborList extends ParallelRegion {
       sb.append(format("   Assign Atoms to Cells:  %6.4f sec\n", assignAtomsToCellsTime * 1e-9));
       sb.append(format("   Create Vertlet Lists:   %6.4f sec\n", verletListTime * 1e-9));
       sb.append(format("   Parallel Schedule:      %6.4f sec\n", scheduleTime * 1e-9));
-      if ( M > 1 && N > 1) {
+      if ( M >= 1 || N >= 1) {
         sb.append(format("   M x N List Total:       %6.4f sec\n", groupingTime * 1e-9));
       }
       sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
@@ -470,7 +469,7 @@ public class NeighborList extends ParallelRegion {
           verletListTime += System.nanoTime();
         }
         // Build MxN Loop if desired
-        if ( M > 1 && N > 1) {
+        if ( M >= 1 || N >= 1) {
           if(threadIndex == 0){
             groupingTime = -System.nanoTime();
           }
@@ -546,14 +545,13 @@ public class NeighborList extends ParallelRegion {
             } else {
               group[l] = -1;
             }
-            groups[k][symmGroups[k]++] = group;
           }
+          groups[k][symmGroups[k]++] = group;
         }
       }
     }
     nGroups = symmGroups[0]; // symmGroups is uniform array
     groupLists = new int[nSymm][nGroups][]; // Last will be union of N atoms' list * N
-    groupBitMasks = new boolean[nSymm][nGroups][];
   }
 
   /**
@@ -1035,43 +1033,32 @@ public class NeighborList extends ParallelRegion {
       // Build lists
       for(int i = 0; i < nSymm; i++){
         for(int j = lb; j < ub; j++){
-          int[] group = groups[i][j];
-          // Fill out union and mask
-          ArrayList<Integer> groupUnion = new ArrayList<>();
+          // Fill out union
+          int[] pairs = new int[1000*N];
+          int n = 0;
           boolean[] exists = new boolean[nAtoms];
-          ArrayList<boolean[]> groupMasks = new ArrayList<>();
-          HashMap<Integer, Integer> neighborIDToMaskIndex = new HashMap<>();
           for(int k = 0; k < M; k++){
-            int atomID = group[k];
+            int atomID = groups[i][j][k];
             if (atomID == -1) {
               continue;
             }
             int[] neighborList = lists[i][atomID];
             for(int l = 0; l < neighborList.length; l++){
               boolean newInteraction = !exists[neighborList[l]];
-              if(newInteraction){ // Mark down and save location of mask
-                groupUnion.add(neighborList[l]);
+              if(newInteraction){
+                try{
+                  Arrays.fill(pairs, n, n+N, neighborList[l]);
+                  n+=N;
+                } catch (Exception e){
+                  pairs = copyOf(pairs, n + 100*N);
+                  Arrays.fill(pairs, n, n+N, neighborList[l]);
+                  n+=N;
+                }
                 exists[neighborList[l]] = true;
-                groupMasks.add(new boolean[M]);
-                groupMasks.getLast()[k] = true;
-                neighborIDToMaskIndex.put(neighborList[l], groupMasks.size()-1);
-              } else { // mark down
-                int maskIndex = neighborIDToMaskIndex.get(neighborList[l]);
-                groupMasks.get(maskIndex)[k] = true;
               }
             }
           }
-          int[] groupNeighborListExpanded = new int[groupUnion.size()*N];
-          boolean[] groupNeighborMasks = new boolean[groupUnion.size()*N];
-          for(int k = 0; k < groupUnion.size(); k++){
-            int atomID = groupUnion.get(k);
-            for(int l = 0; l < N; l++){
-              groupNeighborListExpanded[k*N+l] = atomID;
-              groupNeighborMasks[k*N+l] = groupMasks.get(k)[l];
-            }
-          }
-          groupLists[i][j] = groupNeighborListExpanded;
-          groupBitMasks[i][j] = groupNeighborMasks;
+          groupLists[i][j] = copyOf(pairs, n);
         }
       }
     }
@@ -1123,9 +1110,6 @@ public class NeighborList extends ParallelRegion {
     private int[] cellB;
     /** The cell indices of each atom along the C-axis. */
     private int[] cellC;
-    private int[] groupCellA;
-    private int[] groupCellB;
-    private int[] groupCellC;
     /**
      * The fractional sub-volumes of the unit cell.
      */
@@ -1162,10 +1146,6 @@ public class NeighborList extends ParallelRegion {
         cellA = new int[nAtoms];
         cellB = new int[nAtoms];
         cellC = new int[nAtoms];
-        // Include symOps so that every atom in extended crystal has cell
-        groupCellA = new int[crystal.getNumSymOps()*nAtoms];
-        groupCellB = new int[crystal.getNumSymOps()*nAtoms];
-        groupCellC = new int[crystal.getNumSymOps()*nAtoms];
       }
 
       // Determine the number of subcells along each axis.
@@ -1400,20 +1380,6 @@ public class NeighborList extends ParallelRegion {
         return null;
       }
       return cells[a][b][c];
-    }
-
-    public void addGroupToCell(int groupID, double[] frac) {
-      for(int i = 0; i < frac.length; i++)
-        while(frac[i] < 0.0 || frac[i] >= 1.0)
-          frac[i] = frac[i] < 0.0 ? frac[i] + 1.0 : frac[i] - 1.0;
-      groupCellA[groupID] = (int)floor(frac[XX]*nA);
-      groupCellB[groupID] = (int)floor(frac[YY]*nB);
-      groupCellC[groupID] = (int)floor(frac[ZZ]*nC);
-      cells[groupCellA[groupID]][groupCellB[groupID]][groupCellC[groupID]].groupAdd(groupID);
-    }
-
-    public Cell getCellForGroup(int i) {
-      return cells[groupCellA[i]][groupCellB[i]][groupCellC[i]];
     }
   }
 

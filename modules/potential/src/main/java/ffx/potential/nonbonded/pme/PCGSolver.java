@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.special.Erf.erfc;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -61,6 +54,13 @@ import ffx.utilities.Constants;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.numerics.special.Erf.erfc;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Parallel pre-conditioned conjugate gradient solver for the self-consistent field.
@@ -284,7 +284,7 @@ public class PCGSolver {
    * Pairwise schedule for load balancing.
    */
   private IntegerSchedule realSpaceSchedule;
-  private long[] realSpaceSCFTime;
+  private PMETimings pmeTimings;
 
   /**
    * A preconditioner cut-off of 3 to 4 Angstroms generally works well.
@@ -459,7 +459,7 @@ public class PCGSolver {
       double dieletric,
       ParallelTeam parallelTeam,
       IntegerSchedule realSpaceSchedule,
-      long[] realSpaceSCFTime) {
+      PMETimings pmeTimings) {
     this.atoms = atoms;
     this.coordinates = coordinates;
     this.polarizability = polarizability;
@@ -477,7 +477,7 @@ public class PCGSolver {
     this.dieletric = dieletric;
     this.parallelTeam = parallelTeam;
     this.realSpaceSchedule = realSpaceSchedule;
-    this.realSpaceSCFTime = realSpaceSCFTime;
+    this.pmeTimings = pmeTimings;
   }
 
   public int scfByPCG(boolean print, long startTime, ParticleMeshEwald particleMeshEwald) {
@@ -1222,6 +1222,16 @@ public class PCGSolver {
     }
 
     @Override
+    public void start() {
+      pmeTimings.realSpaceSCFTotalTime -= System.nanoTime();
+    }
+
+    @Override
+    public void finish() {
+      pmeTimings.realSpaceSCFTotalTime += System.nanoTime();
+    }
+
+    @Override
     public void run() {
       int threadIndex = getThreadIndex();
       if (inducedPreconditionerFieldLoop[threadIndex] == null) {
@@ -1249,7 +1259,7 @@ public class PCGSolver {
 
       @Override
       public void finish() {
-        realSpaceSCFTime[threadID] += System.nanoTime();
+        pmeTimings.realSpaceSCFTime[threadID] += System.nanoTime();
       }
 
       @Override
@@ -1550,7 +1560,7 @@ public class PCGSolver {
       @Override
       public void start() {
         threadID = getThreadIndex();
-        realSpaceSCFTime[threadID] -= System.nanoTime();
+        pmeTimings.realSpaceSCFTime[threadID] -= System.nanoTime();
         x = coordinates[0][0];
         y = coordinates[0][1];
         z = coordinates[0][2];

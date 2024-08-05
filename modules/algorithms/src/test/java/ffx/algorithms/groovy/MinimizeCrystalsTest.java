@@ -49,7 +49,7 @@ import org.junit.Test;
  * @author Mallory R. Tollefson
  */
 public class MinimizeCrystalsTest extends AlgorithmsTest {
-  
+
   /** Tests convergence criteria flag of the CrystalMin class. */
   @Test
   public void testCrystalMinConvergenceCriteria() {
