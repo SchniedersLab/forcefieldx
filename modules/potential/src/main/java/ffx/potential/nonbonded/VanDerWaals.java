@@ -159,6 +159,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private boolean gradient;
   private boolean lambdaTerm;
+
+  private double vdwLambdaEnd;
   private boolean esvTerm;
   private boolean[] isSoft;
   /**
@@ -330,6 +332,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       sharedd2EdL2 = new SharedDouble();
       vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.25);
       vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 3.0);
+      vdwLambdaEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
       if (vdwLambdaAlpha < 0.0) {
         logger.warning(format(
             " Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.",
@@ -341,6 +344,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             " Invalid value %8.3g for vdw-lambda-exponent; must be greater than or equal to 1. Resetting to 3.",
             vdwLambdaExponent));
         vdwLambdaExponent = 3.0;
+      }
+      if (vdwLambdaEnd > 1.0){
+        logger.warning(format(
+            " Invalid value %8.3g for vdw-lambda-end; must be less than or equal to 1. Resetting to 1.",
+            vdwLambdaEnd));
+        vdwLambdaEnd = 1.0;
       }
       intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
       intramolecularSoftcore = forceField.getBoolean("INTRAMOLECULAR_SOFTCORE", false);
@@ -576,7 +585,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (!lambdaTerm) {
       return;
     }
-
+    if(lambda < vdwLambdaEnd){
+      lambda = lambda / vdwLambdaEnd;
+    } else {
+      lambda = 1.0;
+    }
     this.lambda = lambda;
     // Softcore constant in vdW denominator sc1 = alpha * (1-L)^2
     sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
