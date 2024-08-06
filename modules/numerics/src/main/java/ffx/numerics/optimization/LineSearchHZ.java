@@ -116,7 +116,7 @@ public class LineSearchHZ {
     this.n = n;
 
     first = true;
-    QuadStep = false; // user's choice? todo was false
+    QuadStep = true; // user's choice? todo was false
     alphaArr = new double[10000]; // [lineSearchMax]; //todo? this size?
     valueArr = new double[10000]; // [lineSearchMax];
     slopeArr = new double[10000]; // [lineSearchMax];
@@ -145,7 +145,12 @@ public class LineSearchHZ {
 //  search(int n, double[] x, double f, double[] g, double[] p, double[] angle,
 //         double fMove, LineSearch.LineSearchResult[] info, int[] functionEvaluations,
 //         OptimizationInterface optimizationSystem)
-  // TODO MATLAB code has it returning double[] {alpha, phi}
+  // TODO: STOPPING CRITERIONS USED IN SIMULATIONS IN HZ PAPER (DIFFERENT TIMES):
+  //  ∥∇ f (xk)∥∞ ≤ max{10−6, 10−12∥∇ f (x0)∥∞}. (30)
+  //  ∥∇ f (xk)∥∞ ≤ 10−6(1 + | f (xk)|). (31)
+  //  ALSO HAS ∥gk∥∞ ≤ 10^−2 AND ∥gk∥∞ ≤ 10^−12 IN THE 2005 PAPER
+  //  Or: (a) ∥∇f(xk)∥∞ ≤ 10−6 or (b) αkgkTdk ≤ 10−20|f(xk+1)|, ?
+  //  NOTE: THEY ALWAYS USE THE INF. NORM (GREATEST ABS. VALUE VECTOR ELEMENT) (NOT RMS!)
   public double search(int n, double[] x, double f, double[] g, double[] p, double[] angle,
                        double fMove, LineSearch.LineSearchResult[] info, int[] functionEvaluations,
                        OptimizationInterface optimizationSystem) {
@@ -153,6 +158,7 @@ public class LineSearchHZ {
 //    logger.info(String.format("==ENTERED LINE SEARCH: n = %d",n));
 
     // Initialize the line search.
+    first = true;
     this.x = x;
     this.g = g;
     this.optimizationSystem = optimizationSystem;
@@ -177,6 +183,7 @@ public class LineSearchHZ {
     // log: "initial c = %f",c
 
     double[] tempPhi = getPhiDPhi(0);
+    logger.info(String.format("PE Eval 1 - total: %d",nf[0]));
     double phi_0 = tempPhi[0];
     double dphi_0 = tempPhi[1];
 
@@ -220,6 +227,7 @@ public class LineSearchHZ {
     assert( Double.isFinite(c) && c <= alphaMax );
 
     tempPhi = getPhiDPhi(c);
+    logger.info(String.format("PE Eval 2 - total: %d",nf[0]));
     double phi_c = tempPhi[0];
     double dphi_c = tempPhi[1];
 
@@ -230,6 +238,7 @@ public class LineSearchHZ {
       c = psi3 * c; // Contracts c, since psi3 = 0.1
 
       tempPhi = getPhiDPhi(c);
+      logger.info(String.format("PE Eval 3 - total: %d",nf[0]));
       phi_c = tempPhi[0];
       dphi_c = tempPhi[1];
     }
@@ -316,6 +325,9 @@ public class LineSearchHZ {
 //          return new double[]{cold,phi_cold}; TODO
           info[0] = LineSearch.LineSearchResult.ReSearch;
 //          logger.info(String.format("===Returned at line 315. cold (step) >= alphaMax! alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",cold,phi_cold,-69.69,x[0],g[0]));
+          arraycopy(x0, 0, x, 0, n); // reset X vector before adding c*s
+          aV1PlusV2(n, alphaArr[alphaIdx-1], s, 0, 1, x, 0, 1); // updates x; (x_new = x + c *s)
+          logger.info(String.format("Difference Bewteen phi_cold and valueArr[valueIdx-1] = %f",phi_cold-valueArr[valueIdx-1]));
           return phi_cold;
         }
         // c_{j+1} = rho * c_{j}, where rho is the growth factor for the bracketing interval. Hager and Zhang suggest to
@@ -328,6 +340,7 @@ public class LineSearchHZ {
         }
 
         tempPhi = getPhiDPhi(c);
+        logger.info(String.format("PE Eval 4 - total: %d",nf[0]));
         phi_c = tempPhi[0];
         dphi_c = tempPhi[1];
 
@@ -339,6 +352,7 @@ public class LineSearchHZ {
           // log: "B3: non-finite value, bisection."
           c = (cold + c) / 2;
           tempPhi = getPhiDPhi(c);
+          logger.info(String.format("PE Eval 5 - total: %d",nf[0]));
           phi_c = tempPhi[0];
           dphi_c = tempPhi[1];
         }
@@ -378,6 +392,8 @@ public class LineSearchHZ {
 //        return new double[]{a, valueArr[ia]}; TODO
         info[0] = LineSearch.LineSearchResult.ReSearch;
 //        logger.info(String.format("===Returned at line 378. [a,b] too close. alhpa = %f, phi = %f, dphi = %f, x[0] = %f, g[0] = %f",a,valueArr[ia],slopeArr[ia],x[0],g[0]));
+        arraycopy(x0, 0, x, 0, n); // reset X vector before adding c*s
+        aV1PlusV2(n, alphaArr[ia], s, 0, 1, x, 0, 1); // updates x; (x_new = x + c *s)
         return valueArr[ia];
       }
 
@@ -422,6 +438,7 @@ public class LineSearchHZ {
         c = (A + B) / 2;
 
         tempPhi = getPhiDPhi(c);
+        logger.info(String.format("PE Eval 6 - total: %d",nf[0]));
         phi_c = tempPhi[0];
         dphi_c = tempPhi[1];
 
@@ -467,6 +484,7 @@ public class LineSearchHZ {
       double d = (a + b) / 2;
 
       double[] tempPhi = getPhiDPhi(d);
+      logger.info(String.format("PE Eval 7 - total: %d",nf[0]));
       double phi_d = tempPhi[0];
       double dphi_d = tempPhi[1];
 
@@ -520,6 +538,7 @@ public class LineSearchHZ {
       alpha = hzStepI0(f);
 
       double[] tempPhi = getPhiDPhi(alpha);
+      logger.info(String.format("PE Eval 8 - total: %d",nf[0]));
       double dphi_0 = tempPhi[1];
 
       // If dphi_0 is not strictly negative, then do this to force return an alpha where dphi_0 <0.
@@ -528,6 +547,7 @@ public class LineSearchHZ {
           alpha = 0.5 * alpha;
 
           tempPhi = getPhiDPhi(alpha);
+          logger.info(String.format("PE Eval 9 - total: %d",nf[0]));
           dphi_0 = tempPhi[1];
           if (alpha == 0.0) {
             alpha = ulp(1); //2.2204*pow(10,-16);
@@ -542,6 +562,7 @@ public class LineSearchHZ {
       // If here, means that this is not the first iteration of the optimization method, so use alpha from previous iteration
       alpha = 1; // TODO How to get/store previous alphas? global var?
       double[] tempPhi = getPhiDPhi(alpha);
+      logger.info(String.format("PE Eval 10 - total: %d",nf[0]));
       double phi_0 = tempPhi[0];
       double dphi_0 = tempPhi[1];
 
@@ -558,11 +579,15 @@ public class LineSearchHZ {
     double gr_max = sqrt(v1DotV2(n, g, 0, 1, g, 0, 1));
     if (gr_max != 0) {
 //      double x_max = max(x[0],x[1]); // Infinity norm - should be maximum absolute value (magnitude) of whole vector
+      double[] sortG = g;
+      Arrays.sort(sortG);
+      double g_inf = Math.max(abs(sortG[0]), abs(sortG[sortG.length - 1]));
       double[] sortX = x;
       Arrays.sort(sortX);
       double x_max = Math.max(abs(sortX[0]), abs(sortX[sortX.length - 1]));
       if (x_max != 0) { // I0.(a)
-        alpha = psi0 * x_max / gr_max;
+//        alpha = psi0 * x_max / gr_max;
+        alpha = psi0 * x_max / g_inf;
       } else if (f_x != 0) { // point I0.(b)
         alpha = psi0 * abs(f_x) / Math.pow(gr_max,2);
       }
@@ -581,6 +606,7 @@ public class LineSearchHZ {
     alphaTest = min(alphaTest, alphaMax);
 
     double phiTest = getPhi(alphaTest);
+    logger.info(String.format("PE Eval 0a - total: %d",nf[0]));
 
     double[] aPhi = getFinite(alphaTest,phiTest,iterFiniteMax,phi_0);
     alphaTest = aPhi[0];
@@ -600,15 +626,17 @@ public class LineSearchHZ {
 
         //
         double phiTest2 = getPhi(alphaTest2);
+        logger.info(String.format("PE Eval 0b - total: %d",nf[0]));
         if (Double.isFinite(phiTest2)) {
           alphaTest = alphaTest2;
           phiTest = phiTest2;
+          quadStepSuccess = true;
         }
       }
     }
 
     // I2
-    if ((QuadStep || !quadStepSuccess) && (phiTest <= phi_0)) {
+    if ((!QuadStep || !quadStepSuccess) && (phiTest <= phi_0)) {
       // If no QuadStep or it fails, expand the interval. While the phiTest <= phi_0 condition was not in the paper, it
       // gives a significant boost to the speed. The rationale behind it is that since the slope at alpha = 0 is
       // negative, if phiTest > phi_0 then a local minimum must be between alpha = 0 and alpha = alphaTest, so alphaTest
@@ -617,6 +645,7 @@ public class LineSearchHZ {
       alphaTest = min(alphaTest, alphaMax);
 
       phiTest = getPhi(alphaTest);
+      logger.info(String.format("PE Eval 0c - total: %d",nf[0]));
       aPhi = getFinite(alphaTest, phiTest, iterFiniteMax, phi_0); //
       alphaTest = aPhi[0]; // don't use the phi this time
     }
@@ -626,7 +655,7 @@ public class LineSearchHZ {
   // Returns alpha and phi TODO: I DON'T GET WHAT THIS IS DOING
   private double[] getFinite(double alpha,double phi,int iterMax,double phi_0) {
     int iter = 1;
-    while (Double.isFinite(phi)) {
+    while (!Double.isFinite(phi)) {
       if (iter >= iterMax) {
         phi = phi_0;
         return new double[]{alpha, phi}; // return original phi
@@ -634,10 +663,11 @@ public class LineSearchHZ {
       alpha = psi3 * alpha;
 
       phi = getPhi(alpha);
+      logger.info(String.format("PE Eval 0d - total: %d",nf[0]));
 
       iter++;
     }
-    return null;
+    return new double[]{alpha, phi};
   }
 
   private double[] getPhiDPhi(double c) {
@@ -679,7 +709,8 @@ public class LineSearchHZ {
   private boolean satisfiesWolfe(double c, double phi_c, double dphi_c, double phi_0, double dphi_0, double phi_lim) {
     // Original Wolfe conditions (T1)
     boolean wolfe = (DELTA * dphi_0 >= (phi_c - phi_0) / c) && (dphi_c >= SIGMA * dphi_0);
-
+    // TODO: note the strong Wolfe curvature condition is not used
+    // TODO: TRY DELTO OF 10^04 ?????
     // Approximate Wolfe conditions (T2)
     boolean approxWolfe = ( ((2 * DELTA - 1) * dphi_0 >= dphi_c) && (dphi_c >= SIGMA * dphi_0) ) && (phi_c <= phi_lim);
 
@@ -709,6 +740,7 @@ public class LineSearchHZ {
     assert( Double.isFinite(c) );
 
     double[] tempPhi = getPhiDPhi(c);
+    logger.info(String.format("PE Eval 11 - total: %d",nf[0]));
     double phi_c = tempPhi[0];
     double dphi_c = tempPhi[1];
 
@@ -761,6 +793,7 @@ public class LineSearchHZ {
       // log: "S4: second c = %f",c
 
       tempPhi = getPhiDPhi(c);
+      logger.info(String.format("PE Eval 12 - total: %d",nf[0]));
       phi_c = tempPhi[0];
       dphi_c = tempPhi[1];
 
