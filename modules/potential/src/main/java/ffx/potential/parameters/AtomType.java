@@ -44,7 +44,9 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
+import ffx.potential.bonded.Atom;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -249,6 +251,16 @@ public final class AtomType extends BaseType implements Comparator<String> {
           atomicWeight, valence);
     }
     return s;
+  }
+
+  /**
+   * Write AtomType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("name", format("%d",type));
+    node.setAttribute("class", format("%d",atomClass));
+    node.setAttribute("element", format("%s", Atom.ElementSymbol.values()[atomicNumber-1]));
+    node.setAttribute("mass", format("%.3f",atomicWeight));
   }
 
   /**

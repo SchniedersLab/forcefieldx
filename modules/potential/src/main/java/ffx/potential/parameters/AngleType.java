@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -491,6 +492,26 @@ public final class AngleType extends BaseType implements Comparator<String> {
       angleString.append(format("  %6.2f", eq));
     }
     return angleString.toString();
+  }
+
+  /**
+   * Write AngleType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d",atomClasses[0]));
+    node.setAttribute("class2", format("%d",atomClasses[1]));
+    node.setAttribute("class3", format("%d",atomClasses[2]));
+    node.setAttribute("k", format("%f",forceConstant*4.184/(57.2957795130*57.2957795130))); // convert Kcal/mol/radian^2 to KJ/mol/deg^2
+    int i = 1;
+    for (double eq : angle) {
+      node.setAttribute(format("angle%d",i), format("%f", eq));
+      i++;
+    }
+    if (angleMode == AngleMode.NORMAL) {
+      node.setAttribute("inPlane", "False");
+    } else {
+      node.setAttribute("inPlane", "True");
+    }
   }
 
   /**

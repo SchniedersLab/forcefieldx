@@ -42,10 +42,12 @@ import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -291,5 +293,16 @@ public final class StretchBendType extends BaseType implements Comparator<String
   public String toString() {
     return String.format("strbnd  %5d  %5d  %5d  %6.2f  %6.2f", atomClasses[0], atomClasses[1],
         atomClasses[2], forceConstants[0], forceConstants[1]);
+  }
+
+  /**
+   * Write StretchBendType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    node.setAttribute("k1", format("%f", forceConstants[0]*41.84/57.2957795130)); // to KJ/mol/nm-radians
+    node.setAttribute("k2", format("%f", forceConstants[1]*41.84/57.2957795130)); // to KJ/mol/nm-radians
   }
 }
