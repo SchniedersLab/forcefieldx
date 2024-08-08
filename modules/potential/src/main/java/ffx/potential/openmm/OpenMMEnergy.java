@@ -137,10 +137,16 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
     int enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
+    // Load the OpenMM plugins
     openMMContext = new OpenMMContext(requestedPlatform, atoms, enforcePBC, this);
+
+    // Create the OpenMM System.
     openMMSystem = new OpenMMSystem(this);
     openMMSystem.addForces();
 
+    // Update the Context with the created system.
+    openMMContext.update();
+    
     // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
     lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
     if (lambdaStart > 1.0) {

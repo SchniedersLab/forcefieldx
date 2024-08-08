@@ -128,8 +128,7 @@ public class OpenMMContext extends Context {
    * @param enforcePBC        Enforce periodic boundary conditions.
    * @param openMMEnergy      ForceFieldEnergyOpenMM instance.
    */
-  public OpenMMContext(ffx.potential.Platform requestedPlatform, Atom[] atoms, int enforcePBC,
-                       OpenMMEnergy openMMEnergy) {
+  public OpenMMContext(ffx.potential.Platform requestedPlatform, Atom[] atoms, int enforcePBC, OpenMMEnergy openMMEnergy) {
     platform = requestedPlatform;
     this.atoms = atoms;
     this.enforcePBC = enforcePBC;
@@ -171,19 +170,19 @@ public class OpenMMContext extends Context {
     openMMIntegrator = createIntegrator(integratorName, timeStep, temperature, openMMSystem);
 
     // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
-    double currentLambda = openMMEnergy.getLambda();
-
-    if (openMMEnergy.getLambdaTerm()) {
-      openMMEnergy.setLambda(1.0);
-    }
+    // TODO: Test on a fixed charge system.
+    // double currentLambda = openMMEnergy.getLambda();
+    // if (openMMEnergy.getLambdaTerm()) {
+    //  openMMEnergy.setLambda(1.0);
+    // }
 
     // Update the context.
     updateContext(openMMSystem, openMMIntegrator, openMMPlatform);
 
     // Revert to the current lambda value.
-    if (openMMEnergy.getLambdaTerm()) {
-      openMMEnergy.setLambda(currentLambda);
-    }
+    // if (openMMEnergy.getLambdaTerm()) {
+    //   openMMEnergy.setLambda(currentLambda);
+    // }
 
     // Get initial positions and velocities for active atoms.
     int nVar = openMMEnergy.getNumberOfVariables();
