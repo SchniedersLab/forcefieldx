@@ -48,6 +48,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -466,6 +467,25 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
       }
     }
     return polarizeString.toString();
+  }
+
+  /**
+   * Write PolarizeType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("type", format("%d",type));
+    node.setAttribute("polarizability", format("%f",polarizability*0.001)); // convert to nm^3
+    node.setAttribute("thole", format("%f",thole));
+
+    // todo - OMM does not have support for Direct polarization damping (ddp)
+
+    int i = 1;
+    if (polarizationGroup != null) {
+      for (int a : polarizationGroup) {
+        node.setAttribute(format("pgrp%d",i), format("%d",a));
+        i++;
+      }
+    }
   }
 
   /**

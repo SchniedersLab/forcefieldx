@@ -45,6 +45,8 @@ import ffx.potential.parameters.*
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword
 import org.apache.commons.configuration2.CompositeConfiguration
+import org.apache.commons.io.filefilter.FalseFileFilter
+import org.biojava.nbio.core.util.FileDownloadUtils
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
@@ -124,12 +126,14 @@ class WriteXML extends PotentialScript {
 //        File inputFile = new File(arguments[1]) // main xml FF file
 //        File watFile = new File(arguments[2]) // water xml FF file (e.g. TIP3P)
         File prmFile = new File(arguments[0])
+        File resFile = new File("/Users/jakemiller/ffx_testing/writeXML/residuesFinal.xml")
 
         // CREATE XML ROOT NODES AND FILL IN BASIC INFO
         // Instantiate Document building objects
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance()
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder()
         Document doc = dBuilder.newDocument()
+        Document resDoc = dBuilder.parse(resFile)
 
         // Create Root Node "ForceField"
         Element rootElement = doc.createElement("ForceField")
@@ -172,6 +176,7 @@ class WriteXML extends PotentialScript {
         }
 
         // Add Residues??       HashMap<String, AtomType> x = ff.getAtomTypes("GLY") TODO try for residues
+        buildResidueDict(resDoc)
 
         // Add Bond Types
         Element bondTypesNode = doc.createElement("AmoebaBondedForce")
@@ -297,14 +302,161 @@ class WriteXML extends PotentialScript {
         Map<String, VDWType> vdwMap = ff.getTypes(ForceField.ForceFieldType.VDW)
         for (VDWType vdw : vdwMap.values()) {
             Element vdwType = doc.createElement("Vdw")
-            vdw.toXML(vdwType) // TODO cont. here - note also need vdwPair in second for loop after
+            vdw.toXML(vdwType)
             vdwTypesNode.appendChild(vdwType)
         }
+        Map<String, VDWPairType> vdwPMap = ff.getTypes(ForceField.ForceFieldType.VDWPR)
+        for (VDWPairType vdwP : vdwPMap.values()) {
+            Element vdwPairType = doc.createElement("Pair")
+            vdwP.toXML(vdwPairType)
+            vdwTypesNode.appendChild(vdwPairType)
+        }
+
+        // Add MultipoleType and PolarizeType
+        Element mpTypesNode = doc.createElement("AmoebaMultipoleForce")
+        rootElement.appendChild(mpTypesNode)
+        mpTypesNode.setAttribute("direct11Scale", format("%f",ff.getDouble("direct-11-scale")))
+        mpTypesNode.setAttribute("direct12Scale", format("%f",ff.getDouble("direct-12-scale")))
+        mpTypesNode.setAttribute("direct13Scale", format("%f",ff.getDouble("direct-13-scale")))
+        mpTypesNode.setAttribute("direct14Scale", format("%f",ff.getDouble("direct-14-scale")))
+        mpTypesNode.setAttribute("mpole12Scale", format("%f",ff.getDouble("mpole-12-scale")))
+        mpTypesNode.setAttribute("mpole13Scale", format("%f",ff.getDouble("mpole-13-scale")))
+        mpTypesNode.setAttribute("mpole14Scale", format("%f",ff.getDouble("mpole-14-scale")))
+        mpTypesNode.setAttribute("mpole15Scale", format("%f",ff.getDouble("mpole-15-scale")))
+        mpTypesNode.setAttribute("mutual11Scale", format("%f",ff.getDouble("mutual-11-scale")))
+        mpTypesNode.setAttribute("mutual12Scale", format("%f",ff.getDouble("mutual-12-scale")))
+        mpTypesNode.setAttribute("mutual13Scale", format("%f",ff.getDouble("mutual-13-scale")))
+        mpTypesNode.setAttribute("mutual14Scale", format("%f",ff.getDouble("mutual-14-scale")))
+        mpTypesNode.setAttribute("polar12Scale", format("%f",ff.getDouble("polar-12-scale")))
+        mpTypesNode.setAttribute("polar13Scale", format("%f",ff.getDouble("polar-13-scale")))
+        mpTypesNode.setAttribute("polar14Intra", format("%f",ff.getDouble("polar-14-intra")))
+        mpTypesNode.setAttribute("polar14Scale", format("%f",ff.getDouble("polar-14-scale")))
+        mpTypesNode.setAttribute("polar15Scale", format("%f",ff.getDouble("polar-15-scale"))) // todo why dont they have all (e.g. intra)
+        Map<String, MultipoleType> mpMap = ff.getTypes(ForceField.ForceFieldType.MULTIPOLE)
+        for (MultipoleType mp : mpMap.values()) {
+            Element mpType = doc.createElement("Multipole")
+            mp.toXML(mpType)
+            mpTypesNode.appendChild(mpType)
+        }
+        Map<String, PolarizeType> polMap = ff.getTypes(ForceField.ForceFieldType.POLARIZE)
+        for (PolarizeType pol : polMap.values()) {
+            Element polType = doc.createElement("Polarize")
+            pol.toXML(polType)
+            mpTypesNode.appendChild(polType)
+        }
+
+        // Add UreyBradleyType
+        Element ubTypesNode = doc.createElement("AmoebaUreyBradleyForce")
+        rootElement.appendChild(ubTypesNode)
+        ubTypesNode.setAttribute("cubic", format("%f",ff.getDouble("urey-cubic", 0.0)))
+        ubTypesNode.setAttribute("quartic", format("%f",ff.getDouble("urey-quartic", 0.0)))
+        Map<String, UreyBradleyType> ubMap = ff.getTypes(ForceField.ForceFieldType.UREYBRAD)
+        for (UreyBradleyType ub : ubMap.values()) {
+            Element ubType = doc.createElement("UreyBradley")
+            ub.toXML(ubType)
+            ubTypesNode.appendChild(ubType)
+        }
+
 
         // Write XML to baseName.xml
         writeXML(doc, prmFile.baseName)
 
         return this
+    }
+
+    // Build entry for protein residue
+    private static void buildProteinResidue(Map residueDict, Map atoms, Map bondInfo, String abbr, String loc,
+                                            String tinkerLookupName, boolean include, String residueName, String type) {
+        // Add an inner hash map with all of this residue's info
+        residueDict.put(abbr, new HashMap<>())
+        residueDict.get(abbr).put("atoms", atoms)
+        residueDict.get(abbr).put("type", type)
+        residueDict.get(abbr).put("loc", loc)
+        residueDict.get(abbr).put("tinkerLookupName", tinkerLookupName)
+        residueDict.get(abbr).put("residueName", residueName)
+        residueDict.get(abbr).put("include", include)
+
+        // # for each bond, add entry to
+        //    #   residueDict[abbr]['atoms'][atom]['bonds']
+        //    #   residueDict[abbr]['atoms'][bondedAtom]['bonds']
+        for (String atom : bondInfo.keySet()) {
+            if (residueDict.get(abbr).get("atoms").containsKey(atom)) {
+                if (!residueDict.get(abbr).get("atoms").get(atom).containsKey("bonds")) {
+                    residueDict.get(abbr).get("atoms").get(atom).put("bonds", new HashMap<>())
+                }
+
+                for (String bondedAtom : bondInfo.get(atom)) { // todo as is or keySet?
+
+                }
+            }
+            logger.info(atom.getAttribute("from"))
+        }
+    }
+
+    private static void buildResidueDict(Document resDoc) {
+//        Map<String, Map<String, Object>> residueDict = new HashMap<>()
+        Map residueDict = new HashMap()
+        NodeList residues = resDoc.getElementsByTagName("Residue")
+        for (Node residue : residues) {
+            String abbr = residue.getAttribute("abbreviation")
+            String loc = residue.getAttribute("loc")
+            String type = residue.getAttribute("type")
+            String tinkerName = residue.getAttribute("tinkerLookupName")
+            String residueName = residue.getAttribute("fullName")
+
+            Element e = (Element) residue
+            Map atoms = getXmlAtoms(e.getElementsByTagName("Atom"))
+            Map bondInfo = getXmlBonds(e.getElementsByTagName("Bond"))
+
+            if (type == "AmoebaWater") {
+                buildProteinResidue(residueDict, atoms, bondInfo, abbr, "x", tinkerName, true, "HOH", "water")
+            } else if (type == "protein") {
+                buildProteinResidue(residueDict, atoms, bondInfo, abbr, "m", tinkerName, true, residueName, "protein")
+            } else if (type == "dna" || type == "rna") {
+                buildProteinResidue(residueDict, atoms, bondInfo, abbr, loc, tinkerName, true, residueName, type)
+            }
+
+
+        }
+    }
+
+    // Default 'constructor' for atoms
+    private static Map getDefaultAtom() {
+        Map atom = new HashMap()
+        atom.put("tinkerLookupName", "XXX")
+        atom.put("type", "-1")
+        atom.put("bonds", new HashMap())
+        return atom
+    }
+
+    // Get atom Map from xml atom list
+    private static Map getXmlAtoms(NodeList atoms) {
+        Map atomInfo = new HashMap()
+        for (Node atom : atoms) {
+            String name = atom.getAttribute("name")
+            atomInfo.put(name, getDefaultAtom())
+            atomInfo.get(name).get("tinkerLookupName").put(atom.getAttribute("tinkerLookupName"))
+        }
+        return atomInfo
+    }
+
+    // Get bond Map from xml bond list
+    private static Map getXmlBonds(NodeList bonds) {
+        Map bondInfo = new HashMap()
+        for (Node bond : bonds) {
+            String atom1 = bond.getAttribute("from")
+            String atom2 = bond.getAttribute("to")
+            if (!bondInfo.containsKey(atom1)) {
+                bondInfo.put(atom1, new HashMap())
+            }
+            if (!bondInfo.containsKey(atom2)) {
+                bondInfo.put(atom2, new HashMap())
+            }
+
+            bondInfo.get(atom1).put(atom2, "1")
+            bondInfo.get(atom2).put(atom1, "1")
+        }
+        return bondInfo
     }
 
     private static void writeXML(Document doc, String outputName) {

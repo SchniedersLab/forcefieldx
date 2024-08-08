@@ -57,6 +57,7 @@ import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.io.BufferedReader;
 import java.util.ArrayList;
@@ -1393,6 +1394,59 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         multipole[t101] / BOHR2, multipole[t011] / BOHR2, multipole[t002] / BOHR2,
         "                                      "));
     return multipoleBuffer.toString();
+  }
+
+  /**
+   * Write MultipoleType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    switch (frameDefinition) {
+      case NONE -> node.setAttribute("type", format("%d",frameAtomTypes[0]));
+      case ZONLY -> {
+        node.setAttribute("type", format("%d",frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d",frameAtomTypes[1]));
+      }
+      case ZTHENX -> {
+        if (frameAtomTypes.length == 3) {
+          node.setAttribute("type", format("%d",frameAtomTypes[0]));
+          node.setAttribute("kz", format("%d",frameAtomTypes[1]));
+          node.setAttribute("kx", format("%d",frameAtomTypes[2]));
+        } else {
+          // Chiral
+          node.setAttribute("type", format("%d",frameAtomTypes[0]));
+          node.setAttribute("kz", format("%d",frameAtomTypes[1]));
+          node.setAttribute("kx", format("%d",frameAtomTypes[2]));
+          node.setAttribute("ky", format("%d",frameAtomTypes[3]));
+        }
+      }
+      case BISECTOR -> {
+        node.setAttribute("type", format("%d",frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d",-frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d",-frameAtomTypes[2]));
+      }
+      case ZTHENBISECTOR -> {
+        node.setAttribute("type", format("%d",frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d",frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d",-frameAtomTypes[2]));
+        node.setAttribute("ky", format("%d",-frameAtomTypes[3]));
+      }
+      case THREEFOLD -> {
+        node.setAttribute("type", format("%d",frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d",-frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d",-frameAtomTypes[2]));
+        node.setAttribute("ky", format("%d",-frameAtomTypes[3]));
+      }
+    }
+    node.setAttribute("c0", format("%f",multipole[t000]));
+    node.setAttribute("d1", format("%f",multipole[t100]*0.1)); // don't multiply by BOHR b/c they take it from prm file
+    node.setAttribute("d2", format("%f",multipole[t010]*0.1));
+    node.setAttribute("d3", format("%f",multipole[t001]*0.1));
+    node.setAttribute("q11", format("%f",multipole[t200]*0.01/3.0)); // don't multiply by BOHR2 b/c they take it from prm file
+    node.setAttribute("q21", format("%f",multipole[t110]*0.01/3.0));
+    node.setAttribute("q22", format("%f",multipole[t020]*0.01/3.0));
+    node.setAttribute("q31", format("%f",multipole[t101]*0.01/3.0));
+    node.setAttribute("q32", format("%f",multipole[t011]*0.01/3.0));
+    node.setAttribute("q33", format("%f",multipole[t002]*0.01/3.0));
   }
 
   /**
