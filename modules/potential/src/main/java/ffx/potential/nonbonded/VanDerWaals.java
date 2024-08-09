@@ -334,6 +334,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       sharedd2EdL2 = new SharedDouble();
       vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.25);
       vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 3.0);
+      vdwLambdaEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
       if (vdwLambdaAlpha < 0.0) {
         logger.warning(format(
             " Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.",
@@ -353,7 +354,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             " Invalid value %8.3g for vdw-lambda-end; must be between 0 and 1. Resetting to 1.", vdwLambdaEnd));
         vdwLambdaEnd = 1.0;
       }
-
       intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
       intramolecularSoftcore = forceField.getBoolean("INTRAMOLECULAR_SOFTCORE", false);
     } else {
@@ -588,7 +588,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (!lambdaTerm) {
       return;
     }
-
     // Scale lambda if vdwLambdaEnd is less than 1.0.
     if (lambda > vdwLambdaEnd) {
       lambda = 1.0;
