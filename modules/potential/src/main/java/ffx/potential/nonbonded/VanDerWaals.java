@@ -159,8 +159,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private boolean gradient;
   private boolean lambdaTerm;
-
-  private double vdwLambdaEnd;
   private boolean esvTerm;
   private boolean[] isSoft;
   /**
