@@ -722,10 +722,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     modelingPanel = new ModelingPanel(this);
 
     JPanel treePane = new JPanel(new BorderLayout());
-    JScrollPane scrollPane =
-        new JScrollPane(
-            hierarchy,
-            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+    JScrollPane scrollPane = new JScrollPane(hierarchy, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
             JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     treePane.add(scrollPane, BorderLayout.CENTER);
 
@@ -734,12 +731,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
       GraphicsConfiguration gc = null;
       try {
-        gc =
-            GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getBestConfiguration(template3D);
-        // gc =
-        // GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
       } catch (Exception e) {
         logger.log(Level.SEVERE, " Exception encountered when trying to get the best GraphicsConfiguration", e);
       }

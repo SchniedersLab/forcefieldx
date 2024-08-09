@@ -90,7 +90,7 @@ public class MinimizeTest extends AlgorithmsTest {
     // Evaluate the script.
     Minimize minimize = new Minimize(binding).run();
     algorithmsScript = minimize;
-    
+
     double expectedTotalPotential = -263.972890377609;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
