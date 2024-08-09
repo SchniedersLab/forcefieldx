@@ -254,6 +254,11 @@ public class OpenMMSystem extends ffx.openmm.System {
    */
   private double lambdaTorsion = 1.0;
   /**
+   * The lambda value that defines when the van der Waals will peak at a value of 1.0 for full path
+   * non-bonded term scaling.
+   */
+  private double vdwEnd = 1.0;
+  /**
    * The lambda value that defines when the electrostatics will start to turn on for full path
    * non-bonded term scaling.
    *
@@ -323,6 +328,13 @@ public class OpenMMSystem extends ffx.openmm.System {
       openMMEnergy.setLambdaTerm(elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
     } else {
       openMMEnergy.setLambdaTerm(true);
+    }
+
+    vdwEnd = forceField.getDouble("vdw.lambda.end",1.0);
+    if (vdwEnd > 1.0) {
+      vdwEnd = 1.0;
+    } else if (vdwEnd < 0.0) {
+      vdwEnd = 0.0;
     }
 
     VanDerWaals vdW = openMMEnergy.getVdwNode();
@@ -507,6 +519,7 @@ public class OpenMMSystem extends ffx.openmm.System {
       if (vdwLambdaTerm) {
         logger.info(format(" van Der Waals alpha:            %6.3f", vdWSoftcoreAlpha));
         logger.info(format(" van Der Waals lambda power:     %6.3f", vdwSoftcorePower));
+        logger.info(format(" van Der Waals end:              %6.3f", vdwEnd));
       }
       logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
 
@@ -686,7 +699,13 @@ public class OpenMMSystem extends ffx.openmm.System {
         lambdaElec = (lambda - electrostaticStart) / elecWindow;
         lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
       }
-      lambdaVDW = lambda;
+
+      if (lambda >= vdwEnd) {
+        lambdaVDW = 1.0;
+      } else{
+        lambdaVDW = lambda / vdwEnd;
+      }
+
       if (useMeld) {
         lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
         lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
