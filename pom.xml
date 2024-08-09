@@ -253,7 +253,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[21,22.1]</version>
+                  <version>[21,24.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -1017,7 +1017,7 @@
   </profiles>
   <properties>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-    <antlr4.version>4.13.1</antlr4.version>
+    <antlr4.version>4.13.2</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
@@ -1037,7 +1037,7 @@
     <!-- Versions of commons-configuration beyond 2.10.1 are not compatible with the IJava ipynb -->
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
     <commons-io.version>2.16.1</commons-io.version>
-    <commons-lang3.version>3.15.0</commons-lang3.version>
+    <commons-lang3.version>3.16.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
     <commons-text.version>1.12.0</commons-text.version>
@@ -1048,7 +1048,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.2</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
-    <exec.version>3.3.0</exec.version>
+    <exec.version>3.4.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
