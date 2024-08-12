@@ -49,14 +49,14 @@ public class MixedRadixFactorPrime extends MixedRadixFactor {
    * Handle a general prime number.
    */
   protected void passScalar(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    int sign = passData.sign();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
     if (im != 1) {
       throw new IllegalArgumentException(" Support for large prime factors requires interleaved data.");
     }
-    final int dataOffset = passData.inOffset();
-    final int retOffset = passData.outOffset();
+    final int dataOffset = passData.inOffset;
+    final int retOffset = passData.outOffset;
     final int jump = (factor - 1) * innerLoopLimit;
     for (int i = 0; i < nextInput; i++) {
       ret[retOffset + 2 * i] = data[dataOffset + 2 * i];

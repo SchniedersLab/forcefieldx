@@ -37,20 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.potential.parameters.MultipoleType.getRotationMatrix;
-import static ffx.potential.parameters.MultipoleType.rotateMultipole;
-import static ffx.potential.parameters.MultipoleType.t000;
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t002;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t011;
-import static ffx.potential.parameters.MultipoleType.t020;
-import static ffx.potential.parameters.MultipoleType.t100;
-import static ffx.potential.parameters.MultipoleType.t101;
-import static ffx.potential.parameters.MultipoleType.t110;
-import static ffx.potential.parameters.MultipoleType.t200;
-import static org.apache.commons.math3.util.FastMath.max;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -66,9 +52,24 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.MultipoleType.getRotationMatrix;
+import static ffx.potential.parameters.MultipoleType.rotateMultipole;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static org.apache.commons.math3.util.FastMath.max;
 
 /**
  * Parallel initialization of accumulation arrays, expand atomic coordinates and rotation of
@@ -88,11 +89,17 @@ public class InitializationRegion extends ParallelRegion {
    * true).
    */
   private final boolean rotateMultipoles;
-  /** If set to false, multipole charges are set to zero (default is true). */
+  /**
+   * If set to false, multipole charges are set to zero (default is true).
+   */
   private final boolean useCharges;
-  /** If set to false, multipole dipoles are set to zero (default is true). */
+  /**
+   * If set to false, multipole dipoles are set to zero (default is true).
+   */
   private final boolean useDipoles;
-  /** If set to false, multipole quadrupoles are set to zero (default is true). */
+  /**
+   * If set to false, multipole quadrupoles are set to zero (default is true).
+   */
   private final boolean useQuadrupoles;
   /**
    * Initialization Loops
@@ -114,22 +121,38 @@ public class InitializationRegion extends ParallelRegion {
    */
   private boolean esvTerm;
 
-  /** An ordered array of atoms in the system. */
+  /**
+   * An ordered array of atoms in the system.
+   */
   private Atom[] atoms;
-  /** Dimensions of [nsymm][xyz][nAtoms]. */
+  /**
+   * Dimensions of [nsymm][xyz][nAtoms].
+   */
   private double[][][] coordinates;
-  /** Unit cell and spacegroup information. */
+  /**
+   * Unit cell and spacegroup information.
+   */
   private Crystal crystal;
-  /** Multipole frame definition. */
+  /**
+   * Multipole frame definition.
+   */
   private MultipoleFrameDefinition[] frame;
-  /** Multipole frame defining atoms. */
+  /**
+   * Multipole frame defining atoms.
+   */
   private int[][] axisAtom;
-  /** Dimensions of [nsymm][nAtoms][10] */
+  /**
+   * Dimensions of [nsymm][nAtoms][10]
+   */
   private double[][][] globalMultipole;
-  /** Dimensions of [nsymm][nAtoms][10] */
+  /**
+   * Dimensions of [nsymm][nAtoms][10]
+   */
   private double[][][] titrationMultipole;
   private double[][][] tautomerMultipole;
-  /** Polarizability of each atom */
+  /**
+   * Polarizability of each atom
+   */
   private double[] polarizability;
   private double[] titrationPolarizability;
   private double[] tautomerPolarizability;
@@ -154,17 +177,25 @@ public class InitializationRegion extends ParallelRegion {
   private int[][][] realSpaceLists;
 
   private int[][][] vaporLists;
-  /** Atomic Gradient array. */
+  /**
+   * Atomic Gradient array.
+   */
   private AtomicDoubleArray3D grad;
-  /** Atomic Torque array. */
+  /**
+   * Atomic Torque array.
+   */
   private AtomicDoubleArray3D torque;
-  /** Partial derivative of the gradient with respect to Lambda. */
+  /**
+   * Partial derivative of the gradient with respect to Lambda.
+   */
   private AtomicDoubleArray3D lambdaGrad;
-  /** Partial derivative of the torque with respect to Lambda. */
+  /**
+   * Partial derivative of the torque with respect to Lambda.
+   */
   private AtomicDoubleArray3D lambdaTorque;
 
   public InitializationRegion(ParticleMeshEwald particleMeshEwald, int maxThreads,
-      ForceField forceField) {
+                              ForceField forceField) {
     initializationLoop = new InitializationLoop[maxThreads];
     rotateMultipolesLoop = new RotateMultipolesLoop[maxThreads];
     useCharges = forceField.getBoolean("USE_CHARGES", true);
@@ -441,7 +472,6 @@ public class InitializationRegion extends ParallelRegion {
             */
             getRotationMatrix(frame[ii], localOrigin, frameCoords, rotmat);
             rotateMultipole(rotmat, tempDipole, tempQuadrupole, dipole, quadrupole);
-
             double[] out = globalMultipole[iSymm][ii];
             // Set the charge.
             out[t000] = in[0] * chargeScale * elecScale;

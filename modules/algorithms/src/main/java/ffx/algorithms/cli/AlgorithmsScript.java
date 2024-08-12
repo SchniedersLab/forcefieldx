@@ -38,10 +38,12 @@
 package ffx.algorithms.cli;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.AlgorithmUtils;
+import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.FFXScript;
@@ -228,4 +230,62 @@ public class AlgorithmsScript extends FFXScript {
     activeAssembly = molecularAssembly;
   }
 
+  /**
+   * Update the title line of the structure with Energy and Density.
+   * @param energy Newly minimized energy value.
+   */
+  public void updateTitle(double energy){
+    // Replace existing energy and density label if present
+    String oldName = activeAssembly.getName();
+    Crystal crystal = activeAssembly.getCrystal();
+    if(crystal != null && !crystal.aperiodic()){
+      double density = crystal.getDensity(activeAssembly.getMass());
+      if (containsIgnoreCase(oldName, "Energy:") || containsIgnoreCase(oldName, "Density:")) {
+        String[] tokens = oldName.trim().split(" +");
+        int numTokens = tokens.length;
+        // First element should always be number of atoms in XYZ.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < numTokens; i++) {
+          if (containsIgnoreCase(tokens[i], "Energy:")){
+            // i++ skips current entry (value associated with "Energy")
+            tokens[i++] = Double.toString(energy);
+          } else if (containsIgnoreCase(tokens[i], "Density:")){
+            // i++ skips current entry (value associated with "Density")
+            tokens[i++] = Double.toString(density);
+          } else {
+            // Accrue previous name.
+            sb.append(tokens[i]).append(" ");
+          }
+        }
+        // Opted to add energy/density after to preserve formatting.
+        activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+                sb, energy, density));
+      } else {
+        // Append energy and density to structure name (line 1 of XYZ).
+        activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+                oldName, energy, density));
+      }
+    } else {
+      if (containsIgnoreCase(oldName, "Energy:")) {
+        String[] tokens = oldName.trim().split(" +");
+        int numTokens = tokens.length;
+        // First element should always be number of atoms in XYZ.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < numTokens; i++) {
+          if (containsIgnoreCase(tokens[i], "Energy:")){
+            // i++ skips current entry (value associated with "Energy")
+            tokens[i++] = Double.toString(energy);
+          } else{
+            // Accrue previous name.
+            sb.append(tokens[i]).append(" ");
+          }
+        }
+        // Opted to add energy/density after to preserve formatting.
+        activeAssembly.setName(format("%s Energy: %9.4f", sb, energy));
+      } else {
+        // Append energy and density to structure name (line 1 of XYZ).
+        activeAssembly.setName(format("%s Energy: %9.4f", oldName, energy));
+      }
+    }
+  }
 }

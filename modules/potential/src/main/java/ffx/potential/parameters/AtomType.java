@@ -317,7 +317,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
    * Weights.
    * Retrieved on 1/24/22.
    */
-  private static final double[] atomicMass = { /* H Hydrogen */  1.008,
+  public static final double[] atomicMass = { /* H Hydrogen */  1.008,
       /* 2 He Helium */ 4.002,
       /* 3 Li Lithium */ 6.94,
       /* 4 Be Beryllium */ 9.012,

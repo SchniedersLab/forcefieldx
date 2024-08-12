@@ -1,5 +1,7 @@
 package ffx.numerics.multipole;
 
+import java.util.HashMap;
+
 import static ffx.numerics.math.ScalarMath.binomial;
 import static java.lang.String.format;
 
@@ -115,9 +117,68 @@ public class MultipoleUtilities {
    * @param l number of d/dx partial derivatives.
    * @param m number of d/dx partial derivatives.
    * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>tlmn</code>.
+   * @return a String of the form <code>lmn</code>.
    */
-  protected static String tlmn(int l, int m, int n) {
+  protected static String lmn(int l, int m, int n) {
     return format("%d%d%d", l, m, n);
+  }
+
+  /**
+   * Load a tensor element into a SIMD register.
+   * <p>
+   * For l=m=n=0, the returned String is:
+   * DoubleVector t000 = fromArray(SPECIES, t, T000);
+   *
+   * @param l The number of d/dx operations.
+   * @param n The number of d/dy operations.
+   * @param m The number of d/dz operations.
+   * @return a String of the form <code>DoubleVector t000 = fromArray(SPECIES, t, T000);</code>
+   */
+  protected static String loadTensor(int l, int n, int m, HashMap<Integer, String> tensorMap) {
+    String s = lmn(l, n, m);
+    String offset = "T" + lmn(l, n, m);
+    String name = "t" + s;
+    if (tensorMap.containsValue(name)) {
+      return "";
+    }
+    int size = tensorMap.size();
+    tensorMap.put(size, name);
+    return format("\tDoubleVector %s = fromArray(SPECIES, t, %s);\n", name, offset);
+  }
+
+  /**
+   * Code to store an electrostatic potential element into an array.
+   * <p>
+   * For l=m=n=0, the returned String is (including a preceding tab):
+   * term000.intoArray(to, T000);
+   *
+   * @param to variable name of the array to store into.
+   * @param l  number of d/dx partial derivatives.
+   * @param n  number of d/dy partial derivatives.
+   * @param m  number of d/dz partial derivatives.
+   * @return a String of the form <code>term000.intoArray(to, T000);</code>
+   */
+  protected static String storePotential(String to, int l, int n, int m) {
+    String from = term(l, n, m);
+    String offset = "T" + lmn(l, n, m);
+    return format("\t%s.intoArray(%s, %s);\n", from, to, offset);
+  }
+
+  /**
+   * Code to store a negated electrostatic potential element into an array.
+   * <p>
+   * For l=m=n=0, the returned String is (including a preceding tab):
+   * term000.neg().intoArray(to, T000);
+   *
+   * @param to variable name of the array to store into.
+   * @param l  number of d/dx partial derivatives.
+   * @param n  number of d/dy partial derivatives.
+   * @param m  number of d/dz partial derivatives.
+   * @return a String of the form <code>term000.intoArray(to, T000);</code>
+   */
+  protected static String storePotentialNeg(String to, int l, int n, int m) {
+    String from = term(l, n, m);
+    String offset = "T" + lmn(l, n, m);
+    return format("\t%s.neg().intoArray(%s, %s);\n", from, to, offset);
   }
 }

@@ -350,7 +350,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     // For Stochastic dynamics, center of mass motion will not be removed.
     if (integrator instanceof Stochastic) {
-      thermostat.setRemoveCenterOfMassMotion(false);
+      boolean removecom = assembly.getForceField().getBoolean("removecom", false);
+      thermostat.setRemoveCenterOfMassMotion(removecom);
+      if(removecom){
+        logger.info(" Removing center of mass motion from stochastic simulation.");
+      }
     }
 
     done = true;
@@ -1198,8 +1202,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
       state.copyAccelerationsToPrevious();
     }
 
+    if(esvSystem != null){
+      SystemState esvState = esvSystem.getState();
+      double[] esvA = esvState.a();
+      double[] esvMass = esvState.getMass();
+      int nESVs = esvState.getNumberOfVariables();
+      double[] gradESV = esvSystem.postForce();
+      for (int i = 0; i < nESVs; i++) {
+        esvA[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradESV[i] / esvMass[i];
+      }
+    }
+
     // Compute the current kinetic energy.
     thermostat.computeKineticEnergy();
+    if (esvSystem != null) {
+      esvThermostat.computeKineticEnergy();
+      double kineticEnergy = thermostat.getKineticEnergy();
+      double esvKineticEnergy = esvThermostat.getKineticEnergy();
+      state.setKineticEnergy(kineticEnergy + esvKineticEnergy);
+    }
 
     // Store the initial state.
     initialState = new UnmodifiableState(state);
@@ -1254,6 +1275,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
       File archiveFile = assembly.getArchiveFile();
       ForceField forceField = assembly.getForceField();
       CompositeConfiguration properties = assembly.getProperties();
+
+      //Remove energy/density from name of assembly as it likely changed during MD.
+      String name = assembly.getName();
+      String[] tokens = name.split(" +");
+      StringBuilder stringBuilder = new StringBuilder();
+      int numTokens = tokens.length;
+      for(int i = 0; i < numTokens; i++){
+        if(tokens[i].equalsIgnoreCase("Energy:") || tokens[i].equalsIgnoreCase("Density:")){
+          //Skip next value.
+          i++;
+        }else{
+          stringBuilder.append(" ").append(tokens[i]);
+        }
+      }
+      assembly.setName(stringBuilder.toString());
 
       // Save as an ARC file.
       if (archiveFile != null && !saveSnapshotAsPDB) {
@@ -1331,6 +1367,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     // Integrate Newton's equations of motion for the requested number of steps,
     // unless early termination is requested.
     long time = System.nanoTime();
+    int removeCOMMotionFrequency = molecularAssembly[0].getForceField().getInteger("removecomfrequency", 100);
+    if(thermostat.getRemoveCenterOfMassMotion()){
+      logger.info(format(" COM will be removed every %3d step(s).", removeCOMMotionFrequency));
+    }
     for (long step = 1; step <= nSteps; step++) {
       if (step > 1) {
         List<Constraint> constraints = potential.getConstraints();
@@ -1387,8 +1427,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         esvThermostat.computeKineticEnergy();
       }
 
-      // Remove center of mass motion every ~100 steps.
-      int removeCOMMotionFrequency = 100;
+      // Remove center of mass motion if requested.
       if (thermostat.getRemoveCenterOfMassMotion() && step % removeCOMMotionFrequency == 0) {
         thermostat.centerOfMassMotion(true, false);
       }

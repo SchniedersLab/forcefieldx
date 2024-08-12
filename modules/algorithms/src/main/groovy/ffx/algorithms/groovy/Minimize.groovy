@@ -56,6 +56,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+
 /**
  * The Minimize script uses a limited-memory BFGS algorithm to minimize the energy of a molecular system.
  * <br>
@@ -154,7 +156,7 @@ class Minimize extends AlgorithmsScript {
       arguments.add(molecularAssembly.getFile().getName())
       topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
     } else {
-      logger.info(String.format(" Initializing %d topologies...", nArgs))
+      logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
         topologyList.add(alchemical.openFile(algorithmFunctions,
             topology, threadsPer, arguments.get(i), i))
@@ -187,8 +189,8 @@ class Minimize extends AlgorithmsScript {
     minimize.minimize(minimizeOptions.getNBFGS(), minimizeOptions.getEps(), minimizeOptions.getIterations())
 
     potential.getCoordinates(x)
-    potential.energy(x, true)
-
+    activeAssembly = systemFilter.getActiveMolecularSystem()
+    updateTitle(potential.energy(x, true))
     if (topologies.length > 1) {
       // Handle Multiple Topology Cases.
       for (molecularAssembly in topologies) {

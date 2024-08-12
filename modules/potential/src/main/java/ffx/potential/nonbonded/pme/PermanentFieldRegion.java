@@ -92,24 +92,42 @@ import java.util.logging.Logger;
 public class PermanentFieldRegion extends ParallelRegion implements MaskingInterface {
 
   private static final Logger logger = Logger.getLogger(PermanentFieldRegion.class.getName());
-  /** Constant applied to multipole interactions. */
+  /**
+   * Constant applied to multipole interactions.
+   */
   private static final double oneThird = 1.0 / 3.0;
-  /** Specify inter-molecular softcore. */
+  /**
+   * Specify inter-molecular softcore.
+   */
   private final boolean intermolecularSoftcore;
-  /** Specify intra-molecular softcore. */
+  /**
+   * Specify intra-molecular softcore.
+   */
   private final boolean intramolecularSoftcore;
-  /** Dimensions of [nsymm][nAtoms][3] */
+  /**
+   * Dimensions of [nsymm][nAtoms][3]
+   */
   public double[][][] inducedDipole;
   public double[][][] inducedDipoleCR;
-  /** Polarization groups. */
+  /**
+   * Polarization groups.
+   */
   protected int[][] ip11;
-  /** An ordered array of atoms in the system. */
+  /**
+   * An ordered array of atoms in the system.
+   */
   private Atom[] atoms;
-  /** Unit cell and spacegroup information. */
+  /**
+   * Unit cell and spacegroup information.
+   */
   private Crystal crystal;
-  /** Dimensions of [nsymm][xyz][nAtoms]. */
+  /**
+   * Dimensions of [nsymm][xyz][nAtoms].
+   */
   private double[][][] coordinates;
-  /** Dimensions of [nsymm][nAtoms][10] */
+  /**
+   * Dimensions of [nsymm][nAtoms][10]
+   */
   private double[][][] globalMultipole;
   /**
    * Neighbor lists, including atoms beyond the real space cutoff. [nsymm][nAtoms][nAllNeighbors]
@@ -124,7 +142,9 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
    * [nSymm][nAtoms][nIncludedNeighbors]
    */
   private int[][][] preconditionerLists;
-  /** Number of neighboring atoms within the preconditioner cutoff. [nSymm][nAtoms] */
+  /**
+   * Number of neighboring atoms within the preconditioner cutoff. [nSymm][nAtoms]
+   */
   private int[][] preconditionerCounts;
   /**
    * When computing the polarization energy at Lambda there are 3 pieces.
@@ -145,19 +165,26 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
    * energy of sub-structures.
    */
   private boolean[] use;
-  /** Molecule number for each atom. */
+  /**
+   * Molecule number for each atom.
+   */
   private int[] molecule;
   private double[] ipdamp;
   private double[] thole;
-  /** Masking of 1-2, 1-3 and 1-4 interactions. */
+  /**
+   * Masking of 1-2, 1-3 and 1-4 interactions.
+   */
   private int[][] mask12;
   private int[][] mask13;
   private int[][] mask14;
-  /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */
+  /**
+   * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
+   */
   private LambdaMode lambdaMode = LambdaMode.OFF;
-  /** Reciprocal space instance. */
+  /**
+   * Reciprocal space instance.
+   */
   private ReciprocalSpace reciprocalSpace;
-
   private boolean reciprocalSpaceTerm;
   private double off2;
   private double preconditionerCutoff;
@@ -167,24 +194,27 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
    * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
    */
   private int[][][] realSpaceLists;
-  /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
+  /**
+   * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
+   */
   private int[][] realSpaceCounts;
-
   private Range[] realSpaceRanges;
   private IntegerSchedule permanentSchedule;
-  /** Field array. */
-  private AtomicDoubleArray3D field;
-  /** Chain rule field array. */
-  private AtomicDoubleArray3D fieldCR;
-  /** Timing variables. */
-  private long realSpacePermTotal;
   /**
-   * Collect timings for each thread.
+   * Field array.
    */
-  private long[] realSpacePermTime;
+  private AtomicDoubleArray3D field;
+  /**
+   * Chain rule field array.
+   */
+  private AtomicDoubleArray3D fieldCR;
   private ScaleParameters scaleParameters;
   private final PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
   private final PermanentReciprocalSection permanentReciprocalSection;
+  /**
+   * Timing variables.
+   */
+  private PMETimings pmeTimings;
 
   public PermanentFieldRegion(ParallelTeam pt, ForceField forceField, boolean lambdaTerm) {
     permanentRealSpaceFieldSection = new PermanentRealSpaceFieldSection(pt);
@@ -203,8 +233,8 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   /**
    * Apply permanent field masking rules.
    *
-   * @param i The atom whose masking rules should be applied.
-   * @param is14 True if atom i and the current atom are 1-4 to each other.
+   * @param i     The atom whose masking rules should be applied.
+   * @param is14  True if atom i and the current atom are 1-4 to each other.
    * @param masks One or more masking arrays.
    */
   @Override
@@ -237,8 +267,20 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     }
   }
 
-  public long getRealSpacePermTotal() {
-    return realSpacePermTotal;
+  public void initTimings() {
+    permanentRealSpaceFieldSection.initTimings();
+  }
+
+  public long getRealSpacePermTime() {
+    return permanentRealSpaceFieldSection.time;
+  }
+
+  public long getInitTime(int threadId) {
+    return permanentRealSpaceFieldSection.permanentRealSpaceFieldRegion.initializationLoop[threadId].time;
+  }
+
+  public long getPermTime(int threadId) {
+    return permanentRealSpaceFieldSection.permanentRealSpaceFieldRegion.permanentRealSpaceFieldLoop[threadId].time;
   }
 
   public void init(
@@ -267,8 +309,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       IntegerSchedule permanentSchedule,
       RealSpaceNeighborParameters realSpaceNeighborParameters,
       AtomicDoubleArray3D field,
-      AtomicDoubleArray3D fieldCR,
-      PMETimings pmeTimings) {
+      AtomicDoubleArray3D fieldCR) {
     this.atoms = atoms;
     this.crystal = crystal;
     this.coordinates = coordinates;
@@ -305,15 +346,13 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     this.realSpaceRanges = realSpaceNeighborParameters.realSpaceRanges;
     this.field = field;
     this.fieldCR = fieldCR;
-    this.realSpacePermTotal = pmeTimings.realSpacePermTotal;
-    this.realSpacePermTime = pmeTimings.realSpacePermTime;
   }
 
   /**
    * Remove permanent field masking rules.
    *
-   * @param i The atom whose masking rules should be removed.
-   * @param is14 True if atom i and the current atom are 1-4 to each other.
+   * @param i     The atom whose masking rules should be removed.
+   * @param is14  True if atom i and the current atom are 1-4 to each other.
    * @param masks One or more masking arrays.
    */
   @Override
@@ -360,11 +399,14 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     }
   }
 
-  /** Computes the Permanent Multipole Real Space Field. */
+  /**
+   * Computes the Permanent Multipole Real Space Field.
+   */
   private class PermanentRealSpaceFieldSection extends ParallelSection {
 
     private final PermanentRealSpaceFieldRegion permanentRealSpaceFieldRegion;
     private final ParallelTeam parallelTeam;
+    protected long time;
 
     PermanentRealSpaceFieldSection(ParallelTeam pt) {
       this.parallelTeam = pt;
@@ -372,12 +414,17 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       permanentRealSpaceFieldRegion = new PermanentRealSpaceFieldRegion(nt);
     }
 
+    public void initTimings() {
+      time = 0;
+      permanentRealSpaceFieldRegion.initTimings();
+    }
+
     @Override
     public void run() {
       try {
-        realSpacePermTotal -= System.nanoTime();
+        time -= System.nanoTime();
         parallelTeam.execute(permanentRealSpaceFieldRegion);
-        realSpacePermTotal += System.nanoTime();
+        time += System.nanoTime();
       } catch (RuntimeException e) {
         String message = "Fatal exception computing the real space field.\n";
         logger.log(Level.WARNING, message, e);
@@ -412,9 +459,20 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
 
     PermanentRealSpaceFieldRegion(int nt) {
       threadCount = nt;
-      permanentRealSpaceFieldLoop = new PermanentRealSpaceFieldLoop[threadCount];
       initializationLoop = new InitializationLoop[threadCount];
+      permanentRealSpaceFieldLoop = new PermanentRealSpaceFieldLoop[threadCount];
       sharedCount = new SharedInteger();
+      for (int i = 0; i < threadCount; i++) {
+        initializationLoop[i] = new InitializationLoop();
+        permanentRealSpaceFieldLoop[i] = new PermanentRealSpaceFieldLoop();
+      }
+    }
+
+    public void initTimings() {
+      for (int i = 0; i < threadCount; i++) {
+        permanentRealSpaceFieldLoop[i].time = 0;
+        initializationLoop[i].time = 0;
+      }
     }
 
     @Override
@@ -476,11 +534,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     @Override
     public void run() {
       int threadIndex = getThreadIndex();
-      realSpacePermTime[threadIndex] -= System.nanoTime();
-      if (initializationLoop[threadIndex] == null) {
-        initializationLoop[threadIndex] = new InitializationLoop();
-        permanentRealSpaceFieldLoop[threadIndex] = new PermanentRealSpaceFieldLoop();
-      }
       try {
         int nAtoms = atoms.length;
         execute(0, nAtoms - 1, initializationLoop[threadIndex]);
@@ -493,7 +546,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
             "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
         logger.log(Level.SEVERE, message, e);
       }
-      realSpacePermTime[threadIndex] += System.nanoTime();
     }
 
     @Override
@@ -502,6 +554,18 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     }
 
     private class InitializationLoop extends IntegerForLoop {
+
+      protected long time;
+
+      @Override
+      public void start() {
+        time -= System.nanoTime();
+      }
+
+      @Override
+      public void finish() {
+        time += System.nanoTime();
+      }
 
       @Override
       public void run(int lb, int ub) {
@@ -533,6 +597,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
 
     private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
 
+      protected long time;
       private final double[] dx_local;
       private final double[][] transOp;
       private int threadID;
@@ -549,6 +614,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       @Override
       public void finish() {
         sharedCount.addAndGet(count);
+        time += System.nanoTime();
       }
 
       @Override
@@ -946,6 +1012,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
 
       @Override
       public void start() {
+        time = -System.nanoTime();
         threadID = getThreadIndex();
         count = 0;
         int nAtoms = atoms.length;

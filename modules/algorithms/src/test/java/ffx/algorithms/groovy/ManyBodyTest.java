@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import static org.junit.Assert.assertEquals;
-
 import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo
@@ -73,11 +73,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -221.0842558097416;
+    double expectedTotalPotential = -221.08425644431628;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -216.93107790352414;
+    double expectedApproximateEnergy = -216.93107853813615;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -106,12 +106,12 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -221.0842558097416; //-221.48751140045158
+    double expectedTotalPotential = -221.08425644431537;
     double actualTotalPotential =
         manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -220.31899441275732;
+    double expectedApproximateEnergy = -220.3189950491514;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -226,7 +226,7 @@ public class ManyBodyTest extends AlgorithmsTest {
   @Test
   public void testManyBodyTitration() {
     // Set-up the input arguments for the script.
-    String[] args = {"--tR", "--pH","7.0","--eR",
+    String[] args = {"--tR", "--pH", "7.0", "--eR",
         getResourcePath("DEHK.rot.restart"),
         getResourcePath("DEHK.rot.pdb")
     };

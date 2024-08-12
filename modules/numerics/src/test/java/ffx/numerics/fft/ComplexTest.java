@@ -99,10 +99,19 @@ public class ComplexTest extends FFXTest {
   }
 
   /**
+   * Test of preferredDimension method, of class Complex.
+   */
+  @Test
+  public void testPreferredDimension() {
+    boolean result = Complex.preferredDimension(n);
+    assertEquals(info, preferred, result);
+  }
+
+  /**
    * Test of fft method, of class Complex.
    */
   @Test
-  public void testFftInterleavedScalar() {
+  public void testInterleavedScalar() {
     double tolerance = 1.0e-11;
 
     int offset = 0;
@@ -144,7 +153,51 @@ public class ComplexTest extends FFXTest {
    * Test of fft method, of class Complex.
    */
   @Test
-  public void testFftInterleavedSIMD() {
+  public void testBlockedScalar() {
+    if (!this.preferred) {
+      return;
+    }
+    double tolerance = 1.0e-11;
+    int offset = 0;
+    int stride = 1;
+    Complex complex = new Complex(n, DataLayout1D.BLOCKED, n);
+    complex.setUseSIMD(false);
+
+    // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
+
+    long dftTime = System.nanoTime();
+    Complex.dftBlocked(dataBlocked, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    complex.fft(dataBlocked, offset, stride);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    for (int i = 0; i < 2 * n; i++) {
+      assertEquals(" Forward " + info + " at position: " + i, dft[i], dataBlocked[i], tolerance);
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(dataBlocked, offset, stride);
+    for (int i = 0; i < n; i++) {
+      double orig = this.origBlocked[i];
+      double actual = dataBlocked[i];
+      assertEquals(" IFFT(FFT(X)) " + info + " at position: " + i, orig, actual, tolerance);
+    }
+  }
+
+  /**
+   * Test of fft method, of class Complex.
+   */
+  @Test
+  public void testInterleavedSIMD() {
     double tolerance = 1.0e-11;
 
     int offset = 0;
@@ -186,7 +239,7 @@ public class ComplexTest extends FFXTest {
    * Test of fft method, of class Complex.
    */
   @Test
-  public void testFftBlockedScalar() {
+  public void testBlockedSIMD() {
     if (!this.preferred) {
       return;
     }
@@ -194,9 +247,7 @@ public class ComplexTest extends FFXTest {
     int offset = 0;
     int stride = 1;
     Complex complex = new Complex(n, DataLayout1D.BLOCKED, n);
-    complex.setUseSIMD(false);
-
-    // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
+    complex.setUseSIMD(true);
 
     long dftTime = System.nanoTime();
     Complex.dftBlocked(dataBlocked, dft);
@@ -227,11 +278,273 @@ public class ComplexTest extends FFXTest {
   }
 
   /**
-   * Test of preferredDimension method, of class Complex.
+   * Test of fft method, of class Complex, using N FFTs packed next to each other.
+   * <p>
+   * This test is designed to mimic a 2D transform, so we'll pack N FFTs into a 1D array of size (2*N)^2
    */
   @Test
-  public void testPreferredDimension() {
-    boolean result = Complex.preferredDimension(n);
-    assertEquals(info, preferred, result);
+  public void testInterleavedScalarNFFT() {
+    double tolerance = 1.0e-11;
+
+    int nFFTs = n;
+    int nextFFT = 2 * n;
+    int offset = 0;
+    int stride = 2;
+    int im = 1;
+    Complex complex = new Complex(n, DataLayout1D.INTERLEAVED, im, nFFTs);
+    complex.setUseSIMD(false);
+
+    long dftTime = System.nanoTime();
+    Complex.dft(data, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    double[] data2 = new double[2 * n * nFFTs];
+    int index = 0;
+    for (int ii = 0; ii < 2 * n; ii += stride) {
+      for (int i = 0; i < nFFTs; i++) {
+        data2[index] = data[ii];
+        //data2[index + im] = data[ii + im];
+        index += stride;
+      }
+    }
+
+    complex.fft(data2, offset, stride, nextFFT);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < n; ii++) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii], data2[index], tolerance);
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii + 1], data2[index + 1], tolerance);
+        index += 2;
+      }
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data2, offset, stride, nextFFT);
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < nextFFT; ii += 2) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" IFFT(FFT(X)) " + info + " at position: " + ii + " FFT " + i,
+            orig[ii], data2[index], tolerance);
+        index += 2;
+      }
+    }
   }
+
+  /**
+   * Test of fft method, of class Complex, using N FFTs packed next to each other.
+   * <p>
+   * This test is designed to mimic a 2D transform, so we'll pack N FFTs into a 1D array of size (2*N)^2
+   */
+  @Test
+  public void testInterleavedSIMDNFFT() {
+    double tolerance = 1.0e-11;
+
+    int nFFTs = n;
+    int nextFFT = 2 * n;
+    int offset = 0;
+    int stride = 2;
+    int im = 1;
+    Complex complex = new Complex(n, DataLayout1D.INTERLEAVED, im, nFFTs);
+    complex.setUseSIMD(true);
+
+    long dftTime = System.nanoTime();
+    Complex.dft(data, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    double[] data2 = new double[2 * n * nFFTs];
+    int index = 0;
+    for (int ii = 0; ii < 2 * n; ii += stride) {
+      for (int i = 0; i < nFFTs; i++) {
+        data2[index] = data[ii];
+        //data2[index + im] = data[ii + im];
+        index += stride;
+      }
+    }
+
+    complex.fft(data2, offset, stride, nextFFT);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < n; ii++) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii], data2[index], tolerance);
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[2 * ii + 1], data2[index + 1], tolerance);
+        index += 2;
+      }
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data2, offset, stride, nextFFT);
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < nextFFT; ii += 2) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" IFFT(FFT(X)) " + info + " at position: " + ii + " FFT " + i,
+            orig[ii], data2[index], tolerance);
+        index += 2;
+      }
+    }
+  }
+
+  /**
+   * Test of fft method, of class Complex, using N FFTs packed next to each other.
+   * <p>
+   * This test is designed to mimic a 2D transform, so we'll pack N FFTs into a 1D array of size (2*N)^2
+   */
+  @Test
+  public void testBlockedScalarNFFT() {
+    if (!this.preferred) {
+      return;
+    }
+    double tolerance = 1.0e-11;
+
+    int nFFTs = n;
+    int nextFFT = 2 * n;
+    int offset = 0;
+    int stride = 1;
+    int im = n * nFFTs;
+    Complex complex = new Complex(n, DataLayout1D.BLOCKED, im, nFFTs);
+    complex.setUseSIMD(false);
+
+    long dftTime = System.nanoTime();
+    Complex.dftBlocked(dataBlocked, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    double[] data2 = new double[2 * n * nFFTs];
+    int index = 0;
+    for (int ii = 0; ii < n; ii += stride) {
+      for (int i = 0; i < nFFTs; i++) {
+        data2[index++] = dataBlocked[ii];
+      }
+    }
+
+    complex.fft(data2, offset, stride, nextFFT);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < n; ii++) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[ii], data2[index], tolerance);
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[ii + n], data2[index + im], tolerance);
+        index++;
+      }
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data2, offset, stride, nextFFT);
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < nextFFT; ii += 2) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" IFFT(FFT(X)) " + info + " at position: " + ii + " FFT " + i,
+            orig[ii], data2[index], tolerance);
+        index++;
+      }
+    }
+  }
+
+  /**
+   * Test of fft method, of class Complex, using N FFTs packed next to each other.
+   * <p>
+   * This test is designed to mimic a 2D transform, so we'll pack N FFTs into a 1D array of size (2*N)^2
+   */
+  @Test
+  public void testBlockedSIMDNFFT() {
+    if (!this.preferred) {
+      return;
+    }
+    double tolerance = 1.0e-11;
+
+    int nFFTs = n;
+    int nextFFT = 2 * n;
+    int offset = 0;
+    int stride = 1;
+    int im = n * nFFTs;
+    Complex complex = new Complex(n, DataLayout1D.BLOCKED, im, nFFTs);
+    complex.setUseSIMD(true);
+
+    long dftTime = System.nanoTime();
+    Complex.dftBlocked(dataBlocked, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
+    double[] data2 = new double[2 * n * nFFTs];
+    int index = 0;
+    for (int ii = 0; ii < n; ii += stride) {
+      for (int i = 0; i < nFFTs; i++) {
+        data2[index++] = dataBlocked[ii];
+      }
+    }
+
+    complex.fft(data2, offset, stride, nextFFT);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < n; ii++) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[ii], data2[index], tolerance);
+        assertEquals(" FFT " + i + " Forward " + info + " at position: " + ii,
+            dft[ii + n], data2[index + im], tolerance);
+        index++;
+      }
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
+    complex.inverse(data2, offset, stride, nextFFT);
+
+    // Test the FFT is equals the DFT result.
+    index = 0;
+    for (int ii = 0; ii < nextFFT; ii += 2) {
+      for (int i = 0; i < nFFTs; i++) {
+        assertEquals(" IFFT(FFT(X)) " + info + " at position: " + ii + " FFT " + i,
+            orig[ii], data2[index], tolerance);
+        index++;
+      }
+    }
+  }
+
 }

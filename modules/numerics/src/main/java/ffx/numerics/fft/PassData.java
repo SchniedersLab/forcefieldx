@@ -37,15 +37,29 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-/**
- * References to the input and output data arrays.
- *
- * @param sign      Sign to apply.
- * @param in        Input data for the current pass.
- * @param inOffset  Offset into the input data.
- * @param out       Output data for the current pass.
- * @param outOffset Offset into output array.
- */
-public record PassData(int sign, double[] in, int inOffset, double[] out, int outOffset) {
-  // Empty.
+public class PassData {
+
+  protected int sign;
+  protected double[] in;
+  protected int inOffset;
+  protected double[] out;
+  protected int outOffset;
+
+  /**
+   * References to the input and output data arrays.
+   *
+   * @param sign      Sign to apply.
+   * @param in        Input data for the current pass.
+   * @param inOffset  Offset into the input data.
+   * @param out       Output data for the current pass.
+   * @param outOffset Offset into output array.
+   */
+  public PassData(int sign, double[] in, int inOffset, double[] out, int outOffset) {
+    this.sign = sign;
+    this.in = in;
+    this.inOffset = inOffset;
+    this.out = out;
+    this.outOffset = outOffset;
+  }
+
 }

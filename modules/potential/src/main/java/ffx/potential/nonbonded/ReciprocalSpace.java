@@ -650,7 +650,7 @@ public class ReciprocalSpace {
             + splineInducedTotal + inducedPhiTotal) * toSeconds;
 
         logger.fine(format("\n Reciprocal Space: %7.4f (sec)", total));
-        long[] convTime = complex3DFFT.getTimings();
+        long[] convTime = complex3DFFT.getTiming();
         logger.fine("                           Direct Field    SCF Field");
         logger.fine(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
 
@@ -754,7 +754,7 @@ public class ReciprocalSpace {
       logger.info(this.crystal.toString());
       logger.info(crystal.toString());
       logger.severe(
-          " The reciprocal space class does not currently allow changes in the number of symmetry operators.");
+          " The reciprocal space class does not currently allow changes in the number of symmetry operators unless it is mapped by a user supplied symmetry operator.");
     }
     this.coordinates = particleMeshEwald.getCoordinates();
     initConvolution();

@@ -158,8 +158,9 @@ public class MultipoleTensorGlobalTest extends FFXTest {
     String code = multipoleTensor.codeTensorRecursion(r, tensor);
     logger.info(format("\n%s", code));
 
-    logger.info(format(" Writing Cartesian Order %d vectorized tensor recursion code:", order));
-    code = multipoleTensor.codeVectorTensorRecursion();
+    int filter = 5;
+    logger.info(format(" Writing Cartesian Order %d vectorized tensor recursion code filtered at O=%d:", order, filter));
+    code = multipoleTensor.codeVectorTensorRecursion(filter);
     logger.info(format("\n%s", code));
 
     PolarizableMultipole polarizableMultipole = new PolarizableMultipole(Qi, Ui, Ui);

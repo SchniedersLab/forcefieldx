@@ -38,15 +38,19 @@
 package ffx.potential.groovy
 
 import com.google.common.collect.MinMaxPriorityQueue
+import edu.rit.pj.ParallelTeam
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 import ffx.potential.bonded.Torsion
+import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
+import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
@@ -75,6 +79,12 @@ class Energy extends PotentialScript {
 
   @Mixin
   AtomSelectionOptions atomSelectionOptions
+
+  @Mixin
+  AlchemicalOptions alchemical
+
+  @Mixin
+  TopologyOptions topology
 
   /**
    * -m or --moments print out electrostatic moments.
@@ -150,13 +160,17 @@ class Energy extends PotentialScript {
   /**
    * The final argument is a PDB or XYZ coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "file",
+  @Parameters(arity = "1..4", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  private String filename = null
+  private List<String> filenames = null
 
   public double energy = 0.0
   public ForceFieldEnergy forceFieldEnergy = null
   private AssemblyState assemblyState = null
+  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
+  private int threadsPer = threadsAvail
+  private Potential potential
+  MolecularAssembly[] topologies
 
   /**
    * Energy constructor.
@@ -182,15 +196,72 @@ class Energy extends PotentialScript {
       return this
     }
 
-    // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
-    if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+    List<String> arguments = filenames
+    // Check nArgs should either be number of arguments (min 1), else 1.
+    int nArgs = arguments ? arguments.size() : 1
+    nArgs = (nArgs < 1) ? 1 : nArgs
+
+    topologies = new MolecularAssembly[nArgs]
+
+    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+    threadsPer = (int) (threadsAvail / numParallel)
+
+    // Turn on computation of lambda derivatives if softcore atoms exist.
+    boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
+
+    if (lambdaTerm) {
+      System.setProperty("lambdaterm", "true")
     }
 
+    double lambda = alchemical.getInitialLambda()
+
+    // Relative free energies via the DualTopologyEnergy class require different
+    // default OST parameters than absolute free energies.
+    if (nArgs >= 2) {
+      // Ligand vapor electrostatics are not calculated. This cancels when the
+      // difference between protein and water environments is considered.
+      System.setProperty("ligand-vapor-elec", "false")
+    }
+
+    List<MolecularAssembly> topologyList = new ArrayList<>(4)
+
+    // Read in files.
+    if (!arguments || arguments.isEmpty()) {
+      activeAssembly = getActiveAssembly(filenames[0])
+      if (activeAssembly == null) {
+        logger.info(helpString())
+        return this
+      }
+      arguments = new ArrayList<>()
+      arguments.add(activeAssembly.getFile().getName())
+      topologyList.add(alchemical.processFile(topology, activeAssembly, 0))
+    } else {
+      logger.info(format(" Initializing %d topologies...", nArgs))
+      for (int i = 0; i < nArgs; i++) {
+        topologyList.add(alchemical.openFile(potentialFunctions,
+                topology, threadsPer, arguments.get(i), i))
+      }
+      activeAssembly = topologyList.get(0);
+    }
+
+    MolecularAssembly[] topologies =
+            topologyList.toArray(new MolecularAssembly[topologyList.size()])
+
+    if (topologies.length == 1) {
+      atomSelectionOptions.setActiveAtoms(topologies[0])
+    }
+
+    // Configure the potential to test.
+    StringBuilder sb = new StringBuilder("\n Calculating energy of ")
+    potential = topology.assemblePotential(topologies, threadsAvail, sb)
+
+    logger.info(sb.toString())
+
+    LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
+    linter?.setLambda(lambda)
+
     // Set the filename.
-    filename = activeAssembly.getFile().getAbsolutePath()
+    String filename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Running Energy on " + filename)
 
@@ -204,17 +275,17 @@ class Energy extends PotentialScript {
     }
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    int nVars = forceFieldEnergy.getNumberOfVariables()
+    int nVars = potential.getNumberOfVariables()
     double[] x = new double[nVars]
-    forceFieldEnergy.getCoordinates(x)
+    potential.getCoordinates(x)
 
     double[] collectGradient = new double[nVars]
 
     if (gradient) {
       double[] g = new double[nVars]
       int nAts = (int) (nVars / 3)
-      energy = forceFieldEnergy.energyAndGradient(x, g, true)
-//      logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
+      energy = potential.energyAndGradient(x, g, true)
+      logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
       for (int i = 0; i < nAts; i++) {
         int i3 = 3 * i
         collectGradient[i3] += g[i3]
@@ -223,7 +294,7 @@ class Energy extends PotentialScript {
 //        logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
       }
     } else {
-      energy = forceFieldEnergy.energy(x, true)
+      energy = potential.energy(x, true)
     }
 
     if (moments) {
@@ -442,11 +513,11 @@ class Energy extends PotentialScript {
         if (numSnaps > index) {
           logger.warning(format(
               " Requested %d snapshots, but file %s has only %d snapshots. All %d energies will be reported",
-              numSnaps, filename, index, index))
+              numSnaps, filenames, index, index))
           numSnaps = index
         }
 
-        String name = getName(filename)
+        String name = getName(filenames)
 
         for (int i = 0; i < numSnaps - 1; i++) {
           StateContainer savedState = lowestEnergyQueue.removeLast()

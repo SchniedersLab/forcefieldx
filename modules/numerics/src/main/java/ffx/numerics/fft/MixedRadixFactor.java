@@ -204,6 +204,10 @@ public abstract class MixedRadixFactor {
    */
   protected final int n;
   /**
+   * The number of FFTs to process (default = 1).
+   */
+  protected final int nFFTs;
+  /**
    * The imaginary offset.
    */
   protected final int im;
@@ -255,13 +259,14 @@ public abstract class MixedRadixFactor {
 
   public MixedRadixFactor(PassConstants passConstants) {
     n = passConstants.n();
+    nFFTs = passConstants.nFFTs();
     im = passConstants.im();
     factor = passConstants.factor();
     product = passConstants.product();
     twiddles = passConstants.twiddles();
     outerLoopLimit = n / product;
-    innerLoopLimit = product / factor * passConstants.nFFTs();
-    nextInput = n / factor;
+    innerLoopLimit = (product / factor) * nFFTs;
+    nextInput = (n / factor) * nFFTs;
     if (im == 1) {
       ii = 2;
       // For interleaved complex data, the di and dj offsets are doubled.
@@ -275,6 +280,27 @@ public abstract class MixedRadixFactor {
       dj = innerLoopLimit;
     }
     jstep = (factor - 1) * dj;
+  }
+
+  /**
+   * Return a string representation of the mixed radix factor.
+   * @return a string representation of the mixed radix factor.
+   */
+  public String toString() {
+    return "MixedRadixFactor {" +
+        "n=" + n +
+        ", nFFTs=" + nFFTs +
+        ", im=" + im +
+        ", factor=" + factor +
+        ", product=" + product +
+        ", outerLoopLimit=" + outerLoopLimit +
+        ", innerLoopLimit=" + innerLoopLimit +
+        ", nextInput=" + nextInput +
+        ", di=" + di +
+        ", dj=" + dj +
+        ", ii=" + ii +
+        ", jstep=" + jstep +
+        '}';
   }
 
   /**

@@ -125,6 +125,8 @@ public class PolarizableMultipole {
    * Averaged induced dipole + induced dipole chain-rule z-component: sz = 0.5 * (uz + pz).
    */
   protected double sz;
+  protected double Z;
+
 
   /**
    * PolarizableMultipole constructor with zero moments.
@@ -142,6 +144,20 @@ public class PolarizableMultipole {
   public PolarizableMultipole(double[] Q, double[] u, double[] uCR) {
     setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
+  }
+
+  /**
+   * PolarizableMultipole constructor.
+   *
+   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipole u[ux, uy, uz]
+   * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
+   */
+  public PolarizableMultipole(double[] Q, double[] u, double[] uCR, double Z) {
+    setPermanentMultipole(Q);
+    setInducedDipole(u, uCR);
+    this.Z = Z;
+    this.q = -Z + q;
   }
 
   /**
@@ -169,9 +185,9 @@ public class PolarizableMultipole {
    */
   public final void setPermanentMultipole(double[] Q) {
     q = Q[0];
-    dx = Q[1];
-    dy = Q[2];
-    dz = Q[3];
+    dx =  Q[1];
+    dy =  Q[2];
+    dz =  Q[3];
     qxx = Q[4] * oneThird;
     qyy = Q[5] * oneThird;
     qzz = Q[6] * oneThird;

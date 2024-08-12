@@ -75,11 +75,11 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
    */
   @Override
   protected void passScalar(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double sin2PI_5s = sign * sin2PI_5;
     final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
@@ -206,16 +206,15 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
     }
   }
 
-
   /**
    * Handle factors of 5.
    */
   protected void interleaved(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double sin2PI_5s = sign * sin2PI_5;
     final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
@@ -294,11 +293,11 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
    * Handle factors of 5.
    */
   protected void blocked(PassData passData) {
-    final double[] data = passData.in();
-    final double[] ret = passData.out();
-    int sign = passData.sign();
-    int i = passData.inOffset();
-    int j = passData.outOffset();
+    final double[] data = passData.in;
+    final double[] ret = passData.out;
+    int sign = passData.sign;
+    int i = passData.inOffset;
+    int j = passData.outOffset;
     final double sin2PI_5s = sign * sin2PI_5;
     final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.

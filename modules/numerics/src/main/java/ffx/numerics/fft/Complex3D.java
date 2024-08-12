@@ -55,11 +55,14 @@ package ffx.numerics.fft;
  * For blocked data along x, the location of the input point [x, y, z] within the input array must be:
  * <br>
  * double real = input[x*nextX + y*nextY + z*nextZ] <br>
- * double imag = input[x*nextX + y*nextY + z*nextZ + nX] <br>
+ * double imag = input[x*nextX + y*nextY + z*nextZ + im] <br>
  * where <br>
  * int nextX = 1 <br>
  * int nextY = 2*nX <br>
  * int nextZ = 2*nX*nY <br>
+ * int im = nX for BLOCKED_X<br>
+ * int im = nX*nY for BLOCKED_XY<br>
+ * int im = nX*nY*nZ for BLOCKED_XYZ<br>
  *
  * @author Michal J. Schnieders
  * @see Complex
@@ -67,16 +70,65 @@ package ffx.numerics.fft;
  */
 public class Complex3D {
 
-  private final int nX, nY, nZ;
+  /**
+   * The number of points along the X-axis.
+   */
+  private final int nX;
+  /**
+   * The number of points along the Y-axis.
+   */
+  private final int nY;
+  /**
+   * The number of points along the Z-axis.
+   */
+  private final int nZ;
+  /**
+   * The offset from each real point to the corresponding imaginary point.
+   */
   private final int im;
-
-  private final int nextX, nextY, nextZ;
+  /**
+   * The offset from each real point to the next real point (either 1 or 2).
+   */
+  private final int ii;
+  /**
+   * The offset from each real point to the next real point along the X-dimension (either 1 or 2).
+   */
+  private final int nextX;
+  /**
+   * The offset from each real point to the next real point along the Y-dimension (either nX or 2*nX).
+   */
+  private final int nextY;
+  /**
+   * The offset from each real point to the next real point along the Z-dimension (either nX*nY or 2*nX*nY).
+   */
+  private final int nextZ;
+  /**
+   * The 2D FFT for the XY-plane.
+   */
+  private final Complex2D fftXY;
+  /**
+   * The 1D FFT for the Z-axis.
+   */
+  private final Complex fftZN;
+  /**
+   * The work array holding a 2D YZ-plane for transforms along the Z-axis.
+   */
   private final double[] work;
-  private final Complex fftX, fftY, fftZ;
+  /**
+   * The offset from each real point to its corresponding imaginary point for the 2D YZ-plane.
+   */
+  private final int internalImZ;
+  /**
+   * The offset from each real point to the next real point for the 2D YZ-plane (1 or 2).
+   */
+  private final int internalNextZ;
+  /**
+   * The reciprocal space data.
+   */
   private final double[] recip;
 
-  private final int internalImZ;
-  private final int internalNextZ;
+  private boolean useSIMD;
+  private boolean packFFTs;
 
   /**
    * Initialize the 3D FFT for complex 3D matrix using interleaved data layout.
@@ -102,66 +154,107 @@ public class Complex3D {
     this.nY = nY;
     this.nZ = nZ;
 
-    DataLayout1D dataLayout1D;
+    DataLayout2D dataLayoutXY;
+    DataLayout1D dataLayoutZ;
     switch (layout) {
       default:
       case INTERLEAVED:
         // Interleaved data layout.
         im = 1;
+        ii = 2;
         nextX = 2;
         nextY = 2 * nX;
         nextZ = 2 * nX * nY;
-        // Internal 1D FFTs will be performed in interleaved format.
-        dataLayout1D = DataLayout1D.INTERLEAVED;
+        dataLayoutXY = DataLayout2D.INTERLEAVED;
+        dataLayoutZ = DataLayout1D.INTERLEAVED;
         // Transforms along the Z-axis will be repacked into 1D interleaved format.
-        internalImZ = 1;
         internalNextZ = 2;
+        internalImZ = 1;
         break;
       case BLOCKED_X:
         // Blocking is along the X-axis.
         im = nX;
+        ii = 1;
         nextX = 1;
         nextY = 2 * nX;
         nextZ = 2 * nX * nY;
-        // Internal 1D FFTs will be performed in blocked format.
-        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayoutXY = DataLayout2D.BLOCKED_X;
+        dataLayoutZ = DataLayout1D.BLOCKED;
         // Transforms along the Z-axis will be repacked into 1D blocked format.
         internalNextZ = 1;
-        internalImZ = nZ;
+        internalImZ = nY * nZ;
         break;
       case BLOCKED_XY:
         // Blocking is based on 2D XY-planes.
         im = nX * nY;
+        ii = 1;
         nextX = 1;
         nextY = nX;
         nextZ = 2 * nY * nX;
-        // Internal 1D FFTs will be performed in blocked format.
-        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayoutXY = DataLayout2D.BLOCKED_XY;
+        dataLayoutZ = DataLayout1D.BLOCKED;
         // Transforms along the Z-axis will be repacked into 1D blocked format.
         internalNextZ = 1;
-        internalImZ = nZ;
+        internalImZ = nY * nZ;
         break;
       case BLOCKED_XYZ:
         // Blocking is based on 3D XYZ-volume with all real values followed by all imaginary.
         im = nX * nY * nZ;
+        ii = 1;
         nextX = 1;
         nextY = nX;
         nextZ = nY * nX;
-        // Internal 1D FFTs will be performed in blocked format.
-        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayoutXY = DataLayout2D.BLOCKED_XY;
+        dataLayoutZ = DataLayout1D.BLOCKED;
         // Transforms along the Z-axis will be repacked into 1D blocked format.
         internalNextZ = 1;
-        internalImZ = nZ;
+        internalImZ = nY * nZ;
         break;
+    }
+
+    // Do not use SIMD by default for now.
+    useSIMD = false;
+    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+    try {
+      useSIMD = Boolean.parseBoolean(simd);
+    } catch (Exception e) {
+      useSIMD = false;
+    }
+
+    packFFTs = false;
+    String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
+    try {
+      packFFTs = Boolean.parseBoolean(pack);
+    } catch (Exception e) {
+      packFFTs = false;
     }
 
     // Allocate memory for the reciprocal space data to be repacked into the order needed by the convolution routine.
     recip = new double[nX * nY * nZ];
-    fftX = new Complex(nX, dataLayout1D, im);
-    fftY = new Complex(nY, dataLayout1D, im);
-    // Z-data is always repacked into a local work array.
-    work = new double[2 * nZ];
-    fftZ = new Complex(nZ, dataLayout1D, internalImZ);
+    fftXY = new Complex2D(nX, nY, dataLayoutXY, im);
+    fftXY.setPackFFTs(packFFTs);
+    fftXY.setUseSIMD(useSIMD);
+    fftZN = new Complex(nZ, dataLayoutZ, internalImZ, nY);
+    fftZN.setUseSIMD(useSIMD);
+
+    // Transforms along Z-data are repacked into a local work array.
+    work = new double[2 * nZ * nY];
+  }
+
+  /**
+   * Set the 2D transform to use SIMD instructions.
+   *
+   * @param useSIMD True to use SIMD instructions.
+   */
+  public void setUseSIMD(boolean useSIMD) {
+    this.useSIMD = useSIMD;
+    fftXY.setUseSIMD(useSIMD);
+    fftZN.setUseSIMD(useSIMD);
+  }
+
+  public void setPackFFTs(boolean packFFTs) {
+    this.packFFTs = packFFTs;
+    fftXY.setPackFFTs(packFFTs);
   }
 
   /**
@@ -198,79 +291,19 @@ public class Complex3D {
   }
 
   /**
-   * Perform a convolution.
-   *
-   * @param input The input array.
-   */
-  public void convolution(final double[] input) {
-    for (int z = 0; z < nZ; z++) {
-      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-        fftX.fft(input, offset, nextX);
-      }
-      for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-        fftY.fft(input, offset, nextY);
-      }
-    }
-    for (int offset = 0, index = 0, y = 0; y < nY; y++) {
-      for (int x = 0; x < nX; x++, offset += nextX) {
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          work[w] = input[z];
-          work[w + internalImZ] = input[z + im];
-        }
-        fftZ.fft(work, 0, internalNextZ);
-        for (int i = 0; i < nZ; i++) {
-          double r = recip[index++];
-          int w = i * nextX;
-          work[w] *= r;
-          work[w + internalImZ] *= r;
-        }
-        fftZ.ifft(work, 0, internalNextZ);
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          input[z] = work[w];
-          input[z + im] = work[w + internalImZ];
-        }
-      }
-    }
-    for (int z = 0; z < nZ; z++) {
-      for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-        fftY.ifft(input, offset, nextY);
-      }
-      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-        fftX.ifft(input, offset, nextX);
-      }
-    }
-  }
-
-  /**
    * Compute the 3D FFT.
    *
    * @param input The input array must be of size 2 * nX * nY * nZ.
    */
   public void fft(final double[] input) {
     for (int z = 0; z < nZ; z++) {
-      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-        fftX.fft(input, offset, nextX);
-      }
-      for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-        fftY.fft(input, offset, nextY);
-      }
+      fftXY.fft(input, z * nextZ);
     }
     for (int x = 0, offset = 0; x < nX; x++) {
-      for (int y = 0; y < nY; y++, offset += nextX) {
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          work[w] = input[z];
-          work[w + internalImZ] = input[z + im];
-        }
-        fftZ.fft(work, 0, im);
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          input[z] = work[w];
-          input[z + im] = work[w + internalImZ];
-        }
-      }
+      selectYZPlane(offset, input);
+      fftZN.fft(work, 0, ii);
+      replaceYZPlane(offset, input);
+      offset += nextX;
     }
   }
 
@@ -281,27 +314,35 @@ public class Complex3D {
    */
   public void ifft(final double[] input) {
     for (int offset = 0, x = 0; x < nX; x++) {
-      for (int y = 0; y < nY; y++, offset += nextX) {
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          work[w] = input[z];
-          work[w + internalImZ] = input[z + im];
-        }
-        fftZ.ifft(work, 0, internalNextZ);
-        for (int i = 0, z = offset; i < nZ; i++, z += nextZ) {
-          int w = i * nextX;
-          input[z] = work[w];
-          input[z + im] = work[w + internalImZ];
-        }
-      }
+      selectYZPlane(offset, input);
+      fftZN.ifft(work, 0, ii);
+      replaceYZPlane(offset, input);
+      offset += nextX;
     }
     for (int z = 0; z < nZ; z++) {
-      for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
-        fftY.ifft(input, offset, nextY);
-      }
-      for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
-        fftX.ifft(input, offset, nextX);
-      }
+      fftXY.ifft(input, z * nextZ);
+    }
+  }
+
+  /**
+   * Perform a convolution.
+   *
+   * @param input The input array.
+   */
+  public void convolution(final double[] input) {
+    for (int z = 0; z < nZ; z++) {
+      fftXY.fft(input, z * nextZ);
+    }
+    for (int x = 0, offset = 0; x < nX; x++) {
+      selectYZPlane(offset, input);
+      fftZN.fft(work, 0, internalNextZ);
+      recipConv(x, work);
+      fftZN.ifft(work, 0, internalNextZ);
+      replaceYZPlane(offset, input);
+      offset += nextX;
+    }
+    for (int z = 0; z < nZ; z++) {
+      fftXY.ifft(input, z * nextZ);
     }
   }
 
@@ -311,14 +352,103 @@ public class Complex3D {
    * @param recip an array of double.
    */
   public void setRecip(double[] recip) {
-    // Reorder the reciprocal space data into the order it is needed by the convolution routine.
+    // Reorder the reciprocal space data for convolution.
+    // Input
+    // trNextY = ii
+    // trNextZ = nY*ii
+    // real[y, z] = work[y*trNextY + z*trNextZ]
+    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
+    int recipNextY = nX;
+    int recipNextZ = nY * nX;
     int index = 0;
-    for (int offset = 0, y = 0; y < nY; y++) {
-      for (int x = 0; x < nX; x++, offset++) {
-        for (int i = 0, z = offset; i < nZ; i++, z += nX * nY) {
-          this.recip[index++] = recip[z];
+    for (int x = 0; x < nX; x++) {
+      int dx = x;
+      for (int z = 0; z < nZ; z++) {
+        int dz = dx + z * recipNextZ;
+        for (int y = 0; y < nY; y++) {
+          int conv = y * recipNextY + dz;
+          this.recip[index] = recip[conv];
+          index++;
         }
       }
     }
   }
+
+  /**
+   * Select a YZ-plane at fixed X into a contiguous block of memory.
+   *
+   * @param offset The offset into the input array.
+   * @param input  The input array.
+   */
+  private void selectYZPlane(int offset, double[] input) {
+    // Input
+    // real[x, y, z] = input[offset + y*nextY + z*nextZ]
+    // imag[x, y, z] = input[offset + y*nextY + z*nextZ + im]
+    // Collect a Y-Z plane at fixed X.
+    // Output
+    // trNextY = ii
+    // trNextZ = nY*ii
+    // real[y, z] = work[y*trNextY + z*trNextZ]
+    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
+    int index = 0;
+    for (int z = 0; z < nZ; z++) {
+      int dz = offset + z * nextZ;
+      for (int y = 0; y < nY; y++) {
+        double real = input[y * nextY + dz];
+        double imag = input[y * nextY + dz + im];
+        work[index] = real;
+        work[index + internalImZ] = imag;
+        index += ii;
+      }
+    }
+  }
+
+  /**
+   * Replace the Y-Z plane at fixed X back into the input array.
+   *
+   * @param offset The offset into the output array.
+   * @param output The input array.
+   */
+  private void replaceYZPlane(int offset, double[] output) {
+    // Input
+    // trNextY = ii
+    // trNextZ = nY*ii
+    // real[y, z] = work[y*trNextY + z*trNextZ]
+    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
+    // Output
+    // real[x, y, z] = input[offset + y*nextY + z*nextZ]
+    // imag[x, y, z] = input[offset + y*nextY + z*nextZ + im]
+    int index = 0;
+    for (int z = 0; z < nZ; z++) {
+      int dzOut = offset + z * nextZ;
+      for (int y = 0; y < nY; y++) {
+        int dyOut = y * nextY;
+        double real = work[index];
+        double imag = work[index + internalImZ];
+        index += ii;
+        output[dyOut + dzOut] = real;
+        output[dyOut + dzOut + im] = imag;
+      }
+    }
+  }
+
+  /**
+   * Perform a multiplication by the reciprocal space data.
+   *
+   * @param x    The X-value for this Y-Z plane.
+   * @param work The input array.
+   */
+  private void recipConv(int x, double[] work) {
+    int index = 0;
+    int rindex = x * (nY * nZ);
+    for (int z = 0; z < nZ; z++) {
+      for (int y = 0; y < nY; y++) {
+        double r = recip[rindex++];
+        work[index] *= r;
+        work[index + internalImZ] *= r;
+        index += ii;
+      }
+    }
+  }
+
 }
