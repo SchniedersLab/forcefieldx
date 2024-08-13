@@ -59,6 +59,7 @@ import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.utils.ConvexHullOps;
 
 import java.io.File;
 import java.util.*;
@@ -279,8 +280,9 @@ public class NeighborList extends ParallelRegion {
     domainDecomposition = new DomainDecomposition(nAtoms, crystal, cutoffPlusBuffer);
 
     if(useOctree) {
-      QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms);
-      double maxDist = ConvexHullOps.maxDist(quickHull3D);
+//      QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms);
+//      double maxDist = ConvexHullOps.maxDist(quickHull3D);
+      double maxDist = cutoffPlusBuffer;
       domainDecompositionOctree = new DomainDecompositionOctree(nAtoms, crystal, maxDist, 8);
     }
     initNeighborList(print);
@@ -1748,7 +1750,7 @@ public class NeighborList extends ParallelRegion {
         cellB[i] = b;
         cellC[i] = c;
       }
-      cells[a][b][c].add(i, iSymm);
+      cells[a][b][c].add(i, iSymm, zu);
     }
 
     /**

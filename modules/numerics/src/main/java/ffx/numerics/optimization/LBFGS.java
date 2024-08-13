@@ -241,8 +241,8 @@ public class LBFGS {
     double gamma = 1.0;
 
     // Line search parameters.
-//    final LineSearch lineSearch = new LineSearch(n);
-    final LineSearchHZ lineSearch = new LineSearchHZ(n);
+    final LineSearch lineSearch = new LineSearch(n);
+//    final LineSearchHZ lineSearch = new LineSearchHZ(n);
     final LineSearchResult[] info = {LineSearchResult.Success};
 //    final LineSearchHZ lineSearchHZ = new LineSearchHZ(n);
 //    final LineSearchHZResult[] info = {LineSearchHZResult.Success};
