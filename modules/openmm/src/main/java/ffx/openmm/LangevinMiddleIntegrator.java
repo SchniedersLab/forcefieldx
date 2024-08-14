@@ -35,46 +35,54 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.openmm;
 
-import ffx.potential.Platform;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_setRandomNumberSeed;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_step;
 
 /**
- * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
- * implementations.
+ * Langevin Integrator.
  */
-public enum SCFAlgorithm {
-  SOR(true, true),
-  CG(true, true),
-  EPT(true, true);
+public class LangevinMiddleIntegrator extends Integrator {
 
-  private final List<Platform> supportedPlatforms;
-
-  SCFAlgorithm(boolean ffx, boolean openMM) {
-    List<Platform> platforms = new ArrayList<>();
-    if (ffx) {
-      platforms.add(Platform.FFX);
-    }
-    if (openMM) {
-      platforms.add(Platform.OMM);
-      platforms.add(Platform.OMM_CUDA);
-      platforms.add(Platform.OMM_OPENCL);
-      platforms.add(Platform.OMM_REF);
-    }
-    supportedPlatforms = Collections.unmodifiableList(platforms);
+  /**
+   * Constructor.
+   *
+   * @param dt    The time step.
+   * @param temp  The temperature.
+   * @param gamma The friction coefficient.
+   */
+  public LangevinMiddleIntegrator(double dt, double temp, double gamma) {
+    pointer = OpenMM_LangevinMiddleIntegrator_create(temp, gamma, dt);
   }
 
   /**
-   * Checks if this platform is supported
+   * Step the integrator.
    *
-   * @param platform To check
-   * @return Supported
+   * @param steps The number of steps to take.
    */
-  public boolean isSupported(Platform platform) {
-    return supportedPlatforms.contains(platform);
+  public void step(int steps) {
+    OpenMM_LangevinMiddleIntegrator_step(pointer, steps);
+  }
+
+  /**
+   * Set the random number seed.
+   *
+   * @param seed The random number seed.
+   */
+  public void setRandomNumberSeed(int seed) {
+    OpenMM_LangevinMiddleIntegrator_setRandomNumberSeed(pointer, seed);
+  }
+
+  /**
+   * Destroy the integrator.
+   */
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_LangevinMiddleIntegrator_destroy(pointer);
+      pointer = null;
+    }
   }
 }

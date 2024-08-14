@@ -1844,12 +1844,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     try {
       Platform platform = Platform.valueOf(platformString);
       switch (platform) {
-        case OMM, OMM_REF, OMM_CUDA:
+        case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
           try {
             return new OpenMMEnergy(assembly, platform, numThreads);
           } catch (Exception ex) {
             logger.warning(format(" Exception creating OpenMMEnergy: %s", ex));
-
             ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
             if (ffxEnergy == null) {
               ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
@@ -1857,7 +1856,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             return ffxEnergy;
           }
-        case OMM_OPENCL, OMM_OPTCPU:
+        case OMM_CPU:
           logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
         default:
           ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();

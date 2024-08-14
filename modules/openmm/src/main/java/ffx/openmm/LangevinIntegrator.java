@@ -37,15 +37,12 @@
 // ******************************************************************************
 package ffx.openmm;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_setRandomNumberSeed;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_step;
-
 /**
- * Langevin Integrator.
+ * This is an Integrator which simulates a System using Langevin dynamics.  It
+ * is identical to LangevinMiddleIntegrator. It simply subclasses it without adding or changing anything.
+ * The two different classes exist only for historical reasons.
  */
-public class LangevinIntegrator extends Integrator {
+public class LangevinIntegrator extends LangevinMiddleIntegrator {
 
   /**
    * Constructor.
@@ -55,34 +52,6 @@ public class LangevinIntegrator extends Integrator {
    * @param gamma The friction coefficient.
    */
   public LangevinIntegrator(double dt, double temp, double gamma) {
-    pointer = OpenMM_LangevinIntegrator_create(temp, gamma, dt);
-  }
-
-  /**
-   * Step the integrator.
-   *
-   * @param steps The number of steps to take.
-   */
-  public void step(int steps) {
-    OpenMM_LangevinIntegrator_step(pointer, steps);
-  }
-
-  /**
-   * Set the random number seed.
-   *
-   * @param seed The random number seed.
-   */
-  public void setRandomNumberSeed(int seed) {
-    OpenMM_LangevinIntegrator_setRandomNumberSeed(pointer, seed);
-  }
-
-  /**
-   * Destroy the integrator.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_LangevinIntegrator_destroy(pointer);
-      pointer = null;
-    }
+    super(dt, temp, gamma);
   }
 }

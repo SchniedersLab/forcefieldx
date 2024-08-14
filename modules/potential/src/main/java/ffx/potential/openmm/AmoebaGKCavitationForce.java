@@ -48,7 +48,7 @@ import ffx.potential.nonbonded.implicit.GaussVol;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_NonbondedMethod.OpenMM_AmoebaGKCavitationForce_NoCutoff;
+// import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_NonbondedMethod.OpenMM_AmoebaGKCavitationForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
@@ -68,6 +68,9 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
    * @param openMMEnergy OpenMM energy.
    */
   public AmoebaGKCavitationForce(OpenMMEnergy openMMEnergy) {
+    logger.severe(" The AmoebaGKCavitationForce is not currently supported.");
+    // TODO: Implement the AmoebaGKCavitationForce as a plugin.
+
     GeneralizedKirkwood generalizedKirkwood = openMMEnergy.getGK();
     if (generalizedKirkwood == null) {
       destroy();
@@ -100,7 +103,8 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
       addParticle(radius * OpenMM_NmPerAngstrom, surfaceTension, isHydrogen);
     }
 
-    setNonbondedMethod(OpenMM_AmoebaGKCavitationForce_NoCutoff);
+    // TODO: Uncomment this when the AmoebaGKCavitationForce plugin is ready.
+    // setNonbondedMethod(OpenMM_AmoebaGKCavitationForce_NoCutoff);
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("GK_FORCE_GROUP", 2);
     setForceGroup(forceGroup);

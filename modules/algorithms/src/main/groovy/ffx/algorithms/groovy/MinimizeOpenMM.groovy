@@ -127,7 +127,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
       case Platform.OMM:
       case Platform.OMM_CUDA:
       case Platform.OMM_OPENCL:
-      case Platform.OMM_OPTCPU:
+      case Platform.OMM_CPU:
       case Platform.OMM_REF:
         logger.fine(" Platform is appropriate for OpenMM Minimization.")
         break

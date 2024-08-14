@@ -191,6 +191,10 @@
           <version>${resources.version}</version>
         </plugin>
         <plugin>
+          <artifactId>maven-wrapper-plugin</artifactId>
+          <version>${wrapper.version}</version>
+        </plugin>
+        <plugin>
           <groupId>io.github.git-commit-id</groupId>
           <artifactId>git-commit-id-maven-plugin</artifactId>
           <version>${git-commit-id.version}</version>
@@ -726,13 +730,6 @@
       <type>pom</type>
       <version>${groovy-all.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
-    <!-- dependency>
-        <artifactId>jaxb-api</artifactId>
-        <groupId>javax.xml.bind</groupId>
-        <version>${jaxb-api.version}</version>
-    </dependency -->
-    <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
     <dependency>
       <artifactId>jsr305</artifactId>
       <groupId>com.google.code.findbugs</groupId>
@@ -1022,7 +1019,7 @@
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
-    <biojava.version>7.1.1</biojava.version>
+    <biojava.version>7.1.2</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
@@ -1071,7 +1068,7 @@
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
-    <jopenmm.version>7.5.0-v11</jopenmm.version>
+    <jopenmm.version>8.1.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
     <jxr.version>3.4.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
@@ -1095,7 +1092,7 @@
     <release.version>3.1.1</release.version>
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
-    <slf4j-nop.version>2.0.13</slf4j-nop.version>
+    <slf4j-nop.version>2.0.16</slf4j-nop.version>
     <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
     <site.version>3.12.1</site.version>
     <!-- site.version>4.0.0-M11</site.version -->
@@ -1118,6 +1115,7 @@
     <versions.version>2.17.1</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
+    <wrapper.version>3.3.2</wrapper.version>
   </properties>
   <reporting>
     <plugins>

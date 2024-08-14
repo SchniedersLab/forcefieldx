@@ -289,9 +289,8 @@ class PhDynamics extends AlgorithmsScript {
       MolecularDynamicsOpenMM molecularDynamicsOpenMM = molecularDynamics
 
       // Create an FFX Molecular Dynamics
-      molecularDynamics =
-              dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
-                  MDEngine.FFX)
+      molecularDynamics = dynamicsOptions.getDynamics(writeOutOptions, potential,
+          activeAssembly, algorithmListener, MDEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
       if (repEx.repEx) {

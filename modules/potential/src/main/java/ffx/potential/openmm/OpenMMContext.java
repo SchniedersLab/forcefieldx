@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import com.sun.jna.ptr.PointerByReference;
 import edu.rit.pj.Comm;
 import edu.uiowa.jopenmm.OpenMMLibrary;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -49,6 +50,7 @@ import ffx.openmm.State;
 import ffx.openmm.StringArray;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +65,9 @@ import static ffx.openmm.Platform.getOpenMMVersion;
 import static ffx.openmm.Platform.getPluginLoadFailures;
 import static ffx.openmm.Platform.loadPluginsFromDirectory;
 import static ffx.potential.ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
+import static ffx.potential.Platform.OMM;
+import static ffx.potential.Platform.OMM_CUDA;
+import static ffx.potential.Platform.OMM_OPENCL;
 import static ffx.potential.openmm.OpenMMEnergy.getDefaultDevice;
 import static ffx.potential.openmm.OpenMMIntegrator.createIntegrator;
 import static java.lang.String.format;
@@ -266,8 +271,8 @@ public class OpenMMContext extends Context {
    * @param maxIterations Maximum number of iterations.
    */
   public void optimize(double eps, int maxIterations) {
-    OpenMM_LocalEnergyMinimizer_minimize(getPointer(),
-        eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
+    PointerByReference nullReporter = new PointerByReference();
+    OpenMM_LocalEnergyMinimizer_minimize(getPointer(), eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations, nullReporter);
   }
 
   /**
@@ -383,6 +388,7 @@ public class OpenMMContext extends Context {
     int numPlugins = plugins.getSize();
     logger.log(Level.INFO, " Number of Plugins: {0}", numPlugins);
     boolean cuda = false;
+    boolean opencl = false;
     for (int i = 0; i < numPlugins; i++) {
       String pluginString = plugins.get(i);
       logger.log(Level.INFO, "  Plugin: {0}", pluginString);
@@ -392,6 +398,10 @@ public class OpenMMContext extends Context {
         if (amoebaCudaAvailable) {
           cuda = true;
         }
+        boolean amoebaOpenCLAvailable = pluginString.contains("AMOEBAOPENCL");
+        if (amoebaOpenCLAvailable) {
+          opencl = true;
+        }
       }
     }
     plugins.destroy();
@@ -399,8 +409,12 @@ public class OpenMMContext extends Context {
     int numPlatforms = getNumPlatforms();
     logger.log(Level.INFO, " Number of Platforms: {0}", numPlatforms);
 
-    if (requestedPlatform == ffx.potential.Platform.OMM_CUDA && !cuda) {
+    if (requestedPlatform == OMM_CUDA && !cuda) {
       logger.severe(" The OMM_CUDA platform was requested, but is not available.");
+    }
+
+    if (requestedPlatform == ffx.potential.Platform.OMM_OPENCL && !opencl) {
+      logger.severe(" The OMM_OPENCL platform was requested, but is not available.");
     }
 
     // Extra logging to print out plugins that failed to load.
@@ -415,7 +429,8 @@ public class OpenMMContext extends Context {
 
     String defaultPrecision = "mixed";
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
-    String precision = molecularAssembly.getForceField().getString("PRECISION", defaultPrecision).toLowerCase();
+    ForceField forceField = molecularAssembly.getForceField();
+    String precision = forceField .getString("PRECISION", defaultPrecision).toLowerCase();
     precision = precision.replace("-precision", "");
     switch (precision) {
       case "double", "mixed", "single" -> logger.info(format(" Precision level: %s", precision));
@@ -425,26 +440,48 @@ public class OpenMMContext extends Context {
       }
     }
 
-    if (cuda && requestedPlatform != ffx.potential.Platform.OMM_REF) {
+
+    if (cuda && (requestedPlatform == OMM_CUDA || requestedPlatform == OMM)) {
+      // CUDA
       int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
       openMMPlatform = new Platform("CUDA");
-      int deviceID = molecularAssembly.getForceField().getInteger("CUDA_DEVICE", defaultDevice);
+      // CUDA_DEVICE is deprecated; use DeviceIndex.
+      int deviceID = forceField .getInteger("CUDA_DEVICE", defaultDevice);
+      deviceID = forceField .getInteger("DeviceIndex", deviceID);
       String deviceIDString = Integer.toString(deviceID);
-
-      openMMPlatform.setPropertyDefaultValue("CudaDeviceIndex", deviceIDString);
+      openMMPlatform.setPropertyDefaultValue("DeviceIndex", deviceIDString);
       openMMPlatform.setPropertyDefaultValue("Precision", precision);
-      logger.info(format(" Platform: AMOEBA CUDA (Device ID %d)", deviceID));
-      try {
-        Comm world = Comm.world();
-        if (world != null) {
-          logger.info(format(" Running on host %s, rank %d", world.host(), world.rank()));
-        }
-      } catch (IllegalStateException illegalStateException) {
-        logger.fine(" Could not find the world communicator!");
-      }
+      String name = openMMPlatform.getName();
+      logger.info(format(" Platform: %s (Device Index %d)", name, deviceID));
+    } else if (opencl && (requestedPlatform == OMM_OPENCL || requestedPlatform == OMM)) {
+      // OpenCL
+      int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
+      openMMPlatform = new Platform("OpenCL");
+      int deviceID = forceField.getInteger("DeviceIndex", defaultDevice);
+      String deviceIDString = Integer.toString(deviceID);
+      openMMPlatform.setPropertyDefaultValue("DeviceIndex", deviceIDString);
+      int openCLPlatformIndex = forceField.getInteger("OpenCLPlatformIndex", 0);
+      String openCLPlatformIndexString = Integer.toString(openCLPlatformIndex);
+      openMMPlatform.setPropertyDefaultValue("DeviceIndex", deviceIDString);
+      openMMPlatform.setPropertyDefaultValue("OpenCLPlatformIndex", openCLPlatformIndexString);
+      openMMPlatform.setPropertyDefaultValue("Precision", precision);
+      String name = openMMPlatform.getName();
+      logger.info(format(" Platform: %s (Platform Index %d, Device Index %d)",
+          name, openCLPlatformIndex, deviceID));
     } else {
+      // Reference
       openMMPlatform = new Platform("Reference");
-      logger.info(" Platform: AMOEBA CPU Reference");
+      String name = openMMPlatform.getName();
+      logger.info(format(" Platform: %s", name));
+    }
+
+    try {
+      Comm world = Comm.world();
+      if (world != null) {
+        logger.info(format(" Running on host %s, rank %d", world.host(), world.rank()));
+      }
+    } catch (IllegalStateException illegalStateException) {
+      logger.fine(" Could not find the world communicator!");
     }
   }
 

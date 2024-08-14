@@ -183,7 +183,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       devs[i] = Integer.parseInt(availDevices[i]);
     }
 
-    logger.info(format(" Number of CUDA devices: %d.", nDevs));
+    logger.info(format(" Available devices: %d.", nDevs));
 
     int index = 0;
     try {
