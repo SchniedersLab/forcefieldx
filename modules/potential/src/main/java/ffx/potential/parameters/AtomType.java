@@ -259,7 +259,11 @@ public final class AtomType extends BaseType implements Comparator<String> {
   public void toXML(Element node) {
     node.setAttribute("name", format("%d",type));
     node.setAttribute("class", format("%d",atomClass));
-    node.setAttribute("element", format("%s", Atom.ElementSymbol.values()[atomicNumber-1]));
+    if (atomicNumber >= 1) {
+      node.setAttribute("element", format("%s", Atom.ElementSymbol.values()[atomicNumber-1]));
+    } else {
+      node.setAttribute("element", "");
+    }
     node.setAttribute("mass", format("%.3f",atomicWeight));
   }
 

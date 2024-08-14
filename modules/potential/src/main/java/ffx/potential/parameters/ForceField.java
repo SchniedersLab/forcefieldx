@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.String.format;
 
+import ffx.potential.parsers.OpenMMXmlFilter;
 import ffx.utilities.FFXProperty;
 
 import java.net.URL;
@@ -1443,6 +1444,16 @@ public class ForceField {
       sb.append(toString(type));
     }
     return sb;
+  }
+
+  /**
+   * Uses OpenMMXmlFilter to create an XML file of the force field usable by OpenMM.
+   *
+   * @return Returns a StringBuffer representation of the ForceField.
+   */
+  public void toXML() throws Exception {
+    OpenMMXmlFilter xmlFilter = new OpenMMXmlFilter(this);
+    xmlFilter.toXML();
   }
 
   /**

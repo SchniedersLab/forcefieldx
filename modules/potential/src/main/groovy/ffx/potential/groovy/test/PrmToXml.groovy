@@ -166,16 +166,17 @@ class PrmToXml extends PotentialScript {
             bioTypeDict.get(lookUp).put("moleculeName", bioType.moleculeName) // 2
             bioTypeDict.get(lookUp).put("atomType", bioType.atomType) // 3
 
-            if (!moleculeDict.containsKey(bioType.moleculeName)) {
-                moleculeDict.put(bioType.moleculeName, new HashMap())
-                moleculeDict.get(bioType.moleculeName).put("added", false) // todo can change this to true in original methods? can add to make getExtraBiotypes simpler
-                moleculeDict.get(bioType.moleculeName).put("atoms", new HashMap())
+            if (bioType.bonds.length > 0) {
+                if (!moleculeDict.containsKey(bioType.moleculeName)) {
+                    moleculeDict.put(bioType.moleculeName, new HashMap())
+                    moleculeDict.get(bioType.moleculeName).put("added", false) // todo can change this to true in original methods? can add to make getExtraBiotypes simpler
+                    moleculeDict.get(bioType.moleculeName).put("atoms", new HashMap())
+                }
+                moleculeDict.get(bioType.moleculeName).get("atoms").put(bioType.atomName, new HashMap())
+                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("index", bioType.index)
+                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("atomType", bioType.atomType)
+                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("bonds", bioType.bonds) // todo need to make sure these are there
             }
-            moleculeDict.get(bioType.moleculeName).get("atoms").put(bioType.atomName, new HashMap())
-            moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("index", bioType.index)
-            moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("atomType", bioType.atomType)
-            moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("bonds", bioType.bonds)
-//            moleculeDict.get(bioType.moleculeName).put(bioType.atomType, bioType.atomName)
         }
         Map residueDict = buildResidueDict(resDoc, doc)
 //        List<String> extraBTs = getExtraBiotypes(bioTypeDict, residueDict) // todo DELETE
@@ -187,184 +188,207 @@ class PrmToXml extends PotentialScript {
 
 
         // Add Bond Types
-        Element bondTypesNode = doc.createElement("AmoebaBondedForce")
-        rootElement.appendChild(bondTypesNode)
-        bondTypesNode.setAttribute("bond-cubic", format("%f",ff.getDouble("bond-cubic")*10.0))
-        bondTypesNode.setAttribute("bond-quartic", format("%f",ff.getDouble("bond-quartic")*100.0))
         Map<String, BondType> btMap = ff.getTypes(ForceField.ForceFieldType.BOND)
-        for (BondType bt : btMap.values()) {
-            Element bondType = doc.createElement("Bond")
-            bt.toXML(bondType)
-            bondTypesNode.appendChild(bondType)
+        if (btMap.values().size() >= 1) {
+            Element bondTypesNode = doc.createElement("AmoebaBondedForce")
+            rootElement.appendChild(bondTypesNode)
+            bondTypesNode.setAttribute("bond-cubic", format("%f",ff.getDouble("bond-cubic")*10.0))
+            bondTypesNode.setAttribute("bond-quartic", format("%f",ff.getDouble("bond-quartic")*100.0))
+            for (BondType bt : btMap.values()) {
+                Element bondType = doc.createElement("Bond")
+                bt.toXML(bondType)
+                bondTypesNode.appendChild(bondType)
+            }
         }
 
         // Add Angle Types
-        Element angleTypesNode = doc.createElement("AmoebaAngleForce")
-        rootElement.appendChild(angleTypesNode)
-        angleTypesNode.setAttribute("angle-cubic", ff.getDouble("angle-cubic").toString())
-        angleTypesNode.setAttribute("angle-quartic", ff.getDouble("angle-quartic").toString())
-        angleTypesNode.setAttribute("angle-pentic", ff.getDouble("angle-pentic").toString())
-        angleTypesNode.setAttribute("angle-sextic", ff.getDouble("angle-sextic").toString())
         Map<String, AngleType> angMap = ff.getTypes(ForceField.ForceFieldType.ANGLE)
-        for (AngleType ang : angMap.values()) {
-            Element angleType = doc.createElement("Angle")
-            ang.toXML(angleType)
-            angleTypesNode.appendChild(angleType)
+        if (angMap.values().size() >= 1) {
+            Element angleTypesNode = doc.createElement("AmoebaAngleForce")
+            rootElement.appendChild(angleTypesNode)
+            angleTypesNode.setAttribute("angle-cubic", ff.getDouble("angle-cubic").toString())
+            angleTypesNode.setAttribute("angle-quartic", ff.getDouble("angle-quartic").toString())
+            angleTypesNode.setAttribute("angle-pentic", ff.getDouble("angle-pentic").toString())
+            angleTypesNode.setAttribute("angle-sextic", ff.getDouble("angle-sextic").toString())
+            for (AngleType ang : angMap.values()) {
+                Element angleType = doc.createElement("Angle")
+                ang.toXML(angleType)
+                angleTypesNode.appendChild(angleType)
+            }
         }
 
         // Add OutOfPlane Bend Types
-        Element oopbTypesNode = doc.createElement("AmoebaOutOfPlaneBendForce")
-        rootElement.appendChild(oopbTypesNode)
-        oopbTypesNode.setAttribute("type", ff.getString("opbendtype"))
-        oopbTypesNode.setAttribute("opbend-cubic", ff.getDouble("opbend-cubic").toString())
-        oopbTypesNode.setAttribute("opbend-quartic", ff.getDouble("opbend-quartic").toString())
-        oopbTypesNode.setAttribute("opbend-pentic", ff.getDouble("opbend-pentic").toString())
-        oopbTypesNode.setAttribute("opbend-sextic", ff.getDouble("opbend-sextic").toString())
         Map<String, OutOfPlaneBendType> oopbMap = ff.getTypes(ForceField.ForceFieldType.OPBEND)
-        for (OutOfPlaneBendType oopb : oopbMap.values()) {
-            Element oopbType = doc.createElement("Angle")
-            oopb.toXML(oopbType)
-            oopbTypesNode.appendChild(oopbType)
+        if (oopbMap.values().size() >= 1) {
+            Element oopbTypesNode = doc.createElement("AmoebaOutOfPlaneBendForce")
+            rootElement.appendChild(oopbTypesNode)
+            oopbTypesNode.setAttribute("type", ff.getString("opbendtype"))
+            oopbTypesNode.setAttribute("opbend-cubic", ff.getDouble("opbend-cubic").toString())
+            oopbTypesNode.setAttribute("opbend-quartic", ff.getDouble("opbend-quartic").toString())
+            oopbTypesNode.setAttribute("opbend-pentic", ff.getDouble("opbend-pentic").toString())
+            oopbTypesNode.setAttribute("opbend-sextic", ff.getDouble("opbend-sextic").toString())
+            for (OutOfPlaneBendType oopb : oopbMap.values()) {
+                Element oopbType = doc.createElement("Angle")
+                oopb.toXML(oopbType)
+                oopbTypesNode.appendChild(oopbType)
+            }
         }
 
         // Add Torsion Types
-        Element torsTypesNode = doc.createElement("PeriodicTorsionForce")
-        rootElement.appendChild(torsTypesNode)
         Map<String, TorsionType> torsMap = ff.getTypes(ForceField.ForceFieldType.TORSION)
-        double torsionUnit = ff.getDouble("torsionunit")
-        for (TorsionType tors : torsMap.values()) {
-            Element torsType = doc.createElement("Proper")
-            tors.toXML(torsType,torsionUnit)
-            torsTypesNode.appendChild(torsType)
+        if (torsMap.values().size() >= 1) {
+            Element torsTypesNode = doc.createElement("PeriodicTorsionForce")
+            rootElement.appendChild(torsTypesNode)
+            double torsionUnit = ff.getDouble("torsionunit")
+            for (TorsionType tors : torsMap.values()) {
+                Element torsType = doc.createElement("Proper")
+                tors.toXML(torsType,torsionUnit)
+                torsTypesNode.appendChild(torsType)
+            }
         }
 
         // Add PiOrbitalTorsion Types
-        Element piTorsTypesNode = doc.createElement("AmoebaPiTorsionForce") // todo should we not create node if not PiTorsTypes in FF?
-        rootElement.appendChild(piTorsTypesNode)
-        piTorsTypesNode.setAttribute("piTorsionUnit", ff.getDouble("pitorsunit", 1.0).toString()) // todo should have default for all instances
         Map<String, PiOrbitalTorsionType> ptMap = ff.getTypes(ForceField.ForceFieldType.PITORS)
-        for (PiOrbitalTorsionType pt : ptMap.values()) {
-            Element piTorsType = doc.createElement("PiTorsion")
-            pt.toXML(piTorsType)
-            piTorsTypesNode.appendChild(piTorsType)
+        if (ptMap.values().size() >= 1) {
+            Element piTorsTypesNode = doc.createElement("AmoebaPiTorsionForce")
+            rootElement.appendChild(piTorsTypesNode)
+            piTorsTypesNode.setAttribute("piTorsionUnit", ff.getDouble("pitorsunit", 1.0).toString()) // todo should have default for all instances
+            for (PiOrbitalTorsionType pt : ptMap.values()) {
+                Element piTorsType = doc.createElement("PiTorsion")
+                pt.toXML(piTorsType)
+                piTorsTypesNode.appendChild(piTorsType)
+            }
         }
 
         // Add StretchTorsionType's
-        Element strTorsTypesNode = doc.createElement("AmoebaStretchTorsionForce")
-        rootElement.appendChild(strTorsTypesNode)
         Map<String, StretchTorsionType> stMap = ff.getTypes(ForceField.ForceFieldType.STRTORS)
-        for (StretchTorsionType st : stMap.values()) {
-            Element strTorsType = doc.createElement("Torsion")
-            st.toXML(strTorsType)
-            strTorsTypesNode.appendChild(strTorsType)
+        if (stMap.values().size() >= 1) {
+            Element strTorsTypesNode = doc.createElement("AmoebaStretchTorsionForce")
+            rootElement.appendChild(strTorsTypesNode)
+            for (StretchTorsionType st : stMap.values()) {
+                Element strTorsType = doc.createElement("Torsion")
+                st.toXML(strTorsType)
+                strTorsTypesNode.appendChild(strTorsType)
+            }
         }
 
         // Add AngleTorsionType's
-        Element angTorsTypesNode = doc.createElement("AmoebaAngleTorsionForce")
-        rootElement.appendChild(angTorsTypesNode)
         Map<String, AngleTorsionType> angTorsMap = ff.getTypes(ForceField.ForceFieldType.ANGTORS)
-        for (AngleTorsionType angTors : angTorsMap.values()) {
-            Element angTorsType = doc.createElement("Torsion")
-            angTors.toXML(angTorsType)
-            angTorsTypesNode.appendChild(angTorsType)
+        if (angTorsMap.values().size() >= 1) {
+            Element angTorsTypesNode = doc.createElement("AmoebaAngleTorsionForce")
+            rootElement.appendChild(angTorsTypesNode)
+            for (AngleTorsionType angTors : angTorsMap.values()) {
+                Element angTorsType = doc.createElement("Torsion")
+                angTors.toXML(angTorsType)
+                angTorsTypesNode.appendChild(angTorsType)
+            }
         }
 
         // Add StretchBendType's
-        Element strBendTypesNode = doc.createElement("AmoebaStretchBendForce")
-        rootElement.appendChild(strBendTypesNode)
-        strBendTypesNode.setAttribute("stretchBendUnit", format("%f",ff.getDouble("strbndunit", PI/180)*180/PI)) // TODO OpenMM has value of 1.0 (so multipled by 180/pi, but unnecessary?)
         Map<String, StretchBendType> sbMap = ff.getTypes(ForceField.ForceFieldType.STRBND)
-        for (StretchBendType sb : sbMap.values()) {
-            Element strBendType = doc.createElement("StretchBend")
-            sb.toXML(strBendType)
-            strBendTypesNode.appendChild(strBendType)
+        if (sbMap.values().size() >= 1) {
+            Element strBendTypesNode = doc.createElement("AmoebaStretchBendForce")
+            rootElement.appendChild(strBendTypesNode)
+            strBendTypesNode.setAttribute("stretchBendUnit", format("%f",ff.getDouble("strbndunit", PI/180)*180/PI)) // TODO OpenMM has value of 1.0 (so multipled by 180/pi, but unnecessary?)
+            for (StretchBendType sb : sbMap.values()) {
+                Element strBendType = doc.createElement("StretchBend")
+                sb.toXML(strBendType)
+                strBendTypesNode.appendChild(strBendType)
+            }
         }
 
         // Add TorsionTorsionType's
-        Element tortorsNode = doc.createElement("AmoebaTorsionTorsionForce")
-        rootElement.appendChild(tortorsNode)
         Map<String, TorsionTorsionType> ttMap = ff.getTypes(ForceField.ForceFieldType.TORTORS)
-        int i = 0
-        for (TorsionTorsionType tt : ttMap.values()) {
-            Element tortors = doc.createElement("TorsionTorsion")
-            Element ttGrid = doc.createElement("TorsionTorsionGrid")
-            tt.toXML(doc, tortors, ttGrid) // send doc to method to create additional child nodes under ttGrid
-            tortors.setAttribute("grid", toString(i))
-            ttGrid.setAttribute("grid", toString(i))
-            tortorsNode.appendChild(tortors)
-            tortorsNode.appendChild(ttGrid)
-            i++
+        if (ttMap.values().size() >= 1) {
+            Element tortorsNode = doc.createElement("AmoebaTorsionTorsionForce")
+            rootElement.appendChild(tortorsNode)
+            int i = 0
+            for (TorsionTorsionType tt : ttMap.values()) {
+                Element tortors = doc.createElement("TorsionTorsion")
+                Element ttGrid = doc.createElement("TorsionTorsionGrid")
+                tt.toXML(doc, tortors, ttGrid) // send doc to method to create additional child nodes under ttGrid
+                tortors.setAttribute("grid", toString(i))
+                ttGrid.setAttribute("grid", toString(i))
+                tortorsNode.appendChild(tortors)
+                tortorsNode.appendChild(ttGrid)
+                i++
+            }
         }
 
         // Add VDWType
-        Element vdwTypesNode = doc.createElement("AmoebaVdwForce")
-        rootElement.appendChild(vdwTypesNode)
-        vdwTypesNode.setAttribute("type", ff.getString("vdwtype"))
-        vdwTypesNode.setAttribute("radiusrule", ff.getString("radiusrule"))
-        vdwTypesNode.setAttribute("radiustype", ff.getString("radiustype"))
-        vdwTypesNode.setAttribute("radiussize", ff.getString("radiussize"))
-        vdwTypesNode.setAttribute("epsilonrule", ff.getString("epsilonrule"))
-        vdwTypesNode.setAttribute("vdw-13-scale", format("%f",ff.getDouble("vdw-13-scale")))
-        vdwTypesNode.setAttribute("vdw-14-scale", format("%f",ff.getDouble("vdw-14-scale")))
-        vdwTypesNode.setAttribute("vdw-15-scale", format("%f",ff.getDouble("vdw-15-scale")))
         Map<String, VDWType> vdwMap = ff.getTypes(ForceField.ForceFieldType.VDW)
-        for (VDWType vdw : vdwMap.values()) {
-            Element vdwType = doc.createElement("Vdw")
-            vdw.toXML(vdwType)
-            vdwTypesNode.appendChild(vdwType)
-        }
         Map<String, VDWPairType> vdwPMap = ff.getTypes(ForceField.ForceFieldType.VDWPR)
-        for (VDWPairType vdwP : vdwPMap.values()) {
-            Element vdwPairType = doc.createElement("Pair")
-            vdwP.toXML(vdwPairType)
-            vdwTypesNode.appendChild(vdwPairType)
+        if (vdwMap.values().size() >= 1 || vdwPMap.values().size() >= 1) {
+            Element vdwTypesNode = doc.createElement("AmoebaVdwForce")
+            rootElement.appendChild(vdwTypesNode)
+            vdwTypesNode.setAttribute("type", ff.getString("vdwtype"))
+            vdwTypesNode.setAttribute("radiusrule", ff.getString("radiusrule"))
+            vdwTypesNode.setAttribute("radiustype", ff.getString("radiustype"))
+            vdwTypesNode.setAttribute("radiussize", ff.getString("radiussize"))
+            vdwTypesNode.setAttribute("epsilonrule", ff.getString("epsilonrule"))
+            vdwTypesNode.setAttribute("vdw-13-scale", format("%f",ff.getDouble("vdw-13-scale")))
+            vdwTypesNode.setAttribute("vdw-14-scale", format("%f",ff.getDouble("vdw-14-scale")))
+            vdwTypesNode.setAttribute("vdw-15-scale", format("%f",ff.getDouble("vdw-15-scale")))
+            for (VDWType vdw : vdwMap.values()) {
+                Element vdwType = doc.createElement("Vdw")
+                vdw.toXML(vdwType)
+                vdwTypesNode.appendChild(vdwType)
+            }
+            for (VDWPairType vdwP : vdwPMap.values()) {
+                Element vdwPairType = doc.createElement("Pair")
+                vdwP.toXML(vdwPairType)
+                vdwTypesNode.appendChild(vdwPairType)
+            }
         }
 
         // Add MultipoleType and PolarizeType
-        Element mpTypesNode = doc.createElement("AmoebaMultipoleForce")
-        rootElement.appendChild(mpTypesNode)
-        mpTypesNode.setAttribute("direct11Scale", format("%f",ff.getDouble("direct-11-scale")))
-        mpTypesNode.setAttribute("direct12Scale", format("%f",ff.getDouble("direct-12-scale")))
-        mpTypesNode.setAttribute("direct13Scale", format("%f",ff.getDouble("direct-13-scale")))
-        mpTypesNode.setAttribute("direct14Scale", format("%f",ff.getDouble("direct-14-scale")))
-        mpTypesNode.setAttribute("mpole12Scale", format("%f",ff.getDouble("mpole-12-scale")))
-        mpTypesNode.setAttribute("mpole13Scale", format("%f",ff.getDouble("mpole-13-scale")))
-        mpTypesNode.setAttribute("mpole14Scale", format("%f",ff.getDouble("mpole-14-scale")))
-        mpTypesNode.setAttribute("mpole15Scale", format("%f",ff.getDouble("mpole-15-scale")))
-        mpTypesNode.setAttribute("mutual11Scale", format("%f",ff.getDouble("mutual-11-scale")))
-        mpTypesNode.setAttribute("mutual12Scale", format("%f",ff.getDouble("mutual-12-scale")))
-        mpTypesNode.setAttribute("mutual13Scale", format("%f",ff.getDouble("mutual-13-scale")))
-        mpTypesNode.setAttribute("mutual14Scale", format("%f",ff.getDouble("mutual-14-scale")))
-        mpTypesNode.setAttribute("polar12Scale", format("%f",ff.getDouble("polar-12-scale")))
-        mpTypesNode.setAttribute("polar13Scale", format("%f",ff.getDouble("polar-13-scale")))
-        mpTypesNode.setAttribute("polar14Intra", format("%f",ff.getDouble("polar-14-intra")))
-        mpTypesNode.setAttribute("polar14Scale", format("%f",ff.getDouble("polar-14-scale")))
-        mpTypesNode.setAttribute("polar15Scale", format("%f",ff.getDouble("polar-15-scale"))) // todo why dont they have all (e.g. intra)
         Map<String, MultipoleType> mpMap = ff.getTypes(ForceField.ForceFieldType.MULTIPOLE)
-        for (MultipoleType mp : mpMap.values()) {
-            Element mpType = doc.createElement("Multipole")
-            mp.toXML(mpType)
-            mpTypesNode.appendChild(mpType)
-        }
         Map<String, PolarizeType> polMap = ff.getTypes(ForceField.ForceFieldType.POLARIZE)
-        for (PolarizeType pol : polMap.values()) {
-            Element polType = doc.createElement("Polarize")
-            pol.toXML(polType)
-            mpTypesNode.appendChild(polType)
+        if (mpMap.values().size() >= 1 || polMap.values().size() >= 1) {
+            Element mpTypesNode = doc.createElement("AmoebaMultipoleForce")
+            rootElement.appendChild(mpTypesNode)
+            mpTypesNode.setAttribute("direct11Scale", format("%f",ff.getDouble("direct-11-scale")))
+            mpTypesNode.setAttribute("direct12Scale", format("%f",ff.getDouble("direct-12-scale")))
+            mpTypesNode.setAttribute("direct13Scale", format("%f",ff.getDouble("direct-13-scale")))
+            mpTypesNode.setAttribute("direct14Scale", format("%f",ff.getDouble("direct-14-scale")))
+            mpTypesNode.setAttribute("mpole12Scale", format("%f",ff.getDouble("mpole-12-scale")))
+            mpTypesNode.setAttribute("mpole13Scale", format("%f",ff.getDouble("mpole-13-scale")))
+            mpTypesNode.setAttribute("mpole14Scale", format("%f",ff.getDouble("mpole-14-scale")))
+            mpTypesNode.setAttribute("mpole15Scale", format("%f",ff.getDouble("mpole-15-scale")))
+            mpTypesNode.setAttribute("mutual11Scale", format("%f",ff.getDouble("mutual-11-scale")))
+            mpTypesNode.setAttribute("mutual12Scale", format("%f",ff.getDouble("mutual-12-scale")))
+            mpTypesNode.setAttribute("mutual13Scale", format("%f",ff.getDouble("mutual-13-scale")))
+            mpTypesNode.setAttribute("mutual14Scale", format("%f",ff.getDouble("mutual-14-scale")))
+            mpTypesNode.setAttribute("polar12Scale", format("%f",ff.getDouble("polar-12-scale")))
+            mpTypesNode.setAttribute("polar13Scale", format("%f",ff.getDouble("polar-13-scale")))
+            mpTypesNode.setAttribute("polar14Intra", format("%f",ff.getDouble("polar-14-intra")))
+            mpTypesNode.setAttribute("polar14Scale", format("%f",ff.getDouble("polar-14-scale")))
+            mpTypesNode.setAttribute("polar15Scale", format("%f",ff.getDouble("polar-15-scale"))) // todo why dont they have all (e.g. intra)
+            for (MultipoleType mp : mpMap.values()) {
+                Element mpType = doc.createElement("Multipole")
+                mp.toXML(mpType)
+                mpTypesNode.appendChild(mpType)
+            }
+            for (PolarizeType pol : polMap.values()) {
+                Element polType = doc.createElement("Polarize")
+                pol.toXML(polType)
+                mpTypesNode.appendChild(polType)
+            }
         }
 
         // Add UreyBradleyType
-        Element ubTypesNode = doc.createElement("AmoebaUreyBradleyForce")
-        rootElement.appendChild(ubTypesNode)
-        ubTypesNode.setAttribute("cubic", format("%f",ff.getDouble("urey-cubic", 0.0)))
-        ubTypesNode.setAttribute("quartic", format("%f",ff.getDouble("urey-quartic", 0.0)))
         Map<String, UreyBradleyType> ubMap = ff.getTypes(ForceField.ForceFieldType.UREYBRAD)
-        for (UreyBradleyType ub : ubMap.values()) {
-            Element ubType = doc.createElement("UreyBradley")
-            ub.toXML(ubType)
-            ubTypesNode.appendChild(ubType)
+        if (ubMap.values().size() >= 1) {
+            Element ubTypesNode = doc.createElement("AmoebaUreyBradleyForce")
+            rootElement.appendChild(ubTypesNode)
+            ubTypesNode.setAttribute("cubic", format("%f",ff.getDouble("urey-cubic", 0.0)))
+            ubTypesNode.setAttribute("quartic", format("%f",ff.getDouble("urey-quartic", 0.0)))
+            for (UreyBradleyType ub : ubMap.values()) {
+                Element ubType = doc.createElement("UreyBradley")
+                ub.toXML(ubType)
+                ubTypesNode.appendChild(ubType)
+            }
         }
-
 
         // Write XML to baseName.xml
         writeXML(doc, prmFile.baseName)
@@ -399,11 +423,23 @@ class PrmToXml extends PotentialScript {
                 resNode.appendChild(atomNode)
 
                 String[] bonds = moleculeDict.get(mol).get("atoms").get(atom).get("bonds")
-                for (String bond : bonds) { // todo just store here and have another loop or..
-                    Element bondNode = doc.createElement("Bond")
-                    bondNode.setAttribute("from", atom)
-                    bondNode.setAttribute("to", bond)
-                    resNode.appendChild(bondNode)
+                for (String bond : bonds) {
+                    if (!moleculeDict.get(mol).get("atoms").get(atom).containsKey("usedBonds")) {
+                        moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", new ArrayList<>())
+                    }
+                    if (!moleculeDict.get(mol).get("atoms").get(bond).containsKey("usedBonds")) {
+                        moleculeDict.get(mol).get("atoms").get(bond).put("usedBonds", new ArrayList<>())
+                    }
+
+                    if (!moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds").contains(bond) && !moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds").contains(atom)) {
+                        Element bondNode = doc.createElement("Bond")
+                        bondNode.setAttribute("from", atom)
+                        bondNode.setAttribute("to", bond)
+                        resNode.appendChild(bondNode)
+                    }
+
+                    moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds").add(bond)
+                    moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds").add(atom)
                 }
             }
         }
@@ -877,7 +913,6 @@ class PrmToXml extends PotentialScript {
             }
         }
     }
-    //TODO - THOUGHT: could have a tracker for all atoms seeing if they get placed into a biotype, if not, must create new residue
 
     private static void writeXML(Document doc, String outputName) {
         TransformerFactory tfFactory = TransformerFactory.newInstance()
