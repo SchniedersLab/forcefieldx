@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -266,6 +267,20 @@ public final class VDWType extends BaseType implements Comparator<String> {
     }
 
     return vdwString.toString();
+  }
+
+  /**
+   * Write VDWType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class", format("%d",atomClass));
+    node.setAttribute("sigma", format("%f",radius*0.1)); // convert to nm
+    node.setAttribute("epsilon", format("%f",wellDepth*4.184)); // convert to kj/mol
+    if (reductionFactor <= 0e0) {
+      node.setAttribute("reduction", "1.0");
+    } else {
+      node.setAttribute("reduction", format("%f",reductionFactor));
+    }
   }
 
   /**

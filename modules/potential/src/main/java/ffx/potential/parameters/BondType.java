@@ -45,7 +45,9 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
+import ffx.potential.bonded.Atom;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -365,6 +367,16 @@ public final class BondType extends BaseType implements Comparator<String> {
   public String toString() {
     return format("bond  %5d  %5d  %7.2f  %7.4f", atomClasses[0], atomClasses[1], forceConstant,
         distance);
+  }
+
+  /**
+   * Write BondType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d",atomClasses[0]));
+    node.setAttribute("class2", format("%d",atomClasses[1]));
+    node.setAttribute("length", format("%f",distance*0.1)); // convert to Ang to nm
+    node.setAttribute("k", format("%f",forceConstant*100.0*4.184)); // convert Kcal/mol to KJ/mol (*100? for dJ/mol) todo check
   }
 
   /**
