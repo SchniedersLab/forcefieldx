@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -484,6 +485,23 @@ public final class TorsionType extends BaseType implements Comparator<String> {
       }
     }
     return torsionBuffer.toString();
+  }
+
+  /**
+   * Write TorsionType (Proper) to OpenMM XML format.
+   */
+  public void toXML(Element node, Double torsUnit) {
+    // TODO specify proper?
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    node.setAttribute("class4", format("%d", atomClasses[3]));
+
+    for (int i = 0; i < amplitude.length; i++) {
+      node.setAttribute(format("k%d",i+1), format("%f",amplitude[i]*4.184*torsUnit)); // convert to kj
+      node.setAttribute(format("phase%d",i+1), format("%f",phase[i]/57.2957795130)); // convert to radians
+      node.setAttribute(format("periodicity%d",i+1), format("%d",periodicity[i]));
+    }
   }
 
   /**

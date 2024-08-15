@@ -43,11 +43,13 @@ import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -341,5 +343,21 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
   public String toString() {
     return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
         atomClasses[2], atomClasses[3], forceConstant);
+  }
+
+  /**
+   * Write OutOfPlaneBendType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    int i = 1;
+    for (int ac : atomClasses) {
+      if (ac == 0) {
+        node.setAttribute(format("class%d",i), "");
+      } else {
+        node.setAttribute(format("class%d",i), format("%d", ac));
+      }
+      i++;
+    }
+    node.setAttribute("k", format("%f",forceConstant*4.184/(57.2957795130*57.2957795130))); // convert Kcal/mol/radian^2 to KJ/mol/deg^2
   }
 }

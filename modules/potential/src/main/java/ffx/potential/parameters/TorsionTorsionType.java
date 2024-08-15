@@ -48,6 +48,8 @@ import static java.util.Arrays.sort;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -627,6 +629,34 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
       tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f", tx[nxi], ty[nyi], energy[i]));
     }
     return tortorBuffer.toString();
+  }
+
+  /**
+   * Write TorsionTorsionType to OpenMM XML format.
+   */
+  public void toXML(Document doc, Element tortors, Element ttGrid) {
+    // Set TorsionTorsion node
+    tortors.setAttribute("class1", format("%d", atomClasses[0]));
+    tortors.setAttribute("class2", format("%d", atomClasses[1]));
+    tortors.setAttribute("class3", format("%d", atomClasses[2]));
+    tortors.setAttribute("class4", format("%d", atomClasses[3]));
+    tortors.setAttribute("class5", format("%d", atomClasses[4]));
+    tortors.setAttribute("nx", format("%d",gridPoints[0]));
+    tortors.setAttribute("ny", format("%d",gridPoints[1]));
+
+    // Set TorsionTorsionGrid
+    ttGrid.setAttribute("nx", format("%d",gridPoints[0]));
+    ttGrid.setAttribute("ny", format("%d",gridPoints[1]));
+    for (int i = 0; i < energy.length; i++) {
+      int nxi = i % nx;
+      int nyi = i / ny;
+      // TODO - also could have fx fy and fxy on top of 'f' (energy)?
+      Element grid = doc.createElement("Grid");
+      grid.setAttribute("angle1", format("%f",tx[nxi]));
+      grid.setAttribute("angle2", format("%f",ty[nyi]));
+      grid.setAttribute("f", format("%f", energy[i]*4.184)); // convert to kj/mol
+      ttGrid.appendChild(grid);
+    }
   }
 
   /**

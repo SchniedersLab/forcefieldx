@@ -44,6 +44,7 @@ import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -196,6 +197,16 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
   public String toString() {
     return format("vdwpr  %5d  %5d  %11.9f  %11.9f", atomClasses[0], atomClasses[1], radius,
         wellDepth);
+  }
+
+  /**
+   * Write VDWPairType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d",atomClasses[0]));
+    node.setAttribute("class2", format("%d",atomClasses[1]));
+    node.setAttribute("sigma", format("%f",radius*0.1)); // convert to nm
+    node.setAttribute("epsilon", format("%f",wellDepth*4.184)); // convert to kj/mol
   }
 
   /**
