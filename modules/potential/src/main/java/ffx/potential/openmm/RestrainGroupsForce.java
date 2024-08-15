@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCentroidBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CentroidBondForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.RestrainGroups;
 
@@ -56,7 +56,7 @@ import static java.lang.String.format;
 /**
  * Restrain Groups Force.
  */
-public class RestrainGroupsForce extends CentroidBondForce {
+public class RestrainGroupsForce extends CustomCentroidBondForce {
 
   private static final Logger logger = Logger.getLogger(RestrainGroupsForce.class.getName());
 

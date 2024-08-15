@@ -51,7 +51,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_resize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_set;
 
 /**
- * Bond Array.
+ * Bonds are specified by pairs of integers (the atom indices).
  */
 public class BondArray {
 

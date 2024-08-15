@@ -39,8 +39,12 @@ package ffx.openmm;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_getDefaultCollisionFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_getDefaultTemperature;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_getRandomNumberSeed;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultCollisionFrequency;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultTemperature;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setRandomNumberSeed;
 
 /**
  * This class uses the Andersen method to maintain constant temperature.
@@ -50,29 +54,83 @@ public class AndersenThermostat extends Force {
   /**
    * OpenMM AndersenThermostat constructor.
    *
-   * @param temperature The temperature.
-   * @param frequency   The collision frequency.
+   * @param temperature the default temperature of the heat bath (in Kelvin).
+   * @param frequency   the default collision frequency (in 1/ps)
    */
   public AndersenThermostat(double temperature, double frequency) {
     pointer = OpenMM_AndersenThermostat_create(temperature, frequency);
   }
 
   /**
-   * Set the default temperature.
+   * Set the default temperature of the heat bath. This will affect any new Contexts
+   * you create, but not ones that already exist.
    *
-   * @param temperature The temperature.
+   * @param temperature the default temperature of the heat bath (in Kelvin).
    */
   public void setDefaultTemperature(double temperature) {
     OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
   }
 
   /**
-   * Set the default collision frequency.
+   * Get the default temperature of the heat bath (in Kelvin).
    *
-   * @param frequency The collision frequency.
+   * @return the default temperature of the heat bath, measured in Kelvin.
+   */
+  public double getDefaultTemperature() {
+    return OpenMM_AndersenThermostat_getDefaultTemperature(pointer);
+  }
+
+  /**
+   * Set the default collision frequency. This will affect any new Contexts you create,
+   * but not ones that already exist.
+   *
+   * @param frequency the default collision frequency (in 1/ps).
    */
   public void setDefaultCollisionFrequency(double frequency) {
     OpenMM_AndersenThermostat_setDefaultCollisionFrequency(pointer, frequency);
+  }
+
+  /**
+   * Get the default collision frequency (in 1/ps).
+   *
+   * @return the default collision frequency (in 1/ps).
+   */
+  public double getDefaultCollisionFrequency() {
+    return OpenMM_AndersenThermostat_getDefaultCollisionFrequency(pointer);
+  }
+
+  /**
+   * Set the random number seed.  The precise meaning of this parameter is undefined, and is left up
+   * to each Platform to interpret in an appropriate way.  It is guaranteed that if two simulations
+   * are run with different random number seeds, the sequence of collisions will be different.  On
+   * the other hand, no guarantees are made about the behavior of simulations that use the same seed.
+   * In particular, Platforms are permitted to use non-deterministic algorithms which produce different
+   * results on successive runs, even if those runs were initialized identically.
+   * <p>
+   * If seed is set to 0 (which is the default value assigned), a unique seed is chosen when a Context
+   * is created from this Force. This is done to ensure that each Context receives unique random seeds
+   * without you needing to set them explicitly.
+   *
+   * @param seed the random number seed.
+   */
+  public void setRandomNumberSeed(int seed) {
+    OpenMM_AndersenThermostat_setRandomNumberSeed(pointer, seed);
+  }
+
+  /**
+   * Get the random number seed. See setRandomNumberSeed() for details.
+   */
+  public int getRandomNumberSeed() {
+    return OpenMM_AndersenThermostat_getRandomNumberSeed(pointer);
+  }
+
+  /**
+   * Returns whether this force makes use of periodic boundary conditions.
+   *
+   * @returns the Andersen Thermostat always returns false.
+   */
+  public boolean usesPeriodicBoundaryConditions() {
+    return false;
   }
 
   /**

@@ -115,6 +115,10 @@ public class AmoebaVdwForce extends VdwForce {
       if (!vdwClassToOpenMMType.containsKey(atomClass)) {
         double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
         double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+        // OpenMM AMOEBA vdW class does not allow a radius of 0.
+        if (rad == 0) {
+          rad = OpenMM_NmPerAngstrom * radScale;
+        }
         int type = addParticleType(rad, eps);
         vdwClassToOpenMMType.put(atomClass, type);
         if (atomClass <= vdWClassForNoInteraction) {
