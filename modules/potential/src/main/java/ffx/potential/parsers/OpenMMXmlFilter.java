@@ -1,38 +1,73 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.potential.parsers;
 
-import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities;
-import ffx.potential.parameters.*;
-import ffx.utilities.Keyword;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static java.lang.Integer.toString;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 
+import ffx.potential.parameters.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
+
+/**
+ * The OpenMMXmlFilter class creates an OpenMM-style XML file from a ForceField object. Work is underway to parse
+ * OpenMM XML files into ForceField objects (AMBER & CHARMM).
+ *
+ * @author Jacob M. Miller
+ */
 public class OpenMMXmlFilter {
 
-    /** The ForceField instance that will be used. */
+    /** A Logger for the XmlFilter class. */
+    private static final Logger logger = Logger.getLogger(OpenMMXmlFilter.class.getName());
+
+    /** The ForceField object that will be written to an XML. */
     private final ForceField forceField;
 
     /**
-     * Constructor for OUTPUTing XML.
+     * Constructor for outputting XML.
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -41,19 +76,16 @@ public class OpenMMXmlFilter {
     }
 
     /**
-     * Create an XML file for the force field.
+     * Create an OpenMM XML file for the given force field.
+     *
      * @throws Exception
      */
     public void toXML() throws Exception {
-        // specify files
-        File resFile = new File("/Users/jakemiller/ffx_testing/writeXML/residuesFinal.xml");
-
         // CREATE XML ROOT NODES AND FILL IN BASIC INFO
         // Instantiate Document building objects
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.newDocument();
-        Document resDoc = dBuilder.parse(resFile);
 
         // Create Root Node "ForceField"
         Element rootElement = doc.createElement("ForceField");
@@ -62,19 +94,20 @@ public class OpenMMXmlFilter {
         // Create Info Section
         Element infoNode = doc.createElement("Info");
         rootElement.appendChild(infoNode);
-        // If wanted attribute in this node: infoNode.setAttribute("id", "1001") e.g.
-        // an Attribute is inside the node definition - <Node Att="n">...</Node>
 
+        // Set Source node to the force field name
         Element srcNode = doc.createElement("Source");
         srcNode.setTextContent(forceField.getString("forcefield", "UNKNOWN"));
         infoNode.appendChild(srcNode);
 
+        // Set the date
         Element dateNode = doc.createElement("DateGenerated");
         SimpleDateFormat ft = new SimpleDateFormat("yyyy-MM-dd");
         String date = ft.format(new Date());
         dateNode.setTextContent(date);
         infoNode.appendChild(dateNode);
 
+        // Adds references for the AMOEBA force field.
         Element refNode = doc.createElement("Reference");
         refNode.setTextContent("Yue Shi, Zhen Xia, Jiajing Zhang, Robert Best, Chuanjie Wu, Jay W. Ponder, and Pengyu Ren. Polarizable Atomic Multipole-Based AMOEBA Force Field for Proteins. Journal of Chemical Theory and Computation, 9(9):4046–4063, 2013.");
         Element refNode2 = doc.createElement("Reference");
@@ -94,44 +127,28 @@ public class OpenMMXmlFilter {
 
 
         // Add Residues
-        // TODO : if statement if bioTypes != null
-        Map<String, Map<String, Object>> bioTypeDict = new HashMap<>();
         Map<String, BioType> bioTypes = forceField.getBioTypeMap();
-        Map<String, Map<String, Map<String, Map<String, Object>>>> moleculeDict = new HashMap<>();
-        for (BioType bioType : bioTypes.values()) {
-            String lookUp = bioType.atomName + "_" + bioType.moleculeName;
-            if (bioTypeDict.containsKey(lookUp)) {
-                // Workaround for Tinker using the same name but different types for H2', H2'', and for H5', H5''
-                lookUp = bioType.atomName + "*_" + bioType.moleculeName;
-            }
-            bioTypeDict.put(lookUp, new HashMap<>());
-            bioTypeDict.get(lookUp).put("index", bioType.index); // 0
-            bioTypeDict.get(lookUp).put("atomName", bioType.atomName); // 1
-            bioTypeDict.get(lookUp).put("moleculeName", bioType.moleculeName); // 2
-            bioTypeDict.get(lookUp).put("atomType", bioType.atomType); // 3
-
-            if (bioType.bonds != null) {
-                if (!moleculeDict.containsKey(bioType.moleculeName)) {
-                    moleculeDict.put(bioType.moleculeName, new HashMap<>());
+        if (bioTypes.values().size() >= 1) {
+            Map<String, Map<String, Map<String, Map<String, Object>>>> moleculeDict = new HashMap<>();
+            for (BioType bioType : bioTypes.values()) {
+                if (bioType.bonds != null) {
+                    if (!moleculeDict.containsKey(bioType.moleculeName)) {
+                        moleculeDict.put(bioType.moleculeName, new HashMap<>());
 //                    moleculeDict.get(bioType.moleculeName).put("added", false); // todo can change this to true in original methods? can add to make getExtraBiotypes simpler
-                    moleculeDict.get(bioType.moleculeName).put("atoms", new HashMap<>());
+                        moleculeDict.get(bioType.moleculeName).put("atoms", new HashMap<>());
+                    }
+                    moleculeDict.get(bioType.moleculeName).get("atoms").put(bioType.atomName, new HashMap<>());
+                    moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("index", bioType.index);
+                    moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("atomType", bioType.atomType);
+                    moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("bonds", bioType.bonds);
                 }
-                moleculeDict.get(bioType.moleculeName).get("atoms").put(bioType.atomName, new HashMap<>());
-                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("index", bioType.index);
-                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("atomType", bioType.atomType);
-                moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("bonds", bioType.bonds); // todo need to make sure these are there
             }
+            Element residuesNode = doc.createElement("Residues");
+            buildExtraResidues(moleculeDict, doc, residuesNode);
+            rootElement.appendChild(residuesNode);
+        } else {
+            logger.info("WARNING: No BioTypes defined for force field, therefore no OpenMM residues are created.");
         }
-
-//        Map residueDict = buildResidueDict(resDoc, doc);
-//        List<String> extraBTs = getExtraBiotypes(bioTypeDict, residueDict) // todo DELETE
-//        setBioTypes(bioTypeDict, residueDict); // set biotypes for all atoms
-//        Element residuesNode = createResidueNodes(doc, residueDict, bioTypeDict);
-        Element residuesNode = doc.createElement("Residues");
-        buildExtraResidues(moleculeDict, doc, residuesNode);
-        rootElement.appendChild(residuesNode);
-
-
 
         // Add Bond Types
         Map<String, BondType> btMap = (Map<String, BondType>) forceField.getTypes(ForceField.ForceFieldType.BOND);
@@ -338,25 +355,27 @@ public class OpenMMXmlFilter {
             }
         }
 
-        // Write XML to baseName.xml
+        // Write XML to 'force field name'.xml
         writeXML(doc, forceField.getString("forcefield", "UNKNOWN"));
     }
 
     /**
-     * Build residues not found in OpenMM finalResidues.xml todo - should this just replace that
+     * Build residues not found in OpenMM finalResidues.xml todo - should this just replace that?
      * @param moleculeDict Map containing molecules defined in BioTypes along with individual atom information.
      * @param doc Document with XML Nodes.
      * @param residuesNode Residues Node that will contain individual Residue nodes with Atoms and Bonds.
      */
     private static void buildExtraResidues(Map<String, Map<String, Map<String, Map<String, Object>>>> moleculeDict, Document doc, Element residuesNode) {
+        // Go through all molecules defined in the moleculeDict (keys)
         for (String mol : moleculeDict.keySet()) {
-            Element resNode = doc.createElement("Residue");
+            Element resNode = doc.createElement("Residue"); // create Residue node for each molecule
             resNode.setAttribute("name", mol);
             residuesNode.appendChild(resNode);
 
             List<String> order = new ArrayList<>();
             List<String> froms = new ArrayList<>();
             List<String> tos = new ArrayList<>();
+            // Go through all atoms inside the molecule (keys)
             for (String atom : moleculeDict.get(mol).get("atoms").keySet()) {
                 Element atomNode = doc.createElement("Atom");
                 atomNode.setAttribute("name", atom);
@@ -364,6 +383,7 @@ public class OpenMMXmlFilter {
                 resNode.appendChild(atomNode);
 
                 String[] bonds = (String[]) moleculeDict.get(mol).get("atoms").get(atom).get("bonds");
+                // Go through all atoms (bonds) that the defined atom is bonded to
                 for (String bond : bonds) {
                     if (!moleculeDict.get(mol).get("atoms").get(atom).containsKey("usedBonds")) {
                         moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", new ArrayList<>());
@@ -372,32 +392,26 @@ public class OpenMMXmlFilter {
                         moleculeDict.get(mol).get("atoms").get(bond).put("usedBonds", new ArrayList<>());
                     }
 
+                    // get the bonds already done for each atom
                     List<String> atomBonds = (ArrayList<String>) moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds");
                     List<String> bondBonds = (ArrayList<String>) moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds");
 
-//                    if (!moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds").contains(bond) && !moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds").contains(atom)) {
+                    // record the bond in from/to lists if the bond has not already been used
                     if (!atomBonds.contains(bond) && !bondBonds.contains(atom)) {
-//                        Element bondNode = doc.createElement("Bond");
-//                        int from = (int) moleculeDict.get(mol).get("atoms").get(atom).get("index");
-//                        int to = (int) moleculeDict.get(mol).get("atoms").get(bond).get("index");
-//                        bondNode.setAttribute("from", String.valueOf(from));
-//                        bondNode.setAttribute("to", String.valueOf(to));
-//                        resNode.appendChild(bondNode);
-                        // wrong because indexing works by how it is ordered in XML file - out of order this way
                         froms.add(atom);
                         tos.add(bond);
                     }
 
-//                    moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds").add(bond);
-//                    moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds").add(atom);
+                    // store that the bond has been identified
                     atomBonds.add(bond);
                     bondBonds.add(atom);
-                    moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", atomBonds); // can improve this
+                    moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", atomBonds);
                     moleculeDict.get(mol).get("atoms").get(bond).put("usedBonds", bondBonds);
                 }
-                order.add(atom);
+                order.add(atom); // add atom in the order they have been added to the Residue node
             }
 
+            // add Bond nodes using the order the Atom nodes were placed
             for (int i = 0; i < froms.size(); i++) {
                 Element bondNode = doc.createElement("Bond");
                 bondNode.setAttribute("from", String.valueOf(order.indexOf(froms.get(i))));
@@ -411,7 +425,7 @@ public class OpenMMXmlFilter {
     }
 
     /**
-     * Create new XML.
+     * Create an OpenMM-style XML file from the Document object that was created in toXML().
      * @param doc Document object containing XML nodes.
      * @param outputName String with name of the new file.
      * @throws TransformerException
