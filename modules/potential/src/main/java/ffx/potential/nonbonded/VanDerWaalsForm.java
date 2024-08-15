@@ -540,6 +540,9 @@ public class VanDerWaalsForm {
         return 2.0 * sei * sej * rr3 / (ri6 + rj6);
       }
       default -> {
+        if (ei * ej == 0.0) {
+          return 0.0;
+        }
         return 4.0 * (ei * ej) / ((sei + sej) * (sei + sej));
       }
     }

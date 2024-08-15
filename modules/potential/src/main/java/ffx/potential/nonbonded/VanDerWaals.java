@@ -1784,6 +1784,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 esvik = esvVdwPrefactori[0] * esvVdwPrefactork[0];
               }
               e += eik * taper * esvik;
+              // log(i, k, ev, r, eik * taper * esvik);
               count++;
               if (!gradient && !soft) {
                 continue;
