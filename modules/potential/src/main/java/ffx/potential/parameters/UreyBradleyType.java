@@ -46,6 +46,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -308,5 +309,16 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   public String toString() {
     return format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f", atomClasses[0], atomClasses[1],
         atomClasses[2], forceConstant, distance);
+  }
+
+  /**
+   * Write UreyBradleyType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d",atomClasses[0]));
+    node.setAttribute("class2", format("%d",atomClasses[1]));
+    node.setAttribute("class3", format("%d",atomClasses[2]));
+    node.setAttribute("k", format("%f",forceConstant*4.184*100.0)); // convert to kj/mol/nm^2
+    node.setAttribute("d", format("%f",distance*0.1)); // convert to nm
   }
 }

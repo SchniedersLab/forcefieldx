@@ -46,6 +46,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -298,5 +299,24 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
         atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3], forceConstants[0],
         forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4],
         forceConstants[5], forceConstants[6], forceConstants[7], forceConstants[8]);
+  }
+
+  /**
+   * Write StretchTorsionType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    node.setAttribute("class4", format("%d", atomClasses[3]));
+    node.setAttribute("v11", format("%f", forceConstants[0]*4.184*10));
+    node.setAttribute("v12", format("%f", forceConstants[1]*4.184*10));
+    node.setAttribute("v13", format("%f", forceConstants[2]*4.184*10));
+    node.setAttribute("v21", format("%f", forceConstants[3]*4.184*10));
+    node.setAttribute("v22", format("%f", forceConstants[4]*4.184*10));
+    node.setAttribute("v23", format("%f", forceConstants[5]*4.184*10));
+    node.setAttribute("v31", format("%f", forceConstants[6]*4.184*10));
+    node.setAttribute("v32", format("%f", forceConstants[7]*4.184*10));
+    node.setAttribute("v33", format("%f", forceConstants[8]*4.184*10));
   }
 }

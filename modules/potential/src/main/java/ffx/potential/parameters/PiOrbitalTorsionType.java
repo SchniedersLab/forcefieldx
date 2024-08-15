@@ -45,6 +45,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -270,6 +271,15 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
   @Override
   public String toString() {
     return format("pitors  %5d  %5d  %4.2f", atomClasses[0], atomClasses[1], forceConstant);
+  }
+
+  /**
+   * Write PiOrbitalTorsionType to OpenMM XML format.
+   */
+  public void toXML(Element node) {
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("k", format("%f", forceConstant*4.184*piTorsUnit)); // OpenMM has it hard coded to 1.0, which is default
   }
 
 }
