@@ -75,56 +75,6 @@ public class VanDerWaalsForm {
   static final byte EPS = 1;
 
   /**
-   * The default gamma parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
-   */
-  private static final double DEFAULT_GAMMA = 0.12;
-
-  /**
-   * The default delta parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
-   */
-  private static final double DEFAULT_DELTA = 0.07;
-
-  /**
-   * The default epsilon combining rule.
-   */
-  private static final EPSILON_RULE DEFAULT_EPSILON_RULE = EPSILON_RULE.GEOMETRIC;
-
-  /**
-   * The default radius combining rule.
-   */
-  private static final RADIUS_RULE DEFAULT_RADIUS_RULE = RADIUS_RULE.ARITHMETIC;
-
-  /**
-   * The default radius size.
-   */
-  private static final RADIUS_SIZE DEFAULT_RADIUS_SIZE = RADIUS_SIZE.RADIUS;
-
-  /**
-   * The default radius type.
-   */
-  private static final RADIUS_TYPE DEFAULT_RADIUS_TYPE = RADIUS_TYPE.R_MIN;
-
-  /**
-   * The default van der Waals functional form type.
-   */
-  private static final VDW_TYPE DEFAULT_VDW_TYPE = VDW_TYPE.LENNARD_JONES;
-
-  /**
-   * The default van der Waals scale factor for 1-2 (bonded) interactions.
-   */
-  private static final double DEFAULT_VDW_12_SCALE = 0.0;
-
-  /**
-   * The default van der Waals scale factor for 1-3 (angle) interactions.
-   */
-  private static final double DEFAULT_VDW_13_SCALE = 0.0;
-
-  /**
-   * The default van der Waals scale factor for 1-4 (torisonal) interactions.
-   */
-  private static final double DEFAULT_VDW_14_SCALE = 1.0;
-
-  /**
    * The default van der Waals taper location is at 90% of the cut-off distance.
    */
   public static final double DEFAULT_VDW_TAPER = 0.9;
@@ -165,7 +115,7 @@ public class VanDerWaalsForm {
           The text modifier gives the name of the functional form to be used.
           The default in the absence of the vdwtype keyword is to use the standard two parameter Lennard-Jones function.
           """)
-  public VDW_TYPE vdwType;
+  public VDWType.VDW_TYPE vdwType;
 
   /**
    * Epsilon combining rule.
@@ -177,7 +127,7 @@ public class VanDerWaalsForm {
           The default in the absence of the epsilonrule keyword is to use the geometric mean of the
           individual epsilon values of the two atoms involved in the van der Waals interaction.
           """)
-  public EPSILON_RULE epsilonRule;
+  public VDWType.EPSILON_RULE epsilonRule;
 
   /**
    * Radius combining rule.
@@ -188,7 +138,7 @@ public class VanDerWaalsForm {
           Sets the functional form of the radius combining rule for heteroatomic van der Waals potential energy interactions.
           The default in the absence of the radiusrule keyword is to use the arithmetic mean combining rule to get radii for heteroatomic interactions.
           """)
-  public RADIUS_RULE radiusRule;
+  public VDWType.RADIUS_RULE radiusRule;
 
   /**
    * Radius size in the parameter file (radius or diameter).
@@ -200,7 +150,7 @@ public class VanDerWaalsForm {
           VDW keyword statements are interpreted as atomic radius or diameter values.
           The default in the absence of the radiussize keyword is to assume that vdw size parameters are given as radius values.
           """)
-  public RADIUS_SIZE radiusSize;
+  public VDWType.RADIUS_SIZE radiusSize;
 
   /**
    * Radius type in the parameter file (R-Min or Sigma).
@@ -212,7 +162,7 @@ public class VanDerWaalsForm {
           statements are interpreted as potential minimum (Rmin) or LJ-style sigma values.
           The default in the absence of the radiustype keyword is to assume that vdw size parameters are given as Rmin values.
           """)
-  public RADIUS_TYPE radiusType;
+  public VDWType.RADIUS_TYPE radiusType;
 
   /**
    * Define scale factors between 1-2 atoms.
@@ -309,10 +259,10 @@ public class VanDerWaalsForm {
   public VanDerWaalsForm(ForceField forceField) {
 
     // Define functional form.
-    vdwType = DEFAULT_VDW_TYPE;
-    String value = forceField.getString("VDWTYPE", DEFAULT_VDW_TYPE.name());
+    vdwType = VDWType.DEFAULT_VDW_TYPE;
+    String value = forceField.getString("VDWTYPE", VDWType.DEFAULT_VDW_TYPE.name());
     try {
-      vdwType = VDW_TYPE.valueOf(toEnumForm(value));
+      vdwType = VDWType.VDW_TYPE.valueOf(toEnumForm(value));
     } catch (Exception e) {
       logger.info(format(" Unrecognized VDWTYPE %s; defaulting to %s.", value, vdwType));
     }
@@ -324,37 +274,37 @@ public class VanDerWaalsForm {
     }
 
     // Define epsilon combining rule.
-    epsilonRule = DEFAULT_EPSILON_RULE;
-    value = forceField.getString("EPSILONRULE", DEFAULT_EPSILON_RULE.name());
+    epsilonRule = VDWType.DEFAULT_EPSILON_RULE;
+    value = forceField.getString("EPSILONRULE", VDWType.DEFAULT_EPSILON_RULE.name());
     try {
-      epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
+      epsilonRule = VDWType.EPSILON_RULE.valueOf(toEnumForm(value));
     } catch (Exception e) {
       logger.info(format(" Unrecognized EPSILONRULE %s; defaulting to %s.", value, epsilonRule));
     }
 
     // Define radius combining rule.
-    radiusRule = DEFAULT_RADIUS_RULE;
-    value = forceField.getString("RADIUSRULE", DEFAULT_RADIUS_RULE.name());
+    radiusRule = VDWType.DEFAULT_RADIUS_RULE;
+    value = forceField.getString("RADIUSRULE", VDWType.DEFAULT_RADIUS_RULE.name());
     try {
-      radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
+      radiusRule = VDWType.RADIUS_RULE.valueOf(toEnumForm(value));
     } catch (Exception e) {
       logger.info(format(" Unrecognized RADIUSRULE %s; defaulting to %s.", value, radiusRule));
     }
 
     // Define radius size.
-    radiusSize = DEFAULT_RADIUS_SIZE;
-    value = forceField.getString("RADIUSSIZE", DEFAULT_RADIUS_SIZE.name());
+    radiusSize = VDWType.DEFAULT_RADIUS_SIZE;
+    value = forceField.getString("RADIUSSIZE", VDWType.DEFAULT_RADIUS_SIZE.name());
     try {
-      radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
+      radiusSize = VDWType.RADIUS_SIZE.valueOf(toEnumForm(value));
     } catch (Exception e) {
       logger.info(format(" Unrecognized RADIUSSIZE %s; defaulting to %s.", value, radiusSize));
     }
 
     // Define radius type.
-    radiusType = DEFAULT_RADIUS_TYPE;
-    value = forceField.getString("RADIUSTYPE", DEFAULT_RADIUS_TYPE.name());
+    radiusType = VDWType.DEFAULT_RADIUS_TYPE;
+    value = forceField.getString("RADIUSTYPE", VDWType.DEFAULT_RADIUS_TYPE.name());
     try {
-      radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
+      radiusType = VDWType.RADIUS_TYPE.valueOf(toEnumForm(value));
     } catch (Exception e) {
       logger.info(format(" Unrecognized RADIUSTYPE %s; defaulting to %s", value, radiusType));
     }
@@ -371,8 +321,8 @@ public class VanDerWaalsForm {
       default -> {
         repulsivePower = 14;
         dispersivePower = 7;
-        delta = forceField.getDouble("DELTA-HALGREN", DEFAULT_DELTA);
-        gamma = forceField.getDouble("GAMMA-HALGREN", DEFAULT_GAMMA);
+        delta = forceField.getDouble("DELTA-HALGREN", VDWType.DEFAULT_DELTA);
+        gamma = forceField.getDouble("GAMMA-HALGREN", VDWType.DEFAULT_GAMMA);
       }
     }
 
@@ -383,9 +333,9 @@ public class VanDerWaalsForm {
     t1n = pow(delta1, dispersivePower);
     gamma1 = 1.0 + gamma;
 
-    scale12 = forceField.getDouble("VDW_12_SCALE", DEFAULT_VDW_12_SCALE);
-    scale13 = forceField.getDouble("VDW_13_SCALE", DEFAULT_VDW_13_SCALE);
-    scale14 = forceField.getDouble("VDW_14_SCALE", DEFAULT_VDW_14_SCALE);
+    scale12 = forceField.getDouble("VDW_12_SCALE", VDWType.DEFAULT_VDW_12_SCALE);
+    scale13 = forceField.getDouble("VDW_13_SCALE", VDWType.DEFAULT_VDW_13_SCALE);
+    scale14 = forceField.getDouble("VDW_14_SCALE", VDWType.DEFAULT_VDW_14_SCALE);
     double scale15 = forceField.getDouble("VDW_15_SCALE", 1.0);
     if (scale15 != 1.0) {
       logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
@@ -524,7 +474,7 @@ public class VanDerWaalsForm {
    * @return The combined eps value.
    */
   public static double getCombinedEps(double ei, double ej, double ri, double rj,
-                                      EPSILON_RULE epsilonRule) {
+                                      VDWType.EPSILON_RULE epsilonRule) {
     double sei = sqrt(ei);
     double sej = sqrt(ej);
     switch (epsilonRule) {
@@ -556,7 +506,7 @@ public class VanDerWaalsForm {
    * @param radiusRule The radius combining rule to use.
    * @return The combined radius value.
    */
-  public static double getCombinedRadius(double ri, double rj, RADIUS_RULE radiusRule) {
+  public static double getCombinedRadius(double ri, double rj, VDWType.RADIUS_RULE radiusRule) {
     switch (radiusRule) {
       case ARITHMETIC -> {
         return ri + rj;
@@ -663,48 +613,6 @@ public class VanDerWaalsForm {
    */
   double rhoDelta1(double rhoDelta) {
     return vdwPowers.rhoDisp1(rhoDelta);
-  }
-
-  /**
-   * VDW Type.
-   */
-  public enum VDW_TYPE {
-    BUFFERED_14_7,
-    LENNARD_JONES
-  }
-
-  /**
-   * Radius combining rule.
-   */
-  public enum RADIUS_RULE {
-    ARITHMETIC,
-    CUBIC_MEAN,
-    GEOMETRIC
-  }
-
-  /**
-   * Radius size in the parameter file (radius or diameter).
-   */
-  public enum RADIUS_SIZE {
-    DIAMETER,
-    RADIUS
-  }
-
-  /**
-   * Radius type in the parameter file (R-Min or Sigma).
-   */
-  public enum RADIUS_TYPE {
-    R_MIN,
-    SIGMA
-  }
-
-  /**
-   * Epsilon combining rule.
-   */
-  public enum EPSILON_RULE {
-    GEOMETRIC,
-    HHG,
-    W_H
   }
 
   /**

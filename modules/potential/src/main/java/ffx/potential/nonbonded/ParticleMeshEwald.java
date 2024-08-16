@@ -2271,24 +2271,10 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.fine(
               format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
         }
-        directRegion.init(
-            atoms,
-            polarizability,
-            globalMultipole,
-            cartesianMultipolePhi,
-            field,
-            fieldCR,
-            generalizedKirkwoodTerm,
-            generalizedKirkwood,
-            ewaldParameters,
-            soluteDielectric,
-            inducedDipole,
-            inducedDipoleCR,
-            directDipole,
-            directDipoleCR,
-            directField,
-            directFieldCR
-        );
+        directRegion.init(atoms, polarizability, globalMultipole, cartesianMultipolePhi,
+            field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood,
+            ewaldParameters, soluteDielectric, inducedDipole, inducedDipoleCR,
+            directDipole, directDipoleCR, directField, directFieldCR);
         directRegion.executeWith(parallelTeam);
         expandInducedDipoles();
         logger.info(" Direct induced dipoles computed due to SCF failure.");

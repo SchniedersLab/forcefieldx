@@ -102,7 +102,7 @@ public class AmoebaVdwForce extends VdwForce {
     Crystal crystal = openMMEnergy.getCrystal();
 
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 
@@ -231,7 +231,7 @@ public class AmoebaVdwForce extends VdwForce {
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 

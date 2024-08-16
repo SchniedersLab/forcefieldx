@@ -37,17 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -59,6 +52,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.
@@ -85,6 +88,18 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   private static final Logger logger = Logger.getLogger(PolarizeType.class.getName());
 
   private static final double sixth = 1.0 / 6.0;
+  public static final double DEFAULT_DIRECT_11_SCALE = 0.0;
+  public static final double DEFAULT_DIRECT_12_SCALE = 1.0;
+  public static final double DEFAULT_DIRECT_13_SCALE = 1.0;
+  public static final double DEFAULT_DIRECT_14_SCALE = 1.0;
+  public static final double DEFAULT_POLAR_12_SCALE = 0.0;
+  public static final double DEFAULT_POLAR_13_SCALE = 0.0;
+  public static final double DEFAULT_POLAR_14_SCALE = 1.0;
+  public static final double DEFAULT_POLAR_15_SCALE = 1.0;
+  public static final double DEFAULT_POLAR_12_INTRA = 0.0;
+  public static final double DEFAULT_POLAR_13_INTRA = 0.0;
+  public static final double DEFAULT_POLAR_14_INTRA = 0.5;
+  public static final double DEFAULT_POLAR_15_INTRA = 1.0;
   /**
    * Thole damping factor.
    */
@@ -470,22 +485,47 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
+   * Add constant attributes to the AmoebaMultipoleForce
+   *
+   * @param node       the AmoebaMultipoleForce element.
+   * @param forceField the ForceField for collecting constants.
+   */
+  public static void addXMLAttributes(Element node, ForceField forceField) {
+    node.setAttribute("direct11Scale", valueOf(forceField.getDouble("direct-11-scale", DEFAULT_DIRECT_11_SCALE)));
+    node.setAttribute("direct12Scale", valueOf(forceField.getDouble("direct-12-scale", DEFAULT_DIRECT_12_SCALE)));
+    node.setAttribute("direct13Scale", valueOf(forceField.getDouble("direct-13-scale", DEFAULT_DIRECT_13_SCALE)));
+    node.setAttribute("direct14Scale", valueOf(forceField.getDouble("direct-14-scale", DEFAULT_DIRECT_14_SCALE)));
+    node.setAttribute("mutual11Scale", valueOf(forceField.getDouble("mutual-11-scale", 1.0)));
+    node.setAttribute("mutual12Scale", valueOf(forceField.getDouble("mutual-12-scale", 1.0)));
+    node.setAttribute("mutual13Scale", valueOf(forceField.getDouble("mutual-13-scale", 1.0)));
+    node.setAttribute("mutual14Scale", valueOf(forceField.getDouble("mutual-14-scale", 1.0)));
+    node.setAttribute("polar12Scale", valueOf(forceField.getDouble("polar-12-scale", DEFAULT_POLAR_12_SCALE)));
+    node.setAttribute("polar13Scale", valueOf(forceField.getDouble("polar-13-scale", DEFAULT_POLAR_13_SCALE)));
+    node.setAttribute("polar14Scale", valueOf(forceField.getDouble("polar-14-scale", DEFAULT_POLAR_14_SCALE)));
+    node.setAttribute("polar15Scale", valueOf(forceField.getDouble("polar-15-scale", DEFAULT_POLAR_15_SCALE)));
+    // polar-12-intra and polar-13-intra are zero by default. Other values are not supported by FFX (or OpenMM).
+    // polar-15-intra is 1.0 by default. Other values are not supported by FFX or OpenMM.
+    node.setAttribute("polar14Intra", valueOf(forceField.getDouble("polar-14-intra", DEFAULT_POLAR_14_INTRA)));
+  }
+
+  /**
    * Write PolarizeType to OpenMM XML format.
    */
-  public void toXML(Element node) {
-    node.setAttribute("type", format("%d",type));
-    node.setAttribute("polarizability", format("%f",polarizability*0.001)); // convert to nm^3
-    node.setAttribute("thole", format("%f",thole));
-
-    // todo - OMM does not have support for Direct polarization damping (ddp)
-
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Polarize");
+    node.setAttribute("type", format("%d", type));
+    // Convert Ang^3 to nm^3
+    node.setAttribute("polarizability", format("%f", polarizability * ANG_TO_NM * ANG_TO_NM * ANG_TO_NM));
+    node.setAttribute("thole", format("%f", thole));
+    // TODO: OMM does not have support for AMOEBA+ and its use of direct polarization damping (ddp)
     int i = 1;
     if (polarizationGroup != null) {
       for (int a : polarizationGroup) {
-        node.setAttribute(format("pgrp%d",i), format("%d",a));
+        node.setAttribute(format("pgrp%d", i), format("%d", a));
         i++;
       }
     }
+    return node;
   }
 
   /**

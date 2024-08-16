@@ -38,20 +38,25 @@
 package ffx.potential.parameters;
 
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW;
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 
 /**
  * The VDWType class defines van der Waals type for a normal interaction or a special 1-4
@@ -80,6 +85,47 @@ import static java.lang.String.format;
 public final class VDWType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(VDWType.class.getName());
+  /**
+   * The default gamma parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
+   */
+  public static final double DEFAULT_GAMMA = 0.12;
+  /**
+   * The default delta parameter in Halgren’s buffered 14-7 vdw potential energy functional form.
+   */
+  public static final double DEFAULT_DELTA = 0.07;
+  /**
+   * The default epsilon combining rule.
+   */
+  public static final EPSILON_RULE DEFAULT_EPSILON_RULE = EPSILON_RULE.GEOMETRIC;
+  /**
+   * The default radius combining rule.
+   */
+  public static final RADIUS_RULE DEFAULT_RADIUS_RULE = RADIUS_RULE.ARITHMETIC;
+  /**
+   * The default radius size.
+   */
+  public static final RADIUS_SIZE DEFAULT_RADIUS_SIZE = RADIUS_SIZE.RADIUS;
+  /**
+   * The default radius type.
+   */
+  public static final RADIUS_TYPE DEFAULT_RADIUS_TYPE = RADIUS_TYPE.R_MIN;
+  /**
+   * The default van der Waals functional form type.
+   */
+  public static final VDW_TYPE DEFAULT_VDW_TYPE = VDW_TYPE.LENNARD_JONES;
+  /**
+   * The default van der Waals scale factor for 1-2 (bonded) interactions.
+   */
+  public static final double DEFAULT_VDW_12_SCALE = 0.0;
+  /**
+   * The default van der Waals scale factor for 1-3 (angle) interactions.
+   */
+  public static final double DEFAULT_VDW_13_SCALE = 0.0;
+  /**
+   * The default van der Waals scale factor for 1-4 (torisonal) interactions.
+   */
+  public static final double DEFAULT_VDW_14_SCALE = 1.0;
+
   /**
    * The radius of the minimum well depth energy (angstroms).
    */
@@ -270,17 +316,53 @@ public final class VDWType extends BaseType implements Comparator<String> {
   }
 
   /**
+   * Create an AmoebaVdwForce force node.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to collect constants from.
+   * @return The AmoebaVdwForce force node.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, VDWType> vdwTypes = (Map<String, VDWType>) forceField.getTypes(ForceField.ForceFieldType.VDW);
+    Map<String, VDWPairType> vdwPairTypes = (Map<String, VDWPairType>) forceField.getTypes(ForceField.ForceFieldType.VDWPR);
+    if (!vdwTypes.values().isEmpty() || !vdwPairTypes.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaVdwForce");
+      node.setAttribute("type", forceField.getString("vdwtype", DEFAULT_VDW_TYPE.toString()));
+      node.setAttribute("radiusrule", forceField.getString("radiusrule", DEFAULT_RADIUS_RULE.toString()));
+      node.setAttribute("radiustype", forceField.getString("radiustype", DEFAULT_RADIUS_TYPE.toString()));
+      node.setAttribute("radiussize", forceField.getString("radiussize", DEFAULT_RADIUS_SIZE.toString()));
+      node.setAttribute("epsilonrule", forceField.getString("epsilonrule", DEFAULT_EPSILON_RULE.toString()));
+      // There is not currently support for a 1-2 scale in OpenMM (this is always zero).
+      node.setAttribute("vdw-13-scale", valueOf(forceField.getDouble("vdw-13-scale", DEFAULT_VDW_13_SCALE)));
+      node.setAttribute("vdw-14-scale", valueOf(forceField.getDouble("vdw-14-scale", DEFAULT_VDW_14_SCALE)));
+      node.setAttribute("vdw-15-scale", valueOf(forceField.getDouble("vdw-15-scale", 1.0)));
+      for (VDWType vdwType : vdwTypes.values()) {
+        node.appendChild(vdwType.toXML(doc));
+      }
+      for (VDWPairType vdwPairType : vdwPairTypes.values()) {
+        node.appendChild(vdwPairType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
    * Write VDWType to OpenMM XML format.
    */
-  public void toXML(Element node) {
-    node.setAttribute("class", format("%d",atomClass));
-    node.setAttribute("sigma", format("%f",radius*0.1)); // convert to nm
-    node.setAttribute("epsilon", format("%f",wellDepth*4.184)); // convert to kj/mol
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Vdw");
+    node.setAttribute("class", format("%d", atomClass));
+    // Convert Angstroms to nm
+    node.setAttribute("sigma", format("%f", radius * ANG_TO_NM));
+    // Convert Kcal/mol to KJ/mol
+    node.setAttribute("epsilon", format("%f", wellDepth * KCAL_TO_KJ));
     if (reductionFactor <= 0e0) {
       node.setAttribute("reduction", "1.0");
     } else {
-      node.setAttribute("reduction", format("%f",reductionFactor));
+      node.setAttribute("reduction", format("%f", reductionFactor));
     }
+    return node;
   }
 
   /**
@@ -298,5 +380,63 @@ public final class VDWType extends BaseType implements Comparator<String> {
    */
   public enum VDWMode {
     NORMAL, VDW14
+  }
+
+  /**
+   * VDW Type.
+   */
+  public enum VDW_TYPE {
+    BUFFERED_14_7,
+    LENNARD_JONES;
+
+    public String toString() {
+      return name().replace("_", "-");
+    }
+  }
+
+  /**
+   * Radius combining rule.
+   */
+  public enum RADIUS_RULE {
+    ARITHMETIC,
+    CUBIC_MEAN,
+    GEOMETRIC;
+
+    public String toString() {
+      return name().replace("_", "-");
+    }
+  }
+
+  /**
+   * Radius size in the parameter file (radius or diameter).
+   */
+  public enum RADIUS_SIZE {
+    DIAMETER,
+    RADIUS
+  }
+
+  /**
+   * Radius type in the parameter file (R-Min or Sigma).
+   */
+  public enum RADIUS_TYPE {
+    R_MIN,
+    SIGMA;
+
+    public String toString() {
+      return name().replace("_", "-");
+    }
+  }
+
+  /**
+   * Epsilon combining rule.
+   */
+  public enum EPSILON_RULE {
+    GEOMETRIC,
+    HHG,
+    W_H;
+
+    public String toString() {
+      return name().replace("_", "-");
+    }
   }
 }

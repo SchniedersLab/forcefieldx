@@ -127,6 +127,10 @@ public class Constants {
    */
   public static final double NM_TO_ANG = 10;
   /**
+   * Constant <code>ANG_TO_NM=0.1</code>
+   */
+  public static final double ANG_TO_NM = 0.1;
+  /**
    * Constant <code>SEC_TO_PSEC=1E12</code>
    */
   public static final double SEC_TO_PSEC = 1E12;

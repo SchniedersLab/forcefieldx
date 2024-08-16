@@ -455,7 +455,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
    */
   public double energy(boolean gradient, boolean print) {
 
-    if (vdwForm.vdwType != VanDerWaalsForm.VDW_TYPE.BUFFERED_14_7) {
+    if (vdwForm.vdwType != VDWType.VDW_TYPE.BUFFERED_14_7) {
       logger.severe((" TornadoVM vdW only supports AMOEBA."));
     }
 

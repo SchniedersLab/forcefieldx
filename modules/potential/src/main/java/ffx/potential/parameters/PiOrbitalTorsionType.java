@@ -37,21 +37,25 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
-import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
 
 /**
  * The PiOrbitalTorsionType class defines a Pi-Orbital Torsion energy term.
@@ -274,12 +278,38 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
   }
 
   /**
-   * Write PiOrbitalTorsionType to OpenMM XML format.
+   * Create an AmoebaPiTorsionForce Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField instance to grab constants from.
+   * @return the AmoebaPiTorsionForce Element.
    */
-  public void toXML(Element node) {
+  public static Element getXMLElement(Document doc, ForceField forceField) {
+    Map<String, PiOrbitalTorsionType> types = (Map<String, PiOrbitalTorsionType>) forceField.getTypes(ForceField.ForceFieldType.PITORS);
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaPiTorsionForce");
+      node.setAttribute("piTorsionUnit", valueOf(forceField.getDouble("pitorsunit", DEFAULT_PITORS_UNIT)));
+      for (PiOrbitalTorsionType piOrbitalTorsionType : types.values()) {
+        node.appendChild(piOrbitalTorsionType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write PiOrbitalTorsionType to OpenMM XML format.
+   *
+   * @param doc the Document instance.
+   * @return the PiTorsion Element.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("PiTorsion");
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
-    node.setAttribute("k", format("%f", forceConstant*4.184*piTorsUnit)); // OpenMM has it hard coded to 1.0, which is default
+    // OpenMM has the piTorsUnit hard coded to 1.0 (the default).
+    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ));
+    return node;
   }
 
 }

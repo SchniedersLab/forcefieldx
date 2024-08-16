@@ -62,11 +62,11 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
-import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import static ffx.potential.parameters.VDWType.EPSILON_RULE.GEOMETRIC;
+import static ffx.potential.parameters.VDWType.RADIUS_RULE.ARITHMETIC;
+import static ffx.potential.parameters.VDWType.RADIUS_SIZE.RADIUS;
+import static ffx.potential.parameters.VDWType.RADIUS_TYPE.R_MIN;
+import static ffx.potential.parameters.VDWType.VDW_TYPE.LENNARD_JONES;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 

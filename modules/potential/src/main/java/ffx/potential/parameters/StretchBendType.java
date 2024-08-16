@@ -37,23 +37,29 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.STRBND;
-import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.PI;
-
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.STRBND;
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
+import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
+import static java.util.Arrays.copyOf;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * The StretchBendType class defines one out-of-plane angle bending energy type.
@@ -296,13 +302,36 @@ public final class StretchBendType extends BaseType implements Comparator<String
   }
 
   /**
+   * Create an AmoebaStretchBendForce element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to grab constants from.
+   * @return the AmoebaStretchBendForce element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, StretchBendType> types = (Map<String, StretchBendType>) forceField.getTypes(ForceField.ForceFieldType.STRBND);
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaStretchBendForce");
+      node.setAttribute("stretchBendUnit", valueOf(forceField.getDouble("strbndunit", DEFAULT_STRBND_UNIT) * DEGREES_PER_RADIAN));
+      for (StretchBendType stretchBendType : types.values()) {
+        node.appendChild(stretchBendType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
    * Write StretchBendType to OpenMM XML format.
    */
-  public void toXML(Element node) {
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("StretchBend");
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
-    node.setAttribute("k1", format("%f", forceConstants[0]*41.84/57.2957795130)); // to KJ/mol/nm-radians
-    node.setAttribute("k2", format("%f", forceConstants[1]*41.84/57.2957795130)); // to KJ/mol/nm-radians
+    // Convert kcal/mol/A-degrees to KJ/mol/nm-radians
+    node.setAttribute("k1", format("%f", forceConstants[0] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
+    node.setAttribute("k2", format("%f", forceConstants[1] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
+    return node;
   }
 }

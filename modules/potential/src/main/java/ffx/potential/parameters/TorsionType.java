@@ -37,8 +37,21 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPROPER;
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORSION;
+import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
@@ -48,15 +61,6 @@ import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
-
-import ffx.utilities.FFXProperty;
-import org.w3c.dom.Element;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The TorsionType class defines a torsional angle.
@@ -487,21 +491,49 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     return torsionBuffer.toString();
   }
 
+
+  /**
+   * Create a PeriodicTorsionForce Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField that contains the Torsion types.
+   * @return the PeriodicTorsionForce instance.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, TorsionType> torsMap = (Map<String, TorsionType>) forceField.getTypes(ForceField.ForceFieldType.TORSION);
+    if (!torsMap.values().isEmpty()) {
+      Element node = doc.createElement("PeriodicTorsionForce");
+      double torsionUnit = forceField.getDouble("torsionunit", DEFAULT_TORSION_UNIT);
+      for (TorsionType torsionType : torsMap.values()) {
+        node.appendChild(torsionType.toXML(doc, torsionUnit));
+      }
+      return node;
+    }
+    return null;
+  }
+
   /**
    * Write TorsionType (Proper) to OpenMM XML format.
+   *
+   * @param doc      the Document instance.
+   * @param torsUnit scale torsion force constants by this factor.
+   * @return the Proper torsion Element.
    */
-  public void toXML(Element node, Double torsUnit) {
+  public Element toXML(Document doc, Double torsUnit) {
+    Element node = doc.createElement("Proper");
     // TODO specify proper?
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     node.setAttribute("class4", format("%d", atomClasses[3]));
-
     for (int i = 0; i < amplitude.length; i++) {
-      node.setAttribute(format("k%d",i+1), format("%f",amplitude[i]*4.184*torsUnit)); // convert to kj
-      node.setAttribute(format("phase%d",i+1), format("%f",phase[i]/57.2957795130)); // convert to radians
-      node.setAttribute(format("periodicity%d",i+1), format("%d",periodicity[i]));
+      // Convert from Kcal/mol to KJ/mol
+      node.setAttribute(format("k%d", i + 1), format("%f", amplitude[i] * KCAL_TO_KJ * torsUnit));
+      // Convert from degrees to radians.
+      node.setAttribute(format("phase%d", i + 1), format("%f", phase[i] / DEGREES_PER_RADIAN));
+      node.setAttribute(format("periodicity%d", i + 1), format("%d", periodicity[i]));
     }
+    return node;
   }
 
   /**

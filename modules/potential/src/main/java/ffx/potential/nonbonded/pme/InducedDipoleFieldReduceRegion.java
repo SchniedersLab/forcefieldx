@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t100;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -48,8 +44,13 @@ import edu.rit.pj.ParallelTeam;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t100;
 
 /**
  * Parallel summation and reduction of components of the induced dipole field at each atom.
@@ -61,27 +62,37 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
   private final InducedDipoleFieldReduceLoop[] inducedDipoleFieldReduceLoop;
-  /** Dimensions of [nsymm][nAtoms][3] */
+  /**
+   * Dimensions of [nsymm][nAtoms][3]
+   */
   public double[][][] inducedDipole;
 
   public double[][][] inducedDipoleCR;
-  /** An ordered array of atoms in the system. */
+  /**
+   * An ordered array of atoms in the system.
+   */
   private Atom[] atoms;
 
   private double[][] cartesianDipolePhi;
   private double[][] cartesianDipolePhiCR;
-  /** Field array. */
+  /**
+   * Field array.
+   */
   private AtomicDoubleArray3D field;
-  /** Chain rule field array. */
+  /**
+   * Chain rule field array.
+   */
   private AtomicDoubleArray3D fieldCR;
-  /** Flag to indicate use of generalized Kirkwood. */
+  /**
+   * Flag to indicate use of generalized Kirkwood.
+   */
   private boolean generalizedKirkwoodTerm;
 
   private GeneralizedKirkwood generalizedKirkwood;
   private double aewald;
   private double aewald3;
 
-  private double dielectric;
+  private double soluteDielectric;
 
   public InducedDipoleFieldReduceRegion(int nt) {
     inducedDipoleFieldReduceLoop = new InducedDipoleFieldReduceLoop[nt];
@@ -108,7 +119,7 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
       boolean generalizedKirkwoodTerm,
       GeneralizedKirkwood generalizedKirkwood,
       EwaldParameters ewaldParameters,
-      double dielectric,
+      double soluteDielectric,
       double[][] cartesianDipolePhi,
       double[][] cartesianDipolePhiCR,
       AtomicDoubleArray3D field,
@@ -121,7 +132,7 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
     this.generalizedKirkwood = generalizedKirkwood;
     this.aewald = ewaldParameters.aewald;
     this.aewald3 = ewaldParameters.aewald3;
-    this.dielectric = dielectric;
+    this.soluteDielectric = soluteDielectric;
     this.cartesianDipolePhi = cartesianDipolePhi;
     this.cartesianDipolePhiCR = cartesianDipolePhiCR;
     // Output
@@ -139,10 +150,8 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
       int nAtoms = atoms.length;
       execute(0, nAtoms - 1, inducedDipoleFieldReduceLoop[threadID]);
     } catch (Exception e) {
-      String message =
-          " Fatal exception computing the mutual induced dipoles in thread "
-              + getThreadIndex()
-              + "\n";
+      String message = " Fatal exception computing the mutual induced dipoles in thread "
+          + getThreadIndex() + "\n";
       logger.log(Level.SEVERE, message, e);
     }
   }
@@ -177,9 +186,9 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
       field.reduce(lb, ub);
       fieldCR.reduce(lb, ub);
 
-      // Scale the total direct field by the inverse dielectric.
-      if (dielectric > 1.0) {
-        double inverseDielectric = 1.0 / dielectric;
+      // Scale the total induced field by the inverse dielectric.
+      if (soluteDielectric > 1.0) {
+        double inverseDielectric = 1.0 / soluteDielectric;
         for (int i = lb; i <= ub; i++) {
           field.scale(0, i, inverseDielectric);
           fieldCR.scale(0, i, inverseDielectric);

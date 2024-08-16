@@ -37,21 +37,23 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.potential.bonded.Atom;
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.ATOM;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
-
-import ffx.potential.bonded.Atom;
-import ffx.utilities.FFXProperty;
-import org.w3c.dom.Element;
-
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The AtomType class represents one molecular mechanics atom type.
@@ -254,17 +256,36 @@ public final class AtomType extends BaseType implements Comparator<String> {
   }
 
   /**
+   * Create an AtomType Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to grab constants from.
+   * @return the AtomType element.
+   */
+  public static Element getXMLAtomTypes(Document doc, ForceField forceField) {
+    Element node = doc.createElement("AtomTypes");
+    Map<String, AtomType> types = (Map<String, AtomType>) forceField.getTypes(ForceField.ForceFieldType.ATOM);
+    for (AtomType atomType : types.values()) {
+      node.appendChild(atomType.toXML(doc));
+    }
+    return node;
+  }
+
+  /**
    * Write AtomType to OpenMM XML format.
    */
-  public void toXML(Element node) {
-    node.setAttribute("name", format("%d",type));
-    node.setAttribute("class", format("%d",atomClass));
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Type");
+    node.setAttribute("name", format("%d", type));
+    node.setAttribute("class", format("%d", atomClass));
     if (atomicNumber >= 1) {
-      node.setAttribute("element", format("%s", Atom.ElementSymbol.values()[atomicNumber-1]));
+      node.setAttribute("element", format("%s", Atom.ElementSymbol.values()[atomicNumber - 1]));
     } else {
+      // Handle force fields with dummy atoms that use atomic number 0.
       node.setAttribute("element", "");
     }
-    node.setAttribute("mass", format("%.3f",atomicWeight));
+    node.setAttribute("mass", format("%.3f", atomicWeight));
+    return node;
   }
 
   /**
