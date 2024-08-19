@@ -323,7 +323,6 @@ class GenZ extends AlgorithmsScript {
                         int rotamerInd = conformers[resIndex][i]
                         String rotName = rotamers[rotamerInd].getName()
                         double occupancyTest = populationArray[resIndex][rotamerInd]
-                        logger.info("Residue index: " + resIndex)
                         if (i == 2 && rotNames[resIndex] != null) {
                             rotNames[resIndex] = rotName
                         } else if (i < 2 && occupancyTest != 0 && !rotNames[resIndex].contains(rotName)) {
@@ -335,7 +334,6 @@ class GenZ extends AlgorithmsScript {
                             rotNames[resIndex] = rotName
                         }
                     }
-                    logger.info(rotNames.toString())
                     for(Atom atom: residue.getAtomList()){
                             if(!residue.getBackboneAtoms().contains(atom) || diffStates){
                                 if(occupancy != 1){
