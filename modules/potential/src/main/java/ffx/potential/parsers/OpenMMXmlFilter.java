@@ -89,6 +89,9 @@ public class OpenMMXmlFilter {
    */
   private final ForceField forceField;
 
+  /** The path to write the XML file to. Should not include '.xml' on end. */
+  private String outputName;
+
   /**
    * Constructor for outputting XML.
    *
@@ -97,6 +100,17 @@ public class OpenMMXmlFilter {
   public OpenMMXmlFilter(ForceField forceField) {
     this.forceField = forceField;
   }
+
+  /**
+   * Constructor for outputting XML with output path specified.
+   *
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param saveName a String with the output path.
+   */
+    public OpenMMXmlFilter(ForceField forceField, String saveName) {
+      this.forceField = forceField;
+      this.outputName = saveName;
+    }
 
   /**
    * Create an OpenMM XML file for the given force field.
@@ -235,7 +249,7 @@ public class OpenMMXmlFilter {
     }
 
     // Write XML to 'force field name'.xml
-    writeXML(doc, forceField.getString("forcefield", "UNKNOWN"));
+    writeXML(doc);
   }
 
   /**
@@ -308,10 +322,16 @@ public class OpenMMXmlFilter {
    * Create an OpenMM-style XML file from the Document object that was created in toXML().
    *
    * @param doc        Document object containing XML nodes.
-   * @param outputName String with name of the new file.
    * @throws TransformerException
    */
-  private static void writeXML(Document doc, String outputName) throws TransformerException {
+  private void writeXML(Document doc) throws TransformerException {
+    String saveName;
+    if (outputName != null) {
+      saveName = outputName;
+    } else {
+      saveName = forceField.getString("forcefield", "UNKNOWN");
+    }
+
     TransformerFactory tfFactory = TransformerFactory.newInstance();
     Transformer transformer = tfFactory.newTransformer();
 
@@ -319,7 +339,7 @@ public class OpenMMXmlFilter {
     transformer.setOutputProperty(OutputKeys.INDENT, "yes"); // print with indentation
 
     DOMSource src = new DOMSource(doc);
-    StreamResult result = new StreamResult(outputName + ".xml");
+    StreamResult result = new StreamResult(saveName + ".xml");
     transformer.transform(src, result);
   }
 }
