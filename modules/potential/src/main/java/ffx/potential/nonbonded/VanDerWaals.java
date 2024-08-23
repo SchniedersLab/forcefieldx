@@ -625,7 +625,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     // Redo the long range correction.
     if (doLongRangeCorrection) {
       longRangeCorrection = computeLongRangeCorrection();
-      logger.info(format(" Long-range VdW correction %12.8f (kcal/mole).", longRangeCorrection));
+      logger.fine(format(" Long-range VdW correction %12.8f (kcal/mole).", longRangeCorrection));
     } else {
       longRangeCorrection = 0.0;
     }
