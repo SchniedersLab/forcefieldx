@@ -42,9 +42,6 @@ import ffx.potential.bonded.Bond
 import ffx.potential.bonded.Molecule
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.BioType
-import ffx.potential.parameters.ForceField
-import ffx.potential.parsers.PDBFilter
-import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -75,6 +72,13 @@ class Biotype extends PotentialScript {
   @Option(names = ['-a', '--useAtomNames'], paramLabel = "false", defaultValue = "false",
       description = 'Use the atom names in the XYZ file.')
   private boolean useAtomNames
+
+  /**
+   * -w or --writePDB Write out a PDB file with the updated atom and molecule names.
+   */
+  @Option(names = ['-c', '--writeCONECT'], paramLabel = "false", defaultValue = "false",
+      description = 'Write out CONECT records to append to the PDB file.')
+  private boolean writeCONNECT
 
   /**
    * -w or --writePDB Write out a PDB file with the updated atom and molecule names.
@@ -186,7 +190,6 @@ class Biotype extends PotentialScript {
           atom.getAtomType().type, bondString)
 
       bioTypes.add(biotype)
-      logger.info("\n Generated Biotype records: \n")
       logger.info(biotype.toString())
     }
 
@@ -204,6 +207,23 @@ class Biotype extends PotentialScript {
 
     // Return the bioTypes via the Binding.
     binding.setVariable("bioTypes", bioTypes)
+
+    if (writeCONNECT) {
+      for (Atom a : atoms) {
+// =============================================================================
+//  7 - 11        Integer        serial       Atom  serial number
+// 12 - 16        Integer        serial       Serial number of bonded atom
+// 17 - 21        Integer        serial       Serial number of bonded atom
+// 22 - 26        Integer        serial       Serial number of bonded atom
+// 27 - 31        Integer        serial       Serial number of bonded atom
+        StringBuilder sb = new StringBuilder(String.format("CONECT%5s", Integer.toString(a.getXyzIndex())))
+        Bond[] bonds = a.getBonds()
+        for (Bond b : bonds) {
+          sb.append(String.format("%5s", Integer.toString(b.get1_2(a).getXyzIndex())))
+        }
+        logger.info(sb.toString())
+      }
+    }
 
     return this
   }
