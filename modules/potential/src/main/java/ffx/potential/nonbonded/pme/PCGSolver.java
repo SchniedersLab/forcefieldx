@@ -73,20 +73,24 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <p>
  * x: is the unknown vector of length N.
  * <p>
- * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_multipoles
+ * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_direct
  * <br>
  * where C = [alpha^-1 - T]
  * <br>
  * u are the induced dipoles.
  * <br>
- * E_multipoles is the direct field from permanent multipoles.
+ * E_direct is the direct field from permanent multipoles.
  * <p>
  * The matrix alpha^-1 is the inverse of the N x N diagonal polarizability matrix. The matrix T is
  * the N x N matrix that produces the field due to induced dipoles.
  * <p>
  * Initialization:
  * <br>
- * 1) Compute the residual:        r_0 = E_mutipoles - C u_direct = E_direct_induced
+ * 1) Compute the residual where x_0 is either u_direct or u_mutual (a pcg guess):<br>
+ * r_0 = b - A x_0<br>
+ * r_0 = E_direct - C u_0<br>
+ * r_0 = E_direct - [alpha^-1 - T] u_0<br>
+ * r_0 = (u_direct - u_0) * alpha^-1 - E_u_0
  * <br>
  * 2) Compute the preconditioner:  z_0 = M^1 r_0
  * <br>
@@ -620,10 +624,8 @@ public class PCGSolver {
         int nAtoms = atoms.length;
         execute(0, nAtoms - 1, initResidualLoops[ti]);
       } catch (Exception e) {
-        String message =
-            "Fatal exception computing the mutual induced dipoles in thread "
-                + getThreadIndex()
-                + "\n";
+        String message = "Fatal exception computing the mutual induced dipoles in thread "
+                + getThreadIndex() + "\n";
         logger.log(Level.SEVERE, message, e);
       }
     }
