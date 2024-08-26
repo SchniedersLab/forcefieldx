@@ -642,7 +642,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @return the AmoebaTorsionTorsionForce Element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, TorsionTorsionType> types = (Map<String, TorsionTorsionType>) forceField.getTypes(ForceField.ForceFieldType.TORTORS);
+    Map<String, TorsionTorsionType> types = forceField.getTorsionTorsionTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaTorsionTorsionForce");
       int i = 0;

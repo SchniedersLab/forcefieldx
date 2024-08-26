@@ -309,7 +309,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
    * @return the AmoebaStretchBendForce element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, StretchBendType> types = (Map<String, StretchBendType>) forceField.getTypes(ForceField.ForceFieldType.STRBND);
+    Map<String, StretchBendType> types = forceField.getStretchBendTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaStretchBendForce");
       node.setAttribute("stretchBendUnit", valueOf(forceField.getDouble("strbndunit", DEFAULT_STRBND_UNIT) * DEGREES_PER_RADIAN));

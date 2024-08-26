@@ -935,6 +935,7 @@ public final class PDBFilter extends SystemFilter {
                   }
                   break;
                 }
+                break;
               case HETATM:
 // =============================================================================
 //  1 - 6        Record name    "HETATM"

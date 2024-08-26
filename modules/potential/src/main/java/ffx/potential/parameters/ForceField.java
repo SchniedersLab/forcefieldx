@@ -37,11 +37,9 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.String.format;
-
 import ffx.potential.parsers.OpenMMXmlFilter;
 import ffx.utilities.FFXProperty;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -55,7 +53,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.String.format;
 
 /**
  * The ForceField class organizes parameters for a molecular mechanics force field.
@@ -450,6 +449,19 @@ public class ForceField {
   }
 
   /**
+   * Get AngleTorsionTypes.
+   *
+   * @return The AngleTorsionTypes.
+   */
+  public Map<String, AngleTorsionType> getAngleTorsionTypes() {
+    // Finalize keywords for AngleTorsionTypes.
+    for (String key : angleTorsionTypes.keySet()) {
+      getAngleTorsionType(key);
+    }
+    return angleTorsionTypes;
+  }
+
+  /**
    * getAngleType
    *
    * @param key a {@link java.lang.String} object.
@@ -468,6 +480,19 @@ public class ForceField {
       angleType.sextic = getDouble("ANGLE-SEXTIC", AngleType.DEFAULT_ANGLE_SEXTIC);
     }
     return angleType;
+  }
+
+  /**
+   * Get AngleTypes.
+   *
+   * @return The AngleTypes.
+   */
+  public Map<String, AngleType> getAngleTypes() {
+    // Finalize keywords for Angle Types.
+    for (String key : angleTypes.keySet()) {
+      getAngleType(key);
+    }
+    return angleTypes;
   }
 
   /**
@@ -492,6 +517,15 @@ public class ForceField {
    */
   public AtomType getAtomType(String key) {
     return atomTypes.get(key);
+  }
+
+  /**
+   * Get AtomTypes.
+   *
+   * @return the AtomTypes.
+   */
+  public Map<String, AtomType> getAtomTypes() {
+    return atomTypes;
   }
 
   /**
@@ -596,6 +630,19 @@ public class ForceField {
       bondType.quartic = getDouble("BOND_QUARTIC", BondType.DEFAULT_BOND_QUARTIC);
     }
     return bondType;
+  }
+
+  /**
+   * Get BondTypes.
+   *
+   * @return the BondTypes.
+   */
+  public Map<String, BondType> getBondTypes() {
+    // Finalize keywords for Bond Types.
+    for (String key : bondTypes.keySet()) {
+      getBondType(key);
+    }
+    return bondTypes;
   }
 
   /**
@@ -824,6 +871,15 @@ public class ForceField {
   }
 
   /**
+   * Get MultipoleTypes.
+   *
+   * @return the MultipoleTypes.
+   */
+  public Map<String, MultipoleType> getMultipoleTypes() {
+    return multipoleTypes;
+  }
+
+  /**
    * Return all force field types of a given type.
    *
    * @param type The type of force field type to clear.
@@ -852,17 +908,26 @@ public class ForceField {
   public OutOfPlaneBendType getOutOfPlaneBendType(String key) {
     OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBendTypes.get(key);
     if (outOfPlaneBendType != null) {
-      outOfPlaneBendType.opBendUnit = getDouble("OPBENDUNIT",
-          OutOfPlaneBendType.DEFAULT_OPBEND_UNIT);
+      outOfPlaneBendType.opBendUnit = getDouble("OPBENDUNIT", OutOfPlaneBendType.DEFAULT_OPBEND_UNIT);
       outOfPlaneBendType.cubic = getDouble("OPBEND-CUBIC", OutOfPlaneBendType.DEFAULT_OPBEND_CUBIC);
-      outOfPlaneBendType.quartic = getDouble("OPBEND-QUARTIC",
-          OutOfPlaneBendType.DEFAULT_OPBEND_QUARTIC);
-      outOfPlaneBendType.pentic = getDouble("OPBEND-PENTIC",
-          OutOfPlaneBendType.DEFAULT_OPBEND_PENTIC);
-      outOfPlaneBendType.sextic = getDouble("OPBEND-SEXTIC",
-          OutOfPlaneBendType.DEFAULT_OPBEND_SEXTIC);
+      outOfPlaneBendType.quartic = getDouble("OPBEND-QUARTIC", OutOfPlaneBendType.DEFAULT_OPBEND_QUARTIC);
+      outOfPlaneBendType.pentic = getDouble("OPBEND-PENTIC", OutOfPlaneBendType.DEFAULT_OPBEND_PENTIC);
+      outOfPlaneBendType.sextic = getDouble("OPBEND-SEXTIC", OutOfPlaneBendType.DEFAULT_OPBEND_SEXTIC);
     }
     return outOfPlaneBendType;
+  }
+
+  /**
+   * Get OutOfPlaneBendTypes.
+   *
+   * @return the OutOfPlaneBendTypes.
+   */
+  public Map<String, OutOfPlaneBendType> getOutOfPlaneBendTypes() {
+    // Finalize keywords for OutOfPlaneBend Types.
+    for (String key : outOfPlaneBendTypes.keySet()) {
+      getOutOfPlaneBendType(key);
+    }
+    return outOfPlaneBendTypes;
   }
 
   /**
@@ -914,6 +979,19 @@ public class ForceField {
   }
 
   /**
+   * Get PiOrbitalTorsions.
+   *
+   * @return the PiOrbitalTorsions.
+   */
+  public Map<String, PiOrbitalTorsionType> getPiOrbitalTorsionTypes() {
+    // Finalize keywords for PiOrbitalTorsion Types.
+    for (String key : piOrbitalTorsionTypes.keySet()) {
+      getPiOrbitalTorsionType(key);
+    }
+    return piOrbitalTorsionTypes;
+  }
+
+  /**
    * getPiOrbitalTorsionType
    *
    * @param a1 AtomType of atom 1.
@@ -936,6 +1014,15 @@ public class ForceField {
    */
   public PolarizeType getPolarizeType(String key) {
     return polarizeTypes.get(key);
+  }
+
+  /**
+   * Get PolarizeTypes.
+   *
+   * @return the PolarizeTypes.
+   */
+  public Map<String, PolarizeType> getPolarizeTypes() {
+    return polarizeTypes;
   }
 
   /**
@@ -989,6 +1076,19 @@ public class ForceField {
   }
 
   /**
+   * Get StretchBendTypes.
+   *
+   * @return the StretchBendTypes.
+   */
+  public Map<String, StretchBendType> getStretchBendTypes() {
+    // Finalize keywords for StretchBend Types.
+    for (String key : stretchBendTypes.keySet()) {
+      getStretchBendType(key);
+    }
+    return stretchBendTypes;
+  }
+
+  /**
    * getStretchBendType
    *
    * @param a1 First AtomType.
@@ -1011,10 +1111,22 @@ public class ForceField {
   public StretchTorsionType getStretchTorsionType(String key) {
     StretchTorsionType stretchTorsionType = stretchTorsionTypes.get(key);
     if (stretchTorsionType != null) {
-      stretchTorsionType.strTorUnit = getDouble("STRTORUNIT",
-          StretchTorsionType.DEFAULT_STRTOR_UNIT);
+      stretchTorsionType.strTorUnit = getDouble("STRTORUNIT", StretchTorsionType.DEFAULT_STRTOR_UNIT);
     }
     return stretchTorsionType;
+  }
+
+  /**
+   * Get StretchTorsionTypes.
+   *
+   * @return the StretchTorsionTypes.
+   */
+  public Map<String, StretchTorsionType> getStretchTorsionTypes() {
+    // Finalize keywords for StretchTorsion Types.
+    for (String key : stretchTorsionTypes.keySet()) {
+      getStretchTorsionType(key);
+    }
+    return stretchTorsionTypes;
   }
 
   /**
@@ -1066,6 +1178,19 @@ public class ForceField {
   }
 
   /**
+   * Get TorsionTorsionTypes.
+   *
+   * @return the TorsionTorsionTypes.
+   */
+  public Map<String, TorsionTorsionType> getTorsionTorsionTypes() {
+    // Finalize keywords for TorsionTorsion Types.
+    for (String key : torsionTorsionTypes.keySet()) {
+      getTorsionTorsionType(key);
+    }
+    return torsionTorsionTypes;
+  }
+
+  /**
    * getTorsionType
    *
    * @param key a {@link java.lang.String} object.
@@ -1077,6 +1202,19 @@ public class ForceField {
       torsionType.torsionUnit = getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
     }
     return torsionType;
+  }
+
+  /**
+   * Get TorsionTypes.
+   *
+   * @return the TorsionTypes.
+   */
+  public Map<String, TorsionType> getTorsionTypes() {
+    // Finalize keywords for Torsion Types.
+    for (String key : torsionTypes.keySet()) {
+      getTorsionType(key);
+    }
+    return torsionTypes;
   }
 
   /**
@@ -1148,6 +1286,19 @@ public class ForceField {
       ureyBradleyType.quartic = getDouble("UREY_QUARTIC", UreyBradleyType.DEFAULT_UREY_QUARTIC);
     }
     return ureyBradleyType;
+  }
+
+  /**
+   * Get UreyBradleyTypes.
+   *
+   * @return the UreyBradleyTypes.
+   */
+  public Map<String, UreyBradleyType> getUreyBradleyTypes() {
+    // Finalize keywords for UreyBradley Types.
+    for (String key : ureyBradleyTypes.keySet()) {
+      getUreyBradleyType(key);
+    }
+    return ureyBradleyTypes;
   }
 
   /**
