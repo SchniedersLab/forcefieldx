@@ -332,12 +332,12 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     node.setAttribute("class4", format("%d", atomClasses[3]));
-    node.setAttribute("v11", format("%f", forceConstants[0] * KCAL_TO_KJ));
-    node.setAttribute("v12", format("%f", forceConstants[1] * KCAL_TO_KJ));
-    node.setAttribute("v13", format("%f", forceConstants[2] * KCAL_TO_KJ));
-    node.setAttribute("v21", format("%f", forceConstants[3] * KCAL_TO_KJ));
-    node.setAttribute("v22", format("%f", forceConstants[4] * KCAL_TO_KJ));
-    node.setAttribute("v23", format("%f", forceConstants[5] * KCAL_TO_KJ));
+    node.setAttribute("v11", format("%.17f", forceConstants[0] * KCAL_TO_KJ));
+    node.setAttribute("v12", format("%.17f", forceConstants[1] * KCAL_TO_KJ));
+    node.setAttribute("v13", format("%.17f", forceConstants[2] * KCAL_TO_KJ));
+    node.setAttribute("v21", format("%.17f", forceConstants[3] * KCAL_TO_KJ));
+    node.setAttribute("v22", format("%.17f", forceConstants[4] * KCAL_TO_KJ));
+    node.setAttribute("v23", format("%.17f", forceConstants[5] * KCAL_TO_KJ));
     return node;
   }
 }

@@ -354,13 +354,13 @@ public final class VDWType extends BaseType implements Comparator<String> {
     Element node = doc.createElement("Vdw");
     node.setAttribute("class", format("%d", atomClass));
     // Convert Angstroms to nm
-    node.setAttribute("sigma", format("%f", radius * ANG_TO_NM));
+    node.setAttribute("sigma", format("%.17f", radius * ANG_TO_NM));
     // Convert Kcal/mol to KJ/mol
-    node.setAttribute("epsilon", format("%f", wellDepth * KCAL_TO_KJ));
+    node.setAttribute("epsilon", format("%.17f", wellDepth * KCAL_TO_KJ));
     if (reductionFactor <= 0e0) {
       node.setAttribute("reduction", "1.0");
     } else {
-      node.setAttribute("reduction", format("%f", reductionFactor));
+      node.setAttribute("reduction", format("%.17f", reductionFactor));
     }
     return node;
   }

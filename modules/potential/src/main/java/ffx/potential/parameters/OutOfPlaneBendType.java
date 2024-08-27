@@ -388,7 +388,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
       i++;
     }
     // Convert Kcal/mol/radian^2 to KJ/mol/deg^2
-    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
+    node.setAttribute("k", format("%.17f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
     return node;
   }
 }

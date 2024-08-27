@@ -330,8 +330,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     // Convert kcal/mol/A-degrees to KJ/mol/nm-radians
-    node.setAttribute("k1", format("%f", forceConstants[0] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
-    node.setAttribute("k2", format("%f", forceConstants[1] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
+    node.setAttribute("k1", format("%.17f", forceConstants[0] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
+    node.setAttribute("k2", format("%.17f", forceConstants[1] * KCAL_TO_KJ / (ANG_TO_NM * DEGREES_PER_RADIAN)));
     return node;
   }
 }

@@ -308,7 +308,7 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
     // OpenMM has the piTorsUnit hard coded to 1.0 (the default).
-    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ));
+    node.setAttribute("k", format("%.17f", forceConstant * KCAL_TO_KJ));
     return node;
   }
 

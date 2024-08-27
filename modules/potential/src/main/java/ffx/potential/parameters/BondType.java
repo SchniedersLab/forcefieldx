@@ -395,7 +395,7 @@ public final class BondType extends BaseType implements Comparator<String> {
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("length", format("%f", distance * ANG_TO_NM));
-    node.setAttribute("k", format("%f", forceConstant * NM_TO_ANG * NM_TO_ANG * KCAL_TO_KJ));
+    node.setAttribute("k", format("%.17f", forceConstant * NM_TO_ANG * NM_TO_ANG * KCAL_TO_KJ));
     return node;
   }
 

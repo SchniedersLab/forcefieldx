@@ -534,7 +534,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     // Convert Kcal/mol/radian^2 to KJ/mol/deg^2
-    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
+    node.setAttribute("k", format("%.17f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
     int i = 1;
     for (double eq : angle) {
       node.setAttribute(format("angle%d", i), format("%f", eq));

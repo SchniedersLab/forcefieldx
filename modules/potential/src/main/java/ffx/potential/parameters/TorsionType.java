@@ -528,9 +528,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     node.setAttribute("class4", format("%d", atomClasses[3]));
     for (int i = 0; i < amplitude.length; i++) {
       // Convert from Kcal/mol to KJ/mol
-      node.setAttribute(format("k%d", i + 1), format("%f", amplitude[i] * KCAL_TO_KJ * torsUnit));
+      node.setAttribute(format("k%d", i + 1), format("%.17f", amplitude[i] * KCAL_TO_KJ * torsUnit));
       // Convert from degrees to radians.
-      node.setAttribute(format("phase%d", i + 1), format("%f", phase[i] / DEGREES_PER_RADIAN));
+      node.setAttribute(format("phase%d", i + 1), format("%.17f", phase[i] / DEGREES_PER_RADIAN));
       node.setAttribute(format("periodicity%d", i + 1), format("%d", periodicity[i]));
     }
     return node;
