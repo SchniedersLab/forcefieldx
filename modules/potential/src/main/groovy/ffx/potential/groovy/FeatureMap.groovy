@@ -81,6 +81,10 @@ class FeatureMap extends PotentialScript {
             description = "Reading in a CSV a second time. Specifically for gathering ppi information")
     private boolean rerun = false
 
+    @Option(names = ["--ddG", "--ddgFile"], paramLabel = "file",
+            description = "Read in the folding free energy difference file")
+    private String ddgFile
+
     @Option(names = ["--mI", "--multiple isomers"], paramLabel = "false",
             description = "Set this flag if the variant list contains variants from multiple isomers. Isomer should be in name of pdb file")
     private boolean multipleIsomers = false
@@ -142,9 +146,9 @@ class FeatureMap extends PotentialScript {
         // writing the file csv file
         String[] geneSplit
         String fileIsomer
-        if(multipleIsomers){
+        if (multipleIsomers) {
             String baseName = getBaseName(filenames[0])
-            if(baseName.contains("ENS")){
+            if (baseName.contains("ENS")) {
                 geneSplit = baseName.replace(".pdb", "").split("_")
                 fileIsomer = geneSplit
             } else {
@@ -154,9 +158,9 @@ class FeatureMap extends PotentialScript {
         }
 
         List<String[]> featureList = new ArrayList<>()
-        String geneName = filenames[1].substring(0, filenames[1].length()-4)
+        String geneName = filenames[1].substring(0, filenames[1].length() - 4)
         //Store all features for each residue in an array list called Features
-        for (Residue residue: residues) {
+        for (Residue residue : residues) {
             double residueSurfaceArea =
                     forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residue)
             featureList.add(getProteinFeatures.saveFeatures(residue, residueSurfaceArea, includeAngles, includeStructure, includePPI))
@@ -166,31 +170,33 @@ class FeatureMap extends PotentialScript {
 
         // Parse the ddGun output file for extracting free energy values for the map
         List<String> ddgunLines = new ArrayList<>()
-        try {
-            File freeEnergyFile = new File(filenames[2])
-            txtReader = new BufferedReader(new FileReader(freeEnergyFile));
-            String line = txtReader.readLine();
-            while (line != null) {
-                if (line.contains('.pdb')) {
-                    ddgunLines.add(line)
-                }
-                // read next line
-                line = txtReader.readLine();
-            }
-            txtReader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Get ddGun features
-        List<String> npChanges = getProteinFeatures.ddgunToNPChange(ddgunLines)
-        List<Double[]> ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
-
-        // Get Polarity and Acidity Features if flags are set
+        List<String> npChanges = new ArrayList<>()
+        List<Double[]> ddGun = new ArrayList<>()
         List<String[]> polarityAndAcidityChange = new ArrayList<>()
-        if(includePolarity || includeAcidity){
-            polarityAndAcidityChange = getProteinFeatures.getPolarityAndAcidityChange(npChanges,
-                    includePolarity, includeAcidity)
+        if (ddgFile != null) {
+            try {
+                File freeEnergyFile = new File(ddgFile)
+                txtReader = new BufferedReader(new FileReader(freeEnergyFile));
+                String line = txtReader.readLine();
+                while (line != null) {
+                    if (line.contains('.pdb')) {
+                        ddgunLines.add(line)
+                    }
+                    // read next line
+                    line = txtReader.readLine();
+                }
+                txtReader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // Get ddGun features
+            ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
+            npChanges = getProteinFeatures.ddgunToNPChange(ddgunLines)
+            // Get Polarity and Acidity Features if flags are set
+            if (includePolarity || includeAcidity) {
+                polarityAndAcidityChange = getProteinFeatures.getPolarityAndAcidityChange(npChanges,
+                        includePolarity, includeAcidity)
+            }
         }
 
         BufferedReader br = null;
@@ -199,7 +205,7 @@ class FeatureMap extends PotentialScript {
         // Write a new csv file with all the original data and the features determined through this script
         try {
             File inputCSVFile = new File(filenames[1])
-            String inputCSVPath = inputCSVFile.getAbsolutePath().replace( "/" +filenames[1], '')
+            String inputCSVPath = inputCSVFile.getAbsolutePath().replace("/" + filenames[1], '')
             String newCSVFileName = "update_" + filenames[1]
             File updatedFile = new File(inputCSVPath, newCSVFileName)
             br = new BufferedReader(new InputStreamReader(new FileInputStream(inputCSVFile)))
@@ -217,40 +223,39 @@ class FeatureMap extends PotentialScript {
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
                 if (i == 0 || i == 1) {
-                    if(!rerun){
+                    if (!rerun) {
                         if (updatedFile.length() == 0 && i == 1) {
-                            newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
-                                    'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
-                            if(includeAcidity){
+                            newCSVLine.append(line + delimiter + 'Surface Area' + delimiter + 'Normalized SA' + delimiter +
+                                    'Confidence Score' + delimiter + 'ddG' + delimiter + '|ddG|')
+                            if (includeAcidity) {
                                 newCSVLine.append(delimiter + 'Acidity Change')
                             }
-                            if(includePolarity){
+                            if (includePolarity) {
                                 newCSVLine.append(delimiter + 'Polarity Change')
                             }
-                            if(includeAngles){
+                            if (includeAngles) {
                                 newCSVLine.append(delimiter + 'Phi' + delimiter + 'Psi' + delimiter + 'Omega')
                             }
-                            if(includeStructure){
+                            if (includeStructure) {
                                 newCSVLine.append(delimiter + 'Secondary Structure Annotation')
                             }
-                            if(includePPI){
+                            if (includePPI) {
                                 newCSVLine.append(delimiter + 'Interface Residue')
                             }
                             bw.write(newCSVLine.toString())
                         } else if (i == 0 && updatedFile.length() == 0) {
                             bw.write(line + '\n')
                         }
-                }
-
+                    }
                 } else {
                     String[] splits = line.split(delimiter)
-                    if(i == 1 || i==2){
-                        for(int j=0; j < splits.length; j++){
-                            if(splits[j].contains("p.")){
+                    if (i == 1 || i == 2) {
+                        for (int j = 0; j < splits.length; j++) {
+                            if (splits[j].contains("p.")) {
                                 npIndex = j
                             }
-                            if(multipleIsomers){
-                                if(splits[j].contains("NP") || splits[j].contains("XP") || splits[j].contains("ENS")){
+                            if (multipleIsomers) {
+                                if (splits[j].contains("NP") || splits[j].contains("XP") || splits[j].contains("ENS")) {
                                     isoformIndex = j
                                 }
                             }
@@ -265,28 +270,30 @@ class FeatureMap extends PotentialScript {
                     String[] feat = new String[featureList.get(0).length]
                     if (splits[npIndex].contains('del')) {
                         ddG = ["null", "null"]
-                        Arrays.fill(feat,null)
+                        Arrays.fill(feat, null)
                     } else {
                         String proteinChange = npChange.substring(npChange.indexOf('p'))
                         String splitstring = "p\\."
                         String sub = proteinChange.split(splitstring)[1]
-                        position = sub.replace(sub.substring(0,3),'').replace(sub.substring(sub.length()-4, sub.length()), '').toInteger()
+                        position = sub.replace(sub.substring(0, 3), '').replace(sub.substring(sub.length() - 4, sub.length()), '').toInteger()
                         if (position <= residues.size()) {
-                            if (npChanges.indexOf(proteinChange) != -1) {
-                                ddG = ddGun.get(npChanges.indexOf(proteinChange))
-                                if(includeAcidity || includePolarity){
-                                    pA = polarityAndAcidityChange.get(npChanges.indexOf(proteinChange))
+                            if(ddgFile != null){
+                                if (npChanges.indexOf(proteinChange) != -1) {
+                                    ddG = ddGun.get(npChanges.indexOf(proteinChange))
+                                    if (includeAcidity || includePolarity) {
+                                        pA = polarityAndAcidityChange.get(npChanges.indexOf(proteinChange))
+                                    }
+                                } else {
+                                    ddG = ["null", "null"]
+                                    pA = ["null", "null"]
                                 }
-                            } else {
-                                ddG = ["null", "null"]
-                                pA = ["null", "null"]
                             }
                             feat = featureList.get(position - 1)
                         }
                     }
                     String isomer
-                    if(multipleIsomers){
-                        if(splits[isoformIndex].contains(":p.")){
+                    if (multipleIsomers) {
+                        if (splits[isoformIndex].contains(":p.")) {
                             isomer = splits[isoformIndex].split(":")[0]
                         } else {
                             isomer = splits[isoformIndex]
@@ -295,38 +302,42 @@ class FeatureMap extends PotentialScript {
                     }
 
                     if (length == splits.length) {
-                        if(multipleIsomers){
-                            if(isomer != fileIsomer){
+                        if (multipleIsomers) {
+                            if (isomer != fileIsomer) {
                                 continue
                             }
                         }
-                        if(rerun){
+                        if (rerun) {
                             newCSVLine.append(line)
                         } else {
-                            newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2] + delimiter
-                                    + String.valueOf(ddG[0]) + delimiter + String.valueOf(ddG[1]))
+                            if (ddgFile != null) {
+                                newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2] + delimiter
+                                        + String.valueOf(ddG[0]) + delimiter + String.valueOf(ddG[1]))
+                            } else {
+                                newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2])
+                            }
                         }
 
-                        if(includeAcidity && !rerun){
+                        if (includeAcidity && !rerun) {
                             newCSVLine.append(delimiter + pA[0])
                         }
-                        if(includePolarity && !rerun){
+                        if (includePolarity && !rerun) {
                             newCSVLine.append(delimiter + pA[1])
                         }
-                        if(includeAngles && !rerun){
+                        if (includeAngles && !rerun) {
                             newCSVLine.append(delimiter + feat[3] + delimiter + feat[4] + delimiter + feat[5])
-                            if(includeStructure){
+                            if (includeStructure) {
                                 newCSVLine.append(delimiter + feat[6])
                             }
-                            if(includePPI){
+                            if (includePPI) {
                                 newCSVLine.append(delimiter + feat[7])
                             }
-                        } else if(includeStructure && !rerun){
+                        } else if (includeStructure && !rerun) {
                             newCSVLine.append(delimiter + feat[3])
-                            if(includePPI){
+                            if (includePPI) {
                                 newCSVLine.append(delimiter + feat[4])
                             }
-                        } else if(includePPI){
+                        } else if (includePPI) {
                             newCSVLine.append(delimiter + feat[3])
                         }
                         bw.newLine()

@@ -514,7 +514,7 @@ public class GetProteinFeatures {
     for(Atom atom: molecularAssembly.getAtomList()){
       if(atom.getChainID() != chainID){
         for(Atom resAtom: residue.getAtomList()){
-          if(resAtom.getXYZ().dist(atom.getXYZ()) <= 5.0){
+          if(resAtom.getXYZ().dist(atom.getXYZ()) <= 10.0){
             int index = chainNames.indexOf(atom.getChainID().toString());
             return genes[index];
           }
