@@ -500,11 +500,11 @@ public final class TorsionType extends BaseType implements Comparator<String> {
    * @return the PeriodicTorsionForce instance.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, TorsionType> torsMap = (Map<String, TorsionType>) forceField.getTypes(ForceField.ForceFieldType.TORSION);
-    if (!torsMap.values().isEmpty()) {
+    Map<String, TorsionType> types = forceField.getTorsionTypes();
+    if (!types.values().isEmpty()) {
       Element node = doc.createElement("PeriodicTorsionForce");
       double torsionUnit = forceField.getDouble("torsionunit", DEFAULT_TORSION_UNIT);
-      for (TorsionType torsionType : torsMap.values()) {
+      for (TorsionType torsionType : types.values()) {
         node.appendChild(torsionType.toXML(doc, torsionUnit));
       }
       return node;

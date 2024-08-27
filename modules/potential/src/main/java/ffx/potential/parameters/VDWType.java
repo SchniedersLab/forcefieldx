@@ -323,8 +323,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
    * @return The AmoebaVdwForce force node.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, VDWType> vdwTypes = (Map<String, VDWType>) forceField.getTypes(ForceField.ForceFieldType.VDW);
-    Map<String, VDWPairType> vdwPairTypes = (Map<String, VDWPairType>) forceField.getTypes(ForceField.ForceFieldType.VDWPR);
+    Map<String, VDWType> vdwTypes = forceField.getVDWTypes();
+    Map<String, VDWPairType> vdwPairTypes = forceField.getVDWPairTypes();
     if (!vdwTypes.values().isEmpty() || !vdwPairTypes.values().isEmpty()) {
       Element node = doc.createElement("AmoebaVdwForce");
       node.setAttribute("type", forceField.getString("vdwtype", DEFAULT_VDW_TYPE.toString()));

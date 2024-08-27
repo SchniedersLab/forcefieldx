@@ -41,11 +41,11 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LineSearch;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.openmm.OpenMMContext;
-import ffx.potential.openmm.OpenMMState;
 import ffx.potential.bonded.Atom;
+import ffx.potential.openmm.OpenMMContext;
+import ffx.potential.openmm.OpenMMEnergy;
+import ffx.potential.openmm.OpenMMState;
 
 import java.util.logging.Logger;
 
@@ -58,7 +58,16 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * OpenMM accelerated L-BFGS minimization.
+ * Given a Context, this class searches for a new set of particle positions that represent
+ * a local minimum of the potential energy.  The search is performed with the L-BFGS algorithm.
+ * Distance constraints are enforced during minimization by adding a harmonic restraining
+ * force to the potential function.  The strength of the restraining force is steadily increased
+ * until the minimum energy configuration satisfies all constraints to within the tolerance
+ * specified by the Context's Integrator.
+ * <p>
+ * Energy minimization is done using the force groups defined by the Integrator.
+ * If you have called setIntegrationForceGroups() on it to restrict the set of forces
+ * used for integration, only the energy of the included forces will be minimized.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -67,17 +76,33 @@ public class MinimizeOpenMM extends Minimize {
 
   private static final Logger logger = Logger.getLogger(MinimizeOpenMM.class.getName());
 
+  /**
+   * MinimizeOpenMM constructor.
+   *
+   * @param molecularAssembly the MolecularAssembly to optimize.
+   */
   public MinimizeOpenMM(MolecularAssembly molecularAssembly) {
     super(molecularAssembly, molecularAssembly.getPotentialEnergy(), null);
   }
 
-  public MinimizeOpenMM(MolecularAssembly molecularAssembly,
-                        OpenMMEnergy openMMEnergy) {
+  /**
+   * MinimizeOpenMM constructor.
+   *
+   * @param molecularAssembly the MolecularAssembly to optimize.
+   * @param openMMEnergy      the OpenMM potential energy function.
+   */
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly, OpenMMEnergy openMMEnergy) {
     super(molecularAssembly, openMMEnergy, null);
   }
 
-  public MinimizeOpenMM(MolecularAssembly molecularAssembly,
-                        OpenMMEnergy openMMEnergy, AlgorithmListener algorithmListener) {
+  /**
+   * MinimizeOpenMM constructor.
+   *
+   * @param molecularAssembly the MolecularAssembly to optimize.
+   * @param openMMEnergy      the OpenMM potential energy function.
+   * @param algorithmListener report progress using the listener.
+   */
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly, OpenMMEnergy openMMEnergy, AlgorithmListener algorithmListener) {
     super(molecularAssembly, openMMEnergy, algorithmListener);
   }
 

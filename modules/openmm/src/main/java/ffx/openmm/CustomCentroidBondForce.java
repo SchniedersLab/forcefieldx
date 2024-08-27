@@ -225,6 +225,7 @@ public class CustomCentroidBondForce extends Force {
    *
    * @deprecated This method exists only for backward compatibility.  Use getNumTabulatedFunctions() instead.
    */
+  @Deprecated
   public int getNumFunctions() {
     return OpenMM_CustomCentroidBondForce_getNumFunctions(pointer);
   }

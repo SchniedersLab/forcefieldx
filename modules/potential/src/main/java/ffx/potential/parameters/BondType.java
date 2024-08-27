@@ -374,7 +374,7 @@ public final class BondType extends BaseType implements Comparator<String> {
   }
 
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, BondType> btMap = (Map<String, BondType>) forceField.getTypes(ForceField.ForceFieldType.BOND);
+    Map<String, BondType> btMap = forceField.getBondTypes();
     if (!btMap.values().isEmpty()) {
       Element node = doc.createElement("AmoebaBondForce");
       node.setAttribute("bond-cubic", format("%f", forceField.getDouble("bond-cubic", DEFAULT_BOND_CUBIC) * NM_TO_ANG));

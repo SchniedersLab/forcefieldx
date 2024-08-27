@@ -357,15 +357,15 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
    * @param forceField the ForceField to grab constants from.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, OutOfPlaneBendType> oopbMap = (Map<String, OutOfPlaneBendType>) forceField.getTypes(ForceField.ForceFieldType.OPBEND);
-    if (!oopbMap.values().isEmpty()) {
+    Map<String, OutOfPlaneBendType> types = forceField.getOutOfPlaneBendTypes();
+    if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaOutOfPlaneBendForce");
       node.setAttribute("type", forceField.getString("opbendtype", "ALLINGER"));
       node.setAttribute("opbend-cubic", valueOf(forceField.getDouble("opbend-cubic", DEFAULT_OPBEND_CUBIC)));
       node.setAttribute("opbend-quartic", valueOf(forceField.getDouble("opbend-quartic", DEFAULT_OPBEND_QUARTIC)));
       node.setAttribute("opbend-pentic", valueOf(forceField.getDouble("opbend-pentic", DEFAULT_OPBEND_PENTIC)));
       node.setAttribute("opbend-sextic", valueOf(forceField.getDouble("opbend-sextic", DEFAULT_OPBEND_SEXTIC)));
-      for (OutOfPlaneBendType outOfPlaneBendType : oopbMap.values()) {
+      for (OutOfPlaneBendType outOfPlaneBendType : types.values()) {
         node.appendChild(outOfPlaneBendType.toXML(doc));
       }
       return node;

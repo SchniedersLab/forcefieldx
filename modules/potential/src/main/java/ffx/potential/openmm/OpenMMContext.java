@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
 import edu.rit.pj.Comm;
 import edu.uiowa.jopenmm.OpenMMLibrary;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -45,10 +44,10 @@ import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
 import ffx.openmm.Context;
 import ffx.openmm.Integrator;
+import ffx.openmm.MinimizationReporter;
 import ffx.openmm.Platform;
 import ffx.openmm.State;
 import ffx.openmm.StringArray;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 
@@ -57,6 +56,8 @@ import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LocalEnergyMinimizer_minimize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
@@ -89,17 +90,13 @@ public class OpenMMContext extends Context {
   private static final Logger logger = Logger.getLogger(OpenMMContext.class.getName());
 
   /**
-   * Requested Platform (i.e. Java or an OpenMM platform).
+   * OpenMM Platform.
    */
-  private final ffx.potential.Platform platform;
+  private final Platform openMMPlatform;
   /**
-   * OpenMM Platform pointer.
+   * OpenMM System.
    */
-  private Platform openMMPlatform = null;
-  /**
-   * ForceFieldEnergyOpenMM instance.
-   */
-  private final OpenMMEnergy openMMEnergy;
+  private final OpenMMSystem openMMSystem;
   /**
    * Instance of the OpenMM Integrator class.
    */
@@ -128,17 +125,21 @@ public class OpenMMContext extends Context {
   /**
    * Create an OpenMM Context.
    *
-   * @param requestedPlatform Platform requested.
-   * @param atoms             Array of atoms.
-   * @param enforcePBC        Enforce periodic boundary conditions.
-   * @param openMMEnergy      ForceFieldEnergyOpenMM instance.
+   * @param platform     OpenMM Platform.
+   * @param openMMSystem OpenMM System.
+   * @param atoms        Array of atoms.
    */
-  public OpenMMContext(ffx.potential.Platform requestedPlatform, Atom[] atoms, int enforcePBC, OpenMMEnergy openMMEnergy) {
-    platform = requestedPlatform;
+  public OpenMMContext(Platform platform, OpenMMSystem openMMSystem, Atom[] atoms) {
+    this.openMMPlatform = platform;
+    this.openMMSystem = openMMSystem;
+
+    ForceField forceField = openMMSystem.getForceField();
+    boolean aperiodic = openMMSystem.getCrystal().aperiodic();
+    boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
+    enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
+
     this.atoms = atoms;
-    this.enforcePBC = enforcePBC;
-    this.openMMEnergy = openMMEnergy;
-    loadPlatform(requestedPlatform);
+    update(integratorName, timeStep, temperature, true);
   }
 
   /**
@@ -148,10 +149,8 @@ public class OpenMMContext extends Context {
    * @param timeStep       Time step (psec).
    * @param temperature    Temperature (K).
    * @param forceCreation  Force creation of a new context, even if the current one matches.
-   * @param openMMEnergy   ForceFieldEnergyOpenMM instance.
    */
-  public void update(String integratorName, double timeStep, double temperature,
-                     boolean forceCreation, OpenMMEnergy openMMEnergy) {
+  public void update(String integratorName, double timeStep, double temperature, boolean forceCreation) {
     // Check if the current context is consistent with the requested context.
     if (hasContextPointer() && !forceCreation) {
       if (this.temperature == temperature && this.timeStep == timeStep
@@ -168,7 +167,6 @@ public class OpenMMContext extends Context {
     logger.info("\n Updating OpenMM Context");
 
     // Update the integrator.
-    OpenMMSystem openMMSystem = openMMEnergy.getSystem();
     if (openMMIntegrator != null) {
       openMMIntegrator.destroy();
     }
@@ -190,7 +188,7 @@ public class OpenMMContext extends Context {
     // }
 
     // Get initial positions and velocities for active atoms.
-    int nVar = openMMEnergy.getNumberOfVariables();
+    int nVar = openMMSystem.getNumberOfVariables();
     double[] x = new double[nVar];
     double[] v = new double[nVar];
     double[] vel3 = new double[3];
@@ -211,7 +209,7 @@ public class OpenMMContext extends Context {
     }
 
     // Load the current periodic box vectors.
-    Crystal crystal = openMMEnergy.getCrystal();
+    Crystal crystal = openMMSystem.getCrystal();
     setPeriodicBoxVectors(crystal);
 
     // Load current atomic positions.
@@ -236,7 +234,8 @@ public class OpenMMContext extends Context {
    */
   public void update() {
     if (!hasContextPointer()) {
-      openMMEnergy.updateContext(integratorName, timeStep, temperature, true);
+      logger.info(" Delayed creation of OpenMM Context.");
+      update(integratorName, timeStep, temperature, true);
     }
   }
 
@@ -248,11 +247,7 @@ public class OpenMMContext extends Context {
    */
   public OpenMMState getOpenMMState(int mask) {
     State state = getState(mask, enforcePBC);
-    return new OpenMMState(state.getPointer(), atoms, openMMEnergy.getNumberOfVariables());
-  }
-
-  public ffx.potential.Platform getPlatform() {
-    return platform;
+    return new OpenMMState(state.getPointer(), atoms, openMMSystem.getNumberOfVariables());
   }
 
   /**
@@ -271,8 +266,11 @@ public class OpenMMContext extends Context {
    * @param maxIterations Maximum number of iterations.
    */
   public void optimize(double eps, int maxIterations) {
-    PointerByReference nullReporter = new PointerByReference();
-    OpenMM_LocalEnergyMinimizer_minimize(getPointer(), eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations, nullReporter);
+    // The "report" method of MinimizationReporter cannot be overridden, so the reporter does nothing.
+    MinimizationReporter reporter = new MinimizationReporter();
+    OpenMM_LocalEnergyMinimizer_minimize(getPointer(), eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ),
+        maxIterations, reporter.getPointer());
+    reporter.destroy();
   }
 
   /**
@@ -358,8 +356,12 @@ public class OpenMMContext extends Context {
 
   /**
    * Load an OpenMM Platform
+   *
+   * @param requestedPlatform the requested OpenMM platform.
+   * @param forceField        the ForceField to query for platform flags.
+   * @return the loaded Platform.
    */
-  private void loadPlatform(ffx.potential.Platform requestedPlatform) {
+  public static Platform loadPlatform(ffx.potential.Platform requestedPlatform, ForceField forceField) {
 
     OpenMMUtils.init();
 
@@ -428,9 +430,7 @@ public class OpenMMContext extends Context {
     }
 
     String defaultPrecision = "mixed";
-    MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
-    ForceField forceField = molecularAssembly.getForceField();
-    String precision = forceField .getString("PRECISION", defaultPrecision).toLowerCase();
+    String precision = forceField.getString("PRECISION", defaultPrecision).toLowerCase();
     precision = precision.replace("-precision", "");
     switch (precision) {
       case "double", "mixed", "single" -> logger.info(format(" Precision level: %s", precision));
@@ -441,13 +441,14 @@ public class OpenMMContext extends Context {
     }
 
 
+    Platform openMMPlatform;
     if (cuda && (requestedPlatform == OMM_CUDA || requestedPlatform == OMM)) {
       // CUDA
-      int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
+      int defaultDevice = getDefaultDevice(forceField.getProperties());
       openMMPlatform = new Platform("CUDA");
       // CUDA_DEVICE is deprecated; use DeviceIndex.
-      int deviceID = forceField .getInteger("CUDA_DEVICE", defaultDevice);
-      deviceID = forceField .getInteger("DeviceIndex", deviceID);
+      int deviceID = forceField.getInteger("CUDA_DEVICE", defaultDevice);
+      deviceID = forceField.getInteger("DeviceIndex", deviceID);
       String deviceIDString = Integer.toString(deviceID);
       openMMPlatform.setPropertyDefaultValue("DeviceIndex", deviceIDString);
       openMMPlatform.setPropertyDefaultValue("Precision", precision);
@@ -455,7 +456,7 @@ public class OpenMMContext extends Context {
       logger.info(format(" Platform: %s (Device Index %d)", name, deviceID));
     } else if (opencl && (requestedPlatform == OMM_OPENCL || requestedPlatform == OMM)) {
       // OpenCL
-      int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
+      int defaultDevice = getDefaultDevice(forceField.getProperties());
       openMMPlatform = new Platform("OpenCL");
       int deviceID = forceField.getInteger("DeviceIndex", defaultDevice);
       String deviceIDString = Integer.toString(deviceID);
@@ -483,6 +484,8 @@ public class OpenMMContext extends Context {
     } catch (IllegalStateException illegalStateException) {
       logger.fine(" Could not find the world communicator!");
     }
+
+    return openMMPlatform;
   }
 
   /**

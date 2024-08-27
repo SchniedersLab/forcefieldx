@@ -324,7 +324,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
    * @return the AmoebaUreyBradleyForce element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, UreyBradleyType> types = (Map<String, UreyBradleyType>) forceField.getTypes(ForceField.ForceFieldType.UREYBRAD);
+    Map<String, UreyBradleyType> types = forceField.getUreyBradleyTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaUreyBradleyForce");
       node.setAttribute("cubic", valueOf(forceField.getDouble("urey-cubic", DEFAULT_UREY_CUBIC)));

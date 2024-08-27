@@ -1411,8 +1411,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * @return the element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, MultipoleType> mpMap = (Map<String, MultipoleType>) forceField.getTypes(ForceField.ForceFieldType.MULTIPOLE);
-    Map<String, PolarizeType> polMap = (Map<String, PolarizeType>) forceField.getTypes(ForceField.ForceFieldType.POLARIZE);
+    Map<String, MultipoleType> mpMap = forceField.getMultipoleTypes();
+    Map<String, PolarizeType> polMap = forceField.getPolarizeTypes();
     if (!mpMap.values().isEmpty() || !polMap.values().isEmpty()) {
       Element node = doc.createElement("AmoebaMultipoleForce");
       node.setAttribute("mpole12Scale", String.valueOf(forceField.getDouble("mpole-12-scale", DEFAULT_MPOLE_12_SCALE)));

@@ -309,7 +309,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
    * @return the AmoebaAngleTorsionForce Element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, AngleTorsionType> types = (Map<String, AngleTorsionType>) forceField.getTypes(ForceField.ForceFieldType.ANGTORS);
+    Map<String, AngleTorsionType> types = forceField.getAngleTorsionTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaAngleTorsionForce");
       for (AngleTorsionType angleTorsionType : types.values()) {
