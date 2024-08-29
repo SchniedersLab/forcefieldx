@@ -198,7 +198,7 @@ class MutatePDB extends AlgorithmsScript {
         Polymer polymer = molecularAssembly.getChain(chain.toString())
         Residue residue = polymer.getResidue(resID)
         Rotamer[] rotamers = residue.getRotamers()
-        if (rotamers != null && rotamers.length > 0) {
+        if (rotamers != null && rotamers.length > destRotamer) {
           RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
         } else {
           logger.info(" No rotamer to apply.")
@@ -206,10 +206,8 @@ class MutatePDB extends AlgorithmsScript {
       }
     }
     pdbFilter.writeFile(structureFile, false)
-    String versionFileName = pdbFilter.getVersionFileName()
 
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
-    binding.setVariable('versionFileName', versionFileName)
 
     return this
   }
