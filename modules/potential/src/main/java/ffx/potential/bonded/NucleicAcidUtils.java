@@ -550,7 +550,26 @@ public class NucleicAcidUtils {
   private static void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue,
       Atom C1s, Atom O4s, Atom C2s, ForceField forceField, List<Bond> bondList)
       throws MissingHeavyAtomException, MissingAtomTypeException {
-    double glyco = 0;
+    double glyco = 0.0; // DEFAULT - should it be more like 240?
+
+    // glycosyl torsion: pyrimidines:O4′-C1′-N1-C2 | purines:O4′-C1′-N9-C4
+    Atom o4p = residue.getAtomByName("O4'", true);
+    Atom c1p = residue.getAtomByName("C1'", true);
+    Atom baseN = null;
+    Atom baseC = null;
+    if (nucleicAcid == NucleicAcid3.DAD || nucleicAcid == NucleicAcid3.DGU) {
+      baseN = residue.getAtomByName("N9", true);
+      baseC = residue.getAtomByName("C4", true);
+    } else if (nucleicAcid == NucleicAcid3.DCY || nucleicAcid == NucleicAcid3.DTY) {
+      baseN = residue.getAtomByName("N1", true);
+      baseC = residue.getAtomByName("C2", true);
+    }
+
+    if (o4p != null && c1p != null && baseN != null && baseC != null) {
+      double angle = DoubleMath.dihedralAngle(o4p.getXYZ(null), c1p.getXYZ(null), baseN.getXYZ(null), baseC.getXYZ(null));
+      glyco = toDegrees(angle);
+    }
+
     switch (nucleicAcid) {
       case ADE -> buildADE(residue, C1s, O4s, C2s, glyco, forceField, bondList);
       case M1MA -> buildM1MA(residue, C1s, forceField, bondList);
@@ -1428,4 +1447,20 @@ public class NucleicAcidUtils {
             nextResidue, atomName));
   }
 
+  /**
+   * getNucleicAcidNumber.
+   *
+   * @param residueName a {@link String} object.
+   * @return The index of the nucleic acid in the nucleicAcidList.
+   */
+  public static int getNucleicAcidNumber(String residueName) {
+    int nucleicAcidNumber = -1;
+    for (NucleicAcid3 nucleicAcid : nucleicAcidList) {
+      nucleicAcidNumber++;
+      if (nucleicAcid.toString().equalsIgnoreCase(residueName)) {
+        break;
+      }
+    }
+    return nucleicAcidNumber;
+  }
 }
