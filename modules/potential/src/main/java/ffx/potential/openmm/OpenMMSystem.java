@@ -99,6 +99,9 @@ public class OpenMMSystem extends ffx.openmm.System {
    * The OpenMMContext instance.
    */
   private final OpenMMContext openMMContext;
+  /**
+   * Scale factor used for MELD.
+   */
   private final double meldScaleFactor;
   /**
    * When using MELD, our goal will be to scale down the potential by this factor. A negative value
@@ -330,7 +333,7 @@ public class OpenMMSystem extends ffx.openmm.System {
       openMMEnergy.setLambdaTerm(true);
     }
 
-    vdwEnd = forceField.getDouble("vdw.lambda.end",1.0);
+    vdwEnd = forceField.getDouble("vdw.lambda.end", 1.0);
     if (vdwEnd > 1.0) {
       vdwEnd = 1.0;
     } else if (vdwEnd < 0.0) {
@@ -646,6 +649,24 @@ public class OpenMMSystem extends ffx.openmm.System {
   }
 
   /**
+   * Get the Crystal instance.
+   *
+   * @return the Crystal instance.
+   */
+  public Crystal getCrystal() {
+    return openMMEnergy.getCrystal();
+  }
+
+  /**
+   * Get the number of variables.
+   *
+   * @return the number of variables.
+   */
+  public int getNumberOfVariables() {
+    return openMMEnergy.getNumberOfVariables();
+  }
+
+  /**
    * Destroy the system.
    */
   public void free() {
@@ -702,7 +723,7 @@ public class OpenMMSystem extends ffx.openmm.System {
 
       if (lambda >= vdwEnd) {
         lambdaVDW = 1.0;
-      } else{
+      } else {
         lambdaVDW = lambda / vdwEnd;
       }
 

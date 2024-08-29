@@ -65,8 +65,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static java.lang.Double.isFinite;
@@ -84,6 +82,10 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   private static final Logger logger = Logger.getLogger(OpenMMEnergy.class.getName());
 
   /**
+   * FFX Platform.
+   */
+  private final Platform platform;
+  /**
    * OpenMM Context.
    */
   private OpenMMContext openMMContext;
@@ -95,7 +97,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * The atoms this ForceFieldEnergyOpenMM operates on.
    */
   private final Atom[] atoms;
-
   /**
    * Truncate the normal OpenMM Lambda Path from 0 ... 1 to Lambda_Start ... 1. This is useful for
    * conformational optimization if full removal of vdW interactions is not desired (i.e. lambdaStart
@@ -133,20 +134,18 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     ForceField forceField = molecularAssembly.getForceField();
     atoms = molecularAssembly.getAtomArray();
-    boolean aperiodic = super.getCrystal().aperiodic();
-    boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
-    int enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
     // Load the OpenMM plugins
-    openMMContext = new OpenMMContext(requestedPlatform, atoms, enforcePBC, this);
+    this.platform = requestedPlatform;
+    ffx.openmm.Platform openMMPlatform = OpenMMContext.loadPlatform(platform, forceField);
 
     // Create the OpenMM System.
     openMMSystem = new OpenMMSystem(this);
     openMMSystem.addForces();
 
-    // Update the Context with the created system.
-    openMMContext.update();
-    
+    // Create the Context.
+    openMMContext = new OpenMMContext(openMMPlatform, openMMSystem, atoms);
+
     // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
     lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
     if (lambdaStart > 1.0) {
@@ -251,7 +250,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *                       request.
    */
   public void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation) {
-    openMMContext.update(integratorName, timeStep, temperature, forceCreation, this);
+    openMMContext.update(integratorName, timeStep, temperature, forceCreation);
   }
 
   /**
@@ -345,20 +344,24 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       return 0.0;
     }
 
-    // ZE BUG: updateParameters only gets called for energy(), not energyAndGradient().
-
     // Un-scale the coordinates.
     unscaleCoordinates(x);
 
     // Make sure a context has been created.
     openMMContext.update();
 
+    // long time = -System.nanoTime();
     setCoordinates(x);
+    // time += System.nanoTime();
+    // logger.info(format(" Load coordinates time %10.6f (sec)", time * 1.0e-9));
 
+    // time = -System.nanoTime();
     OpenMMState openMMState = openMMContext.getOpenMMState(OpenMM_State_Energy | OpenMM_State_Forces);
     double e = openMMState.potentialEnergy;
     g = openMMState.getGradient(g);
     openMMState.destroy();
+    // time += System.nanoTime();
+    // logger.info(format(" Calculate energy time %10.6f (sec)", time * 1.0e-9));
 
     if (!isFinite(e)) {
       String message = format(" Energy from OpenMM was a non-finite %8g", e);
@@ -506,7 +509,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   @Override
   public Platform getPlatform() {
-    return openMMContext.getPlatform();
+    return platform;
   }
 
   /**
@@ -642,9 +645,8 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   @Override
   public void setLambda(double lambda) {
-
     if (!lambdaTerm) {
-      logger.fine(" Attempting to set lambda for a ForceFieldEnergyOpenMM with lambdaterm false.");
+      logger.fine(" Attempting to set lambda for an OpenMMEnergy with lambdaterm false.");
       return;
     }
 

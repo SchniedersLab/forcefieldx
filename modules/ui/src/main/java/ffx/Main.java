@@ -72,6 +72,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -182,7 +183,7 @@ public final class Main extends JFrame {
 
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder sb = new StringBuilder();
-      sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
+      sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime(TimeUnit.MILLISECONDS)));
       Runtime runtime = Runtime.getRuntime();
       runtime.gc();
       long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();

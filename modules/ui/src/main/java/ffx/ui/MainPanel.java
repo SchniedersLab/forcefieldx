@@ -285,13 +285,13 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         + " \n"
         + """                
                 Please cite the following reference when using Force Field X:
-                
-                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove, 
-                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,  
-                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,  
-                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders, 
+        
+                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove,
+                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,
+                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,
+                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders,
                 2024, Journal of Chemical Physics, 161 (1).
-                                
+        
                 Copyright (c)  Michael J. Schnieders  2001-2024
                 All Rights Reserved
         

@@ -507,7 +507,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
    * @return the AmoebaAngleForce Element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, AngleType> angMap = (Map<String, AngleType>) forceField.getTypes(ForceField.ForceFieldType.ANGLE);
+    Map<String, AngleType> angMap = forceField.getAngleTypes();
     if (!angMap.values().isEmpty()) {
       Element node = doc.createElement("AmoebaAngleForce");
       node.setAttribute("angle-cubic", valueOf(forceField.getDouble("angle-cubic", DEFAULT_ANGLE_CUBIC)));

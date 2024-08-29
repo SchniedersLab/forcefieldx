@@ -264,7 +264,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
    */
   public static Element getXMLAtomTypes(Document doc, ForceField forceField) {
     Element node = doc.createElement("AtomTypes");
-    Map<String, AtomType> types = (Map<String, AtomType>) forceField.getTypes(ForceField.ForceFieldType.ATOM);
+    Map<String, AtomType> types = forceField.getAtomTypes();
     for (AtomType atomType : types.values()) {
       node.appendChild(atomType.toXML(doc));
     }

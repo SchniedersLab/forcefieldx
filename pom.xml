@@ -8,6 +8,10 @@
       <!-- Explicitly define plugins for FFX module pom.xml files. -->
       <plugins>
         <plugin>
+          <artifactId>asciidoctor-maven-plugin</artifactId>
+          <version>${asciidoc.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>${antrun.version}</version>
         </plugin>
@@ -395,7 +399,9 @@
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
           <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
-          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules jdk.incubator.vector</argLine>
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules
+            jdk.incubator.vector
+          </argLine>
           <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
@@ -1031,12 +1037,10 @@
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <!-- Versions of commons-configuration beyond 2.10.1 are not compatible with the IJava ipynb -->
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
     <commons-io.version>2.16.1</commons-io.version>
     <commons-lang3.version>3.16.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
     <commons-text.version>1.12.0</commons-text.version>
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
@@ -1045,7 +1049,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.2</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
-    <exec.version>3.4.0</exec.version>
+    <exec.version>3.4.1</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1055,7 +1059,7 @@
     <gmavenplus.version>3.0.2</gmavenplus.version>
     <graal.version>24.0.2</graal.version>
     <groovy-all.version>5.0.0-alpha-9</groovy-all.version>
-    <guava.version>33.2.1-jre</guava.version>
+    <guava.version>33.3.0-jre</guava.version>
     <install.version>3.1.2</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
@@ -1094,9 +1098,9 @@
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.16</slf4j-nop.version>
     <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
-    <site.version>3.12.1</site.version>
+    <site.version>3.20.0</site.version>
     <!-- site.version>4.0.0-M11</site.version -->
-    <asciidoc.version>2.2.4</asciidoc.version>
+    <asciidoc.version>3.0.0</asciidoc.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->

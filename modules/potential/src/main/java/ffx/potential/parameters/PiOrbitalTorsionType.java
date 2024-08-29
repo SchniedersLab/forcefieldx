@@ -285,7 +285,7 @@ public final class PiOrbitalTorsionType extends BaseType implements Comparator<S
    * @return the AmoebaPiTorsionForce Element.
    */
   public static Element getXMLElement(Document doc, ForceField forceField) {
-    Map<String, PiOrbitalTorsionType> types = (Map<String, PiOrbitalTorsionType>) forceField.getTypes(ForceField.ForceFieldType.PITORS);
+    Map<String, PiOrbitalTorsionType> types = forceField.getPiOrbitalTorsionTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaPiTorsionForce");
       node.setAttribute("piTorsionUnit", valueOf(forceField.getDouble("pitorsunit", DEFAULT_PITORS_UNIT)));

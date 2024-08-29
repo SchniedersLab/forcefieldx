@@ -313,7 +313,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
    * @return the AmoebaStretchTorsionForce Element.
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
-    Map<String, StretchTorsionType> types = (Map<String, StretchTorsionType>) forceField.getTypes(ForceField.ForceFieldType.STRTORS);
+    Map<String, StretchTorsionType> types = forceField.getStretchTorsionTypes();
     if (!types.values().isEmpty()) {
       Element node = doc.createElement("AmoebaStretchTorsionForce");
       for (StretchTorsionType stretchTorsionType : types.values()) {
