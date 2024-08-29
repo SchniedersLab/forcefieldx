@@ -108,9 +108,7 @@ public final class PDBFilter extends SystemFilter {
 
     String[] constantPhNames = {"C", "CA", "N", "O", "OXT", "OT2", "H", "HA", "H1", "H2", "H3"};
     constantPhBackboneNames = Set.of(constantPhNames);
-
-//    String[] naNames = {"O5", "C5", "H51", "H52", "C4", "H4", "O4", "C1", "H1", "C3", "H3", "C2", "H21", "O2", "H22",
-//            "O3", "P", "OP", "HO5T", "HO3T"};
+    
     String[] naNames = {"P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'"};
     naBackboneNames = Set.of(naNames);
   }
