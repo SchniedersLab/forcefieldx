@@ -98,7 +98,7 @@ public class OpenMMSystem extends ffx.openmm.System {
   /**
    * The OpenMMContext instance.
    */
-  private final OpenMMContext openMMContext;
+  private OpenMMContext openMMContext;
   /**
    * Scale factor used for MELD.
    */
@@ -370,6 +370,10 @@ public class OpenMMSystem extends ffx.openmm.System {
       // Only need single-sided dU/dL
       openMMEnergy.setTwoSidedFiniteDifference(false);
     }
+  }
+
+  public void setOpenMMContext(OpenMMContext openMMContext) {
+    this.openMMContext = openMMContext;
   }
 
   /**
@@ -1070,5 +1074,4 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
     return false;
   }
-
 }
