@@ -49,12 +49,14 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Annihilate;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
@@ -177,7 +179,13 @@ public class AmoebaVdwForce extends VdwForce {
     }
 
     if (openMMEnergy.getSystem().getVdwLambdaTerm()) {
-      setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+      CompositeConfiguration compositeConfiguration = forceField.getProperties();
+      boolean annihilate = compositeConfiguration.getBoolean("intramolecular-softcore", false);
+      if(annihilate) {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Annihilate);
+      } else {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+      }
       setSoftcoreAlpha(vdW.getAlpha());
       setSoftcorePower((int) vdW.getBeta());
     }

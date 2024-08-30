@@ -923,6 +923,7 @@ public class OpenMMSystem extends ffx.openmm.System {
     if (amoebaGKCavitationForce != null) {
       amoebaGKCavitationForce.updateForce(atoms, openMMEnergy);
     }
+    printLambdaValues();
   }
 
   /**
