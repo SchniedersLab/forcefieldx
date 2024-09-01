@@ -8,6 +8,7 @@
       <!-- Explicitly define plugins for FFX module pom.xml files. -->
       <plugins>
         <plugin>
+          <groupId>org.asciidoctor</groupId>
           <artifactId>asciidoctor-maven-plugin</artifactId>
           <version>${asciidoc.version}</version>
         </plugin>
@@ -1030,7 +1031,7 @@
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.4.0</checkstyle.version>
+    <checkstyle.version>3.5.0</checkstyle.version>
     <ciftools-java.version>6.0.0</ciftools-java.version>
     <clean.version>3.4.0</clean.version>
     <clover.version>4.4.1</clover.version>
@@ -1039,15 +1040,15 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
     <commons-io.version>2.16.1</commons-io.version>
-    <commons-lang3.version>3.16.0</commons-lang3.version>
+    <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <commons-text.version>1.12.0</commons-text.version>
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.13.0</compiler.version>
-    <dependency.version>3.7.1</dependency.version>
+    <dependency.version>3.8.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.1.2</deploy.version>
+    <deploy.version>3.1.3</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
     <exec.version>3.4.1</exec.version>
     <failIfNoTests>false</failIfNoTests>
@@ -1060,21 +1061,21 @@
     <graal.version>24.0.2</graal.version>
     <groovy-all.version>5.0.0-alpha-9</groovy-all.version>
     <guava.version>33.3.0-jre</guava.version>
-    <install.version>3.1.2</install.version>
+    <install.version>3.1.3</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <javaparser.version>3.26.1</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.8.0</javadoc.version>
+    <javadoc.version>3.10.0</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.14.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>8.1.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.4.0</jxr.version>
+    <jxr.version>3.5.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
     <log4j.version>2.23.1</log4j.version>
@@ -1083,10 +1084,10 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.24.0</pmd.version>
+    <pmd.version>3.25.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 21 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.6.2</project-info-reports.version>
+    <project-info-reports.version>3.7.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
@@ -1097,23 +1098,18 @@
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.16</slf4j-nop.version>
-    <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
     <site.version>3.20.0</site.version>
-    <!-- site.version>4.0.0-M11</site.version -->
     <asciidoc.version>3.0.0</asciidoc.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
-    <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.3.1</surefire.version>
+    <surefire.version>3.5.0</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
-    <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
-    <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>1.0.1</tornado.version>
+    <tornado.version>1.0.7</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
     <versions.version>2.17.1</versions.version>
@@ -1168,8 +1164,9 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <failOnError>false</failOnError>
-          <quiet>false</quiet>
-          <debug>true</debug>
+          <quiet>true</quiet>
+          <debug>false</debug>
+          <doclint>none</doclint>
           <additionalOptions>
             <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
           </additionalOptions>
@@ -1353,17 +1350,6 @@
       </snapshots>
       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
     </repository>
-    <!-- repository>
-        <name>JFrog OpenSource Snapshots</name>
-        <id>6.jfrog.repo</id>
-        <url>https://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository -->
   </repositories>
   <scm>
     <connection>scm:git:https://github.com/SchniedersLab/forcefieldx.git</connection>

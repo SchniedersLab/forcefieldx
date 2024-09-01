@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -58,10 +58,10 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.floor;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 /**
  * The Van der Waals class computes Van der Waals interaction in parallel using a {@link
@@ -79,9 +79,13 @@ public class VanDerWaalsTornado extends VanDerWaals {
   private static final byte XX = 0;
   private static final byte YY = 1;
   private static final byte ZZ = 2;
-  /** Lennard-Jones or Buffered 14-7 vdW form. */
+  /**
+   * Lennard-Jones or Buffered 14-7 vdW form.
+   */
   private final VanDerWaalsForm vdwForm;
-  /** Cut-off switch. */
+  /**
+   * Cut-off switch.
+   */
   private final double vdwTaper;
 
   private final double vdwCutoff;
@@ -91,15 +95,25 @@ public class VanDerWaalsTornado extends VanDerWaals {
   private double energy;
   private double[] grad;
   private Crystal crystal;
-  /** An array of all atoms in the system. */
+  /**
+   * An array of all atoms in the system.
+   */
   private Atom[] atoms;
-  /** The Force Field that defines the Van der Waals interactions. */
+  /**
+   * The Force Field that defines the Van der Waals interactions.
+   */
   private ForceField forceField;
-  /** A local convenience variable equal to atoms.length. */
+  /**
+   * A local convenience variable equal to atoms.length.
+   */
   private int nAtoms;
-  /** A local reference to the atom class of each atom in the system. */
+  /**
+   * A local reference to the atom class of each atom in the system.
+   */
   private int[] atomClass;
-  /** A local copy of atomic coordinates, including reductions on the hydrogen atoms. */
+  /**
+   * A local copy of atomic coordinates, including reductions on the hydrogen atoms.
+   */
   private double[] coordinates;
   /**
    * Each hydrogen vdW site is located a fraction of the way from the heavy atom nucleus to the
@@ -111,18 +125,22 @@ public class VanDerWaalsTornado extends VanDerWaals {
    * a look-up that gives the heavy atom index for each hydrogen.
    */
   private int[] reductionIndex;
-  /** 1-2, 1-3, 1-4 interactions are masked. */
+  /**
+   * 1-2, 1-3, 1-4 interactions are masked.
+   */
   private int[] mask;
-  /** Pointer into the mask array for each atom. */
+  /**
+   * Pointer into the mask array for each atom.
+   */
   private int[] maskPointer;
 
   /**
    * The VanDerWaalsTornado class constructor.
    *
-   * @param atoms Atom array to do Van Der Waals calculations on.
-   * @param crystal The periodic boundary conditions information.
+   * @param atoms      Atom array to do Van Der Waals calculations on.
+   * @param crystal    The periodic boundary conditions information.
    * @param forceField the ForceField parameters to apply.
-   * @param vdwCutoff vdW cutoff.
+   * @param vdwCutoff  vdW cutoff.
    * @since 1.0
    */
   public VanDerWaalsTornado(
@@ -146,7 +164,9 @@ public class VanDerWaalsTornado extends VanDerWaals {
     logger.info(toString());
   }
 
-  /** Currently does not use "neighbor-lists" and so is truly N^2. */
+  /**
+   * Currently does not use "neighbor-lists" and so is truly N^2.
+   */
   private static void tornadoEnergy(
       int[] atomClass,
       double[] eps,
@@ -449,7 +469,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
    * The energy routine may be called repeatedly.
    *
    * @param gradient If true, gradients with respect to atomic coordinates are computed.
-   * @param print If true, there is verbose printing.
+   * @param print    If true, there is verbose printing.
    * @return The energy.
    * @since 1.0
    */
@@ -554,7 +574,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
       fill(grad, 0.0);
     }
 
-    TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+    TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     FFXTornado.logDevice(device);
     TaskGraph graph =
         new TaskGraph("vdW").transferToDevice(EVERY_EXECUTION,
@@ -635,7 +655,9 @@ public class VanDerWaalsTornado extends VanDerWaals {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuffer sb = new StringBuffer("\n  Van der Waals\n");
@@ -644,7 +666,9 @@ public class VanDerWaalsTornado extends VanDerWaals {
     return sb.toString();
   }
 
-  /** Allocate coordinate arrays and set up reduction indices and values. */
+  /**
+   * Allocate coordinate arrays and set up reduction indices and values.
+   */
   private void initAtomArrays() {
     if (atomClass == null || nAtoms > atomClass.length) {
       atomClass = new int[nAtoms];
@@ -728,11 +752,11 @@ public class VanDerWaalsTornado extends VanDerWaals {
   /**
    * Log the Van der Waals interaction.
    *
-   * @param i Atom i.
-   * @param k Atom j.
+   * @param i    Atom i.
+   * @param k    Atom j.
    * @param minr The minimum vdW separation distance.
-   * @param r The distance rij.
-   * @param eij The interaction energy.
+   * @param r    The distance rij.
+   * @param eij  The interaction energy.
    * @since 1.0
    */
   private void log(int i, int k, double minr, double r, double eij) {

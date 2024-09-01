@@ -37,14 +37,14 @@
 // ******************************************************************************
 package ffx.numerics.tornado;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
-import java.util.logging.Logger;
-
-/** Utility Routines to use the TornadoVM */
+/**
+ * Utility Routines to use the TornadoVM
+ */
 public class FFXTornado {
 
   private FFXTornado() {
@@ -57,7 +57,7 @@ public class FFXTornado {
    * @return The default TornadoDevice instance.
    */
   public static TornadoDevice getDevice() {
-    return TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+    return TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
   }
 
   /**
@@ -68,8 +68,8 @@ public class FFXTornado {
    * @return The TornadoDevice instance.
    */
   public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-    TornadoDriver tornadoDriver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-    return tornadoDriver.getDevice(deviceIndex);
+    TornadoBackend tornadoBackend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
+    return tornadoBackend.getDevice(deviceIndex);
   }
 
   /**
@@ -80,13 +80,13 @@ public class FFXTornado {
    */
   public static TornadoDevice getDevice(int deviceID) {
     int n = 0;
-    int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-    for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-      TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-      for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
+    int numBackends = TornadoRuntimeProvider.getTornadoRuntime().getNumBackends();
+    for (int backendIndex = 0; backendIndex < numBackends; backendIndex++) {
+      TornadoBackend tornadoBackend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex);
+      for (int deviceIndex = 0; deviceIndex < tornadoBackend.getNumDevices(); deviceIndex++) {
         if (n == deviceID) {
-          TornadoRuntime.setProperty("devices", driverIndex + ":" + deviceIndex);
-          return getDevice(driverIndex, deviceIndex);
+          TornadoRuntimeProvider.setProperty("devices", backendIndex + ":" + deviceIndex);
+          return getDevice(backendIndex, deviceIndex);
         }
         n++;
       }
@@ -101,10 +101,10 @@ public class FFXTornado {
    */
   public static int getNumberOfDevices() {
     int n = 0;
-    int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-    for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-      TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
-      int count = driver.getDeviceCount();
+    int numBackends = TornadoRuntimeProvider.getTornadoRuntime().getNumBackends();
+    for (int backendIndex = 0; backendIndex < numBackends; backendIndex++) {
+      TornadoBackend tornadoBackend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex);
+      int count = tornadoBackend.getNumDevices();
       n += count;
     }
     return n;

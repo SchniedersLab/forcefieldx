@@ -85,6 +85,28 @@
       <groupId>tornado</groupId>
       <artifactId>tornado-api</artifactId>
       <version>${tornado.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>word</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>collections</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>
