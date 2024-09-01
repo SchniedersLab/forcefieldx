@@ -44,9 +44,186 @@ package ffx.crystal;
  * @since 1.0
  */
 public enum LaueSystem {
-  L111, L112, L121, L211, L21U, L21V, L21W, L21X, L21Y, L21Z, L222, L22U, L22V, L22W, L114, L141,
-  L411, L224, L242, L422, L113, L131, L311, L11T, L1T1, LT11, L31A, L31B, L31C, L31D, L223, L232,
-  L322, L32A, L32B, L32C, L32D, L32U, L32V, L32W, L32X, L32Y, L32Z, LM3B, LM3M;
+  /**
+   * Laue System 111.
+   */
+  L111,
+  /**
+   * Laue System 112.
+   */
+  L112,
+  /**
+   * Laue System 121.
+   */
+  L121,
+  /**
+   * Laue System 211.
+   */
+  L211,
+  /**
+   * Laue System 21U.
+   */
+  L21U,
+  /**
+   * Laue System 21V.
+   */
+  L21V,
+  /**
+   * Laue System 21W.
+   */
+  L21W,
+  /**
+   * Laue System 21X.
+   */
+  L21X,
+  /**
+   * Laue System 21Y.
+   */
+  L21Y,
+  /**
+   * Laue System 21Z.
+   */
+  L21Z,
+  /**
+   * Laue System 222.
+   */
+  L222,
+  /**
+   * Laue System 22U.
+   */
+  L22U,
+  /**
+   * Laue System 22V.
+   */
+  L22V,
+  /**
+   * Laue System 22W.
+   */
+  L22W,
+  /**
+   * Laue System 114.
+   */
+  L114,
+  /**
+   * Laue System 141.
+   */
+  L141,
+  /**
+   * Laue System 411.
+   */
+  L411,
+  /**
+   * Laue System 224.
+   */
+  L224,
+  /**
+   * Laue System 242.
+   */
+  L242,
+  /**
+   * Laue System 422.
+   */
+  L422,
+  /**
+   * Laue System 113.
+   */
+  L113,
+  /**
+   * Laue System 131.
+   */
+  L131,
+  /**
+   * Laue System 311.
+   */
+  L311,
+  /**
+   * Laue System 11T.
+   */
+  L11T,
+  /**
+   * Laue System 1T1.
+   */
+  L1T1,
+  /**
+   * Laue System T11.
+   */
+  LT11,
+  /**
+   * Laue System 31A.
+   */
+  L31A,
+  /**
+   * Laue System 31B.
+   */
+  L31B,
+  /**
+   * Laue System 31C.
+   */
+  L31C,
+  /**
+   * Laue System 31D.
+   */
+  L31D,
+  /**
+   * Laue System 223.
+   */
+  L223,
+  /**
+   * Laue System 232.
+   */
+  L232,
+  /**
+   * Laue System 322.
+   */
+  L322,
+  /**
+   * Laue System 32A.
+   */
+  L32A,
+  /**
+   * Laue System 32B.
+   */
+  L32B,
+  /**
+   * Laue System 32C.
+   */
+  L32C,
+  /**
+   * Laue System 32D.
+   */
+  L32D,
+  /**
+   * Laue System 32U.
+   */
+  L32U,
+  /**
+   * Laue System 32V.
+   */
+  L32V,
+  /**
+   * Laue System 32W.
+   */
+  L32W,
+  /**
+   * Laue System 32X.
+   */
+  L32X,
+  /**
+   * Laue System 32Y.
+   */
+  L32Y,
+  /**
+   * Laue System 32Z.
+   */
+  L32Z,
+  /**
+   * Laue System M3B.
+   */
+  LM3B,
+  /**
+   * Laue System M3M.
+   */
+  LM3M;
 
   /**
    * Check the given HKL is valid given the Laue system.
@@ -194,7 +371,6 @@ public enum LaueSystem {
         return (k >= l && l >= h && h >= 0);
       }
       default -> {
-        assert (2 != 2);
         return false;
       }
     }
