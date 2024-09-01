@@ -93,6 +93,7 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
    * @param order       Tensor order.
    * @param beta        The Ewald convergence parameter.
    * @param ewaldSource Location to store the source terms.
+   * @return The source terms.
    */
   protected static double[] initEwaldSource(int order, double beta, double[] ewaldSource) {
     double prefactor = 2.0 * beta / sqrtPI;

@@ -486,6 +486,10 @@ public class Complex3DParallel {
     convRegion.initTiming();
   }
 
+  /**
+   * Get the timing string.
+   * @return The timing string.
+   */
   public String timingString() {
     return convRegion.timingString();
   }
@@ -1176,7 +1180,9 @@ public class Complex3DParallel {
   /**
    * Initialize a 3D data for testing purposes.
    *
-   * @param dim The dimension of the cube.
+   * @param dim          The dimension of the cube.
+   * @param parallelTeam The parallel team.
+   * @return The 3D data.
    * @since 1.0
    */
   public static double[] initRandomData(int dim, ParallelTeam parallelTeam) {

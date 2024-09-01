@@ -44,6 +44,9 @@ import static jdk.incubator.vector.DoubleVector.broadcast;
 import static jdk.incubator.vector.DoubleVector.fromArray;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+/**
+ * The MixedRadixFactor6 class handles factors of 6 in the FFT.
+ */
 public class MixedRadixFactor6 extends MixedRadixFactor {
 
   private static final double sqrt3_2 = sqrt(3.0) / 2.0;
@@ -57,6 +60,11 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
   private final int dj4;
   private final int dj5;
 
+  /**
+   * Construct a MixedRadixFactor6.
+   *
+   * @param passConstants PassConstants.
+   */
   public MixedRadixFactor6(PassConstants passConstants) {
     super(passConstants);
     di2 = 2 * di;
@@ -71,6 +79,8 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
 
   /**
    * Handle factors of 6.
+   *
+   * @param passData PassData.
    */
   @Override
   protected void passScalar(PassData passData) {
@@ -195,6 +205,8 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
 
   /**
    * Handle factors of 6 using SIMD vectors.
+   *
+   * @param passData PassData.
    */
   @Override
   protected void passSIMD(PassData passData) {
@@ -219,6 +231,8 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
 
   /**
    * Handle factors of 6.
+   *
+   * @param passData PassData.
    */
   private void interleaved(PassData passData) {
     final double[] data = passData.in;
@@ -310,6 +324,8 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
 
   /**
    * Handle factors of 6.
+   *
+   * @param passData PassData.
    */
   private void blocked(PassData passData) {
     final double[] data = passData.in;

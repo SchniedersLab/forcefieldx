@@ -46,6 +46,9 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+/**
+ * The MixedRadixFactor5 class handles factors of 5 in the FFT.
+ */
 public class MixedRadixFactor5 extends MixedRadixFactor {
 
   private static final double sqrt5_4 = sqrt(5.0) / 4.0;
@@ -60,6 +63,11 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
   private final int dj4;
   private final double tau = sqrt5_4;
 
+  /**
+   * Construct a MixedRadixFactor5.
+   *
+   * @param passConstants PassConstants.
+   */
   public MixedRadixFactor5(PassConstants passConstants) {
     super(passConstants);
     di2 = 2 * di;
@@ -72,6 +80,8 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
 
   /**
    * Handle factors of 5.
+   *
+   * @param passData PassData.
    */
   @Override
   protected void passScalar(PassData passData) {
@@ -186,6 +196,8 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
 
   /**
    * Handle factors of 5 using SIMD vectors.
+   *
+   * @param passData PassData.
    */
   @Override
   protected void passSIMD(PassData passData) {
@@ -208,6 +220,8 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
 
   /**
    * Handle factors of 5.
+   *
+   * @param passData PassData.
    */
   protected void interleaved(PassData passData) {
     final double[] data = passData.in;
@@ -291,6 +305,8 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
 
   /**
    * Handle factors of 5.
+   *
+   * @param passData PassData.
    */
   protected void blocked(PassData passData) {
     final double[] data = passData.in;

@@ -45,6 +45,9 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 
+/**
+ * The MixedRadixFactor7 class handles factors of 7 in the FFT.
+ */
 public class MixedRadixFactor7 extends MixedRadixFactor {
 
   private static final double oneThird = 1.0 / 3.0;
@@ -73,6 +76,11 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   private final int dj5;
   private final int dj6;
 
+  /**
+   * Construct a MixedRadixFactor7.
+   *
+   * @param passConstants PassConstants.
+   */
   public MixedRadixFactor7(PassConstants passConstants) {
     super(passConstants);
     di2 = 2 * di;
@@ -89,6 +97,8 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
   /**
    * Handle factors of 7.
+   *
+   * @param passData PassData.
    */
   protected void passScalar(PassData passData) {
     final double[] data = passData.in;
@@ -299,6 +309,8 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
   /**
    * Handle factors of 6 using SIMD vectors.
+   *
+   * @param passData PassData.
    */
   @Override
   protected void passSIMD(PassData passData) {
@@ -321,6 +333,8 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
   /**
    * Handle factors of 7.
+   *
+   * @param passData PassData.
    */
   private void interleaved(PassData passData) {
     final double[] data = passData.in;
@@ -465,6 +479,8 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
   /**
    * Handle factors of 7.
+   *
+   * @param passData PassData.
    */
   private void blocked(PassData passData) {
     final double[] data = passData.in;
