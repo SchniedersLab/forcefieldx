@@ -50,7 +50,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.commons.logging.impl.LogFactoryImpl;
 
 import javax.annotation.Nullable;
 import javax.swing.ImageIcon;
@@ -70,7 +70,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
@@ -89,25 +88,45 @@ import static java.lang.String.format;
 public final class Main extends JFrame {
 
   private static final Logger logger = Logger.getLogger(Main.class.getName());
-  /** This is the main application wrapper. */
+  /**
+   * This is the main application wrapper.
+   */
   public static MainPanel mainPanel;
-  /** Constant <code>stopWatch</code> */
+  /**
+   * Constant <code>stopWatch</code>
+   */
   private static StopWatch stopWatch = new StopWatch();
-  /** Handle FFX logging. */
+  /**
+   * Handle FFX logging.
+   */
   private static LogHandler logHandler;
-  /** The configured Scheduler port. */
+  /**
+   * The configured Scheduler port.
+   */
   private static int schedulerPort;
-  /** Parallel Java Configuration instance. */
+  /**
+   * Parallel Java Configuration instance.
+   */
   private static Configuration configuration = null;
-  /** Parallel Java World Communicator. */
+  /**
+   * Parallel Java World Communicator.
+   */
   private static Comm world = null;
-  /** Name of the machine FFX is running on. */
+  /**
+   * Name of the machine FFX is running on.
+   */
   private static String hostName = null;
-  /** Force Field X process ID. */
+  /**
+   * Force Field X process ID.
+   */
   private static int procID = -1;
-  /** Print version and exit */
+  /**
+   * Print version and exit
+   */
   private static boolean printVersionAndExit = false;
-  /** This Runnable is used to init the GUI using SwingUtilities. */
+  /**
+   * This Runnable is used to init the GUI using SwingUtilities.
+   */
   private final Runnable initGUI =
       new Runnable() {
         // Create the MainPanel and MainMenu, then add them to the JFrame.
@@ -162,7 +181,7 @@ public final class Main extends JFrame {
    * Main does some window initializations.
    *
    * @param commandLineFile a {@link java.io.File} object.
-   * @param argList a {@link java.util.List} object.
+   * @param argList         a {@link java.util.List} object.
    */
   public Main(@Nullable File commandLineFile, List<String> argList) {
     super("Force Field X");
@@ -228,7 +247,7 @@ public final class Main extends JFrame {
    * Process the input arguments into a List, start the logging, start Parallel Java and process the
    * input command.
    *
-   * @param args an array of {@link java.lang.String} objects.
+   * @param args    an array of {@link java.lang.String} objects.
    * @param argList List is filled with processed arguments.
    * @return A file for FFX to operate on.
    */
@@ -299,7 +318,9 @@ public final class Main extends JFrame {
     return null;
   }
 
-  /** Print out help for the command line version of Force Field X. */
+  /**
+   * Print out help for the command line version of Force Field X.
+   */
   private static void commandLineInterfaceHelp(boolean listTestScripts) {
     logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
     if (listTestScripts) {
@@ -313,7 +334,9 @@ public final class Main extends JFrame {
     System.exit(0);
   }
 
-  /** Determine the host name, process ID, and FFX base directory. */
+  /**
+   * Determine the host name, process ID, and FFX base directory.
+   */
   private static void environment() {
     try {
       InetAddress addr = InetAddress.getLocalHost();
@@ -344,7 +367,9 @@ public final class Main extends JFrame {
     }
   }
 
-  /** Print out a promo. */
+  /**
+   * Print out a promo.
+   */
   private static void header(String[] args) {
     StringBuilder sb = new StringBuilder();
     sb.append(MainPanel.border).append("\n");
@@ -380,7 +405,9 @@ public final class Main extends JFrame {
     logger.info(sb.toString());
   }
 
-  /** Process any "-D" command line flags. */
+  /**
+   * Process any "-D" command line flags.
+   */
   private static String[] processProperties(String[] args) {
     List<String> newArgs = new ArrayList<>();
     for (String arg : args) {
@@ -420,7 +447,7 @@ public final class Main extends JFrame {
    * Start the Force Field X command line interface.
    *
    * @param commandLineFile The command line file.
-   * @param argList The command line argument list.
+   * @param argList         The command line argument list.
    */
   private static Script startCommandLineInterface(File commandLineFile, List<String> argList) {
     if (configuration == null) {
@@ -435,7 +462,7 @@ public final class Main extends JFrame {
    * Start the Force Field X graphical user interface.
    *
    * @param commandLineFile The command line file.
-   * @param argList The command line argument list.
+   * @param argList         The command line argument list.
    */
   private static void startGraphicalUserInterface(File commandLineFile, List<String> argList) {
     logger.info(" Starting up the graphical user interface.");
@@ -461,7 +488,9 @@ public final class Main extends JFrame {
     new Main(commandLineFile, argList);
   }
 
-  /** Replace the default console handler with our custom FFX handler. */
+  /**
+   * Replace the default console handler with our custom FFX handler.
+   */
   private static void startLogging() {
     // Remove all log handlers from the default logger.
     try {
@@ -475,19 +504,60 @@ public final class Main extends JFrame {
       System.err.println(error);
     }
 
-    // Turn off log4j
+    // Suppress various loggers used by FFX dependencies.
+    // Attempt to suppress Log4j version 1.x.
+    // https://logging.apache.org/log4j/1.x/manual.html
+    System.setProperty("log4j.threshold", "OFF");
+    System.setProperty("log4j.rootLogger", "OFF");
     Properties properties = new Properties();
     properties.setProperty("log4j.threshold", "OFF");
-    properties.setProperty("log4j2.level", "OFF");
-    properties.setProperty("org.apache.logging.log4j.level", "OFF");
-    PropertyConfigurator.configure(properties);
+    properties.setProperty("log4j.rootLogger", "OFF");
+    properties.setProperty("log4j.logger.org.apache.commons.beanutils", "ERROR");
+    org.apache.log4j.PropertyConfigurator.configure(properties);
+    org.apache.log4j.LogManager.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
+
+    // Attempt to suppress Log4j2 version 2.x.
+    // https://logging.apache.org/log4j/2.x/manual
+    System.setProperty("log4j2.level", "OFF");
+    System.setProperty("log4j2.simplelogLevel", "OFF");
+    System.setProperty("log4j2.disable.jmx", "true");
+    org.apache.logging.log4j.LogManager.getRootLogger().atLevel(org.apache.logging.log4j.Level.OFF);
+
+    // Attempt to suppress SLF4J loggers.
+    // https://www.slf4j.org/manual.html
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
+    // The statement below causes a warning to be printed to the console for SLF4J 2.0.16.
+    // System.setProperty(LoggerFactory.PROVIDER_PROPERTY_KEY, "org.slf4j.nop.NOPServiceProvider");
+    // org.slf4j.Logger rootLogger = org.slf4j.LoggerFactory.getILoggerFactory().getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+
+    // Attempt to suppress Apache Commons loggers.
+    // https://commons.apache.org/proper/commons-logging/guide.html
+    System.setProperty(LogFactoryImpl.LOG_PROPERTY, "org.apache.commons.logging.impl.NoOpLog");
+    org.apache.commons.logging.LogFactory.getFactory()
+        .setAttribute(LogFactoryImpl.LOG_PROPERTY, "org.apache.commons.logging.impl.NoOpLog");
+
+    /*
+    // The following message is logged in Jupyter notebooks. It would be nice to determine how to suppress it.
+    // The bug is described here: https://issues.apache.org/jira/browse/BEANUTILS-477
+    // INFO org.apache.commons.beanutils.FluentPropertyBeanIntrospector -
+    // Error when creating PropertyDescriptor for
+    // public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)!
+    // Ignoring this property.
+    org.apache.commons.logging.Log beanUtilsLog = LogFactory.getLog(org.apache.commons.beanutils.FluentPropertyBeanIntrospector.class);
+    System.out.println(beanUtilsLog.getClass().getName());
+    System.out.println(" INFO: " + beanUtilsLog.isInfoEnabled());
+    System.out.println(" TRACE: " + beanUtilsLog.isTraceEnabled());
+    System.out.println(" DEBUG: " + beanUtilsLog.isDebugEnabled());
+    System.out.println(" ERROR: " + beanUtilsLog.isErrorEnabled());
+    System.out.println(" WARN: " + beanUtilsLog.isWarnEnabled());
+     */
 
     Logger ffxLogger = Logger.getLogger("ffx");
     // Remove any existing handlers.
     for (Handler handler : ffxLogger.getHandlers()) {
       ffxLogger.removeHandler(handler);
     }
-    
+
     // Retrieve the log level from the ffx.log system property.
     String logLevel = System.getProperty("ffx.log", "info");
     Level tempLevel;
@@ -504,7 +574,9 @@ public final class Main extends JFrame {
     ffxLogger.setLevel(level);
   }
 
-  /** Start up the Parallel Java communication layer. */
+  /**
+   * Start up the Parallel Java communication layer.
+   */
   private static void startParallelJava(String[] args) {
 
     // Try to read the PJ configuration file.
