@@ -1338,7 +1338,7 @@ public final class PDBFilter extends SystemFilter {
   public void removeExcessHydrogens(){
     logger.info(" Removing excess Hydrogens");
     for(Residue residue: activeMolecularAssembly.getResidueList()){
-      if(residue.getName().equals("ACE") || residue.getName().equals("NME")){
+      if(residue.getName().equals("ACE") || residue.getName().equals("NME") || residue.getResidueType() != Residue.ResidueType.AA){
         break;
       }
       String trueResName = residue.getAtomByName("CA", true).getResidueName();
