@@ -856,6 +856,11 @@ public final class PDBFilter extends SystemFilter {
                           // pyrimidines: need N1 & C2 | purines: need N9 & C4
                           if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
                             boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
+                            // log the deletion to get alchemical atoms from WT (don't include H primes)
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                              logger.info(format(" DELETE test atom %d chain %s", serial, chainID));
+                            }
                             if (atomName.equals("N9")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -869,12 +874,15 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C2"; // change C4 to C2
                               }
                             } else {
-                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
                               doBreak = true;
                               break;
                             }
                           } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
                             boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                              logger.info(format(" DELETE test atom %d chain %s", serial, chainID));
+                            }
                             if (atomName.equals("N1")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -888,12 +896,12 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C4"; // change C2 to C4
                               }
                             } else {
-                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
                               doBreak = true;
                               break;
                             }
                           } else {
                             logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                            // don't have alchemical atom logging because this would be for AA, have to check
                             doBreak = true;
                             break;
                           }
@@ -2018,6 +2026,15 @@ public final class PDBFilter extends SystemFilter {
                 .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
             for (Atom atom : residueAtoms) {
+              if (mutate) {
+                for (Mutation mtn : mutations) {
+                  if (resID == mtn.resID) {
+                    if (residue.getBackboneAtoms().contains(atom)) {
+                      logger.info(format(" MTN atom is %d chain %s",serial, currentChainID));
+                    }
+                  }
+                }
+              }
               writeAtom(atom, serial++, sb, anisouSB, bw);
               Character altLoc = atom.getAltLoc();
               if (altLoc != null && !altLoc.equals(' ')) {
