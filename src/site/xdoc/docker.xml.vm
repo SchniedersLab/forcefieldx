@@ -13,20 +13,24 @@
       </p>
       <subsection name="Build the Docker Container">
         <p>Download and install <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> onto
-          your local workstation.</p>
-        <p>After starting Docker Desktop, in a terminal window, change into the FFX binder directory and run the
-          following command:</p>
-        <source>docker build --no-cache -t ffxdocker:${project.version} -f Dockerfile .</source>
+          your local workstation.
+        </p>
+        <p>After starting Docker Desktop, in a terminal window run the following command within the root FFX
+          directory:
+        </p>
+        <source>docker build --no-cache -t ffxdocker -f Dockerfile .</source>
       </subsection>
       <subsection name="Run the Container in a Terminal Window">
         <p>To launch the FFX container in a terminal window, run the command:</p>
-        <source>docker run -it --rm ffxdocker:${project.version} bash</source>
+        <source>docker run -it --rm ffxdocker bash</source>
         <p>Check that FFX is in your path:</p>
         <source>which ffxc</source>
       </subsection>
       <subsection name="Use Jupyter Notebooks Locally in Web Browser">
-        <p>To launch the FFX Jupyter notebooks in web browser, run the command:</p>
-        <source>docker run -it --rm -p 8888:8888 ffxdocker:${project.version} jupyter notebook --NotebookApp.default_url=/lab/ --ip=0.0.0.0 --port=8888</source>
+        <p>To launch an FFX Jupyter Notebook interface in a web browser, run the command:</p>
+        <source>docker run -it --rm -p 8888:8888 ffxdocker</source>
+        <p>To launch an FFX Jupyter Lab interface in a web browser, run the command:</p>
+        <source>docker run -it --rm -p 8888:8888 ffxdocker jupyter lab --ip=0.0.0.0</source>
         <p>Both Java and Kotlin notebooks are available.</p>
       </subsection>
     </section>
