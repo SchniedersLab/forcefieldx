@@ -373,7 +373,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   @FFXProperty(name = "nonpolar-model", clazz = String.class, propertyGroup = ImplicitSolvent,
       defaultValue = "gauss-disp", description = """ 
-      [CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ]
+      [CAV / CAV-DISP / DISP / GAUSS-DISP / SEV-DISP / NONE ]
       The non-polar contribution to the implicit solvent.
       """)
   private final NonPolarModel nonPolarModel;
@@ -777,6 +777,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
         dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
         chandlerCavitation = null;
         break;
+      case DISP:
+        tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
+        dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
+        surfaceAreaRegion = null;
+        chandlerCavitation = null;
+        break;
       case SEV_DISP:
         tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
         double[] radii = new double[nAtoms];
@@ -907,18 +913,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             nonPolarModel.toString().replace('_', '-')));
 
     if (nonPolarModel.equals(NonPolarModel.GAUSS_DISP)) {
-      logger.info(
-          format("    GaussVol Radii Offset:               %2.4f",
+      logger.info(format("    GaussVol Radii Offset:               %2.4f",
               forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
-      logger.info(
-          format("    GaussVol Radii Scale:                %2.4f",
+      logger.info(format("    GaussVol Radii Scale:                %2.4f",
               forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.15)));
     }
 
     if (dispersionRegion != null) {
-      logger.info(
-          format(
-              "   Dispersion Integral Offset:         %8.4f (A)",
+      logger.info(format("   Dispersion Integral Offset:         %8.4f (A)",
               dispersionRegion.getDispersionOffset()));
     }
 
@@ -1489,6 +1491,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
           cavitationEnergy = surfaceAreaRegion.getEnergy();
           cavitationTime += System.nanoTime();
           break;
+        case DISP:
+          dispersionTime = -System.nanoTime();
+          dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
+          parallelTeam.execute(dispersionRegion);
+          dispersionEnergy = dispersionRegion.getEnergy();
+          dispersionTime += System.nanoTime();
         case SEV_DISP:
           dispersionTime = -System.nanoTime();
           dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
@@ -1573,24 +1581,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
       logger.info(format(" Generalized Kirkwood%16.8f %10.3f", gkEnergy, gkTime * 1e-9));
       switch (nonPolarModel) {
         case CAV:
-          logger.info(
-              format(
-                  " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
+          logger.info(format(" Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
+          break;
+        case DISP:
+          logger.info(format(" Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
           break;
         case CAV_DISP:
         case SEV_DISP:
         case GAUSS_DISP:
-          logger.info(
-              format(
-                  " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
-          logger.info(
-              format(
-                  " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
+          logger.info(format(" Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
+          logger.info(format(" Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
           break;
         case BORN_CAV_DISP:
-          logger.info(
-              format(
-                  " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
+          logger.info(format(" Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
           break;
         case HYDROPHOBIC_PMF:
         case BORN_SOLV:
@@ -1825,6 +1828,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   public enum NonPolarModel {
     CAV,
     CAV_DISP,
+    DISP,
     SEV_DISP,
     GAUSS_DISP,
     HYDROPHOBIC_PMF,
