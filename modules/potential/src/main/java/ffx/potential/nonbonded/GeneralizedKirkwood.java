@@ -1497,6 +1497,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           parallelTeam.execute(dispersionRegion);
           dispersionEnergy = dispersionRegion.getEnergy();
           dispersionTime += System.nanoTime();
+          break;
         case SEV_DISP:
           dispersionTime = -System.nanoTime();
           dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
