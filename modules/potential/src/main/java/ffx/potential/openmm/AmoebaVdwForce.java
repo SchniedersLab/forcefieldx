@@ -179,8 +179,8 @@ public class AmoebaVdwForce extends VdwForce {
     }
 
     if (openMMEnergy.getSystem().getVdwLambdaTerm()) {
-      CompositeConfiguration compositeConfiguration = forceField.getProperties();
-      boolean annihilate = compositeConfiguration.getBoolean("intramolecular-softcore", false);
+      boolean annihilate = forceField.getBoolean("intramolecular-softcore", false);
+      logger.info(" Annihilate intramolecular vdW interactions: " + annihilate);
       if(annihilate) {
         setAlchemicalMethod(OpenMM_AmoebaVdwForce_Annihilate);
       } else {
