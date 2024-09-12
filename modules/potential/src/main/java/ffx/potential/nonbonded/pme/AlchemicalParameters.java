@@ -325,7 +325,7 @@ public class AlchemicalParameters {
       dlPowPol *= polLambdaScale;
       d2lPowPol *= (polLambdaScale * polLambdaScale);
     }
-    logger.info("PermLambda: " + permLambda + " PolLambda: " + polLambda);
+    logger.info("PermLambda: " + lPowPerm + " PolLambda: " + lPowPol);
     logger.info("permLambdaExponent = " + permLambdaExponent + " polLambdaExponent = " + polLambdaExponent);
     logger.info("permlambdaalpha = " + permLambdaAlpha);
   }
