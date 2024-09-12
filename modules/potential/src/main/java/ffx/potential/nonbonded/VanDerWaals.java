@@ -49,6 +49,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
@@ -57,6 +58,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.FFXProperty;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
@@ -322,7 +324,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     nAtoms = atoms.length;
     nSymm = crystal.spaceGroup.getNumberOfSymOps();
     vdwForm = new VanDerWaalsForm(forceField);
-
+    vdwLambdaEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
     vdwIndex = forceField.getString("VDWINDEX", "Class");
     reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
@@ -334,7 +336,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       sharedd2EdL2 = new SharedDouble();
       vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.25);
       vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 3.0);
-      vdwLambdaEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
       if (vdwLambdaAlpha < 0.0) {
         logger.warning(format(
             " Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.",
@@ -348,7 +349,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         vdwLambdaExponent = 3.0;
       }
 
-      vdwLambdaEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
       if (vdwLambdaEnd < 0.0 || vdwLambdaEnd > 1.0) {
         logger.warning(format(
             " Invalid value %8.3g for vdw-lambda-end; must be between 0 and 1. Resetting to 1.", vdwLambdaEnd));
@@ -629,6 +629,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     } else {
       longRangeCorrection = 0.0;
     }
+    logger.info(format(" VdW lambda %8.3f", lambda));
   }
 
   /**
