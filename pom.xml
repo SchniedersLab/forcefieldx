@@ -1026,7 +1026,7 @@
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
-    <biojava.version>7.1.2</biojava.version>
+    <biojava.version>7.1.3</biojava.version>
     <cdk.version>2.9</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
@@ -1078,7 +1078,7 @@
     <jxr.version>3.5.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.23.1</log4j.version>
+    <log4j.version>2.24.0</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>

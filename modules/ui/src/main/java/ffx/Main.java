@@ -509,10 +509,11 @@ public final class Main extends JFrame {
     // https://logging.apache.org/log4j/1.x/manual.html
     System.setProperty("log4j.threshold", "OFF");
     System.setProperty("log4j.rootLogger", "OFF");
+    System.setProperty("log4j1.compatibility", "true");
     Properties properties = new Properties();
     properties.setProperty("log4j.threshold", "OFF");
     properties.setProperty("log4j.rootLogger", "OFF");
-    properties.setProperty("log4j.logger.org.apache.commons.beanutils", "ERROR");
+    properties.setProperty("log4j1.compatibility", "true");
     org.apache.log4j.PropertyConfigurator.configure(properties);
     org.apache.log4j.LogManager.getRootLogger().setLevel(org.apache.log4j.Level.OFF);
 
@@ -543,13 +544,6 @@ public final class Main extends JFrame {
     // Error when creating PropertyDescriptor for
     // public final void org.apache.commons.configuration2.AbstractConfiguration.setProperty(java.lang.String,java.lang.Object)!
     // Ignoring this property.
-    org.apache.commons.logging.Log beanUtilsLog = LogFactory.getLog(org.apache.commons.beanutils.FluentPropertyBeanIntrospector.class);
-    System.out.println(beanUtilsLog.getClass().getName());
-    System.out.println(" INFO: " + beanUtilsLog.isInfoEnabled());
-    System.out.println(" TRACE: " + beanUtilsLog.isTraceEnabled());
-    System.out.println(" DEBUG: " + beanUtilsLog.isDebugEnabled());
-    System.out.println(" ERROR: " + beanUtilsLog.isErrorEnabled());
-    System.out.println(" WARN: " + beanUtilsLog.isWarnEnabled());
      */
 
     Logger ffxLogger = Logger.getLogger("ffx");
