@@ -184,6 +184,11 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     logger.info(format(" Available devices: %d.", nDevs));
 
+    // If only one device is available, return it.
+    if (nDevs == 1) {
+      return devs[0];
+    }
+    
     int index = 0;
     try {
       Comm world = Comm.world();

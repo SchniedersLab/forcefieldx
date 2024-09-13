@@ -38,6 +38,7 @@
 package ffx.ui;
 
 import edu.rit.pj.Comm;
+
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -114,19 +115,24 @@ public class LogFormatter extends SimpleFormatter {
   /**
    * Prepend the MPI rank to a line of text to give: " [Rank]line"
    *
-   * @param size Number of MPI processes.
-   * @param rank Rank of this MPI processs.
+   * @param size  Number of MPI processes.
+   * @param rank  Rank of this MPI processs.
    * @param lines The String to format split by new line characters.
    * @return " [Rank]line"
    */
   private String mpiFormat(int size, int rank, String[] lines) {
     int rankLen = Integer.toString(size - 1).length();
     String formatString = " [%0" + rankLen + "d]%s";
-    StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
-    for (int i = 1; i < lines.length; i++) {
-      sb.append("\n");
-      sb.append(String.format(formatString, rank, lines[i]));
+    if (lines.length > 0) {
+      StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
+      for (int i = 1; i < lines.length; i++) {
+        sb.append("\n");
+        sb.append(String.format(formatString, rank, lines[i]));
+      }
+      return sb.toString();
+    } else {
+      StringBuilder sb = new StringBuilder(String.format(formatString, rank, ""));
+      return sb.toString();
     }
-    return sb.toString();
   }
 }
