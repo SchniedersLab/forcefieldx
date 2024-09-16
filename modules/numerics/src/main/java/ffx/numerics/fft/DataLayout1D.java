@@ -53,5 +53,12 @@ package ffx.numerics.fft;
  * </PRE>
  */
 public enum DataLayout1D {
-  INTERLEAVED, BLOCKED
+  /**
+   * Interleaved data layout.
+   */
+  INTERLEAVED,
+  /**
+   * Blocked data layout.
+   */
+  BLOCKED
 }

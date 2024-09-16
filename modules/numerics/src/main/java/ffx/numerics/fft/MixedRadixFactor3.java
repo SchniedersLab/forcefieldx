@@ -47,12 +47,20 @@ import static jdk.incubator.vector.DoubleVector.broadcast;
 import static jdk.incubator.vector.DoubleVector.fromArray;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+/**
+ * The MixedRadixFactor3 class handles factors of 3 in the FFT.
+ */
 public class MixedRadixFactor3 extends MixedRadixFactor {
 
   private static final double sqrt3_2 = sqrt(3.0) / 2.0;
   private final int di2;
   private final int dj2;
 
+  /**
+   * Create a new MixedRadixFactor3 instance.
+   *
+   * @param passConstants The pass constants.
+   */
   public MixedRadixFactor3(PassConstants passConstants) {
     super(passConstants);
     di2 = 2 * di;
@@ -138,7 +146,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
 
   /**
    * Handle factors of 3 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void interleaved(PassData passData, int simdLength) {
@@ -163,7 +172,8 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
 
   /**
    * Handle factors of 3 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void blocked(PassData passData, int simdLength) {
@@ -188,6 +198,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
 
   /**
    * Handle factors of 3 using the 128-bit SIMD vectors.
+   *
    * @param passData The interleaved pass data.
    */
   private void interleaved(PassData passData) {
@@ -216,6 +227,7 @@ public class MixedRadixFactor3 extends MixedRadixFactor {
 
   /**
    * Handle factors of 3 using the 128-bit SIMD vectors.
+   *
    * @param passData The pass blocked data.
    */
   private void blocked(PassData passData) {

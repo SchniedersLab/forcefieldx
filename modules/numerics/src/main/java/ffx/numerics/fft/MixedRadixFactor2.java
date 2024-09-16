@@ -45,14 +45,24 @@ import static jdk.incubator.vector.DoubleVector.SPECIES_512;
 import static jdk.incubator.vector.DoubleVector.broadcast;
 import static jdk.incubator.vector.DoubleVector.fromArray;
 
+/**
+ * The MixedRadixFactor2 class handles factors of 2 in the FFT.
+ */
 public class MixedRadixFactor2 extends MixedRadixFactor {
 
+  /**
+   * Create a new MixedRadixFactor2 instance.
+   *
+   * @param passConstants The pass constants.
+   */
   public MixedRadixFactor2(PassConstants passConstants) {
     super(passConstants);
   }
 
   /**
    * Handle factors of 2.
+   *
+   * @param passData The pass data.
    */
   @Override
   protected void passScalar(PassData passData) {
@@ -97,6 +107,8 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Handle factors of 2 using SIMD vectors.
+   *
+   * @param passData The pass data.
    */
   @Override
   protected void passSIMD(PassData passData) {
@@ -114,7 +126,8 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Handle factors of 2 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void interleaved(PassData passData, int simdLength) {
@@ -139,7 +152,8 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Handle factors of 2 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void blocked(PassData passData, int simdLength) {
@@ -164,6 +178,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Handle factors of 2 using the 128-bit SIMD vectors.
+   *
    * @param passData The interleaved pass data.
    */
   private void interleaved(PassData passData) {
@@ -192,6 +207,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Handle factors of 2 using the 128-bit SIMD vectors.
+   *
    * @param passData The pass blocked data.
    */
   private void blocked(PassData passData) {

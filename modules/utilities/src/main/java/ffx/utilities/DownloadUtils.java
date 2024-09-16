@@ -54,6 +54,13 @@ public class DownloadUtils {
   private static final Logger logger = Logger.getLogger(DownloadUtils.class.getName());
 
   /**
+   * Default constructor.
+   */
+  private DownloadUtils() {
+    // Prevent instantiation.
+  }
+
+  /**
    * Download a PDB file.
    *
    * @param pdbID The PDB ID.

@@ -37,26 +37,26 @@
 // ******************************************************************************
 package ffx.numerics.estimator;
 
+import ffx.numerics.math.SummaryStatistics;
+
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
 import static ffx.numerics.estimator.Zwanzig.Directionality.BACKWARDS;
 import static ffx.numerics.estimator.Zwanzig.Directionality.FORWARDS;
 import static ffx.numerics.math.ScalarMath.fermiFunction;
 import static ffx.utilities.Constants.R;
-import static java.lang.String.format;
-import static java.lang.Double.isNaN;
 import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.numerics.math.SummaryStatistics;
-
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The Bennett Acceptance Ratio class implements the Bennett Acceptance Ratio (BAR) statistical
@@ -186,6 +186,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
    * @param energiesHigh Energies of trajectory i at lambda (i+1).
    * @param temperature  Temperature of each trajectory.
    * @param tolerance    Convergence criterion in kcal/mol for BAR iteration.
+   * @param nIterations  Maximum number of iterations for BAR.
    */
   public BennettAcceptanceRatio(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
                                 double[][] energiesHigh, double[] temperature, double tolerance, int nIterations) {
@@ -227,7 +228,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     for (int i = 0; i < len; i++) {
       fermiDiffs[i] = fermiFunction(invRT * (e0[i] - e1[i] + c));
     }
-    if(stream(fermiDiffs).sum() == 0){
+    if (stream(fermiDiffs).sum() == 0) {
       logger.warning(format(" Input Fermi with length %3d should not be permitted: c: %9.4f invRT: %9.4f Fermi output: %9.4f", len, c, invRT, stream(fermiDiffs).sum()));
     }
   }
@@ -377,7 +378,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
     for (int i = 0; i < nWindows; i++) {
       // Free energy estimate/shift constant.
-      if(isNaN(forwardZwanzig[i]) || isInfinite(forwardZwanzig[i]) || isNaN(backwardZwanzig[i]) || isInfinite(backwardZwanzig[i])){
+      if (isNaN(forwardZwanzig[i]) || isInfinite(forwardZwanzig[i]) || isNaN(backwardZwanzig[i]) || isInfinite(backwardZwanzig[i])) {
         logger.warning(format(" Window %3d bin energies produced unreasonable value(s) for forward Zwanzig (%8.4f) and/or backward Zwanzig (%8.4f)", i, forwardZwanzig[i], backwardZwanzig[i]));
       }
       double c = 0.5 * (forwardZwanzig[i] + backwardZwanzig[i]);
@@ -445,7 +446,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
         if (!converged && ++cycleCounter > nIterations) {
           throw new IllegalArgumentException(
-              format(" BAR required too many iterations (%d) to converge! (%9.8f > %9.8f)", cycleCounter, abs(c-cold), tolerance));
+              format(" BAR required too many iterations (%d) to converge! (%9.8f > %9.8f)", cycleCounter, abs(c - cold), tolerance));
         }
 
         if (!randomSamples) {

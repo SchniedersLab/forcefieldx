@@ -59,14 +59,8 @@ import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
-import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.*;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
@@ -106,6 +100,7 @@ public final class PDBFilter extends SystemFilter {
   private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
   private static final Set<String> backboneNames;
   private static final Set<String> constantPhBackboneNames;
+  private static final Set<String> naBackboneNames;
 
   static {
     String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
@@ -113,6 +108,9 @@ public final class PDBFilter extends SystemFilter {
 
     String[] constantPhNames = {"C", "CA", "N", "O", "OXT", "OT2", "H", "HA", "H1", "H2", "H3"};
     constantPhBackboneNames = Set.of(constantPhNames);
+    
+    String[] naNames = {"P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'"};
+    naBackboneNames = Set.of(naNames);
   }
 
   /** Map of SEQRES entries. */
@@ -847,14 +845,58 @@ public final class PDBFilter extends SystemFilter {
                     for (Mutation mtn : mutations) {
                       if (chainID == mtn.chainChar && resSeq == mtn.resID) {
                         String atomName = name.toUpperCase();
-                        if (backboneNames.contains(atomName)) {
+
+                        int isAA = AminoAcidUtils.getAminoAcidNumber(resName);
+                        int isNA = NucleicAcidUtils.getNucleicAcidNumber(resName);
+
+                        if ((isNA != -1 && naBackboneNames.contains(atomName)) || (isAA != -1 && backboneNames.contains(atomName))) {
                           printAtom = true;
                           resName = mtn.resName;
                         } else {
-                          logger.info(
-                              format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
-                          doBreak = true;
-                          break;
+                          // pyrimidines: need N1 & C2 | purines: need N9 & C4
+                          if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
+                            boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
+                            if (atomName.equals("N9")) {
+                              printAtom = true;
+                              resName = mtn.resName;
+                              if (isMtnPyrimidine) {
+                                name = "N1"; // change N9 to N1
+                              }
+                            } else if (atomName.equals("C4")) {
+                              printAtom = true;
+                              resName = mtn.resName;
+                              if (isMtnPyrimidine) {
+                                name = "C2"; // change C4 to C2
+                              }
+                            } else {
+                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                              doBreak = true;
+                              break;
+                            }
+                          } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
+                            boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
+                            if (atomName.equals("N1")) {
+                              printAtom = true;
+                              resName = mtn.resName;
+                              if (isMtnPurine) {
+                                name = "N9"; // change N1 to N9
+                              }
+                            } else if (atomName.equals("C2")) {
+                              printAtom = true;
+                              resName = mtn.resName;
+                              if (isMtnPurine) {
+                                name = "C4"; // change C2 to C4
+                              }
+                            } else {
+                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                              doBreak = true;
+                              break;
+                            }
+                          } else {
+                            logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                            doBreak = true;
+                            break;
+                          }
                         }
                       }
                     }
@@ -2464,9 +2506,9 @@ public final class PDBFilter extends SystemFilter {
       if (newResName.length() != 3) {
         logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
       }
-      try {
-        AminoAcidUtils.AminoAcid3.valueOf(newResName);
-      } catch (IllegalArgumentException ex) {
+      int isAA = AminoAcidUtils.getAminoAcidNumber(newResName);
+      int isNA = NucleicAcidUtils.getNucleicAcidNumber(newResName);
+      if (isAA == -1 && isNA == -1) {
         logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
       }
       this.resID = resID;

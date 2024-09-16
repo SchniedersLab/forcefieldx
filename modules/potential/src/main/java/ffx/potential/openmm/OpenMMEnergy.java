@@ -184,11 +184,17 @@ public class OpenMMEnergy extends ForceFieldEnergy {
 
     logger.info(format(" Available devices: %d.", nDevs));
 
+    // If only one device is available, return it.
+    if (nDevs == 1) {
+      return devs[0];
+    }
+    
     int index = 0;
     try {
       Comm world = Comm.world();
       if (world != null) {
         int size = world.size();
+        logger.fine(format(" Number of MPI processes %d exceeds number of available devices %d.", size, nDevs));
 
         // Format the host as a CharacterBuf of length 100.
         int messageLen = 100;
@@ -197,6 +203,8 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         host = host.substring(0, Math.min(messageLen, host.length()));
         // Pad to 100 characters.
         host = format("%-100s", host);
+
+        logger.fine(format(" Host: %s", host.trim()));
         char[] messageOut = host.toCharArray();
         CharacterBuf out = CharacterBuf.buffer(messageOut);
 
@@ -208,9 +216,11 @@ public class OpenMMEnergy extends ForceFieldEnergy {
         }
 
         try {
+          logger.fine(" AllGather for determining rank.");
           world.allGather(out, in);
+          logger.fine(" AllGather complete.");
         } catch (IOException ex) {
-          logger.severe(format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
+          logger.warning(format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
         }
         int ownIndex = -1;
         int rank = world.rank();
@@ -227,7 +237,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
           }
         }
         if (!selfFound) {
-          logger.severe(format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
+          logger.warning(format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
         } else {
           index = ownIndex % nDevs;
         }

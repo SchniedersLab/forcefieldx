@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.cos;
@@ -123,7 +123,7 @@ public class TornadoDFT {
    * Execute the Discrete Fourier Transform on the default TornadoDevice.
    */
   public void execute() {
-    TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+    TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     execute(device);
   }
 

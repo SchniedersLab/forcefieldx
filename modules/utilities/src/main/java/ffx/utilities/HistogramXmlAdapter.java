@@ -25,6 +25,13 @@ public class HistogramXmlAdapter extends XmlAdapter<String, double[][]> {
   public static final Logger logger = Logger.getLogger(HistogramXmlAdapter.class.getName());
 
   /**
+   * Default constructor.
+   */
+  public HistogramXmlAdapter() {
+    // Default constructor.
+  }
+
+  /**
    * Convert the histogram data string to a 2D double array.
    *
    * @param value String containing the Histogram data.

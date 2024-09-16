@@ -53,6 +53,19 @@ import static java.lang.String.format;
  */
 public class DoubleXMLAdapter extends XmlAdapter<String, Double> {
 
+
+  /**
+   * Default constructor.
+   */
+  public DoubleXMLAdapter() {
+    // Default constructor.
+  }
+
+  /**
+   * Unmarshel the Double
+   * @param v The string containing the double.
+   * @return The double value or null of the String is empty or "null".
+   */
   @Override
   public Double unmarshal(@Nullable String v) {
     if (v == null || v.isEmpty() || v.equalsIgnoreCase("null")) {
@@ -60,6 +73,7 @@ public class DoubleXMLAdapter extends XmlAdapter<String, Double> {
     }
     return parseDouble(v);
   }
+
 
   @Override
   public String marshal(@Nullable Double v) {
