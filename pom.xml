@@ -1058,20 +1058,20 @@
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>9.0.1</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>24.0.2</graal.version>
-    <groovy-all.version>5.0.0-alpha-9</groovy-all.version>
+    <graal.version>24.1.0</graal.version>
+    <groovy-all.version>5.0.0-alpha-10</groovy-all.version>
     <guava.version>33.3.0-jre</guava.version>
     <install.version>3.1.3</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.4.2</jar.version>
-    <jarsigner.version>3.0.0</jarsigner.version>
+    <jarsigner.version>3.1.0</jarsigner.version>
     <javaparser.version>3.26.2</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.10.0</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.0</jdepend.version>
-    <jna.version>5.14.0</jna.version>
+    <jna.version>5.15.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
     <jopenmm.version>8.1.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
@@ -1085,8 +1085,8 @@
     <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.version>3.25.0</pmd.version>
-    <!-- Skip PMD because it does not handle Java language version 21 yet. -->
-    <pmd.skip>false</pmd.skip>
+    <!-- Skip PMD because it does not handle Java language version 23 yet. -->
+    <pmd.skip>true</pmd.skip>
     <project-info-reports.version>3.7.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

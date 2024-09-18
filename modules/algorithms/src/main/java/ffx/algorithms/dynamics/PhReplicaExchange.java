@@ -281,7 +281,7 @@ public class PhReplicaExchange implements Terminatable {
         extendedSystem.readESVInfoFrom(esvBackup);
       } else if (backupNeeded) {
         logger.info(" Directories do not contain all of the correct backup restart files.");
-        logger.warning(" No backup files found, treating as a fresh start.");
+        logger.info(" No backup files found, treating as a fresh start.");
         restart = false;
         return true;
       }

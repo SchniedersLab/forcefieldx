@@ -875,7 +875,7 @@ class BAR extends AlgorithmsScript {
         EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
         EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
 
-        int volumeLength = volume.length;
+        int volumeLength = volume.length
         long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volumeLength, volumeLength))
         if (w == nWindows) {
           logger.info("\n Free Energy Difference:\n")
