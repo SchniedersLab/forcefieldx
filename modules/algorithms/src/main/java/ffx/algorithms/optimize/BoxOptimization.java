@@ -83,7 +83,6 @@ class BoxOptimization {
         rotamerOptimization.usingBoxOptimization = true;
         long beginTime = -System.nanoTime();
         Residue[] residues = residueList.toArray(new Residue[0]);
-
         /*
          * A new dummy Crystal will be constructed for an aperiodic system. The
          * purpose is to avoid using the overly large dummy Crystal used for
@@ -106,6 +105,8 @@ class BoxOptimization {
             }
             cellEnd = totalCells - 1;
         } else if (cellEnd < 0) {
+            cellEnd = totalCells - 1;
+        } else if(!crystal.aperiodic()){
             cellEnd = totalCells - 1;
         }
         ManyBodyCell[] cells = loadCells(crystal, residues);
@@ -278,7 +279,7 @@ class BoxOptimization {
                 maxXYZ[i] += superboxBuffer;
             }
         } else {
-            return originalCrystal;
+            return originalCrystal.getUnitCell();
         }
         double newA = maxXYZ[0] - minXYZ[0];
         double newB = maxXYZ[1] - minXYZ[1];
@@ -342,7 +343,8 @@ class BoxOptimization {
         double bCellBorderFracSize = (cellBorderSize / crystal.b);
         double cCellBorderFracSize = (cellBorderSize / crystal.c);
         int numCells = cellEnd - cellStart + 1;
-        rotamerOptimization.logIfRank0(format(" Number of fractional cells: %d = %d x %d x %d", numCells, numXYZCells[0], numXYZCells[1], numXYZCells[2]));
+        rotamerOptimization.logIfRank0(format(" Number of fractional cells: %d = %d x %d x %d",
+                numCells, numXYZCells[0], numXYZCells[1], numXYZCells[2]));
 
         ManyBodyCell[] cells = new ManyBodyCell[numCells];
         int currentIndex = 0;
@@ -383,6 +385,7 @@ class BoxOptimization {
                     fracCoords[5] = (((1.0 + k) / numXYZCells[2]) + cCellBorderFracSize);
                     cells[filledCells++] = new ManyBodyCell(fracCoords, xyzIndices, currentIndex);
                     ++currentIndex;
+
                 }
             }
         }
