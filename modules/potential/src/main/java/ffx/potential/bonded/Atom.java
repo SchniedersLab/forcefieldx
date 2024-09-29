@@ -617,18 +617,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void addToXYZGradient(double x, double y, double z) {
     if (active) {
-      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(
-          z)) {
+      if (isNaN(x) || isInfinite(x) || isNaN(y) || isInfinite(y) || isNaN(z) || isInfinite(z)) {
         StringBuilder sb = new StringBuilder(
-            format("Adding gradient of atom %s to (%8.3f,%8.3f,%8.3f) is not permitted.", this, x, y, z));
+            format(" Attempted to add undefined gradient (%8.3f,%8.3f,%8.3f) to atom:\n %s", x, y, z, this));
         double[] vals = new double[3];
         this.getVelocity(vals);
-        sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        sb.append(format("\n Velocities:             %26.16E%26.16E%26.16E", vals[0], vals[1], vals[2]));
         this.getAcceleration(vals);
-        sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        sb.append(format("\n Accelerations:          %26.16E%26.16E%26.16E", vals[0], vals[1], vals[2]));
         this.getPreviousAcceleration(vals);
-        sb.append(
-            format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+        sb.append(format("\n Previous accelerations: %26.16E%26.16E%26.16E", vals[0], vals[1], vals[2]));
         throw new EnergyException(sb.toString());
       }
       xyzGradient[0] += x;

@@ -766,12 +766,10 @@ public class NeighborList extends ParallelRegion {
             if (dr2 < spCutoff2) {
               int molecule = atoms[i].getMoleculeNumber();
               if (atoms[i].isActive()) {
-                logger.info(format(
-                    "   Active Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
+                logger.info(format("   Active Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
                     atoms[i], molecule, iSymm, sqrt(dr2)));
               } else if (logger.isLoggable(Level.FINE)) {
-                logger.fine(
-                    format("   Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
+                logger.fine(format("   Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
                         atoms[i], molecule, iSymm, sqrt(dr2)));
               }
               // Exclude molecule-molecule interactions between the asymmetric unit and the iSymm symmetry mate.
