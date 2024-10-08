@@ -208,6 +208,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     // Run the MD steps.
     mainLoop(numSteps);
+
     // Post-run cleanup operations.
     postRun();
   }

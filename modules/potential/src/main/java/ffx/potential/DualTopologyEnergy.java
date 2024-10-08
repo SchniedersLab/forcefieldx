@@ -485,7 +485,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     int i1 = 0;
     int i2 = 0;
     // Not true if mapping atoms via symmetry operator.
-    if(!useSymOp) {
+    if (!useSymOp) {
       for (int i = 0; i < nShared; i++) {
         Atom a1 = atoms1[i1++];
         while (a1.applyLambda()) {
@@ -561,9 +561,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         // TODO: Condense with loop above by replacing nActive2 with incremental index?
         int sharedIndex = 0;
-        for(int j = 0; j < nActive2; j++){
-          if(sharedAtoms2[j]){
-            if(mask[i][j]){
+        for (int j = 0; j < nActive2; j++) {
+          if (sharedAtoms2[j]) {
+            if (mask[i][j]) {
               sharedMask[i][sharedIndex] = true;
             }
             sharedIndex++;
@@ -614,7 +614,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         // Applied to topology 1 to generate approximate coordinates for topology 2.
         applyCartesianSymOp(origX1, origX1, symOp[i], sharedMask[i]);
         logger.info(format("\n SymOp %3d of %3d between topologies:\n Applied to atoms: %s\n %s\n Inverse SymOp:\n %s",
-                i + 1, numSymOps, writeAtomRanges(symOpAtoms.get(i).stream().mapToInt(j->j).toArray()), symOp[i].toString(), inverse[i].toString()));
+            i + 1, numSymOps, writeAtomRanges(symOpAtoms.get(i).stream().mapToInt(j -> j).toArray()), symOp[i].toString(), inverse[i].toString()));
       }
       double symOpRMSD = rmsd(origX1, origX2, mass);
       logger.info("\n RMSD to topology 2 coordinates via loaded symop:");
@@ -1461,10 +1461,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Bonded terms for alchemical atoms are always on to prevent atoms from "floating away". However, this creates an
-   * artificial interaction between symmetry operators if the bonded terms for alchemical atoms overlap with multiple
-   * symmetry operated sections.
-   * @param nActive Number of active atoms (shared and alchemical) in simulation for this system.
+   * Bonded terms for alchemical atoms are used to prevent them from being unconstrained.
+   * These restraints have the potential to interact with symmetry operators applied in dual-topology simulations.
+   *
+   * @param nActive     Number of active atoms (shared and alchemical) in simulation for this system.
    * @param sharedAtoms Mask to determined which atoms are shared vs alchemical.
    * @param activeAtoms Active atoms for this simulation.
    */
@@ -1474,33 +1474,50 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     for (int i = 0; i < nActive; i++) {
       // Determine if this atom is alchemical.
       if (!sharedAtoms[i]) {
-        // Collect bonded terms for alchemical atom.
-        ArrayList<Integer> bondedAtoms = new ArrayList<>();
         Atom alchAtom = activeAtoms[i];
-        // Identify atoms bonded via bonds, angles, and torsions.
+        int symOpForAlchemicalAtom = -1;
+        for (int j = 0; j < numSymOps; j++) {
+          List<Integer> symOpAtomGroup = symOpAtoms.get(j);
+          if (symOpAtomGroup.contains(i)) {
+            symOpForAlchemicalAtom = j;
+            break;
+          }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("\n Alchemical atom %s\n Symmetry group %s:\n", alchAtom, symOpForAlchemicalAtom + 1));
+        List<Integer> symOpAtomGroup = symOpAtoms.get(symOpForAlchemicalAtom);
+        for (Integer j : symOpAtomGroup) {
+          if (j == i) {
+            continue;
+          }
+          sb.append(format("  %d %s\n", j + 1, activeAtoms[j]));
+        }
+        sb.append(format("\n 1-2, 1-3 or 1-4 atoms in other symmetry groups:\n"));
+
+        // Collect atoms that are 1-2, 1-3 or 1-4 to the alchemical atom.
+        ArrayList<Integer> bondedAtoms = new ArrayList<>();
         addUniqueBondedIndices(bondedAtoms, alchAtom.get12List());
         addUniqueBondedIndices(bondedAtoms, alchAtom.get13List());
         addUniqueBondedIndices(bondedAtoms, alchAtom.get14List());
-        //TODO: handle rings
-        int overlapSym = -1;
-        // Loop through atoms bonded to alchemical atom to determine if they overlap between sym ops.
-        StringBuilder sb = new StringBuilder();
+        // Loop through atoms bonded to alchemical atom to determine if they're part of
+        // a different SymOp group.
         boolean conflict = false;
-        for(Integer integer: bondedAtoms){
-          for (int j = 0; j < numSymOps; j++){
-            if(symOpAtoms.get(j).contains(integer)){
-              if (overlapSym < 0){
-                overlapSym = j;
-                sb.append(format(" Alchemical atom %3d conflicts between symmetry operators:", i + 1)).append("\n").append(format(" Bonded atom (%3d) corresponds to symmetry operator %3d.", integer, j + 1)).append("\n");
-              } else if ( overlapSym != j){
-                conflict = true;
-                sb.append(format(" Bonded atom (%3d) corresponds to symmetry operator %3d.", integer, j + 1)).append("\n");
-              }
+        for (int j = 0; j < numSymOps; j++) {
+          // If the bonded atom is in the same symmetry group as the alchemical atom, then there is no conflict.
+          if (j == symOpForAlchemicalAtom) {
+            continue;
+          }
+          symOpAtomGroup = symOpAtoms.get(j);
+          for (Integer integer : bondedAtoms) {
+            if (symOpAtomGroup.contains(integer)) {
+              conflict = true;
+              sb.append(format("  %d %s uses symmetry group %2d.\n", integer + 1, activeAtoms[integer], j + 1));
             }
           }
         }
-        if(conflict){
-          logger.warning(sb.toString());
+        if (conflict) {
+          logger.info(sb.toString());
         }
       }
     }
@@ -1508,13 +1525,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
   /**
    * Take list of aggregated unique indices based on input list of bonded atoms..
+   *
    * @param uniqueIndices List of unique indices of bonded atoms.
-   * @param bondedAtoms Atoms that are bonded to the atom of interest.
+   * @param bondedAtoms   Atoms that are bonded to the atom of interest.
    */
-  private void addUniqueBondedIndices(ArrayList<Integer> uniqueIndices, List<Atom> bondedAtoms){
+  private void addUniqueBondedIndices(ArrayList<Integer> uniqueIndices, List<Atom> bondedAtoms) {
     // Loop through bonded atoms
     for (Atom a : bondedAtoms) {
-      int index = a.getIndex();
+      int index = a.getIndex() - 1;
       // Determine if bonded atom's index is already in unique list.
       if (!uniqueIndices.contains(index)) {
         // Add to list if it is not already included.
