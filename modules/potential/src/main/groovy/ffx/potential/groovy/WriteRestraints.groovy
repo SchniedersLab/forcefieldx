@@ -38,15 +38,16 @@
 package ffx.potential.groovy
 
 import ffx.potential.bonded.*
-import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFileFilter
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.getExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
+
 
 /**
  * WriteRestraints logs "restrain-position" properties for a PDB file.
@@ -59,7 +60,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class WriteRestraints extends PotentialScript {
 
   /**
-   * -c or --chain to specify chain
+   * -c or --chain to specify the chain for a PDB file.
    */
   @Option(names = ['--chain', '-c'], description = 'Single character chain name.')
   String chain = null
@@ -127,33 +128,48 @@ class WriteRestraints extends PotentialScript {
 
     logger.info("\n Writing restraints for " + filename + "\n")
 
+    SystemFilter systemFilter = this.potentialFunctions.getFilter()
     int count = 0
 
-    Polymer[] polymers = activeAssembly.getChains()
-    for (Polymer polymer : polymers) {
-      if (chain != null && !chain.isEmpty()) {
-        char requested = chain.charAt(0).toUpperCase()
-        char current = polymer.getChainID().toUpperCase()
-        if (current != requested) {
-          logger.info(" Skipping chain " + current)
-          continue
-        } else {
-          logger.info(" Restraints for chain " + current)
+    if (systemFilter instanceof PDBFilter) {
+      Polymer[] polymers = activeAssembly.getChains()
+      for (Polymer polymer : polymers) {
+        if (chain != null && !chain.isEmpty()) {
+          char requested = chain.charAt(0).toUpperCase()
+          char current = polymer.getChainID().toUpperCase()
+          if (current != requested) {
+            logger.info(" Skipping chain " + current)
+            continue
+          } else {
+            logger.info(" Restraints for chain " + current)
+          }
+        }
+        Residue[] residues = polymer.getResidues()
+        for (Residue residue : residues) {
+          // Check for an amino acid c-alpha or a nucleic acid phosphate.
+          Atom atom = residue.getAtomByName("CA", true)
+          if (atom == null) {
+            atom = residue.getAtomByName("P", true)
+          }
+
+          // Continue if an atom isn't found.
+          if (atom == null) {
+            continue
+          }
+
+          if (count % select == 0) {
+            double x = atom.getX()
+            double y = atom.getY()
+            double z = atom.getZ()
+            logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f %12.8f %12.8f",
+                atom.getIndex(), x, y, z, forceConstant, fbDistance))
+          }
+          count++
         }
       }
-      Residue[] residues = polymer.getResidues()
-      for (Residue residue : residues) {
-        // Check for an amino acid c-alpha or a nucleic acid phosphate.
-        Atom atom = residue.getAtomByName("CA", true)
-        if (atom == null) {
-          atom = residue.getAtomByName("P", true)
-        }
-
-        // Continue if an atom isn't found.
-        if (atom == null) {
-          continue
-        }
-
+    } else {
+      Atom[] atoms = activeAssembly.getAtomArray()
+      for (Atom atom : atoms) {
         if (count % select == 0) {
           double x = atom.getX()
           double y = atom.getY()

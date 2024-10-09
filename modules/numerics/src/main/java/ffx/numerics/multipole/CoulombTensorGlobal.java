@@ -2280,6 +2280,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   /**
    * Emit code to calculate the Cartesian multipole tensor using SIMD vectorization.
    *
+   * @param order The order of the multipole expansion.
    * @return the code to calculate the Cartesian multipole tensor using SIMD vectorization.
    */
   protected String codeVectorTensorRecursion(int order) {

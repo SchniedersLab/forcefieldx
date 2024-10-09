@@ -37,6 +37,11 @@
 //******************************************************************************
 package ffx.potential.nonbonded.pme;
 
+import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
@@ -44,14 +49,31 @@ import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition.NONE;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition.THREEFOLD;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition.ZONLY;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+/**
+ * The torque values on a single site defined by
+ * a local coordinate frame are converted to Cartesian forces on
+ * the original site and sites specifying the local frame.
+ * <p>
+ * P. L. Popelier and A. J. Stone, "Formulae for the First and
+ * Second Derivatives of Anisotropic Potentials with Respect to
+ * Geometrical Parameters", Molecular Physics, 82, 411-425 (1994)
+ * <p>
+ * C. Segui, L. G. Pedersen and T. A. Darden, "Towards an Accurate
+ * Representation of Electrostatics in Classical Force Fields:
+ * Efficient Implementation of Multipolar Interactions in
+ * Biomolecular Simulations", Journal of Chemical Physics, 120,
+ * 73-87 (2004)
+ *
+ * @since 1.0
+ * @author Michael Schnieders
+ */
 public class Torque {
 
   private static final Logger logger = Logger.getLogger(Torque.class.getName());
@@ -89,7 +111,7 @@ public class Torque {
   public void torque(int i, int iSymm, double[] trq, int[] frameIndex, double[][] g) {
     final int[] ax = axisAtom[i];
     // Ions, for example, have no torque.
-    if (frame[i] == MultipoleType.MultipoleFrameDefinition.NONE) {
+    if (frame[i] == NONE) {
       return;
     }
 
@@ -111,6 +133,7 @@ public class Torque {
     double[] x = coordinates[iSymm][0];
     double[] y = coordinates[iSymm][1];
     double[] z = coordinates[iSymm][2];
+    // Construct the three rotation axes for the local frame.
     localOrigin[0] = x[i];
     localOrigin[1] = y[i];
     localOrigin[2] = z[i];
@@ -119,7 +142,7 @@ public class Torque {
     vecZ[2] = z[iz];
     sub(vecZ, localOrigin, vecZ);
     double rZ = length(vecZ);
-    if (frame[i] != MultipoleType.MultipoleFrameDefinition.ZONLY) {
+    if (frame[i] != ZONLY) {
       vecX[0] = x[ix];
       vecX[1] = y[ix];
       vecX[2] = z[ix];
@@ -135,8 +158,7 @@ public class Torque {
       }
     }
     double rX = length(vecX);
-    if (frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR
-        || frame[i] == MultipoleType.MultipoleFrameDefinition.THREEFOLD) {
+    if (frame[i] == ZTHENBISECTOR || frame[i] == THREEFOLD) {
       vecY[0] = x[iy];
       vecY[1] = y[iy];
       vecY[2] = z[iy];

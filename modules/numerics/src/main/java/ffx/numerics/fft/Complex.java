@@ -493,6 +493,7 @@ public class Complex {
    * @param data   an array of double.
    * @param offset the offset to the beginning of the data.
    * @param stride the stride between data points.
+   * @param nextFFT the offset to the beginning of the next FFT when nFFTs > 1.
    */
   public void inverse(double[] data, int offset, int stride, int nextFFT) {
     ifft(data, offset, stride, nextFFT);

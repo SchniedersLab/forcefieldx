@@ -905,7 +905,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     */
     if (gradient || lambdaTerm) {
       reduceRegion.init(lambdaTerm, gradient, atoms, coordinates, frame, axisAtom, grad, torque, lambdaGrad, lambdaTorque);
-      reduceRegion.excuteWith(parallelTeam);
+      reduceRegion.executeWith(parallelTeam);
     }
 
     // Log some timings.

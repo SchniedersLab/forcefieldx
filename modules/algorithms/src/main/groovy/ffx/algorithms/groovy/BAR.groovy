@@ -64,11 +64,9 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.logging.Level
-
 import static ffx.utilities.Constants.NS2SEC
 import static java.lang.Integer.MIN_VALUE
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.parseInt
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.min
 
@@ -130,14 +128,14 @@ class BAR extends AlgorithmsScript {
    * --ni or --nIterattions Maximum number of allowable iterations for BAR calculation.
    */
   @Option(names = ["--ni", "--nIterations"], paramLabel = "100",
-          description = "Specify the maximum number of iterations for BAR convergence.")
+      description = "Specify the maximum number of iterations for BAR convergence.")
   private int nIterations = 100
 
   /**
    * -e or --eps Convergence criterion for BAR iteration..
    */
   @Option(names = ["-e", "--eps"], paramLabel = "1.0E-7",
-          description = "Specify convergence cutoff for BAR calculation.")
+      description = "Specify convergence cutoff for BAR calculation.")
   private double eps = 1.0E-7
 
   /**
@@ -237,39 +235,39 @@ class BAR extends AlgorithmsScript {
   /**
    * Parallel Java world communicator.
    */
-  private Comm world;
+  private Comm world
   /**
    * If false, do not use MPI communication.
    */
-  private boolean useMPI;
+  private boolean useMPI
   /**
    * Number of processes.
    */
-  private int numProc;
+  private int numProc
   /**
    * Rank of this process.
    */
-  private int rank;
+  private int rank
   /**
    * The energy matrix stores a single energy value from each process. The array is of size
    * [numProc][numWorkItems][snapshots].
    */
-  private double[][][] energiesLowPJ;
+  private double[][][] energiesLowPJ
   /**
    * The energy matrix stores a single energy value from each process. The array is of size
    * [numProc][numWorkItems][snapshots].
    */
-  private double[][][] energiesAtPJ;
+  private double[][][] energiesAtPJ
   /**
    * The energy matrix stores a single energy value from each process. The array is of size
    * [numProc][numWorkItems][snapshots].
    */
-  private double[][][] energiesHighPJ;
+  private double[][][] energiesHighPJ
   /**
    * The volume matrix stores a single volume value from each process. The array is of size
    * [numProc][numWorkItems][snapshots].
    */
-  private double[][][] volumePJ;
+  private double[][][] volumePJ
   /**
    * The number of models matrix stores a single volume value from each process. The array is of size
    * [numProc][1].
@@ -279,66 +277,66 @@ class BAR extends AlgorithmsScript {
    * The energy matrix stores a single energy value from each process. The array is of size
    * [nWindows][nSnapshots].
    */
-  private double[][] energiesLow;
+  private double[][] energiesLow
   /**
    * The energy matrix stores a single energy value from each process. The array is of size
    * [nWindows][nSnapshots].
    */
-  private double[][] energiesAt;
+  private double[][] energiesAt
   /**
    * The energy matrix stores a single energy value from each process. The array is of size
    * [nWindows][nSnapshots].
    */
-  private double[][] energiesHigh;
+  private double[][] energiesHigh
   /**
    * The volume matrix stores a single volume value from each process. The array is of size
    * [nWindows][nSnapshots].
    */
-  private double[][] volume;
+  private double[][] volume
   /**
    * Each distance is wrapped inside a DoubleBuf for MPI communication.
    */
-  private DoubleBuf[] buffersLow;
+  private DoubleBuf[] buffersLow
   /**
    * Each distance is wrapped inside a DoubleBuf for MPI communication.
    */
-  private DoubleBuf[] buffersAt;
+  private DoubleBuf[] buffersAt
   /**
    * Each distance is wrapped inside a DoubleBuf for MPI communication.
    */
-  private DoubleBuf[] buffersHigh;
+  private DoubleBuf[] buffersHigh
   /**
    * Each distance is wrapped inside a DoubleBuf for MPI communication.
    */
-  private DoubleBuf[] buffersVolume;
+  private DoubleBuf[] buffersVolume
   /**
    * Each distance is wrapped inside a DoubleBuf for MPI communication.
    */
-  private IntegerBuf[] buffersMax;
+  private IntegerBuf[] buffersMax
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
-  private DoubleBuf myBufferLow;
+  private DoubleBuf myBufferLow
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
-  private DoubleBuf myBufferAt;
+  private DoubleBuf myBufferAt
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
-  private DoubleBuf myBufferHigh;
+  private DoubleBuf myBufferHigh
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
-  private DoubleBuf myBufferVolume;
+  private DoubleBuf myBufferVolume
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
-  private IntegerBuf myBufferMax;
+  private IntegerBuf myBufferMax
   /**
    * The amount of work based on windows for each process.
    */
-  private int numWorkItems;
+  private int numWorkItems
 
   /**
    * Maximum number of trials to be used for bootstrap.
@@ -392,8 +390,7 @@ class BAR extends AlgorithmsScript {
       logger.info(' At least two ensembles must be specified')
       return this
     } else if (nFiles == 1 && nWindows >= 2) {
-      logger.
-              info(format(' Auto-detecting %d windows for single topology:\n %s.', nWindows, files[0]))
+      logger.info(format(' Auto-detecting %d windows for single topology:\n %s.', nWindows, files[0]))
     } else if (nFiles == 2 && nWindows >= 2) {
       logger.info(format(' Auto-detecting %d windows for dual topology:\n %s\n %s.', nWindows, files[0], files[1]))
       numTopologies = 2
@@ -431,7 +428,7 @@ class BAR extends AlgorithmsScript {
 
     // Could set "getInitialLambda"'s quiet flag to false, but better logging here?
     logger.info(" Lambda values for each window: ")
-    int nLambda = lambdaValues.length;
+    int nLambda = lambdaValues.length
     for (int i = 0; i < nLambda; i++) {
       double l = lambdaValues[i]
       logger.info(format(" Window %3d: %6.4f", i, l))
@@ -528,41 +525,41 @@ class BAR extends AlgorithmsScript {
     }
 
     // Load properties file to determine if parallel environment if specified.
-    CompositeConfiguration properties = algorithmFunctions.getActiveAssembly().getProperties();
-    useMPI = properties.getBoolean("pj.use.mpi", true);
+    CompositeConfiguration properties = algorithmFunctions.getActiveAssembly().getProperties()
+    useMPI = properties.getBoolean("pj.use.mpi", true)
     // Set up parallel objects if necessary.
     if (useMPI) {
-      world = Comm.world();
+      world = Comm.world()
       // Number of processes is equal to world size (often called size).
-      numProc = world.size();
+      numProc = world.size()
       // Each processor gets its own rank (ID of sorts).
-      rank = world.rank();
+      rank = world.rank()
 
       // Padding of the target array size (inner loop limit) is for parallelization.
       // Target conformations are parallelized over available nodes.
       // For example, if numProc = 8 and nWindows = 12, then paddednWindows = 16.
-      int extra = nWindows % numProc;
-      int paddednWindows = nWindows;
+      int extra = nWindows % numProc
+      int paddednWindows = nWindows
       if (extra != 0) {
-        paddednWindows = nWindows - extra + numProc;
+        paddednWindows = nWindows - extra + numProc
       }
-      numWorkItems = (int) (paddednWindows / numProc);
+      numWorkItems = (int) (paddednWindows / numProc)
 
       if (numProc > 1) {
-        logger.info(format(" Number of MPI Processes:  %d", numProc));
-        logger.info(format(" Rank of this MPI Process: %d", rank));
-        logger.info(format(" Work per process per row: %d", numWorkItems));
+        logger.info(format(" Number of MPI Processes:  %d", numProc))
+        logger.info(format(" Rank of this MPI Process: %d", rank))
+        logger.info(format(" Work per process per row: %d", numWorkItems))
       }
     } else {
-      world = null;
-      numProc = 1;
-      rank = 0;
+      world = null
+      numProc = 1
+      rank = 0
     }
 
     // Parallelized determination of number of models in BAR calculation.
     maxModelsPJ = new int[numProc][1] // Note: int does not work with PJ gather commands --> int[][]
-    buffersMax = new IntegerBuf[numProc];
-    for(int p = 0; p < numProc; p++){
+    buffersMax = new IntegerBuf[numProc]
+    for (int p = 0; p < numProc; p++) {
       Arrays.fill(maxModelsPJ[p], MIN_VALUE)
       buffersMax[p] = IntegerBuf.buffer(maxModelsPJ[p])
     }
@@ -570,27 +567,27 @@ class BAR extends AlgorithmsScript {
     myBufferMax = buffersMax[rank]
     if (useTinkerBAR) {
       for (int w = 0; w < nWindows; w++) {
-        int windowRank = w % numProc;
+        int windowRank = w % numProc
         if (windowRank == rank) {
           for (String fileName : fullFilePaths[w]) {
             try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-              String data;
-              int xyzCount = 0;
+              String data
+              int xyzCount = 0
               while ((data = br.readLine()) != null) {
                 if (data.contains(".xyz") || data.contains(".pdb")) {
                   xyzCount++
-                  String[] tokens = data.trim().split(" +");
+                  String[] tokens = data.trim().split(" +")
                   int numModels = parseInt(tokens[0])
                   if (numModels > maxModelsPJ[rank][0]) {
                     maxModelsPJ[rank][0] = numModels
                   }
                 }
                 if (xyzCount == numTopologies) {
-                  break;
+                  break
                 }
               }
             } catch (IOException fileNotFoundException) {
-              logger.warning(format(" Exception reading %s:\n %s", fileName, fileNotFoundException));
+              logger.warning(format(" Exception reading %s:\n %s", fileName, fileNotFoundException))
             }
           }
         }
@@ -601,47 +598,47 @@ class BAR extends AlgorithmsScript {
         // Might need parameter/patch information from original file, therefore load original file.
         MolecularAssembly unused = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[t], t)
         // Extract systemFilter that will be used to read archives.
-        SystemFilter systemFilter = algorithmFunctions.getFilter();
+        SystemFilter systemFilter = algorithmFunctions.getFilter()
         for (int w = 0; w < nWindows; w++) {
-          int windowRank = w % numProc;
+          int windowRank = w % numProc
           if (windowRank == rank) {
-            String fileName = fullFilePaths[w][t];
+            String fileName = fullFilePaths[w][t]
             // Update assembly to use archive file.
-            systemFilter.getActiveMolecularSystem().setFile(new File(fileName));
+            systemFilter.getActiveMolecularSystem().setFile(new File(fileName))
             // Determine minimum number of assemblies.
             int numModels = systemFilter.countNumModels()
             if (numModels > maxModelsPJ[rank][0]) {
-              maxModelsPJ[rank][0] = numModels;
+              maxModelsPJ[rank][0] = numModels
             }
           }
         }
       }
     }
-    int maxModels;
-    if(useMPI) {
-      if(rank == 0 && numProc > 1){
+    int maxModels
+    if (useMPI) {
+      if (rank == 0 && numProc > 1) {
         logger.info(" MPI is only implemented for energy calculation (useTinkerBar or from files).")
       }
       world.allGather(myBufferMax, buffersMax)
       world.barrier()
-      int maximum = MIN_VALUE;
+      int maximum = MIN_VALUE
       for (int[] numModel : maxModelsPJ) {
-        for(int value: numModel){
+        for (int value : numModel) {
           if (value > maximum) {
             maximum = value;
           }
         }
       }
-      for(int p = 0; p < numProc; p++){
+      for (int p = 0; p < numProc; p++) {
         Arrays.fill(maxModelsPJ[p], maximum)
       }
       maxModels = maxModelsPJ[rank][0]
-    }else {
-      int maximum = MIN_VALUE;
+    } else {
+      int maximum = MIN_VALUE
       for (int[] numModel : maxModelsPJ) {
-        for(int value: numModel){
+        for (int value : numModel) {
           if (value > maximum) {
-            maximum = value;
+            maximum = value
           }
         }
       }
@@ -650,11 +647,11 @@ class BAR extends AlgorithmsScript {
     logger.info(format(" Maximum number of models is: %3d", maxModels));
 
     // Determine number of snapshots to include in evaluation.
-    if(endingSnapshot == 0){
+    if (endingSnapshot == 0) {
       endingSnapshot = maxModels - 1
     }
-    int snapshots = (endingSnapshot - startingSnapshot) + 1;
-    if(snapshots > maxModels){
+    int snapshots = (endingSnapshot - startingSnapshot) + 1
+    if (snapshots > maxModels) {
       logger.warning(format(" Specified number of snapshots (%5d) is greater than snapshots available (%5d).", snapshots, maxModels))
     }
 
@@ -670,22 +667,22 @@ class BAR extends AlgorithmsScript {
     volumePJ = new double[numProc][numWorkItems][snapshots]
     // Default values to impossible so that we know which should be removed in the end.
     //   Otherwise use minimum number of snapshots for all windows.
-    for(int i = 0; i < numProc; i++){
-      for(int j = 0; j < numWorkItems; j++){
-        Arrays.fill(energiesLowPJ[i][j], Double.NaN);
-        Arrays.fill(energiesAtPJ[i][j], Double.NaN);
-        Arrays.fill(energiesHighPJ[i][j], Double.NaN);
-        Arrays.fill(volumePJ[i][j], Double.NaN);
+    for (int i = 0; i < numProc; i++) {
+      for (int j = 0; j < numWorkItems; j++) {
+        Arrays.fill(energiesLowPJ[i][j], Double.NaN)
+        Arrays.fill(energiesAtPJ[i][j], Double.NaN)
+        Arrays.fill(energiesHighPJ[i][j], Double.NaN)
+        Arrays.fill(volumePJ[i][j], Double.NaN)
       }
     }
 
-    buffersLow = new DoubleBuf[numProc];
-    buffersAt = new DoubleBuf[numProc];
-    buffersHigh = new DoubleBuf[numProc];
-    buffersVolume = new DoubleBuf[numProc];
+    buffersLow = new DoubleBuf[numProc]
+    buffersAt = new DoubleBuf[numProc]
+    buffersHigh = new DoubleBuf[numProc]
+    buffersVolume = new DoubleBuf[numProc]
 
     for (int p = 0; p < numProc; p++) {
-      buffersLow[p] = DoubleBuf.buffer(energiesLowPJ[p]);
+      buffersLow[p] = DoubleBuf.buffer(energiesLowPJ[p])
       buffersAt[p] = DoubleBuf.buffer(energiesAtPJ[p])
       buffersHigh[p] = DoubleBuf.buffer(energiesHighPJ[p])
       buffersVolume[p] = DoubleBuf.buffer(volumePJ[p])
@@ -715,7 +712,7 @@ class BAR extends AlgorithmsScript {
         currentLambdas[1] = lambdaValues[w]
         currentLambdas[2] = lambdaValues[w + 1]
       }
-      nCurrLambdas = currentLambdas.length;
+      nCurrLambdas = currentLambdas.length
       energy = new double[nCurrLambdas][]
 
       if (useTinkerBAR) {
@@ -746,9 +743,8 @@ class BAR extends AlgorithmsScript {
       } else {
         int windowRank = w % numProc;
         if (windowRank == rank) {
-          int workIndex = (int) (w / numProc);
-          volumePJ[rank][workIndex] = getEnergyForLambdas(molecularAssemblies, currentLambdas,
-                  fullFilePaths[w], energy, isPBC, nSymm)
+          int workIndex = (int) (w / numProc)
+          volumePJ[rank][workIndex] = getEnergyForLambdas(molecularAssemblies, currentLambdas, fullFilePaths[w], energy, isPBC, nSymm)
           if (w == 0) {
             energiesAtPJ[rank][workIndex] = energy[0]
             energiesHighPJ[rank][workIndex] = energy[1]
@@ -764,7 +760,7 @@ class BAR extends AlgorithmsScript {
       }
     }
     // Gather all values from processes and place in object with desired dimensions.
-    gatherAllValues();
+    gatherAllValues()
 
     // Create file objects to write out TINKER style bar files.
     String tinkerFilePath = ""
@@ -780,16 +776,16 @@ class BAR extends AlgorithmsScript {
     double[] energySD = new double[nWindows]
     double[] energyVar = new double[nWindows]
     // Intensive calculations are done. Utilizing node 0 only for remaining calculations/output.
-    if(!useMPI || rank == 0) {
+    if (!useMPI || rank == 0) {
       for (int w = 0; w < nWindows + 1; w++) {
         if (w < nWindows) {
           if (tinkerBAR) {
             if (w == 0) {
               barWriters[w] = new BARFilter(xyzFile, energiesAt[w], energiesHigh[w], energiesLow[w + 1],
-                      energiesAt[w + 1], volume[w], volume[w + 1], temperature)
+                  energiesAt[w + 1], volume[w], volume[w + 1], temperature)
             } else if (w != nWindows - 1) {
               barWriters[w] = new BARFilter(xyzFile, energiesAt[w], energiesHigh[w], energiesLow[w + 1],
-                      energiesAt[w + 1], volume[w], volume[w + 1], temperature)
+                  energiesAt[w + 1], volume[w], volume[w + 1], temperature)
             }
             if (w != nWindows - 1) {
               String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
@@ -803,6 +799,7 @@ class BAR extends AlgorithmsScript {
           energyVar[w] = energyStats.var
         }
       }
+
       // Finish writing BAR files before evaluating windows in case of error evaluating a window.
       for (int w = 0; w < nWindows + 1; w++) {
         if (w == nWindows) {
@@ -870,7 +867,7 @@ class BAR extends AlgorithmsScript {
         }
 
         SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyWindowLow,
-                energyWindowAt, energyWindowHigh, new double[]{temperature}, eps, nIterations)
+            energyWindowAt, energyWindowHigh, new double[]{temperature}, eps, nIterations)
         SequentialEstimator forwards = bar.getInitialForwardsGuess()
         SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
@@ -878,7 +875,7 @@ class BAR extends AlgorithmsScript {
         EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
         EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
 
-        int volumeLength = volume.length;
+        int volumeLength = volume.length
         long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volumeLength, volumeLength))
         if (w == nWindows) {
           logger.info("\n Free Energy Difference:\n")
@@ -962,17 +959,17 @@ class BAR extends AlgorithmsScript {
   private void gatherAllValues() {
     if (useMPI) {
       try {
-        world.gather(0, myBufferLow, buffersLow);
-        world.gather(0, myBufferAt, buffersAt);
-        world.gather(0, myBufferHigh, buffersHigh);
-        world.gather(0, myBufferVolume, buffersVolume);
+        world.gather(0, myBufferLow, buffersLow)
+        world.gather(0, myBufferAt, buffersAt)
+        world.gather(0, myBufferHigh, buffersHigh)
+        world.gather(0, myBufferVolume, buffersVolume)
         if (rank == 0) {
           for (int workItem = 0; workItem < numWorkItems; workItem++) {
             for (int proc = 0; proc < numProc; proc++) {
-              final int index = numProc * workItem + proc;
+              final int index = numProc * workItem + proc
               // Do not include padded results.
               if (index < nWindows) {
-                energiesLow[index] = energiesLowPJ[proc][workItem];
+                energiesLow[index] = energiesLowPJ[proc][workItem]
                 energiesAt[index] = energiesAtPJ[proc][workItem];
                 energiesHigh[index] = energiesHighPJ[proc][workItem];
                 volume[index] = volumePJ[proc][workItem];
@@ -1005,13 +1002,12 @@ class BAR extends AlgorithmsScript {
   }
 
   private double[] getEnergyForLambdas(MolecularAssembly[] topologies, double[] lambdaValues,
-      String[] arcFileName, double[][] energy, boolean isPBC, int nSymm) {
+                                       String[] arcFileName, double[][] energy, boolean isPBC, int nSymm) {
     for (int j = 0; j < numTopologies; j++) {
       File archiveFile = new File(arcFileName[j])
       openers[j].setFile(archiveFile)
       topologies[j].setFile(archiveFile)
-      StringBuilder sb = new StringBuilder(format(
-          "\n Evaluating energies for %s\n ", arcFileName[j]))
+      StringBuilder sb = new StringBuilder(format("\n Evaluating energies for %s\n ", arcFileName[j]))
       logger.info(sb as String)
     }
     int nSnapshots = openers[0].countNumModels()

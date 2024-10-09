@@ -149,9 +149,10 @@ public class Complex2D {
   /**
    * Create a new 2D Complex FFT.
    *
-   * @param nX     The number of points in the X dimension.
-   * @param nY     The number of points in the Y dimension.
-   * @param layout The data layout.
+   * @param nX       The number of points in the X dimension.
+   * @param nY       The number of points in the Y dimension.
+   * @param layout   The data layout.
+   * @param imOffset The offset between real and imaginary values.
    */
   public Complex2D(int nX, int nY, DataLayout2D layout, int imOffset) {
     this.nX = nX;
@@ -247,6 +248,11 @@ public class Complex2D {
     packedFFTY.setUseSIMD(useSIMD);
   }
 
+  /**
+   * Set the 2D transform to pack FFTs into a contiguous array to compute all FFTs at once.
+   *
+   * @param packFFTs True to pack FFTs.
+   */
   public void setPackFFTs(boolean packFFTs) {
     this.packFFTs = packFFTs;
   }

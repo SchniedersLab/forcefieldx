@@ -39,8 +39,16 @@ package ffx.numerics.fft;
 
 import static java.lang.Math.fma;
 
+/**
+ * The MixedRadixFactorPrime class handles prime factors in the FFT.
+ */
 public class MixedRadixFactorPrime extends MixedRadixFactor {
 
+  /**
+   * Construct a MixedRadixFactorPrime.
+   *
+   * @param passConstants PassConstants.
+   */
   public MixedRadixFactorPrime(PassConstants passConstants) {
     super(passConstants);
   }

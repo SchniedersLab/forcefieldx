@@ -45,6 +45,9 @@ import static jdk.incubator.vector.DoubleVector.SPECIES_512;
 import static jdk.incubator.vector.DoubleVector.broadcast;
 import static jdk.incubator.vector.DoubleVector.fromArray;
 
+/**
+ * The MixedRadixFactor4 class handles factors of 4 in the FFT.
+ */
 public class MixedRadixFactor4 extends MixedRadixFactor {
 
   private final int di2;
@@ -52,6 +55,10 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
   private final int dj2;
   private final int dj3;
 
+  /**
+   * Construct a MixedRadixFactor4.
+   * @param passConstants PassConstants.
+   */
   public MixedRadixFactor4(PassConstants passConstants) {
     super(passConstants);
     di2 = 2 * di;

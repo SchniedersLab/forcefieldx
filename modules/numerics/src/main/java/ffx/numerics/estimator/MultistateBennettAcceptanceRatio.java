@@ -65,7 +65,10 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.stream;
 import static org.apache.commons.lang3.ArrayFill.fill;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The MultistateBennettAcceptanceRatio class defines a statistical estimator based on a generalization
@@ -78,8 +81,8 @@ import static org.apache.commons.math3.util.FastMath.*;
  * Shirts, M. R. and Chodera, J. D. (2008) Statistically optimal analysis of snaps from multiple equilibrium
  * states. J. Chem. Phys. 129, 124105. doi:10.1063/1.2978177
  * <p>
- * This class is based heavily on the pymbar code, which is available at:
- * https://github.com/choderalab/pymbar/tree/master
+ * This class is based heavily on the pymbar code, which is available from
+ * <a href="https://github.com/choderalab/pymbar/tree/master">Github</a>.
  *
  * @author Matthew J. Speranza
  * @since 1.0
@@ -163,13 +166,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   private SeedType seedType;
 
 
-
   /**
    * Enum of MBAR seed types.
    */
   public enum SeedType {BAR, ZWANZIG, ZEROS;}
+
   public static boolean FORCE_ZEROS_SEED = false;
   public static boolean VERBOSE = false;
+
   /**
    * Constructor for MBAR estimator.
    *
@@ -210,7 +214,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   public MultistateBennettAcceptanceRatio(double[] lambdaValues, int[] snaps, double[][] eAllFlat, double[] temperature,
-                                          double tolerance, SeedType seedType){
+                                          double tolerance, SeedType seedType) {
     super(lambdaValues, snaps, eAllFlat, temperature);
     this.tolerance = tolerance;
     this.seedType = seedType;
@@ -235,7 +239,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     switch (seedType) {
       case BAR:
         try {
-          if(eLow == null || eAt == null || eHigh == null) {
+          if (eLow == null || eAt == null || eHigh == null) {
             seedType = SeedType.ZEROS;
             seedEnergies();
             return;
@@ -254,8 +258,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           return;
         }
       case ZWANZIG:
-        try{
-          if(eLow == null || eAt == null || eHigh == null) {
+        try {
+          if (eLow == null || eAt == null || eHigh == null) {
             seedType = SeedType.ZEROS;
             seedEnergies();
             return;
@@ -271,7 +275,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           if (stream(mbarFEEstimates).anyMatch(Double::isInfinite) || stream(mbarFEEstimates).anyMatch(Double::isNaN)) {
             throw new IllegalArgumentException("MBAR contains NaNs or Infs after seeding.");
           }
-        break;
+          break;
         } catch (IllegalArgumentException e) {
           logger.warning(" Zwanzig failed to converge. Zeros will be used for seed energies.");
           seedType = SeedType.ZEROS;
@@ -299,7 +303,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   @Override
   public void estimateDG(boolean randomSamples) {
-    if (MultistateBennettAcceptanceRatio.VERBOSE){
+    if (MultistateBennettAcceptanceRatio.VERBOSE) {
       logger.setLevel(java.util.logging.Level.FINE);
     }
 
@@ -313,7 +317,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       seedType = SeedType.ZEROS;
       seedEnergies();
     }
-    if(MultistateBennettAcceptanceRatio.VERBOSE) {
+    if (MultistateBennettAcceptanceRatio.VERBOSE) {
       logger.info(" Seed Type: " + seedType);
       logger.info(" MBAR FE Estimates after seeding: " + Arrays.toString(mbarFEEstimates));
     }
@@ -374,7 +378,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // i.e. no trajectories for that lambda were generated/sampled, but other trajectories had potentials evaluated at that lambda
     ArrayList<Integer> zeroSnapLambdas = new ArrayList<>();
     ArrayList<Integer> sampledLambdas = new ArrayList<>();
-    for(int i = 0; i < nLambdaStates; i++) {
+    for (int i = 0; i < nLambdaStates; i++) {
       if (snaps[i] == 0) {
         zeroSnapLambdas.add(i);
       } else {
@@ -405,7 +409,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // SCI iterations used to start optimization of MBAR objective function.
     // Optimizers can struggle when starting too far from the minimum, but SCI doesn't.
-    double[] prevMBAR = copyOf(mbarFEEstimatesTemp, nLambdaStatesTemp);;
+    double[] prevMBAR = copyOf(mbarFEEstimatesTemp, nLambdaStatesTemp);
+    ;
     double omega = 1.5; // Parameter chosen empirically to work with most systems (> 2 works but not always).
     for (int i = 0; i < 10; i++) {
       prevMBAR = copyOf(mbarFEEstimatesTemp, nLambdaStatesTemp);
@@ -416,7 +421,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       if (stream(mbarFEEstimatesTemp).anyMatch(Double::isInfinite) || stream(mbarFEEstimatesTemp).anyMatch(Double::isNaN)) {
         throw new IllegalArgumentException("MBAR contains NaNs or Infs during startup SCI ");
       }
-      if(converged(prevMBAR)) {
+      if (converged(prevMBAR)) {
         break;
       }
     }
@@ -439,7 +444,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         LBFGS.minimize(nLambdaStatesTemp, mCorrections, x, mbarObjectiveFunction(reducedPotentialsTemp, snapsTemp, mbarFEEstimatesTemp),
             grad, eps, 1000, this, listener);
         arraycopy(x, 0, mbarFEEstimatesTemp, 0, nLambdaStatesTemp);
-      } else if (!converged(prevMBAR)){ // Newton optimization if hessian inversion isn't too expensive
+      } else if (!converged(prevMBAR)) { // Newton optimization if hessian inversion isn't too expensive
         if (MultistateBennettAcceptanceRatio.VERBOSE) {
           logger.info(" Newton optimization started.");
         }
@@ -447,15 +452,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     } catch (Exception e) {
       logger.warning(" L-BFGS/Newton failed to converge. Finishing w/ self-consistent iteration. Message: " +
-              e.getMessage());
+          e.getMessage());
     }
-    if(MultistateBennettAcceptanceRatio.VERBOSE) {
+    if (MultistateBennettAcceptanceRatio.VERBOSE) {
       logger.info(" MBAR FE Estimates after gradient optimization: " + Arrays.toString(mbarFEEstimatesTemp));
     }
 
     // Update the FE estimates with the optimized values from derivative-based optimization
     int count = 0;
-    for(Integer i : sampledLambdas){
+    for (Integer i : sampledLambdas) {
       if (!Double.isNaN(mbarFEEstimatesTemp[count])) { // Should be !NaN
         mbarFEEstimates[i] = mbarFEEstimatesTemp[count];
       }
@@ -504,6 +509,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
 
   //////// Misc. Methods ////////////
+
   /**
    * Checks if the MBAR free energy estimates have converged by comparing the difference
    * between the previous and current free energies. The tolerance is set by the user.
@@ -527,7 +533,6 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * <p>i.e. collapsedW[0][0] is the sum of the weights in W[0] from the trajectory sampled at
    * lambda 0. The diagonal of this matrix should be larger than all other values if that
    * window had proper sampling.
-   *
    */
   private void logWeights() {
     logger.info(" MBAR Weight Matrix Information Collapsed:");
@@ -536,19 +541,19 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (int i = 0; i < snaps.length; i++) {
       for (int j = 0; j < W.length; j++) {
         int start = 0;
-        for(int k = 0; k < i; k++) {
+        for (int k = 0; k < i; k++) {
           start += snaps[k];
         }
-        for(int k = 0; k < snaps[i]; k++) {
+        for (int k = 0; k < snaps[i]; k++) {
           collapsedW[j][i] += W[j][start + k];
         }
       }
     }
-    for(int i = 0; i < W.length; i++) {
-      logger.info( "\n Estimation " + i + ": " + Arrays.toString(collapsedW[i]));
+    for (int i = 0; i < W.length; i++) {
+      logger.info("\n Estimation " + i + ": " + Arrays.toString(collapsedW[i]));
     }
     double[] rowSum = new double[W.length];
-    for(int i = 0; i < collapsedW[0].length; i++) {
+    for (int i = 0; i < collapsedW[0].length; i++) {
       for (double[] trajectory : collapsedW) {
         rowSum[i] += trajectory[i];
       }
@@ -559,12 +564,13 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
 
   //////// Methods for calculating MBAR variables, vectors, and matrices. ////////
+
   /**
    * MBAR objective function. This is used for L-BFGS optimization.
    *
-   * @param reducedPotentials -ln(boltzmann weights)
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   -ln(boltzmann weights)
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return The objective function value.
    */
   private static double mbarObjectiveFunction(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -594,9 +600,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Gradient of the MBAR objective function. C6 in Shirts and Chodera 2008.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Gradient for the mbar objective function.
    */
   private static double[] mbarGradient(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -636,9 +642,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Hessian of the MBAR objective function. C9 in Shirts and Chodera 2008.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return Hessian for the mbar objective function.
    */
   private static double[][] mbarHessian(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -673,9 +679,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * W = exp(freeEnergyEstimates - reducedPotentials.T - log_denominator_n[:, newaxis])
    * Eq. 9 in Shirts and Chodera 2008.
    *
-   * @param reducedPotentials energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotentials   energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return W matrix.
    */
   private static double[][] mbarW(double[][] reducedPotentials, int[] snapsPerLambda, double[] freeEnergyEstimates) {
@@ -707,10 +713,10 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   private double[] mbarEnthalpyCalc(double[][] reducedPotentials, double[] mbarFEEstimates) {
     double[] enthalpy = new double[mbarFEEstimates.length - 1];
     double[] averagePotential = new double[mbarFEEstimates.length];
-    for(int i = 0; i < reducedPotentials.length; i++) {
+    for (int i = 0; i < reducedPotentials.length; i++) {
       averagePotential[i] = computeExpectations(eAllFlat[i])[i]; // average potential of ith lambda
     }
-    for(int i = 0; i < enthalpy.length; i++) {
+    for (int i = 0; i < enthalpy.length; i++) {
       enthalpy[i] = averagePotential[i + 1] - averagePotential[i];
     }
     return enthalpy;
@@ -718,7 +724,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   private double[] mbarEntropyCalc(double[] mbarEnthalpy, double[] mbarFEEstimates) {
     double[] entropy = new double[mbarFEEstimates.length - 1];
-    for(int i = 0; i < entropy.length; i++) {
+    for (int i = 0; i < entropy.length; i++) {
       entropy[i] = mbarEnthalpy[i] - mbarFEDifferenceEstimates[i]; // dG = dH - TdS || TdS = dH - dG
     }
     return entropy;
@@ -732,20 +738,20 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   public void setBiasData(double[][][] biasAll, boolean multiDataObservable) {
     biasFlat = new double[biasAll.length][biasAll.length * biasAll[0][0].length];
-    if(multiDataObservable){ // Flatten data
+    if (multiDataObservable) { // Flatten data
       int[] snapsT = new int[biasAll.length];
       int[] nanCount = new int[biasAll.length];
       for (int i = 0; i < biasAll.length; i++) {
         ArrayList<Double> temp = new ArrayList<>();
         double maxBias = Double.NEGATIVE_INFINITY;
-        for(int j = 0; j < biasAll.length; j++) {
+        for (int j = 0; j < biasAll.length; j++) {
           int count = 0;
           int countNaN = 0;
-          for(int k = 0; k < biasAll[j][i].length; k++) {
+          for (int k = 0; k < biasAll[j][i].length; k++) {
             // Don't include NaN values
             if (!Double.isNaN(biasAll[j][i][k])) {
               temp.add(biasAll[j][i][k]);
-              if(biasAll[j][i][k] > maxBias){
+              if (biasAll[j][i][k] > maxBias) {
                 maxBias = biasAll[j][i][k];
               }
               count++;
@@ -758,18 +764,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
         biasFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
         // Regularize bias for this lambda
-        for(int j = 0; j < biasFlat[i].length; j++){
+        for (int j = 0; j < biasFlat[i].length; j++) {
           biasFlat[i][j] -= maxBias;
         }
       }
     } else { // Put relevant data into the 0th index
       int count = 0;
       double maxBias = Double.NEGATIVE_INFINITY;
-      for (int i = 0; i < biasAll.length; i++){
-        for(int j = 0; j < biasAll[0][0].length; j++){
-          if(!Double.isNaN(biasAll[i][i][j])){
+      for (int i = 0; i < biasAll.length; i++) {
+        for (int j = 0; j < biasAll[0][0].length; j++) {
+          if (!Double.isNaN(biasAll[i][i][j])) {
             biasFlat[0][count] = biasAll[i][i][j];
-            if(biasAll[i][i][j] > maxBias){
+            if (biasAll[i][i][j] > maxBias) {
               maxBias = biasAll[i][i][j];
             }
             count++;
@@ -777,23 +783,23 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       }
       // Regularize bias for this lambda
-      for(int i = 0; i < biasFlat[0].length; i++){
+      for (int i = 0; i < biasFlat[0].length; i++) {
         biasFlat[0][i] -= maxBias;
       }
     }
   }
 
-  public void setBiasData(double[][] biasData){
+  public void setBiasData(double[][] biasData) {
     this.biasFlat = biasData;
     // Regularize bias for this lambda
-    for(int i = 0; i < biasFlat.length; i++){
+    for (int i = 0; i < biasFlat.length; i++) {
       double maxBias = Double.NEGATIVE_INFINITY;
-      for(int j = 0; j < biasFlat[i].length; j++){
-        if(biasFlat[i][j] > maxBias){
+      for (int j = 0; j < biasFlat[i].length; j++) {
+        if (biasFlat[i][j] > maxBias) {
           maxBias = biasFlat[i][j];
         }
       }
-      for(int j = 0; j < biasFlat[i].length; j++){
+      for (int j = 0; j < biasFlat[i].length; j++) {
         biasFlat[i][j] -= maxBias;
       }
     }
@@ -801,15 +807,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   public void setObservableData(double[][][] oAll, boolean multiDataObservable, boolean uncertainties) {
     oAllFlat = new double[oAll.length][oAll.length * oAll[0][0].length];
-    if(multiDataObservable){ // Flatten data
+    if (multiDataObservable) { // Flatten data
       int[] snapsT = new int[oAll.length];
       int[] nanCount = new int[oAll.length];
       for (int i = 0; i < oAll.length; i++) {
         ArrayList<Double> temp = new ArrayList<>();
-        for(int j = 0; j < oAll.length; j++) {
+        for (int j = 0; j < oAll.length; j++) {
           int count = 0;
           int countNaN = 0;
-          for(int k = 0; k < oAll[j][i].length; k++) {
+          for (int k = 0; k < oAll[j][i].length; k++) {
             // Don't include NaN values
             if (!Double.isNaN(oAll[j][i][k])) {
               temp.add(oAll[j][i][k]);
@@ -825,9 +831,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
     } else { // Put relevant data into the 0th index
       int count = 0;
-      for (int i = 0; i < oAll.length; i++){
-        for(int j = 0; j < oAll[0][0].length; j++){
-          if(!Double.isNaN(oAll[i][i][j])){
+      for (int i = 0; i < oAll.length; i++) {
+        for (int j = 0; j < oAll[0][0].length; j++) {
+          if (!Double.isNaN(oAll[i][i][j])) {
             oAllFlat[0][count] = oAll[i][i][j]; // Note [i][i] indexing
             count++;
           }
@@ -836,25 +842,25 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
     // OST Data
     if (biasFlat != null) {
-      for(int i = 0; i< oAllFlat.length; i++) {
+      for (int i = 0; i < oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
-          oAllFlat[i][j] *= exp(biasFlat[i][j]/rtValues[i]);
+          oAllFlat[i][j] *= exp(biasFlat[i][j] / rtValues[i]);
         }
       }
     }
     this.fillObservationExpectations(multiDataObservable, uncertainties);
   }
 
-  public void setObservableData(double[][] oAll, boolean uncertainties){
+  public void setObservableData(double[][] oAll, boolean uncertainties) {
     oAllFlat = oAll;
     // OST Data
     if (biasFlat != null) {
       if (oAllFlat.length != biasFlat.length || oAllFlat[0].length != biasFlat[0].length) {
         logger.severe("Observable and bias data are not the same size. Exiting.");
       }
-      for(int i = 0; i< oAllFlat.length; i++) {
+      for (int i = 0; i < oAllFlat.length; i++) {
         for (int j = 0; j < oAllFlat[i].length; j++) {
-          oAllFlat[i][j] *= exp(biasFlat[i][j]/rtValues[i]);
+          oAllFlat[i][j] *= exp(biasFlat[i][j] / rtValues[i]);
         }
       }
     }
@@ -862,8 +868,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   public double getTIIntegral() {
-    DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0,1, mbarObservableEnsembleAverages.length, false),
-            mbarObservableEnsembleAverages, false);
+    DataSet dSet = new DoublesDataSet(Integrate1DNumeric.generateXPoints(0, 1, mbarObservableEnsembleAverages.length, false),
+        mbarObservableEnsembleAverages, false);
     return Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, Integrate1DNumeric.IntegrationType.TRAPEZOIDAL);
   }
 
@@ -873,11 +879,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    *
    * @return Uncertainty of the observable.
    */
-  private void fillObservationExpectations(boolean multiData, boolean uncertainties){
-    if(multiData){
+  private void fillObservationExpectations(boolean multiData, boolean uncertainties) {
+    if (multiData) {
       mbarObservableEnsembleAverages = new double[oAllFlat.length];
       mbarObservableEnsembleAverageUncertainties = new double[oAllFlat.length];
-      for(int i = 0; i < oAllFlat.length; i++){
+      for (int i = 0; i < oAllFlat.length; i++) {
         mbarObservableEnsembleAverages[i] = computeExpectations(oAllFlat[i])[i];
         if (uncertainties) {
           mbarObservableEnsembleAverageUncertainties[i] = computeExpectationStd(oAllFlat[i])[i];
@@ -901,14 +907,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param samples
    * @return
    */
-  private double[] computeExpectations(double[] samples){
+  private double[] computeExpectations(double[] samples) {
     double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
     if (W[0].length != samples.length) {
       logger.severe("Samples and W matrix are not the same length. Exiting.");
     }
     double[] expectation = new double[W.length];
-    for(int i = 0; i < W.length; i++){
-      for(int j = 0; j < W[i].length; j++){
+    for (int i = 0; i < W.length; i++) {
+      for (int j = 0; j < W[i].length; j++) {
         expectation[i] += W[i][j] * samples[j];
       }
     }
@@ -925,7 +931,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   private double[][] mbarAugmentedW(double[] samples) {
     int nStates = mbarFEEstimates.length;
     // Enforce positivity of samples --> from pymbar
-    double minSample = stream(samples).min().getAsDouble() - 3*java.lang.Math.ulp(1.0); // ulp to avoid zeros
+    double minSample = stream(samples).min().getAsDouble() - 3 * java.lang.Math.ulp(1.0); // ulp to avoid zeros
     if (minSample < 0) {
       for (int i = 0; i < samples.length; i++) {
         samples[i] -= minSample;
@@ -947,14 +953,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       }
       log_denom_n[i] = logSumExp(temp, snaps, maxTemp);
-      for(int j = 0; j < nStates; j++){
+      for (int j = 0; j < nStates; j++) {
         logCATerms[j][i] = log(samples[i]) - reducedPotentials[j][i] - log_denom_n[i];
-        if(logCATerms[j][i] > maxLogCATerm[i]){
+        if (logCATerms[j][i] > maxLogCATerm[i]) {
           maxLogCATerm[j] = logCATerms[j][i];
         }
       }
     }
-    for(int i = 0; i < nStates; i++){
+    for (int i = 0; i < nStates; i++) {
       logCA[i] = logSumExp(logCATerms[i], maxLogCATerm[i]);
     }
     // Eq. 13 in Shirts and Chodera (2008)
@@ -973,7 +979,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
     double[][] augmentedW = new double[nStates * 2][reducedPotentials[0].length];
     for (int i = 0; i < augmentedW.length; i++) {
-      augmentedW[i] = i < nStates ? Wna[i] : WnA[(i-nStates)];
+      augmentedW[i] = i < nStates ? Wna[i] : WnA[(i - nStates)];
     }
     return augmentedW;
   }
@@ -987,25 +993,25 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @param samples
    * @return
    */
-  private double[] computeExpectationStd(double[] samples){
+  private double[] computeExpectationStd(double[] samples) {
     int[] extendedSnaps = new int[snaps.length * 2];
     System.arraycopy(snaps, 0, extendedSnaps, 0, snaps.length);
     RealMatrix theta = MatrixUtils.createRealMatrix(mbarTheta(extendedSnaps, mbarAugmentedW(samples)));
     double[] expectations = computeExpectations(samples);
-    double[] diag = new double[expectations.length*2];
-    for(int i = 0; i < expectations.length; i++){
+    double[] diag = new double[expectations.length * 2];
+    for (int i = 0; i < expectations.length; i++) {
       diag[i] = expectations[i];
-      diag[i+expectations.length] = expectations[i];
+      diag[i + expectations.length] = expectations[i];
     }
     RealMatrix diagMatrix = MatrixUtils.createRealDiagonalMatrix(diag);
     theta = diagMatrix.multiply(theta).multiply(diagMatrix);
-    RealMatrix ul = theta.getSubMatrix(0, expectations.length-1, 0, expectations.length-1);
-    RealMatrix ur = theta.getSubMatrix(0, expectations.length-1, expectations.length, expectations.length*2-1);
-    RealMatrix ll = theta.getSubMatrix(expectations.length, expectations.length*2-1, 0, expectations.length-1);
-    RealMatrix lr = theta.getSubMatrix(expectations.length, expectations.length*2-1, expectations.length, expectations.length*2-1);
+    RealMatrix ul = theta.getSubMatrix(0, expectations.length - 1, 0, expectations.length - 1);
+    RealMatrix ur = theta.getSubMatrix(0, expectations.length - 1, expectations.length, expectations.length * 2 - 1);
+    RealMatrix ll = theta.getSubMatrix(expectations.length, expectations.length * 2 - 1, 0, expectations.length - 1);
+    RealMatrix lr = theta.getSubMatrix(expectations.length, expectations.length * 2 - 1, expectations.length, expectations.length * 2 - 1);
     double[][] covA = ul.add(lr).subtract(ur).subtract(ll).getData(); // Loose precision here
     double[] sigma = new double[covA.length];
-    for(int i = 0; i < covA.length; i++){
+    for (int i = 0; i < covA.length; i++) {
       sigma[i] = sqrt(abs(covA[i][i]));
     }
     return sigma;
@@ -1025,8 +1031,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       if (variance < 0) {
         if (MultistateBennettAcceptanceRatio.VERBOSE) {
           logger.warning(" Negative variance detected in MBAR uncertainty calculation. " +
-                  "Multiplying by -1 to get real value. Check diff matrix to see which variances were negative. " +
-                  "They should be NaN.");
+              "Multiplying by -1 to get real value. Check diff matrix to see which variances were negative. " +
+              "They should be NaN.");
         }
         variance *= -1;
       }
@@ -1053,8 +1059,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * D4 from supp info of MBAR paper used instead to reduce storage and comp. complexity.
    *
    * @param reducedPotentials energies
-   * @param snapsPerState  number of snaps per state
-   * @param freeEnergies  free energies
+   * @param snapsPerState     number of snaps per state
+   * @param freeEnergies      free energies
    * @return Theta matrix.
    */
   private static double[][] mbarTheta(double[][] reducedPotentials, int[] snapsPerState, double[] freeEnergies) {
@@ -1109,9 +1115,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   /**
    * Self-consistent iteration to update free energies. Eq. 11 from Shirts and Chodera (2008).
    *
-   * @param reducedPotential energies
-   * @param snapsPerLambda  number of snaps per state
-   * @param freeEnergyEstimates  free energies
+   * @param reducedPotential    energies
+   * @param snapsPerLambda      number of snaps per state
+   * @param freeEnergyEstimates free energies
    * @return updated free energies
    */
   private static double[] mbarSelfConsistentUpdate(double[][] reducedPotential, int[] snapsPerLambda,
@@ -1156,7 +1162,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
   /**
    * Newton-Raphson step for MBAR optimization. Falls back to the steepest descent if hessian is singular.
-   *
+   * <p>
    * The matrix can come back from being singular after several iterations, so it isn't worth moving to L-BFGS.
    *
    * @param n        current free energies.
@@ -1171,12 +1177,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     try {
       RealMatrix hessianInverse = MatrixUtils.inverse(MatrixUtils.createRealMatrix(hessian));
       step = hessianInverse.preMultiply(grad);
-    } catch (IllegalArgumentException e){
-        if(MultistateBennettAcceptanceRatio.VERBOSE) {
-          logger.info(" Singular matrix detected in MBAR Newton-Raphson step. Performing steepest descent step.");
-        }
-        step = grad;
-        stepSize = 1e-5;
+    } catch (IllegalArgumentException e) {
+      if (MultistateBennettAcceptanceRatio.VERBOSE) {
+        logger.info(" Singular matrix detected in MBAR Newton-Raphson step. Performing steepest descent step.");
+      }
+      step = grad;
+      stepSize = 1e-5;
     }
     // Zero out the first term of the step
     double temp = step[0];
@@ -1212,7 +1218,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       // Catches singular matrices and performs steepest descent
       f_kPlusOne = newtonStep(freeEnergyEstimates, grad, hessian, 1.0);
       double eps = 0.0;
-      for(int i = 0; i < freeEnergyEstimates.length; i++){
+      for (int i = 0; i < freeEnergyEstimates.length; i++) {
         eps += abs(grad[i]);
       }
       if (eps < tolerance) {
@@ -1220,7 +1226,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       }
       iter++;
     }
-    if(MultistateBennettAcceptanceRatio.VERBOSE) {
+    if (MultistateBennettAcceptanceRatio.VERBOSE) {
       logger.info(" Newton iterations (max 15): " + iter);
     }
 
@@ -1273,14 +1279,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    *
    * @param values
    */
-  private static void softMax(double[] values){
+  private static void softMax(double[] values) {
     double max = stream(values).max().getAsDouble();
     double sum = 0.0;
-    for(int i = 0; i < values.length; i++){
-      values[i] = exp(values[i]-max);
+    for (int i = 0; i < values.length; i++) {
+      values[i] = exp(values[i] - max);
       sum += values[i];
     }
-    for(int i = 0; i < values.length; i++){
+    for (int i = 0; i < values.length; i++) {
       values[i] /= sum;
     }
   }
@@ -1456,12 +1462,12 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * Test all MBAR methods individually with a simple Harmonic Oscillator test case with an
    * excess of samples. "PASS" indicates that the test passed, while "FAIL" followed by the
    * method name indicates that the test failed.
-   *
+   * <p>
    * Last updated - 06/11/2024
    *
    * @return array of test results
    */
-  public static String[] testMBARMethods(){
+  public static String[] testMBARMethods() {
     // Set up highly converged test case
     double[] O_k = {1, 2, 3, 4};
     double[] K_k = {.5, 1.0, 1.5, 2};
@@ -1514,21 +1520,21 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     // mbarHessian()
     double[][] hessian = mbarHessian(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[][] expected2d = new double[][]{{47600.586808418964, -29977.008359691405, -12870.425573135915, -4753.1528755909385},
-            {-29977.008359691405, 63767.745823769576, -24597.198354108747, -9193.539109971487},
-            {-12870.425573135915, -24597.198354108747, 64584.87112481013, -27117.247197561417},
-            {-4753.1528755909385, -9193.539109971487, -27117.247197561417, 41063.93918312612}};
+        {-29977.008359691405, 63767.745823769576, -24597.198354108747, -9193.539109971487},
+        {-12870.425573135915, -24597.198354108747, 64584.87112481013, -27117.247197561417},
+        {-4753.1528755909385, -9193.539109971487, -27117.247197561417, 41063.93918312612}};
     pass = !(normDiff(hessian, expected2d) > 16e-5);
     hessian = mbarHessian(reducedPotentials, snapsPerLambda, highTolFEEstimates);
     expected2d = new double[][]{{49168.30161780381, -31256.519016487477, -12983.708230229113, -4928.074371082683},
-            {-31256.519016487477, 66075.94621325849, -25339.462656640117, -9479.964540130917},
-            {-12983.708230229113, -25339.462656640117, 64308.30940252403, -25985.13851565483},
-            {-4928.074371082683, -9479.964540130917, -25985.13851565483, 40393.1774268678}};
+        {-31256.519016487477, 66075.94621325849, -25339.462656640117, -9479.964540130917},
+        {-12983.708230229113, -25339.462656640117, 64308.30940252403, -25985.13851565483},
+        {-4928.074371082683, -9479.964540130917, -25985.13851565483, 40393.1774268678}};
     pass = !(normDiff(hessian, expected2d) > 16e-5) && pass;
     hessian = mbarHessian(reducedPotentials, snapsPerLambda, zeros);
     expected2d = new double[][]{{56125.271437145464, -33495.87894376072, -15738.011263498352, -6891.381229885624},
-            {-33495.87894376072, 64613.515110188295, -21970.091845920833, -9147.544320511564},
-            {-15738.011263498352, -21970.091845920833, 61407.66256511316, -23699.55945569241},
-            {-6891.381229885624, -9147.544320511564, -23699.55945569241, 39738.48500608951}};
+        {-33495.87894376072, 64613.515110188295, -21970.091845920833, -9147.544320511564},
+        {-15738.011263498352, -21970.091845920833, 61407.66256511316, -23699.55945569241},
+        {-6891.381229885624, -9147.544320511564, -23699.55945569241, 39738.48500608951}};
     pass = !(normDiff(hessian, expected2d) > 16e-5) && pass;
     results[3] = pass ? "PASS" : "FAIL mbarHessian()";
 
@@ -1537,11 +1543,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[][] theta = mbarTheta(reducedPotentials, snapsPerLambda, freeEnergyEstimates);
     double[][] diff = diffMatrixCalculation(theta);
     expected2d = new double[][]{{0.0, 0.001953125, 0.003400485419234404, 0.004858337095247168},
-            {0.0020716018980074633, 0.0, 0.002042627017905458, 0.004055968683065466},
-            {0.003435363105339426, 0.002042627017905458, 0.0, 0.002560568476977909},
-            {0.0048828125, 0.004055968683065466, 0.0025135815773894045, 0.0}};
+        {0.0020716018980074633, 0.0, 0.002042627017905458, 0.004055968683065466},
+        {0.003435363105339426, 0.002042627017905458, 0.0, 0.002560568476977909},
+        {0.0048828125, 0.004055968683065466, 0.0025135815773894045, 0.0}};
     pass = !(normDiff(diff, expected2d) > 16e-5);
-    results[4] = pass ? "PASS" : "FAIL mbarTheta() or diffMatrixCalculation()" ;
+    results[4] = pass ? "PASS" : "FAIL mbarTheta() or diffMatrixCalculation()";
 
     pass = true;
     // selfConsistentUpdate()
@@ -1567,18 +1573,18 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     return results;
   }
 
-  private static double normDiff(double[] a, double[] b){
+  private static double normDiff(double[] a, double[] b) {
     double sum = 0.0;
-    for(int i = 0; i < a.length; i++){
+    for (int i = 0; i < a.length; i++) {
       sum += abs(a[i] - b[i]);
     }
     return sum;
   }
 
-  private static double normDiff(double[][] a, double[][] b){
+  private static double normDiff(double[][] a, double[][] b) {
     double sum = 0.0;
-    for(int i = 0; i < a.length; i++){
-      for(int j = 0; j < a[i].length; j++){
+    for (int i = 0; i < a.length; i++) {
+      for (int j = 0; j < a[i].length; j++) {
         sum += abs(a[i][j] - b[i][j]);
       }
     }
@@ -1636,14 +1642,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     double[] analyticalFreeEnergies = testCase.analyticalFreeEnergies();
     double[] error = new double[analyticalFreeEnergies.length];
     for (int i = 0; i < error.length; i++) {
-      error[i] = analyticalFreeEnergies[i]-mbarFEEstimates[i];
+      error[i] = analyticalFreeEnergies[i] - mbarFEEstimates[i];
     }
     double[] temp = testCase.analyticalEntropies(0);
     double[] analyticEntropyDiff = new double[temp.length - 1];
     double[] errorEntropy = new double[temp.length - 1];
-    for(int i = 0; i < analyticEntropyDiff.length; i++){
-      analyticEntropyDiff[i] = temp[i+1] - temp[i];
-      errorEntropy[i] = analyticEntropyDiff[i] -mbarEntropyDiff[i];
+    for (int i = 0; i < analyticEntropyDiff.length; i++) {
+      analyticEntropyDiff[i] = temp[i + 1] - temp[i];
+      errorEntropy[i] = analyticEntropyDiff[i] - mbarEntropyDiff[i];
     }
 
     // Compare the calculated free energy differences with the analytical ones
@@ -1670,9 +1676,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     System.out.println("MBAR DERIVED OBSERVABLES: \n");
     mbar.setObservableData(u_kln, true, true);
     double[] mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
-            mbar.mbarObservableEnsembleAverages.length);
+        mbar.mbarObservableEnsembleAverages.length);
     double[] mbarObservableEnsembleAverageUncertainties = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
-            mbar.mbarObservableEnsembleAverageUncertainties.length);
+        mbar.mbarObservableEnsembleAverageUncertainties.length);
     System.out.println("Multi-Data Observable Example u_kln:");
     System.out.println("MBAR Observable Ensemble Averages (Potential):              " + Arrays.toString(mbarObservableEnsembleAverages));
     System.out.println("Analytical Observable Ensemble Averages (Potential):        " + Arrays.toString(testCase.analyticalObservable("potential energy")));
@@ -1681,17 +1687,17 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
 
     // Reads data from xAll[0]
     double[][][] xAll = new double[equilPositions.length][equilPositions.length][x_n.length];
-    for(int i = 0; i < xAll[0].length; i++){
-      for(int j = 0; j < xAll[0][0].length; j++){
+    for (int i = 0; i < xAll[0].length; i++) {
+      for (int j = 0; j < xAll[0][0].length; j++) {
         // Copy data multiple times into same window
         xAll[0][i][j] = x_n[j];
       }
     }
     mbar.setObservableData(xAll, false, true);
     mbarObservableEnsembleAverages = Arrays.copyOf(mbar.mbarObservableEnsembleAverages,
-            mbar.mbarObservableEnsembleAverages.length);
+        mbar.mbarObservableEnsembleAverages.length);
     mbarObservableEnsembleAverageUncertainties = Arrays.copyOf(mbar.mbarObservableEnsembleAverageUncertainties,
-            mbar.mbarObservableEnsembleAverageUncertainties.length);
+        mbar.mbarObservableEnsembleAverageUncertainties.length);
     System.out.println("Single-Data Observable Example x_n:");
     System.out.println("MBAR Observable Ensemble Averages (Position):              " + Arrays.toString(mbarObservableEnsembleAverages));
     System.out.println("Analytical Observable Ensemble Averages (Position):        " + Arrays.toString(testCase.analyticalMeans()));
@@ -1707,6 +1713,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     private final double[] equilPositions;
     private final int n_states;
     private final double[] springConstants;
+
     public HarmonicOscillatorsTestCase(double[] O_k, double[] K_k, double beta) {
       this.beta = beta;
       this.equilPositions = O_k;
@@ -1782,7 +1789,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     /**
-     * Sample from harmonic oscillator w/ gaussian & std
+     * Sample from harmonic oscillator with gaussian and standard deviation.
      *
      * @param N_k  number of snaps per state
      * @param mode only u_kn -> return K x N_tot matrix where u_kn[k,n] is reduced potential of sample n evaluated at state k
@@ -1830,8 +1837,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           index++;
         }
         // Set the rest of the array to NaN
-        for(int n = N_k[k]; n < N_max; n++){
-          for ( int l =0; l < n_states; l++) {
+        for (int n = N_k[k]; n < N_max; n++) {
+          for (int l = 0; l < n_states; l++) {
             u_kln[k][l][n] = Double.NaN;
           }
         }

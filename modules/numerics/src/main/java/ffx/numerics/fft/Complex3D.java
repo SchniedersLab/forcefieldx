@@ -252,6 +252,11 @@ public class Complex3D {
     fftZN.setUseSIMD(useSIMD);
   }
 
+  /**
+   * Set the 2D transform to pack FFTs.
+   *
+   * @param packFFTs True to pack FFTs.
+   */
   public void setPackFFTs(boolean packFFTs) {
     this.packFFTs = packFFTs;
     fftXY.setPackFFTs(packFFTs);
@@ -274,11 +279,12 @@ public class Complex3D {
   /**
    * Determine the index of the complex number in the blocked 1D array from the X, Y and Z indices.
    *
-   * @param i  the index along the X-axis.
-   * @param j  the index along the Y-axis.
-   * @param k  the index along the Z-axis.
-   * @param nX the number of points along the X-axis.
-   * @param nY the number of points along the Y-axis.
+   * @param i      the index along the X-axis.
+   * @param j      the index along the Y-axis.
+   * @param k      the index along the Z-axis.
+   * @param nX     the number of points along the X-axis.
+   * @param nY     the number of points along the Y-axis.
+   * @param layout the data layout.
    * @return the index of the complex number in the 1D array using blocked data layout.
    */
   public static int index3D(int i, int j, int k, int nX, int nY, DataLayout3D layout) {

@@ -51,6 +51,9 @@ public abstract class MixedRadixFactor {
   private static final double[] negateReal = {-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0};
   private static final int[] shuffleMask = {1, 0, 3, 2, 5, 4, 7, 6};
 
+  /**
+   * The preferred vector species for double precision.
+   */
   protected static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_PREFERRED;
   /**
    * Vector used to change the sign of the imaginary members of the vector via multiplication.
@@ -257,6 +260,11 @@ public abstract class MixedRadixFactor {
    */
   protected final int jstep;
 
+  /**
+   * Constructor for the mixed radix factor.
+   *
+   * @param passConstants the pass constants.
+   */
   public MixedRadixFactor(PassConstants passConstants) {
     n = passConstants.n();
     nFFTs = passConstants.nFFTs();
@@ -284,6 +292,7 @@ public abstract class MixedRadixFactor {
 
   /**
    * Return a string representation of the mixed radix factor.
+   *
    * @return a string representation of the mixed radix factor.
    */
   public String toString() {
@@ -305,11 +314,15 @@ public abstract class MixedRadixFactor {
 
   /**
    * Apply the mixed radix factor using scalar operations.
+   *
+   * @param passData the pass data.
    */
   protected abstract void passScalar(PassData passData);
 
   /**
    * Apply the mixed radix factor using SIMD operations.
+   *
+   * @param passData the pass data.
    */
   protected abstract void passSIMD(PassData passData);
 

@@ -333,7 +333,7 @@ public class OpenMMSystem extends ffx.openmm.System {
       openMMEnergy.setLambdaTerm(true);
     }
 
-    vdwEnd = forceField.getDouble("vdw.lambda.end", 1.0);
+    vdwEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
     if (vdwEnd > 1.0) {
       vdwEnd = 1.0;
     } else if (vdwEnd < 0.0) {

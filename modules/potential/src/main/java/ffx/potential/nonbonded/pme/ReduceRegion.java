@@ -45,9 +45,15 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import ffx.potential.utils.EnergyException;
+
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
 
 /**
  * Parallel conversion of torques into forces, and then reduce them.
@@ -73,23 +79,41 @@ public class ReduceRegion extends ParallelRegion {
    * on/off.
    */
   private boolean lambdaTerm;
-  /** If true, compute coordinate gradient. */
+  /**
+   * If true, compute coordinate gradient.
+   */
   private boolean gradient;
-  /** An ordered array of atoms in the system. */
+  /**
+   * An ordered array of atoms in the system.
+   */
   private Atom[] atoms;
-  /** Dimensions of [nsymm][xyz][nAtoms]. */
+  /**
+   * Dimensions of [nsymm][xyz][nAtoms].
+   */
   private double[][][] coordinates;
-  /** Multipole frame definition. */
+  /**
+   * Multipole frame definition.
+   */
   private MultipoleFrameDefinition[] frame;
-  /** Multipole frame defining atoms. */
+  /**
+   * Multipole frame defining atoms.
+   */
   private int[][] axisAtom;
-  /** Atomic Gradient array. */
+  /**
+   * Atomic Gradient array.
+   */
   private AtomicDoubleArray3D grad;
-  /** Atomic Torque array. */
+  /**
+   * Atomic Torque array.
+   */
   private AtomicDoubleArray3D torque;
-  /** Partial derivative of the gradient with respect to Lambda. */
+  /**
+   * Partial derivative of the gradient with respect to Lambda.
+   */
   private AtomicDoubleArray3D lambdaGrad;
-  /** Partial derivative of the torque with respect to Lambda. */
+  /**
+   * Partial derivative of the torque with respect to Lambda.
+   */
   private AtomicDoubleArray3D lambdaTorque;
 
   public ReduceRegion(int threadCount, ForceField forceField) {
@@ -103,7 +127,7 @@ public class ReduceRegion extends ParallelRegion {
    *
    * @param parallelTeam The ParallelTeam instance to execute with.
    */
-  public void excuteWith(ParallelTeam parallelTeam) {
+  public void executeWith(ParallelTeam parallelTeam) {
     try {
       parallelTeam.execute(this);
     } catch (Exception e) {
@@ -136,7 +160,7 @@ public class ReduceRegion extends ParallelRegion {
   }
 
   @Override
-  public void run() {
+  public void run() throws EnergyException {
     int nAtoms = atoms.length;
     try {
       int threadIndex = getThreadIndex();
@@ -149,6 +173,9 @@ public class ReduceRegion extends ParallelRegion {
       }
       execute(0, nAtoms - 1, reduceLoop[threadIndex]);
     } catch (Exception e) {
+      if (e instanceof EnergyException) {
+        throw (EnergyException) e;
+      }
       String message = "Fatal exception computing torque in thread " + getThreadIndex() + "\n";
       logger.log(Level.SEVERE, message, e);
     }
@@ -167,7 +194,7 @@ public class ReduceRegion extends ParallelRegion {
     }
 
     @Override
-    public void run(int lb, int ub) {
+    public void run(int lb, int ub) throws EnergyException {
       if (gradient) {
         torque.reduce(lb, ub);
         for (int i = lb; i <= ub; i++) {
@@ -176,11 +203,34 @@ public class ReduceRegion extends ParallelRegion {
           trq[0] = torque.getX(i);
           trq[1] = torque.getY(i);
           trq[2] = torque.getZ(i);
+
+          // Check for undefined torques.
+          if (isNaN(trq[0]) || isInfinite(trq[0])
+              || isNaN(trq[1]) || isInfinite(trq[1])
+              || isNaN(trq[2]) || isInfinite(trq[2])) {
+            Atom a = atoms[i];
+            throw new EnergyException(
+                format(" Undefined torque (%8.3f,%8.3f,%8.3f) for atom %s.", trq[0], trq[1], trq[2], a));
+          }
+
           torques.torque(i, 0, trq, frameIndex, g);
           for (int j = 0; j < 4; j++) {
             int index = frameIndex[j];
             if (index >= 0) {
               double[] gj = g[j];
+
+              // Check for undefined torques.
+              if (isNaN(gj[0]) || isInfinite(gj[0])
+                  || isNaN(gj[1]) || isInfinite(gj[1])
+                  || isNaN(gj[2]) || isInfinite(gj[2])) {
+                Atom ai = atoms[i];
+                Atom aj = atoms[index];
+                throw new EnergyException(
+                    format(" Undefined gradient (%8.3f,%8.3f,%8.3f)\n For atom: %s\n From torque of atom %s",
+                        gj[0], gj[1], gj[2], aj, ai));
+              }
+
+
               grad.add(threadID, index, gj[0], gj[1], gj[2]);
             }
           }
@@ -221,7 +271,7 @@ public class ReduceRegion extends ParallelRegion {
   private class ReduceLoop extends IntegerForLoop {
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) throws EnergyException {
       if (gradient) {
         grad.reduce(lb, ub);
         for (int i = lb; i <= ub; i++) {
