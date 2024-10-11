@@ -353,7 +353,7 @@ class GenZ extends AlgorithmsScript {
             }
 
             conformerAssemblies[assemblyIndex] = conformerAssembly
-            if(!manyBodyOptions.getTitration()){
+            if(manyBodyOptions.getTitration()){
                 titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, conformerAssemblies[assemblyIndex], conformerResidueList)
                 excludeAtoms.addAll(titrationManyBody.getExcludeAtoms())
             }
