@@ -39,7 +39,6 @@ package ffx.potential.groovy
 
 import ffx.potential.bonded.*
 import ffx.potential.cli.PotentialScript
-import ffx.potential.parsers.PDBFileFilter
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command

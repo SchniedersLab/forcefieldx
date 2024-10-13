@@ -198,6 +198,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * Offset in Angstroms (alpha).
    */
   private double vdwLambdaAlpha = 0.25;
+
+  /**
+   * Non-alchemical vdW offset (not scaled by lambda).
+   */
+  private double vdwOffset = 0.0;
+
   /**
    * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary. [nThreads]
    */
@@ -325,6 +331,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     vdwIndex = forceField.getString("VDWINDEX", "Class");
     reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
+    vdwOffset = forceField.getDouble("VDW_OFFSET", 0.0);
 
     // Lambda parameters.
     lambdaTerm = forceField.getBoolean("VDW_LAMBDATERM",
@@ -1739,7 +1746,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 dsc2dL = 0.0;
                 d2sc2dL2 = 0.0;
               }
-              final double alpha = sc1;
+              final double alpha = sc1 + vdwOffset;
               final double lambda5 = sc2;
               /*
                Calculate Van der Waals interaction energy. Notation from
