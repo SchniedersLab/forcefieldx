@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
@@ -55,14 +50,20 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NeighborList;
+import org.apache.commons.math3.util.CombinatoricsUtils;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.math3.util.CombinatoricsUtils;
-import org.apache.commons.math3.util.FastMath;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Calculates a residue-residue distance matrix.
@@ -129,10 +130,8 @@ public class DistanceMatrix {
   /**
    * The minimum distance between atoms of a residue pair, taking into account interactions with
    * symmetry mates.
-   *
-   * <p>[residue1][rotamer1][residue2][rotamer2]
    */
-  private double[][][][] distanceMatrix;
+  private NeighborDistances[][] distanceMatrix;
 
   public DistanceMatrix(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener,
                         Residue[] allResiduesArray, List<Residue> allResiduesList,
@@ -182,12 +181,7 @@ public class DistanceMatrix {
       ri = rj;
       rj = temp;
     }
-    double dist = distanceMatrix[i][ri][j][rj];
-    if (dist < 0) {
-      dist = evaluateDistance(i, ri, j, rj);
-      distanceMatrix[i][ri][j][rj] = dist;
-    }
-    return dist;
+    return distanceMatrix[i][ri].getDistance(j, rj);
   }
 
   /**
@@ -392,7 +386,7 @@ public class DistanceMatrix {
 
     double minDist = Double.MAX_VALUE;
     final int lenri = distanceMatrix[i].length;
-    final int lenrj = distanceMatrix[i][ri][j].length;
+    final int lenrj = allResiduesArray[j].getRotamers().length;
     for (int roti = 0; roti < lenri; roti++) {
       for (int rotj = 0; rotj < lenrj; rotj++) {
         minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
@@ -427,9 +421,7 @@ public class DistanceMatrix {
   }
 
   private void distanceMatrix() {
-
-    distanceMatrix = new double[numResidues - 1][][][];
-    long numDistances = 0L;
+    distanceMatrix = new NeighborDistances[numResidues - 1][];
     for (int i = 0; i < (numResidues - 1); i++) {
       Residue residuei = allResiduesArray[i];
       int lengthRi;
@@ -439,31 +431,12 @@ public class DistanceMatrix {
         logger.warning(format(" Residue i %s has null rotamers.", residuei.toFormattedString(false, true)));
         continue;
       }
-      distanceMatrix[i] = new double[lengthRi][][];
+      distanceMatrix[i] = new NeighborDistances[lengthRi];
       for (int ri = 0; ri < lengthRi; ri++) {
-        distanceMatrix[i][ri] = new double[numResidues][];
-        for (int j = (i + 1); j < numResidues; j++) {
-          Residue residuej = allResiduesArray[j];
-          int lengthRj;
-          try {
-            lengthRj = residuej.getRotamers().length;
-          } catch (IndexOutOfBoundsException ex) {
-            logger.warning(format(" Residue j %s has null rotamers.", residuej.toFormattedString(false, true)));
-            continue;
-          }
-          distanceMatrix[i][ri][j] = new double[lengthRj];
-          numDistances += lengthRj;
-          if (!lazyMatrix) {
-            fill(distanceMatrix[i][ri][j], Double.MAX_VALUE);
-          } else {
-            fill(distanceMatrix[i][ri][j], -1.0);
-          }
-        }
+        distanceMatrix[i][ri] = new NeighborDistances(i, ri);
       }
     }
-
-    logger.info(format(" Number of pairwise distances: %d", numDistances));
-
+    
     if (!lazyMatrix) {
       ResidueState[] orig = ResidueState.storeAllCoordinates(allResiduesList);
       int nMultiRes = 0;
@@ -503,15 +476,13 @@ public class DistanceMatrix {
        interfacial radius.
       */
       if (!crystal.aperiodic()) {
-        double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB),
-            crystal.interfacialRadiusC);
+        double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB), crystal.interfacialRadiusC);
         if (nlistCutoff > sphere) {
           nlistCutoff = sphere;
         }
       }
 
-      NeighborList neighborList = new NeighborList(null, crystal, atoms, nlistCutoff, 0.0,
-          parallelTeam);
+      NeighborList neighborList = new NeighborList(null, crystal, atoms, nlistCutoff, 0.0, parallelTeam);
 
       // Expand coordinates
       double[][] xyz = new double[nSymm][3 * numResidues];
@@ -551,8 +522,7 @@ public class DistanceMatrix {
 
       long parallelTime = -System.nanoTime();
       try {
-        distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener,
-            distanceMatrix);
+        distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener, distanceMatrix);
         parallelTeam.execute(distanceRegion);
       } catch (Exception e) {
         String message = " Exception compting residue distance matrix.";
@@ -681,4 +651,74 @@ public class DistanceMatrix {
     }
     return minDist;
   }
+
+  /**
+   * Store all neighbors of a residue / rotamer pair.
+   */
+  public class NeighborDistances {
+
+    /**
+     * The residue index.
+     */
+    private final int i;
+    /**
+     * The rotamer index.
+     */
+    private final int ri;
+
+    /**
+     * Map of distances.
+     * <p>
+     * The key is the index of residue j.
+     * The value is an array of distances for each rotamer of residue j.
+     */
+    private final Map<Integer, double[]> distances = new HashMap<>();
+
+    /**
+     * Constructor.
+     *
+     * @param i  The residue index.
+     * @param ri The rotamer index.
+     */
+    public NeighborDistances(int i, int ri) {
+      this.i = i;
+      this.ri = ri;
+    }
+
+    /**
+     * Store a distance.
+     *
+     * @param j        The residue index.
+     * @param rj       The rotamer index.
+     * @param distance The distance.
+     */
+    public void storeDistance(int j, int rj, double distance) {
+      if (distances.containsKey(j)) {
+        distances.get(j)[rj] = distance;
+      } else {
+        double[] dists = new double[allResiduesArray[j].getRotamers().length];
+        Arrays.fill(dists, -1);
+        dists[rj] = distance;
+        distances.put(j, dists);
+      }
+    }
+
+    /**
+     * Get a distance.
+     *
+     * @param j  The residue index.
+     * @param rj The rotamer index.
+     * @return The distance.
+     */
+    public double getDistance(int j, int rj) {
+      if (distances.containsKey(j) && distances.get(j)[rj] >= 0) {
+        return distances.get(j)[rj];
+      } else {
+        double distance = getResidueDistance(i, ri, j, rj);
+        storeDistance(j, rj, distance);
+        return distance;
+      }
+    }
+  }
+
 }
