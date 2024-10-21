@@ -123,11 +123,6 @@ public class DistanceMatrix {
    */
   private final double threeBodyCutoffDist;
   /**
-   * Flag to load the distance matrix as needed; if false, matrix is prefilled at the beginning of
-   * rotamer optimization.
-   */
-  private final boolean lazyMatrix;
-  /**
    * The minimum distance between atoms of a residue pair, taking into account interactions with
    * symmetry mates.
    */
@@ -136,7 +131,7 @@ public class DistanceMatrix {
   public DistanceMatrix(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener,
                         Residue[] allResiduesArray, List<Residue> allResiduesList,
                         RotamerOptimization.DistanceMethod distanceMethod, double distance, double twoBodyCutoffDist,
-                        double threeBodyCutoffDist, boolean lazyMatrix) {
+                        double threeBodyCutoffDist) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.allResiduesArray = allResiduesArray;
@@ -146,8 +141,6 @@ public class DistanceMatrix {
     this.distance = distance;
     this.twoBodyCutoffDist = twoBodyCutoffDist;
     this.threeBodyCutoffDist = threeBodyCutoffDist;
-    this.lazyMatrix = lazyMatrix;
-
     distanceMatrix();
   }
 
@@ -436,21 +429,20 @@ public class DistanceMatrix {
         distanceMatrix[i][ri] = new NeighborDistances(i, ri);
       }
     }
-    
-    if (!lazyMatrix) {
-      ResidueState[] orig = ResidueState.storeAllCoordinates(allResiduesList);
-      int nMultiRes = 0;
 
-      // Build a list that contains one atom from each Residue: CA from
-      // amino acids, C1 from nucleic acids, or the first atom otherwise.
-      Atom[] atoms = new Atom[numResidues];
-      for (int i = 0; i < numResidues; i++) {
-        Residue residuei = allResiduesArray[i];
-        atoms[i] = residuei.getReferenceAtom();
-        if (residuei instanceof MultiResidue) {
-          ++nMultiRes;
-        }
+    ResidueState[] orig = ResidueState.storeAllCoordinates(allResiduesList);
+    int nMultiRes = 0;
+
+    // Build a list that contains one atom from each Residue: CA from
+    // amino acids, C1 from nucleic acids, or the first atom otherwise.
+    Atom[] atoms = new Atom[numResidues];
+    for (int i = 0; i < numResidues; i++) {
+      Residue residuei = allResiduesArray[i];
+      atoms[i] = residuei.getReferenceAtom();
+      if (residuei instanceof MultiResidue) {
+        ++nMultiRes;
       }
+    }
 
       /*
        Use of the pre-existing ParallelTeam causes a conflict when
@@ -458,85 +450,84 @@ public class DistanceMatrix {
        for sequence optimization: if > 1 residue optimized, run on only
        one thread.
       */
-      ParallelTeam parallelTeam = getParallelTeam(nMultiRes);
-      Crystal crystal = molecularAssembly.getCrystal();
-      int nSymm = crystal.spaceGroup.getNumberOfSymOps();
-      logger.info("\n Computing Residue Distance Matrix");
+    ParallelTeam parallelTeam = getParallelTeam(nMultiRes);
+    Crystal crystal = molecularAssembly.getCrystal();
+    int nSymm = crystal.spaceGroup.getNumberOfSymOps();
+    logger.info("\n Computing Residue Distance Matrix");
 
-      double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
+    double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
 
-      // Two residues whose c-alphas are separated by 25 angstroms may
-      // still interact if they have long side-chains directed at each other.
-      double conservativeBuffer = 25.0;
-      nlistCutoff += conservativeBuffer;
+    // Two residues whose c-alphas are separated by 25 angstroms may
+    // still interact if they have long side-chains directed at each other.
+    double conservativeBuffer = 25.0;
+    nlistCutoff += conservativeBuffer;
 
       /*
        For small crystals, including replicate unit cells in the
        distance matrix is redundant. The cutoff is reduced to the
        interfacial radius.
       */
-      if (!crystal.aperiodic()) {
-        double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB), crystal.interfacialRadiusC);
-        if (nlistCutoff > sphere) {
-          nlistCutoff = sphere;
-        }
+    if (!crystal.aperiodic()) {
+      double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB), crystal.interfacialRadiusC);
+      if (nlistCutoff > sphere) {
+        nlistCutoff = sphere;
       }
+    }
 
-      NeighborList neighborList = new NeighborList(null, crystal, atoms, nlistCutoff, 0.0, parallelTeam);
+    NeighborList neighborList = new NeighborList(null, crystal, atoms, nlistCutoff, 0.0, parallelTeam);
 
-      // Expand coordinates
-      double[][] xyz = new double[nSymm][3 * numResidues];
-      double[] in = new double[3];
-      double[] out = new double[3];
-      for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-        SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
-        for (int i = 0; i < numResidues; i++) {
-          Atom atom = atoms[i];
-          in[0] = atom.getX();
-          in[1] = atom.getY();
-          in[2] = atom.getZ();
-          crystal.applySymOp(in, out, symOp);
-          int iX = i * 3;
-          int iY = iX + 1;
-          int iZ = iX + 2;
-          xyz[iSymOp][iX] = out[0];
-          xyz[iSymOp][iY] = out[1];
-          xyz[iSymOp][iZ] = out[2];
-        }
+    // Expand coordinates
+    double[][] xyz = new double[nSymm][3 * numResidues];
+    double[] in = new double[3];
+    double[] out = new double[3];
+    for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
+      SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
+      for (int i = 0; i < numResidues; i++) {
+        Atom atom = atoms[i];
+        in[0] = atom.getX();
+        in[1] = atom.getY();
+        in[2] = atom.getZ();
+        crystal.applySymOp(in, out, symOp);
+        int iX = i * 3;
+        int iY = iX + 1;
+        int iZ = iX + 2;
+        xyz[iSymOp][iX] = out[0];
+        xyz[iSymOp][iY] = out[1];
+        xyz[iSymOp][iZ] = out[2];
       }
+    }
 
-      // Build the residue neighbor-list.
-      int[][][] lists = new int[nSymm][numResidues][];
-      boolean[] use = new boolean[numResidues];
-      fill(use, true);
-      boolean forceRebuild = true;
-      boolean printLists = false;
-      long neighborTime = -System.nanoTime();
-      neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
+    // Build the residue neighbor-list.
+    int[][][] lists = new int[nSymm][numResidues][];
+    boolean[] use = new boolean[numResidues];
+    fill(use, true);
+    boolean forceRebuild = true;
+    boolean printLists = false;
+    long neighborTime = -System.nanoTime();
+    neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
 
-      neighborTime += System.nanoTime();
-      logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
+    neighborTime += System.nanoTime();
+    logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
-      DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(), numResidues,
-          crystal, lists, neighborList.getPairwiseSchedule());
+    DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(), numResidues,
+        crystal, lists, neighborList.getPairwiseSchedule());
 
-      long parallelTime = -System.nanoTime();
-      try {
-        distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener, distanceMatrix);
-        parallelTeam.execute(distanceRegion);
-      } catch (Exception e) {
-        String message = " Exception compting residue distance matrix.";
-        logger.log(Level.SEVERE, message, e);
-      }
-      parallelTime += System.nanoTime();
-      logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
+    long parallelTime = -System.nanoTime();
+    try {
+      distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener, distanceMatrix);
+      parallelTeam.execute(distanceRegion);
+    } catch (Exception e) {
+      String message = " Exception compting residue distance matrix.";
+      logger.log(Level.SEVERE, message, e);
+    }
+    parallelTime += System.nanoTime();
+    logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
 
-      ResidueState.revertAllCoordinates(allResiduesList, orig);
-      try {
-        parallelTeam.shutdown();
-      } catch (Exception ex) {
-        logger.warning(format(" Exception shutting down parallel team for the distance matrix: %s", ex));
-      }
+    ResidueState.revertAllCoordinates(allResiduesList, orig);
+    try {
+      parallelTeam.shutdown();
+    } catch (Exception ex) {
+      logger.warning(format(" Exception shutting down parallel team for the distance matrix: %s", ex));
     }
   }
 
@@ -714,7 +705,7 @@ public class DistanceMatrix {
       if (distances.containsKey(j) && distances.get(j)[rj] >= 0) {
         return distances.get(j)[rj];
       } else {
-        double distance = getResidueDistance(i, ri, j, rj);
+        double distance = Double.POSITIVE_INFINITY;
         storeDistance(j, rj, distance);
         return distance;
       }

@@ -340,11 +340,6 @@ public class RotamerOptimization implements Terminatable {
    */
   private PDBFilter ensembleFilter;
   /**
-   * Flag to load the distance matrix as needed; if false, matrix is prefilled at the beginning of
-   * rotamer optimization.
-   */
-  private boolean lazyMatrix = false;
-  /**
    * Clash energy threshold (kcal/mole).
    */
   private double clashThreshold = 25.0;
@@ -669,12 +664,6 @@ public class RotamerOptimization implements Terminatable {
     if (mcNoEnum != null) {
       this.mcNoEnum = parseBoolean(mcNoEnum);
       logIfRank0(format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
-    }
-
-    String lazyMatrix = properties.getString("ro-lazyMatrix");
-    if (lazyMatrix != null) {
-      this.lazyMatrix = parseBoolean(lazyMatrix);
-      logger.info(format(" (KEY) lazyMatrix: %b", lazyMatrix));
     }
 
     String propStr = properties.getString("ro-maxRotCheckDepth");
@@ -1186,8 +1175,7 @@ public class RotamerOptimization implements Terminatable {
        */
       if (distance > 0) {
         dM = new DistanceMatrix(molecularAssembly, algorithmListener, allResiduesArray,
-            allResiduesList, distanceMethod, distance, twoBodyCutoffDist, threeBodyCutoffDist,
-            lazyMatrix);
+            allResiduesList, distanceMethod, distance, twoBodyCutoffDist, threeBodyCutoffDist);
       }
 
       if (residueList != null) {
