@@ -189,7 +189,7 @@ class ManyBody extends AlgorithmsScript {
 
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
-            optimalRotamers)
+            optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       } else {
