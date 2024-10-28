@@ -1546,6 +1546,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Update lambda for non-equilibrium simulations.
       if (nonEquilibriumLambda && potential instanceof LambdaInterface lambdaInterface) {
         double lambda = (double) step / nSteps;
+        logger.info(format(" Non-equilibrium lambda updated: %6.4f", lambda));
         lambdaInterface.setLambda(lambda);
       }
 
