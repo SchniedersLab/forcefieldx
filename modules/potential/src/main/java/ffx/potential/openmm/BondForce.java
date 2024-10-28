@@ -88,7 +88,8 @@ public class BondForce extends CustomBondForce {
     ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Bonds \t\t%6d\t\t%1d", bonds.length, forceGroup));
+    logger.info(format("  Bonds:                             %10d", bonds.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

@@ -109,7 +109,8 @@ public class AngleForce extends CustomAngleForce {
     if (nAngles > 0) {
       int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
       setForceGroup(forceGroup);
-      logger.log(Level.INFO, format("  Angles \t\t%6d\t\t%1d", nAngles, forceGroup));
+      logger.info(format("  Angles:                            %10d", nAngles));
+      logger.fine(format("   Force Group:                      %10d", forceGroup));
     }
   }
 

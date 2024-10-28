@@ -82,7 +82,8 @@ public class UreyBradleyForce extends HarmonicBondForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
+    logger.info(format("  Urey-Bradleys:                     %10d", ureyBradleys.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

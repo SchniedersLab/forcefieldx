@@ -47,6 +47,7 @@ import ffx.numerics.Potential;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 
@@ -1625,12 +1626,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         dEdL_1 = lambdaInterface1.getdEdL();
         d2EdL2_1 = lambdaInterface1.getd2EdL2();
         lambdaInterface1.getdEdXdL(gl1);
-        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
-          forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+        if (doValenceRestraint1) {
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
           }
-          restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1, verbose);
+          forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+          if (forceFieldEnergy1 instanceof OpenMMEnergy openMMEnergy) {
+            // Use FFX to calculate the energy and gradient for the restraints.
+            restraintEnergy1 = openMMEnergy.energyAndGradientFFX(x1, rg1, verbose);
+          } else {
+            restraintEnergy1 = forceFieldEnergy1.energyAndGradient(x1, rg1, verbose);
+          }
           restraintdEdL_1 = forceFieldEnergy1.getdEdL();
           restraintd2EdL2_1 = forceFieldEnergy1.getd2EdL2();
           forceFieldEnergy1.getdEdXdL(rgl1);
@@ -1647,12 +1653,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
       } else {
         energy1 = potential1.energy(x1, verbose);
-        if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
-          forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+        if (doValenceRestraint1) {
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 1");
           }
-          restraintEnergy1 = potential1.energy(x1, verbose);
+          forceFieldEnergy1.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+          if (forceFieldEnergy1 instanceof OpenMMEnergy openMMEnergy) {
+            // Use FFX to calculate the energy and gradient for the restraints.
+            restraintEnergy1 = openMMEnergy.energyFFX(x1, verbose);
+          } else {
+            restraintEnergy1 = potential1.energy(x1, verbose);
+          }
           forceFieldEnergy1.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy1 = 0.0;
@@ -1705,13 +1716,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             applyCartesianSymRot(gl2, gl2, inverse[i], mask[i]);
           }
         }
-
         if (doValenceRestraint2) {
-          forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");
           }
-          restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2, verbose);
+          forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+          if (forceFieldEnergy2 instanceof OpenMMEnergy openMMEnergy) {
+            // Use FFX to calculate the energy and gradient for the restraints.
+            restraintEnergy2 = openMMEnergy.energyAndGradientFFX(x2, rg2, verbose);
+          } else {
+            restraintEnergy2 = forceFieldEnergy2.energyAndGradient(x2, rg2, verbose);
+          }
           restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
           restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
           forceFieldEnergy2.getdEdXdL(rgl2);
@@ -1735,12 +1750,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
       } else {
         energy2 = potential2.energy(x2, verbose);
-        if (doValenceRestraint2 && potential2 instanceof ForceFieldEnergy) {
-          forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+        if (doValenceRestraint2) {
           if (verbose) {
             logger.info(" Calculating lambda bonded terms for topology 2");
           }
-          restraintEnergy2 = potential2.energy(x2, verbose);
+          forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
+          if (forceFieldEnergy2 instanceof OpenMMEnergy openMMEnergy) {
+            // Use FFX to calculate the energy and gradient for the restraints.
+            restraintEnergy2 = openMMEnergy.energyFFX(x2, verbose);
+          } else {
+            restraintEnergy2 = potential2.energy(x2, verbose);
+          }
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;

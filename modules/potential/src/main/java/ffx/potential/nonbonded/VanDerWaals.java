@@ -200,11 +200,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private double vdwLambdaAlpha = 0.25;
 
   /**
-   * Non-alchemical vdW offset (not scaled by lambda).
-   */
-  private double vdwOffset = 0.0;
-
-  /**
    * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary. [nThreads]
    */
   private LambdaFactors[] lambdaFactors = null;
@@ -258,7 +253,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private double[] reductionValue;
 
-  private boolean reducedHydrogens;
+  private boolean reducedHydrogen;
   private double longRangeCorrection;
   private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
   /**
@@ -330,8 +325,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     vdwForm = new VanDerWaalsForm(forceField);
 
     vdwIndex = forceField.getString("VDWINDEX", "Class");
-    reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
-    vdwOffset = forceField.getDouble("VDW_OFFSET", 0.0);
+    reducedHydrogen = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
     // Lambda parameters.
     lambdaTerm = forceField.getBoolean("VDW_LAMBDATERM",
@@ -519,6 +513,21 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       logger.log(Level.SEVERE, message, e);
     }
     return sharedEnergy.get();
+  }
+
+  /**
+   * If true, there are alchemical atoms impacted by the lambda state variable.
+   * @return True if there are alchemical atoms.
+   */
+  public boolean getLambdaTerm() {
+    return lambdaTerm;
+  }
+
+  /**
+   * If true, intra-molecular interactions are annihilated by the lambda state variable.
+   */
+  public boolean getIntramolecularSoftcore() {
+    return intramolecularSoftcore;
   }
 
   /**
@@ -841,13 +850,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     }
 
     sb.append(format("   Long-Range Correction:                %6B\n", doLongRangeCorrection));
-    if (!reducedHydrogens) {
-      sb.append(format("   Reduce Hydrogens:                     %6B\n", reducedHydrogens));
+    if (!reducedHydrogen) {
+      sb.append(format("   Reduce Hydrogen:                      %6B\n", reducedHydrogen));
     }
     if (lambdaTerm) {
       sb.append("   Alchemical Parameters\n");
       sb.append(format("    Softcore Alpha:                       %5.3f\n", vdwLambdaAlpha));
       sb.append(format("    Lambda Exponent:                      %5.3f\n", vdwLambdaExponent));
+      sb.append(format("    Lambda End:                           %5.3f\n", vdwLambdaEnd));
     }
     return sb.toString();
   }
@@ -933,7 +943,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       List<Bond> bonds = ai.getBonds();
       int numBonds = bonds.size();
-      if (reducedHydrogens && vdwType.reductionFactor > 0.0 && numBonds == 1) {
+      if (reducedHydrogen && vdwType.reductionFactor > 0.0 && numBonds == 1) {
         Bond bond = bonds.get(0);
         Atom heavyAtom = bond.get1_2(ai);
         // Atom indexes start at 1
@@ -1418,7 +1428,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           // Set reduction values.
           List<Bond> bonds = atom.getBonds();
           int numBonds = bonds.size();
-          if (reducedHydrogens && vdwType.reductionFactor > 0.0 && numBonds == 1) {
+          if (reducedHydrogen && vdwType.reductionFactor > 0.0 && numBonds == 1) {
             Bond bond = bonds.get(0);
             Atom heavyAtom = bond.get1_2(atom);
             // Atom indexes start at 1
@@ -1746,7 +1756,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 dsc2dL = 0.0;
                 d2sc2dL2 = 0.0;
               }
-              final double alpha = sc1 + vdwOffset;
+              final double alpha = sc1;
               final double lambda5 = sc2;
               /*
                Calculate Van der Waals interaction energy. Notation from

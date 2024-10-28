@@ -186,7 +186,7 @@ public class FixedChargeGBForce extends CustomGBForce {
     }
 
     DoubleArray parameters = new DoubleArray(0);
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;
       double chargeUseFactor = 1.0;
