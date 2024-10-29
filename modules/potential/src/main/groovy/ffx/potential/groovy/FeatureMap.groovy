@@ -41,14 +41,12 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
 import ffx.potential.utils.GetProteinFeatures
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
-import static org.apache.commons.io.FilenameUtils.getFullPath
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "FeatureMap")
 class FeatureMap extends PotentialScript {
@@ -87,7 +85,7 @@ class FeatureMap extends PotentialScript {
 
     @Option(names = ["--mI", "--multiple isomers"], paramLabel = "false",
             description = "Set this flag if the variant list contains variants from multiple isomers. Isomer should be in name of pdb file")
-    private boolean multipleIsomers = false
+    private boolean multipleIsoforms = false
     /**
      * The final argument(s) should be one or more filenames.
      */
@@ -145,15 +143,15 @@ class FeatureMap extends PotentialScript {
         // Handles when variant files will have multiple isoforms and will need to isoform specific variants when
         // writing the file csv file
         String[] geneSplit
-        String fileIsomer
-        if (multipleIsomers) {
+        String fileIsoform
+        if (multipleIsoforms) {
             String baseName = getBaseName(filenames[0])
             if (baseName.contains("ENS")) {
                 geneSplit = baseName.replace(".pdb", "").split("_")
-                fileIsomer = geneSplit
+                fileIsoform = geneSplit
             } else {
                 geneSplit = baseName.replace(".pdb", "").split("_")
-                fileIsomer = geneSplit[1] + '_' + geneSplit[2]
+                fileIsoform = geneSplit[2].toUpperCase() + '_' + geneSplit[3].toUpperCase()
             }
         }
 
@@ -254,7 +252,7 @@ class FeatureMap extends PotentialScript {
                             if (splits[j].contains("p.")) {
                                 npIndex = j
                             }
-                            if (multipleIsomers) {
+                            if (multipleIsoforms) {
                                 if (splits[j].contains("NP") || splits[j].contains("XP") || splits[j].contains("ENS")) {
                                     isoformIndex = j
                                 }
@@ -272,7 +270,7 @@ class FeatureMap extends PotentialScript {
                         ddG = ["null", "null"]
                         Arrays.fill(feat, null)
                     } else {
-                        String proteinChange = npChange.substring(npChange.indexOf('p'))
+                        String proteinChange = npChange.substring(npChange.indexOf('p'),npChange.size()-1)
                         String splitstring = "p\\."
                         String sub = proteinChange.split(splitstring)[1]
                         position = sub.replace(sub.substring(0, 3), '').replace(sub.substring(sub.length() - 4, sub.length()), '').toInteger()
@@ -291,19 +289,18 @@ class FeatureMap extends PotentialScript {
                             feat = featureList.get(position - 1)
                         }
                     }
-                    String isomer
-                    if (multipleIsomers) {
+                    String isoform
+                    if (multipleIsoforms) {
                         if (splits[isoformIndex].contains(":p.")) {
-                            isomer = splits[isoformIndex].split(":")[0]
+                            isoform = splits[isoformIndex].split(":")[0]
                         } else {
-                            isomer = splits[isoformIndex]
+                            isoform = splits[isoformIndex]
                         }
-
                     }
 
                     if (length == splits.length) {
-                        if (multipleIsomers) {
-                            if (isomer != fileIsomer) {
+                        if (multipleIsoforms) {
+                            if (!isoform.contains(fileIsoform)) {
                                 continue
                             }
                         }
