@@ -259,15 +259,37 @@ public class RotamerOptimization implements Terminatable {
     /**
      * List of residues to optimize; they may not be contiguous or all members of the same chain.
      */
-
+    /**
+     * Total boltzmann calculated during the partition function
+     */
     private double totalBoltzmann = 0;
+    /**
+     * Reference energy for calculating boltzmanns in the partition function
+     */
     private double refEnergy = 0;
+    /**
+     * Rotamer populations from the partition function
+     */
     private double[][] fraction;
+    /**
+     * Botlzmann weights of every rotamer
+     */
     private double[][] populationBoltzmann;
+    /**
+     * pH during titration rotamer optimization
+     */
     private double pH;
+    /**
+     * Energy restraint on titration
+     */
     private double pHRestraint = 0;
-    private boolean onlyProtons = false;
+    /**
+     * Recompute the self energies from restart when changing the pH
+     */
     private boolean recomputeSelf = false;
+    /**
+     * True when running the GenZ algorithm
+     */
     boolean genZ = false;
     /**
      * List of residues to optimize; they may not be contiguous or all members of the same chain.
@@ -1303,27 +1325,39 @@ public class RotamerOptimization implements Terminatable {
     }
     return currentEnergy;
   }
-    public void setPHRestraint(double pHRestraint) {
-        this.pHRestraint = pHRestraint;
-    }
 
+    /**
+     * Set the K for the harmonic pH restraint
+     * @param pHRestraint KpH
+     */
+    public void setPHRestraint(double pHRestraint) {this.pHRestraint = pHRestraint;}
+    /**
+     * Set the environment pH
+     * @param pH
+     */
     public void setpH(double pH) {
         this.pH = pH;
     }
-
+    /**
+     * Sets to recompute self energies at a different pH using an energy restart file
+     * @param recomputeSelf
+     */
     public void setRecomputeSelf(boolean recomputeSelf) {
         this.recomputeSelf = recomputeSelf;
     }
 
-
-    public void setOnlyProtons(boolean onlyProtons) {
-        this.onlyProtons = onlyProtons;
-    }
-
+    /**
+     * Return the K in the harmonic pH restraint
+     * @return double KpH
+     */
     public double getPHRestraint() {
         return pHRestraint;
     }
 
+    /**
+     * Get the enviroment pH
+     * @return double pH
+     */
     public double getPH() {
         return pH;
     }
@@ -2245,7 +2279,7 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * A global optimization over side-chain rotamers using a recursive algorithm and information about
-     * eliminated rotamers, rotamer pairs and rotamer triples.
+     * eliminated rotamers, rotamer pairs and rotamer triples to calculate a partition function.
      *
      * @param residues        Residue array.
      * @param i               Current number of permutations.
@@ -2383,7 +2417,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Get reference energy for partition function boltzmann weights
+     * Return reference energy for partition function boltzmann weights
      *
      * @return ref energy
      */
@@ -2392,7 +2426,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Get the total boltzmann weight for an ensemble
+     * Return the total boltzmann weight for an ensemble
      *
      * @return total boltzmann
      */
@@ -2401,7 +2435,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Get the ensemble average of protonated rotamers for all titratable sites
+     * Return the ensemble average of protonated rotamers for all titratable sites
      *
      * @return fraction of protonated residues
      */
@@ -2419,7 +2453,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Calculate Populations for Residues
+     * Calculate population of each rotamer for residues in the system
      *
      * @param residues        residue array
      * @param i               int
@@ -2452,7 +2486,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Calculate Populations for Residues
+     * Return population of each rotamer for residues in the system
      *
      * @param residues        residue array
      * @param i               int
@@ -2483,6 +2517,11 @@ public class RotamerOptimization implements Terminatable {
         logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
     }
 
+    /**
+     * Return the populations of the titratable residue states and print
+     * @param residues residues in the system
+     * @return double array of populations
+     */
     public double[][] getProtonationPopulations(Residue[] residues){
         double[][] populations = new double[residues.length][3];
         int residueIndex = 0;
@@ -2560,6 +2599,11 @@ public class RotamerOptimization implements Terminatable {
         return populations;
     }
 
+    /**
+     * Return the rotamer index for each conformer (A,B,C) in xray and realspace genZ
+     * @return int array of rotamer indexes for each conformer (A,B,C)
+     * @throws Exception
+     */
     public int[][] getConformers() throws Exception{
         int[][] conformers = new int[fraction.length][3];
         for(int i = 0; i < fraction.length; i++){

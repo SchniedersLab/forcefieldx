@@ -22,7 +22,7 @@ import picocli.CommandLine
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 import static java.lang.String.format
 
-@CommandLine.Command(description = " Run GenZ function for free energy change.", name = "ffxc realspace.GenZ")
+@CommandLine.Command(description = " Run GenZ for ensemble generation.", name = "ffxc realspace.GenZ")
 class GenZ extends AlgorithmsScript  {
 
     @CommandLine.Mixin

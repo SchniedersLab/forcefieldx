@@ -1874,7 +1874,7 @@ public class TitrationUtils {
     ASH1toASH2(Double.NaN, 0.00,0,0,0, 0.0, -35.305, 35.305, 0.0, AminoAcid3.ASH, AminoAcid3.ASH),
     GLHtoGLU(4.25, -81.90, -39.71, -64.85, -39.35,28.024, -131.270, 189.980, 0.0,  AminoAcid3.GLH, AminoAcid3.GLU),
     GLH1toGLH2(Double.NaN, 0,0,0,0.00, 0.0, -29.395, 29.395, 0.0, AminoAcid3.GLH, AminoAcid3.GLH),
-    LYStoLYD(10.40, 41.35, 20.0, 41.31, 25.45,6.752, -78.804, 26.894, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.35, 20.0, 41.31, 21.45,6.752, -78.804, 26.894, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     CYStoCYD(8.55, -53.1, 0.0, -33.12, -6.75,44.247, -183.990, 226.710, 0.0, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, 20.92, 26.30, 25.0, 0.0, -64.317, 30.350, 0.0,  AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
