@@ -37,29 +37,19 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static ffx.potential.bonded.Residue.ResidueType.NA;
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.*;
-
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.WorkerTeam;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.mc.MCMove;
-import ffx.algorithms.optimize.manybody.ManyBodyCell;
 import ffx.algorithms.optimize.manybody.DistanceMatrix;
 import ffx.algorithms.optimize.manybody.EliminatedRotamers;
 import ffx.algorithms.optimize.manybody.EnergyExpansion;
 import ffx.algorithms.optimize.manybody.EnergyRegion;
 import ffx.algorithms.optimize.manybody.FourBodyEnergyRegion;
 import ffx.algorithms.optimize.manybody.GoldsteinPairRegion;
+import ffx.algorithms.optimize.manybody.ManyBodyCell;
 import ffx.algorithms.optimize.manybody.RotamerMatrixMC;
 import ffx.algorithms.optimize.manybody.RotamerMatrixMove;
 import ffx.algorithms.optimize.manybody.SelfEnergyRegion;
@@ -70,7 +60,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
@@ -81,6 +70,7 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Constants;
@@ -111,11 +101,16 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone conformations using rotamers.
@@ -128,364 +123,354 @@ import static org.apache.commons.math3.util.FastMath.abs;
  */
 public class RotamerOptimization implements Terminatable {
 
-    /**
-     * Logger for this class.
-     */
-    private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
-    /**
-     * Fallback if there is no vdW node.
-     */
-    private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
-    /**
-     * MolecularAssembly to perform rotamer optimization on.
-     */
-    protected final MolecularAssembly molecularAssembly;
-    /**
-     * The Potential to evaluate during rotamer optimization.
-     */
-    protected final Potential potential;
-    /**
-     * AlgorithmListener who should receive updates as the optimization runs.
-     */
-    protected final AlgorithmListener algorithmListener;
-    /**
-     * World Parallel Java communicator.
-     */
-    private final Comm world;
-    /**
-     * Number of Parallel Java processes.
-     */
-    private final int numProc;
-    /**
-     * Rank of this process.
-     */
-    private final int rank;
-    /**
-     * Flag to indicate if this is the master process.
-     */
-    private final boolean rank0;
-    /**
-     * Flag to control the verbosity of printing.
-     */
-    private final boolean print = false;
-    /**
-     * Flag to calculate and print additional energies (mostly for debugging).
-     */
-    private final boolean verboseEnergies = true;
+  /**
+   * Logger for this class.
+   */
+  private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
+  /**
+   * Fallback if there is no vdW node.
+   */
+  private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
+  protected final MolecularAssembly molecularAssembly;
+  /**
+   * The Potential to evaluate during rotamer optimization.
+   */
+  protected final Potential potential;
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
+  protected final AlgorithmListener algorithmListener;
+  /**
+   * World Parallel Java communicator.
+   */
+  private final Comm world;
+  /**
+   * Number of Parallel Java processes.
+   */
+  private final int numProc;
+  /**
+   * Rank of this process.
+   */
+  private final int rank;
+  /**
+   * Flag to indicate if this is the master process.
+   */
+  private final boolean rank0;
+  /**
+   * Flag to control the verbosity of printing.
+   */
+  private final boolean print = false;
+  /**
+   * Flag to calculate and print additional energies (mostly for debugging).
+   */
+  private final boolean verboseEnergies = true;
+  /**
+   * If true, write out an energy restart file.
+   */
+  private boolean writeEnergyRestart = true;
+  /**
+   * Parameters for box optimization are stored here.
+   */
+  private final BoxOptimization boxOpt;
+  /**
+   * Represents the method called to obtain the directory corresponding to the current energy; will
+   * be a simple return null for potential energy evaluations. While current energy calls will fill
+   * the rotamer list with the current rotamers of the residue, other methods may skip applying the
+   * rotamer directly.
+   */
+  private final BiFunction<List<Residue>, List<Rotamer>, File> dirSupplier;
+  /**
+   * Represents the method called to obtain energy for the current rotamer or state; defaults to the
+   * existing potential energy code. May discard the input file.
+   */
+  private final ToDoubleFunction<File> eFunction;
+  /**
+   * Flag to indicate verbose logging.
+   */
+  private final boolean verbose;
+  /**
+   * The DistanceMatrix class handles calculating distances between residues.
+   */
+  private DistanceMatrix dM;
+  /**
+   * The EnergyExpansion class compute terms in the many-body energy expansion.
+   */
+  private EnergyExpansion eE;
+  /**
+   * The EliminatedRotamers class tracks eliminated rotamers and rotamer paris.
+   */
+  private EliminatedRotamers eR;
+  /**
+   * RotamerLibrary instance.
+   */
+  protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
+  /**
+   * Parallel evaluation of quantities used during Goldstein Pair elimination.
+   */
+  private GoldsteinPairRegion goldsteinPairRegion;
+  /**
+   * Parallel evaluation of many-body energy sums.
+   */
+  private EnergyRegion energyRegion;
+  /**
+   * Flag to indicate a request to terminate the optimization.
+   */
+  private boolean terminate = false;
+  /**
+   * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
+   */
+  private boolean done = true;
+  /**
+   * Two-Body cutoff distance.
+   */
+  private double twoBodyCutoffDist;
+  /**
+   * Flag to control use of 3-body terms.
+   */
+  private boolean threeBodyTerm = false;
+  /**
+   * Three-body cutoff distance.
+   */
+  private double threeBodyCutoffDist;
+  /**
+   * Interaction partners of a Residue that come after it.
+   */
+  private int[][] resNeighbors;
+  /**
+   * All interaction partners of a Residue, including prior residues.
+   */
+  private int[][] bidiResNeighbors;
+  /**
+   * Flag to prune clashes.
+   */
+  private boolean pruneClashes = true;
+  /**
+   * Flag to prune pair clashes.
+   */
+  private boolean prunePairClashes = true;
+  /**
+   * Number of permutations whose energy is explicitly evaluated.
+   */
+  private int evaluatedPermutations = 0;
+  /**
+   * Permutations are printed when modulo this field is zero.
+   */
+  private int evaluatedPermutationsPrint = 0;
+  /**
+   * List of residues to optimize; they may not be contiguous or all members of the same chain.
+   */
 
-    public void setWriteEnergyRestart(boolean writeEnergyRestart) {
-        this.writeEnergyRestart = writeEnergyRestart;
-    }
+  private double totalBoltzmann = 0;
+  private double refEnergy = 0;
+  private double[][] fraction;
+  private double[][] populationBoltzmann;
+  private double pH;
+  private double pHRestraint = 0;
+  private boolean onlyProtons = false;
+  private boolean recomputeSelf = false;
+  /**
+   * List of residues to optimize; they may not be contiguous or all members of the same chain.
+   */
+  private List<Residue> residueList;
+  /**
+   * This is the optimal rotamers corresponding to residueList.
+   */
+  private int[] optimum;
 
-    /**
-     * If true, write out an energy restart file.
-     */
-    private boolean writeEnergyRestart = true;
-    /**
-     * Parameters for box optimization are stored here.
-     */
-    private final BoxOptimization boxOpt;
-    /**
-     * Represents the method called to obtain the directory corresponding to the current energy; will
-     * be a simple return null for potential energy evaluations. While current energy calls will fill
-     * the rotamer list with the current rotamers of the residue, other methods may skip applying the
-     * rotamer directly.
-     */
-    private final BiFunction<List<Residue>, List<Rotamer>, File> dirSupplier;
-    /**
-     * Represents the method called to obtain energy for the current rotamer or state; defaults to the
-     * existing potential energy code. May discard the input file.
-     */
-    private final ToDoubleFunction<File> eFunction;
-    /**
-     * Flag to indicate verbose logging.
-     */
-    private final boolean verbose;
-    /**
-     * The DistanceMatrix class handles calculating distances between residues.
-     */
-    private DistanceMatrix dM;
-    /**
-     * The EnergyExpansion class compute terms in the many-body energy expansion.
-     */
-    private EnergyExpansion eE;
-    /**
-     * The EliminatedRotamers class tracks eliminated rotamers and rotamer paris.
-     */
-    private EliminatedRotamers eR;
-    /**
-     * RotamerLibrary instance.
-     */
-    protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
-    /**
-     * Parallel evaluation of quantities used during Goldstein Pair elimination.
-     */
-    private GoldsteinPairRegion goldsteinPairRegion;
-    /**
-     * Parallel evaluation of many-body energy sums.
-     */
-    private EnergyRegion energyRegion;
-    /**
-     * Flag to indicate a request to terminate the optimization.
-     */
-    private boolean terminate = false;
-    /**
-     * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
-     */
-    private boolean done = true;
-    /**
-     * Two-Body cutoff distance.
-     */
-    private double twoBodyCutoffDist;
-    /**
-     * Flag to control use of 3-body terms.
-     */
-    private boolean threeBodyTerm = false;
-    /**
-     * Three-body cutoff distance.
-     */
-    private double threeBodyCutoffDist;
-    /**
-     * Interaction partners of a Residue that come after it.
-     */
-    private int[][] resNeighbors;
-    /**
-     * All interaction partners of a Residue, including prior residues.
-     */
-    private int[][] bidiResNeighbors;
-    /**
-     * Flag to prune clashes.
-     */
-    private boolean pruneClashes = true;
-    /**
-     * Flag to prune pair clashes.
-     */
-    private boolean prunePairClashes = true;
-    /**
-     * Number of permutations whose energy is explicitly evaluated.
-     */
-    private int evaluatedPermutations = 0;
-    /**
-     * Permutations are printed when modulo this field is zero.
-     */
-    private int evaluatedPermutationsPrint = 0;
-    /**
-     * List of residues to optimize; they may not be contiguous or all members of the same chain.
-     */
+  /**
+   * Size of the sliding window.
+   */
+  private int windowSize = 7;
+  /**
+   * The distance the sliding window moves.
+   */
+  private int increment = 3;
+  /**
+   * In sliding window, whether to revert an unfavorable change.
+   */
+  private boolean revert;
+  /**
+   * The sliding window direction.
+   */
+  private Direction direction = Direction.FORWARD;
 
-    private double totalBoltzmann = 0;
-    private double refEnergy = 0;
-    private double[][] fraction;
-    private double[][] populationBoltzmann;
-    private double pH;
-    private double pHRestraint = 0;
-    private boolean onlyProtons = false;
-    private boolean recomputeSelf = false;
-    /**
-     * List of residues to optimize; they may not be contiguous or all members of the same chain.
-     */
-    private List<Residue> residueList;
-    /**
-     * This is the optimal rotamers corresponding to residueList.
-     */
-    private int[] optimum;
+  /**
+   * The distance that the distance matrix checks for.
+   */
+  private double distance = 2.0;
+  /**
+   * Default distance method is to find the shortest distance between residues.
+   */
+  private DistanceMethod distanceMethod = DistanceMethod.RESIDUE;
+  /**
+   * The algorithm to use for rotamer optimization.
+   */
+  private Algorithm algorithm = null;
 
-    /**
-     * Size of the sliding window.
-     */
-    private int windowSize = 7;
-    /**
-     * The distance the sliding window moves.
-     */
-    private int increment = 3;
-    /**
-     * In sliding window, whether to revert an unfavorable change.
-     */
-    private boolean revert;
-    /**
-     * The sliding window direction.
-     */
-    private Direction direction = Direction.FORWARD;
-
-    /**
-     * The distance that the distance matrix checks for.
-     */
-    private double distance = 2.0;
-    /**
-     * Default distance method is to find the shortest distance between residues.
-     */
-    private DistanceMethod distanceMethod = DistanceMethod.RESIDUE;
-    /**
-     * The algorithm to use for rotamer optimization.
-     */
-    private Algorithm algorithm = null;
-
-    /**
-     * Flag to indicate use of the Goldstein criteria instead of the less stringent Dead-End
-     * Elimination criteria.
-     */
-    private boolean useGoldstein = true;
-    /**
-     * The number of most-favorable structures to include as output.
-     */
-    private int ensembleNumber = 1;
-    /**
-     * The energy buffer applied to each elimination criteria to affect an ensemble.
-     */
-    private double ensembleBuffer = 0.0;
-    /**
-     * The step value of the energy buffer for use with ensemble search.
-     */
-    private double ensembleBufferStep = 0.5;
-    /**
-     * The energy boundary for structures to be included in the final ensemble.
-     */
-    private double ensembleEnergy = 0.0;
-    /**
-     * File to contain ensemble of structures.
-     */
-    private File ensembleFile;
-    /**
-     * PDBFilter to write out ensemble snapshots.
-     */
-    private PDBFilter ensembleFilter;
-    /**
-     * Flag to load the distance matrix as needed; if false, matrix is prefilled at the beginning of
-     * rotamer optimization.
-     */
-    private boolean lazyMatrix = false;
-    /**
-     * Clash energy threshold (kcal/mole).
-     */
-    private double clashThreshold = 25.0;
-    /**
-     * Clash energy threshold (kcal/mol) for MultiResidues, which can have much more variation in self
-     * and 2-Body energies.
-     */
-    private double multiResClashThreshold = 80.0;
-    /**
-     * Clash energy threshold (kcal/mole).
-     */
-    private double pairClashThreshold = 25.0;
-    /**
-     * Pair clash energy threshold (kcal/mol) for MultiResidues.
-     */
-    private double multiResPairClashAddn = 80.0;
-    /**
-     * An array of atomic coordinates (length 3 * the number of atoms).
-     */
-    private double[] x = null;
-    /**
-     * A flag to indicate use of the full N-Body AMOEBA potential energy during the rotamer
-     * optimization.
-     */
-    private boolean useForceFieldEnergy = false;
-    /**
-     * Threshold to eliminate nucleic acid Rotamers based on excessive correction distances; 0
-     * indicates the threshold is not being implemented.
-     */
-    private double nucleicCorrectionThreshold = 0;
-    /**
-     * The approximate energy from summing the backbone energy, self-energies, pair-energies, etc.
-     */
-    private double approximateEnergy = 0;
-    /**
-     * Minimum number of nucleic acid Rotamers to use for rotamer optimization should some be
-     * eliminated by the nucleic correction threshold.
-     */
-    private int minNumberAcceptedNARotamers = 10;
-    /**
-     * Factor by which to multiply the pruning constraints for nucleic acids.
-     */
-    private double nucleicPruningFactor = 10.0;
-    /**
-     * The arithmetic mean of 1.0 and the pruning factor, and is applied for AA-NA pairs.
-     */
-    private double nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
-    /**
-     * A list of all residues in the system, which is used to compute a distance matrix.
-     */
-    private List<Residue> allResiduesList = null;
-    /**
-     * An array of all residues in the system, which is used to compute a distance matrix.
-     */
-    private Residue[] allResiduesArray = null;
-    /**
-     * Number of residues being optimized.
-     */
-    private int nAllResidues = 0;
-    /**
-     * The array of optimum rotamers for the subset of residues being optimized during box or window
-     * optimization.
-     */
-    private int[] optimumSubset;
-    /**
-     * If true, load an energy restart file.
-     */
-    private boolean loadEnergyRestart = false;
-    /**
-     * Energy restart File instance.
-     */
-    private File energyRestartFile;
-    /**
-     * ParallelTeam instance.
-     */
-    private ParallelTeam parallelTeam;
-    /**
-     * Flag to indicate computation of 4-body energy values. This is limited to the study 4-body energy
-     * magnitudes, but is not included in the rotamer optimization.
-     */
-    private boolean compute4BodyEnergy = false;
-    /**
-     * Flag to indicate use of box optimization.
-     */
-    private boolean usingBoxOptimization = false;
-    /**
-     * If a pair of residues have two atoms closer together than the superposition threshold, the
-     * energy is set to NaN.
-     */
-    private double superpositionThreshold = 0.25;
-    /**
-     * Flag to indicate computation of a many-body expansion for original coordinates.
-     */
-    private boolean decomposeOriginal = false;
-    /**
-     * Flag to indicate use of MC optimization.
-     */
-    private boolean monteCarlo = false;
-    /**
-     * Number of MC optimization steps.
-     */
-    private int nMCSteps = 1000000;
-    /**
-     * MC temperature (K).
-     */
-    private double mcTemp = 298.15;
-    /**
-     * Check to see if proposed move has an eliminated 2-body or higher-order term.
-     */
-    private boolean mcUseAll = false;
-    /**
-     * Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
-     */
-    private boolean mcNoEnum = false;
-    /**
-     * Sets whether files should be printed; true for standalone applications, false for some
-     * applications which use rotamer optimization as part of a larger process.
-     */
-    private boolean printFiles = true;
-    /**
-     * Stores states of each ensemble if printFiles is false.
-     */
-    private List<ObjectPair<ResidueState[], Double>> ensembleStates;
-    /**
-     * Maximum depth to check if a rotamer can be eliminated.
-     */
-    private int maxRotCheckDepth;
-    /**
-     * Writes energies to restart file.
-     */
-    private BufferedWriter energyWriter;
+  /**
+   * Flag to indicate use of the Goldstein criteria instead of the less stringent Dead-End
+   * Elimination criteria.
+   */
+  private boolean useGoldstein = true;
+  /**
+   * The number of most-favorable structures to include as output.
+   */
+  private int ensembleNumber = 1;
+  /**
+   * The energy buffer applied to each elimination criteria to affect an ensemble.
+   */
+  private double ensembleBuffer = 0.0;
+  /**
+   * The step value of the energy buffer for use with ensemble search.
+   */
+  private double ensembleBufferStep = 0.5;
+  /**
+   * The energy boundary for structures to be included in the final ensemble.
+   */
+  private double ensembleEnergy = 0.0;
+  /**
+   * File to contain ensemble of structures.
+   */
+  private File ensembleFile;
+  /**
+   * PDBFilter to write out ensemble snapshots.
+   */
+  private PDBFilter ensembleFilter;
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
+  private double clashThreshold = 25.0;
+  /**
+   * Clash energy threshold (kcal/mol) for MultiResidues, which can have much more variation in self
+   * and 2-Body energies.
+   */
+  private double multiResClashThreshold = 80.0;
+  /**
+   * Clash energy threshold (kcal/mole).
+   */
+  private double pairClashThreshold = 25.0;
+  /**
+   * Pair clash energy threshold (kcal/mol) for MultiResidues.
+   */
+  private double multiResPairClashAddn = 80.0;
+  /**
+   * An array of atomic coordinates (length 3 * the number of atoms).
+   */
+  private double[] x = null;
+  /**
+   * A flag to indicate use of the full N-Body AMOEBA potential energy during the rotamer
+   * optimization.
+   */
+  private boolean useForceFieldEnergy = false;
+  /**
+   * Threshold to eliminate nucleic acid Rotamers based on excessive correction distances; 0
+   * indicates the threshold is not being implemented.
+   */
+  private double nucleicCorrectionThreshold = 0;
+  /**
+   * The approximate energy from summing the backbone energy, self-energies, pair-energies, etc.
+   */
+  private double approximateEnergy = 0;
+  /**
+   * Minimum number of nucleic acid Rotamers to use for rotamer optimization should some be
+   * eliminated by the nucleic correction threshold.
+   */
+  private int minNumberAcceptedNARotamers = 10;
+  /**
+   * Factor by which to multiply the pruning constraints for nucleic acids.
+   */
+  private double nucleicPruningFactor = 10.0;
+  /**
+   * The arithmetic mean of 1.0 and the pruning factor, and is applied for AA-NA pairs.
+   */
+  private double nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
+  /**
+   * A list of all residues in the system, which is used to compute a distance matrix.
+   */
+  private List<Residue> allResiduesList = null;
+  /**
+   * An array of all residues in the system, which is used to compute a distance matrix.
+   */
+  private Residue[] allResiduesArray = null;
+  /**
+   * Number of residues being optimized.
+   */
+  private int nAllResidues = 0;
+  /**
+   * The array of optimum rotamers for the subset of residues being optimized during box or window
+   * optimization.
+   */
+  private int[] optimumSubset;
+  /**
+   * If true, load an energy restart file.
+   */
+  private boolean loadEnergyRestart = false;
+  /**
+   * Energy restart File instance.
+   */
+  private File energyRestartFile;
+  /**
+   * ParallelTeam instance.
+   */
+  private ParallelTeam parallelTeam;
+  /**
+   * Flag to indicate computation of 4-body energy values. This is limited to the study 4-body energy
+   * magnitudes, but is not included in the rotamer optimization.
+   */
+  private boolean compute4BodyEnergy = false;
+  /**
+   * Flag to indicate use of box optimization.
+   */
+  private boolean usingBoxOptimization = false;
+  /**
+   * If a pair of residues have two atoms closer together than the superposition threshold, the
+   * energy is set to NaN.
+   */
+  private double superpositionThreshold = 0.25;
+  /**
+   * Flag to indicate computation of a many-body expansion for original coordinates.
+   */
+  private boolean decomposeOriginal = false;
+  /**
+   * Flag to indicate use of MC optimization.
+   */
+  private boolean monteCarlo = false;
+  /**
+   * Number of MC optimization steps.
+   */
+  private int nMCSteps = 1000000;
+  /**
+   * MC temperature (K).
+   */
+  private double mcTemp = 298.15;
+  /**
+   * Check to see if proposed move has an eliminated 2-body or higher-order term.
+   */
+  private boolean mcUseAll = false;
+  /**
+   * Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
+   */
+  private boolean mcNoEnum = false;
+  /**
+   * Sets whether files should be printed; true for standalone applications, false for some
+   * applications which use rotamer optimization as part of a larger process.
+   */
+  private boolean printFiles = true;
+  /**
+   * Stores states of each ensemble if printFiles is false.
+   */
+  private List<ObjectPair<ResidueState[], Double>> ensembleStates;
+  /**
+   * Maximum depth to check if a rotamer can be eliminated.
+   */
+  private int maxRotCheckDepth;
+  /**
+   * Writes energies to restart file.
+   */
+  private BufferedWriter energyWriter;
 
   /**
    * False unless JUnit testing.
@@ -681,12 +666,6 @@ public class RotamerOptimization implements Terminatable {
       logIfRank0(format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
     }
 
-    String lazyMatrix = properties.getString("ro-lazyMatrix");
-    if (lazyMatrix != null) {
-      this.lazyMatrix = parseBoolean(lazyMatrix);
-      logger.info(format(" (KEY) lazyMatrix: %b", lazyMatrix));
-    }
-
     String propStr = properties.getString("ro-maxRotCheckDepth");
     int defaultMaxRotCheckDepth = 1;
     if (propStr != null) {
@@ -706,6 +685,15 @@ public class RotamerOptimization implements Terminatable {
     }
 
     setUpRestart();
+  }
+
+  /**
+   * Set the writeEnergyRestart flag.
+   *
+   * @param writeEnergyRestart If true, write out an energy restart file.
+   */
+  public void setWriteEnergyRestart(boolean writeEnergyRestart) {
+    this.writeEnergyRestart = writeEnergyRestart;
   }
 
   /**
@@ -1187,8 +1175,7 @@ public class RotamerOptimization implements Terminatable {
        */
       if (distance > 0) {
         dM = new DistanceMatrix(molecularAssembly, algorithmListener, allResiduesArray,
-            allResiduesList, distanceMethod, distance, twoBodyCutoffDist, threeBodyCutoffDist,
-            lazyMatrix);
+            allResiduesList, distanceMethod, distance, twoBodyCutoffDist, threeBodyCutoffDist);
       }
 
       if (residueList != null) {
@@ -1303,30 +1290,31 @@ public class RotamerOptimization implements Terminatable {
     }
     return currentEnergy;
   }
-    public void setPHRestraint(double pHRestraint) {
-        this.pHRestraint = pHRestraint;
-    }
 
-    public void setpH(double pH) {
-        this.pH = pH;
-    }
+  public void setPHRestraint(double pHRestraint) {
+    this.pHRestraint = pHRestraint;
+  }
 
-    public void setRecomputeSelf(boolean recomputeSelf) {
-        this.recomputeSelf = recomputeSelf;
-    }
+  public void setpH(double pH) {
+    this.pH = pH;
+  }
 
+  public void setRecomputeSelf(boolean recomputeSelf) {
+    this.recomputeSelf = recomputeSelf;
+  }
 
-    public void setOnlyProtons(boolean onlyProtons) {
-        this.onlyProtons = onlyProtons;
-    }
+  public void setOnlyProtons(boolean onlyProtons) {
+    this.onlyProtons = onlyProtons;
+  }
 
-    public double getPHRestraint() {
-        return pHRestraint;
-    }
+  public double getPHRestraint() {
+    return pHRestraint;
+  }
 
-    public double getPH() {
-        return pH;
-    }
+  public double getPH() {
+    return pH;
+  }
+
   /**
    * Sets the approximate dimensions of boxes, over-riding numXYZBoxes in determining box size.
    * Rounds box size up and number of boxes down to get a whole number of boxes along each axis.
@@ -2243,206 +2231,206 @@ public class RotamerOptimization implements Terminatable {
     return 0.0;
   }
 
-    /**
-     * A global optimization over side-chain rotamers using a recursive algorithm and information about
-     * eliminated rotamers, rotamer pairs and rotamer triples.
-     *
-     * @param residues        Residue array.
-     * @param i               Current number of permutations.
-     * @param currentRotamers Current rotamer list.
-     */
-    public void partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
-        // This is the initialization condition.
-        double LOG10 = log(10.0);
-        double temperature = 298.15;
-        if (i == 0) {
-            totalBoltzmann = 0;
-            evaluatedPermutations = 0;
-            evaluatedPermutationsPrint = 1000;
+  /**
+   * A global optimization over side-chain rotamers using a recursive algorithm and information about
+   * eliminated rotamers, rotamer pairs and rotamer triples.
+   *
+   * @param residues        Residue array.
+   * @param i               Current number of permutations.
+   * @param currentRotamers Current rotamer list.
+   */
+  public void partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+    // This is the initialization condition.
+    double LOG10 = log(10.0);
+    double temperature = 298.15;
+    if (i == 0) {
+      totalBoltzmann = 0;
+      evaluatedPermutations = 0;
+      evaluatedPermutationsPrint = 1000;
+    }
+
+    if (evaluatedPermutations >= evaluatedPermutationsPrint) {
+      if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
+        logIfRank0(
+            format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
+        evaluatedPermutationsPrint *= 10;
+      }
+    }
+
+    int nResidues = residues.length;
+    Residue residuei = residues[i];
+    Rotamer[] rotamersi = residuei.getRotamers();
+    int lenri = rotamersi.length;
+    if (i < nResidues - 1) {
+      for (int ri = 0; ri < lenri; ri++) {
+        if (eR.check(i, ri)) {
+          continue;
         }
-
-        if (evaluatedPermutations >= evaluatedPermutationsPrint) {
-            if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
-                logIfRank0(
-                        format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
-                evaluatedPermutationsPrint *= 10;
-            }
+        boolean deadEnd = false;
+        for (int j = 0; j < i; j++) {
+          int rj = currentRotamers[j];
+          deadEnd = eR.check(j, rj, i, ri);
+          if (deadEnd) {
+            break;
+          }
         }
-
-        int nResidues = residues.length;
-        Residue residuei = residues[i];
-        Rotamer[] rotamersi = residuei.getRotamers();
-        int lenri = rotamersi.length;
-        if (i < nResidues - 1) {
-            for (int ri = 0; ri < lenri; ri++) {
-                if (eR.check(i, ri)) {
-                    continue;
-                }
-                boolean deadEnd = false;
-                for (int j = 0; j < i; j++) {
-                    int rj = currentRotamers[j];
-                    deadEnd = eR.check(j, rj, i, ri);
-                    if (deadEnd) {
-                        break;
-                    }
-                }
-                if (deadEnd) {
-                    continue;
-                }
-                currentRotamers[i] = ri;
-                partitionFunction(residues, i + 1, currentRotamers);
-            }
-        } else {
-            // At the end of the recursion, check each rotamer of the final residue.
-            for (int ri = 0; ri < lenri; ri++) {
-                int res = 0;
-                if (eR.check(i, ri)) {
-                    continue;
-                }
-                currentRotamers[i] = ri;
-                boolean deadEnd = false;
-                for (int j = 0; j < i; j++) {
-                    int rj = currentRotamers[j];
-                    deadEnd = eR.check(j, rj, i, ri);
-                    if (deadEnd) {
-                        break;
-                    }
-                }
-                if (!deadEnd) {
-                    evaluatedPermutations++;
-
-                    energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
-                    parallelTeam.execute(energyRegion);
-                    double selfEnergy = energyRegion.getSelf();
-                    // Recompute the self energy from a restart file run at pH 7.0
-                    if (recomputeSelf) {
-                        int count = 0;
-                        for (Residue residue : residues) {
-                            double bias7 = 0;
-                            double biasCurrent = 0;
-                            Rotamer[] rotamers = residue.getRotamers();
-                            int currentRotamer = currentRotamers[count];
-                            switch (rotamers[currentRotamer].getName()) {
-                                case "HIE" -> {
-                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
-                                            TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
-                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - pH)) -
-                                            TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
-                                }
-                                case "HID" -> {
-                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - 7)) -
-                                            TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
-                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - pH)) -
-                                            TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
-                                }
-                                case "ASP" -> {
-                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - 7)) -
-                                            TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
-                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
-                                            TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
-                                }
-                                case "GLU" -> {
-                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
-                                            TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
-                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - pH)) -
-                                            TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
-                                }
-                                case "LYD" -> {
-                                    bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - 7)) -
-                                            TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
-                                    biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - pH)) -
-                                            TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
-                                }
-                                default -> {
-                                }
-                            }
-                            selfEnergy = selfEnergy - bias7 + biasCurrent;
-                            count += 1;
-                        }
-                    }
-
-                    // Calculate the total energy of a permutation/conformation
-                    double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
-                            energyRegion.getTwoBody() + energyRegion.getThreeBody();
-
-                    // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
-                    if (evaluatedPermutations == 1) {
-                        refEnergy = totalEnergy;
-                        logger.info("The reference energy: " + refEnergy);
-                    }
-                    double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
-
-                    // Collect Boltzmann weight for every rotamer for residues included in the optimization
-                    for (Residue residue : residues) {
-                        Rotamer[] rotamers = residue.getRotamers();
-                        int currentRotamer = currentRotamers[res];
-                        int rotIndex = rotamers[currentRotamer].getRotIndex();
-                        populationBoltzmann[res][rotIndex] += boltzmannWeight;
-                        res += 1;
-                    }
-
-                    // Sum Boltzmann of all permutations
-                    totalBoltzmann += boltzmannWeight;
-                }
-            }
+        if (deadEnd) {
+          continue;
         }
-    }
-
-    /**
-     * Get reference energy for partition function boltzmann weights
-     *
-     * @return ref energy
-     */
-    public double getRefEnergy() {
-        return refEnergy;
-    }
-
-    /**
-     * Get the total boltzmann weight for an ensemble
-     *
-     * @return total boltzmann
-     */
-    public double getTotalBoltzmann() {
-        return totalBoltzmann;
-    }
-
-    /**
-     * Get the ensemble average of protonated rotamers for all titratable sites
-     *
-     * @return fraction of protonated residues
-     */
-    public double[][] getFraction() {
-        return fraction;
-    }
-
-    /**
-     * Get the Protonated Boltzmann for all sites
-     *
-     * @return fraction of protonated residues
-     */
-    public double[][] getPopulationBoltzmann() {
-        return populationBoltzmann;
-    }
-
-    /**
-     * Calculate Populations for Residues
-     *
-     * @param residues        residue array
-     * @param i               int
-     * @param currentRotamers empty array
-     * @throws Exception too many permutations to continue
-     */
-    public void getPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
-        fraction = new double[residues.length][54];
-        populationBoltzmann = new double[residues.length][54];
-        partitionFunction(residues, i, currentRotamers);
-        for (int m = 0; m < fraction.length; m++) {
-            for (int n = 0; n < 54; n++) {
-                fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
-            }
+        currentRotamers[i] = ri;
+        partitionFunction(residues, i + 1, currentRotamers);
+      }
+    } else {
+      // At the end of the recursion, check each rotamer of the final residue.
+      for (int ri = 0; ri < lenri; ri++) {
+        int res = 0;
+        if (eR.check(i, ri)) {
+          continue;
         }
-        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations);
+        currentRotamers[i] = ri;
+        boolean deadEnd = false;
+        for (int j = 0; j < i; j++) {
+          int rj = currentRotamers[j];
+          deadEnd = eR.check(j, rj, i, ri);
+          if (deadEnd) {
+            break;
+          }
+        }
+        if (!deadEnd) {
+          evaluatedPermutations++;
+
+          energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
+          parallelTeam.execute(energyRegion);
+          double selfEnergy = energyRegion.getSelf();
+          // Recompute the self energy from a restart file run at pH 7.0
+          if (recomputeSelf) {
+            int count = 0;
+            for (Residue residue : residues) {
+              double bias7 = 0;
+              double biasCurrent = 0;
+              Rotamer[] rotamers = residue.getRotamers();
+              int currentRotamer = currentRotamers[count];
+              switch (rotamers[currentRotamer].getName()) {
+                case "HIE" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
+                      TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - pH)) -
+                      TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                }
+                case "HID" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - 7)) -
+                      TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - pH)) -
+                      TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                }
+                case "ASP" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - 7)) -
+                      TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
+                      TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                }
+                case "GLU" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
+                      TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - pH)) -
+                      TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                }
+                case "LYD" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - 7)) -
+                      TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - pH)) -
+                      TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                }
+                default -> {
+                }
+              }
+              selfEnergy = selfEnergy - bias7 + biasCurrent;
+              count += 1;
+            }
+          }
+
+          // Calculate the total energy of a permutation/conformation
+          double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
+              energyRegion.getTwoBody() + energyRegion.getThreeBody();
+
+          // Set a reference energy to evaluate all follow energies against for the Boltzmann calculations to avoid Nan/Inf errors
+          if (evaluatedPermutations == 1) {
+            refEnergy = totalEnergy;
+            logger.info("The reference energy: " + refEnergy);
+          }
+          double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
+
+          // Collect Boltzmann weight for every rotamer for residues included in the optimization
+          for (Residue residue : residues) {
+            Rotamer[] rotamers = residue.getRotamers();
+            int currentRotamer = currentRotamers[res];
+            int rotIndex = rotamers[currentRotamer].getRotIndex();
+            populationBoltzmann[res][rotIndex] += boltzmannWeight;
+            res += 1;
+          }
+
+          // Sum Boltzmann of all permutations
+          totalBoltzmann += boltzmannWeight;
+        }
+      }
     }
+  }
+
+  /**
+   * Get reference energy for partition function boltzmann weights
+   *
+   * @return ref energy
+   */
+  public double getRefEnergy() {
+    return refEnergy;
+  }
+
+  /**
+   * Get the total boltzmann weight for an ensemble
+   *
+   * @return total boltzmann
+   */
+  public double getTotalBoltzmann() {
+    return totalBoltzmann;
+  }
+
+  /**
+   * Get the ensemble average of protonated rotamers for all titratable sites
+   *
+   * @return fraction of protonated residues
+   */
+  public double[][] getFraction() {
+    return fraction;
+  }
+
+  /**
+   * Get the Protonated Boltzmann for all sites
+   *
+   * @return fraction of protonated residues
+   */
+  public double[][] getPopulationBoltzmann() {
+    return populationBoltzmann;
+  }
+
+  /**
+   * Calculate Populations for Residues
+   *
+   * @param residues        residue array
+   * @param i               int
+   * @param currentRotamers empty array
+   * @throws Exception too many permutations to continue
+   */
+  public void getPopulations(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+    fraction = new double[residues.length][54];
+    populationBoltzmann = new double[residues.length][54];
+    partitionFunction(residues, i, currentRotamers);
+    for (int m = 0; m < fraction.length; m++) {
+      for (int n = 0; n < 54; n++) {
+        fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+      }
+    }
+    logger.info("\n   Total permutations evaluated: " + evaluatedPermutations);
+  }
 
   /**
    * Return an integer array of optimized rotamers following rotamer optimization.
@@ -4969,7 +4957,7 @@ public class RotamerOptimization implements Terminatable {
       double bCellBorderFracSize = (cellBorderSize / crystal.b);
       double cCellBorderFracSize = (cellBorderSize / crystal.c);
       int numCells = cellEnd - cellStart + 1;
-      logIfRank0(format(" Number of fractional cells: %d = %d x %d x %d", numCells,  numXYZCells[0], numXYZCells[1], numXYZCells[2]));
+      logIfRank0(format(" Number of fractional cells: %d = %d x %d x %d", numCells, numXYZCells[0], numXYZCells[1], numXYZCells[2]));
 
       ManyBodyCell[] cells = new ManyBodyCell[numCells];
       int currentIndex = 0;

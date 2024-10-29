@@ -181,7 +181,7 @@ public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
     double[] neckFactors = gk.getNeckScale();
 
     boolean nea = gk.getNativeEnvironmentApproximation();
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
 
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;

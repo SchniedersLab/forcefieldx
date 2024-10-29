@@ -41,6 +41,7 @@ import ffx.openmm.Force;
 import ffx.openmm.amoeba.GKCavitationForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.nonbonded.implicit.GaussVol;
@@ -151,7 +152,9 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
 
     double surfaceTension = chandlerCavitation.getSurfaceTension()
         * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom / OpenMM_NmPerAngstrom;
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    double lambdaElec = pme.getAlchemicalParameters().permLambda;
 
     // Changing cavitation radii is not supported.
     // for (int i=0; i<nAtoms; i++) {

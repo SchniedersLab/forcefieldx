@@ -113,8 +113,8 @@ public class OSTGradientTest extends AlgorithmsTest {
     double nFailures = ostGradient.nFailures;
 
     // Assert that energy is conserved at the end of the dynamics trajectory.
-    assertEquals(info + ": dUdL error for atom " + args[6] + " at lambda " + args[4] + ": ", 0.0, dUdLError, tolerance);
-    assertEquals(info + ": Number of coordinate gradient errors for atom " + args[6] + " at lambda " + args[4] + ": ", 0, nFailures, 0);
+    assertEquals(info + ": dUdL error for atom " + atomID + " at lambda " + args[4] + ": ", 0.0, dUdLError, tolerance);
+    assertEquals(info + ": Number of coordinate gradient errors for atom " + atomID + " at lambda " + args[4] + ": ", 0, nFailures, 0);
   }
 
   @Test

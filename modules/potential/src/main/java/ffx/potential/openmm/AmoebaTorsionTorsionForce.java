@@ -154,7 +154,8 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Torsion-Torsions  \t%6d\t\t%1d", torsionTorsions.length, forceGroup));
+    logger.info(format("  Torsion-Torsions:                  %10d", torsionTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

@@ -825,7 +825,7 @@ class BAR extends AlgorithmsScript {
           currentLambdas[2] = lambdaValues[w + 1]
         }
 
-        nCurrLambdas = currentLambdas.length;
+        nCurrLambdas = currentLambdas.length
         double[][] energyWindowLow = new double[nCurrLambdas][]
         double[][] energyWindowAt = new double[nCurrLambdas][]
         double[][] energyWindowHigh = new double[nCurrLambdas][]
@@ -918,6 +918,15 @@ class BAR extends AlgorithmsScript {
         logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS, varBARFE))
 
         if (w == nWindows) {
+          logger.info("\n Free Energy for each Window (Iteration, Bootstrap):\n")
+          double[] barIterationFE = bar.getBinEnergies()
+          double[] barUncertaintyFE = bar.getBinUncertainties()
+          double[] barBSFE = barBS.getFE()
+          double[] barBSUncertaintyFE = barBS.getUncertainty()
+          for (int n = 0; n < nWindows - 1; n++) {
+            logger.info(format("  Window %2d: %12.4f +/- %6.4f  %12.4f +/- %6.4f", n, barIterationFE[n], barUncertaintyFE[n], barBSFE[n], barBSUncertaintyFE[n]))
+          }
+
           logger.info("\n Enthalpy from Potential Energy Averages:\n")
           for (int n = 0; n < nWindows; n++) {
             logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.", n, energyMean[n], energySD[n]))

@@ -143,7 +143,7 @@ public class AmoebaWcaDispersionForce extends WcaDispersionForce {
       radScale = 0.5;
     }
 
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
 
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;

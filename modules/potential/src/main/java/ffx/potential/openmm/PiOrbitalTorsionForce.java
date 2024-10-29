@@ -99,7 +99,8 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Pi-Orbital Torsions  \t%6d\t\t%1d", piOrbitalTorsions.length, forceGroup));
+    logger.info(format("  Pi-Orbital Torsions:               %10d", piOrbitalTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

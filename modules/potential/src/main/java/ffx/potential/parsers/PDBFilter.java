@@ -1362,8 +1362,12 @@ public final class PDBFilter extends SystemFilter {
 
     // Finally, re-number the atoms if missing atoms were created.
     int currentN = activeMolecularAssembly.getAtomArray().length;
+    boolean renumber = forceField.getBoolean("renumber-pdb", false);
     if (pdbAtoms != currentN) {
       logger.info(format(" Renumbering PDB file due to built atoms (%d vs %d)", currentN, pdbAtoms));
+      numberAtoms(activeMolecularAssembly);
+    } else if (renumber) {
+      logger.info(" Renumbering PDB file due to renumber-pdb flag.");
       numberAtoms(activeMolecularAssembly);
     }
     return true;

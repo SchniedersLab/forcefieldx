@@ -70,7 +70,6 @@ public class UIFileOpener implements FileOpener {
   MainPanel mainPanel;
   private boolean timer = true;
   private boolean gc = true;
-  private long occupiedMemory;
   private long time;
   private int nThreads = -1;
 
@@ -247,7 +246,6 @@ public class UIFileOpener implements FileOpener {
     if (gc) {
       runtime.gc();
     }
-    occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
     time -= System.nanoTime();
   }
 

@@ -313,13 +313,14 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
 
       if (applyLambda) {
         OpenMMSystem system = openMMEnergy.getSystem();
-        // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom
-        // Non-Bonded force.
-        if (system.getVdwLambdaTerm()) {
+        boolean vdwLambdaTerm = vdW.getLambdaTerm();
+        // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom Non-Bonded force.
+        if (vdwLambdaTerm) {
           eps = 0.0;
         }
         // Always scale the charge by lambdaElec
-        charge *= system.getLambdaElec();
+        double permLambda = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
+        charge *= permLambda;
       }
 
       if (!atom.getUse()) {
@@ -363,21 +364,23 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
       double minEpsilon = 1.0e-12;
 
       OpenMMSystem system = openMMEnergy.getSystem();
-      double lambdaValue = system.getLambdaElec();
-      boolean vdwLambdaTerm = system.getVdwLambdaTerm();
 
-      if (lambdaValue < minEpsilon) {
-        lambdaValue = minEpsilon;
+      ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+      double lambdaElec = pme.getAlchemicalParameters().permLambda;
+      boolean vdwLambdaTerm = vdW.getLambdaTerm();
+
+      if (lambdaElec < minEpsilon) {
+        lambdaElec = minEpsilon;
       }
 
       if (atom1.applyLambda()) {
-        qq *= lambdaValue;
+        qq *= lambdaElec;
         if (vdwLambdaTerm) {
           epsilon = minEpsilon;
         }
       }
       if (atom2.applyLambda()) {
-        qq *= lambdaValue;
+        qq *= lambdaElec;
         if (vdwLambdaTerm) {
           epsilon = minEpsilon;
         }

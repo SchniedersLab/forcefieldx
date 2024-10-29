@@ -48,17 +48,19 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
+import ffx.potential.nonbonded.pme.AlchemicalParameters;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.checkerframework.checker.units.qual.A;
 
 import javax.annotation.Nullable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
@@ -68,7 +70,6 @@ import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
@@ -90,24 +91,10 @@ public class OpenMMSystem extends ffx.openmm.System {
 
   private static final Logger logger = Logger.getLogger(OpenMMSystem.class.getName());
 
-  private static final double DEFAULT_MELD_SCALE_FACTOR = -1.0;
   /**
    * The ForceFieldEnergyOpenMM instance.
    */
   private final OpenMMEnergy openMMEnergy;
-  /**
-   * The OpenMMContext instance.
-   */
-  private final OpenMMContext openMMContext;
-  /**
-   * Scale factor used for MELD.
-   */
-  private final double meldScaleFactor;
-  /**
-   * When using MELD, our goal will be to scale down the potential by this factor. A negative value
-   * indicates we're not using MELD.
-   */
-  private final boolean useMeld;
   /**
    * The Force Field in use.
    */
@@ -229,62 +216,6 @@ public class OpenMMSystem extends ffx.openmm.System {
    * Fixed charge softcore vdW force boolean.
    */
   private boolean softcoreCreated = false;
-  /**
-   * Lambda flag to indicate control of electrostatic scaling. If both elec and vdW are being
-   * scaled, then vdW is scaled first, followed by elec.
-   */
-  private boolean elecLambdaTerm;
-  /**
-   * Lambda flag to indicate control of vdW scaling. If both elec and vdW are being scaled, then
-   * vdW is scaled first, followed by elec.
-   */
-  private boolean vdwLambdaTerm;
-  /**
-   * Lambda flag to indicate control of torsional force constants (L=0 corresponds to torsions
-   * being off, and L=1 to torsions at full strength).
-   */
-  private boolean torsionLambdaTerm;
-  /**
-   * Value of the van der Waals lambda state variable.
-   */
-  private double lambdaVDW = 1.0;
-  /**
-   * Value of the electrostatics lambda state variable.
-   */
-  private double lambdaElec = 1.0;
-  /**
-   * Value of the electrostatics lambda state variable.
-   */
-  private double lambdaTorsion = 1.0;
-  /**
-   * The lambda value that defines when the van der Waals will peak at a value of 1.0 for full path
-   * non-bonded term scaling.
-   */
-  private double vdwEnd = 1.0;
-  /**
-   * The lambda value that defines when the electrostatics will start to turn on for full path
-   * non-bonded term scaling.
-   *
-   * <p>A value of 0.6 works well for Chloride ion solvation, which is a difficult case due to the
-   * ion having a formal negative charge and a large polarizability.
-   */
-  private double electrostaticStart = 0.6;
-  /**
-   * Electrostatics lambda is raised to this power.
-   */
-  private double electrostaticLambdaPower;
-  /**
-   * van der Waals softcore alpha.
-   */
-  private double vdWSoftcoreAlpha = 0.25;
-  /**
-   * van der Waals softcore beta.
-   */
-  private double vdwSoftcorePower = 3.0;
-  /**
-   * Torsional lambda power.
-   */
-  private double torsionalLambdaPower = 2.0;
 
   /**
    * OpenMMSystem constructor.
@@ -293,9 +224,6 @@ public class OpenMMSystem extends ffx.openmm.System {
    */
   public OpenMMSystem(OpenMMEnergy openMMEnergy) {
     this.openMMEnergy = openMMEnergy;
-    this.openMMContext = openMMEnergy.getContext();
-
-    logger.info("\n System created");
 
     MolecularAssembly molecularAssembly = openMMEnergy.getMolecularAssembly();
     forceField = molecularAssembly.getForceField();
@@ -308,68 +236,8 @@ public class OpenMMSystem extends ffx.openmm.System {
       logger.severe(" Atom without mass encountered.");
     }
 
-    // Check for MELD use. If we're using MELD, set all lambda terms to true.
-    meldScaleFactor = forceField.getDouble("MELD_SCALE_FACTOR", DEFAULT_MELD_SCALE_FACTOR);
-    if (meldScaleFactor <= 1.0 && meldScaleFactor > 0.0) {
-      useMeld = true;
-      elecLambdaTerm = true;
-      vdwLambdaTerm = true;
-      torsionLambdaTerm = true;
-    } else {
-      useMeld = false;
-      elecLambdaTerm = false;
-      vdwLambdaTerm = false;
-      torsionLambdaTerm = false;
-    }
+    logger.info(format("\n OpenMM system created with %d atoms.", atoms.length));
 
-    // Read alchemical information -- this needs to be done before creating forces.
-    elecLambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM", elecLambdaTerm);
-    vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
-    torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
-
-    if (!forceField.getBoolean("LAMBDATERM", false)) {
-      openMMEnergy.setLambdaTerm(elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
-    } else {
-      openMMEnergy.setLambdaTerm(true);
-    }
-
-    vdwEnd = forceField.getDouble("VDW_LAMBDA_END", 1.0);
-    if (vdwEnd > 1.0) {
-      vdwEnd = 1.0;
-    } else if (vdwEnd < 0.0) {
-      vdwEnd = 0.0;
-    }
-
-    VanDerWaals vdW = openMMEnergy.getVdwNode();
-    if (vdW != null) {
-      vdWSoftcoreAlpha = vdW.getAlpha();
-      vdwSoftcorePower = (int) vdW.getBeta();
-    }
-
-    electrostaticStart = forceField.getDouble("PERMANENT_LAMBDA_START", electrostaticStart);
-    if (electrostaticStart > 1.0) {
-      electrostaticStart = 1.0;
-    } else if (electrostaticStart < 0.0) {
-      electrostaticStart = 0.0;
-    }
-    electrostaticLambdaPower = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 2.0);
-
-    if (useMeld) {
-      // lambda path starts at 0.0
-      openMMEnergy.setLambdaStart(0.0);
-      // electrostaticStart is ignored for MELD.
-      electrostaticStart = 0.0;
-      // electrostaticLambdaPower is ignored for MELD.
-      electrostaticLambdaPower = 1.0;
-      // vdW is linearly scaled for MELD.
-      vdwSoftcorePower = 1;
-      // No softcore offset for MELD.
-      vdWSoftcoreAlpha = 0.0;
-      // Torsions are linearly scaled for MELD.
-      torsionalLambdaPower = 1.0;
-      // Only need single-sided dU/dL
-      openMMEnergy.setTwoSidedFiniteDifference(false);
-    }
   }
 
   /**
@@ -468,7 +336,7 @@ public class OpenMMSystem extends ffx.openmm.System {
 
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     if (vdW != null) {
-      logger.info("\n Non-Bonded Terms\n");
+      logger.info("\n Non-Bonded Terms");
       VanDerWaalsForm vdwForm = vdW.getVDWForm();
       if (vdwForm.vdwType == LENNARD_JONES) {
         fixedChargeNonBondedForce = (FixedChargeNonbondedForce) FixedChargeNonbondedForce.constructForce(openMMEnergy);
@@ -509,30 +377,6 @@ public class OpenMMSystem extends ffx.openmm.System {
             addForce(amoebaGKCavitationForce);
           }
         }
-      }
-    }
-
-    if (openMMEnergy.getLambdaTerm()) {
-      logger.info(format("\n Lambda path start:              %6.3f", openMMEnergy.getLambdaStart()));
-      logger.info(format(" Lambda scales torsions:          %s", torsionLambdaTerm));
-      if (torsionLambdaTerm) {
-        logger.info(format(" torsion lambda power:           %6.3f", torsionalLambdaPower));
-      }
-      logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
-      if (vdwLambdaTerm) {
-        logger.info(format(" van Der Waals alpha:            %6.3f", vdWSoftcoreAlpha));
-        logger.info(format(" van Der Waals lambda power:     %6.3f", vdwSoftcorePower));
-        logger.info(format(" van Der Waals end:              %6.3f", vdwEnd));
-      }
-      logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
-
-      if (elecLambdaTerm) {
-        logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
-        logger.info(format(" Electrostatics lambda power:    %6.3f", electrostaticLambdaPower));
-      }
-      logger.info(format(" Using Meld:                      %s", useMeld));
-      if (useMeld) {
-        logger.info(format(" Meld scale factor:              %6.3f", meldScaleFactor));
       }
     }
   }
@@ -677,104 +521,6 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
   }
 
-  /**
-   * Print current lambda values.
-   */
-  public void printLambdaValues() {
-    logger.info(format("\n Lambda Values\n Torsion: %6.3f vdW: %6.3f Elec: %6.3f ", lambdaTorsion,
-        lambdaVDW, lambdaElec));
-  }
-
-  /**
-   * Set the overall lambda value for the system.
-   *
-   * @param lambda Current lambda value.
-   */
-  public void setLambda(double lambda) {
-
-    // Initially set all lambda values to 1.0.
-    lambdaTorsion = 1.0;
-
-    // Applied to softcore vdW forces.
-    lambdaVDW = 1.0;
-
-    // Applied to normal electrostatic parameters for alchemical atoms.
-    lambdaElec = 1.0;
-
-    if (torsionLambdaTerm) {
-      // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
-      lambdaTorsion = pow(lambda, torsionalLambdaPower);
-      if (useMeld) {
-        lambdaTorsion = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-      }
-    }
-
-    if (elecLambdaTerm && vdwLambdaTerm) {
-      // Lambda effects both vdW and electrostatics.
-      if (lambda < electrostaticStart) {
-        // Begin turning vdW on with electrostatics off.
-        lambdaElec = 0.0;
-      } else {
-        // Turn electrostatics on during the latter part of the path.
-        double elecWindow = 1.0 - electrostaticStart;
-        lambdaElec = (lambda - electrostaticStart) / elecWindow;
-        lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
-      }
-
-      if (lambda >= vdwEnd) {
-        lambdaVDW = 1.0;
-      } else {
-        lambdaVDW = lambda / vdwEnd;
-      }
-
-      if (useMeld) {
-        lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
-        lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-      }
-    } else if (vdwLambdaTerm) {
-      // Lambda effects vdW, with electrostatics turned off.
-      lambdaElec = 0.0;
-      lambdaVDW = lambda;
-      if (useMeld) {
-        lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
-      }
-
-    } else if (elecLambdaTerm) {
-      // Lambda effects electrostatics, but not vdW.
-      lambdaElec = lambda;
-      if (useMeld) {
-        lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
-      }
-    }
-  }
-
-  /**
-   * Get the value of the vdW lambda term flag.
-   *
-   * @return the vdW lambda term flag.
-   */
-  public boolean getVdwLambdaTerm() {
-    return vdwLambdaTerm;
-  }
-
-  /**
-   * Set the vdW softcore alpha value.
-   *
-   * @return the vdW softcore alpha value.
-   */
-  public double getVdWSoftcoreAlpha() {
-    return vdWSoftcoreAlpha;
-  }
-
-  /**
-   * Set the vdW softcore power.
-   *
-   * @return the vdW softcore power.
-   */
-  public double getVdwSoftcorePower() {
-    return vdwSoftcorePower;
-  }
-
   public void setUpdateBondedTerms(boolean updateBondedTerms) {
     this.updateBondedTerms = updateBondedTerms;
   }
@@ -809,17 +555,16 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
   }
 
-  public double getLambdaElec() {
-    return lambdaElec;
-  }
-
   /**
    * Update parameters if the Use flags and/or Lambda value has changed.
    *
    * @param atoms Atoms in this list are considered.
    */
   public void updateParameters(@Nullable Atom[] atoms) {
+    VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
+    boolean vdwLambdaTerm = vanDerWaals.getLambdaTerm();
     if (vdwLambdaTerm) {
+      double lambdaVDW = vanDerWaals.getLambda();
       if (fixedChargeNonBondedForce != null) {
         if (!softcoreCreated) {
           fixedChargeAlchemicalForces = new FixedChargeAlchemicalForces(openMMEnergy, fixedChargeNonBondedForce);
@@ -827,15 +572,18 @@ public class OpenMMSystem extends ffx.openmm.System {
           addForce(fixedChargeAlchemicalForces.getAlchemicalAlchemicalStericsForce());
           addForce(fixedChargeAlchemicalForces.getNonAlchemicalAlchemicalStericsForce());
           // Re-initialize the context.
-          openMMContext.reinitialize(OpenMM_True);
+          openMMEnergy.getContext().reinitialize(OpenMM_True);
           softcoreCreated = true;
         }
-        openMMContext.setParameter("vdw_lambda", lambdaVDW);
+        // Update the lambda value.
+        openMMEnergy.getContext().setParameter("vdw_lambda", lambdaVDW);
       } else if (amoebaVDWForce != null) {
-        openMMContext.setParameter("AmoebaVdwLambda", lambdaVDW);
+        // Update the lambda value.
+        openMMEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
         if (softcoreCreated) {
+          ParticleMeshEwald pme = openMMEnergy.getPmeNode();
           // Avoid any updateParametersInContext calls if vdwLambdaTerm is true, but not other alchemical terms.
-          if (!torsionLambdaTerm && !elecLambdaTerm) {
+          if (pme == null || !pme.getLambdaTerm()) {
             return;
           }
         } else {
@@ -845,7 +593,7 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
 
     // Note Stretch-Torsion and Angle-Torsion terms (for nucleic acids)
-    // and Torsion-Torsion terms (for protein backbones) are not udpated yet.
+    // and Torsion-Torsion terms (for protein backbones) are not updated yet.
     if (updateBondedTerms) {
       if (bondForce != null) {
         bondForce.updateForce(openMMEnergy);
@@ -868,15 +616,10 @@ public class OpenMMSystem extends ffx.openmm.System {
       if (piOrbitalTorsionForce != null) {
         piOrbitalTorsionForce.updateForce(openMMEnergy);
       }
-    }
-
-    if (torsionLambdaTerm || updateBondedTerms) {
       if (torsionForce != null) {
-        torsionForce.setLambdaTorsion(lambdaTorsion);
         torsionForce.updateForce(openMMEnergy);
       }
       if (improperTorsionForce != null) {
-        improperTorsionForce.setLambdaTorsion(lambdaTorsion);
         improperTorsionForce.updateForce(openMMEnergy);
       }
     }
@@ -930,10 +673,8 @@ public class OpenMMSystem extends ffx.openmm.System {
    * of particles added.
    */
   private void addAtoms() throws Exception {
-    double totalMass = 0.0;
     for (Atom atom : atoms) {
       double mass = atom.getMass();
-      totalMass += mass;
       if (mass < 0.0) {
         throw new Exception(" Atom with mass less than 0.");
       }
@@ -942,8 +683,6 @@ public class OpenMMSystem extends ffx.openmm.System {
       }
       addParticle(mass);
     }
-    logger.log(Level.INFO, format("  Atoms \t\t%6d", atoms.length));
-    logger.log(Level.INFO, format("  Mass  \t\t%12.3f", totalMass));
   }
 
   /**

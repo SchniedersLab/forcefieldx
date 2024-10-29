@@ -97,12 +97,11 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * The atoms this ForceFieldEnergyOpenMM operates on.
    */
   private final Atom[] atoms;
+
   /**
-   * Truncate the normal OpenMM Lambda Path from 0 ... 1 to Lambda_Start ... 1. This is useful for
-   * conformational optimization if full removal of vdW interactions is not desired (i.e. lambdaStart
-   * = ~0.2).
+   * If true, compute dUdL.
    */
-  private double lambdaStart;
+  private boolean computeDEDL = false;
   /**
    * Use two-sided finite difference dU/dL.
    */
@@ -146,14 +145,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     // Create the Context.
     openMMContext = new OpenMMContext(openMMPlatform, openMMSystem, atoms);
 
-    // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
-    lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
-    if (lambdaStart > 1.0) {
-      lambdaStart = 1.0;
-    } else if (lambdaStart < 0.0) {
-      lambdaStart = 0.0;
-    }
-
+    computeDEDL = forceField.getBoolean("OMM_DUDL", false);
     finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
     twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", twoSidedFiniteDifference);
   }
@@ -188,7 +180,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (nDevs == 1) {
       return devs[0];
     }
-    
+
     int index = 0;
     try {
       Comm world = Comm.world();
@@ -321,9 +313,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (!isFinite(e)) {
       String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
       logger.warning(message);
-      if (lambdaTerm) {
-        openMMSystem.printLambdaValues();
-      }
       throw new EnergyException(message);
     }
 
@@ -376,9 +365,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (!isFinite(e)) {
       String message = format(" Energy from OpenMM was a non-finite %8g", e);
       logger.warning(message);
-      if (lambdaTerm) {
-        openMMSystem.printLambdaValues();
-      }
       throw new EnergyException(message);
     }
 
@@ -545,7 +531,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   @Override
   public double getdEdL() {
     // No lambda dependence.
-    if (!lambdaTerm) {
+    if (!lambdaTerm || !computeDEDL) {
       return 0.0;
     }
 
@@ -638,14 +624,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     openMMContext.setPeriodicBoxVectors(crystal);
   }
 
-  public void setLambdaStart(double lambdaStart) {
-    this.lambdaStart = lambdaStart;
-  }
-
-  public double getLambdaStart() {
-    return lambdaStart;
-  }
-
   public void setTwoSidedFiniteDifference(boolean twoSidedFiniteDifference) {
     this.twoSidedFiniteDifference = twoSidedFiniteDifference;
   }
@@ -660,37 +638,21 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       return;
     }
 
-    // Check for lambda outside the range [0 .. 1].
-    if (lambda < 0.0 || lambda > 1.0) {
-      String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
-      logger.warning(message);
-      return;
-    }
-
     super.setLambda(lambda);
 
-    // Remove the beginning of the normal Lambda path.
-    double mappedLambda = lambda;
-    if (lambdaStart > 0) {
-      double windowSize = 1.0 - lambdaStart;
-      mappedLambda = lambdaStart + lambda * windowSize;
+    if (atoms != null) {
+      List<Atom> atomList = new ArrayList<>();
+      for (Atom atom : atoms) {
+        if (atom.applyLambda()) {
+          atomList.add(atom);
+        }
+      }
+      // Update force field parameters based on defined lambda values.
+      updateParameters(atomList.toArray(new Atom[0]));
+    } else {
+      updateParameters(null);
     }
 
-    if (openMMSystem != null) {
-      openMMSystem.setLambda(mappedLambda);
-      if (atoms != null) {
-        List<Atom> atomList = new ArrayList<>();
-        for (Atom atom : atoms) {
-          if (atom.applyLambda()) {
-            atomList.add(atom);
-          }
-        }
-        // Update force field parameters based on defined lambda values.
-        updateParameters(atomList.toArray(new Atom[0]));
-      } else {
-        updateParameters(null);
-      }
-    }
   }
 
   /**
@@ -702,7 +664,9 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (atoms == null) {
       atoms = this.atoms;
     }
-    openMMSystem.updateParameters(atoms);
+    if (openMMSystem != null) {
+      openMMSystem.updateParameters(atoms);
+    }
   }
 
   /**

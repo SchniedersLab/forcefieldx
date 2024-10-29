@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Annihilate;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
@@ -176,8 +177,13 @@ public class AmoebaVdwForce extends VdwForce {
       setNonbondedMethod(OpenMM_AmoebaVdwForce_CutoffPeriodic);
     }
 
-    if (openMMEnergy.getSystem().getVdwLambdaTerm()) {
-      setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+    if (vdW.getLambdaTerm()) {
+      boolean annihilate = vdW.getIntramolecularSoftcore();
+      if (annihilate) {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Annihilate);
+      } else {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+      }
       setSoftcoreAlpha(vdW.getAlpha());
       setSoftcorePower((int) vdW.getBeta());
     }
@@ -204,7 +210,9 @@ public class AmoebaVdwForce extends VdwForce {
 
     int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  AMOEBA van der Waals force \t\t%d", forceGroup));
+
+    logger.log(Level.INFO, vdW.toString());
+    logger.log(Level.FINE, format("   Force group:\t\t%d\n", forceGroup));
   }
 
   /**
