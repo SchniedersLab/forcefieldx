@@ -56,6 +56,8 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
+import ffx.potential.FiniteDifferenceUtils;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.SystemState;
 import ffx.potential.UnmodifiableState;
@@ -294,7 +296,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /**
    * If true, the lambda value will be updated each integration time step.
    */
-  private boolean nonEquilibriumLambda = false;
+  private final boolean nonEquilibriumLambda;
+  /**
+   * The number of non-equilibrium lambda steps.
+   */
+  private final int nonEquilibriumLambdaSteps;
+  /**
+   * The non-equilibrium free energy difference from thermodynamic integration.
+   */
+  private double nonEquilibriumDeltaG;
+
 
   /**
    * Constructor for MolecularDynamics.
@@ -418,6 +429,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (nonEquilibrium) {
       nonEquilibriumLambda = true;
       logger.info(" Non-equilibrium lambda dynamics enabled.");
+      int steps = properties.getInteger("non-equilibrium-lambda-steps", 100);
+      if (steps < 1) {
+        nonEquilibriumLambdaSteps = 100;
+      } else {
+        nonEquilibriumLambdaSteps = steps;
+      }
+    } else {
+      nonEquilibriumLambda = false;
+      nonEquilibriumLambdaSteps = 0;
     }
 
     done = true;
@@ -1451,19 +1471,45 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.info(format(" COM will be removed every %3d step(s).", removeCOMMotionFrequency));
     }
 
+    long nonEquilibiumLambdaUpdateFrequency = Long.MAX_VALUE;
     if (nonEquilibriumLambda) {
-      logger.info(" Beginning non-equilibrium simulation with L=0.");
+      logger.info(" Beginning non-equilibrium simulation.");
+      nonEquilibriumDeltaG = 0.0;
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       lambdaInterface.setLambda(0.0);
+      if (nSteps % nonEquilibriumLambdaSteps != 0) {
+        logger.info(format(" Non-equilibrium lambda steps (%d) is not a multiple of total steps (%d).",
+            nonEquilibriumLambdaSteps, nSteps));
+        nSteps = nSteps - (nSteps % nonEquilibriumLambdaSteps);
+        logger.info(format(" Number of steps adjusted to %d.", nSteps));
+      }
+      nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps;
     }
 
     for (long step = 1; step <= nSteps; step++) {
+
+      // Update lambda for non-equilibrium simulations.
+      if (nonEquilibriumLambda && (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0) {
+        LambdaInterface lambdaInterface = (LambdaInterface) potential;
+        if (step != 1) {
+          MolecularAssembly assembly = molecularAssembly[0];
+          double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
+          nonEquilibriumDeltaG += dEdL / nonEquilibriumLambdaSteps;
+        }
+        // The system has already been equilibrated with lambda=0, so we update lambda at step 1.
+        int nLambdaSteps = (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency) + 1;
+        double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
+        double lambda = nLambdaSteps * lambdaStepSize;
+        double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
+        logger.info(format(" Non-equilibrium dE=%12.8f and dG=%12.8f with update to L=%6.4f", deltaE, nonEquilibriumDeltaG, lambda));
+        lambdaInterface.setLambda(lambda);
+      }
+
       if (step > 1) {
         List<Constraint> constraints = potential.getConstraints();
         // TODO: Replace magic numbers with named constants.
         long constraintFails = constraints.stream()
-            .filter((Constraint c) -> !c.constraintSatisfied(state.x(), state.v(), 1E-7, 1E-7))
-            .count();
+            .filter((Constraint c) -> !c.constraintSatisfied(state.x(), state.v(), 1E-7, 1E-7)).count();
         if (constraintFails > 0) {
           logger.info(format(" %d constraint failures in step %d", constraintFails, step));
         }
@@ -1543,13 +1589,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.log(basicLogging, format(" %s", esvSystem.getLambdaList()));
       }
 
-      // Update lambda for non-equilibrium simulations.
-      if (nonEquilibriumLambda && potential instanceof LambdaInterface lambdaInterface) {
-        double lambda = (double) step / nSteps;
-        logger.info(format(" Non-equilibrium lambda updated: %6.4f", lambda));
-        lambdaInterface.setLambda(lambda);
-      }
-
       if (automaticWriteouts) {
         writeFilesForStep(step, true, true);
       }
@@ -1566,6 +1605,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(format("\n Terminating after %8d time steps\n", step));
         break;
       }
+    }
+
+    // Update lambda for non-equilibrium simulations.
+    if (nonEquilibriumLambda) {
+     MolecularAssembly assembly = molecularAssembly[0];
+     LambdaInterface lambdaInterface = (LambdaInterface) potential;
+     double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
+     nonEquilibriumDeltaG += dEdL / nonEquilibriumLambdaSteps;
+     double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
+     logger.info(format(" Final non-equilibrium dE %16.8f (kcal/mol) and dG %16.8f (kcal/mol)", deltaE, nonEquilibriumDeltaG));
     }
   }
 
