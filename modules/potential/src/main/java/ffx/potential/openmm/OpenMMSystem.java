@@ -562,32 +562,34 @@ public class OpenMMSystem extends ffx.openmm.System {
    */
   public void updateParameters(@Nullable Atom[] atoms) {
     VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
-    boolean vdwLambdaTerm = vanDerWaals.getLambdaTerm();
-    if (vdwLambdaTerm) {
-      double lambdaVDW = vanDerWaals.getLambda();
-      if (fixedChargeNonBondedForce != null) {
-        if (!softcoreCreated) {
-          fixedChargeAlchemicalForces = new FixedChargeAlchemicalForces(openMMEnergy, fixedChargeNonBondedForce);
-          addForce(fixedChargeAlchemicalForces.getFixedChargeSoftcoreForce());
-          addForce(fixedChargeAlchemicalForces.getAlchemicalAlchemicalStericsForce());
-          addForce(fixedChargeAlchemicalForces.getNonAlchemicalAlchemicalStericsForce());
-          // Re-initialize the context.
-          openMMEnergy.getContext().reinitialize(OpenMM_True);
-          softcoreCreated = true;
-        }
-        // Update the lambda value.
-        openMMEnergy.getContext().setParameter("vdw_lambda", lambdaVDW);
-      } else if (amoebaVDWForce != null) {
-        // Update the lambda value.
-        openMMEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
-        if (softcoreCreated) {
-          ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-          // Avoid any updateParametersInContext calls if vdwLambdaTerm is true, but not other alchemical terms.
-          if (pme == null || !pme.getLambdaTerm()) {
-            return;
+    if (vanDerWaals != null) {
+      boolean vdwLambdaTerm = vanDerWaals.getLambdaTerm();
+      if (vdwLambdaTerm) {
+        double lambdaVDW = vanDerWaals.getLambda();
+        if (fixedChargeNonBondedForce != null) {
+          if (!softcoreCreated) {
+            fixedChargeAlchemicalForces = new FixedChargeAlchemicalForces(openMMEnergy, fixedChargeNonBondedForce);
+            addForce(fixedChargeAlchemicalForces.getFixedChargeSoftcoreForce());
+            addForce(fixedChargeAlchemicalForces.getAlchemicalAlchemicalStericsForce());
+            addForce(fixedChargeAlchemicalForces.getNonAlchemicalAlchemicalStericsForce());
+            // Re-initialize the context.
+            openMMEnergy.getContext().reinitialize(OpenMM_True);
+            softcoreCreated = true;
           }
-        } else {
-          softcoreCreated = true;
+          // Update the lambda value.
+          openMMEnergy.getContext().setParameter("vdw_lambda", lambdaVDW);
+        } else if (amoebaVDWForce != null) {
+          // Update the lambda value.
+          openMMEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
+          if (softcoreCreated) {
+            ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+            // Avoid any updateParametersInContext calls if vdwLambdaTerm is true, but not other alchemical terms.
+            if (pme == null || !pme.getLambdaTerm()) {
+              return;
+            }
+          } else {
+            softcoreCreated = true;
+          }
         }
       }
     }

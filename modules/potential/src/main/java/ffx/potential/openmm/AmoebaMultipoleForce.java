@@ -360,23 +360,25 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     DoubleArray quadrupoles = new DoubleArray(9);
 
     AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
-    AlchemicalParameters.AlchemicalMode alchemicalMode = alchemicalParameters.mode;
-
-    // Only scale mode is supported for OpenMM.
-    if (alchemicalMode != AlchemicalParameters.AlchemicalMode.SCALE) {
-      logger.severe(format(" Alchemical mode %s not supported for OpenMM.", alchemicalMode));
-    }
-    // Permanent multipole softcore is supported for OpenMM.
-    if (alchemicalParameters.permLambdaAlpha != 0.0) {
-      logger.severe(" Permanent multipole softcore not supported for OpenMM.");
-    }
-    // Isolated ligand electrostatics are not supported for OpenMM.
-    if (alchemicalParameters.doLigandGKElec || alchemicalParameters.doLigandVaporElec) {
-      logger.severe(" Isolated ligand electrostatics are not supported for OpenMM.");
-    }
-    // Condensed SCF without a ligand is not supported for OpenMM.
-    if (alchemicalParameters.doNoLigandCondensedSCF) {
-      logger.severe(" Condensed SCF without a ligand is not supported for OpenMM.");
+    boolean lambdaTerm = pme.getLambdaTerm();
+    if (lambdaTerm) {
+      AlchemicalParameters.AlchemicalMode alchemicalMode = alchemicalParameters.mode;
+      // Only scale mode is supported for OpenMM.
+      if (alchemicalMode != AlchemicalParameters.AlchemicalMode.SCALE) {
+        logger.severe(format(" Alchemical mode %s not supported for OpenMM.", alchemicalMode));
+      }
+      // Permanent multipole softcore is supported for OpenMM.
+      if (alchemicalParameters.permLambdaAlpha != 0.0) {
+        logger.severe(" Permanent multipole softcore not supported for OpenMM.");
+      }
+      // Isolated ligand electrostatics are not supported for OpenMM.
+      if (alchemicalParameters.doLigandGKElec || alchemicalParameters.doLigandVaporElec) {
+        logger.severe(" Isolated ligand electrostatics are not supported for OpenMM.");
+      }
+      // Condensed SCF without a ligand is not supported for OpenMM.
+      if (alchemicalParameters.doNoLigandCondensedSCF) {
+        logger.severe(" Condensed SCF without a ligand is not supported for OpenMM.");
+      }
     }
 
     double permLambda = alchemicalParameters.permLambda;
