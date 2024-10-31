@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.WriteoutOptions;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
 
 import java.io.File;
 import java.util.Arrays;
@@ -52,8 +53,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that calculate thermodynamics.
@@ -147,6 +147,57 @@ public class ThermodynamicsOptions {
   }
 
   /**
+   * Run a non-equilibrium alchemical free energy simulation.
+   *
+   * @param molecularAssemblies All involved MolecularAssemblies.
+   * @param crystalPotential    The Potential to be sampled.
+   * @param dynamicsOptions     DynamicsOptions.
+   * @param writeoutOptions     WriteoutOptions
+   * @param dyn                 MD restart file
+   * @param algorithmListener   AlgorithmListener
+   * @return The MolecularDynamics object constructed.
+   */
+  public MolecularDynamics runNEQ(MolecularAssembly[] molecularAssemblies,
+                                  CrystalPotential crystalPotential, DynamicsOptions dynamicsOptions,
+                                  WriteoutOptions writeoutOptions, File dyn, AlgorithmListener algorithmListener) {
+    dynamicsOptions.init();
+
+    MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, crystalPotential,
+        molecularAssemblies[0], algorithmListener);
+    for (int i = 1; i < molecularAssemblies.length; i++) {
+      molDyn.addAssembly(molecularAssemblies[i]);
+    }
+
+    boolean initVelocities = true;
+    long nSteps = dynamicsOptions.getSteps();
+    molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
+    // Start sampling.
+    if (group.equilibrationSteps > 0) {
+      logger.info("\n Beginning Equilibration (at Lambda = 0)");
+      LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
+      lambdaInterface.setLambda(0.0);
+      runDynamics(molDyn, group.equilibrationSteps, dynamicsOptions, writeoutOptions, true, dyn);
+      if (nSteps > 0) {
+        logger.info(" Beginning Non-Equilibrium Sampling");
+      }
+      initVelocities = false;
+    } else if (nSteps > 0) {
+      logger.info("\n Beginning Non-Equilibrium Sampling Without Equilibration");
+      if (!group.resetNumSteps) {
+        // Workaround for being unable to pick up pre-existing steps.
+        initVelocities = true;
+      }
+    }
+
+    if (nSteps > 0) {
+      molDyn.setNonEquilibriumLambda(true, group.nonEquilibriumSteps);
+      runDynamics(molDyn, nSteps, dynamicsOptions, writeoutOptions, initVelocities, dyn);
+    }
+
+    return molDyn;
+  }
+
+  /**
    * The number of equilibration steps prior to production OST counts begin.
    *
    * @return Returns the number of equilibration steps.
@@ -207,31 +258,36 @@ public class ThermodynamicsOptions {
     private long equilibrationSteps = 1000;
 
     /**
+     * --nEQ or --nonEquilibriumSteps sets the number of non-equilibrium lambda steps.
+     */
+    @Option(names = {"--nEQ", "--nonEquilibriumSteps"}, paramLabel = "100", defaultValue = "100",
+        description = "Sets the number of non-equilibrium lambda steps.")
+    private int nonEquilibriumSteps = 100;
+
+    /**
      * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart files and thus resets
      * the histogram; use -rn false to continue from the end of any prior simulation.
      */
     @Option(names = {"--rn", "--resetNumSteps"}, defaultValue = "false",
-        description = "Ignore prior steps logged in .lam or similar files")
+        description = "Ignore prior steps logged in .lam or similar files.")
     private boolean resetNumSteps = false;
 
     /**
      * --tA or --thermodynamicsAlgorithm specifies the algorithm to be used; currently serves as a
-     * switch between OST and window-based methods.
+     * switch between OST, Fixed and NEQ methods.
      */
     @Option(names = {"--tA", "--thermodynamicsAlgorithm"}, paramLabel = "OST", defaultValue = "OST",
-        description = "Choice of thermodynamics algorithm. The default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
+        description = "Choice of thermodynamics algorithm [OST, FIXED, or NEQ].")
     private String thermoAlgoString = "OST";
   }
 
   /**
-   * Represents categories of thermodynamics algorithms that must be handled differentially. For
-   * legacy reasons, MC-OST and MD-OST are both just "OST", and the differences are handled in
-   * OSTOptions and Thermodynamics.groovy. Introduced primarily to get BAR working.
+   * Represents categories of thermodynamics algorithms that must be handled differently.
    */
   public enum ThermodynamicsAlgorithm {
-    // TODO: Separate MC-OST from MD-OST. Requires coupled changes elsewhere.
-    // Fixed represents generation of snapshots for estimators like BAR, FEP, etc.
-    OST("OST", "MC-OST", "MD-OST", "DEFAULT"), FIXED("BAR", "MBAR", "FEP", "WINDOWED");
+    OST("OST", "MC-OST", "MD-OST", "DEFAULT"),
+    FIXED("FIXED", "BAR", "MBAR", "FEP", "WINDOWED"),
+    NEQ("NEQ", "NON-EQUILIBRIUM");
 
     private final Set<String> aliases;
 

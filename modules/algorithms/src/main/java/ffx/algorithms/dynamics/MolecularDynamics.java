@@ -297,11 +297,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /**
    * If true, the lambda value will be updated each integration time step.
    */
-  private final boolean nonEquilibriumLambda;
+  private boolean nonEquilibriumLambda;
   /**
    * The number of non-equilibrium lambda steps.
    */
-  private final int nonEquilibriumLambdaSteps;
+  private int nonEquilibriumLambdaSteps;
   /**
    * The non-equilibrium free energy difference from thermodynamic integration.
    */
@@ -430,24 +430,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
       if (removecom) {
         logger.info(" Removing center of mass motion from stochastic simulation.");
       }
-    }
-
-    // Non-equilibrium lambda dynamics.
-    boolean nonEquilibrium = properties.getBoolean("non-equilibrium-lambda", false);
-    if (nonEquilibrium) {
-      nonEquilibriumLambda = true;
-      logger.info(" Non-equilibrium lambda dynamics enabled.");
-      int steps = properties.getInteger("non-equilibrium-lambda-steps", 100);
-      if (steps < 1) {
-        nonEquilibriumLambdaSteps = 100;
-      } else {
-        nonEquilibriumLambdaSteps = steps;
-      }
-      nonEquilibriumLambdaValues = new double[nonEquilibriumLambdaSteps + 1];
-      nonEquilibriumdUdLValues = new double[nonEquilibriumLambdaSteps + 1];
-    } else {
-      nonEquilibriumLambda = false;
-      nonEquilibriumLambdaSteps = 0;
     }
 
     done = true;
@@ -584,6 +566,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
     logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMass()));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
+  }
+
+  /**
+   * Enables non-equilibrium lambda dynamics.
+   * @param nonEquilibrium True if non-equilibrium lambda dynamics should be enabled.
+   * @param nEQSteps Number of lambda steps.
+   */
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps) {
+    nonEquilibriumLambda = nonEquilibrium;
+    if (nonEquilibriumLambda) {
+      if (nEQSteps < 1) {
+        nonEquilibriumLambdaSteps = 100;
+      } else {
+        nonEquilibriumLambdaSteps = nEQSteps;
+      }
+      nonEquilibriumLambdaValues = new double[nonEquilibriumLambdaSteps + 1];
+      nonEquilibriumdUdLValues = new double[nonEquilibriumLambdaSteps + 1];
+    } else {
+      nonEquilibriumLambdaSteps = 0;
+    }
   }
 
   /**
@@ -1483,7 +1485,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     long nonEquilibiumLambdaUpdateFrequency = Long.MAX_VALUE;
     if (nonEquilibriumLambda) {
-      logger.info(" Beginning non-equilibrium simulation.");
       nonEquilibriumDeltaG = 0.0;
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       lambdaInterface.setLambda(0.0);

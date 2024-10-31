@@ -257,6 +257,8 @@ class Thermodynamics extends AlgorithmsScript {
       sb.append("Orthogonal Space Tempering")
     } else if (algorithm == ThermodynamicsAlgorithm.FIXED) {
       sb.append("Fixed Lambda Sampling at Window L=").append(format("%5.3f ", initLambda))
+    } else if (algorithm == ThermodynamicsAlgorithm.NEQ) {
+      sb.append("Non-Equilibrium Sampling")
     } else {
       logger.severe(" Unknown Thermodynamics Algorithm " + algorithm)
     }
@@ -279,7 +281,7 @@ class Thermodynamics extends AlgorithmsScript {
 
     multiDynamicsOptions.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsAlgorithm.OST) {
+    if (algorithm == ThermodynamicsAlgorithm.OST) {
       orthogonalSpaceTempering =
           ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
               additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
@@ -298,17 +300,20 @@ class Thermodynamics extends AlgorithmsScript {
         ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamicsOptions,
             writeoutOptions, thermodynamicsOptions, dyn, algorithmListener)
       }
-
-      logger.info(" Done running OST")
-    } else {
+      logger.info(" Done running OST sampling.")
+    } else if (algorithm == ThermodynamicsAlgorithm.FIXED) {
       orthogonalSpaceTempering = null
       potential = barostatOptions.checkNPT(topologies[0], potential)
-      thermodynamicsOptions.runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
-              algorithmListener)
-      logger.info(" Done running Fixed")
+      thermodynamicsOptions.runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn, algorithmListener)
+      logger.info(" Done running fixed lambda sampling.")
+    } else if (algorithm == ThermodynamicsAlgorithm.NEQ) {
+      orthogonalSpaceTempering = null
+      potential = barostatOptions.checkNPT(topologies[0], potential)
+      thermodynamicsOptions.runNEQ(topologies, potential, dynamicsOptions, writeoutOptions, dyn, algorithmListener)
+      logger.info(" Done running non-equilibrium sampling.")
+    } else {
+      logger.severe(" Unknown Thermodynamics Algorithm " + algorithm)
     }
-
-    logger.info(" Algorithm Done: " + thermodynamicsOptions.getAlgorithm())
 
     return this
   }
