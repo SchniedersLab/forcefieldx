@@ -1020,7 +1020,7 @@
     </profile>
   </profiles>
   <properties>
-    <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
+    <asciidoc.version>3.1.0</asciidoc.version>
     <antlr4.version>4.13.2</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
@@ -1082,9 +1082,10 @@
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
+    <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <picocli.version>4.7.6</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.25.0</pmd.version>
+    <pmd.version>3.26.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 23 yet. -->
     <pmd.skip>true</pmd.skip>
     <project-info-reports.version>3.8.0</project-info-reports.version>
@@ -1099,7 +1100,6 @@
     <scm.version>2.1.0</scm.version>
     <slf4j-nop.version>2.0.16</slf4j-nop.version>
     <site.version>3.21.0</site.version>
-    <asciidoc.version>3.0.0</asciidoc.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->

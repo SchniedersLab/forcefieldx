@@ -55,8 +55,6 @@ import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
-import ffx.numerics.integrate.DoublesDataSet;
-import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.FiniteDifferenceUtils;
 import ffx.potential.MolecularAssembly;
@@ -299,21 +297,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   private boolean nonEquilibriumLambda;
   /**
-   * The number of non-equilibrium lambda steps.
+   * Support for non-equilibrium lambda dynamics.
    */
-  private int nonEquilibriumLambdaSteps;
-  /**
-   * The non-equilibrium free energy difference from thermodynamic integration.
-   */
-  private double nonEquilibriumDeltaG;
-  /**
-   * The non-equilibrium lambda values.
-   */
-  private double[] nonEquilibriumLambdaValues;
-  /**
-   * The non-equilibrium dU/dL values.
-   */
-  private double[] nonEquilibriumdUdLValues;
+  private NonEquilbriumDynamics nonEquilibriumDynamics;
 
   /**
    * Constructor for MolecularDynamics.
@@ -570,21 +556,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
   /**
    * Enables non-equilibrium lambda dynamics.
+   *
    * @param nonEquilibrium True if non-equilibrium lambda dynamics should be enabled.
-   * @param nEQSteps Number of lambda steps.
+   * @param nEQSteps       Number of lambda steps.
    */
   public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps) {
     nonEquilibriumLambda = nonEquilibrium;
     if (nonEquilibriumLambda) {
-      if (nEQSteps < 1) {
-        nonEquilibriumLambdaSteps = 100;
-      } else {
-        nonEquilibriumLambdaSteps = nEQSteps;
-      }
-      nonEquilibriumLambdaValues = new double[nonEquilibriumLambdaSteps + 1];
-      nonEquilibriumdUdLValues = new double[nonEquilibriumLambdaSteps + 1];
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps);
     } else {
-      nonEquilibriumLambdaSteps = 0;
+      nonEquilibriumDynamics = null;
     }
   }
 
@@ -1483,43 +1464,29 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.info(format(" COM will be removed every %3d step(s).", removeCOMMotionFrequency));
     }
 
-    long nonEquilibiumLambdaUpdateFrequency = Long.MAX_VALUE;
     if (nonEquilibriumLambda) {
-      nonEquilibriumDeltaG = 0.0;
+      // Configure the number of non-equilibrium dynamics.
+      nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       lambdaInterface.setLambda(0.0);
-      if (nSteps % nonEquilibriumLambdaSteps != 0) {
-        logger.info(format(" Non-equilibrium lambda steps (%d) is not a multiple of total steps (%d).",
-            nonEquilibriumLambdaSteps, nSteps));
-        nSteps = nSteps - (nSteps % nonEquilibriumLambdaSteps);
-        logger.info(format(" Number of steps adjusted to %d.", nSteps));
-      }
-      nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps;
     }
 
+    // Main MD loop to take molecular dynamics steps.
     for (long step = 1; step <= nSteps; step++) {
+
       // Update lambda for non-equilibrium simulations.
-      if (nonEquilibriumLambda && (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0) {
+      if (nonEquilibriumLambda && nonEquilibriumDynamics.isUpdateStep(step)) {
         LambdaInterface lambdaInterface = (LambdaInterface) potential;
         MolecularAssembly assembly = molecularAssembly[0];
         double currentLambda = lambdaInterface.getLambda();
         double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-
-        // The system was equilibrated with lambda=0, so we update lambda at step 1.
-        int nLambdaSteps = (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency) + 1;
-        nonEquilibriumLambdaValues[nLambdaSteps - 1] = currentLambda;
-        nonEquilibriumdUdLValues[nLambdaSteps - 1] = dEdL;
-        double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
-        double newLambda = nLambdaSteps * lambdaStepSize;
+        nonEquilibriumDynamics.setdEdL(step, dEdL);
+        double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
         lambdaInterface.setLambda(newLambda);
-
+        double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG(0, nonEquilibriumDynamics.getCurrentLambdaBin(step));
         double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
-        if (step != 1) {
-          double mean = (dEdL + nonEquilibriumdUdLValues[nLambdaSteps - 2]) / 2.0;
-          nonEquilibriumDeltaG += mean / nonEquilibriumLambdaSteps;
-        }
         logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-            currentLambda, nonEquilibriumDeltaG, deltaE, dEdL));
+            currentLambda, dG, deltaE, dEdL));
       }
 
       if (step > 1) {
@@ -1629,22 +1596,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
       MolecularAssembly assembly = molecularAssembly[0];
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-      int length = nonEquilibriumLambdaValues.length;
-      double mean = (dEdL + nonEquilibriumdUdLValues[length - 2]) / 2.0;
-      nonEquilibriumDeltaG += mean / nonEquilibriumLambdaSteps;
+      nonEquilibriumDynamics.setdEdL(nSteps, dEdL);
+      double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG();
       double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
       double lambda = lambdaInterface.getLambda();
       logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-          lambda, nonEquilibriumDeltaG, deltaE, dEdL));
-
-      // Use Boole's rule.
-      nonEquilibriumLambdaValues[length - 1] = lambda;
-      nonEquilibriumdUdLValues[length - 1] = dEdL;
-      DoublesDataSet dataSet = new DoublesDataSet(nonEquilibriumLambdaValues, nonEquilibriumdUdLValues);
-      double dGSimpson = Integrate1DNumeric.simpsons(dataSet, Integrate1DNumeric.IntegrationSide.LEFT);
-      double dGBooles = Integrate1DNumeric.booles(dataSet, Integrate1DNumeric.IntegrationSide.LEFT);
-      logger.info(format(" Non-equilibrium Simpson dG=%12.6f", dGSimpson));
-      logger.info(format(" Non-equilibrium Boole   dG=%12.6f", dGBooles));
+          lambda, dG, deltaE, dEdL));
+      logger.info(format(" Non-equilibrium Simpson dG=%12.6f", nonEquilibriumDynamics.getSimpsonDeltaG()));
+      logger.info(format(" Non-equilibrium Boole   dG=%12.6f", nonEquilibriumDynamics.getBooleDeltaG()));
     }
   }
 
