@@ -1560,7 +1560,7 @@ public final class PDBFilter extends SystemFilter {
                 // 56 - 66       LString       sGroup         Space  group.
                 // 67 - 70       Integer       z              Z value.
                 // =============================================================================
-                logger.info(" Crystal record found.");
+                logger.fine(" Crystal record found.");
                 if (line.length() < 55) {
                   logger.severe(" CRYST1 record is improperly formatted.");
                 }
