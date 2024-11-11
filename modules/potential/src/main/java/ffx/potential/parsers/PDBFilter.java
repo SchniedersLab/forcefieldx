@@ -471,27 +471,12 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /**
-   * Mutate a residue at the PDB file is being parsed.
-   *
-   * @param chainID the Chain ID of the residue to mutate.
-   * @param resID the Residue ID of the residue to mutate.
-   * @param name the 3-letter code of the amino acid to mutate to.
-   */
-  public void mutate(Character chainID, int resID, String name) {
-    logger.info(format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
-    mutate = true;
-    if (mutations == null) {
-      mutations = new ArrayList<>();
-    }
-    mutations.add(new Mutation(resID, chainID, name));
-  }
-
-  /**
-   * mutate.
+   * Mutate residue(s) as the PDB file is being parsed.
    *
    * @param mutations a {@link java.util.List} object.
    */
   public void mutate(List<Mutation> mutations) {
+    mutate = true;
     if (this.mutations == null) {
       this.mutations = new ArrayList<>();
     }
@@ -856,6 +841,10 @@ public final class PDBFilter extends SystemFilter {
                           // pyrimidines: need N1 & C2 | purines: need N9 & C4
                           if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
                             boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
+                            // log the deletion to get alchemical atoms from WT (don't include H primes)
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            }
                             if (atomName.equals("N9")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -869,12 +858,14 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C2"; // change C4 to C2
                               }
                             } else {
-                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
                               doBreak = true;
                               break;
                             }
                           } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
                             boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            }
                             if (atomName.equals("N1")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -888,12 +879,12 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C4"; // change C2 to C4
                               }
                             } else {
-                              logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
                               doBreak = true;
                               break;
                             }
                           } else {
                             logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
+                            // don't have alchemical atom logging because this would be for AA
                             doBreak = true;
                             break;
                           }
@@ -2022,6 +2013,15 @@ public final class PDBFilter extends SystemFilter {
                 .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
             for (Atom atom : residueAtoms) {
+              if (mutate) {
+                for (Mutation mtn : mutations) {
+                  if (resID == mtn.resID) {
+                    if (residue.getBackboneAtoms().contains(atom)) {
+                      logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                    }
+                  }
+                }
+              }
               writeAtom(atom, serial++, sb, anisouSB, bw);
               Character altLoc = atom.getAltLoc();
               if (altLoc != null && !altLoc.equals(' ')) {
