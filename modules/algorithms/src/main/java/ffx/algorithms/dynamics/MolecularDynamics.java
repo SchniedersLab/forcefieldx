@@ -56,6 +56,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
+import ffx.potential.FiniteDifferenceUtils;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.SystemState;
 import ffx.potential.UnmodifiableState;
@@ -68,9 +69,8 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XPHFilter;
 import ffx.potential.parsers.XYZFilter;
-import ffx.utilities.FileUtils;
+import ffx.utilities.TinkerUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -83,8 +83,11 @@ import java.util.logging.Logger;
 import static ffx.utilities.Constants.FSEC_TO_PSEC;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
+import static ffx.utilities.FileUtils.relativePathTo;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * Run NVE, NVT, or NPT molecular dynamics.
@@ -236,6 +239,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   boolean saveSnapshotAsPDB = true;
   /**
+   * PDB Filter.
+   */
+  PDBFilter[] pdbFilter = null;
+  /**
    * Dynamics restart file.
    */
   File restartFile = null;
@@ -294,7 +301,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /**
    * If true, the lambda value will be updated each integration time step.
    */
-  private boolean nonEquilibriumLambda = false;
+  private boolean nonEquilibriumLambda;
+  /**
+   * Support for non-equilibrium lambda dynamics.
+   */
+  private NonEquilbriumDynamics nonEquilibriumDynamics;
 
   /**
    * Constructor for MolecularDynamics.
@@ -413,13 +424,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
       }
     }
 
-    // Non-equilibrium lambda dynamics.
-    boolean nonEquilibrium = properties.getBoolean("non-equilibrium-lambda", false);
-    if (nonEquilibrium) {
-      nonEquilibriumLambda = true;
-      logger.info(" Non-equilibrium lambda dynamics enabled.");
-    }
-
     done = true;
     fallbackDynFile = defaultFallbackDyn(assembly);
   }
@@ -517,7 +521,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return Default fallback file.
    */
   private static File defaultFallbackDyn(MolecularAssembly assembly) {
-    String firstFileName = FilenameUtils.removeExtension(assembly.getFile().getAbsolutePath());
+    String firstFileName = removeExtension(assembly.getFile().getAbsolutePath());
     return new File(firstFileName + ".dyn");
   }
 
@@ -554,6 +558,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
     logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMass()));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
+  }
+
+  /**
+   * Enables non-equilibrium lambda dynamics.
+   *
+   * @param nonEquilibrium True if non-equilibrium lambda dynamics should be enabled.
+   * @param nEQSteps       Number of lambda steps.
+   */
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps) {
+    nonEquilibriumLambda = nonEquilibrium;
+    if (nonEquilibriumLambda) {
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps);
+    } else {
+      nonEquilibriumDynamics = null;
+    }
   }
 
   /**
@@ -1107,7 +1126,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * Write out a restart file.
    */
   public void writeRestart() {
-    String dynName = FileUtils.relativePathTo(restartFile).toString();
+    String dynName = relativePathTo(restartFile).toString();
     double[] x = state.x();
     double[] v = state.v();
     double[] a = state.a();
@@ -1130,7 +1149,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private void setArchiveFile() {
     for (MolecularAssembly assembly : molecularAssembly) {
       File file = assembly.getFile();
-      String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+      String filename = removeExtension(file.getAbsolutePath());
       File archiveFile = assembly.getArchiveFile();
       if (archiveFile == null) {
         archiveFile = new File(filename + ".arc");
@@ -1347,6 +1366,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param extraLines Strings of meta-data to include.
    */
   protected void appendSnapshot(String[] extraLines) {
+    int numAssemblies = molecularAssembly.length;
+    int currentAssembly = 0;
     // Loop over all molecular assemblies.
     for (MolecularAssembly assembly : molecularAssembly) {
       File archiveFile = assembly.getArchiveFile();
@@ -1370,7 +1391,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Save as an ARC file.
       if (archiveFile != null && !saveSnapshotAsPDB) {
-        String aiName = FileUtils.relativePathTo(archiveFile).toString();
+        String aiName = relativePathTo(archiveFile).toString();
         if (esvSystem == null) {
           XYZFilter xyzFilter = new XYZFilter(archiveFile, assembly, forceField, properties);
           if (xyzFilter.writeFile(archiveFile, true, extraLines)) {
@@ -1379,8 +1400,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.warning(format(" Appending snapshot failed:  %s", aiName));
           }
         } else {
-          XPHFilter xphFilter = new XPHFilter(archiveFile, assembly, forceField, properties,
-              esvSystem);
+          XPHFilter xphFilter = new XPHFilter(archiveFile, assembly, forceField, properties, esvSystem);
           if (xphFilter.writeFile(archiveFile, true, extraLines)) {
             logger.log(basicLogging, format(" Appended to XPH archive %s", aiName));
           } else {
@@ -1388,23 +1408,32 @@ public class MolecularDynamics implements Runnable, Terminatable {
           }
         }
       } else if (saveSnapshotAsPDB) {
-        File file = assembly.getFile();
-        String extName = FilenameUtils.getExtension(file.getName());
-        File pdbFile;
-        if (extName.toLowerCase().startsWith("pdb")) {
-          pdbFile = file;
-        } else {
-          String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-          pdbFile = new File(filename + ".pdb");
+        if (pdbFilter == null) {
+          pdbFilter = new PDBFilter[numAssemblies];
         }
-        String aiName = FileUtils.relativePathTo(pdbFile).toString();
-        PDBFilter pdbFilter = new PDBFilter(pdbFile, assembly, forceField, properties);
-        if (pdbFilter.writeFile(pdbFile, true, extraLines)) {
+        if (pdbFilter[currentAssembly] == null) {
+          File file = assembly.getFile();
+          String extName = getExtension(file.getName());
+          File pdbFile;
+          if (extName.toLowerCase().startsWith("pdb")) {
+            // Version the file to avoid appending to the original input file.
+            pdbFile = TinkerUtils.version(file);
+          } else {
+            String filename = removeExtension(file.getAbsolutePath());
+            pdbFile = new File(filename + ".pdb");
+          }
+          pdbFilter[currentAssembly] = new PDBFilter(pdbFile, assembly, forceField, properties);
+          pdbFilter[currentAssembly].setModelNumbering(0);
+        }
+        File pdbFile = pdbFilter[currentAssembly].getFile();
+        String aiName = relativePathTo(pdbFile).toString();
+        if (pdbFilter[currentAssembly].writeFile(pdbFile, true, extraLines)) {
           logger.log(basicLogging, format(" Appended to PDB file %s", aiName));
         } else {
           logger.warning(format(" Appending to PDB file to %s failed.", aiName));
         }
       }
+      currentAssembly++;
     }
   }
 
@@ -1452,18 +1481,35 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     if (nonEquilibriumLambda) {
-      logger.info(" Beginning non-equilibrium simulation with L=0.");
+      // Configure the number of non-equilibrium dynamics.
+      nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       lambdaInterface.setLambda(0.0);
     }
 
+    // Main MD loop to take molecular dynamics steps.
     for (long step = 1; step <= nSteps; step++) {
+
+      // Update lambda for non-equilibrium simulations.
+      if (nonEquilibriumLambda && nonEquilibriumDynamics.isUpdateStep(step)) {
+        LambdaInterface lambdaInterface = (LambdaInterface) potential;
+        MolecularAssembly assembly = molecularAssembly[0];
+        double currentLambda = lambdaInterface.getLambda();
+        double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
+        nonEquilibriumDynamics.setdEdL(step, dEdL);
+        double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
+        lambdaInterface.setLambda(newLambda);
+        double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG(0, nonEquilibriumDynamics.getCurrentLambdaBin(step));
+        double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
+        logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
+            currentLambda, dG, deltaE, dEdL));
+      }
+
       if (step > 1) {
         List<Constraint> constraints = potential.getConstraints();
         // TODO: Replace magic numbers with named constants.
         long constraintFails = constraints.stream()
-            .filter((Constraint c) -> !c.constraintSatisfied(state.x(), state.v(), 1E-7, 1E-7))
-            .count();
+            .filter((Constraint c) -> !c.constraintSatisfied(state.x(), state.v(), 1E-7, 1E-7)).count();
         if (constraintFails > 0) {
           logger.info(format(" %d constraint failures in step %d", constraintFails, step));
         }
@@ -1543,13 +1589,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.log(basicLogging, format(" %s", esvSystem.getLambdaList()));
       }
 
-      // Update lambda for non-equilibrium simulations.
-      if (nonEquilibriumLambda && potential instanceof LambdaInterface lambdaInterface) {
-        double lambda = (double) step / nSteps;
-        logger.info(format(" Non-equilibrium lambda updated: %6.4f", lambda));
-        lambdaInterface.setLambda(lambda);
-      }
-
       if (automaticWriteouts) {
         writeFilesForStep(step, true, true);
       }
@@ -1566,6 +1605,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(format("\n Terminating after %8d time steps\n", step));
         break;
       }
+    }
+
+    // Update lambda for non-equilibrium simulations.
+    if (nonEquilibriumLambda) {
+      MolecularAssembly assembly = molecularAssembly[0];
+      LambdaInterface lambdaInterface = (LambdaInterface) potential;
+      double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
+      nonEquilibriumDynamics.setdEdL(nSteps, dEdL);
+      double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG();
+      double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
+      double lambda = lambdaInterface.getLambda();
+      logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
+          lambda, dG, deltaE, dEdL));
+      logger.info(format(" Non-equilibrium Simpson dG=%12.6f", nonEquilibriumDynamics.getSimpsonDeltaG()));
+      logger.info(format(" Non-equilibrium Boole   dG=%12.6f", nonEquilibriumDynamics.getBooleDeltaG()));
     }
   }
 

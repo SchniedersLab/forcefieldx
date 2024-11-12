@@ -40,6 +40,7 @@ package ffx.potential.openmm;
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
+import ffx.potential.FiniteDifferenceUtils;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Platform;
@@ -97,19 +98,10 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * The atoms this ForceFieldEnergyOpenMM operates on.
    */
   private final Atom[] atoms;
-
   /**
    * If true, compute dUdL.
    */
-  private boolean computeDEDL = false;
-  /**
-   * Use two-sided finite difference dU/dL.
-   */
-  private boolean twoSidedFiniteDifference = true;
-  /**
-   * Lambda step size for finite difference dU/dL.
-   */
-  private final double finiteDifferenceStepSize;
+  private final boolean computeDEDL;
 
   /**
    * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an OpenMM Platform while
@@ -146,8 +138,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     openMMContext = new OpenMMContext(openMMPlatform, openMMSystem, atoms);
 
     computeDEDL = forceField.getBoolean("OMM_DUDL", false);
-    finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
-    twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", twoSidedFiniteDifference);
   }
 
   /**
@@ -535,56 +525,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       return 0.0;
     }
 
-    // Small optimization to only create the x array once.
-    double[] x = new double[getNumberOfVariables()];
-    getCoordinates(x);
-
-    double currentLambda = getLambda();
-    double width = finiteDifferenceStepSize;
-    double ePlus;
-    double eMinus;
-
-    if (twoSidedFiniteDifference) {
-      if (currentLambda + finiteDifferenceStepSize > 1.0) {
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        setLambda(currentLambda);
-        ePlus = energy(x);
-      } else if (currentLambda - finiteDifferenceStepSize < 0.0) {
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda);
-        eMinus = energy(x);
-      } else {
-        // Two sided finite difference estimate of dE/dL.
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        width *= 2.0;
-        setLambda(currentLambda);
-      }
-    } else {
-      // One-sided finite difference estimates of dE/dL
-      if (currentLambda + finiteDifferenceStepSize > 1.0) {
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        setLambda(currentLambda);
-        ePlus = energy(x);
-      } else {
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda);
-        eMinus = energy(x);
-      }
-    }
-
-    // Compute the finite difference derivative.
-    double dEdL = (ePlus - eMinus) / width;
-
-    // logger.info(format(" getdEdL currentLambda: CL=%8.6f L=%8.6f dEdL=%12.6f", currentLambda,
-    // lambda, dEdL));
-    return dEdL;
+    return FiniteDifferenceUtils.computedEdL(this, this, molecularAssembly.getForceField());
   }
 
   /**
@@ -622,10 +563,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   public void setCrystal(Crystal crystal) {
     super.setCrystal(crystal);
     openMMContext.setPeriodicBoxVectors(crystal);
-  }
-
-  public void setTwoSidedFiniteDifference(boolean twoSidedFiniteDifference) {
-    this.twoSidedFiniteDifference = twoSidedFiniteDifference;
   }
 
   /**

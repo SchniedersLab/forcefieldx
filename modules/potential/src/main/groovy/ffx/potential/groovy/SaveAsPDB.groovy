@@ -41,17 +41,18 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.extended.ExtendedSystem
-import ffx.potential.parameters.ForceField
-import ffx.potential.parsers.PDBFileFilter
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.io.FilenameUtils
+import org.apache.logging.log4j.core.util.FileUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static org.apache.commons.io.FilenameUtils.concat
 import static org.apache.commons.io.FilenameUtils.getName
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
@@ -69,17 +70,38 @@ class SaveAsPDB extends PotentialScript {
   SaveOptions saveOptions
 
   /**
-   * --wS or --writeSnapshot Write out a specific snapshot. Provide the number of the snapshot to be written.
+   * --fs or ---firstSnapshot Provide the number of the first snapshot to be written.
    */
-  @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
-      description = 'Write out a specific snapshot.')
-  private int writeSnapshot = 0
+  @Option(names = ['--fs', '--firstSnapshot'], paramLabel = "-1", defaultValue = "-1",
+      description = 'First snapshot to write out (indexed from 0).')
+  private int firstSnapshot
+
+  /**
+   * --ls or ---lastSnapshot Provide the number of the last snapshot to be written.
+   */
+  @Option(names = ['--ls', '--lastSnapshot'], paramLabel = "-1", defaultValue = "-1",
+      description = 'Last snapshot to write out (indexed from 0).')
+  private int lastSnapshot
+
+  /**
+   * --si or --snapshotIncrement Provide the number of the snapshot increment.
+   */
+  @Option(names = ['--si', '--snapshotIncrement'], paramLabel = "1", defaultValue = "1",
+      description = 'Increment between written snapshots.')
+  private int snapshotIncrement
+
+  /**
+   * --wd or --writeToDirectories Provide the number of the snapshot increment.
+   */
+  @Option(names = ['--wd', '--writeToDirectories'], paramLabel = "false", defaultValue = "false",
+      description = 'Write snapshots to numbered subdirectories.')
+  private boolean writeToDirectories = false
 
   /**
    * --esv Handle an extended system at the bottom of XYZ files using XPHFilter.
    */
   @Option(names = ['--esv'], paramLabel = "file", defaultValue = "",
-          description = 'PDB file to build extended system from.')
+      description = 'PDB file to build extended system from.')
   private String extended = ""
 
   /**
@@ -127,13 +149,13 @@ class SaveAsPDB extends PotentialScript {
     SystemFilter openFilter = potentialFunctions.getFilter()
     ExtendedSystem esvSystem = null
 
-    if(openFilter instanceof XYZFilter && extended != ""){
+    if (openFilter instanceof XYZFilter && extended != "") {
       logger.info("Building extended system from " + extended)
       activeAssembly = getActiveAssembly(extended) // Build from file with res info
       esvSystem = new ExtendedSystem(activeAssembly, 7.4, null)
       activeAssembly.setFile(new File(filename))
       openFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(),
-              activeAssembly.getProperties(), esvSystem)
+          activeAssembly.getProperties(), esvSystem)
       openFilter.readFile()
       logger.info("Reading ESV lambdas from XPH file")
     }
@@ -146,28 +168,42 @@ class SaveAsPDB extends PotentialScript {
     String name = removeExtension(getName(filename)) + ".pdb"
     File saveFile = new File(dirString + name)
 
-    if (writeSnapshot >= 1) {
+    if (firstSnapshot >= 0) {
       PDBFilter snapshotFilter = new PDBFilter(saveFile, activeAssembly,
           activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
       // Reset the filter to read the first snapshot.
       boolean resetPosition = true
       int counter = 0
+      int snapshotCounter = 0
+      logger.info(" Writing snapshots from " + firstSnapshot + " to " + lastSnapshot + " with increment " + snapshotIncrement)
+
       while (openFilter.readNext(resetPosition)) {
         // No more resets.
         resetPosition = false
-        // Increment the snapshot counter.
-        counter++
-        if (counter == writeSnapshot) {
-          File snapshotFile = new File(dirString + "snapshot" + counter.toString() + ".pdb")
+        int offset = counter - firstSnapshot
+        // Write out the snapshot if it is within the range and the increment is met.
+        if (counter >= firstSnapshot && counter <= lastSnapshot && offset % snapshotIncrement == 0) {
+          File snapshotFile
+          if (writeToDirectories) {
+            String subdirectory = concat(dirString, snapshotCounter.toString())
+            FileUtils.mkdir(new File(subdirectory), true)
+            snapshotFile = new File(concat(subdirectory, name))
+          } else {
+            snapshotFile = new File(concat(dirString,
+                removeExtension(name) + "." + counter.toString() + ".pdb"))
+          }
           potentialFunctions.versionFile(snapshotFile)
           saveOptions.preSaveOperations(activeAssembly)
-          snapshotFilter.setModelNumbering(writeSnapshot - 1)
+          snapshotFilter.setModelNumbering(snapshotCounter)
           logger.info("\n Writing out PDB for " + snapshotFile.toString())
           snapshotFilter.writeFile(snapshotFile, true, false, false)
           snapshotFile.append("END\n")
-          break
+          // Increment the snapshot counter used to name the file or create a subdirectory.
+          snapshotCounter++
         }
+        // Increment the counter used to iterate through the snapshots.
+        counter++
       }
       return this
     }
@@ -192,10 +228,11 @@ class SaveAsPDB extends PotentialScript {
     saveFilter.setModelNumbering(1)
 
     // Iterate through the rest of the models in an arc or pdb.
-    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter || openFilter instanceof XPHFilter)) {
+    if (openFilter != null
+        && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter || openFilter instanceof XPHFilter)) {
       try {
         while (openFilter.readNext(false)) {
-          if(extended) {
+          if (extended) {
             for (Atom atom : activeAssembly.getAtomList()) {
               int atomIndex = atom.getIndex() - 1
               atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex))
@@ -214,4 +251,6 @@ class SaveAsPDB extends PotentialScript {
     }
     return this
   }
+
+
 }

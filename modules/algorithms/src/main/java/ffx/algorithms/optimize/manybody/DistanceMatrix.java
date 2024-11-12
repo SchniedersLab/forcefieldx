@@ -517,7 +517,7 @@ public class DistanceMatrix {
       distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener, distanceMatrix);
       parallelTeam.execute(distanceRegion);
     } catch (Exception e) {
-      String message = " Exception compting residue distance matrix.";
+      String message = " Exception computing residue distance matrix.";
       logger.log(Level.SEVERE, message, e);
     }
     parallelTime += System.nanoTime();
@@ -684,13 +684,16 @@ public class DistanceMatrix {
      * @param distance The distance.
      */
     public void storeDistance(int j, int rj, double distance) {
-      if (distances.containsKey(j)) {
-        distances.get(j)[rj] = distance;
-      } else {
-        double[] dists = new double[allResiduesArray[j].getRotamers().length];
-        Arrays.fill(dists, -1);
-        dists[rj] = distance;
-        distances.put(j, dists);
+      // Synchronize on the distances map to avoid concurrent modification.
+      synchronized (distances) {
+        if (distances.containsKey(j)) {
+          distances.get(j)[rj] = distance;
+        } else {
+          double[] dists = new double[allResiduesArray[j].getRotamers().length];
+          Arrays.fill(dists, -1);
+          dists[rj] = distance;
+          distances.put(j, dists);
+        }
       }
     }
 
