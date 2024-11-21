@@ -250,12 +250,18 @@ public class GetProteinFeatures {
     }
 
     totalSurfaceArea += surfaceArea;
-    String surfaceAreaString = String.valueOf(surfaceArea);
+    String surfaceAreaString = String.valueOf(Math.floor(surfaceArea*100)/100);
 
     double standSurfaceArea = standardSurfaceArea.getOrDefault(residue.getAminoAcid3(), 0.0);
-    String normalizedSA = "";
+    String normalizedSAString = "";
     if (standSurfaceArea != 0.0) {
-      normalizedSA = String.valueOf(surfaceArea / standSurfaceArea);
+      double normSA = surfaceArea / standSurfaceArea;
+      normSA = Math.floor(normSA * 100) / 100;
+      if(normSA > 1.0){
+        normSA = 1.0;
+      }
+      normalizedSAString = String.valueOf(normSA);
+
     }
     String confidence = String.valueOf(getConfidenceScore(residue));
     String interactingGene = " ";
@@ -267,7 +273,7 @@ public class GetProteinFeatures {
     }
 
     features[0] = surfaceAreaString;
-    features[1] = normalizedSA;
+    features[1] = normalizedSAString;
     features[2] = confidence;
     if (includeAngles) {
       features[3] = phiString;
@@ -388,7 +394,7 @@ public class GetProteinFeatures {
    * @return The total surface area.
    */
   public double getTotalSurfaceArea() {
-    return totalSurfaceArea;
+    return Math.floor(totalSurfaceArea);
   }
 
   /**
@@ -436,7 +442,7 @@ public class GetProteinFeatures {
     for (String s : ddgun) {
       String[] splits = s.split("\t");
       Double[] value = new Double[2];
-      value[0] = Double.parseDouble(splits[3]);
+      value[0] = Double.parseDouble(splits[3]) * -1.0;
       value[1] = Math.abs(Double.parseDouble(splits[3]));
       values.add(value);
     }

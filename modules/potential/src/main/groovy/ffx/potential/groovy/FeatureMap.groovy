@@ -146,12 +146,18 @@ class FeatureMap extends PotentialScript {
         String fileIsoform
         if (multipleIsoforms) {
             String baseName = getBaseName(filenames[0])
-            if (baseName.contains("ENS")) {
+            if (baseName.containsIgnoreCase("ENS")) {
                 geneSplit = baseName.replace(".pdb", "").split("_")
-                fileIsoform = geneSplit
+                fileIsoform = geneSplit[1]
             } else {
                 geneSplit = baseName.replace(".pdb", "").split("_")
-                fileIsoform = geneSplit[2].toUpperCase() + '_' + geneSplit[3].toUpperCase()
+                int index = 0;
+                for(int i=0; i<geneSplit.length; i++){
+                    if(geneSplit[i].equalsIgnoreCase("NP")){
+                        index = i
+                    }
+                }
+                fileIsoform = geneSplit[index].toUpperCase() + '_' + geneSplit[index+1].toUpperCase()
             }
         }
 
@@ -203,7 +209,7 @@ class FeatureMap extends PotentialScript {
         // Write a new csv file with all the original data and the features determined through this script
         try {
             File inputCSVFile = new File(filenames[1])
-            String inputCSVPath = inputCSVFile.getAbsolutePath().replace("/" + filenames[1], '')
+            String inputCSVPath = inputCSVFile.getAbsolutePath().replace(filenames[1], '')
             String newCSVFileName = "update_" + filenames[1]
             File updatedFile = new File(inputCSVPath, newCSVFileName)
             br = new BufferedReader(new InputStreamReader(new FileInputStream(inputCSVFile)))
@@ -220,9 +226,9 @@ class FeatureMap extends PotentialScript {
             int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
-                if (i == 0 || i == 1) {
+                if (i == 0) {
                     if (!rerun) {
-                        if (updatedFile.length() == 0 && i == 1) {
+                        if (updatedFile.length() == 0) {
                             newCSVLine.append(line + delimiter + 'Surface Area' + delimiter + 'Normalized SA' + delimiter +
                                     'Confidence Score' + delimiter + 'ddG' + delimiter + '|ddG|')
                             if (includeAcidity) {
@@ -247,7 +253,7 @@ class FeatureMap extends PotentialScript {
                     }
                 } else {
                     String[] splits = line.split(delimiter)
-                    if (i == 1 || i == 2) {
+                    if (i == 1) {
                         for (int j = 0; j < splits.length; j++) {
                             if (splits[j].contains("p.")) {
                                 npIndex = j
@@ -270,7 +276,7 @@ class FeatureMap extends PotentialScript {
                         ddG = ["null", "null"]
                         Arrays.fill(feat, null)
                     } else {
-                        String proteinChange = npChange.substring(npChange.indexOf('p'),npChange.size()-1)
+                        String proteinChange = npChange.substring(npChange.indexOf('p'),npChange.size())
                         String splitstring = "p\\."
                         String sub = proteinChange.split(splitstring)[1]
                         position = sub.replace(sub.substring(0, 3), '').replace(sub.substring(sub.length() - 4, sub.length()), '').toInteger()
@@ -297,10 +303,9 @@ class FeatureMap extends PotentialScript {
                             isoform = splits[isoformIndex]
                         }
                     }
-
                     if (length == splits.length) {
                         if (multipleIsoforms) {
-                            if (!isoform.contains(fileIsoform)) {
+                            if (!isoform.containsIgnoreCase(fileIsoform)) {
                                 continue
                             }
                         }
@@ -352,12 +357,7 @@ class FeatureMap extends PotentialScript {
                 bw.close();
         }
 
-        logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f",
-                forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
-        logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f",
-                getProteinFeatures.getTotalSurfaceArea()))
-
-
+        logger.info(" Wrote variants with feature data to update_" + filenames[1])
     }
 
 
