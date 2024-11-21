@@ -742,6 +742,23 @@
       <groupId>com.google.code.findbugs</groupId>
       <version>${findbugs.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>polyglot</artifactId>
+      <version>${graal.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>python</artifactId>
+      <version>${graal.version}</version>
+      <scope>runtime</scope>
+      <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.python</groupId>
+      <artifactId>python-embedding</artifactId>
+      <version>${graal.version}</version>
+    </dependency>
   </dependencies>
   <description>Polyglot Software for Molecular Biophysics</description>
   <developers>
@@ -985,42 +1002,44 @@
   <packaging>pom</packaging>
   <profiles>
     <profile>
+      <id>graalpy</id>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <artifactId>clover-maven-plugin</artifactId>
-            <configuration>
-              <jdk>${compileVersion}</jdk>
-              <excludes>
-                <exclude>edu/**/*.java</exclude>
-                <exclude>ffx/ui/**/*.java</exclude>
-              </excludes>
-              <generateHtml>true</generateHtml>
-              <generateXml>true</generateXml>
-              <includesTestSourceRoots>false</includesTestSourceRoots>
-            </configuration>
-            <groupId>org.openclover</groupId>
-            <version>${clover.version}</version>
+            <groupId>org.graalvm.python</groupId>
+            <artifactId>graalpy-maven-plugin</artifactId>
+            <version>${graal.version}</version>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <configuration>
+                  <packages>
+                    <package>numpy==1.26.4</package>
+                  </packages>
+                  <pythonHome>
+                    <excludes>
+                      <exclude>.*</exclude>
+                    </excludes>
+                  </pythonHome>
+                  <pythonResourcesDirectory>
+                    ${project.basedir}/python-resources
+                  </pythonResourcesDirectory>
+                </configuration>
+                <goals>
+                  <goal>process-graalpy-resources</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
-      <id>ffx.clover</id>
-      <reporting>
-        <plugins>
-          <plugin>
-            <artifactId>clover-maven-plugin</artifactId>
-            <groupId>org.openclover</groupId>
-            <version>${clover.version}</version>
-          </plugin>
-        </plugins>
-      </reporting>
     </profile>
   </profiles>
   <properties>
-    <asciidoc.version>3.1.0</asciidoc.version>
+    <asciidoc.version>3.1.1</asciidoc.version>
     <antlr4.version>4.13.2</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
@@ -1039,7 +1058,7 @@
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
-    <commons-io.version>2.17.0</commons-io.version>
+    <commons-io.version>2.18.0</commons-io.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <commons-text.version>1.12.0</commons-text.version>
@@ -1112,7 +1131,7 @@
     <tornado.version>1.0.7</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.17.1</versions.version>
+    <versions.version>2.18.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
     <wrapper.version>3.3.2</wrapper.version>
@@ -1237,11 +1256,11 @@
         <version>${pmd.version}</version>
       </plugin>
       <plugin>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${checkstyle.version}</version>
-          <configuration>
-              <goal>checkstyle-aggregate</goal>
-          </configuration>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.version}</version>
+        <configuration>
+          <goal>checkstyle-aggregate</goal>
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
