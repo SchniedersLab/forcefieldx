@@ -1018,11 +1018,15 @@
                 <configuration>
                   <packages>
                     <package>numpy==1.26.4</package>
+                    <package>torch==2.2.1</package>
                   </packages>
                   <pythonHome>
-                    <excludes>
+	            <includes>
+                      <include>.*</include>
+                    </includes>
+                    <!-- excludes>
                       <exclude>.*</exclude>
-                    </excludes>
+                    </excludes -->
                   </pythonHome>
                   <pythonResourcesDirectory>
                     ${project.basedir}/python-resources
