@@ -170,7 +170,6 @@ class Biotype extends PotentialScript {
 
     // Update the molecule name.
     molecules[0].setName(molName)
-    Atom[] atoms = activeAssembly.getAtomArray()
 
     // Create a List of biotype String entries.
     bioTypes = new ArrayList<>()
