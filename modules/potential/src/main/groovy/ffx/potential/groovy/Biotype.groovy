@@ -145,6 +145,7 @@ class Biotype extends PotentialScript {
 
     Molecule[] molecules = activeAssembly.getMoleculeArray()
 
+    Atom[] atoms = activeAssembly.getAtomArray()
     if (writeCONNECT) {
       for (Atom a : atoms) {
 // =============================================================================
