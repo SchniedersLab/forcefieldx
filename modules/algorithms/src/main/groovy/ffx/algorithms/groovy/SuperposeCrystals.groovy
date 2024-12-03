@@ -49,6 +49,7 @@ import picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
+import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.concat
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FilenameUtils.getFullPath
@@ -111,18 +112,25 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean createFE
 
   /**
-   * --bs or --bruteSymmetry Brute force symmetry operator creation.
+   * --as or --autoSymmetry Automatic generation of symmetry operators.
    */
-  @Option(names = ['--bs', '--bruteSymmetry'], paramLabel = "false", defaultValue = "false",
-          description = 'Brute force symmetry operator creation.')
-  private static boolean bruteSym
+  @Option(names = ['--as', '--autoSymmetry'], paramLabel = "false", defaultValue = "false",
+          description = 'Automatically generate symmetry operators.')
+  private static boolean autoSym
 
   /**
-   * --as or --appendSym Append symmetry operator.
+   * --st or --symTolerance Tolerance used to add small atom groups for automatic symmetry matching.
    */
-  @Option(names = ['--as', '--appendSym'], paramLabel = "false", defaultValue = "false",
-          description = 'Append the created symmetry operators.')
-  private static boolean appendSym
+  @Option(names = ['--st','--symTolerance'], paramLabel = "0.5", defaultValue = "0.5",
+          description = 'Add atoms to torsion based symmetries that are beneath this cutoff.')
+  private static double symTolerance
+
+  /**
+   * --ws or --writeSym Write symmetry operator to Properties/Key file.
+   */
+  @Option(names = ['--ws', '--writeSym'], paramLabel = "false", defaultValue = "false",
+          description = 'Write the created symmetry operators in the corresponding Properties/Key file.')
+  private static boolean writeSym
 
   /**
    * --gc or --gyrationComponents Display components for radius of gyration for final clusters.
@@ -216,17 +224,17 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean restart
 
   /**
-   * --save Save files for the superposed crystals.
+   * -s or --save Save files for the superposed crystals that align below tolerance.
    */
-  @Option(names = ['--save'], paramLabel = "-1.0", defaultValue = "-1.0",
+  @Option(names = ['-s','--save'], paramLabel = "-1.0", defaultValue = "-1.0",
           description = 'Save structures less than or equal to this cutoff.')
   private static double save
 
   /**
-   * --sc --saveClusters Save files for the superposed crystals.
+   * --sc --saveClusters Save files for the superposed crystal clusters.
    */
   @Option(names = ['--sc', '--saveClusters'], paramLabel = "0", defaultValue = "0",
-          description = 'Save files for the superposed crystals (1=PDB, 2=XYZ).')
+          description = 'Save files for the superposed crystal clusters (1=PDB, 2=XYZ).')
   private static int saveClusters
 
   /**
@@ -237,11 +245,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean machineLearning
 
   /**
-   * --st or --strict Compare all unique AUs between each crystal.
+   * --th or --thorough Compare all unique AUs between each crystal.
    */
-  @Option(names = ['--st', '--strict'], paramLabel = "false", defaultValue = "false",
+  @Option(names = ['--th', '--thorough'], paramLabel = "false", defaultValue = "false",
           description = 'More intensive, less efficient version of PAC.')
-  private static boolean strict
+  private static boolean thorough
 
   /**
    * -w or --write Write out the PAC RMSD matrix.
@@ -351,7 +359,7 @@ class SuperposeCrystals extends AlgorithmsScript {
       zPrime2 = zPrime;
     }
 
-    if (appendSym && printSym < 0) {
+    if (writeSym && printSym < 0) {
       logger.info(" Printing distance for atoms greater than default of 1.0 Å");
       printSym = 1.0;
     }
@@ -360,21 +368,27 @@ class SuperposeCrystals extends AlgorithmsScript {
       // Need assembly to generate subdirectories. Caching ignores assemblies.
       lowMemory = true;
     }
-    if(bruteSym) {
+    if(autoSym) {
+      // List to contain atoms that have already been grouped. Therefore, skip for future groups.
       List<Atom> previouslyIncluded = new ArrayList<>();
       final Atom[] atoms = baseFilter.getActiveMolecularSystem().getAtomArray();
+      // Need 3 atoms to define multipole axes of sym groups, if less, combine groups until sufficient.
+      // Retain list of small groups to combine into larger groups later.
+      List<List<Atom>> smallAtomGroups = new ArrayList<ArrayList<Atom>>();
+      // Record small group RMSD to know if they can be combined (if RMSD > tolerance, then should be independent group).
+      List<Double> smallGroupsRMSD = new ArrayList<Double>();
       for (Atom a : atoms) {
         if (previouslyIncluded.contains(a)) {
           continue;
         }
         // Collect information used for decision making.
-        Bond[] bondsa = a.getBonds();
+        Bond[] bondsA = a.getBonds();
         int numBondsA = a.getNumBonds();
         int numHA = a.getNumberOfBondedHydrogen();
         int nonHbonds = numBondsA - numHA;
-        List<Integer> includeAtoms = new ArrayList<>();
-        List<Integer> queueAtoms = new ArrayList<>();
-        queueAtoms.add(a.getIndex());
+        List<Integer> includeIndices = new ArrayList<>();
+        List<Integer> queueIndices = new ArrayList<>();
+        queueIndices.add(a.getIndex());
         previouslyIncluded.add(a);
         for (Atom a2 : atoms) {
           // If already included, skip this atom. Compare returns 0 when equal.
@@ -382,79 +396,83 @@ class SuperposeCrystals extends AlgorithmsScript {
             continue;
           }
           // Collect information used for decision making.
-          int numBondsA2 = a2.getNumBonds();;
+          int numBondsA2 = a2.getNumBonds(); ;
           int numHA2 = a2.getNumberOfBondedHydrogen();
           int nonHbonds2 = numBondsA2 - numHA2;
           Bond[] bondsa2 = a2.getBonds();
           // Decide which atoms should be grouped together.
           if (nonHbonds2 == 1) {
             // If only bond to group add (e.g., -O-CH3, -O-NH2).
-            queueAtoms.add(a2.getIndex());
+            queueIndices.add(a2.getIndex());
             previouslyIncluded.add(a2);
-            for(Bond b: bondsa2){
+            for (Bond b : bondsa2) {
               Atom a3 = b.get1_2(a2);
-              if(previouslyIncluded.contains(a3)){
-                continue;
-              }else if(a3.isHydrogen()){
-                queueAtoms.add(a3.getIndex());
+              if (!previouslyIncluded.contains(a3) && a3.isHydrogen()) {
+                queueIndices.add(a3.getIndex());
                 previouslyIncluded.add(a3);
               }
             }
           } else if (nonHbonds == 1) {
             // If only bond to group add (e.g., -O-CH3, -O-NH2).
-            queueAtoms.add(a2.getIndex());
+            queueIndices.add(a2.getIndex());
             previouslyIncluded.add(a2);
-            for (Bond b: bondsa) {
+            for (Bond b : bondsA) {
               Atom a3 = b.get1_2(a);
-              if (previouslyIncluded.contains(a3)) {
-                continue;
-              } else if (a3.isHydrogen()) {
-                queueAtoms.add(a3.getIndex());
+              if (!previouslyIncluded.contains(a3) && a3.isHydrogen()) {
+                queueIndices.add(a3.getIndex());
                 previouslyIncluded.add(a3);
               }
             }
           } else if (numBondsA == 1 || numBondsA2 == 1) {
             // If second atom only has one bond and it bonds to 'a' add to list (e.g., hydrogen and halogen)
-            queueAtoms.add(a2.getIndex());
+            queueIndices.add(a2.getIndex());
             previouslyIncluded.add(a2);
           } else if (nonHbonds2 == 2) {
             // If second atom is only connected to this and one other group add (e.g., )
-            queueAtoms.add(a2.getIndex());
+            queueIndices.add(a2.getIndex());
             previouslyIncluded.add(a2);
-            for(Bond b: bondsa2){
+            for (Bond b : bondsa2) {
               Atom a3 = b.get1_2(a2);
-              if(previouslyIncluded.contains(a3)){
-                continue;
-              }else if(a3.isHydrogen()){
-                queueAtoms.add(a3.getIndex());
+              if (!previouslyIncluded.contains(a3) && a3.isHydrogen()) {
+                queueIndices.add(a3.getIndex());
                 previouslyIncluded.add(a3);
               }
             }
           } else {
             // TODO handle higher order bonds and aromaticity.
-            //Look for 1_3 atoms that solely attach to a2 (e.g., -C=O-NH2, -C=0-CH3)
+            // Look for 1_3 atoms that solely attach to a2 (e.g., -C=O-NH2, -C=0-CH3)
             for (Bond b : bondsa2) {
               Atom a3 = b.get1_2(a2);
-              if(previouslyIncluded.contains(a3)){
-                continue;
-              } else if (!a3.isHydrogen() && nonHbonds == 1) {
+              if (!previouslyIncluded.contains(a3) && !a3.isHydrogen() && nonHbonds == 1) {
                 int numBondsA3 = a3.getNumBonds();
-                if((numBondsA3 == 1) && (a3.isBonded(a2) || a3.isBonded(a))){
-                  queueAtoms.add(a3.getIndex());
+                if ((numBondsA3 == 1) && (a3.isBonded(a2) || a3.isBonded(a))) {
+                  queueIndices.add(a3.getIndex());
                   previouslyIncluded.add(a3);
                 }
               }
             }
           }
         }
-        includeAtoms.addAll(queueAtoms);
+        ArrayList<Atom> queueAtoms = new ArrayList<Atom>();
+        for (Integer index : queueIndices) {
+          // Indices are human readable ergo (-1).
+          queueAtoms.add(atoms[index - 1]);
+        }
+        smallAtomGroups.add(queueAtoms);
+      }
+      for(ArrayList<Atom> group: smallAtomGroups){
+        // Run PAC to determine assess small group selection.
+        ArrayList<Integer> includeIndices = new ArrayList<>();
+        for(Atom atom: group){
+          includeIndices.add(atom.getIndex());
+        }
         excludeAtoms = "";
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
-          int ind = i+1;
-          if (!includeAtoms.contains(ind) && excludeAtoms.length() == 0) {
+          int ind = i + 1;
+          if (!includeIndices.contains(ind) && excludeAtoms.length() == 0) {
             excludeAtoms = ind;
-          } else if (!includeAtoms.contains(ind)) {
+          } else if (!includeIndices.contains(ind)) {
             excludeAtoms += "," + ind;
           }
         }
@@ -465,7 +483,7 @@ class SuperposeCrystals extends AlgorithmsScript {
           excludeAtomsA = excludeAtoms
           excludeAtomsB = excludeAtoms
         }
-        if(logger.isLoggable(Level.FINE)){
+        if (logger.isLoggable(Level.FINE)) {
           logger.fine("A: " + excludeAtomsA);
           logger.fine("B: " + excludeAtomsB);
         }
@@ -475,11 +493,174 @@ class SuperposeCrystals extends AlgorithmsScript {
                 isSymmetric)
         runningStatistics =
                 pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
-                        alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, saveClusters, save,
+                        alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
                         restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
-                        lowMemory, createFE, appendSym, pacFilename)
+                        lowMemory, createFE, false, pacFilename)
+        double min = runningStatistics.min;
+        smallGroupsRMSD.add(min)
       }
-    }else {
+      // Follow
+      int numGroups = smallAtomGroups.size();
+      logger.info(format(" Num Minimal Groups: %3d", numGroups));
+      int[][] smallIndexGroups = new int[numGroups][];
+      // Small atom groups are set. Create jagged array containing indices.
+      for(int i = 0; i < numGroups; i++){
+        // Obtain atoms for this group.
+        ArrayList<Atom> currentAtoms = smallAtomGroups.get(i);
+        // Determine size of this row.
+        int currentSize = currentAtoms.size()
+        smallIndexGroups[i] = new int[currentSize];
+        // Add indices of atoms to this row.
+        for(int j = 0; j < currentSize; j++){
+          smallIndexGroups[i][j] = currentAtoms.get(j).getIndex();
+        }
+      }
+      // Object to hold the final groups to be symmetry operated.
+      ArrayList<ArrayList<Integer>> finalGroups = new ArrayList<>();
+      // Atoms that will be included in this group.
+      ArrayList<Integer> acceptedAtoms = new ArrayList<>();
+      // Atoms to attempt to include in this group.
+      ArrayList<Integer> queuedIndices = new ArrayList<>();
+      // Groups that have already been mapped.
+      ArrayList<Integer> usedGroups = new ArrayList<>();
+      // Loop through each of the small atom groups.
+      for(int i = 0; i < numGroups; i++) {
+        ArrayList<Atom> currentAtomGroup = smallAtomGroups.get(i);
+        ArrayList<Integer> currentIndexGroup = smallIndexGroups[i];
+        int numAtomsInGroup = currentAtomGroup.size();
+        // Reset object lists for new group to be added to finalGroups.
+        acceptedAtoms.clear();
+        queuedIndices.clear();
+        logger.info(format(" Minimal Group Num: %3d Size: %3d RMSD: %9.3f", i, numAtomsInGroup, smallGroupsRMSD.get(i))) //REMOVE
+        if (!usedGroups.contains(i)) {
+          // Add current group under consideration to accepted atoms.
+          for (Integer index : currentIndexGroup) {
+            acceptedAtoms.add(index);
+          }
+          usedGroups.add(i);
+          // Groups already above symTolerance cannot be added to other groups and are included outright.
+          if (smallGroupsRMSD.get(i) > symTolerance) {
+            logger.info(format(" Run (Group) %3d added outright to final.", i));
+          }else{
+            for (int j = 0; j < acceptedAtoms.size(); j++){
+              Atom a1 = atoms[acceptedAtoms.get(j) - 1];
+              logger.info(format(" Current Group: %3d Atom in Group: %3d of %3d (was %3d==%3d) Atom Index: %3d", i, j, acceptedAtoms.size(), numAtomsInGroup, currentIndexGroup.size(), a1.getIndex()));
+              Bond[] b1 = a1.getBonds();
+              // Traverse bonds to find adjacent small groups.
+              for (Bond b : b1) {
+                Atom a2 = b.get1_2(a1);
+                int a2Index = a2.getIndex();
+                // If atom is encountered that is not currently in this group, evaluate to see if it should be added.
+                if (!currentIndexGroup.contains(a2Index)) {
+                  // Find the group that this new atom belongs.
+                  for (int k = 0; k < numGroups; k++) {
+                    ArrayList<Integer> currentIndexGroup2 = smallIndexGroups[k];
+                    // Group cannot be added to two separate sym ops.
+                    // If sym is greater than tolerance it cannot be added.
+                    // If atom is not included in this group, go to next.
+                    if(!usedGroups.contains(k) && smallGroupsRMSD[k] < symTolerance && currentIndexGroup2.contains(a2Index)) {
+                      // Attempt to add group containing bonded atom to current group.
+                      for (Integer ind : currentIndexGroup2) {
+                        queuedIndices.add(ind);
+                      }
+                      // Create exclusion strings to isolate desired atoms in PAC.
+                      excludeAtoms = "";
+                      int nAtoms = atoms.length;
+                      for (int l = 0; l < nAtoms; l++) {
+                        int ind = l + 1;
+                        // Any atoms that are not in the accepted or queued lists should be excluded.
+                        boolean exclude = !acceptedAtoms.contains(ind) && !queuedIndices.contains(ind)
+                        if (exclude) {
+                          // Format input string to PAC.
+                          if (excludeAtoms.length() == 0) {
+                            excludeAtoms = ind;
+                          } else {
+                            excludeAtoms += "," + ind;
+                          }
+                        }
+                      }
+                      // Apply atom selections
+                      excludeAtomsA = excludeAtoms
+                      excludeAtomsB = excludeAtoms
+
+                      logger.info(" Excluded atoms A: " + excludeAtomsA);
+                      logger.info(" Excluded atoms B: " + excludeAtomsB);
+
+                      // Compare structures in baseFilter and targetFilter.
+                      ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter,
+                              isSymmetric)
+                      runningStatistics =
+                              pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
+                                      alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
+                                      restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
+                                      lowMemory, createFE, false, pacFilename)
+                      double min = runningStatistics.min;
+                      if (min > symTolerance) {
+                        // Group should not be added as it increased RMSD beyond tolerance.
+                        logger.info(format(" Run %3d Group %3d failed with RMSD %9.3f > tolerance (%9.3f).", i, k, min, symTolerance));
+                        queuedIndices.clear();
+                      } else {
+                        // Satisfied RMSD cutoff, therefore add to accepted atoms.
+                        for (Integer value : queuedIndices) {
+                          if (!acceptedAtoms.contains(value)) {
+                            acceptedAtoms.add(value);
+                          }
+                        }
+                        logger.info(format(" Run %3d Group %3d added to accepted with RMSD: %9.3f.", i, k, min));
+                        usedGroups.add(k);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          finalGroups.add((ArrayList<Integer>) acceptedAtoms.clone());
+          logger.info(format(" Run %3d accepted atoms (size: %3d) added to finalGroups (size: %3d)", i, acceptedAtoms.size(), finalGroups.size()))
+        }
+      }
+
+      logger.info(format(" Final Num Groups: %3d", finalGroups.size()))
+      for (ArrayList<Integer> group : finalGroups) {
+        int groupSize = group.size();
+        logger.info(format(" Final Size: %3d", groupSize))
+        // Skip groups with size of zero. THIS SHOULD NEVER OCCUR.
+        if(groupSize <= 0){
+          logger.warning(" Final group of size zero was encountered. Check selection logic.")
+          continue;
+        }
+        queuedIndices.clear();
+        for(Integer ind : group){
+          queuedIndices.add(ind);
+        }
+        excludeAtoms = "";
+        int nAtoms = atoms.length;
+        for (int l = 0; l < nAtoms; l++) {
+          int ind = l + 1;
+          if (!queuedIndices.contains(ind) && excludeAtoms.length() == 0) {
+            excludeAtoms = ind;
+          } else if (!queuedIndices.contains(ind)) {
+            excludeAtoms += "," + ind;
+          }
+        }
+        // Apply atom selections
+        excludeAtomsA = excludeAtoms
+        excludeAtomsB = excludeAtoms
+        if (logger.isLoggable(Level.FINE)) {
+          logger.fine("A: " + excludeAtomsA);
+          logger.fine("B: " + excludeAtomsB);
+        }
+
+        // Compare structures in baseFilter and targetFilter.
+        ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter,
+                isSymmetric)
+        runningStatistics =
+                pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
+                        alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
+                        restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
+                        lowMemory, createFE, writeSym, pacFilename)
+      }
+    } else {
       // Apply atom selections
       if (excludeAtoms != null && !excludeAtoms.isEmpty()) {
         excludeAtomsA = excludeAtoms
@@ -490,9 +671,9 @@ class SuperposeCrystals extends AlgorithmsScript {
               isSymmetric)
       runningStatistics =
               pac.comparisons(numAU, inflationFactor, matchTol, hitTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
-                      alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, saveClusters, save,
+                      alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
                       restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
-                      lowMemory, createFE, appendSym, pacFilename)
+                      lowMemory, createFE, writeSym, pacFilename)
     }
     baseFilter.closeReader();
     targetFilter.closeReader();
