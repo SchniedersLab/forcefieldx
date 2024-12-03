@@ -226,6 +226,7 @@ class FeatureMap extends PotentialScript {
             int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
+                logger.info(line)
                 if (i == 0) {
                     if (!rerun) {
                         if (updatedFile.length() == 0) {
@@ -279,7 +280,7 @@ class FeatureMap extends PotentialScript {
                         String proteinChange = npChange.substring(npChange.indexOf('p'),npChange.size())
                         String splitstring = "p\\."
                         String sub = proteinChange.split(splitstring)[1]
-                        position = sub.replace(sub.substring(0, 3), '').replace(sub.substring(sub.length() - 4, sub.length()), '').toInteger()
+                        position = sub.substring(3,sub.length()-3).toInteger()
                         if (position <= residues.size()) {
                             if(ddgFile != null){
                                 if (npChanges.indexOf(proteinChange) != -1) {
