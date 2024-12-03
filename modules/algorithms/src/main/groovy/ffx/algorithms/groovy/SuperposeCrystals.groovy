@@ -499,9 +499,10 @@ class SuperposeCrystals extends AlgorithmsScript {
         double min = runningStatistics.min;
         smallGroupsRMSD.add(min)
       }
-      // Follow
       int numGroups = smallAtomGroups.size();
-      logger.info(format(" Num Minimal Groups: %3d", numGroups));
+      if(logger.isLoggable(Level.FINE)){
+        logger.fine(format(" Num Minimal Groups: %3d", numGroups));
+      }
       int[][] smallIndexGroups = new int[numGroups][];
       // Small atom groups are set. Create jagged array containing indices.
       for(int i = 0; i < numGroups; i++){
@@ -531,7 +532,9 @@ class SuperposeCrystals extends AlgorithmsScript {
         // Reset object lists for new group to be added to finalGroups.
         acceptedAtoms.clear();
         queuedIndices.clear();
-        logger.info(format(" Minimal Group Num: %3d Size: %3d RMSD: %9.3f", i, numAtomsInGroup, smallGroupsRMSD.get(i))) //REMOVE
+        if(logger.isLoggable(Level.FINE)) {
+          logger.fine(format(" Minimal Group Num: %3d Size: %3d RMSD: %9.3f", i, numAtomsInGroup, smallGroupsRMSD.get(i)))
+        }
         if (!usedGroups.contains(i)) {
           // Add current group under consideration to accepted atoms.
           for (Integer index : currentIndexGroup) {
@@ -540,11 +543,15 @@ class SuperposeCrystals extends AlgorithmsScript {
           usedGroups.add(i);
           // Groups already above symTolerance cannot be added to other groups and are included outright.
           if (smallGroupsRMSD.get(i) > symTolerance) {
-            logger.info(format(" Run (Group) %3d added outright to final.", i));
+            if(logger.isLoggable(Level.FINE)) {
+              logger.fine(format(" Run (Group) %3d added outright to final.", i));
+            }
           }else{
             for (int j = 0; j < acceptedAtoms.size(); j++){
               Atom a1 = atoms[acceptedAtoms.get(j) - 1];
-              logger.info(format(" Current Group: %3d Atom in Group: %3d of %3d (was %3d==%3d) Atom Index: %3d", i, j, acceptedAtoms.size(), numAtomsInGroup, currentIndexGroup.size(), a1.getIndex()));
+              if(logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" Current Group: %3d Atom in Group: %3d of %3d (was %3d==%3d) Atom Index: %3d", i, j, acceptedAtoms.size(), numAtomsInGroup, currentIndexGroup.size(), a1.getIndex()));
+              }
               Bond[] b1 = a1.getBonds();
               // Traverse bonds to find adjacent small groups.
               for (Bond b : b1) {
@@ -583,8 +590,10 @@ class SuperposeCrystals extends AlgorithmsScript {
                       excludeAtomsA = excludeAtoms
                       excludeAtomsB = excludeAtoms
 
-                      logger.info(" Excluded atoms A: " + excludeAtomsA);
-                      logger.info(" Excluded atoms B: " + excludeAtomsB);
+                      if(logger.isLoggable(Level.FINE)) {
+                        logger.fine(" Excluded atoms A: " + excludeAtomsA);
+                        logger.fine(" Excluded atoms B: " + excludeAtomsB);
+                      }
 
                       // Compare structures in baseFilter and targetFilter.
                       ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter,
@@ -597,7 +606,9 @@ class SuperposeCrystals extends AlgorithmsScript {
                       double min = runningStatistics.min;
                       if (min > symTolerance) {
                         // Group should not be added as it increased RMSD beyond tolerance.
-                        logger.info(format(" Run %3d Group %3d failed with RMSD %9.3f > tolerance (%9.3f).", i, k, min, symTolerance));
+                        if(logger.isLoggable(Level.FINE)) {
+                          logger.fine(format(" Run %3d Group %3d failed with RMSD %9.3f > tolerance (%9.3f).", i, k, min, symTolerance));
+                        }
                         queuedIndices.clear();
                       } else {
                         // Satisfied RMSD cutoff, therefore add to accepted atoms.
@@ -606,7 +617,9 @@ class SuperposeCrystals extends AlgorithmsScript {
                             acceptedAtoms.add(value);
                           }
                         }
-                        logger.info(format(" Run %3d Group %3d added to accepted with RMSD: %9.3f.", i, k, min));
+                        if(logger.isLoggable(Level.FINE)) {
+                          logger.fine(format(" Run %3d Group %3d added to accepted with RMSD: %9.3f.", i, k, min));
+                        }
                         usedGroups.add(k);
                       }
                     }
@@ -616,14 +629,20 @@ class SuperposeCrystals extends AlgorithmsScript {
             }
           }
           finalGroups.add((ArrayList<Integer>) acceptedAtoms.clone());
-          logger.info(format(" Run %3d accepted atoms (size: %3d) added to finalGroups (size: %3d)", i, acceptedAtoms.size(), finalGroups.size()))
+          if(logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Run %3d accepted atoms (size: %3d) added to finalGroups (size: %3d)", i, acceptedAtoms.size(), finalGroups.size()))
+          }
         }
       }
 
-      logger.info(format(" Final Num Groups: %3d", finalGroups.size()))
+      if(logger.isLoggable(Level.FINE)){
+        logger.fine(format(" Final Num Groups: %3d", finalGroups.size()))
+      }
       for (ArrayList<Integer> group : finalGroups) {
         int groupSize = group.size();
-        logger.info(format(" Final Size: %3d", groupSize))
+        if(logger.isLoggable(Level.FINE)){
+          logger.fine(format(" Final Size: %3d", groupSize))
+        }
         // Skip groups with size of zero. THIS SHOULD NEVER OCCUR.
         if(groupSize <= 0){
           logger.warning(" Final group of size zero was encountered. Check selection logic.")
