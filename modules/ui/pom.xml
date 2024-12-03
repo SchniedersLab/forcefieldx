@@ -120,18 +120,6 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>polyglot</artifactId>
-      <version>${graal.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>python</artifactId>
-      <version>${graal.version}</version>
-      <scope>runtime</scope>
-      <type>pom</type>
-    </dependency>
-    <dependency>
       <groupId>org.jogamp.java3d</groupId>
       <artifactId>j3dutils</artifactId>
       <version>${java3d.version}</version>

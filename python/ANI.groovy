@@ -40,6 +40,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Value
+import org.graalvm.python.embedding.utils.GraalPyResources
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -101,7 +102,7 @@ class ANI extends PotentialScript {
         logger.info("\n Running Energy on " + filename)
 
         String FFX_HOME = System.getProperty("basedir")
-        Path graalpy = Paths.get(FFX_HOME, "ffx_venv", "bin", "graalpy")
+        Path graalpy = Paths.get(FFX_HOME, "python-resources")
         graalpyString = System.getProperty("graalpy", graalpy.toString())
         graalpy = Paths.get(graalpyString)
         logger.info(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy)
@@ -123,16 +124,16 @@ class ANI extends PotentialScript {
         double energy = 0.0
         double[] grad = new double[nAtoms * 3]
         // Construct a Polyglot Python environment.
-        try (Context context = Context.newBuilder("python").allowAllAccess(true).
-            option("python.Executable", graalpy.toString()).build()) {
+        try (Context context = GraalPyResources.contextBuilder(graalpy).build()) {
             // Place the coords and species arrays into the context.
             Value polyglotBindings = context.getPolyglotBindings()
             polyglotBindings.putMember("jcoords", jcoords)
             polyglotBindings.putMember("jspecies", jspecies)
 
             // Construct the Python code to run ANI-2x using TorchScript.
-            String torch = "import site\n"
-            torch += "import polyglot\n"
+            // String torch = "import site\n"
+            String torch = "import platform\n"
+            torch = "import polyglot\n"
             torch += "import torch\n"
             // Load the Java arrays into the Torch tensors.
             torch += "jspecies = polyglot.import_value('jspecies')\n"

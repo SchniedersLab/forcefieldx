@@ -8,11 +8,11 @@ Installation of Torch for use of ANI-2x
     GraalPy can be downloaded from [GitHub](https://github.com/oracle/graalpython/releases).
     
     For example, the download for Linux on Intel CPUs is called:
-    graalpy-24.0.1-linux-amd64.tar.gz
+    graalpy-24.1.1-linux-amd64.tar.gz
 
 ## Update your PATH environment variables 
  
-    export GRAALPY_HOME="/iahome/m/mj/mjschnie/software/graalpy-24.0.1-linux-amd64"
+    export GRAALPY_HOME="/iahome/m/mj/mjschnie/software/graalpy-24.1.1-linux-amd64"
     export PATH="$GRAALPY_HOME/bin:$PATH"
 
 ## Create a virtual environment within the Force Field X directory and activate it
