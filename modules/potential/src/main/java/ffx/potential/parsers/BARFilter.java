@@ -157,7 +157,7 @@ public class BARFilter {
         }else if (endingSnap != 0) {
           snapshots = (endingSnap - startingSnap) + 1;
           if (count >= startingSnap + 1 && count <= endingSnap + 1) {
-            if(count < snaps){
+            if(count <= snaps){
               if (numTokens == 4) {
                 vol1.add(parseDouble(tokens[3]));
               }
@@ -167,7 +167,7 @@ public class BARFilter {
               logger.warning(format(" BAR entry of (%3d) is larger than total entries (%3d).", count, snaps));
             }
           } else if (count >= snaps + startingSnap + 2 && count <= snaps + endingSnap + 2) {
-            if(count < snaps + snaps2){
+            if(count <= snaps + snaps2 + 1){
               if (numTokens == 4) {
                 vol2.add(parseDouble(tokens[3]));
               }
