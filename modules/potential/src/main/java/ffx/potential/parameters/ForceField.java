@@ -343,7 +343,7 @@ public class ForceField {
     }
 
     for (AngleType angleType : patch.anglepTypes.values()) {
-      angleTypes.put(angleType.getKey(), angleType);
+      anglepTypes.put(angleType.getKey(), angleType);
     }
 
     for (AtomType atomType : patch.atomTypes.values()) {
@@ -495,6 +495,14 @@ public class ForceField {
     return angleTypes;
   }
 
+  public Map<String, AngleType> getAnglepTypes() {
+    // Finalize keywords for Anglep Types.
+    for (String key : anglepTypes.keySet()) {
+      getAngleType(key);
+    }
+    return anglepTypes;
+  }
+  
   /**
    * getAngleType
    *
