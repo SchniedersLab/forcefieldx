@@ -89,7 +89,9 @@ public class OpenMMXmlFilter {
    */
   private final ForceField forceField;
 
-  /** The path to write the XML file to. Should not include '.xml' on end. */
+  /**
+   * The path to write the XML file to. Should not include '.xml' on end.
+   */
   private String outputName;
 
   /**
@@ -105,12 +107,12 @@ public class OpenMMXmlFilter {
    * Constructor for outputting XML with output path specified.
    *
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param saveName a String with the output path.
+   * @param saveName   a String with the output path.
    */
-    public OpenMMXmlFilter(ForceField forceField, String saveName) {
-      this.forceField = forceField;
-      this.outputName = saveName;
-    }
+  public OpenMMXmlFilter(ForceField forceField, String saveName) {
+    this.forceField = forceField;
+    this.outputName = saveName;
+  }
 
   /**
    * Create an OpenMM XML file for the given force field.
@@ -154,20 +156,14 @@ public class OpenMMXmlFilter {
 
     // Add Residues
     Map<String, BioType> bioTypes = forceField.getBioTypeMap();
-    if (bioTypes.values().size() >= 1) {
-      Map<String, Map<String, Map<String, Map<String, Object>>>> moleculeDict = new HashMap<>();
+    if (!bioTypes.values().isEmpty()) {
+      Map<String, ArrayList<BioType>> moleculeDict = new HashMap<>();
       for (BioType bioType : bioTypes.values()) {
-        if (bioType.bonds != null) {
-          if (!moleculeDict.containsKey(bioType.moleculeName)) {
-            moleculeDict.put(bioType.moleculeName, new HashMap<>());
-//                    moleculeDict.get(bioType.moleculeName).put("added", false); // todo can change this to true in original methods? can add to make getExtraBiotypes simpler
-            moleculeDict.get(bioType.moleculeName).put("atoms", new HashMap<>());
-          }
-          moleculeDict.get(bioType.moleculeName).get("atoms").put(bioType.atomName, new HashMap<>());
-          moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("index", bioType.index);
-          moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("atomType", bioType.atomType);
-          moleculeDict.get(bioType.moleculeName).get("atoms").get(bioType.atomName).put("bonds", bioType.bonds);
+        if (!moleculeDict.containsKey(bioType.moleculeName)) {
+          moleculeDict.put(bioType.moleculeName, new ArrayList<>());
         }
+        ArrayList<BioType> moleculeBioTypes = moleculeDict.get(bioType.moleculeName);
+        moleculeBioTypes.add(bioType);
       }
       Element residuesNode = doc.createElement("Residues");
       buildExtraResidues(moleculeDict, doc, residuesNode);
@@ -253,56 +249,53 @@ public class OpenMMXmlFilter {
   }
 
   /**
-   * Build residues not found in OpenMM finalResidues.xml todo - should this just replace that?
+   * Build residues not found in OpenMM finalResidues.xml
    *
-   * @param moleculeDict Map containing molecules defined in BioTypes along with individual atom information.
+   * @param moleculeDict Map containing molecules and their BioTypes.
    * @param doc          Document with XML Nodes.
    * @param residuesNode Residues Node that will contain individual Residue nodes with Atoms and Bonds.
    */
-  private static void buildExtraResidues(Map<String, Map<String, Map<String, Map<String, Object>>>> moleculeDict, Document doc, Element residuesNode) {
-    // Go through all molecules defined in the moleculeDict (keys)
+  private static void buildExtraResidues(Map<String, ArrayList<BioType>> moleculeDict, Document doc, Element residuesNode) {
+    // Loop over molecules
     for (String mol : moleculeDict.keySet()) {
-      Element resNode = doc.createElement("Residue"); // create Residue node for each molecule
+      // Create Residue node for each molecule
+      Element resNode = doc.createElement("Residue");
       resNode.setAttribute("name", mol);
       residuesNode.appendChild(resNode);
-
       List<String> order = new ArrayList<>();
       List<String> froms = new ArrayList<>();
       List<String> tos = new ArrayList<>();
+
       // Go through all atoms inside the molecule (keys)
-      for (String atom : moleculeDict.get(mol).get("atoms").keySet()) {
+      int atomCount = 0;
+      int bondCount = 0;
+      for (BioType bioType : moleculeDict.get(mol)) {
+        String atom = bioType.atomName;
         Element atomNode = doc.createElement("Atom");
         atomNode.setAttribute("name", atom);
-        atomNode.setAttribute("type", String.valueOf(moleculeDict.get(mol).get("atoms").get(atom).get("atomType")));
+        atomNode.setAttribute("type", String.valueOf(bioType.atomType));
         resNode.appendChild(atomNode);
-
-        String[] bonds = (String[]) moleculeDict.get(mol).get("atoms").get(atom).get("bonds");
+        atomCount++;
+        String[] bonds = bioType.bonds;
         // Go through all atoms (bonds) that the defined atom is bonded to
         for (String bond : bonds) {
-          if (!moleculeDict.get(mol).get("atoms").get(atom).containsKey("usedBonds")) {
-            moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", new ArrayList<>());
-          }
-          if (!moleculeDict.get(mol).get("atoms").get(bond).containsKey("usedBonds")) {
-            moleculeDict.get(mol).get("atoms").get(bond).put("usedBonds", new ArrayList<>());
+          BioType bondBioType = null;
+          for (BioType bioType2 : moleculeDict.get(mol)) {
+            if (bioType2.atomName.equals(bond)) {
+              bondBioType = bioType2;
+              break;
+            }
           }
 
-          // get the bonds already done for each atom
-          List<String> atomBonds = (ArrayList<String>) moleculeDict.get(mol).get("atoms").get(atom).get("usedBonds");
-          List<String> bondBonds = (ArrayList<String>) moleculeDict.get(mol).get("atoms").get(bond).get("usedBonds");
-
-          // record the bond in from/to lists if the bond has not already been used
-          if (!atomBonds.contains(bond) && !bondBonds.contains(atom)) {
+          // Record each bond and avoid duplicates by only adding the bond if the atomType is less than the bondAtomType.
+          if (bioType.atomType < bondBioType.atomType) {
             froms.add(atom);
             tos.add(bond);
+            bondCount++;
           }
-
-          // store that the bond has been identified
-          atomBonds.add(bond);
-          bondBonds.add(atom);
-          moleculeDict.get(mol).get("atoms").get(atom).put("usedBonds", atomBonds);
-          moleculeDict.get(mol).get("atoms").get(bond).put("usedBonds", bondBonds);
         }
-        order.add(atom); // add atom in the order they have been added to the Residue node
+        // Add each atom in the order they have been added to the Residue node.
+        order.add(atom);
       }
 
       // add Bond nodes using the order the Atom nodes were placed
@@ -312,16 +305,15 @@ public class OpenMMXmlFilter {
         bondNode.setAttribute("to", String.valueOf(order.indexOf(tos.get(i))));
         resNode.appendChild(bondNode);
       }
+      logger.info(" Added " + atomCount + " atoms and "
+          + bondCount + " bonds to residue " + mol + ".");
     }
-
-    // TODO - won't be able to determine an external bond? - won't be any for guest molecule
-    // this would be only problem if didn't use OMM defined Residue records
   }
 
   /**
    * Create an OpenMM-style XML file from the Document object that was created in toXML().
    *
-   * @param doc        Document object containing XML nodes.
+   * @param doc Document object containing XML nodes.
    * @throws TransformerException
    */
   private void writeXML(Document doc) throws TransformerException {
