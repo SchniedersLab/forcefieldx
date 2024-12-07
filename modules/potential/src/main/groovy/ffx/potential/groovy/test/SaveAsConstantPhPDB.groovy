@@ -141,7 +141,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
     // Create Potential in same fashion as in PotentialsFileOpener since we manually create mola vs using getActiveAs()
-    ForceFieldEnergy potential = ForceFieldEnergy.energyFactory(activeAssembly, pdbFilter.getCoordRestraints())
+    ForceFieldEnergy potential = ForceFieldEnergy.energyFactory(activeAssembly)
     activeAssembly.setPotential(potential)
     activeAssembly.finalize(true, forceField)
 
