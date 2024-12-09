@@ -288,7 +288,7 @@ public class OpenMMXmlFilter {
           }
 
           // Record each bond and avoid duplicates by only adding the bond if the atomType is less than the bondAtomType.
-          if (bioType.atomType < bondBioType.atomType) {
+          if (bioType.index < bondBioType.index) {
             froms.add(atom);
             tos.add(bond);
             bondCount++;
