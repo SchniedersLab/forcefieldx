@@ -140,7 +140,6 @@ public class OpenMMContext extends Context {
 
     this.atoms = atoms;
     update(integratorName, timeStep, temperature, true);
-    openMMSystem.setOpenMMContext(this);
   }
 
   /**
