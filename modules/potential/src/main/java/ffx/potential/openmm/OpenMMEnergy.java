@@ -40,6 +40,7 @@ package ffx.potential.openmm;
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
+import ffx.potential.FiniteDifferenceUtils;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Platform;
@@ -98,19 +99,9 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   private final Atom[] atoms;
   /**
-   * Truncate the normal OpenMM Lambda Path from 0 ... 1 to Lambda_Start ... 1. This is useful for
-   * conformational optimization if full removal of vdW interactions is not desired (i.e. lambdaStart
-   * = ~0.2).
+   * If true, compute dUdL.
    */
-  private double lambdaStart;
-  /**
-   * Use two-sided finite difference dU/dL.
-   */
-  private boolean twoSidedFiniteDifference = true;
-  /**
-   * Lambda step size for finite difference dU/dL.
-   */
-  private final double finiteDifferenceStepSize;
+  private final boolean computeDEDL;
 
   /**
    * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an OpenMM Platform while
@@ -146,16 +137,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     // Create the Context.
     openMMContext = new OpenMMContext(openMMPlatform, openMMSystem, atoms);
 
-    // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
-    lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
-    if (lambdaStart > 1.0) {
-      lambdaStart = 1.0;
-    } else if (lambdaStart < 0.0) {
-      lambdaStart = 0.0;
-    }
-
-    finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
-    twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", twoSidedFiniteDifference);
+    computeDEDL = forceField.getBoolean("OMM_DUDL", false);
   }
 
   /**
@@ -188,7 +170,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (nDevs == 1) {
       return devs[0];
     }
-    
+
     int index = 0;
     try {
       Comm world = Comm.world();
@@ -321,9 +303,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (!isFinite(e)) {
       String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
       logger.warning(message);
-      if (lambdaTerm) {
-        openMMSystem.printLambdaValues();
-      }
       throw new EnergyException(message);
     }
 
@@ -376,9 +355,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (!isFinite(e)) {
       String message = format(" Energy from OpenMM was a non-finite %8g", e);
       logger.warning(message);
-      if (lambdaTerm) {
-        openMMSystem.printLambdaValues();
-      }
       throw new EnergyException(message);
     }
 
@@ -545,60 +521,11 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   @Override
   public double getdEdL() {
     // No lambda dependence.
-    if (!lambdaTerm) {
+    if (!lambdaTerm || !computeDEDL) {
       return 0.0;
     }
 
-    // Small optimization to only create the x array once.
-    double[] x = new double[getNumberOfVariables()];
-    getCoordinates(x);
-
-    double currentLambda = getLambda();
-    double width = finiteDifferenceStepSize;
-    double ePlus;
-    double eMinus;
-
-    if (twoSidedFiniteDifference) {
-      if (currentLambda + finiteDifferenceStepSize > 1.0) {
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        setLambda(currentLambda);
-        ePlus = energy(x);
-      } else if (currentLambda - finiteDifferenceStepSize < 0.0) {
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda);
-        eMinus = energy(x);
-      } else {
-        // Two sided finite difference estimate of dE/dL.
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        width *= 2.0;
-        setLambda(currentLambda);
-      }
-    } else {
-      // One-sided finite difference estimates of dE/dL
-      if (currentLambda + finiteDifferenceStepSize > 1.0) {
-        setLambda(currentLambda - finiteDifferenceStepSize);
-        eMinus = energy(x);
-        setLambda(currentLambda);
-        ePlus = energy(x);
-      } else {
-        setLambda(currentLambda + finiteDifferenceStepSize);
-        ePlus = energy(x);
-        setLambda(currentLambda);
-        eMinus = energy(x);
-      }
-    }
-
-    // Compute the finite difference derivative.
-    double dEdL = (ePlus - eMinus) / width;
-
-    // logger.info(format(" getdEdL currentLambda: CL=%8.6f L=%8.6f dEdL=%12.6f", currentLambda,
-    // lambda, dEdL));
-    return dEdL;
+    return FiniteDifferenceUtils.computedEdL(this, this, molecularAssembly.getForceField());
   }
 
   /**
@@ -638,18 +565,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     openMMContext.setPeriodicBoxVectors(crystal);
   }
 
-  public void setLambdaStart(double lambdaStart) {
-    this.lambdaStart = lambdaStart;
-  }
-
-  public double getLambdaStart() {
-    return lambdaStart;
-  }
-
-  public void setTwoSidedFiniteDifference(boolean twoSidedFiniteDifference) {
-    this.twoSidedFiniteDifference = twoSidedFiniteDifference;
-  }
-
   /**
    * {@inheritDoc}
    */
@@ -660,37 +575,21 @@ public class OpenMMEnergy extends ForceFieldEnergy {
       return;
     }
 
-    // Check for lambda outside the range [0 .. 1].
-    if (lambda < 0.0 || lambda > 1.0) {
-      String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
-      logger.warning(message);
-      return;
-    }
-
     super.setLambda(lambda);
 
-    // Remove the beginning of the normal Lambda path.
-    double mappedLambda = lambda;
-    if (lambdaStart > 0) {
-      double windowSize = 1.0 - lambdaStart;
-      mappedLambda = lambdaStart + lambda * windowSize;
+    if (atoms != null) {
+      List<Atom> atomList = new ArrayList<>();
+      for (Atom atom : atoms) {
+        if (atom.applyLambda()) {
+          atomList.add(atom);
+        }
+      }
+      // Update force field parameters based on defined lambda values.
+      updateParameters(atomList.toArray(new Atom[0]));
+    } else {
+      updateParameters(null);
     }
 
-    if (openMMSystem != null) {
-      openMMSystem.setLambda(mappedLambda);
-      if (atoms != null) {
-        List<Atom> atomList = new ArrayList<>();
-        for (Atom atom : atoms) {
-          if (atom.applyLambda()) {
-            atomList.add(atom);
-          }
-        }
-        // Update force field parameters based on defined lambda values.
-        updateParameters(atomList.toArray(new Atom[0]));
-      } else {
-        updateParameters(null);
-      }
-    }
   }
 
   /**
@@ -702,7 +601,9 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     if (atoms == null) {
       atoms = this.atoms;
     }
-    openMMSystem.updateParameters(atoms);
+    if (openMMSystem != null) {
+      openMMSystem.updateParameters(atoms);
+    }
   }
 
   /**

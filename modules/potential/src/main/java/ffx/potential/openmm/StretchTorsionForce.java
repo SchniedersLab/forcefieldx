@@ -110,7 +110,8 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Stretch-Torsions  \t%6d\t\t%1d", stretchTorsions.length, forceGroup));
+    logger.info(format("  Stretch-Torsions:                  %10d", stretchTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

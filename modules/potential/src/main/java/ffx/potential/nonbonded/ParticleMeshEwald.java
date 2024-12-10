@@ -727,6 +727,22 @@ public class ParticleMeshEwald implements LambdaInterface {
     return elecForm;
   }
 
+  /**
+   * If true, there are alchemical atoms impacted by the lambda state variable.
+   *
+   * @return True if there are alchemical atoms impacted by the lambda state variable.
+   */
+  public boolean getLambdaTerm() {
+    return lambdaTerm;
+  }
+
+  /**
+   * Return the PME AlchemicalParameters.
+   */
+  public AlchemicalParameters getAlchemicalParameters() {
+    return alchemicalParameters;
+  }
+
   public void computeInduceDipoleField() {
     expandInducedDipoles();
 
@@ -846,13 +862,10 @@ public class ParticleMeshEwald implements LambdaInterface {
     alchemicalParameters.polarizationScale = 1.0;
 
     // Expand coordinates and rotate multipoles into the global frame.
-    initializationRegion.init(lambdaTerm, extendedSystem,
+    initializationRegion.init(lambdaTerm, alchemicalParameters, extendedSystem,
         atoms, coordinates, crystal, frame, axisAtom, globalMultipole,
-        dMultipoledTirationESV, dMultipoledTautomerESV,
-        polarizability, dPolardTitrationESV, dPolardTautomerESV,
-        thole, ipdamp, use, neighborLists,
-        realSpaceNeighborParameters.realSpaceLists,
-        alchemicalParameters.vaporLists,
+        dMultipoledTirationESV, dMultipoledTautomerESV, polarizability, dPolardTitrationESV, dPolardTautomerESV,
+        thole, ipdamp, use, neighborLists, realSpaceNeighborParameters.realSpaceLists,
         grad, torque, lambdaGrad, lambdaTorque);
     initializationRegion.executeWith(parallelTeam);
 
@@ -881,20 +894,23 @@ public class ParticleMeshEwald implements LambdaInterface {
       }
 
       // Condensed phase SCF without ligand atoms.
-      lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
-      double temp = energy;
-      energy = condensedNoLigandSCF();
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Condensed no ligand energy: %20.8f", energy - temp));
-      }
-
-      // Vapor ligand electrostatics.
-      if (alchemicalParameters.doLigandVaporElec) {
-        lambdaMode = LambdaMode.VAPOR;
-        temp = energy;
-        energy = ligandElec();
+      if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.OST) {
+        // Condensed phase SCF without ligand atoms.
+        lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
+        double temp = energy;
+        energy = condensedNoLigandSCF();
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(" Vacuum energy: %20.8f", energy - temp));
+          logger.fine(format(" Condensed no ligand energy: %20.8f", energy - temp));
+        }
+
+        // Vapor ligand electrostatics.
+        if (alchemicalParameters.doLigandVaporElec) {
+          lambdaMode = LambdaMode.VAPOR;
+          temp = energy;
+          energy = ligandElec();
+          if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Vacuum energy: %20.8f", energy - temp));
+          }
         }
       }
     }
@@ -905,7 +921,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     */
     if (gradient || lambdaTerm) {
       reduceRegion.init(lambdaTerm, gradient, atoms, coordinates, frame, axisAtom, grad, torque, lambdaGrad, lambdaTorque);
-      reduceRegion.excuteWith(parallelTeam);
+      reduceRegion.executeWith(parallelTeam);
     }
 
     // Log some timings.
@@ -1566,7 +1582,11 @@ public class ParticleMeshEwald implements LambdaInterface {
    * C. Polarization scaled by lambda.
    */
   private double condensedEnergy() {
-    if (lambda < alchemicalParameters.polLambdaStart) {
+    // Configure the polarization calculation.
+    if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.SCALE) {
+      alchemicalParameters.polarizationScale = 1.0;
+      alchemicalParameters.doPolarization = true;
+    } else if (lambda < alchemicalParameters.polLambdaStart) {
       /*
        If the polarization has been completely decoupled, the
        contribution of the complete system is zero.
@@ -1581,9 +1601,17 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.polarizationScale = 1.0;
       alchemicalParameters.doPolarization = true;
     }
-    alchemicalParameters.doPermanentRealSpace = true;
-    alchemicalParameters.permanentScale = alchemicalParameters.lPowPerm;
-    alchemicalParameters.dEdLSign = 1.0;
+
+    // Configure the permanent electrostatics calculation.
+    if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.SCALE) {
+      alchemicalParameters.doPermanentRealSpace = true;
+      alchemicalParameters.permanentScale = 1.0;
+      alchemicalParameters.dEdLSign = 1.0;
+    } else {
+      alchemicalParameters.doPermanentRealSpace = true;
+      alchemicalParameters.permanentScale = alchemicalParameters.lPowPerm;
+      alchemicalParameters.dEdLSign = 1.0;
+    }
 
     return computeEnergy(false);
   }

@@ -81,12 +81,14 @@ class MinimizeCrystals extends AlgorithmsScript {
   @Option(names = ["-c", "--coords"], paramLabel = 'false', defaultValue = "false",
       description = 'Cycle between lattice and coordinate optimization instead of optimizing both together.')
   boolean coords
+
   /**
    * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
    */
-  @Option(names = ["-f", "--fractional"], paramLabel = 'molecule', defaultValue = "MOLECULE",
+  @Option(names = ["-f", "--fractional"], paramLabel = 'OFF', defaultValue = "OFF",
       description = 'Maintain fractional coordinates during lattice optimization [OFF/MOLECULE/ATOM].')
   String fractional
+
   /**
    * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
    */

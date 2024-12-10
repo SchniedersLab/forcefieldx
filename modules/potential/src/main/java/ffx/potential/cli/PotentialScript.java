@@ -157,6 +157,9 @@ public abstract class PotentialScript extends FFXScript {
       potentialFunctions = new PotentialsUtils();
       binding.setVariable("functions", potentialFunctions);
       // Turn off log4j.
+      System.setProperty("log4j.threshold", "OFF");
+      System.setProperty("log4j.rootLogger", "OFF");
+      System.setProperty("log4j1.compatibility", "true");
       Properties properties = new Properties();
       properties.setProperty("log4j.threshold", "OFF");
       properties.setProperty("log4j2.level", "OFF");

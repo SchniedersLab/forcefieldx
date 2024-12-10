@@ -83,7 +83,8 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Improper Torsions \t%6d\t\t%1d", improperTorsions.length, forceGroup));
+    logger.info(format("  Improper Torsions:                 %10d", improperTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

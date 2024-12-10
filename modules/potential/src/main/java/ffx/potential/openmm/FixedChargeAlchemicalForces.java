@@ -119,8 +119,8 @@ public class FixedChargeAlchemicalForces {
     // Get the Alpha and Beta constants from the VanDerWaals instance.
     OpenMMSystem openMMSystem = openMMEnergy.getSystem();
 
-    double alpha = openMMSystem.getVdWSoftcoreAlpha();
-    double beta = openMMSystem.getVdwSoftcorePower();
+    double alpha = vdW.getAlpha();
+    double beta = vdW.getBeta();
 
     fixedChargeSoftcoreForce.addGlobalParameter("vdw_lambda", 1.0);
     fixedChargeSoftcoreForce.addGlobalParameter("alpha", alpha);

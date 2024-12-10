@@ -108,8 +108,8 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
 
     setForceGroup(forceGroup);
-
-    logger.log(Level.INFO, format("  Angle-Torsions  \t%6d\t\t%1d", angleTorsions.length, forceGroup));
+    logger.info(format("  Angle-Torsions:                    %10d", angleTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

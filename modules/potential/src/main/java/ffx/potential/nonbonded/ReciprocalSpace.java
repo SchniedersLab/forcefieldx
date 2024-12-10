@@ -573,7 +573,7 @@ public class ReciprocalSpace {
   /**
    * getXDim
    *
-   * @return a double.
+   * @return the X dimension of the FFT grid.
    */
   public int getXDim() {
     return fftX;
@@ -582,7 +582,7 @@ public class ReciprocalSpace {
   /**
    * getYDim
    *
-   * @return a double.
+   * @return the Y dimension of the FFT grid.
    */
   public int getYDim() {
     return fftY;
@@ -591,7 +591,7 @@ public class ReciprocalSpace {
   /**
    * getZDim
    *
-   * @return a double.
+   * @return the Z dimension of the FFT grid.
    */
   public int getZDim() {
     return fftZ;

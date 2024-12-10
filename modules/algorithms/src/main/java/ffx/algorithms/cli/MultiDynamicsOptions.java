@@ -303,13 +303,6 @@ public class MultiDynamicsOptions {
     ropt.setResiduesIgnoreNull(residueList);
 
     RotamerLibrary.measureRotamers(residueList, false);
-
-    boolean lazyMat = properties.getBoolean("ro-lazyMatrix", false);
-    if (!lazyMat) {
-      properties.clearProperty("ro-lazyMatrix");
-      properties.addProperty("ro-lazyMatrix", true);
-    }
-
     ropt.optimize(RotamerOptimization.Algorithm.ALL);
     ropt.setCoordinatesToEnsemble(rank);
 
@@ -322,10 +315,6 @@ public class MultiDynamicsOptions {
 
     if (lambdaInterface != null) {
       lambdaInterface.setLambda(initLam);
-    }
-
-    if (!lazyMat) {
-      properties.clearProperty("ro-lazyMatrix");
     }
   }
 

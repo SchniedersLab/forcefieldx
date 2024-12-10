@@ -66,8 +66,13 @@ public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
     }
 
     setSolventDielectric(gk.getSolventPermittivity());
+    double soluteDielectric = gk.getSolutePermittivity();
+    if (soluteDielectric != 1.0) {
+      logger.severe(" Solute dielectric is not 1.0, which is not supported by OpenMM.");
+    }
     setSoluteDielectric(1.0);
     setDielectricOffset(gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
+
 
     boolean usePerfectRadii = gk.getUsePerfectRadii();
     double perfectRadiiScale = 1.0;
@@ -181,7 +186,7 @@ public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
     double[] neckFactors = gk.getNeckScale();
 
     boolean nea = gk.getNativeEnvironmentApproximation();
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
 
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;

@@ -178,10 +178,9 @@ public class AmoebaVdwForce extends VdwForce {
       setNonbondedMethod(OpenMM_AmoebaVdwForce_CutoffPeriodic);
     }
 
-    if (openMMEnergy.getSystem().getVdwLambdaTerm()) {
-      boolean annihilate = forceField.getBoolean("intramolecular-softcore", false);
-      logger.info(" Annihilate intramolecular vdW interactions: " + annihilate);
-      if(annihilate) {
+    if (vdW.getLambdaTerm()) {
+      boolean annihilate = vdW.getIntramolecularSoftcore();
+      if (annihilate) {
         setAlchemicalMethod(OpenMM_AmoebaVdwForce_Annihilate);
       } else {
         setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
@@ -212,7 +211,9 @@ public class AmoebaVdwForce extends VdwForce {
 
     int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  AMOEBA van der Waals force \t\t%d", forceGroup));
+
+    logger.log(Level.INFO, vdW.toString());
+    logger.log(Level.FINE, format("   Force group:\t\t%d\n", forceGroup));
   }
 
   /**
