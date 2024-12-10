@@ -502,7 +502,7 @@ public class ForceField {
     }
     return anglepTypes;
   }
-  
+
   /**
    * getAngleType
    *
