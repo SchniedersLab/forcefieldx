@@ -11,7 +11,7 @@ class FindRestraints extends AlgorithmsScript{
     /**
      * --hostName Molecule name of the host in the file.
      */
-    @CommandLine.Option(names = ['--hostAtoms'], paramLabel = 'None',
+    @CommandLine.Option(names = ['--hostName'], paramLabel = 'None',
             description = 'Host molecule name in the file.')
     String hostName = "BCD"
 
