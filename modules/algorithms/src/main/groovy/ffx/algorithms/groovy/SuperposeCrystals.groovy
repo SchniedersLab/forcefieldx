@@ -444,7 +444,6 @@ class SuperposeCrystals extends AlgorithmsScript {
                   groupFound = true;
                   // Add all atoms from group that is too small to bonded atom's group.
                   for (Atom atomNeedingGroup : queueAtoms) {
-                    logger.warning(" Atom needs group: " + atomNeedingGroup.toString());
                     atomList.add(atomNeedingGroup);
                   }
                 }
@@ -477,7 +476,6 @@ class SuperposeCrystals extends AlgorithmsScript {
           }
         }
         if(!found){
-          logger.warning(" ATOM NOT INCLUDED: " + atom.toString());
           boolean groupFound = false;
           Bond[] bonds = atom.getBonds()
           // Find an atom bonded to atom.
