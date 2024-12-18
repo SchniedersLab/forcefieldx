@@ -103,8 +103,8 @@ class AnalyzeNEQ extends AlgorithmsScript {
   /**
    * --reFile --fileSelectionRegex Locate files that match a Regular expression (.* includes all files).
    */
-  @Option(names = ['--reFile', "--fileSelectionRegex"], paramLabel = ".*", defaultValue = "work.log",
-          description = 'Locate files that match a regular expression (\'.*\' matches all files).')
+  @Option(names = ['--reFile', "--fileSelectionRegex"], paramLabel = "work.log", defaultValue = "work.log",
+          description = 'Locate files that match a regular expression.')
   String reFile
 
   /**
@@ -182,6 +182,9 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     // Create BAR file
     String outputName = fdir.getBaseName() + "-" + rdir.getBaseName() + ".bar" // todo could be specified
+
+    // todo test if this output file (outputName) exists - if so delete it here (before writing a new one)
+
     File barFile = new File(".", "this.xyz")
     double temp = 300.0
     BARFilter barFilter = new BARFilter(barFile, fworks, new double[fworks.length], new double[rworks.length], rworks, new double[3], new double[3], temp)
@@ -241,44 +244,44 @@ class AnalyzeNEQ extends AlgorithmsScript {
     Collections.sort(files)
 
     int numFiles = files.size()
-    double[] works = new double[numFiles]
+    List<Double> works = new ArrayList<Double>();
     for (int i=0; i < numFiles; i++) {
-      File file = files.get(i)
-      if (!file.exists()) {
-        logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()))
-        continue
-      }
+    File file = files.get(i)
+    if (!file.exists()) {
+      logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()))
+      continue
+    }
 
-      String path = normalize(file.getAbsolutePath())
+    String path = normalize(file.getAbsolutePath())
 //      logger.info(format(" Current File: %s", path))
 
-      String workLine = ""
+    String workLine = ""
 
-      try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-        Pattern re = Pattern.compile(reSearch)
-        String line
+    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+      Pattern re = Pattern.compile(reSearch)
+      String line
 
-        while ((line = reader.readLine()) != null) {
-          Matcher matcher = re.matcher(line)
-          if (matcher.find()) {
+      while ((line = reader.readLine()) != null) {
+        Matcher matcher = re.matcher(line)
+        if (matcher.find()) {
 //            System.out.println(line)
-            workLine = line
-          }
+          workLine = line
         }
-      } catch (IOException e) {
-        System.err.println("Error reading file: " + e.getMessage())
       }
-      String[] workSplit = workLine.split()
+    } catch (IOException e) {
+      System.err.println("Error reading file: " + e.getMessage())
+    }
+    String[] workSplit = workLine.split()
 
-      if (workSplit.length != 4) {
-        logger.warning(format("%s line is NOT length four: \"%s\"", reSearch, workLine))
-        continue
-      }
-      if (reverseNeg) {
-        works[i] = workSplit[3].toDouble() * -1
-      } else {
-        works[i] = workSplit[3].toDouble()
-      }
+    if (workSplit.length != 4) {
+      logger.warning(format("%s line is NOT length four: \"%s\"", reSearch, workLine))
+      continue
+    }
+    if (reverseNeg) {
+        works.add(workSplit[3].toDouble() * -1)
+    } else {
+        works.add(workSplit[3].toDouble())
+    }
     }
 
     return works
