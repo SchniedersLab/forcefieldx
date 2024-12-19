@@ -91,14 +91,14 @@ class AnalyzeNEQ extends AlgorithmsScript {
    */
   @Option(names = ['--fDir', "--forwardDirPath"], paramLabel = ".", defaultValue = ".",
           description = 'Path to forward work directory.')
-  String forwardDir // Todo set as parameter instead of option
+  String forwardDir // Todo set as required instead of option
 
   /**
    * --fDir --forwardDirPath Path to reverse work directory.
    */
   @Option(names = ['--rDir', "--reverseDirPath"], paramLabel = ".", defaultValue = ".",
           description = 'Path to reverse work directory.')
-  String reverseDir // todo set as parameter instead of option
+  String reverseDir // todo set as required instead of option
 
   /**
    * --reFile --fileSelectionRegex Locate files that match a Regular expression (.* includes all files).
@@ -160,11 +160,6 @@ class AnalyzeNEQ extends AlgorithmsScript {
     }
     double[] fworks = grabWorks(ffiles)
 
-    logger.info("Forward works")
-    for (double w : fworks) {
-      logger.info(format("work: %f", w))
-    }
-
     // Collect the reverse works.
     File rdir = new File(reverseDir)
     List<File> rfiles = []
@@ -173,20 +168,13 @@ class AnalyzeNEQ extends AlgorithmsScript {
     }
     double[] rworks = grabWorks(rfiles)
 
-    logger.info("Reverse works")
-    for (double w : rworks) {
-      logger.info(format("work: %f", w))
-    }
-
     // Create BAR file
     String outputName = fdir.getBaseName() + "-" + rdir.getBaseName() + ".bar" // todo could be specified
-
-    // todo test if this output file (outputName) exists - if so delete it here (before writing a new one)
 
     File barFile = new File(".", "this.xyz")
     double temp = 300.0
     BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length], new double[3], new double[3], temp)
-    barFilter.writeFile(outputName, false) // todo this appends to a file if there already is one
+    barFilter.writeFile(outputName, false, false)
 
     // ffxc BAR --nw 2 --ni 10000 --useTinker end.pdb
     // Create a Binding for command line arguments.
