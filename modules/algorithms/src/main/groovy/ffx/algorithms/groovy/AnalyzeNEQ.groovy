@@ -158,7 +158,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
     fdir.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$reFile/) {
       ffiles.add(it)
     }
-    double[] fworks = grabWorks(ffiles, false)
+    double[] fworks = grabWorks(ffiles)
 
     logger.info("Forward works")
     for (double w : fworks) {
@@ -171,14 +171,12 @@ class AnalyzeNEQ extends AlgorithmsScript {
     rdir.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$reFile/) {
       rfiles.add(it)
     }
-    double[] rworks = grabWorks(rfiles, true)
+    double[] rworks = grabWorks(rfiles)
 
     logger.info("Reverse works")
     for (double w : rworks) {
       logger.info(format("work: %f", w))
     }
-
-    // todo - should have a check here or in the method grab works to get rid of non-work values in array (default will be zero) (e.g. if extra directory)
 
     // Create BAR file
     String outputName = fdir.getBaseName() + "-" + rdir.getBaseName() + ".bar" // todo could be specified
@@ -187,7 +185,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     File barFile = new File(".", "this.xyz")
     double temp = 300.0
-    BARFilter barFilter = new BARFilter(barFile, fworks, new double[fworks.length], new double[rworks.length], rworks, new double[3], new double[3], temp)
+    BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length], new double[3], new double[3], temp)
     barFilter.writeFile(outputName, false) // todo this appends to a file if there already is one
 
     // ffxc BAR --nw 2 --ni 10000 --useTinker end.pdb
@@ -239,7 +237,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
    * @param reverseNeg - boolean that controls whether to multiply the reverse works by -1
    * @return works - double array with work values from files
    */
-  double[] grabWorks(List<File> files, boolean reverseNeg) {
+  double[] grabWorks(List<File> files) {
     // Sort the files.
     Collections.sort(files)
 
@@ -277,11 +275,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
       logger.warning(format("%s line is NOT length four: \"%s\"", reSearch, workLine))
       continue
     }
-    if (reverseNeg) {
-        works.add(workSplit[3].toDouble() * -1)
-    } else {
-        works.add(workSplit[3].toDouble())
-    }
+      works.add(workSplit[3].toDouble())
     }
 
     return works
