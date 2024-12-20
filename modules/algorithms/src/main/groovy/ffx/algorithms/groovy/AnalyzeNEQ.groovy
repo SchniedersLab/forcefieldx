@@ -114,6 +114,13 @@ class AnalyzeNEQ extends AlgorithmsScript {
           description = 'Locate this regular expression in log files.')
   String reSearch
 
+  /**
+   * --reSearch --fileSearchRegex Maximum iterations for BAR calculation.
+   */
+  @Option(names = ['--bi', "--barIterations"], paramLabel = "100", defaultValue = "100",
+          description = 'Maximum iterations for BAR calculation.')
+  int barIterations
+
 //  /**
 //   * The final argument(s) should be filenames for lambda windows in order.
 //   */
@@ -172,7 +179,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
     String outputName = fdir.getBaseName() + "-" + rdir.getBaseName() + ".bar" // todo could be specified
 
     File barFile = new File(".", "this.xyz")
-    double temp = 300.0
+    double temp = 300.0 // todo could be specified
     BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length], new double[3], new double[3], temp)
     barFilter.writeFile(outputName, false, false)
 
@@ -185,7 +192,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
     commandArgs.add("--nw")
     commandArgs.add("2")
     commandArgs.add("--ni")
-    commandArgs.add("10000")
+    commandArgs.add(barIterations as String)
     commandArgs.add("--useTinker")
     commandArgs.add("--tinkerDir")
     commandArgs.add(outputName)
