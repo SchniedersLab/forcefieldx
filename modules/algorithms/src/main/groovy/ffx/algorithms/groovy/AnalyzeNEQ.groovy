@@ -37,68 +37,32 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import edu.rit.mp.DoubleBuf
-import edu.rit.mp.IntegerBuf
-import edu.rit.pj.Comm
-import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.crystal.Crystal
-import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.numerics.estimator.BennettAcceptanceRatio
-import ffx.numerics.estimator.EstimateBootstrapper
-import ffx.numerics.estimator.SequentialEstimator
-import ffx.numerics.math.BootStrapStatistics
-import ffx.potential.MolecularAssembly
 import ffx.potential.Utilities
-import ffx.potential.bonded.LambdaInterface
-import ffx.potential.cli.AlchemicalOptions
-import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.BARFilter
-import ffx.potential.parsers.SystemFilter
 import ffx.utilities.FFXScript
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.configuration2.Configuration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-import static ffx.utilities.Constants.NS2SEC
 import static groovy.io.FileType.FILES
-import static java.lang.Integer.MIN_VALUE
-import static java.lang.Integer.parseInt
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.normalize
-import static org.apache.commons.math3.util.FastMath.min
 
 /**
- * This script ...
+ * Performs analysis of Non-equilibrium work simulations. Takes directory paths to the forward and reverse work logs and
+ * uses them to create BAR files and calculate the BAR free energy difference.
  * <br>
  * Usage:
  * <br>
  * ffxc BAR [options] &lt;structures1&gt &lt;structures2&gt;
  */
-@Command(description = "Performs analysis of for NEQ simulations with work logs in directories ./1-N.", name = "AnalyzeNEQ")
+@Command(description = "Performs analysis of Non-equilibrium work simulations.", name = "AnalyzeNEQ")
 class AnalyzeNEQ extends AlgorithmsScript {
-
-  /**
-   * --fDir --forwardDirPath Path to forward work directory.
-   */
-  @Option(names = ['--fDir', "--forwardDirPath"], paramLabel = ".", defaultValue = ".",
-          description = 'Path to forward work directory.')
-  String forwardDir // Todo set as required instead of option
-
-  /**
-   * --fDir --forwardDirPath Path to reverse work directory.
-   */
-  @Option(names = ['--rDir', "--reverseDirPath"], paramLabel = ".", defaultValue = ".",
-          description = 'Path to reverse work directory.')
-  String reverseDir // todo set as required instead of option
 
   /**
    * --reFile --fileSelectionRegex Locate files that match a Regular expression (.* includes all files).
@@ -121,16 +85,12 @@ class AnalyzeNEQ extends AlgorithmsScript {
           description = 'Maximum iterations for BAR calculation.')
   int barIterations
 
-//  /**
-//   * The final argument(s) should be filenames for lambda windows in order.
-//   */
-//  @Parameters(arity = "1..*", paramLabel = "files",
-//      description = 'A single PDB/XYZ when windows are auto-determined (or two for dual topology). Two trajectory files for BAR between two ensembles (or four for dual topology).')
-//  List<String> filenames = null
-
-//  /** List of files */
-//  List<File> files
-
+  /**
+   * The final argument(s) should be filenames for lambda windows in order.
+   */
+  @Parameters(arity = "2", paramLabel = "path",
+      description = 'Two paths to directories. The first to the forward work directory and second to the reverse work directory.')
+  List<String> directories = null
 
   /**
    * BAR Constructor.
@@ -159,6 +119,9 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     int recurse = 1 // todo have as input option
 
+    String forwardDir = directories[0]
+    String reverseDir = directories[1]
+
     // Collect the forward works.
     File fdir = new File(forwardDir)
     List<File> ffiles = []
@@ -183,9 +146,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
     BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length], new double[3], new double[3], temp)
     barFilter.writeFile(outputName, false, false)
 
-    // ffxc BAR --nw 2 --ni 10000 --useTinker end.pdb
     // Create a Binding for command line arguments.
-    // String[] args = {"-I", "5", getResourcePath("5awl.pdb")};
     List<String> commandArgs = new ArrayList<>()
 
     // Options
@@ -199,11 +160,6 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     // Parameters
     commandArgs.add("test.pdb") // /Users/jakemiller/forcefieldx/examples/1EY0.pdb todo fix - coord file
-
-//    ClassLoader classLoader = getClass().getClassLoader()
-//    URL url = getClass().location
-//    URL url = classLoader.getResource("4icb_ca_a.xyz")
-//    commandArgs.add(url.getPath())
 
     Binding binding = new Binding()
     binding.setVariable("args", commandArgs)
@@ -246,7 +202,6 @@ class AnalyzeNEQ extends AlgorithmsScript {
     }
 
     String path = normalize(file.getAbsolutePath())
-//      logger.info(format(" Current File: %s", path))
 
     String workLine = ""
 
@@ -257,7 +212,6 @@ class AnalyzeNEQ extends AlgorithmsScript {
       while ((line = reader.readLine()) != null) {
         Matcher matcher = re.matcher(line)
         if (matcher.find()) {
-//            System.out.println(line)
           workLine = line
         }
       }
