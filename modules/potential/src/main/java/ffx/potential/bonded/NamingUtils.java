@@ -719,9 +719,7 @@ public class NamingUtils {
         hydrogen.get(i - 1).setName(format("H%d", i));
       }
     } else {
-//      throw new IllegalArgumentException(
-//              format(" Could not find nitrogen atom for residue %s!", residue));
-      logger.warning(format(" Mapping of nitrogen to residue (%s) failed. Trying to remap to molecule.", residue));
+      logger.fine(format(" Mapping of nitrogen to residue (%s) failed. Trying to remap to molecule.", residue));
       return false;
     }
     return true;
