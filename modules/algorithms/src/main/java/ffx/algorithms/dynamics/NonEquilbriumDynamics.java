@@ -65,6 +65,10 @@ public class NonEquilbriumDynamics {
    */
   private final double[] nonEquilibriumdUdLValues;
   /**
+   * The non-equilibrium work values.
+   */
+  private final double[] nonEquilibriumWorkValues;
+  /**
    * The total number of MD steps.
    */
   private long totalMDSteps = 1;
@@ -92,6 +96,15 @@ public class NonEquilbriumDynamics {
       nonEquilibriumLambdaValues[i] = i * (1.0 / nonEquilibriumLambdaSteps);
     }
     nonEquilibriumdUdLValues = new double[nonEquilibriumLambdaSteps + 1];
+    nonEquilibriumWorkValues = new double[nonEquilibriumLambdaSteps + 1];
+  }
+
+  /**
+   * Get the number of non-equilibrium lambda steps.
+   * @return The number of non-equilibrium lambda steps.
+   */
+  public int getNonEquilibriumLambdaSteps() {
+    return nonEquilibriumLambdaSteps;
   }
 
   /**
@@ -133,21 +146,38 @@ public class NonEquilbriumDynamics {
   }
 
   /**
-   * Set the dU/dL value for a given MD step.
+   * Set the work value for a given Lambda update.
    *
    * @param step The MD step number.
-   * @param dEdL The dU/dL value.
+   * @param work The work value.
+   * @param dUdL The dU/dL value.
    */
-  public void setdEdL(long step, double dEdL) {
+  public void setWork(long step, double work, double dUdL) {
     if (step == this.totalMDSteps) {
-      nonEquilibriumdUdLValues[nonEquilibriumLambdaSteps] = dEdL;
+      nonEquilibriumWorkValues[nonEquilibriumLambdaSteps] = work;
+      nonEquilibriumdUdLValues[nonEquilibriumLambdaSteps] = dUdL;
     } else if (isUpdateStep(step)) {
-      int currentLambdaBin = (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency);
-      nonEquilibriumdUdLValues[currentLambdaBin] = dEdL;
+      int currentLambdaBin = getCurrentLambdaBin(step);
+      nonEquilibriumWorkValues[currentLambdaBin] = work;
+      nonEquilibriumdUdLValues[currentLambdaBin] = dUdL;
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
           nonEquilibiumLambdaUpdateFrequency, step - 1));
     }
+  }
+
+  /**
+   * Get the total work for a given range of lambda bins.
+   * @param firstBin The first lambda bin.
+   * @param lastBin The last lambda bin.
+   * @return The total work.
+   */
+  public double getTotalWork(int firstBin, int lastBin) {
+    double totalWork = 0.0;
+    for (int i = firstBin; i <= lastBin; i++) {
+      totalWork += nonEquilibriumWorkValues[i];
+    }
+    return totalWork;
   }
 
   /**

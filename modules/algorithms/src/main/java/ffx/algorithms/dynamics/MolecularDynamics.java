@@ -1481,6 +1481,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     if (nonEquilibriumLambda) {
+      if (integrator instanceof Respa) {
+        logger.severe(" Non-equilibrium dynamics not supported with RESPA integrator.");
+      }
       // Configure the number of non-equilibrium dynamics.
       nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
@@ -1496,13 +1499,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
         MolecularAssembly assembly = molecularAssembly[0];
         double currentLambda = lambdaInterface.getLambda();
         double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-        nonEquilibriumDynamics.setdEdL(step, dEdL);
+        double currentEnergy = state.getPotentialEnergy();
         double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
         lambdaInterface.setLambda(newLambda);
-        double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG(0, nonEquilibriumDynamics.getCurrentLambdaBin(step));
-        double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
-        logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-            currentLambda, dG, deltaE, dEdL));
+        double newEnergy = potential.energyAndGradient(state.x(), state.gradient());
+        double dW = newEnergy - currentEnergy;
+        nonEquilibriumDynamics.setWork(step, dW, dEdL);
+        int currentBin = nonEquilibriumDynamics.getCurrentLambdaBin(step);
+        double work = nonEquilibriumDynamics.getTotalWork(0, currentBin);
+        double workTI = nonEquilibriumDynamics.getTrapezoidalDeltaG(0, currentBin);
+        logger.info(format(" Non-equilibrium L=%5.3f Work=%12.6f TI=%12.6f dE/dL=%12.6f",
+            newLambda, work, workTI, dEdL));
       }
 
       if (step > 1) {
@@ -1612,14 +1619,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
       MolecularAssembly assembly = molecularAssembly[0];
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-      nonEquilibriumDynamics.setdEdL(nSteps, dEdL);
-      double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG();
-      double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
+      nonEquilibriumDynamics.setWork(nSteps, 0.0, dEdL);
+      int lastBin = nonEquilibriumDynamics.getNonEquilibriumLambdaSteps();
+      double work = nonEquilibriumDynamics.getTotalWork(0, lastBin);
+      double workTI = nonEquilibriumDynamics.getTrapezoidalDeltaG();
       double lambda = lambdaInterface.getLambda();
-      logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-          lambda, dG, deltaE, dEdL));
-      logger.info(format(" Non-equilibrium Simpson dG=%12.6f", nonEquilibriumDynamics.getSimpsonDeltaG()));
-      logger.info(format(" Non-equilibrium Boole   dG=%12.6f", nonEquilibriumDynamics.getBooleDeltaG()));
+      logger.info(format(" Non-equilibrium L=%5.3f Work=%12.6f TI=%12.6f dE/dL=%12.6f",
+          lambda, work, workTI, dEdL));
+      logger.info(format(" Non-equilibrium Simpson TI=  %12.6f", nonEquilibriumDynamics.getSimpsonDeltaG()));
+      logger.info(format(" Non-equilibrium Boole   TI=  %12.6f", nonEquilibriumDynamics.getBooleDeltaG()));
     }
   }
 
