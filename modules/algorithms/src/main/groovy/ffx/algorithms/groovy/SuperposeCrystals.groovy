@@ -49,6 +49,7 @@ import picocli.CommandLine.Parameters
 
 import java.util.logging.Level
 
+import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.concat
 import static org.apache.commons.io.FilenameUtils.getBaseName
@@ -289,12 +290,17 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * List of atoms that have already been included for automatic symmetry generation.
    */
-  private List<Atom> previouslyIncluded = new ArrayList<>();
+  private List<Atom> previouslyIncludedBase = new ArrayList<>()
+
+//  /**
+//   * List of atoms that have already been included for automatic symmetry generation.
+//   */
+//  private List<Atom> previouslyIncludedTarget = new ArrayList<>()
 
   /**
-   * List of indicies that may be added to automatic symmetry generation.
+   * List of indices that may be added to automatic symmetry generation.
    */
-  private List<Integer> queueIndices = new ArrayList<>();
+  private List<Integer> queueIndices = new ArrayList<>()
 
   /**
    * CrystalSuperpose Test requires a public variable containing observables to test.
@@ -304,11 +310,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * Symmetry operators applied to
    */
-  public final StringBuilder symOpsA = new StringBuilder("");
+  public final StringBuilder symOpsA = new StringBuilder("")
   /**
    * Symmetry operators applied to
    */
-  public final StringBuilder symOpsB = new StringBuilder("");
+  public final StringBuilder symOpsB = new StringBuilder("")
 
   /**
    * CrystalSuperpose Constructor.
@@ -367,10 +373,10 @@ class SuperposeCrystals extends AlgorithmsScript {
               "\n PAC will compare all conformations in the first file to all those in the second file.\n")
       algorithmFunctions.openAll(filenames.get(1))
       targetFilter = algorithmFunctions.getFilter()
-      String filenameA = getBaseName(filenames.get(0));
-      String filenameB = getBaseName(filenames.get(1));
-      symOpsA.append(format("\n Add the following symop to properties/key file of %s (Apply on %s to generate %s):\nsymop", filenameA, filenameB, filenameA));
-      symOpsB.append(format("\n\n Add the following symop to properties/key file of %s (Apply on %s to generate %s):\nsymop", filenameB, filenameA, filenameB));
+      String filenameA = getBaseName(filenames.get(0))
+      String filenameB = getBaseName(filenames.get(1))
+      symOpsA.append(format("\n Add the following symop to properties/key file of %s (Apply on %s to generate %s):\nsymop", filenameA, filenameB, filenameA))
+      symOpsB.append(format("\n\n Add the following symop to properties/key file of %s (Apply on %s to generate %s):\nsymop", filenameB, filenameA, filenameB))
     }
 
     // Define the filename to use for the RMSD values.
@@ -378,20 +384,20 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".dst")
 
     if (zPrime > 0 && zPrime % 1 == 0) {
-      zPrime1 = zPrime;
-      zPrime2 = zPrime;
+      zPrime1 = zPrime
+      zPrime2 = zPrime
     }
 
     // Write sym and automatic sym generation both depend on calculating symmetry operators, set --ps if not already.
     if (printSym < 0 && writeSym || autoSym ) {
-      logger.info("\n Printing distance for atoms greater than large distance of 10.0 Å");
-      printSym = 10.0;
+      logger.info("\n Printing distance for atoms greater than large distance of 10.0 Å")
+      printSym = 10.0
     }
 
     if(createFE){
       // TODO see about caching entire assemblies rather than pieces.
       // Need assembly to generate subdirectories. Caching ignores assemblies.
-      lowMemory = true;
+      lowMemory = true
     }
 
     // The autoSym flag is heuristic based... May need updated as more structures are tested.
@@ -400,137 +406,205 @@ class SuperposeCrystals extends AlgorithmsScript {
     if(autoSym) {
       // Reduce logging to final groups if using default logging (small group PAC produces a lot of logging).
       boolean loggerLevelChanged = false
-      if(logger.isLoggable(Level.INFO) && !logger.isLoggable(Level.FINE)){
-        loggerLevelChanged = true;
-        logger.setLevel(Level.WARNING);
+      if (logger.isLoggable(Level.INFO) && !logger.isLoggable(Level.FINE)) {
+        loggerLevelChanged = true
+        logger.setLevel(Level.WARNING)
       }
       // List to contain atoms that have already been grouped. Therefore, skip for future groups.
-      final Atom[] atoms = baseFilter.getActiveMolecularSystem().getAtomArray();
-      final int nAtoms = atoms.length;
+      final Atom[] atomsBase = baseFilter.getActiveMolecularSystem().getAtomArray()
+      final Atom[] atomsTarget = targetFilter.getActiveMolecularSystem().getAtomArray()
+      final int nAtomsBase = atomsBase.length
+      final int nAtomsTarget = atomsTarget.length
+
       // Need 3 atoms to define multipole axes of sym groups, if less, combine groups until sufficient.
       // Retain list of small groups to combine into larger groups later.
-      List<List<Atom>> smallAtomGroups = new ArrayList<ArrayList<Atom>>();
+      List<List<Atom>> smallAtomGroups = new ArrayList<ArrayList<Atom>>()
       // Record small group RMSD to know if they can be combined (if RMSD > tolerance, then should be independent group).
-      List<Double> smallGroupsRMSD = new ArrayList<Double>();
+      List<Double> smallGroupsRMSD = new ArrayList<Double>()
+
+      List<Atom> mapBaseAtoms = new ArrayList<Atom>()
+      List<Integer> mapBaseIndices = new ArrayList<Integer>()
+      List<Atom> mapTargetAtoms = new ArrayList<Atom>()
+      List<Integer> mapTargetIndices = new ArrayList<Integer>()
+      // Check for alchemical atom selections.
+      if (!excludeAtoms.isEmpty()) {
+        List<Integer> alchAtoms = parseAtomRanges("AutoSym", excludeAtoms, nAtomsBase)
+        for (int i = 0; i < nAtomsBase-1; i++) {
+          if(!alchAtoms.contains(i + 1)) {
+            logger.warning(format(" Include Atoms for both:\n %s\n %s.", atomsBase[i].toString(), atomsTarget[i].toString()))
+            mapBaseIndices.add(i + 1);
+            mapBaseAtoms.add(atomsBase[i])
+            mapTargetIndices.add(i + 1);
+            mapTargetAtoms.add(atomsTarget[i])
+          }else{
+            previouslyIncludedBase.add(atomsBase[i])
+//            previouslyIncludedTarget.add(atomsTarget[i])
+          }
+        }
+        //TODO update alch selection to include independent alch atoms for individual systems.
+      } else if (!excludeAtomsA.isEmpty() || !excludeAtomsB.isEmpty()) {
+        logger.warning(format(" Independent alchemical atoms has not been implemented."))
+//        List<Integer> alchAtomsBase = parseAtomRanges("AutoSymBase", excludeAtomsA, nAtomsBase)
+//        for (int i = 0; i < nAtomsBase-1; i++) {
+//          if(!alchAtomsBase.contains(i + 1)) {
+//            logger.warning(format(" Include Atoms for base:\n %s.", atomsBase[i].toString()))
+//            mapBaseIndices.add(i + 1);
+//            mapBaseAtoms.add(atomsBase[i])
+//          }else{
+//            previouslyIncludedBase.add(atomsBase[i])
+//          }
+//        }
+//        List<Integer> alchAtomsTarget = parseAtomRanges("AutoSymTarget", excludeAtomsB, nAtomsTarget)
+//        for (int i = 0; i < nAtomsTarget-1; i++) {
+//          if(!alchAtomsTarget.contains(i + 1)) {
+//            logger.warning(format(" Include Atoms for target:\n %s.", atomsTarget[i].toString()))
+//            mapTargetIndices.add(i + 1);
+//            mapTargetAtoms.add(atomsTarget[i])
+//          }else{
+//            previouslyIncludedTarget.add(atomsTarget[i])
+//          }
+//        }
+      }
+      assert(mapBaseIndices.size() == mapBaseAtoms.size())
+      assert(mapTargetIndices.size() == mapTargetAtoms.size())
+      if(mapBaseAtoms.size() != mapTargetAtoms.size()){
+        logger.warning(format(" Error in atom selection. Base size of %3d does not match Target size of %3d.", mapBaseAtoms.size(), mapTargetAtoms.size()))
+        if(logger.isLoggable(Level.FINE)){
+          StringBuilder sb = new StringBuilder();
+          for(Integer ind : mapBaseIndices){
+            sb.append(ind).append(",")
+          }
+          sb.append("\n")
+          logger.fine(" Base indices:" + sb.toString())
+          sb.setLength(0);
+          for(Integer ind : mapTargetIndices){
+            sb.append(ind).append(",")
+          }
+          sb.append("\n")
+          logger.fine(" Target indices:" + sb.toString())
+        }
+        return;
+      }
       // Loop through atoms in system.
-      for (Atom a : atoms) {
+      for (Atom a : atomsBase) {
         // Skip if already included.
-        if (previouslyIncluded.contains(a)) {
-          continue;
+        if (previouslyIncludedBase.contains(a)) {
+          continue
         }
         // Clear queued indices if there are already any atoms included.
-        queueIndices.clear();
+        queueIndices.clear()
         // Add this atom to list (recursive method).
-        addAtomIndex(a);
+        addAtomIndex(a)
 
-        ArrayList<Atom> queueAtoms = new ArrayList<Atom>();
+        ArrayList<Atom> queueAtoms = new ArrayList<Atom>()
         for (Integer index : queueIndices) {
           // Indices are human readable ergo (-1).
-          queueAtoms.add(atoms[index - 1]);
+          queueAtoms.add(atomsBase[index - 1])
         }
 
         // This is a kludgy fail safe... Essentially throw inappropriately grouped atoms with a bonded atom's group.
         if (queueAtoms.size() < 3) {
-          boolean groupFound = false;
+          boolean groupFound = false
           // Loop through group that is too small to satisfy multipoles.
           for (Atom atom : queueAtoms) {
             Bond[] bonds = atom.getBonds()
             // Find an atom bonded to atom in this group.
             for (Bond bond : bonds) {
-              Atom atomGrouped = bond.get1_2(atom);
+              Atom atomGrouped = bond.get1_2(atom)
               // Find small group corresponding to bonded atom.
               for (List<Atom> atomList : smallAtomGroups) {
                 if (atomList.contains(atomGrouped)) {
-                  groupFound = true;
+                  groupFound = true
                   // Add all atoms from group that is too small to bonded atom's group.
                   for (Atom atomNeedingGroup : queueAtoms) {
-                    atomList.add(atomNeedingGroup);
+                    atomList.add(atomNeedingGroup)
                   }
                 }
                 if (groupFound) {
-                  break;
+                  break
                 }
               }
               if (groupFound) {
-                break;
+                break
               }
             }
             if (groupFound) {
-              break;
+              break
             }
           }
         } else {
           // This is the normal/expected behavior assuming correct group size.
-          smallAtomGroups.add(queueAtoms);
+          smallAtomGroups.add(queueAtoms)
         }
       }
 
       // Check for atoms that have not been included (this code should not be needed... Seems like -N- or -O- ).
-      for (int i = 0; i < nAtoms; i++) {
-        Atom atom = atoms[i]
-        boolean found = false;
+      for (int i = 0; i < nAtomsBase; i++) {
+        Atom atom = atomsBase[i]
+        boolean found = false
         for(List<Atom> list : smallAtomGroups) {
           if(list.contains(atom)){
-            found = true;
-            break;
+            found = true
+            break
           }
         }
         if(!found){
-          boolean groupFound = false;
+          boolean groupFound = false
           Bond[] bonds = atom.getBonds()
           // Find an atom bonded to atom.
           for (Bond bond : bonds) {
-            Atom atomGrouped = bond.get1_2(atom);
+            Atom atomGrouped = bond.get1_2(atom)
             // Find small group corresponding to bonded atom.
             for (List<Atom> atomList : smallAtomGroups) {
               if (atomList.contains(atomGrouped)) {
-                groupFound = true;
+                groupFound = true
                 // Add atom to bonded atom's group.
-                atomList.add(atom);
+                atomList.add(atom)
               }
               if (groupFound) {
-                break;
+                break
               }
             }
             if (groupFound) {
-              break;
+              break
             }
           }
         }
       }
 
       // Atoms have been grouped into sufficient groups of minimal size.
-      StringBuilder sb = new StringBuilder(" Small Groups:\n");
+      StringBuilder sb = new StringBuilder(" Small Groups:\n")
       for(ArrayList<Atom> group: smallAtomGroups){
         // Run PAC to assess small group selection.
-        ArrayList<Integer> includeIndices = new ArrayList<>();
-        sb.append(" New Group: ");
+        ArrayList<Integer> includeIndices = new ArrayList<>()
+        sb.append(" New Group: ")
         for(Atom atom: group){
-          sb.append(atom.getIndex() + ", ");
-          includeIndices.add(atom.getIndex());
+          sb.append(atom.getIndex() + ", ")
+          includeIndices.add(atom.getIndex())
         }
-        sb.append("\n");
+        sb.append("\n")
 
-        excludeAtoms = "";
+        excludeAtoms = ""
 
-        for (int i = 0; i < nAtoms; i++) {
-          int ind = i + 1;
+        for (int i = 0; i < nAtomsBase; i++) {
+          int ind = i + 1
           if (!includeIndices.contains(ind) && excludeAtoms.length() == 0) {
-            excludeAtoms = ind;
+            excludeAtoms = ind
           } else if (!includeIndices.contains(ind)) {
-            excludeAtoms += "," + ind;
+            excludeAtoms += "," + ind
           }
         }
         // Apply atom selections
+        // Check the following branch. Is necessary?
         if (excludeAtoms == null && excludeAtoms.isEmpty()) {
-          continue;
+          continue
         } else {
           excludeAtomsA = excludeAtoms
           excludeAtomsB = excludeAtoms
         }
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine("A: " + excludeAtomsA);
-          logger.fine("B: " + excludeAtomsB);
+          logger.fine("A: " + excludeAtomsA)
+          logger.fine("B: " + excludeAtomsB)
         }
 
         // Compare structures in baseFilter and targetFilter.
@@ -541,93 +615,93 @@ class SuperposeCrystals extends AlgorithmsScript {
                         alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
                         restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
                         lowMemory, createFE, false, pacFilename, new StringBuilder(""), new StringBuilder(""))
-        double min = runningStatistics.min;
+        double min = runningStatistics.min
         smallGroupsRMSD.add(min)
       }
-      logger.info(sb.toString());
-      int numGroups = smallAtomGroups.size();
+      logger.info(sb.toString())
+      int numGroups = smallAtomGroups.size()
       if(logger.isLoggable(Level.FINE)){
-        logger.fine(format(" Number of minimal groups: %3d", numGroups));
+        logger.fine(format(" Number of minimal groups: %3d", numGroups))
       }
-      int[][] smallIndexGroups = new int[numGroups][];
+      int[][] smallIndexGroups = new int[numGroups][]
       // Small atom groups are set. Create jagged array containing indices.
       for(int i = 0; i < numGroups; i++){
         // Obtain atoms for this group.
-        ArrayList<Atom> currentAtoms = smallAtomGroups.get(i);
+        ArrayList<Atom> currentAtoms = smallAtomGroups.get(i)
         // Determine size of this row.
         int currentSize = currentAtoms.size()
-        smallIndexGroups[i] = new int[currentSize];
+        smallIndexGroups[i] = new int[currentSize]
         // Add indices of atoms to this row.
         for(int j = 0; j < currentSize; j++){
-          smallIndexGroups[i][j] = currentAtoms.get(j).getIndex();
+          smallIndexGroups[i][j] = currentAtoms.get(j).getIndex()
         }
       }
       // Object to hold the final groups to be symmetry operated.
-      ArrayList<ArrayList<Integer>> finalGroups = new ArrayList<>();
+      ArrayList<ArrayList<Integer>> finalGroups = new ArrayList<>()
       // Atoms that will be included in this group.
-      ArrayList<Integer> acceptedAtoms = new ArrayList<>();
+      ArrayList<Integer> acceptedAtoms = new ArrayList<>()
       // Atoms to attempt to include in this group.
-      ArrayList<Integer> queuedIndices = new ArrayList<>();
+      ArrayList<Integer> queuedIndices = new ArrayList<>()
       // Groups that have already been mapped.
-      ArrayList<Integer> usedGroups = new ArrayList<>();
+      ArrayList<Integer> usedGroups = new ArrayList<>()
       // Loop through each of the small atom groups.
       for(int i = 0; i < numGroups; i++) {
-        ArrayList<Atom> currentAtomGroup = smallAtomGroups.get(i);
-        ArrayList<Integer> currentIndexGroup = smallIndexGroups[i];
-        int numAtomsInGroup = currentAtomGroup.size();
+        ArrayList<Atom> currentAtomGroup = smallAtomGroups.get(i)
+        ArrayList<Integer> currentIndexGroup = smallIndexGroups[i]
+        int numAtomsInGroup = currentAtomGroup.size()
         // Reset object lists for new group to be added to finalGroups.
-        acceptedAtoms.clear();
-        queuedIndices.clear();
+        acceptedAtoms.clear()
+        queuedIndices.clear()
         if(logger.isLoggable(Level.FINE)) {
           logger.fine(format(" Minimal group number: %3d Size: %3d RMSD: %9.3f", i, numAtomsInGroup, smallGroupsRMSD.get(i)))
         }
         if (!usedGroups.contains(i)) {
           // Add current group under consideration to accepted atoms.
           for (Integer index : currentIndexGroup) {
-            acceptedAtoms.add(index);
+            acceptedAtoms.add(index)
           }
-          usedGroups.add(i);
+          usedGroups.add(i)
           // Groups already above symTolerance cannot be added to other groups and are included outright.
           if (smallGroupsRMSD.get(i) > symTolerance) {
             if(logger.isLoggable(Level.FINE)) {
-              logger.fine(format(" Run (group) %3d added outright to final.", i));
+              logger.fine(format(" Run (group) %3d added outright to final.", i))
             }
           }else{
             for (int j = 0; j < acceptedAtoms.size(); j++){
-              Atom a1 = atoms[acceptedAtoms.get(j) - 1];
+              Atom a1 = atomsBase[acceptedAtoms.get(j) - 1]
               if(logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Current group: %3d Atom in Group: %3d of %3d (was %3d==%3d) Atom Index: %3d", i, j, acceptedAtoms.size(), numAtomsInGroup, currentIndexGroup.size(), a1.getIndex()));
+                logger.fine(format(" Current group: %3d Atom in Group: %3d of %3d (was %3d==%3d) Atom Index: %3d", i, j, acceptedAtoms.size(), numAtomsInGroup, currentIndexGroup.size(), a1.getIndex()))
               }
-              Bond[] b1 = a1.getBonds();
+              Bond[] b1 = a1.getBonds()
               // Traverse bonds to find adjacent small groups.
               for (Bond b : b1) {
-                Atom a2 = b.get1_2(a1);
-                int a2Index = a2.getIndex();
+                Atom a2 = b.get1_2(a1)
+                int a2Index = a2.getIndex()
                 // If atom is encountered that is not currently in this group, evaluate to see if it should be added.
                 if (!currentIndexGroup.contains(a2Index)) {
                   // Find the group that this new atom belongs.
                   for (int k = 0; k < numGroups; k++) {
-                    ArrayList<Integer> currentIndexGroup2 = smallIndexGroups[k];
+                    ArrayList<Integer> currentIndexGroup2 = smallIndexGroups[k]
                     // Group cannot be added to two separate sym ops.
                     // If sym is greater than tolerance it cannot be added.
                     // If atom is not included in this group, go to next.
                     if(!usedGroups.contains(k) && smallGroupsRMSD[k] < symTolerance && currentIndexGroup2.contains(a2Index)) {
                       // Attempt to add group containing bonded atom to current group.
                       for (Integer ind : currentIndexGroup2) {
-                        queuedIndices.add(ind);
+                        queuedIndices.add(ind)
                       }
                       // Create exclusion strings to isolate desired atoms in PAC.
-                      excludeAtoms = "";
-                      for (int l = 0; l < nAtoms; l++) {
-                        int ind = l + 1;
+                      excludeAtoms = ""
+                      for (int l = 0; l < nAtomsBase; l++) {
+                        int ind = l + 1
                         // Any atoms that are not in the accepted or queued lists should be excluded.
                         boolean exclude = !acceptedAtoms.contains(ind) && !queuedIndices.contains(ind)
                         if (exclude) {
                           // Format input string to PAC.
                           if (excludeAtoms.length() == 0) {
-                            excludeAtoms = ind;
+                            excludeAtoms = ind
                           } else {
-                            excludeAtoms += "," + ind;
+                            excludeAtoms += "," + ind
                           }
                         }
                       }
@@ -636,8 +710,8 @@ class SuperposeCrystals extends AlgorithmsScript {
                       excludeAtomsB = excludeAtoms
 
                       if(logger.isLoggable(Level.FINE)) {
-                        logger.fine(" Excluded atoms A: " + excludeAtomsA);
-                        logger.fine(" Excluded atoms B: " + excludeAtomsB);
+                        logger.fine(" Excluded atoms A: " + excludeAtomsA)
+                        logger.fine(" Excluded atoms B: " + excludeAtomsB)
                       }
 
                       // Compare structures in baseFilter and targetFilter.
@@ -648,24 +722,24 @@ class SuperposeCrystals extends AlgorithmsScript {
                                       alphaCarbons, includeHydrogen, massWeighted, crystalPriority, thorough, saveClusters, save,
                                       restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
                                       lowMemory, createFE, false, pacFilename, new StringBuilder(""), new StringBuilder(""))
-                      double min = runningStatistics.min;
+                      double min = runningStatistics.min
                       if (min > symTolerance) {
                         // Group should not be added as it increased RMSD beyond tolerance.
                         if(logger.isLoggable(Level.FINE)) {
-                          logger.fine(format(" Run %3d Group %3d failed with RMSD %9.3f > tolerance (%9.3f).", i, k, min, symTolerance));
+                          logger.fine(format(" Run %3d Group %3d failed with RMSD %9.3f > tolerance (%9.3f).", i, k, min, symTolerance))
                         }
-                        queuedIndices.clear();
+                        queuedIndices.clear()
                       } else {
                         // Satisfied RMSD cutoff, therefore add to accepted atoms.
                         for (Integer value : queuedIndices) {
                           if (!acceptedAtoms.contains(value)) {
-                            acceptedAtoms.add(value);
+                            acceptedAtoms.add(value)
                           }
                         }
                         if(logger.isLoggable(Level.FINE)) {
-                          logger.fine(format(" Run %3d Group %3d added to accepted with RMSD: %9.3f.", i, k, min));
+                          logger.fine(format(" Run %3d Group %3d added to accepted with RMSD: %9.3f.", i, k, min))
                         }
-                        usedGroups.add(k);
+                        usedGroups.add(k)
                       }
                     }
                   }
@@ -673,7 +747,7 @@ class SuperposeCrystals extends AlgorithmsScript {
               }
             }
           }
-          finalGroups.add((ArrayList<Integer>) acceptedAtoms.clone());
+          finalGroups.add((ArrayList<Integer>) acceptedAtoms.clone())
           if(logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Run %3d accepted atoms (size: %3d) added to finalGroups (size: %3d)", i, acceptedAtoms.size(), finalGroups.size()))
           }
@@ -686,37 +760,37 @@ class SuperposeCrystals extends AlgorithmsScript {
 
       // Small atom groups finished. Update logging for final groups.
       if(loggerLevelChanged){
-        logger.setLevel(Level.INFO);
+        logger.setLevel(Level.INFO)
       }
       for (ArrayList<Integer> group : finalGroups) {
-        int groupSize = group.size();
+        int groupSize = group.size()
         if(logger.isLoggable(Level.FINE)){
           logger.fine(format(" Final Size: %3d", groupSize))
         }
         // Skip groups with size of zero. THIS SHOULD NEVER OCCUR.
         if(groupSize <= 0){
           logger.warning(" Final group of size zero was encountered. Check selection logic.")
-          continue;
+          continue
         }
-        queuedIndices.clear();
+        queuedIndices.clear()
         for(Integer ind : group){
-          queuedIndices.add(ind);
+          queuedIndices.add(ind)
         }
-        excludeAtoms = "";
-        for (int l = 0; l < nAtoms; l++) {
-          int ind = l + 1;
+        excludeAtoms = ""
+        for (int l = 0; l < nAtomsBase; l++) {
+          int ind = l + 1
           if (!queuedIndices.contains(ind) && excludeAtoms.length() == 0) {
-            excludeAtoms = ind;
+            excludeAtoms = ind
           } else if (!queuedIndices.contains(ind)) {
-            excludeAtoms += "," + ind;
+            excludeAtoms += "," + ind
           }
         }
         // Apply atom selections
         excludeAtomsA = excludeAtoms
         excludeAtomsB = excludeAtoms
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine("A: " + excludeAtomsA);
-          logger.fine("B: " + excludeAtomsB);
+          logger.fine("A: " + excludeAtomsA)
+          logger.fine("B: " + excludeAtomsB)
         }
 
         // Compare structures in baseFilter and targetFilter.
@@ -755,15 +829,15 @@ class SuperposeCrystals extends AlgorithmsScript {
         symOpsB.setLength(finalCharB)
       }
       if (symOpsA.contains("\\") && symOpsB.contains("\\")) {
-        logger.info(symOpsA.toString() + symOpsB.toString());
+        logger.info(symOpsA.toString() + symOpsB.toString())
       } else if (logger.isLoggable(Level.FINE)) {
         logger.fine(" Following generated SymOp strings did not contain symmetry operators." + symOpsA.toString() + symOpsB.toString())
       }
     }
 
     // Close readers.
-    baseFilter.closeReader();
-    targetFilter.closeReader();
+    baseFilter.closeReader()
+    targetFilter.closeReader()
     return this
   }
 
@@ -773,38 +847,38 @@ class SuperposeCrystals extends AlgorithmsScript {
    * @return
    */
   private void addAtomIndex(Atom aAdded){
-    if(!previouslyIncluded.contains(aAdded)) {
-      queueIndices.add(aAdded.getIndex());
-      previouslyIncluded.add(aAdded)
-      int numBondsAdded = aAdded.getNumBonds();
-      int numHAdded = aAdded.getNumberOfBondedHydrogen();
-      int nonHbonds = numBondsAdded - numHAdded;
+    if(!previouslyIncludedBase.contains(aAdded)) {
+      queueIndices.add(aAdded.getIndex())
+      previouslyIncludedBase.add(aAdded)
+      int numBondsAdded = aAdded.getNumBonds()
+      int numHAdded = aAdded.getNumberOfBondedHydrogen()
+      int nonHbonds = numBondsAdded - numHAdded
 
-      Bond[] bonds4Added = aAdded.getBonds();
+      Bond[] bonds4Added = aAdded.getBonds()
       for (Bond b : bonds4Added) {
-        Atom aBound2Added = b.get1_2(aAdded);
+        Atom aBound2Added = b.get1_2(aAdded)
         if (nonHbonds == 1) {
           // If only bond to group add (e.g., -O-CH3, -O-NH2).
           addAtomIndex(aBound2Added)
           for (Bond bAdded : bonds4Added) {
-            Atom a3 = bAdded.get1_2(aAdded);
+            Atom a3 = bAdded.get1_2(aAdded)
             if (a3.isHydrogen()) {
               addAtomIndex(a3)
             }
           }
         }
 
-        int numBondsB2A = aBound2Added.getNumBonds();
-        int numHB2A = aBound2Added.getNumberOfBondedHydrogen();
-        int nonHB2A = numBondsB2A - numHB2A;
-        Bond[] bondsB2A = aBound2Added.getBonds();
+        int numBondsB2A = aBound2Added.getNumBonds()
+        int numHB2A = aBound2Added.getNumberOfBondedHydrogen()
+        int nonHB2A = numBondsB2A - numHB2A
+        Bond[] bondsB2A = aBound2Added.getBonds()
         if (nonHB2A == 1) {
           // If only bond to group add (e.g., -O-CH3, -O-NH2).
-          addAtomIndex(aBound2Added);
+          addAtomIndex(aBound2Added)
           for (Bond b2a : bondsB2A) {
-            Atom aBond2B2A = b2a.get1_2(aBound2Added);
+            Atom aBond2B2A = b2a.get1_2(aBound2Added)
             if (aBond2B2A.isHydrogen()) {
-              addAtomIndex(aBond2B2A);
+              addAtomIndex(aBond2B2A)
             }
           }
         } else if (numBondsAdded == 1 || numBondsB2A == 1) {
@@ -814,20 +888,20 @@ class SuperposeCrystals extends AlgorithmsScript {
           // If second atom is only connected to this and one other group add (e.g., )
           addAtomIndex(aBound2Added)
           for (Bond b2a : bondsB2A) {
-            Atom aBond2B2A = b2a.get1_2(aBound2Added);
+            Atom aBond2B2A = b2a.get1_2(aBound2Added)
             if (aBond2B2A.isHydrogen()) {
-              addAtomIndex(aBond2B2A);
+              addAtomIndex(aBond2B2A)
             }
           }
         } else {
           // TODO handle higher order bonds and aromaticity.
           // Look for 1_3 atoms that solely attach to a2 (e.g., -C=O-NH2, -C=0-CH3)
           for (Bond b2a : bondsB2A) {
-            Atom aBond2B2A = b2a.get1_2(aBound2Added);
+            Atom aBond2B2A = b2a.get1_2(aBound2Added)
             if (!aBond2B2A.isHydrogen() && nonHbonds == 1) {
-              int numBonds2B2A = aBond2B2A.getNumBonds();
+              int numBonds2B2A = aBond2B2A.getNumBonds()
               if ((numBonds2B2A == 1) && (aBond2B2A.isBonded(aBound2Added) || aBond2B2A.isBonded(aAdded))) {
-                addAtomIndex(aBond2B2A);
+                addAtomIndex(aBond2B2A)
               }
             }
           }
