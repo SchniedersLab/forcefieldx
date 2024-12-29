@@ -79,6 +79,13 @@ class WriteRestraints extends PotentialScript {
   double fbDistance = 0.0
 
   /**
+   * --eh or --excludeHydrogen to exclude writing restraints for hydrogen atoms.
+   */
+  @Option(names = ['--eh', '--excludeHydrogen'], defaultValue = 'false', paramLabel = 'false',
+      description = 'Exclude writing restraints for hydrogen atoms.')
+  boolean excludeHydrogen = false
+
+  /**
    * -s or --select Select every ith restraint. 
    */
   @Option(names = ['-s', '--select'], defaultValue = '1', paramLabel = '1',
@@ -156,11 +163,15 @@ class WriteRestraints extends PotentialScript {
             continue
           }
 
+          if (excludeHydrogen && atom.isHydrogen()) {
+            continue
+          }
+
           if (count % select == 0) {
             double x = atom.getX()
             double y = atom.getY()
             double z = atom.getZ()
-            logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f %12.8f %12.8f",
+            logger.info(format("restrain-position %4d %19.15f %19.15f %19.15f %12.8f %12.8f",
                 atom.getIndex(), x, y, z, forceConstant, fbDistance))
           }
           count++
@@ -169,11 +180,16 @@ class WriteRestraints extends PotentialScript {
     } else {
       Atom[] atoms = activeAssembly.getAtomArray()
       for (Atom atom : atoms) {
+
+        if (excludeHydrogen && atom.isHydrogen()) {
+          continue
+        }
+
         if (count % select == 0) {
           double x = atom.getX()
           double y = atom.getY()
           double z = atom.getZ()
-          logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f %12.8f %12.8f",
+          logger.info(format("restrain-position %4d %19.15f %19.15f %19.15f %12.8f %12.8f",
               atom.getIndex(), x, y, z, forceConstant, fbDistance))
         }
         count++

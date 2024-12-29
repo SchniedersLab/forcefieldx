@@ -105,14 +105,14 @@ public class TinkerUtils {
         int start = Integer.parseInt(m.group(1));
         ++i;
         if (i == n) {
-          logger.info(format(
+          logger.fine(format(
                   " Attempted to parse -%d as a Tinker-style range, but it was ignored because it was the last token provided.",
                   start));
           continue;
         }
         int end = Integer.parseInt(tokens.get(i));
         if (end < start) {
-          logger.info(
+          logger.fine(
               format(
                   " Attempted to parse -%d to %d as a Tinker-style range, which is ignored due to being invalid.",
                   start, end));
@@ -130,7 +130,7 @@ public class TinkerUtils {
           list.add(start + offset);
           nParsed++;
         } else {
-          logger.info(
+          logger.fine(
               format(
                   " Attempted to parse %s as a Tinker-style range, but it was not recognized and ignored.",
                   tokens.get(i)));
