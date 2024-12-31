@@ -37,8 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import ffx.numerics.integrate.DoublesDataSet;
-import ffx.numerics.integrate.Integrate1DNumeric;
+import ffx.numerics.math.RunningStatistics;
 
 import java.util.logging.Logger;
 
@@ -57,17 +56,9 @@ public class NonEquilbriumDynamics {
    */
   private final int nonEquilibriumLambdaSteps;
   /**
-   * The non-equilibrium lambda values.
-   */
-  private final double[] nonEquilibriumLambdaValues;
-  /**
-   * The non-equilibrium dU/dL values.
-   */
-  private final double[] nonEquilibriumdUdLValues;
-  /**
    * The non-equilibrium work values.
    */
-  private final double[] nonEquilibriumWorkValues;
+  private final RunningStatistics nonEquilibriumWorkValues;
   /**
    * The total number of MD steps.
    */
@@ -91,16 +82,12 @@ public class NonEquilbriumDynamics {
     } else {
       this.nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps;
     }
-    nonEquilibriumLambdaValues = new double[nonEquilibriumLambdaSteps + 1];
-    for (int i = 0; i < nonEquilibriumLambdaValues.length; i++) {
-      nonEquilibriumLambdaValues[i] = i * (1.0 / nonEquilibriumLambdaSteps);
-    }
-    nonEquilibriumdUdLValues = new double[nonEquilibriumLambdaSteps + 1];
-    nonEquilibriumWorkValues = new double[nonEquilibriumLambdaSteps + 1];
+    nonEquilibriumWorkValues = new RunningStatistics();
   }
 
   /**
    * Get the number of non-equilibrium lambda steps.
+   *
    * @return The number of non-equilibrium lambda steps.
    */
   public int getNonEquilibriumLambdaSteps() {
@@ -142,42 +129,29 @@ public class NonEquilbriumDynamics {
       logger.severe(format(" Invalid MD step number %d. Must be between 1 and %d.", step, totalMDSteps));
       return false;
     }
+    // The last step is a special case.
+    if (step == totalMDSteps) {
+      return true;
+    }
     return (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0;
   }
 
   /**
-   * Set the work value for a given Lambda update.
+   * Add a work contribution.
    *
-   * @param step The MD step number.
    * @param work The work value.
-   * @param dUdL The dU/dL value.
    */
-  public void setWork(long step, double work, double dUdL) {
-    if (step == this.totalMDSteps) {
-      nonEquilibriumWorkValues[nonEquilibriumLambdaSteps] = work;
-      nonEquilibriumdUdLValues[nonEquilibriumLambdaSteps] = dUdL;
-    } else if (isUpdateStep(step)) {
-      int currentLambdaBin = getCurrentLambdaBin(step);
-      nonEquilibriumWorkValues[currentLambdaBin] = work;
-      nonEquilibriumdUdLValues[currentLambdaBin] = dUdL;
-    } else {
-      logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
-          nonEquilibiumLambdaUpdateFrequency, step - 1));
-    }
+  public void addWork(double work) {
+    nonEquilibriumWorkValues.addValue(work);
   }
 
   /**
    * Get the total work for a given range of lambda bins.
-   * @param firstBin The first lambda bin.
-   * @param lastBin The last lambda bin.
+   *
    * @return The total work.
    */
-  public double getTotalWork(int firstBin, int lastBin) {
-    double totalWork = 0.0;
-    for (int i = firstBin; i <= lastBin; i++) {
-      totalWork += nonEquilibriumWorkValues[i];
-    }
-    return totalWork;
+  public double getWork() {
+    return nonEquilibriumWorkValues.getSum();
   }
 
   /**
@@ -189,10 +163,9 @@ public class NonEquilbriumDynamics {
    */
   public double getNextLambda(long step, double currentLambda) {
     if (isUpdateStep(step)) {
-      // The system was equilibrated with lambda=0, so we update lambda at step 1.
-      int nLambdaSteps = (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency) + 1;
+      int lambdaBin = getCurrentLambdaBin(step);
       double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
-      return nLambdaSteps * lambdaStepSize;
+      return lambdaBin * lambdaStepSize;
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
           nonEquilibiumLambdaUpdateFrequency, step - 1));
@@ -208,7 +181,9 @@ public class NonEquilbriumDynamics {
    * @return The lambda bin.
    */
   public int getCurrentLambdaBin(long step) {
-    if (isUpdateStep(step)) {
+    if (step == totalMDSteps) {
+      return nonEquilibriumLambdaSteps;
+    } else if (isUpdateStep(step)) {
       return (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency);
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
@@ -216,51 +191,5 @@ public class NonEquilbriumDynamics {
       return 0;
     }
   }
-
-  /**
-   * Get the free energy difference from thermodynamic integration using the Trapezoidal rule.
-   *
-   * @param lowerLambdaBin The lower lambda bin.
-   * @param upperLambdaBin The upper lambda bin.
-   * @return The free energy difference using the Trapezoidal rule.
-   */
-  public double getTrapezoidalDeltaG(int lowerLambdaBin, int upperLambdaBin) {
-    DoublesDataSet dataSet = new DoublesDataSet(nonEquilibriumLambdaValues, nonEquilibriumdUdLValues);
-    if (lowerLambdaBin < 0 || lowerLambdaBin >= upperLambdaBin || upperLambdaBin > nonEquilibriumLambdaSteps) {
-      return 0.0;
-    }
-    return Integrate1DNumeric.trapezoidal(dataSet, Integrate1DNumeric.IntegrationSide.LEFT, lowerLambdaBin, upperLambdaBin);
-  }
-
-  /**
-   * Get the free energy difference from thermodynamic integration using the Trapezoidal rule.
-   *
-   * @return The free energy difference using the Trapezoidal rule.
-   */
-  public double getTrapezoidalDeltaG() {
-    DoublesDataSet dataSet = new DoublesDataSet(nonEquilibriumLambdaValues, nonEquilibriumdUdLValues);
-    return Integrate1DNumeric.trapezoidal(dataSet, Integrate1DNumeric.IntegrationSide.LEFT);
-  }
-
-  /**
-   * Get the free energy difference from thermodynamic integration using Simpson's rule.
-   *
-   * @return The free energy difference using Simpson's rule.
-   */
-  public double getSimpsonDeltaG() {
-    DoublesDataSet dataSet = new DoublesDataSet(nonEquilibriumLambdaValues, nonEquilibriumdUdLValues);
-    return Integrate1DNumeric.simpsons(dataSet, Integrate1DNumeric.IntegrationSide.LEFT);
-  }
-
-  /**
-   * Get the free energy difference from thermodynamic integration using Boole's rule.
-   *
-   * @return The free energy difference using Boole's rule.
-   */
-  public double getBooleDeltaG() {
-    DoublesDataSet dataSet = new DoublesDataSet(nonEquilibriumLambdaValues, nonEquilibriumdUdLValues);
-    return Integrate1DNumeric.booles(dataSet, Integrate1DNumeric.IntegrationSide.LEFT);
-  }
-
 
 }
