@@ -564,11 +564,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param nonEquilibrium True if non-equilibrium lambda dynamics should be enabled.
    * @param nEQSteps       Number of lambda steps.
+   * @param reverseNEQ     True if lambda path should be reversed.
    */
-  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps) {
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ) {
     nonEquilibriumLambda = nonEquilibrium;
     if (nonEquilibriumLambda) {
-      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps);
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ);
     } else {
       nonEquilibriumDynamics = null;
     }
@@ -1483,7 +1484,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Configure the number of non-equilibrium dynamics.
       nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
-      lambdaInterface.setLambda(0.0);
+      double lambda = nonEquilibriumDynamics.getInitialLambda();
+      lambdaInterface.setLambda(lambda);
     }
 
     // Main MD loop to take molecular dynamics steps.

@@ -52,6 +52,10 @@ public class NonEquilbriumDynamics {
   private static final Logger logger = Logger.getLogger(NonEquilbriumDynamics.class.getName());
 
   /**
+   * Begin at L=1 and decrease to L=0.
+   */
+  private final boolean reverseNEQ;
+  /**
    * The number of non-equilibrium lambda steps.
    */
   private final int nonEquilibriumLambdaSteps;
@@ -75,13 +79,15 @@ public class NonEquilbriumDynamics {
    * Constructor for NonEquilbriumDynamics.
    *
    * @param nonEquilibriumLambdaSteps The number of non-equilibrium lambda steps.
+   * @param reverseNEQ                If true, lambda values should decrease from 1 to 0.
    */
-  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps) {
+  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps, boolean reverseNEQ) {
     if (nonEquilibriumLambdaSteps < 1) {
       this.nonEquilibriumLambdaSteps = 100;
     } else {
       this.nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps;
     }
+    this.reverseNEQ = reverseNEQ;
     nonEquilibriumWorkValues = new RunningStatistics();
   }
 
@@ -92,6 +98,14 @@ public class NonEquilbriumDynamics {
    */
   public int getNonEquilibriumLambdaSteps() {
     return nonEquilibriumLambdaSteps;
+  }
+
+  /**
+   * Get the initial lambda value.
+   * @return The initial lambda value.
+   */
+  public double getInitialLambda() {
+    return reverseNEQ ? 1.0 : 0.0;
   }
 
   /**
@@ -165,7 +179,11 @@ public class NonEquilbriumDynamics {
     if (isUpdateStep(step)) {
       int lambdaBin = getCurrentLambdaBin(step);
       double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
-      return lambdaBin * lambdaStepSize;
+      if (reverseNEQ) {
+        return 1.0 - lambdaBin * lambdaStepSize;
+      } else {
+        return lambdaBin * lambdaStepSize;
+      }
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
           nonEquilibiumLambdaUpdateFrequency, step - 1));
