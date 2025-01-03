@@ -194,37 +194,38 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     int numFiles = files.size()
     List<Double> works = new ArrayList<Double>();
-    for (int i=0; i < numFiles; i++) {
-    File file = files.get(i)
-    if (!file.exists()) {
-      logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()))
-      continue
-    }
-
-    String path = normalize(file.getAbsolutePath())
-
-    String workLine = ""
-
-    try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-      Pattern re = Pattern.compile(reSearch)
-      String line
-
-      while ((line = reader.readLine()) != null) {
-        Matcher matcher = re.matcher(line)
-        if (matcher.find()) {
-          workLine = line
-        }
+    for (int i = 0; i < numFiles; i++) {
+      File file = files.get(i)
+      if (!file.exists()) {
+        logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()))
+        continue
       }
-    } catch (IOException e) {
-      System.err.println("Error reading file: " + e.getMessage())
-    }
-    String[] workSplit = workLine.split()
 
-    if (workSplit.length != 4) {
-      logger.warning(format("%s line is NOT length four: \"%s\"", reSearch, workLine))
-      continue
-    }
-      works.add(workSplit[3].toDouble())
+      String path = normalize(file.getAbsolutePath())
+
+      String workLine = ""
+
+      try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+        Pattern re = Pattern.compile(reSearch)
+        String line
+
+        // todo above - have ability to request single files or something to let script know only using 1 file for each direction
+
+        while ((line = reader.readLine()) != null) {
+          Matcher matcher = re.matcher(line)
+          if (matcher.find()) {
+            String[] workSplit = line.split()
+            if (!(workSplit.length == 4 || workSplit.length == 5)) {
+              logger.warning(format("%s line is NOT length four or five: \"%s\"", reSearch, workLine))
+              continue
+            }
+            works.add(workSplit[workSplit.length - 1].toDouble())
+          }
+        }
+
+      } catch (IOException e) {
+        System.err.println("Error reading file: " + e.getMessage())
+      }
     }
 
     return works
