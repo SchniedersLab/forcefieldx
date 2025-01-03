@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.parsers;
 
+import static ffx.potential.parsers.SystemFilter.version;
 import static java.lang.Double.isNaN;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
@@ -157,7 +158,7 @@ public class BARFilter {
         }else if (endingSnap != 0) {
           snapshots = (endingSnap - startingSnap) + 1;
           if (count >= startingSnap + 1 && count <= endingSnap + 1) {
-            if(count < snaps){
+            if(count <= snaps){
               if (numTokens == 4) {
                 vol1.add(parseDouble(tokens[3]));
               }
@@ -167,7 +168,7 @@ public class BARFilter {
               logger.warning(format(" BAR entry of (%3d) is larger than total entries (%3d).", count, snaps));
             }
           } else if (count >= snaps + startingSnap + 2 && count <= snaps + endingSnap + 2) {
-            if(count < snaps + snaps2){
+            if(count <= snaps + snaps2 + 1){
               if (numTokens == 4) {
                 vol2.add(parseDouble(tokens[3]));
               }
@@ -233,7 +234,6 @@ public class BARFilter {
     return true;
   }
 
-
   /**
    * Write TINKER bar files
    *
@@ -242,14 +242,30 @@ public class BARFilter {
    * @return True if successful.
    */
   public boolean writeFile(String saveFile, boolean isPBC) {
+    return writeFile(saveFile, isPBC, true);
+  }
+
+  /**
+   * Write TINKER bar files
+   *
+   * @param saveFile The file to write to.
+   * @param isPBC include volume in the output file.
+   * @param append If the append flag is true, "saveFile" will be appended to. Otherwise, the default versioning scheme will be applied.
+   * @return True if successful.
+   */
+  public boolean writeFile(String saveFile, boolean isPBC, boolean append) {
     int snaps = e1l1.length;
     int snaps2 = e2l1.length;
     String name = barFile.getName();
 
     File newFile = new File(saveFile);
+    if (!append) {
+      newFile = version(newFile);
+    }
+
     logger.info(format("\n Writing Tinker-compatible BAR file to %s.", newFile));
     try (FileWriter fw = new FileWriter(newFile,
-        newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
+            append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(format("%8d %9.3f %s\n", snaps, temp, name));
       for (int i = 0; i < snaps; i++) {
         if(isNaN(e1l1[i]) || isNaN(e1l2[i])){
