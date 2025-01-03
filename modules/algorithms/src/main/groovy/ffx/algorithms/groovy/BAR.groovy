@@ -104,6 +104,10 @@ class BAR extends AlgorithmsScript {
       description = "Write out a Tinker BAR file.")
   private boolean tinkerBAR = false
 
+  @Option(names = ["--bf", "--singleBarFile"], paramLabel = "",
+          description = "Path to a single tinker bar file to evaluate.")
+  private String barFilePath = null
+
   @Option(names = ["--nw", "--nWindows"], paramLabel = "-1",
       description = "If set, auto-determine lambda values and subdirectories (overrides other flags).")
   private int nWindows = -1
@@ -511,7 +515,10 @@ class BAR extends AlgorithmsScript {
         } else {
           archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
         }
-        if (useTinkerBAR && i != nWindows - 1) {
+        if (useTinkerBAR && i != nWindows - 1 && barFilePath != null) {
+          // Specified path to Tinker BAR file.
+          fullFilePaths[i][j] = directoryPath + barFilePath
+        } else if (useTinkerBAR && i != nWindows - 1) {
           // Path to Tinker BAR files.
           fullFilePaths[i][j] = directoryPath + "barFiles" + File.separator + "energy_" + i + ".bar"
         } else if (!autodetect) {
