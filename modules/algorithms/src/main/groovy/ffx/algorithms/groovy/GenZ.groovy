@@ -129,7 +129,6 @@ class GenZ extends AlgorithmsScript {
         double titrationPH = manyBodyOptions.getTitrationPH()
         double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
-        boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         double pHRestraint = manyBodyOptions.getPHRestraint()
         // Set system property to propagate titration
@@ -196,8 +195,8 @@ class GenZ extends AlgorithmsScript {
         String listResidues = ""
         // Select residues with alpha carbons within the inclusion cutoff or
         // Select only the titrating residues or the titrating residues and those within the inclusion cutoff
-        if (mutatingResidue != -1 && inclusionCutoff != -1 || onlyTitration || onlyProtons) {
-            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
+        if (mutatingResidue != -1 && inclusionCutoff != -1 || onlyTitration) {
+            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, inclusionCutoff)
         }
 
         String filename = filenames.get(0)
@@ -246,7 +245,7 @@ class GenZ extends AlgorithmsScript {
             potentialEnergy = activeAssembly.getPotentialEnergy()
 
             // Selecting residues
-            if (!pKa || onlyTitration || onlyProtons) {
+            if (!pKa || onlyTitration) {
                 manyBodyOptions.setListResidues(listResidues)
             }
 
@@ -413,5 +412,9 @@ class GenZ extends AlgorithmsScript {
      */
     ForceFieldEnergy getPotential() {
         return potentialEnergy
+    }
+
+    double[][] getPopulationArray(){
+        return populationArray
     }
 }

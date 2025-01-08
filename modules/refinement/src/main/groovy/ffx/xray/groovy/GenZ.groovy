@@ -94,7 +94,6 @@ class GenZ extends AlgorithmsScript {
         double titrationPH = manyBodyOptions.getTitrationPH()
         double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
-        boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         double pHRestraint = manyBodyOptions.getPHRestraint()
         if (manyBodyOptions.getTitration()) {
@@ -170,6 +169,13 @@ class GenZ extends AlgorithmsScript {
         double totalBoltzmann = 0
         List<Residue> residueList = activeAssembly.getResidueList()
 
+        String listResidues = ""
+        // Select residues with alpha carbons within the inclusion cutoff or
+        // Select only the titrating residues or the titrating residues and those within the inclusion cutoff
+        if (inclusionCutoff != -1 || onlyTitration) {
+            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, inclusionCutoff)
+        }
+
         List<Integer> residueNumber = new ArrayList<>()
         for (Residue residue : residueList) {
             residueNumber.add(residue.getResidueNumber())
@@ -206,6 +212,11 @@ class GenZ extends AlgorithmsScript {
         refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
         refinementEnergy.setScaling(null)
 
+        // Selecting residues
+        if (!pKa || onlyTitration) {
+            manyBodyOptions.setListResidues(listResidues)
+        }
+
         if (lambdaTerm) {
             alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
             LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
@@ -220,7 +231,6 @@ class GenZ extends AlgorithmsScript {
         rotamerOptimization.setPrintFiles(printFiles)
         rotamerOptimization.setWriteEnergyRestart(printFiles)
         rotamerOptimization.setPHRestraint(pHRestraint)
-        rotamerOptimization.setOnlyProtons(onlyProtons)
         rotamerOptimization.setpH(titrationPH)
         double[] x = new double[refinementEnergy.getNumberOfVariables()]
         x = refinementEnergy.getCoordinates(x)
@@ -358,7 +368,29 @@ class GenZ extends AlgorithmsScript {
                 excludeAtoms.addAll(titrationManyBody.getExcludeAtoms())
             }
             assemblyIndex++
+            // Calculate the protonation populations
+            if(pKa){
+                rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+            }
         }
+
+        //Print information from the fraction protonated calculations
+        FileWriter popFileWriter = new FileWriter("populations.txt")
+        residueIndex = 0
+        for (Residue residue : selectedResidues) {
+            popFileWriter.write("\n")
+            protonationBoltzmannSums = new double[selectedResidues.size()]
+            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+            Rotamer[] rotamers = residue.getRotamers()
+            for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
+                String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
+                popFileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
+                        rotamers[rotIndex].toString() + "\t" + rotPop + "\n")
+            }
+            residueIndex += 1
+        }
+        fileWriter.close()
+        System.out.println("\n Successfully wrote to the populations file.")
 
         PDBFilter pdbFilter = new PDBFilter(structureFile, Arrays.asList(conformerAssemblies), forceField, properties)
         pdbFilter.writeFile(structureFile, false, excludeAtoms, true, true)

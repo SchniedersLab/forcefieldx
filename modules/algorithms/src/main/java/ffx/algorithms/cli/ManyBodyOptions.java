@@ -406,14 +406,6 @@ public class ManyBodyOptions {
     residueGroup.onlyTitration = onlyTitration;
   }
 
-  public boolean getOnlyProtons() {
-    return residueGroup.onlyProtons;
-  }
-
-  public void setOnlyProtons(boolean onlyProtons) {
-    residueGroup.onlyProtons = onlyProtons;
-  }
-
   public int getInterestedResidue() {
     return residueGroup.interestedResidue;
   }
@@ -748,7 +740,7 @@ public class ManyBodyOptions {
     return group.titration;
   }
 
-  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
+  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration,
                                        double inclusionCutoff){
     String listResidues = "";
     if (mutatingResidue != -1 && inclusionCutoff != -1) {
@@ -768,7 +760,7 @@ public class ManyBodyOptions {
         }
       }
       listResidues = listResidues.substring(1);
-    } else if (onlyTitration || onlyProtons){
+    } else if (onlyTitration){
       String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
       List<String> titratableResiudesList = Arrays.asList(titratableResidues);
       for (Residue residue : residueList) {
@@ -1075,11 +1067,6 @@ public class ManyBodyOptions {
     @Option(names = {"--oT",
             "--onlyTitration"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only titratable residues.")
     private boolean onlyTitration;
-
-    /** --oP or --onlyProtons Rotamer optimize only proton movement. */
-    @Option(names = {"--oP",
-            "--onlyProtons"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only proton movement.")
-    private boolean onlyProtons;
 
     /** --iR or --interestedResidue Optimize rotamers within some distance of a specific residue. */
     @Option(names = {"--iR",

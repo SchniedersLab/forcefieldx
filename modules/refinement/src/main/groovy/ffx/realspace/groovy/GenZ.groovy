@@ -88,7 +88,6 @@ class GenZ extends AlgorithmsScript  {
         double titrationPH = manyBodyOptions.getTitrationPH()
         double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
-        boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         double pHRestraint = manyBodyOptions.getPHRestraint()
         if (manyBodyOptions.getTitration()) {
@@ -196,7 +195,6 @@ class GenZ extends AlgorithmsScript  {
         rotamerOptimization.setPrintFiles(printFiles)
         rotamerOptimization.setWriteEnergyRestart(printFiles)
         rotamerOptimization.setPHRestraint(pHRestraint)
-        rotamerOptimization.setOnlyProtons(onlyProtons)
         rotamerOptimization.setpH(titrationPH)
 
 
