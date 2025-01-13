@@ -226,7 +226,6 @@ class FeatureMap extends PotentialScript {
             int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
-                logger.info(line)
                 if (i == 0) {
                     if (!rerun) {
                         if (updatedFile.length() == 0) {
