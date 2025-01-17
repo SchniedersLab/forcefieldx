@@ -1462,6 +1462,8 @@ public final class PDBFilter extends SystemFilter {
         }
 
         // Begin parsing the model.
+        currentChainID = null;
+        currentSegID = null;
         boolean modelDone = false;
         line = currentReader.readLine();
         while (line != null) {
@@ -2299,13 +2301,40 @@ public final class PDBFilter extends SystemFilter {
       c = 'A';
     }
 
+    // If the chain ID has not changed, return the existing segID.
+    if (c.equals(currentChainID)) {
+      return currentSegID;
+    } else {
+      currentChainID = null;
+    }
+
     List<String> segIDs = segidMap.get(c);
     if (segIDs != null) {
-      String segID = segIDs.get(0);
       if (segIDs.size() > 1) {
-        logger.log(Level.INFO, format(" Multiple SegIDs for to chain %s; using %s.", c, segID));
+        if (currentSegID == null) {
+          currentChainID = c;
+          currentSegID = segIDs.get(0);
+          return segIDs.get(0);
+        } else if (currentSegID.length() == 1) {
+          currentChainID = c;
+          currentSegID = segIDs.get(1);
+          return segIDs.get(1);
+        } else if (currentSegID.length() == 2) {
+          String s = currentSegID.substring(0,1);
+          int num = -2;
+          try {
+            num = Integer.parseInt(s);
+          } catch (NumberFormatException e) {
+            logger.severe(" SegID of length 2 does not start with an integer.");
+          }
+          currentChainID = c;
+          currentSegID = segIDs.get(num+1);
+          return segIDs.get(num+1);
+        } else {
+          logger.info(" Too many repeated chains. Using single letter for segID.");
+        }
       }
-      return segID;
+      return segIDs.get(0);
     } else {
       logger.log(Level.INFO, format(" Creating SegID for to chain %s", c));
       return getSegID(c);
