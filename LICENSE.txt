@@ -3,7 +3,7 @@ Title: Force Field X.
 
 Description: Force Field X - Software for Molecular Biophysics.
 
-Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+Copyright: Copyright (c) Michael J. Schnieders 2001-2025.
 
 Force Field X is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License version 3 as published by
@@ -27,4 +27,3 @@ module which is not derived from or based on this library. If you modify this
 library, you may extend this exception to your version of the library, but
 you are not obligated to do so. If you do not wish to do so, delete this
 exception statement from your version.
-
