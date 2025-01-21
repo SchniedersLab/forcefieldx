@@ -41,21 +41,19 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
 import ffx.potential.utils.GetProteinFeatures
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
-import static org.apache.commons.io.FilenameUtils.getFullPath
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "FeatureMap")
 class FeatureMap extends PotentialScript {
 
     @Option(names = ["-d", "--delimiter"], paramLabel = ",",
             description = "Delimiter of input variant list file")
-    private String delimiter = ","
+    private String delim = ","
 
     @Option(names = ["--iP", "--includePolarity"], paramLabel = "false",
             description = "Include polarity change in feature map.")
@@ -109,6 +107,12 @@ class FeatureMap extends PotentialScript {
         if (!init()) {
             return null
         }
+
+        String delimiter = ","
+        if (delim.equals("t") || delim.equals("tab")) {
+            delimiter = "\t"
+        }
+
         System.setProperty("gkterm", "true")
         System.setProperty("cavmodel", "CAV")
         System.setProperty("surface-tension", "1.0")
@@ -207,8 +211,8 @@ class FeatureMap extends PotentialScript {
             int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
-                if (i == 0 || i == 1) {
-                    if (updatedFile.length() == 0 && i == 1) {
+                if (i == 0) {
+                    if (updatedFile.length() == 0) {
                         newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
                                 'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
                         if(includeAcidity){
@@ -224,8 +228,6 @@ class FeatureMap extends PotentialScript {
                             newCSVLine.append(delimiter + 'Secondary Structure Annotation')
                         }
                         bw.write(newCSVLine.toString())
-                    } else if (i == 0 && updatedFile.length() == 0) {
-                        bw.write(line + '\n')
                     }
                 } else {
                     String[] splits = line.split(delimiter)
@@ -309,10 +311,12 @@ class FeatureMap extends PotentialScript {
             }
         } catch (Exception e) {
             System.out.println(e);
+            e.printStackTrace()
         } finally {
             if (br != null)
                 br.close();
             if (bw != null)
+                bw.newLine();
                 bw.close();
         }
 

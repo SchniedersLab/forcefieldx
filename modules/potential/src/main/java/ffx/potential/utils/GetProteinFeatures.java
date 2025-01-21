@@ -415,7 +415,7 @@ public class GetProteinFeatures {
     for (String s : ddgun) {
       String[] splits = s.split("\t");
       Double[] value = new Double[2];
-      value[0] = Double.parseDouble(splits[3]);
+      value[0] = Double.parseDouble(splits[3]) * -1.0;
       value[1] = Math.abs(Double.parseDouble(splits[3]));
       values.add(value);
     }
