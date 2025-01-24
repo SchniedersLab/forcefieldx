@@ -838,47 +838,49 @@ public final class PDBFilter extends SystemFilter {
                           printAtom = true;
                           resName = mtn.resName;
                         } else {
+                          // pyrimidines: need N1 & C2 | purines: need N9 & C4
                           if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
-                            // purine to pyrimidine mutation - change N9 to N1 and C4 to C2
                             boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
+                            // log the deletion to get alchemical atoms from WT (don't include H primes)
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            }
                             if (atomName.equals("N9")) {
+                              printAtom = true;
+                              resName = mtn.resName;
                               if (isMtnPyrimidine) {
                                 name = "N1"; // change N9 to N1
                               }
                             } else if (atomName.equals("C4")) {
+                              printAtom = true;
+                              resName = mtn.resName;
                               if (isMtnPyrimidine) {
                                 name = "C2"; // change C4 to C2
                               }
-                            }
-                            // log the deletion to get alchemical atoms from WT (don't delete H primes)
-                            if (!atomName.contains("'")) {
-                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            } else {
                               doBreak = true;
                               break;
-                            } else {
-                              printAtom = true;
-                              resName = mtn.resName;
                             }
                           } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
-                            // pyrimidine to purine mutation - change N1 to N9 and C2 to C4
                             boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
+                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            }
                             if (atomName.equals("N1")) {
+                              printAtom = true;
+                              resName = mtn.resName;
                               if (isMtnPurine) {
                                 name = "N9"; // change N1 to N9
                               }
                             } else if (atomName.equals("C2")) {
+                              printAtom = true;
+                              resName = mtn.resName;
                               if (isMtnPurine) {
                                 name = "C4"; // change C2 to C4
                               }
-                            }
-                            // log the deletion to get alchemical atoms from WT (don't delete H primes)
-                            if (!atomName.contains("'")) {
-                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                            } else {
                               doBreak = true;
                               break;
-                            } else {
-                              printAtom = true;
-                              resName = mtn.resName;
                             }
                           } else {
                             logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
