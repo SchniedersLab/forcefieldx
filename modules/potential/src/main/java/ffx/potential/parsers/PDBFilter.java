@@ -829,6 +829,7 @@ public final class PDBFilter extends SystemFilter {
                     boolean doBreak = false;
                     for (Mutation mtn : mutations) {
                       if (chainID == mtn.chainChar && resSeq == mtn.resID) {
+                        mtn.origResName = resName; // todo - only need to do once, but not a big deal?
                         String atomName = name.toUpperCase();
 
                         int isAA = AminoAcidUtils.getAminoAcidNumber(resName);
@@ -842,9 +843,6 @@ public final class PDBFilter extends SystemFilter {
                           if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
                             boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
                             // log the deletion to get alchemical atoms from WT (don't include H primes)
-                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
-                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                            }
                             if (atomName.equals("N9")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -858,14 +856,17 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C2"; // change C4 to C2
                               }
                             } else {
-                              doBreak = true;
+                              if (!atomName.contains("'")) {
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                                doBreak = true;
+                              } else {
+                                resName = mtn.resName;
+                                doBreak = false;
+                              }
                               break;
                             }
                           } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
                             boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
-                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
-                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                            }
                             if (atomName.equals("N1")) {
                               printAtom = true;
                               resName = mtn.resName;
@@ -879,7 +880,13 @@ public final class PDBFilter extends SystemFilter {
                                 name = "C4"; // change C2 to C4
                               }
                             } else {
-                              doBreak = true;
+                              if (!atomName.contains("'")) {
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                                doBreak = true;
+                              } else {
+                                resName = mtn.resName;
+                                doBreak = false;
+                              }
                               break;
                             }
                           } else {
@@ -2018,7 +2025,17 @@ public final class PDBFilter extends SystemFilter {
               if (mutate) {
                 for (Mutation mtn : mutations) {
                   if (resID == mtn.resID) {
-                    if (residue.getBackboneAtoms().contains(atom)) {
+                    // todo - sure this isnt' origResName?
+                    if (mtn.resName.equals("DA") || mtn.resName.equals("DG") || mtn.resName.equals("DAD") || mtn.resName.equals("DGU")) {
+                      // todo - thought - also need to make sure that the original mutation was of the same base type
+                      if (!atom.getName().equals("N9") && !atom.getName().equals("C4") && residue.getBackboneAtoms().contains(atom)) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                      }
+                    } else if (mtn.resName.equals("DC") || mtn.resName.equals("DT") || mtn.resName.equals("DCY") || mtn.resName.equals("DTY")) {
+                      if (!atom.getName().equals("N1") && !atom.getName().equals("C2") && residue.getBackboneAtoms().contains(atom)) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                      }
+                    } else if (residue.getBackboneAtoms().contains(atom)) {
                       logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                     }
                   }
@@ -2533,6 +2550,8 @@ public final class PDBFilter extends SystemFilter {
     final String resName;
     /** Character for the chain ID of the residue that will be mutated. */
     final char chainChar;
+    /** Residue name before mutation. */
+    String origResName;
 
     public Mutation(int resID, char chainChar, String newResName) {
       newResName = newResName.toUpperCase();
