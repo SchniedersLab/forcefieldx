@@ -848,12 +848,15 @@ public final class PDBFilter extends SystemFilter {
                               resName = mtn.resName;
                               if (isMtnPyrimidine) {
                                 name = "N1"; // change N9 to N1
+                                // todo - note for later, if switching from purine to pyrimidine, the numbering is off - so needs to be alch. for now
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               }
                             } else if (atomName.equals("C4")) {
                               printAtom = true;
                               resName = mtn.resName;
                               if (isMtnPyrimidine) {
                                 name = "C2"; // change C4 to C2
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               }
                             } else {
                               if (!atomName.contains("'")) {
@@ -872,12 +875,14 @@ public final class PDBFilter extends SystemFilter {
                               resName = mtn.resName;
                               if (isMtnPurine) {
                                 name = "N9"; // change N1 to N9
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               }
                             } else if (atomName.equals("C2")) {
                               printAtom = true;
                               resName = mtn.resName;
                               if (isMtnPurine) {
                                 name = "C4"; // change C2 to C4
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               }
                             } else {
                               if (!atomName.contains("'")) {
@@ -2025,15 +2030,29 @@ public final class PDBFilter extends SystemFilter {
               if (mutate) {
                 for (Mutation mtn : mutations) {
                   if (resID == mtn.resID) {
-                    // todo - sure this isnt' origResName?
-                    if (mtn.resName.equals("DA") || mtn.resName.equals("DG") || mtn.resName.equals("DAD") || mtn.resName.equals("DGU")) {
-                      // todo - thought - also need to make sure that the original mutation was of the same base type
-                      if (!atom.getName().equals("N9") && !atom.getName().equals("C4") && residue.getBackboneAtoms().contains(atom)) {
-                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                    boolean isMtnPurine = mtn.resName.equals("DA") || mtn.resName.equals("DG") || mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
+                    boolean isMtnPyrimidine = mtn.resName.equals("DC") || mtn.resName.equals("DT") || mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
+                    boolean isWtPurine = mtn.origResName.equals("DA") || mtn.origResName.equals("DG") || mtn.origResName.equals("DAD") || mtn.origResName.equals("DGU");
+                    boolean isWtPyrimidine = mtn.origResName.equals("DT") || mtn.origResName.equals("DC") || mtn.origResName.equals("DTY") || mtn.origResName.equals("DCY");
+                    if (isMtnPurine) {
+                      if (isWtPurine) {
+                        if (!atom.getName().equals("N9") && !atom.getName().equals("C4") && residue.getBackboneAtoms().contains(atom)) {
+                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                        }
+                      } else if (isWtPyrimidine) {
+                        if (residue.getBackboneAtoms().contains(atom)) {
+                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                        }
                       }
-                    } else if (mtn.resName.equals("DC") || mtn.resName.equals("DT") || mtn.resName.equals("DCY") || mtn.resName.equals("DTY")) {
-                      if (!atom.getName().equals("N1") && !atom.getName().equals("C2") && residue.getBackboneAtoms().contains(atom)) {
-                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                    } else if (isMtnPyrimidine) {
+                      if (isWtPyrimidine) {
+                        if (!atom.getName().equals("N1") && !atom.getName().equals("C2") && residue.getBackboneAtoms().contains(atom)) {
+                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                        }
+                      } else if (isWtPurine) {
+                        if (residue.getBackboneAtoms().contains(atom)) {
+                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                        }
                       }
                     } else if (residue.getBackboneAtoms().contains(atom)) {
                       logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
@@ -2566,6 +2585,76 @@ public final class PDBFilter extends SystemFilter {
       this.resID = resID;
       this.chainChar = chainChar;
       this.resName = newResName;
+    }
+
+    // TODO - should have sever warning if the mutation residues are the same
+
+    // want to return the atoms that will not be printed as alchemical atoms
+    // if purine to pyrimidine OR pyrimidine to purine.. DO NOT CHANGE (return nothing)
+    // if purine to purine..
+    public ArrayList<String> getNonAlchemicalAtoms() {
+      // Log warning that the mutation input is the same residue and return nothing so prev. functionality is not changed
+      if (resName.equals(origResName)) {
+        logger.warning("Desired Mutation residue is the same as the original."); // todo - do i want warning or crash??
+        return null;
+      }
+
+      boolean purine;
+      if (isMtnPurine() && isWtPurine()) {
+        logger.info("BOTH PURINE");
+        purine = true;
+      } else if (isMtnPyrimidine() && isWtPyrimidine()) {
+        logger.info("BOTH PYRMIDINE");
+        purine = false;
+      } else {
+        // Return nothing so previous functionality is not changed
+        return null;
+      }
+
+      ArrayList<String> list = new ArrayList<>();
+      if (purine) { // purine: either A to G or G to A
+        if (resName.equals("DAD") || resName.equals("DA")) { // MTN is A
+          list.add("N6");
+          list.add("H61");
+          list.add("H62");
+        } else { // MTN is G
+          list.add("H1");
+          list.add("N2");
+          list.add("H21");
+          list.add("H22");
+          list.add("O6");
+        }
+      } else { // pyrimidine: either T to C or C to T
+        if (resName.equals("DTY") || resName.equals("DT")) { // MTN is T
+          list.add("H3");
+          list.add("O4");
+          list.add("C7");
+          list.add("H71");
+          list.add("H72");
+          list.add("H73");
+        } else { // MTN is C
+          list.add("N4");
+          list.add("H41");
+          list.add("H42");
+        }
+      }
+      return list;
+    }
+
+    public boolean isMtnPurine() {
+      return resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU");
+    }
+
+    public boolean isMtnPyrimidine() {
+      return resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY");
+    }
+
+    public boolean isWtPurine() {
+      return origResName.equals("DA") || origResName.equals("DG") || origResName.equals("DAD") || origResName.equals("DGU");
+    }
+
+    public boolean isWtPyrimidine() {
+      return origResName.equals("DT") || origResName.equals("DC") || origResName.equals("DTY") || origResName.equals("DCY");
     }
   }
 }
