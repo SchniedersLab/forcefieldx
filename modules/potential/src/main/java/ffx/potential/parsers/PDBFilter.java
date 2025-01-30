@@ -839,67 +839,64 @@ public final class PDBFilter extends SystemFilter {
                           printAtom = true;
                           resName = mtn.resName;
                         } else {
-                          // pyrimidines: need N1 & C2 | purines: need N9 & C4
-                          if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
-                            boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
-                            // log the deletion to get alchemical atoms from WT (don't include H primes)
-                            if (atomName.equals("N9")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPyrimidine) {
-                                name = "N1"; // change N9 to N1
-                                // todo - note for later, if switching from purine to pyrimidine, the numbering is off - so needs to be alch. for now
-                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                              }
-                            } else if (atomName.equals("C4")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPyrimidine) {
-                                name = "C2"; // change C4 to C2
-                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                              }
-                            } else {
-                              if (!atomName.contains("'")) {
+                          ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(false);
+                          logger.info("RESNAME: " + resName + " - alchAtoms: " + alchAtoms);
+                          if (alchAtoms == null) {
+                            // TODO - this means that it is a purine to pyrimidine or pyrimidine to purin
+                            //  need to add logic to replace N1/N9 and C2/C4
+                            if (!atomName.contains("'")) {
+                              if (atomName.equals("N1") && isNA != -1) {
+                                printAtom = true;
+                                resName = mtn.resName;
+                                if (mtn.isMtnPurine()) {
+                                  name = "N9";
+                                  // todo - note for later, if switching from purine to pyrimidine, the numbering is off - so needs to be alch. for now
+//                                  logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                                }
+                                resName = mtn.resName;
+                              } else if (atomName.equals("C2")) {
+                                printAtom = true;
+                                resName = mtn.resName;
+                                if (mtn.isMtnPurine()) {
+                                  name = "C4";
+                                  // log?
+                                }
+                                // todo
+                              } else if (atomName.equals("N9")) {
+                                printAtom = true;
+                                resName = mtn.resName;
+                                if (mtn.isMtnPyrimidine()) {
+                                  name = "N1";
+                                  // log?
+                                }
+                              } else if (atomName.equals("C4")) {
+                                printAtom = true;
+                                resName = mtn.resName;
+                                if (mtn.isMtnPyrimidine()) {
+                                  name = "C2";
+                                  // log?
+                                }
+                              } else {
                                 logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                                 doBreak = true;
-                              } else {
-                                resName = mtn.resName;
-                                doBreak = false;
-                              }
-                              break;
-                            }
-                          } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
-                            boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
-                            if (atomName.equals("N1")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPurine) {
-                                name = "N9"; // change N1 to N9
-                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                              }
-                            } else if (atomName.equals("C2")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPurine) {
-                                name = "C4"; // change C2 to C4
-                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               }
                             } else {
-                              if (!atomName.contains("'")) {
-                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                                doBreak = true;
-                              } else {
-                                resName = mtn.resName;
-                                doBreak = false;
-                              }
-                              break;
+                              printAtom = true;
+                              resName = mtn.resName;
+                              doBreak = false;
                             }
+                            // todo make sure when adding n1/n9 logic don't have alchemical atom logging because this would be for AA
                           } else {
-                            logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
-                            // don't have alchemical atom logging because this would be for AA
-                            doBreak = true;
-                            break;
+                            if (alchAtoms.contains(atomName) && !atomName.contains("'")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                              doBreak = true;
+                            } else {
+                              printAtom = true;
+                              resName = mtn.resName;
+                              doBreak = false;
+                            }
                           }
+                          break;
                         }
                       }
                     }
@@ -2030,32 +2027,15 @@ public final class PDBFilter extends SystemFilter {
               if (mutate) {
                 for (Mutation mtn : mutations) {
                   if (resID == mtn.resID) {
-                    boolean isMtnPurine = mtn.resName.equals("DA") || mtn.resName.equals("DG") || mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
-                    boolean isMtnPyrimidine = mtn.resName.equals("DC") || mtn.resName.equals("DT") || mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
-                    boolean isWtPurine = mtn.origResName.equals("DA") || mtn.origResName.equals("DG") || mtn.origResName.equals("DAD") || mtn.origResName.equals("DGU");
-                    boolean isWtPyrimidine = mtn.origResName.equals("DT") || mtn.origResName.equals("DC") || mtn.origResName.equals("DTY") || mtn.origResName.equals("DCY");
-                    if (isMtnPurine) {
-                      if (isWtPurine) {
-                        if (!atom.getName().equals("N9") && !atom.getName().equals("C4") && residue.getBackboneAtoms().contains(atom)) {
-                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
-                        }
-                      } else if (isWtPyrimidine) {
-                        if (residue.getBackboneAtoms().contains(atom)) {
-                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
-                        }
+                    ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(true);
+                    if (alchAtoms != null) {
+                      if (residue.getBackboneAtoms().contains(atom) && alchAtoms.contains(atom.getName())) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                       }
-                    } else if (isMtnPyrimidine) {
-                      if (isWtPyrimidine) {
-                        if (!atom.getName().equals("N1") && !atom.getName().equals("C2") && residue.getBackboneAtoms().contains(atom)) {
-                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
-                        }
-                      } else if (isWtPurine) {
-                        if (residue.getBackboneAtoms().contains(atom)) {
-                          logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
-                        }
+                    } else {
+                      if (residue.getBackboneAtoms().contains(atom)) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                       }
-                    } else if (residue.getBackboneAtoms().contains(atom)) {
-                      logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                     }
                   }
                 }
@@ -2587,36 +2567,47 @@ public final class PDBFilter extends SystemFilter {
       this.resName = newResName;
     }
 
-    // TODO - should have sever warning if the mutation residues are the same
+    // CASE WHERE IT IS NOT A DOUBLE SWITCH
+    public ArrayList<String> getNonAlchemicalAtoms() {
+      ArrayList<String> list = new ArrayList<>();
+      
+      return list;
+    }
 
     // want to return the atoms that will not be printed as alchemical atoms
     // if purine to pyrimidine OR pyrimidine to purine.. DO NOT CHANGE (return nothing)
     // if purine to purine..
-    public ArrayList<String> getNonAlchemicalAtoms() {
+    public ArrayList<String> getAlchemicalAtoms(boolean isMutation) {
       // Log warning that the mutation input is the same residue and return nothing so prev. functionality is not changed
       if (resName.equals(origResName)) {
-        logger.warning("Desired Mutation residue is the same as the original."); // todo - do i want warning or crash??
+        logger.severe("Desired Mutation residue is the same as the original.");
         return null;
       }
 
-      boolean purine;
+      boolean purpur;
       if (isMtnPurine() && isWtPurine()) {
-        logger.info("BOTH PURINE");
-        purine = true;
+        purpur = true;
       } else if (isMtnPyrimidine() && isWtPyrimidine()) {
-        logger.info("BOTH PYRMIDINE");
-        purine = false;
+        purpur = false;
       } else {
         // Return nothing so previous functionality is not changed
         return null;
       }
 
+      String res;
+      if (isMutation) {
+        res = resName;
+      } else {
+        res = origResName;
+      }
+
       ArrayList<String> list = new ArrayList<>();
-      if (purine) { // purine: either A to G or G to A
-        if (resName.equals("DAD") || resName.equals("DA")) { // MTN is A
+      if (purpur) { // purine: either A to G or G to A
+        if (res.equals("DAD") || res.equals("DA")) { // MTN is A
           list.add("N6");
           list.add("H61");
           list.add("H62");
+          list.add("H2");
         } else { // MTN is G
           list.add("H1");
           list.add("N2");
@@ -2625,7 +2616,7 @@ public final class PDBFilter extends SystemFilter {
           list.add("O6");
         }
       } else { // pyrimidine: either T to C or C to T
-        if (resName.equals("DTY") || resName.equals("DT")) { // MTN is T
+        if (res.equals("DTY") || res.equals("DT")) { // MTN is T
           list.add("H3");
           list.add("O4");
           list.add("C7");
@@ -2636,6 +2627,7 @@ public final class PDBFilter extends SystemFilter {
           list.add("N4");
           list.add("H41");
           list.add("H42");
+          list.add("H5");
         }
       }
       return list;
