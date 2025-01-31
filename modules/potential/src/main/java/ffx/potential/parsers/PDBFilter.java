@@ -829,7 +829,8 @@ public final class PDBFilter extends SystemFilter {
                     boolean doBreak = false;
                     for (Mutation mtn : mutations) {
                       if (chainID == mtn.chainChar && resSeq == mtn.resID) {
-                        mtn.origResName = resName; // todo - only need to do once, but not a big deal?
+                        mtn.origResName = resName;
+                        resName = mtn.resName;
                         String atomName = name.toUpperCase();
 
                         int isAA = AminoAcidUtils.getAminoAcidNumber(resName);
@@ -837,62 +838,36 @@ public final class PDBFilter extends SystemFilter {
 
                         if ((isNA != -1 && naBackboneNames.contains(atomName)) || (isAA != -1 && backboneNames.contains(atomName))) {
                           printAtom = true;
-                          resName = mtn.resName;
                         } else {
+                          // grab pur-pur or pyr-pyr alchem. atoms
                           ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(false);
-                          logger.info("RESNAME: " + resName + " - alchAtoms: " + alchAtoms);
                           if (alchAtoms == null) {
-                            // TODO - this means that it is a purine to pyrimidine or pyrimidine to purin
-                            //  need to add logic to replace N1/N9 and C2/C4
-                            if (!atomName.contains("'")) {
-                              if (atomName.equals("N1") && isNA != -1) {
-                                printAtom = true;
-                                resName = mtn.resName;
-                                if (mtn.isMtnPurine()) {
-                                  name = "N9";
-                                  // todo - note for later, if switching from purine to pyrimidine, the numbering is off - so needs to be alch. for now
-//                                  logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                                }
-                                resName = mtn.resName;
-                              } else if (atomName.equals("C2")) {
-                                printAtom = true;
-                                resName = mtn.resName;
-                                if (mtn.isMtnPurine()) {
-                                  name = "C4";
-                                  // log?
-                                }
-                                // todo
-                              } else if (atomName.equals("N9")) {
-                                printAtom = true;
-                                resName = mtn.resName;
-                                if (mtn.isMtnPyrimidine()) {
-                                  name = "N1";
-                                  // log?
-                                }
-                              } else if (atomName.equals("C4")) {
-                                printAtom = true;
-                                resName = mtn.resName;
-                                if (mtn.isMtnPyrimidine()) {
-                                  name = "C2";
-                                  // log?
-                                }
-                              } else {
+                            // test to see if atom is involved in glycosyl torsion and if needs renaming (pyr-pur/pur-pyr)
+                            String newName = mtn.isNonAlchemicalAtom(atomName);
+                            if (newName != null) { // if not null -- use name it
+                              printAtom = true;
+                              if (newName.startsWith("~")) { // switch from purine to pyrmidine or v.v.
+                                // switch name and include it as an alchemical atom
+                                name = newName.substring(1);
                                 logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                                doBreak = true;
+                              } else {
+                                // replace name but do not include as an alchemical atom
+                                name = newName;
                               }
+                              doBreak = false;
+                            } else if (!atomName.contains("'")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                              doBreak = true;
                             } else {
                               printAtom = true;
-                              resName = mtn.resName;
                               doBreak = false;
                             }
-                            // todo make sure when adding n1/n9 logic don't have alchemical atom logging because this would be for AA
                           } else {
                             if (alchAtoms.contains(atomName) && !atomName.contains("'")) {
                               logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
                               doBreak = true;
                             } else {
                               printAtom = true;
-                              resName = mtn.resName;
                               doBreak = false;
                             }
                           }
@@ -2033,6 +2008,7 @@ public final class PDBFilter extends SystemFilter {
                         logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                       }
                     } else {
+                      // treating pur-pyr or pyr-pur N9/N1 & C2/C4 as alchemical
                       if (residue.getBackboneAtoms().contains(atom)) {
                         logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
                       }
@@ -2567,17 +2543,55 @@ public final class PDBFilter extends SystemFilter {
       this.resName = newResName;
     }
 
-    // CASE WHERE IT IS NOT A DOUBLE SWITCH
-    public ArrayList<String> getNonAlchemicalAtoms() {
-      ArrayList<String> list = new ArrayList<>();
-      
-      return list;
+    /**
+     * Check to see if an atom is involved in the mutated base's glycosyl torsion. If the mutation is a switch from
+     * purine to pyrimidine or vice versa, it will return '~name', meaning the name should be replaced but to include it
+     * as an alchemical atom.
+     * @param atomName atom name to check
+     * @return new name to use if it is involved in glycosyl torsion, null otherwise
+     */
+    public String isNonAlchemicalAtom(String atomName) {
+      if (isWtPurine()) {
+        if (atomName.equals("N9")) {
+          if (isMtnPyrimidine()) {
+            return "~N1";
+          }
+          return atomName;
+        } else if (atomName.equals("C4")) {
+          if (isMtnPyrimidine()) {
+            return "~C2";
+          }
+          return atomName;
+        }
+        return null;
+      }
+
+      if (isWtPyrimidine()) {
+        if (atomName.equals("N1")) {
+          if (isMtnPurine()) {
+            // here
+            return "~N9";
+          }
+          return atomName;
+        } else if (atomName.equals("C2")) {
+          if (isMtnPurine()) {
+            // here
+            return "~C4";
+          }
+          return atomName;
+        }
+        return null;
+      }
+
+      return null;
     }
 
-    // want to return the atoms that will not be printed as alchemical atoms
-    // if purine to pyrimidine OR pyrimidine to purine.. DO NOT CHANGE (return nothing)
-    // if purine to purine..
-    public ArrayList<String> getAlchemicalAtoms(boolean isMutation) {
+    /**
+     * Determines what atoms should be alchemical for a purine to purine or pyrimidine to pyrimidine mutation.
+     * @param isWriting true if writing the pdb, false if reading the pdb
+     * @return ArrayList of alchemical atoms, null if not a pur-pur or pyr-pyr mutation
+     */
+    public ArrayList<String> getAlchemicalAtoms(boolean isWriting) {
       // Log warning that the mutation input is the same residue and return nothing so prev. functionality is not changed
       if (resName.equals(origResName)) {
         logger.severe("Desired Mutation residue is the same as the original.");
@@ -2595,7 +2609,9 @@ public final class PDBFilter extends SystemFilter {
       }
 
       String res;
-      if (isMutation) {
+
+      // look at the mutation residue if writing or the original (wild type) residue if reading
+      if (isWriting) {
         res = resName;
       } else {
         res = origResName;
@@ -2633,18 +2649,34 @@ public final class PDBFilter extends SystemFilter {
       return list;
     }
 
+    /**
+     * Determine if the mutation residue is purine.
+     * @return true if mutation is purine
+     */
     public boolean isMtnPurine() {
       return resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU");
     }
 
+    /**
+     * Determine if the mutation residue is pyrimidine.
+     * @return true if mutation is pyrimidine
+     */
     public boolean isMtnPyrimidine() {
       return resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY");
     }
 
+    /**
+     * Determine if original (wild type) residue is purine.
+     * @return true if original residue is purine
+     */
     public boolean isWtPurine() {
       return origResName.equals("DA") || origResName.equals("DG") || origResName.equals("DAD") || origResName.equals("DGU");
     }
 
+    /**
+     * Determine if original (wild type) residue is pyrimidine.
+     * @return true if original residue is pyrimidine
+     */
     public boolean isWtPyrimidine() {
       return origResName.equals("DT") || origResName.equals("DC") || origResName.equals("DTY") || origResName.equals("DCY");
     }
