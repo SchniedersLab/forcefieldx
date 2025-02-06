@@ -137,7 +137,7 @@ class WriteRestraints extends PotentialScript {
     SystemFilter systemFilter = this.potentialFunctions.getFilter()
     int count = 0
 
-    if (systemFilter instanceof PDBFilter) {
+    if (systemFilter instanceof PDBFilter && chain != null) {
       Polymer[] polymers = activeAssembly.getChains()
       for (Polymer polymer : polymers) {
         if (chain != null && !chain.isEmpty()) {
