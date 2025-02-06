@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -56,7 +56,6 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
-import ffx.potential.FiniteDifferenceUtils;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.SystemState;
 import ffx.potential.UnmodifiableState;
@@ -565,11 +564,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param nonEquilibrium True if non-equilibrium lambda dynamics should be enabled.
    * @param nEQSteps       Number of lambda steps.
+   * @param reverseNEQ     True if lambda path should be reversed.
    */
-  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps) {
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ) {
     nonEquilibriumLambda = nonEquilibrium;
     if (nonEquilibriumLambda) {
-      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps);
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ);
     } else {
       nonEquilibriumDynamics = null;
     }
@@ -1484,7 +1484,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Configure the number of non-equilibrium dynamics.
       nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
-      lambdaInterface.setLambda(0.0);
+      double lambda = nonEquilibriumDynamics.getInitialLambda();
+      lambdaInterface.setLambda(lambda);
     }
 
     // Main MD loop to take molecular dynamics steps.
@@ -1492,17 +1493,29 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Update lambda for non-equilibrium simulations.
       if (nonEquilibriumLambda && nonEquilibriumDynamics.isUpdateStep(step)) {
+        Potential.STATE respaState = potential.getEnergyTermState();
+        if (integrator instanceof Respa) {
+          if (respaState != Potential.STATE.BOTH) {
+            potential.setEnergyTermState(Potential.STATE.BOTH);
+          }
+        }
         LambdaInterface lambdaInterface = (LambdaInterface) potential;
-        MolecularAssembly assembly = molecularAssembly[0];
         double currentLambda = lambdaInterface.getLambda();
-        double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-        nonEquilibriumDynamics.setdEdL(step, dEdL);
+        double currentEnergy = state.getPotentialEnergy();
+        // Update the lambda value.
         double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
         lambdaInterface.setLambda(newLambda);
-        double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG(0, nonEquilibriumDynamics.getCurrentLambdaBin(step));
-        double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
-        logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-            currentLambda, dG, deltaE, dEdL));
+        // Compute the new energy.
+        double newEnergy = potential.energy(state.x());
+        // The non-equilibrium work is the difference in energy.
+        double dW = newEnergy - currentEnergy;
+        nonEquilibriumDynamics.addWork(dW);
+        logger.info(format(" Non-equilibrium L=%5.3f Work=%12.6f", newLambda, nonEquilibriumDynamics.getWork()));
+
+        // Reset the Respa State.
+        if (integrator instanceof Respa) {
+          potential.setEnergyTermState(respaState);
+        }
       }
 
       if (step > 1) {
@@ -1605,21 +1618,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(format("\n Terminating after %8d time steps\n", step));
         break;
       }
-    }
-
-    // Update lambda for non-equilibrium simulations.
-    if (nonEquilibriumLambda) {
-      MolecularAssembly assembly = molecularAssembly[0];
-      LambdaInterface lambdaInterface = (LambdaInterface) potential;
-      double dEdL = FiniteDifferenceUtils.computedEdL(potential, lambdaInterface, assembly.getForceField());
-      nonEquilibriumDynamics.setdEdL(nSteps, dEdL);
-      double dG = nonEquilibriumDynamics.getTrapezoidalDeltaG();
-      double deltaE = state.getTotalEnergy() - initialState.getTotalEnergy();
-      double lambda = lambdaInterface.getLambda();
-      logger.info(format(" Non-equilibrium L=%5.3f dG=%12.6f dE=%12.6f dE/dL=%12.6f",
-          lambda, dG, deltaE, dEdL));
-      logger.info(format(" Non-equilibrium Simpson dG=%12.6f", nonEquilibriumDynamics.getSimpsonDeltaG()));
-      logger.info(format(" Non-equilibrium Boole   dG=%12.6f", nonEquilibriumDynamics.getBooleDeltaG()));
     }
   }
 

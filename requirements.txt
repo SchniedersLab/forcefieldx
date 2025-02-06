@@ -1,4 +1,4 @@
-Jinja2==3.1.4
+Jinja2==3.1.5
 MarkupSafe==2.1.2
 Pygments==2.15.0
 Send2Trash==1.8.0
@@ -42,7 +42,7 @@ setuptools==70.0.0
 six==1.12.0
 terminado==0.17.1
 testpath==0.4.2
-tornado==6.4.1
+tornado==6.4.2
 traitlets==5.9.0
 wcwidth==0.1.7
 webencodings==0.5.1

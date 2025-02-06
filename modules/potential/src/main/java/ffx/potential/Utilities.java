@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -116,9 +116,7 @@ public final class Utilities {
    * @param atoms a {@link java.util.List} object.
    */
   public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
-
-    // logger.info(" Biochemistry called.");
-
+    
     Atom atom, seed = null;
     int num = 0;
     int waterNum = 0;
@@ -138,7 +136,6 @@ public final class Utilities {
       }
       // If no nitrogen atoms remain, there are no nucleic or amino acids.
       if (seed.getAtomicNumber() != 7) {
-        // logger.info(" Finished searching for proteins and nucleic acids.");
         List<Atom> moleculeAtoms;
         while (!atoms.isEmpty()) {
           atom = atoms.get(0);
@@ -167,7 +164,6 @@ public final class Utilities {
           }
           // All other molecules
           moleculeNum++;
-          // logger.info(" Molecule: " + moleculeNum);
           Molecule molecule = new Molecule("Molecule-" + moleculeNum);
           moleculeAtoms = getAtomListFromPool();
           collectAtoms(atoms.get(0), moleculeAtoms, true);
@@ -183,25 +179,28 @@ public final class Utilities {
       }
 
       List<Atom> backbone = findPolymer(seed, null);
-      if (!backbone.isEmpty()) {
+      if (backbone != null && !backbone.isEmpty()) {
         seed = backbone.get(backbone.size() - 1);
         backbone = findPolymer(seed, null);
       }
 
-      // logger.info(" Backbone length: " + backbone.size());
+
       Character chainID = getChainID(num);
       String segID = getSegID(chainID, segIDs);
       Polymer c = new Polymer(chainID, segID, true);
-      if (backbone.size() > 2 && divideBackbone(backbone, c)) {
+
+      if (backbone != null && backbone.size() > 2 && divideBackbone(backbone, c)) {
         for (Atom a : c.getAtomList()) {
           atoms.remove(a);
         }
-        // logger.info(" Sequenced chain: " + c.getName());
         molecularAssembly.addMSNode(c);
         num++;
       } else {
+        // The divideBackone method may have set the parent of some atoms before failing. Clear them.
+        for (Atom a : atoms) {
+          a.setParent(null);
+        }
         moleculeNum++;
-        // logger.info(" Molecule: " + moleculeNum);
         Molecule hetero = new Molecule("Molecule-" + moleculeNum);
         atom = backbone.get(0);
         List<Atom> heteroAtomList = getAtomListFromPool();

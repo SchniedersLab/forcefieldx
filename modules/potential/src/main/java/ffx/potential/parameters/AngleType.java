@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -508,6 +508,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
    */
   public static Element getXMLForce(Document doc, ForceField forceField) {
     Map<String, AngleType> angMap = forceField.getAngleTypes();
+    angMap.putAll(forceField.getAnglepTypes());
     if (!angMap.values().isEmpty()) {
       Element node = doc.createElement("AmoebaAngleForce");
       node.setAttribute("angle-cubic", valueOf(forceField.getDouble("angle-cubic", DEFAULT_ANGLE_CUBIC)));

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -173,9 +173,10 @@ public class ThermodynamicsOptions {
     molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
     // Start sampling.
     if (group.equilibrationSteps > 0) {
-      logger.info("\n Beginning Equilibration (at Lambda = 0)");
+      double initialLambda = group.reverseNEQ ? 1.0 : 0.0;
+      logger.info(format("\n Beginning Equilibration (at L=%5.3f)", initialLambda));
       LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
-      lambdaInterface.setLambda(0.0);
+      lambdaInterface.setLambda(initialLambda);
       runDynamics(molDyn, group.equilibrationSteps, dynamicsOptions, writeoutOptions, true, dyn);
       if (nSteps > 0) {
         logger.info(" Beginning Non-Equilibrium Sampling");
@@ -190,7 +191,7 @@ public class ThermodynamicsOptions {
     }
 
     if (nSteps > 0) {
-      molDyn.setNonEquilibriumLambda(true, group.nonEquilibriumSteps);
+      molDyn.setNonEquilibriumLambda(true, group.nonEquilibriumSteps, group.reverseNEQ);
       runDynamics(molDyn, nSteps, dynamicsOptions, writeoutOptions, initVelocities, dyn);
     }
 
@@ -263,6 +264,13 @@ public class ThermodynamicsOptions {
     @Option(names = {"--nEQ", "--nonEquilibriumSteps"}, paramLabel = "100", defaultValue = "100",
         description = "Sets the number of non-equilibrium lambda steps.")
     private int nonEquilibriumSteps = 100;
+
+    /**
+     * --rNEQ or --reverseNonEquilibrium Run non-equilibrium dynamics from L=1 to L=0.
+     */
+    @Option(names = {"--rNEQ", "--reverseNonEquilibrium"}, defaultValue = "false",
+        description = "Run non-equilibrium dynamics from L=1 to L=0.")
+    private boolean reverseNEQ = false;
 
     /**
      * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart files and thus resets

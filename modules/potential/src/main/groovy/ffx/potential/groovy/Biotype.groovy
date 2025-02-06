@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -144,6 +144,25 @@ class Biotype extends PotentialScript {
     logger.info("\n Running Biotype on " + filename)
 
     Molecule[] molecules = activeAssembly.getMoleculeArray()
+
+    Atom[] atoms = activeAssembly.getAtomArray()
+    if (writeCONNECT) {
+      for (Atom a : atoms) {
+// =============================================================================
+//  7 - 11        Integer        serial       Atom  serial number
+// 12 - 16        Integer        serial       Serial number of bonded atom
+// 17 - 21        Integer        serial       Serial number of bonded atom
+// 22 - 26        Integer        serial       Serial number of bonded atom
+// 27 - 31        Integer        serial       Serial number of bonded atom
+        StringBuilder sb = new StringBuilder(String.format("CONECT%5s", Integer.toString(a.getXyzIndex())))
+        Bond[] bonds = a.getBonds()
+        for (Bond b : bonds) {
+          sb.append(String.format("%5s", Integer.toString(b.get1_2(a).getXyzIndex())))
+        }
+        logger.info(sb.toString())
+      }
+    }
+
     if (molecules.length > 1) {
       logger.info(" Biotype is intended for a system with one molecule.")
       return this
@@ -151,7 +170,6 @@ class Biotype extends PotentialScript {
 
     // Update the molecule name.
     molecules[0].setName(molName)
-    Atom[] atoms = activeAssembly.getAtomArray()
 
     // Create a List of biotype String entries.
     bioTypes = new ArrayList<>()
@@ -207,23 +225,6 @@ class Biotype extends PotentialScript {
 
     // Return the bioTypes via the Binding.
     binding.setVariable("bioTypes", bioTypes)
-
-    if (writeCONNECT) {
-      for (Atom a : atoms) {
-// =============================================================================
-//  7 - 11        Integer        serial       Atom  serial number
-// 12 - 16        Integer        serial       Serial number of bonded atom
-// 17 - 21        Integer        serial       Serial number of bonded atom
-// 22 - 26        Integer        serial       Serial number of bonded atom
-// 27 - 31        Integer        serial       Serial number of bonded atom
-        StringBuilder sb = new StringBuilder(String.format("CONECT%5s", Integer.toString(a.getXyzIndex())))
-        Bond[] bonds = a.getBonds()
-        for (Bond b : bonds) {
-          sb.append(String.format("%5s", Integer.toString(b.get1_2(a).getXyzIndex())))
-        }
-        logger.info(sb.toString())
-      }
-    }
 
     return this
   }

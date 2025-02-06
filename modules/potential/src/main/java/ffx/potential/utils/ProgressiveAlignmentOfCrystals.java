@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -942,7 +942,9 @@ public class ProgressiveAlignmentOfCrystals {
                 .append(alchemicalAtoms2).append("\n");
           }
         }
-        stringBuilder.append(format(" Max RMSD: %9.4f B Index: %d T Index: %d", max1, maxBIndex, maxTIndex));
+        if(logger.isLoggable(Level.FINE)){
+          stringBuilder.append(format("\n Max RMSD: %9.4f B Index: %d T Index: %d\n", max1, maxBIndex, maxTIndex));
+        }
       }
       if (useSave && !useSym) {
         if (machineLearning) {
@@ -1353,6 +1355,7 @@ public class ProgressiveAlignmentOfCrystals {
    * @param nAU                Number of asymmetric units to compare.
    * @param inflationFactor    Specify safety factor when generating replicates crystal.
    * @param matchTol           Tolerance to determine whether two AUs are the same (increases efficiency).
+   * @param hitTol             Tolerance used to save out crystals that are similar (e.g., match experiment to predictions).
    * @param zPrime             Number of asymmetric units in first crystal (default attempts detection).
    * @param zPrime2            Number of asymmetric units in second crystal (default attempts detection).
    * @param excludeAtomsA      List of atoms specific to first crystal.
@@ -1364,7 +1367,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param crystalPriority    Prioritize most dense (0), least dense (1), or first inputted file
    *                           (2).
    * @param strict             More intensive, but less efficient version of PAC.
-   * @param saveClusters               Save out files of the resulting superposition.
+   * @param saveClusters       Save out files of the resulting clusters used in superposition.
+   * @param save               Save out files of structures below this tolerance.
    * @param restart            Try to restart from a previous job.
    * @param write              Save out a PAC RMSD file.
    * @param machineLearning    Save out CSV files for machine learning input (saves PDBs as well).
@@ -1376,6 +1380,8 @@ public class ProgressiveAlignmentOfCrystals {
    *                           static assembly.
    * @param lowMemory          Crystals will be read in as needed (slower performance, but less memory
    *                           intensive)
+   * @param createFE           Create subdirectories preparing for free energy calculations between compared crystals.
+   * @param writeSym           Write symmetry operators to corresponding KEY/PROPERTIES files.
    * @param pacFileName        The filename to use.
    * @return RunningStatistics Statistics for comparisons performed.
    */
@@ -1383,11 +1389,11 @@ public class ProgressiveAlignmentOfCrystals {
                                        final int zPrime2, final String excludeAtomsA, final String excludeAtomsB, final boolean alphaCarbons,
                                        final boolean includeHydrogen, final boolean massWeighted, final int crystalPriority, final boolean strict,
                                        int saveClusters, final double save, final boolean restart, final boolean write, final boolean machineLearning, boolean inertia,
-                                       final boolean gyrationComponents, int linkage, final double printSym, boolean lowMemory, final boolean createFE, final boolean appendSym,
-                                       final String pacFileName) {
+                                       final boolean gyrationComponents, int linkage, final double printSym, boolean lowMemory, final boolean createFE, final boolean writeSym,
+                                       final String pacFileName, final StringBuilder symOpsA, final StringBuilder symOpsB) {
     this.printSym = printSym;
     //TODO: Incorporate graphic user interface (gui: ffx)
-    //TODO: Save systems out as original molecule regardless of selection
+    //TODO: Save systems out as full molecule regardless of atom selection
     //TODO: Handle ring flipping or atoms in equivalent positions ("mislabeled" atoms)
     //TODO: Improve handling of Z' > 1 for heterogeneous/co-crystals.
     RunningStatistics runningStatistics;
@@ -1428,7 +1434,7 @@ public class ProgressiveAlignmentOfCrystals {
     ArrayList<Integer> unique = new ArrayList<>(parseAtomRanges("Base Assembly", excludeAtomsA, nAtoms));
     if (invalidAtomSelection(unique, atoms1, alphaCarbons, includeHydrogen)) {
       logger.warning("\n No atoms were selected for the PAC RMSD in first crystal.");
-      return null;
+      return runningStatistics;
     }
     int[] comparisonAtoms = unique.stream().mapToInt(i -> i).toArray();
     List<MSNode> bondedEntities = baseAssembly.getNodeList();
@@ -1446,7 +1452,7 @@ public class ProgressiveAlignmentOfCrystals {
     unique = new ArrayList<>(parseAtomRanges("target", excludeAtomsB, nAtoms2));
     if (invalidAtomSelection(unique, atoms2, alphaCarbons, includeHydrogen)) {
       logger.warning("\n No atoms were selected for the PAC RMSD in second crystal.");
-      return null;
+      return runningStatistics;
     }
     int[] comparisonAtoms2 = unique.stream().mapToInt(i -> i).toArray();
 
@@ -1697,7 +1703,7 @@ public class ProgressiveAlignmentOfCrystals {
       final double[] reducedBaseCoords = reduceSystem(atoms1, comparisonAtoms);
       final double baseDensity = baseCrystal.getUnitCell().getDensity(baseAssembly.getMass());
       if (baseCrystal == null || baseCrystal.aperiodic()) {
-        logger.warning(" " + baseAssembly.getName() + " does not have a crystal. Consider using Superpose command.\n");
+        logger.warning(" File " + baseAssembly.getFile().getName() + ": (" + baseAssembly.getName() + ") does not have a crystal. Consider using Superpose command.\n");
         continue;
       }
 
@@ -1761,18 +1767,18 @@ public class ProgressiveAlignmentOfCrystals {
           }
           if (targetCrystal == null || targetCrystal.aperiodic()) {
             if (!lowMemory) {
-              logger.warning(" " + nameCache[assemblyNum] + " does not have a crystal. Consider using Superpose command.\n");
+              logger.warning(" File " + fileCache[assemblyNum].getName() + ": (" + nameCache[assemblyNum] + ") does not have a crystal. Consider using Superpose command.\n");
             } else {
-              logger.warning(" " + targetAssembly.getName() + " does not have a crystal. Consider using Superpose command.\n");
+              logger.warning(" File " + baseAssembly.getFile().getName() + ": ("  + targetAssembly.getName() + ") does not have a crystal. Consider using Superpose command.\n");
             }
             continue;
           }
 
           int targetFormat = 1;
-          while(targetSize/(10*targetFormat) >= 10){
+          while (targetSize/(10*targetFormat) >= 10) {
             targetFormat++;
           }
-          if(baseSize > 10){
+          if (baseSize > 10) {
             targetFormat++;
           }
           double rmsd;
@@ -1792,7 +1798,7 @@ public class ProgressiveAlignmentOfCrystals {
             rmsd = -10.0;
           } else {
             File targetFE = null;
-            if(createFE) {
+            if (createFE) {
               targetFE = new File(baseFE.getAbsolutePath() + File.separator + format("%0"+targetFormat+"d",column) + File.separator);
               if (!targetFE.exists()) {
                 try {
@@ -1810,7 +1816,7 @@ public class ProgressiveAlignmentOfCrystals {
                             row + 1, baseCrystal.toShortString(), baseLabel, column + 1,
                             targetCrystal.toShortString(), targetLabel));
 
-            //Remove atoms not used in comparisons from the original molecular assembly (crystal 2).
+            // Remove atoms not used in comparisons from the original molecular assembly (crystal 2).
             final double[] reducedTargetCoords = reduceSystem(atoms2, comparisonAtoms2);
             // Used for LMN specific replicates expansion (add LMN as input to generateInflatedSphere).
 //            int[] targetLMN = determineExpansion(targetCrystal.getUnitCell(), reducedTargetCoords, comparisonAtoms2,
@@ -1856,7 +1862,7 @@ public class ProgressiveAlignmentOfCrystals {
             if (targetCoM == null || targetCoM.length != nTargetMols) {
               targetCoM = new double[nTargetMols][3];
             }
-            //Update center of mass and priority for each target crystal..
+            // Update center of mass and priority for each target crystal..
             centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
             prioritizeReplicates(targetXYZ, targetCoM, compareAtomsSize,
                     targetAUDist, 0, linkage);
@@ -2139,6 +2145,9 @@ public class ProgressiveAlignmentOfCrystals {
                       }
                       final int[] mol1arr = mol1list.stream().mapToInt(Integer::intValue).toArray();
                       final int[] mol2arr = mol2list.stream().mapToInt(Integer::intValue).toArray();
+                      if(mol1arr.length < 3 || mol2arr.length < 3){
+                        logger.warning(" Less than 3 atoms were included for this sym op which likely leads to poor multipole overlap.");
+                      }
                       sbSO.append(format("    %s     %s", writeAtomRanges(mol1arr), writeAtomRanges(mol2arr)))
                               .append(asMatrixString(bestTargetTransformSymOp[i][j]));
                       sbInv.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr))).append(asMatrixString(inverted));
@@ -2191,7 +2200,7 @@ public class ProgressiveAlignmentOfCrystals {
                           assembly.setFile(originalFile);
                           assembly.setName(originalName);
                         }
-                        if(appendSym) {
+                        if(writeSym) {
                           try (BufferedWriter bw = new BufferedWriter(new FileWriter(newPropertyFile,
                                   newPropertyFile.exists()))) {
                             String label = fileContainsString(newPropertyFile, "symop");
@@ -2210,12 +2219,12 @@ public class ProgressiveAlignmentOfCrystals {
                           }
                         }
                       }
-                      if(!createFE && appendSym){
+                      if(!createFE && writeSym){
                         File newFile = new File(removeExtension(file1.getAbsolutePath()) + ".properties");
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile,
                                 newFile.exists()))) {
                           String label = fileContainsString(newFile, "symop");
-                          bw.write(format("%s    %s     %s", label, writeAtomRanges(mol1arr), writeAtomRanges(mol2arr)) +asMatrixString(bestTargetTransformSymOp[i][j]) + "\\\n");
+                          bw.write(format("%s    %s     %s", label, writeAtomRanges(mol1arr), writeAtomRanges(mol2arr)) + asMatrixString(bestTargetTransformSymOp[i][j]) + "\\\n");
                         }catch(Exception ex){
                           logger.info(" Failed to append symmetry operator to target properties file.");
                           logger.warning(ex + Utilities.stackTraceToString(ex));
@@ -2224,11 +2233,19 @@ public class ProgressiveAlignmentOfCrystals {
                         try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile2,
                                 newFile2.exists()))) {
                           String label = fileContainsString(newFile2, "symop");
-                          bw.write(format("%s    %s     %s", label, writeAtomRanges(mol2arr), writeAtomRanges(mol1arr)) +asMatrixString(inverted) + "\\\n");
+                          bw.write(format("%s    %s     %s", label, writeAtomRanges(mol2arr), writeAtomRanges(mol1arr)) + asMatrixString(inverted) + "\\\n");
                         }catch(Exception ex){
                           logger.info(" Failed to append symmetry operator to base properties file.");
                           logger.warning(ex + Utilities.stackTraceToString(ex));
                         }
+                      }
+                      // Collect Symmetry operators to format in SuperposeCrystals.
+                      if(densityCheck || crystalPriority == 2){
+                        symOpsA.append(format("    %s     %s", writeAtomRanges(mol1arr), writeAtomRanges(mol2arr))).append(asMatrixString(bestTargetTransformSymOp[i][j])).append("\\\n");
+                        symOpsB.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr))).append(asMatrixString(inverted)).append("\\\n");
+                      }else{
+                        symOpsA.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr))).append(asMatrixString(inverted)).append("\\\n");
+                        symOpsB.append(format("    %s     %s", writeAtomRanges(mol1arr), writeAtomRanges(mol2arr))).append(asMatrixString(bestTargetTransformSymOp[i][j])).append("\\\n");
                       }
 
                       if (logger.isLoggable(Level.FINER)) {
@@ -2356,7 +2373,7 @@ public class ProgressiveAlignmentOfCrystals {
         writeDistanceMatrixRow(pacFileName, distRow, firstColumn);
       }
     }
-
+    // Clean up/ report statistics for comparisons.
     if (minTime < Double.MAX_VALUE) {
       logger.info(format("\n Minimum PAC Time: %7.4f", minTime));
     }

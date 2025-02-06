@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -45,16 +45,14 @@ import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
-import org.apache.logging.log4j.core.util.FileUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static org.apache.commons.io.FilenameUtils.concat
-import static org.apache.commons.io.FilenameUtils.getName
-import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.apache.commons.io.FileUtils.copyFile
+import static org.apache.commons.io.FileUtils.createParentDirectories
+import static org.apache.commons.io.FilenameUtils.*
 
 /**
  * The SaveAsPDB script saves a file as a PDB file
@@ -96,6 +94,13 @@ class SaveAsPDB extends PotentialScript {
   @Option(names = ['--wd', '--writeToDirectories'], paramLabel = "false", defaultValue = "false",
       description = 'Write snapshots to numbered subdirectories.')
   private boolean writeToDirectories = false
+
+  /**
+   * --wp or --writeProperties Copy the property file to each subdirectory.
+   */
+  @Option(names = ['--cp', '--copyProperties'], paramLabel = "true", defaultValue = "true",
+      description = 'Copy the property file to numbered subdirectories (ignored if not writing to subdirectories).')
+  private boolean copyProperties = true
 
   /**
    * --esv Handle an extended system at the bottom of XYZ files using XPHFilter.
@@ -187,18 +192,27 @@ class SaveAsPDB extends PotentialScript {
           File snapshotFile
           if (writeToDirectories) {
             String subdirectory = concat(dirString, snapshotCounter.toString())
-            FileUtils.mkdir(new File(subdirectory), true)
             snapshotFile = new File(concat(subdirectory, name))
+            createParentDirectories(snapshotFile)
+            if (copyProperties) {
+              String propertyFile = activeAssembly.getProperties().getString("propertyFile")
+              if (propertyFile != null) {
+                String propertyFilename = getName(propertyFile)
+                File copyOfPropFile = new File(concat(subdirectory, propertyFilename))
+                logger.info("\n Copying properties to " + copyOfPropFile.toString())
+                copyFile(new File(propertyFile), copyOfPropFile)
+              }
+            }
           } else {
             snapshotFile = new File(concat(dirString,
                 removeExtension(name) + "." + counter.toString() + ".pdb"))
           }
           potentialFunctions.versionFile(snapshotFile)
           saveOptions.preSaveOperations(activeAssembly)
-          snapshotFilter.setModelNumbering(snapshotCounter)
-          logger.info("\n Writing out PDB for " + snapshotFile.toString())
+          logger.info(" Saving PDB to         " + snapshotFile.toString())
           snapshotFilter.writeFile(snapshotFile, true, false, false)
           snapshotFile.append("END\n")
+
           // Increment the snapshot counter used to name the file or create a subdirectory.
           snapshotCounter++
         }
