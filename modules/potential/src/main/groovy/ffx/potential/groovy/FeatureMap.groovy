@@ -269,6 +269,9 @@ class FeatureMap extends PotentialScript {
                                 pA = ["null", "null"]
                             }
                             feat = featureList.get(position - 1)
+                        } else {
+                            ddG = ["null", "null"]
+                            pA = ["null", "null"]
                         }
                     }
                     String isomer
