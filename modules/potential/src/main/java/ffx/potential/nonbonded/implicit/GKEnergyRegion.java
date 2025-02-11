@@ -307,10 +307,8 @@ public class GKEnergyRegion extends ParallelRegion {
     int nAtoms = atoms.length;
     int nThreads = gkEnergyLoop.length;
     if (selfEnergy == null || selfEnergy.size() != atoms.length) {
-      selfEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
-          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
-      crossEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
-          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+      selfEnergy = AtomicDoubleArrayImpl.MULTI.createInstance(nThreads, nAtoms);
+      crossEnergy = AtomicDoubleArrayImpl.MULTI.createInstance(nThreads, nAtoms);
     } else {
       selfEnergy.reset(parallelTeam, 0, nAtoms - 1);
       crossEnergy.reset(parallelTeam, 0, nAtoms - 1);

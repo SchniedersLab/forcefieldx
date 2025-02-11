@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.atomic;
 
-import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -91,9 +90,9 @@ public class AtomicDoubleArray3D {
    */
   public AtomicDoubleArray3D(AtomicDoubleArrayImpl atomicDoubleArrayImpl, int size, int nThreads) {
     atomicDoubleArray = new AtomicDoubleArray[3];
-    atomicDoubleArray[0] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
-    atomicDoubleArray[1] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
-    atomicDoubleArray[2] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
+    atomicDoubleArray[0] = atomicDoubleArrayImpl.createInstance(nThreads, size);
+    atomicDoubleArray[1] = atomicDoubleArrayImpl.createInstance(nThreads, size);
+    atomicDoubleArray[2] = atomicDoubleArrayImpl.createInstance(nThreads, size);
     this.atomicDoubleArrayImpl = atomicDoubleArrayImpl;
   }
 

@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.SoluteType.setSoluteRadii;
@@ -1627,7 +1626,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
       int threadCount = parallelTeam.getThreadCount();
       grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
       torque = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
-      bornRadiiChainRule = atomicDoubleArrayFactory(atomicDoubleArrayImpl, threadCount, nAtoms);
+      bornRadiiChainRule = atomicDoubleArrayImpl.createInstance(threadCount, nAtoms);
     } else {
       grad.alloc(nAtoms);
       torque.alloc(nAtoms);
