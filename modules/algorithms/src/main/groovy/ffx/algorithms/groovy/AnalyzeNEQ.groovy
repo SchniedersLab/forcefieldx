@@ -159,7 +159,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
     commandArgs.add(outputName)
 
     // Parameters
-    commandArgs.add("test.pdb") // /Users/jakemiller/forcefieldx/examples/1EY0.pdb todo fix - coord file
+    commandArgs.add("test.pdb") // todo fix - need coord file
 
     Binding binding = new Binding()
     binding.setVariable("args", commandArgs)
@@ -209,7 +209,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
         Pattern re = Pattern.compile(reSearch)
         String line
 
-        // todo above - have ability to request single files or something to let script know only using 1 file for each direction
+        // todo above - have ability to request single files with all works or multiple files and grab last work
 
         while ((line = reader.readLine()) != null) {
           Matcher matcher = re.matcher(line)
