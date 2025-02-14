@@ -65,7 +65,7 @@ import static java.lang.String.format
  * ffxc test.SaveAsConstantPhPDB [options] &lt;filename&gt;
  */
 @Command(description = " Save a PDB file that includes all titrating tautomer hydrogen atoms.",
-    name = "test.SaveAsConstantPhPDB")
+        name = "test.SaveAsConstantPhPDB")
 class SaveAsConstantPhPDB extends PotentialScript {
 
   @CommandLine.Option(names = ["--rt", "--rotamerTitration"], paramLabel = "false",
@@ -75,7 +75,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
    * The final argument should be a PDB coordinate file.
    */
   @Parameters(arity = "1", paramLabel = "file",
-      description = 'The atomic coordinate file in PDB format.')
+          description = 'The atomic coordinate file in PDB format.')
   String filename = null
 
   /**
@@ -141,7 +141,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
     // Create Potential in same fashion as in PotentialsFileOpener since we manually create mola vs using getActiveAs()
-    ForceFieldEnergy potential = ForceFieldEnergy.energyFactory(activeAssembly, pdbFilter.getCoordRestraints())
+    ForceFieldEnergy potential = ForceFieldEnergy.energyFactory(activeAssembly)
     activeAssembly.setPotential(potential)
     activeAssembly.finalize(true, forceField)
 
