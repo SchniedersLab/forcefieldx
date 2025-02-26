@@ -61,11 +61,15 @@ import static org.apache.commons.math3.util.FastMath.log;
  */
 public class Zwanzig extends SequentialEstimator implements BootstrappableEstimator {
 
-  private static final Logger logger = Logger.getLogger(SequentialEstimator.class.getName());
+  private static final Logger logger = Logger.getLogger(Zwanzig.class.getName());
+
   /**
    * Directionality of the Zwanzig estimation (forwards perturbation or backwards perturbation).
    */
   public final Directionality directionality;
+  /**
+   * Whether the Zwanzig estimation is forwards or backwards.
+   */
   private final boolean forwards;
   /**
    * Number of windows.
@@ -74,27 +78,32 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
   /**
    * Free energy difference for each window.
    */
-  private final double[] windowFreeEnergyDifferences;
-  private final double[] windowEnthalpies;
+  private final double[] freeEnergyDifferences;
+  /**
+   * Enthalpy difference for each window.
+   */
+  private final double[] enthalpyDifferences;
   /**
    * Free energy difference uncertainty for each window.
    */
-  private final double[] windowFreeEnergyUncertainties;
+  private final double[] freeEnergyDifferenceUncertainties;
+  /**
+   * Random number generator for bootstrapping.
+   */
   private final Random random;
   /**
    * Total free energy difference as a sum over windows.
    */
   private double totalFreeEnergyDifference;
   /**
-   * Total free energy difference uncertainty: totalFreeEnergyUncertainty = Sqrt [ Sum over Windows [
-   * Window Uncertainty Squared ] ]
+   * Total free energy difference uncertainty:
+   * totalFreeEnergyUncertainty = Sqrt [ Sum over Windows [ Window Variance ] ]
    */
-  private double totalFreeEnergyUncertainty;
-
+  private double totalFreeEnergyDifferenceUncertainty;
   /**
-   * Total Enthalpy
+   * The total enthalpy difference.
    */
-  private double totalEnthalpy;
+  private double totalEnthalpyDifference;
 
   /**
    * Estimates a free energy using the Zwanzig relationship. The temperature array can be of length 1
@@ -103,29 +112,25 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * <p>The first dimension of the energies arrays corresponds to the lambda values/windows. The
    * second dimension (can be of uneven length) corresponds to potential energies of snapshots
    * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
-   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be all
+   * or the lambda value above. The arrays eLambdaMinusdL[0] and eLambdaPlusdL[n-1] is expected to be all
    * NaN.
    *
-   * @param lambdaValues   Values of lambda dynamics was run at.
-   * @param energiesLow    Potential energies of trajectory L at lambda L-dL. Ignored for forwards
-   *                       FEP.
-   * @param energiesAt     Potential energies of trajectory L at lambda L.
-   * @param energiesHigh   Potential energies of trajectory L at lambda L+dL. Ignored for backwards
-   *                       FEP.
-   * @param temperature    Temperature each lambda window was run at (single-element indicates
-   *                       identical temperatures).
+   * @param lambdaValues   Lambda values for the samples.
+   * @param eLambdaMinusdL Potential energies of state L at lambda L-dL. Ignored for forwards FEP.
+   * @param eLambda        Potential energies of state L at lambda L.
+   * @param eLambdaPlusdL  Potential energies of state L at lambda L+dL. Ignored for backwards FEP.
+   * @param temperature    Temperature each lambda window was run at (single-element indicates identical temperatures).
    * @param directionality Forwards vs. backwards FEP.
    */
-  public Zwanzig(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
-                 double[][] energiesHigh,
-                 double[] temperature, Directionality directionality) {
-    super(lambdaValues, energiesLow, energiesAt, energiesHigh, temperature);
+  public Zwanzig(double[] lambdaValues, double[][] eLambdaMinusdL, double[][] eLambda,
+                 double[][] eLambdaPlusdL, double[] temperature, Directionality directionality) {
+    super(lambdaValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperature);
     this.directionality = directionality;
-    nWindows = nTrajectories - 1;
+    nWindows = nStates - 1;
 
-    windowFreeEnergyDifferences = new double[nWindows];
-    windowFreeEnergyUncertainties = new double[nWindows];
-    windowEnthalpies = new double[nWindows];
+    freeEnergyDifferences = new double[nWindows];
+    freeEnergyDifferenceUncertainties = new double[nWindows];
+    enthalpyDifferences = new double[nWindows];
 
     forwards = directionality.equals(Directionality.FORWARDS);
     random = new Random();
@@ -138,7 +143,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    */
   @Override
   public Zwanzig copyEstimator() {
-    return new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, directionality);
+    return new Zwanzig(lamValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperatures, directionality);
   }
 
   /**
@@ -152,58 +157,54 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
     for (int i = 0; i < nWindows; i++) {
       final int windowIndex = i + (forwards ? 0 : 1);
-      final double[] e1 = eAt[windowIndex];
-      final double[] e2 = forwards ? eHigh[windowIndex] : eLow[windowIndex];
+      final double[] referenceEnergy = eLambda[windowIndex];
+      final double[] perturbedEnergy = forwards ? eLambdaPlusdL[windowIndex] : eLambdaMinusdL[windowIndex];
       final double sign = forwards ? 1.0 : -1.0;
-      final double beta = -temperatures[windowIndex] * R;
-      final double invBeta = 1.0 / beta;
-
-      final int len = e1.length;
-      if (len == 0) {
+      final double kT = temperatures[windowIndex] * R;
+      final double beta = 1.0 / kT;
+      final int numSamples = referenceEnergy.length;
+      if (numSamples == 0) {
         logger.log(warningLevel, " Skipping frame " + i + " due to lack of snapshots!");
         continue;
       }
 
       // With no iteration-to-convergence, generating a fresh random index is OK.
-      int[] samples =
-          randomSamples ? getBootstrapIndices(len, random) : IntStream.range(0, len).toArray();
+      int[] sampleIndices = randomSamples ? getBootstrapIndices(numSamples, random) : IntStream.range(0, numSamples).toArray();
 
-      double sum = 0.0;
-      double num = 0.0;
-      double uAve = 0.0;
-      for (int indJ = 0; indJ < len; indJ++) {
-        int j = samples[indJ];
-        double dE = e2[j] - e1[j];
-        if (sign > 0) {
-          uAve += e1[j];
-          final var term = exp(invBeta * dE);
-          sum += term;
-          num += e2[j] * term;
+      double boltzmannFactorSum = 0.0;
+      double weightedMeanEnergy = 0.0;
+      double meanEnergy = 0.0;
+      for (int j = 0; j < numSamples; j++) {
+        int index = sampleIndices[j];
+        final double dE = perturbedEnergy[index] - referenceEnergy[index];
+        final double weight = exp(-beta * dE);
+        boltzmannFactorSum += weight;
+        if (forwards) {
+          meanEnergy += referenceEnergy[index];
+          weightedMeanEnergy += perturbedEnergy[index] * weight;
         } else {
-          uAve += e2[j];
-          final var term = exp(invBeta * dE);
-          sum += term;
-          num += e1[j] * term;
+          meanEnergy += perturbedEnergy[index];
+          weightedMeanEnergy += referenceEnergy[index] * weight;
         }
       }
+      meanEnergy = meanEnergy / numSamples;
+      double dG = -sign * kT * log(boltzmannFactorSum / numSamples);
 
-      uAve = uAve / len;
-
-      double dG = sign * beta * log(sum / len);
-      if(isNaN(dG)||isInfinite(dG)){
-        logger.severe(format(" Change in free energy (%9.4f) for window (%2d of %2d) in Zwanzig is not permitted. " +
-                        "Sign: %9.4f, Beta: %9.4f (Temp: %9.4f R: %9.6f), Sum: %9.4f, Len: %3d, Log: %9.4f",
-                dG, i, nWindows, sign, beta, -temperatures[windowIndex], R, sum, len, log(sum/len)));
+      if (isNaN(dG) || isInfinite(dG)) {
+        logger.severe(format(" Change in free energy (%9.4f) for window (%2d of %2d) failed. " +
+                "Sign: %9.4f, Beta: %9.4f, Temp: %9.4f, Sum: %9.4f, Len: %3d, Log: %9.4f",
+            dG, i, nWindows, sign, kT, temperatures[windowIndex], boltzmannFactorSum, numSamples, log(boltzmannFactorSum / numSamples)));
       }
-      windowFreeEnergyDifferences[i] = dG;
-      windowEnthalpies[i] = sign * ((num / sum) - uAve);
-      windowFreeEnergyUncertainties[i] = 0.0;
-      totalEnthalpy += windowEnthalpies[i];
+
+      freeEnergyDifferences[i] = dG;
+      enthalpyDifferences[i] = sign * ((weightedMeanEnergy / boltzmannFactorSum) - meanEnergy);
+      freeEnergyDifferenceUncertainties[i] = 0.0;
+      totalEnthalpyDifference += enthalpyDifferences[i];
       cumDG += dG;
     }
 
     totalFreeEnergyDifference = cumDG;
-    totalFreeEnergyUncertainty = 0.0;
+    totalFreeEnergyDifferenceUncertainty = 0.0;
   }
 
   /**
@@ -218,23 +219,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * {@inheritDoc}
    */
   @Override
-  public double[] getBinEnergies() {
-    return copyOf(windowFreeEnergyDifferences, nWindows);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public double[] getBinUncertainties() {
-    return copyOf(windowFreeEnergyUncertainties, nWindows);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public double getFreeEnergy() {
+  public double getTotalFreeEnergyDifference() {
     return totalFreeEnergyDifference;
   }
 
@@ -242,15 +227,31 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * {@inheritDoc}
    */
   @Override
-  public double getUncertainty() {
-    return totalFreeEnergyUncertainty;
+  public double[] getFreeEnergyDifferences() {
+    return copyOf(freeEnergyDifferences, nWindows);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public int numberOfBins() {
+  public double getTotalFEDifferenceUncertainty() {
+    return totalFreeEnergyDifferenceUncertainty;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public double[] getFEDifferenceUncertainties() {
+    return copyOf(freeEnergyDifferenceUncertainties, nWindows);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int getNumberOfBins() {
     return nWindows;
   }
 
@@ -258,8 +259,16 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
    * {@inheritDoc}
    */
   @Override
-  public double[] getBinEnthalpies() {
-    return copyOf(windowEnthalpies, nWindows);
+  public double getTotalEnthalpyDifference() {
+    return totalEnthalpyDifference;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public double[] getEnthalpyDifferences() {
+    return copyOf(enthalpyDifferences, nWindows);
   }
 
   /**

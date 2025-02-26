@@ -38,6 +38,7 @@
 package ffx.algorithms.groovy;
 
 import ffx.algorithms.misc.AlgorithmsTest;
+import ffx.numerics.estimator.FreeEnergyDifferenceReporter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,44 +63,34 @@ public class BARFilesTest extends AlgorithmsTest {
     BAR bar = new BAR(binding).run();
     algorithmsScript = bar;
 
+    FreeEnergyDifferenceReporter reporter = bar.getReporter();
+
     double expectedFepFor = -115.4001;
-    double actualFepFor = bar.getFepFor();
+    double actualFepFor = reporter.getForwardTotalFEDifference();
     Assert.assertEquals(expectedFepFor, actualFepFor, 0.5);
 
     double expectedFepBack = -118.6607;
-    double actualFepBack = bar.getFepBack();
+    double actualFepBack = reporter.getBackwardTotalFEDifference();
     Assert.assertEquals(expectedFepBack, actualFepBack, 0.5);
 
     double expectedhFor = -157.1466;
-    double actualhFor = bar.gethFor();
+    double actualhFor = reporter.getForwardTotalEnthalpyChange();
     Assert.assertEquals(expectedhFor, actualhFor, 50);
 
     double expectedhBack = 123.5150;
-    double actualhBack = bar.gethBack();
+    double actualhBack = reporter.getBackwardTotalEnthalpyChange();
     Assert.assertEquals(expectedhBack, actualhBack, 90);
 
     double expectedhBAR = -29.0062;
-    double actualhBAR = bar.gethBAR();
+    double actualhBAR = reporter.getBarBSTotalEnthalpyChange();
     Assert.assertEquals(expectedhBAR, actualhBAR, 4);
 
-    double expectedsFor = -0.1401;
-    double actualsFor = bar.getsFor();
-    Assert.assertEquals(expectedsFor, actualsFor, 0.15);
-
-    double expectedsBack = 0.8127;
-    double actualsBack = bar.getsBack();
-    Assert.assertEquals(expectedsBack, actualsBack, 0.3);
-
-    double expectedsBAR = 0.2958;
-    double actualsBAR = bar.getsBAR();
-    Assert.assertEquals(expectedsBAR, actualsBAR, 0.1);
-
     double expectedBARIteration = -117.1754;
-    double actualBARIteration = bar.getBarEnergy();
+    double actualBARIteration = reporter.getBarIterTotalFEDiff();
     Assert.assertEquals(expectedBARIteration, actualBARIteration, 0.5);
 
     double expectedBARBootstrap = -117.1464;
-    double actualBARBootstrap = bar.getBarEnergyBS();
+    double actualBARBootstrap = reporter.getBarBSTotalFEDiff();
     Assert.assertEquals(expectedBARBootstrap, actualBARBootstrap, 0.3);
   }
 

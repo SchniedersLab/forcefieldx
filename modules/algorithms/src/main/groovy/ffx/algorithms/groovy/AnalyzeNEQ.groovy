@@ -150,16 +150,16 @@ class AnalyzeNEQ extends AlgorithmsScript {
     List<String> commandArgs = new ArrayList<>()
 
     // Options
-    commandArgs.add("--nw")
+    commandArgs.add("--ns")
     commandArgs.add("2")
     commandArgs.add("--ni")
     commandArgs.add(barIterations as String)
     commandArgs.add("--useTinker")
-    commandArgs.add("--tinkerDir")
+    commandArgs.add("--bf")
     commandArgs.add(outputName)
 
     // Parameters
-    commandArgs.add("test.pdb") // todo fix - need coord file
+    // commandArgs.add("test.pdb") // todo fix - need coord file
 
     Binding binding = new Binding()
     binding.setVariable("args", commandArgs)

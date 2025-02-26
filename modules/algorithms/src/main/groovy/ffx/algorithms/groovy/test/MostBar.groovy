@@ -362,20 +362,20 @@ class MostBar extends AlgorithmsScript {
     SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
     logger.
-        info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergy(),
-            bar.getUncertainty()))
+        info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergyDifference(),
+            bar.getTotalFEDifferenceUncertainty()))
     logger.info(format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.",
-        forwards.getFreeEnergy(), forwards.getUncertainty()))
+        forwards.getFreeEnergyDifference(), forwards.getTotalFEDifferenceUncertainty()))
     logger.info(format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.",
-        backwards.getFreeEnergy(), backwards.getUncertainty()))
+        backwards.getFreeEnergyDifference(), backwards.getTotalFEDifferenceUncertainty()))
     logger.info(" Note - non-bootstrap FEP uncertainties are currently unreliable.")
 
-    double[] barFE = bar.getBinEnergies()
-    double[] barVar = bar.getBinUncertainties()
-    double[] forwardsFE = forwards.getBinEnergies()
-    double[] forwardsVar = forwards.getBinUncertainties()
-    double[] backwardsFE = backwards.getBinEnergies()
-    double[] backwardsVar = backwards.getBinUncertainties()
+    double[] barFE = bar.getFreeEnergyDifferences()
+    double[] barVar = bar.getUncertainties()
+    double[] forwardsFE = forwards.getFreeEnergyDifferences()
+    double[] forwardsVar = forwards.getUncertainties()
+    double[] backwardsFE = backwards.getFreeEnergyDifferences()
+    double[] backwardsVar = backwards.getUncertainties()
 
     sb = new StringBuilder(
         "\n Free Energy Profile Per Window\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")
@@ -431,23 +431,23 @@ class MostBar extends AlgorithmsScript {
       time += System.nanoTime()
       logger.info(format(" Reverse FEP bootstrapping complete in %.4f sec", time * Constants.NS2SEC))
 
-      barFE = barBS.getFE()
-      barVar = barBS.getUncertainty()
-      forwardsFE = forBS.getFE()
-      forwardsVar = forBS.getUncertainty()
-      backwardsFE = backBS.getFE()
-      backwardsVar = backBS.getUncertainty()
+      barFE = barBS.getFreeEnergyDifferences()
+      barVar = barBS.getFEDifferenceStdDevs()
+      forwardsFE = forBS.getFreeEnergyDifferences()
+      forwardsVar = forBS.getFEDifferenceStdDevs()
+      backwardsFE = backBS.getFreeEnergyDifferences()
+      backwardsVar = backBS.getFEDifferenceStdDevs()
 
-      double sumFE = barBS.getTotalFE(barFE)
-      double varFE = barBS.getTotalUncertainty(barVar)
+      double sumFE = barBS.getTotalFreeEnergyDifference(barFE)
+      double varFE = barBS.getTotalFEDifferenceUncertainty(barVar)
       logger.info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-      sumFE = forBS.getTotalFE(forwardsFE)
-      varFE = forBS.getTotalUncertainty()
+      sumFE = forBS.getTotalFreeEnergyDifference(forwardsFE)
+      varFE = forBS.getTotalFEDifferenceUncertainty()
       logger.info(format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
-      sumFE = backBS.getTotalFE(backwardsFE)
-      varFE = backBS.getTotalUncertainty()
+      sumFE = backBS.getTotalFreeEnergyDifference(backwardsFE)
+      varFE = backBS.getTotalFEDifferenceUncertainty()
       logger.info(format(" Free energy via backwards FEP:  %15.9f +/- %.9f kcal/mol.", sumFE, varFE))
 
       sb = new StringBuilder(

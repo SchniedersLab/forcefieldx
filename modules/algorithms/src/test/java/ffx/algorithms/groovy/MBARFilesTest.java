@@ -63,7 +63,7 @@ public class MBARFilesTest extends AlgorithmsTest {
         MultistateBennettAcceptanceRatio mbarEstimator = mbar.mbar;
         Assert.assertNotNull(mbarEstimator);
 
-        double sum = mbarEstimator.getFreeEnergy();
+        double sum = mbarEstimator.getTotalFreeEnergyDifference();
         Assert.assertEquals(72.7092, sum, 1e-2);
     }
 }
