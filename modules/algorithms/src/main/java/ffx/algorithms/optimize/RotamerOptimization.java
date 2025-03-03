@@ -1410,6 +1410,20 @@ public class RotamerOptimization implements Terminatable {
   }
 
   /**
+   * Sets titratble residues to be the center of the box.
+   *
+   * @param titrationBoxes a boolean.
+   */
+  public void setTitrationBoxes(boolean titrationBoxes) {boxOpt.titrationBoxes = titrationBoxes;}
+
+    /**
+     * Sets the size around the titratable residues.
+     *
+     * @param titrationBoxSize double size of the titration box.
+     */
+    public void setTitrationBoxSize(double titrationBoxSize) {boxOpt.titrationBoxSize = titrationBoxSize;}
+
+  /**
    * setCoordinatesToEnsemble.
    *
    * @param ensnum a int.

@@ -8,9 +8,7 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,6 +67,14 @@ class BoxOptimization {
      * Box indeces loaded during a restart.
      */
     public int[] boxLoadCellIndices;
+    /**
+     * Set center of boxes to titratable residues
+     */
+    public boolean titrationBoxes;
+    /**
+     * Box size around a titratable residue
+     */
+    public double titrationBoxSize;
 
     public BoxOptimization(RotamerOptimization rotamerOptimization) {
         this.rotamerOptimization = rotamerOptimization;
@@ -109,7 +115,12 @@ class BoxOptimization {
         } else if(!crystal.aperiodic()){
             cellEnd = totalCells - 1;
         }
-        ManyBodyCell[] cells = loadCells(crystal, residues);
+        ManyBodyCell[] cells;
+        if(titrationBoxes){
+             cells = loadTitrationCells(crystal, residues);
+        } else {
+             cells = loadCells(crystal, residues);
+        }
         int numCells = cells.length;
         rotamerOptimization.logIfRank0(format(" Optimizing cells %d to %d", (cellStart + 1), (cellEnd + 1)));
         for (int i = 0; i < numCells; i++) {
@@ -174,7 +185,17 @@ class BoxOptimization {
                     if(rotamerOptimization.genZ){
                         int[] currentRotamers = new int[rotamerOptimization.optimumSubset.length];
                         rotamerOptimization.getFractions(residueSubsetArray,0,currentRotamers, true);
-                        rotamerOptimization.getProtonationPopulations(residueSubsetArray);
+                        if(titrationBoxes){
+                            int currentResidueNum = manyBodyCell.getABCIndices()[0] + 1;
+                            for(Residue residue: residueSubsetList){
+                                if(residue.getResidueNumber() == currentResidueNum){
+                                    Residue[] titratationResidue = new Residue[]{residue};
+                                    rotamerOptimization.getProtonationPopulations(titratationResidue);
+                                }
+                            }
+                        } else {
+                            rotamerOptimization.getProtonationPopulations(residueSubsetArray);
+                        }
                     }
                     rotamerOptimization.logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
                     rotamerOptimization.logIfRank0(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
@@ -191,7 +212,18 @@ class BoxOptimization {
                     if(rotamerOptimization.genZ){
                         int[] currentRotamers = new int[rotamerOptimization.optimumSubset.length];
                         rotamerOptimization.getFractions(residueSubsetArray,0,currentRotamers, true);
-                        rotamerOptimization.getProtonationPopulations(residueSubsetArray);
+                        if(titrationBoxes){
+                           int currentResidueNum = manyBodyCell.getABCIndices()[0] + 1;
+                           for(Residue residue: residueSubsetList){
+                               if(residue.getResidueNumber() == currentResidueNum){
+                                  Residue[] titratationResidue = new Residue[]{residue};
+                                  rotamerOptimization.getProtonationPopulations(titratationResidue);
+                               }
+                           }
+                        } else {
+                           rotamerOptimization.getProtonationPopulations(residueSubsetArray);
+                        }
+
                     }
                     rotamerOptimization.logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
                     rotamerOptimization.logIfRank0(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
@@ -408,6 +440,66 @@ class BoxOptimization {
     }
 
     /**
+     * Creates and fills cells (boxes) for box optimization.
+     *
+     * @param crystal  Polymer crystal or dummy crystal
+     * @param residues All residues to be optimized
+     * @return Filled cells.
+     */
+    @SuppressWarnings("fallthrough")
+    private ManyBodyCell[] loadTitrationCells(Crystal crystal, Residue[] residues) {
+        String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
+        List<String> titratableResiduesList = Arrays.asList(titratableResidues);
+        List<Residue> centerResidues = new ArrayList<>();
+        for(Residue residue : residues){
+            if (titratableResiduesList.contains(residue.getName())){
+                logger.info(" Adding residue: " + residue.getName() + residue.getResidueNumber() + " to center residue list");
+                centerResidues.add(residue);
+            }
+        }
+
+        int numCells = centerResidues.size();
+        ManyBodyCell[] cells = new ManyBodyCell[numCells];
+        int currentIndex = 0;
+        int filledCells = 0;
+        int[] xyzIndices;
+
+        boolean doBreak = false; // Breaks the ijk loop if the last box passed.
+        for (Residue centerResidue : centerResidues) {
+            double[] center = new double[3];
+            center = centerResidue.getAtomByName("CA", true).getXYZ(center);
+            double[] fracCenter = new double[3];
+            crystal.toFractionalCoordinates(center, fracCenter);
+            double[] fracCoords = new double[6];
+            fracCoords[0] = (fracCenter[0]) - (titrationBoxSize)/crystal.a;
+            fracCoords[1] = (fracCenter[1]) - (titrationBoxSize)/crystal.b;
+            fracCoords[2] = (fracCenter[2]) - (titrationBoxSize)/crystal.c;
+            fracCoords[3] = (fracCenter[0]) + (titrationBoxSize)/crystal.a;
+            fracCoords[4] = (fracCenter[1]) + (titrationBoxSize)/crystal.b;
+            fracCoords[5] = (fracCenter[2]) + (titrationBoxSize)/crystal.c;
+            currentIndex = centerResidues.indexOf(centerResidue);
+            xyzIndices = new int[]{centerResidue.getResidueNumber()-1, centerResidue.getResidueNumber()-1, centerResidue.getResidueNumber()-1};
+            cells[filledCells++] = new ManyBodyCell(fracCoords, xyzIndices, currentIndex);
+        }
+        assignResiduesToCells(crystal, residues, cells);
+        for (ManyBodyCell cell : cells) {
+            cell.sortCellResidues();
+        }
+        switch (rotamerOptimization.direction) {
+            case BACKWARD:
+                ManyBodyCell[] tempCells = new ManyBodyCell[numCells];
+                for (int i = 0; i < numCells; i++) {
+                    tempCells[i] = cells[numCells - (i + 1)];
+                }
+                cells = tempCells;
+                // Fall through into forward case (for now).
+            case FORWARD:
+            default:
+                return cells;
+        }
+    }
+
+    /**
      * Constructs the cells for box optimization and assigns them residues, presently based on C
      * alpha fractional coordinates; by default, cells are sorted by global index. Presently,
      * specifying approxBoxLength over-rides numXYZBoxes, and always rounds the number of boxes down
@@ -445,4 +537,6 @@ class BoxOptimization {
             toAdd.forEach(cell::addResidue);
         }
     }
+
+    public void setTitrationBoxSize(double titrationBoxSize){this.titrationBoxSize = titrationBoxSize;}
 }

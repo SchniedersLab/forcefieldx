@@ -153,6 +153,8 @@ public class ManyBodyOptions {
       rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
       rotamerOptimization.setBoxStart(boxGroup.initialBox);
       rotamerOptimization.setBoxEnd(boxGroup.finalBox);
+      rotamerOptimization.setTitrationBoxes(boxGroup.boxTitration);
+      rotamerOptimization.setTitrationBoxSize(boxGroup.approxBoxLength);
     }
   }
 
@@ -716,6 +718,10 @@ public class ManyBodyOptions {
     boxGroup.boxInclusionCriterion = boxInclusionCriterion;
   }
 
+  public void setBoxTitration(boolean boxTitration){boxGroup.boxTitration = boxTitration;}
+
+  public boolean getBoxTitration(){return boxGroup.boxTitration;}
+
   public void setTitrationPH(double pH) {
     group.titrationPH = pH;
   }
@@ -954,11 +960,18 @@ public class ManyBodyOptions {
     private int initialBox;
 
     /**
-     * --bf or --boxFinal Final box to optimize.
+     * --fB or --boxFinal Final box to optimize.
      */
     @Option(names = {"--fB", "--finalBox"}, defaultValue = "2147483647", // Integer.MAX_VALUE
         description = "Final box to optimize.")
     private int finalBox;
+
+    /**
+     * --bT or --boxTitration Center boxes around titratable residues.
+     */
+    @Option(names = {"--bT", "--boxTitration"}, defaultValue = "false", // Integer.MAX_VALUE
+            description = "Center boxes around titratable residues.")
+    private boolean boxTitration;
 
   }
 
