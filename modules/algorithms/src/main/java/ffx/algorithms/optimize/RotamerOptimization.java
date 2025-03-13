@@ -1226,9 +1226,15 @@ public class RotamerOptimization implements Terminatable {
             e = globalOptimization(residueList);
             arraycopy(optimumSubset, 0, optimum, 0, residueList.size());
           }
-          case WINDOW -> e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
-              direction);
-          case BOX -> e = boxOpt.boxOptimization(residueList);
+            case WINDOW -> {
+                if(genZ) {
+                    e = slidingWindowCentered(residueList);
+                } else {
+                    e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
+                            direction, -1);
+                }
+            }
+            case BOX -> e = boxOpt.boxOptimization(residueList);
           default -> {
           }
         }
@@ -2476,10 +2482,7 @@ public class RotamerOptimization implements Terminatable {
      */
     public void getFractions(Residue[] residues, int i, int[] currentRotamers) throws Exception {
         populationBoltzmann = new double[residues.length][56];
-
-        if(usingBoxOptimization){
-            logger.info("Do this for box optimzation");
-        } else {
+        if(!usingBoxOptimization){
             partitionFunction(residues, i, currentRotamers);
             optimum = new int[residues.length];
             for (int m = 0; m < fraction.length; m++) {
@@ -2611,6 +2614,19 @@ public class RotamerOptimization implements Terminatable {
 
 
         return populations;
+    }
+
+    public double slidingWindowCentered(List<Residue> residueList) throws Exception {
+        String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
+        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+        // TO DO make generic for a list of given residue centers, make array that is filled with TR or take array of centers
+        double e = 0.0;
+        for (Residue titrationResidue : residueList) {
+            if (titratableResiudesList.contains(titrationResidue.getName())) {
+                e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance, Direction.FORWARD, residueList.indexOf(titrationResidue));
+            }
+        }
+        return e;
     }
 
     /**
@@ -3370,7 +3386,7 @@ public class RotamerOptimization implements Terminatable {
 
   @SuppressWarnings("fallthrough")
   private double slidingWindowOptimization(List<Residue> residueList, int windowSize, int increment,
-                                           boolean revert, double distance, Direction direction) {
+                                           boolean revert, double distance, Direction direction, int windowCenter) throws Exception {
 
     long beginTime = -System.nanoTime();
     boolean incrementTruncated = false;
@@ -3395,10 +3411,25 @@ public class RotamerOptimization implements Terminatable {
         for (int windowStart = 0; windowStart + (windowSize - 1) < nOptimize;
              windowStart += increment) {
           long windowTime = -System.nanoTime();
+// Set the start at the residue based on my center
+          if(windowCenter > -1){
+              windowStart =  windowCenter - windowSize/2;
+              if(windowStart < 0){
+                  windowStart = 0;
+              }
+              windowEnd = windowCenter + windowSize/2;
+              if(windowEnd >= residueList.size()){
+                  windowEnd = residueList.size() - 1;
+              }
+          } else {
+              windowEnd = windowStart + (windowSize - 1);
+          }
 
-          windowEnd = windowStart + (windowSize - 1);
-
-          logIfRank0(format("\n Iteration %d of the sliding window.\n", counter++));
+          if(windowCenter > -1){
+              logIfRank0(format("\n Center window at residue %d.\n", residueList.get(windowCenter).getResidueNumber()));
+          } else {
+              logIfRank0(format("\n Iteration %d of the sliding window.\n", counter++));
+          }
 
           Residue firstResidue = residueList.get(windowStart);
           Residue lastResidue = residueList.get(windowEnd);
@@ -3416,6 +3447,9 @@ public class RotamerOptimization implements Terminatable {
 
           if (distance > 0) {
             for (int i = windowStart; i <= windowEnd; i++) {
+              if(windowCenter > -1){
+                  i = windowCenter;
+              }
               Residue residuei = residueList.get(i);
               int indexI = allResiduesList.indexOf(residuei);
               int lengthRi;
@@ -3441,6 +3475,9 @@ public class RotamerOptimization implements Terminatable {
                     }
                   }
                 }
+              }
+              if(windowCenter > -1){
+                  break;
               }
             }
           }
@@ -3560,9 +3597,21 @@ public class RotamerOptimization implements Terminatable {
           logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
           logIfRank0(
               format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+          if(genZ){
+              int[] currentRotamers = new int[optimumSubset.length];
+              usingBoxOptimization = true;
+              Residue[] residueSubsetArray = currentWindow.toArray(new Residue[currentWindow.size()]);
+              getFractions(residueSubsetArray,0,currentRotamers, true);
+              Residue[] titrationResidueArray = new Residue[]{residueList.get(windowCenter)};
+              getProtonationPopulations(titrationResidueArray);
+          }
+          if(windowCenter > -1){
+              break;
+          }
         }
-        break;
 
+
+        break;
       default:
         // No default case.
         break;
