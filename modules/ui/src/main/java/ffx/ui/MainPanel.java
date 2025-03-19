@@ -292,7 +292,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
                 JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders,
                 2024, Journal of Chemical Physics, 161 (1).
         
-                Copyright (c)  Michael J. Schnieders  2001-2024
+                Copyright (c)  Michael J. Schnieders  2001-2025
                 All Rights Reserved
         
                 Force Field X is distributed under the GPL v. 3 license
