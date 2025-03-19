@@ -146,7 +146,7 @@ if [ $hasAwkSed ]; then
         echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 24." 1>&2
     fi
 
-    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 
     nvccComm='which nvcc'
     hasNVCC=''

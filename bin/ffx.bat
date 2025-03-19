@@ -92,7 +92,7 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\lib\*
 
-set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M --add-modules jdk.incubator.vector --add-opens=java.desktop/sun.awt=ALL-UNNAMED
+set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M --add-modules jdk.incubator.vector --add-opens=java.desktop/sun.awt=ALL-UNNAMED --enable-native-access=ALL-UNNAMED
 
 goto endInit
 
