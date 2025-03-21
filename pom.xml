@@ -1055,7 +1055,7 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.6.0</checkstyle.version>
-    <ciftools-java.version>7.0.0</ciftools-java.version>
+    <ciftools-java.version>7.0.1</ciftools-java.version>
     <clean.version>3.4.1</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
@@ -1083,7 +1083,7 @@
     <gmavenplus.version>4.1.1</gmavenplus.version>
     <graal.version>24.2.0</graal.version>
     <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
-    <guava.version>33.4.0-jre</guava.version>
+    <guava.version>33.4.5-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jacoco.skip>true</jacoco.skip>

@@ -53,12 +53,10 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
-import ffx.potential.nonbonded.pme.AlchemicalParameters;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.checkerframework.checker.units.qual.A;
 
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
