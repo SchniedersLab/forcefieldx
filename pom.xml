@@ -1043,13 +1043,13 @@
     </profile>
   </profiles>
   <properties>
-    <asciidoc.version>3.1.1</asciidoc.version>
+    <asciidoc.version>3.2.0</asciidoc.version>
     <antlr4.version>4.13.2</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
-    <biojava.version>7.2.1</biojava.version>
+    <biojava.version>7.2.2</biojava.version>
     <cdk.version>2.10</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
