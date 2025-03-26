@@ -84,7 +84,7 @@ public class ErfTest extends FFXTest {
             // Very small value tests
             {"Test 1.0e-16; near xSmall threshold.", 1.0e-16, 1.128379167095513e-16},
             {"Test 1.0e-10; small value.", 1.0e-10, 1.128379167095513e-10},
-            
+
             {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182849},
             {"Test 0.46; just below first branch point.", 0.46, 0.4846553900016797},
             {"Test 0.46875; at the first branch point.", 0.46875, 0.492613473217938},
