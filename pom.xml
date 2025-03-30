@@ -1050,7 +1050,7 @@
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
     <biojava.version>7.2.2</biojava.version>
-    <cdk.version>2.10</cdk.version>
+    <cdk.version>2.11</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
@@ -1083,7 +1083,7 @@
     <gmavenplus.version>4.1.1</gmavenplus.version>
     <graal.version>24.2.0</graal.version>
     <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
-    <guava.version>33.4.5-jre</guava.version>
+    <guava.version>33.4.6-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.12</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
