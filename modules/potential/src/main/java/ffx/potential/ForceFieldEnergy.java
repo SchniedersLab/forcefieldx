@@ -1022,7 +1022,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       restrainTorsionTerm = false;
     }
 
-    String mode = forceField.getString("RESTRAIN_TORSION_MODE", "ENERGY");
+    String mode = forceField.getString("RESTRAIN_MODE", "ENERGY");
     if (mode.equalsIgnoreCase("ALCHEMICAL")) {
       restrainMode = RestrainMode.ALCHEMICAL;
     } else {
