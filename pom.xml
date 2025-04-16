@@ -1062,10 +1062,10 @@
     <commons-beanutils.version>1.10.1</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.11.0</commons-configuration2.version>
-    <commons-io.version>2.18.0</commons-io.version>
+    <commons-io.version>2.19.0</commons-io.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <commons-text.version>1.13.0</commons-text.version>
+    <commons-text.version>1.13.1</commons-text.version>
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.14.0</compiler.version>
@@ -1083,13 +1083,13 @@
     <gmavenplus.version>4.1.1</gmavenplus.version>
     <graal.version>24.2.0</graal.version>
     <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
-    <guava.version>33.4.6-jre</guava.version>
+    <guava.version>33.4.8-jre</guava.version>
     <install.version>3.1.4</install.version>
-    <jacoco.version>0.8.12</jacoco.version>
+    <jacoco.version>0.8.13</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.1.0</jarsigner.version>
-    <javaparser.version>3.26.3</javaparser.version>
+    <javaparser.version>3.26.4</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.11.2</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
@@ -1128,7 +1128,7 @@
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
-    <surefire.version>3.5.2</surefire.version>
+    <surefire.version>3.5.3</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>

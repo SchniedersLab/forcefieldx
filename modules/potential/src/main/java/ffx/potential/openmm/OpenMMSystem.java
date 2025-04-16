@@ -43,6 +43,7 @@ import ffx.openmm.AndersenThermostat;
 import ffx.openmm.CMMotionRemover;
 import ffx.openmm.Force;
 import ffx.openmm.MonteCarloBarostat;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -312,21 +313,23 @@ public class OpenMMSystem extends ffx.openmm.System {
     amoebaTorsionTorsionForce = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(openMMEnergy);
     addForce(amoebaTorsionTorsionForce);
 
-    // Add Restrain-Position force.
-    restrainPositionsForce = (RestrainPositionsForce) RestrainPositionsForce.constructForce(openMMEnergy);
-    addForce(restrainPositionsForce);
+    if (openMMEnergy.getRestrainMode() == ForceFieldEnergy.RestrainMode.ENERGY) {
+      // Add Restrain Positions force.
+      restrainPositionsForce = (RestrainPositionsForce) RestrainPositionsForce.constructForce(openMMEnergy);
+      addForce(restrainPositionsForce);
 
-    // Add a Restrain-Bond force for each functional form.
-    for (BondType.BondFunction function : BondType.BondFunction.values()) {
-      RestrainBondsForce restrainBondsForce = (RestrainBondsForce) RestrainBondsForce.constructForce(function, openMMEnergy);
-      addForce(restrainBondsForce);
+      // Add Restrain Bonds force for each functional form.
+      for (BondType.BondFunction function : BondType.BondFunction.values()) {
+        RestrainBondsForce restrainBondsForce = (RestrainBondsForce) RestrainBondsForce.constructForce(function, openMMEnergy);
+        addForce(restrainBondsForce);
+      }
+
+      // Add Restrain Torsions force.
+      restrainTorsionsForce = (RestrainTorsionsForce) RestrainTorsionsForce.constructForce(openMMEnergy);
+      addForce(restrainTorsionsForce);
     }
 
-    // Add Restraint-Torsions
-    restrainTorsionsForce = (RestrainTorsionsForce) RestrainTorsionsForce.constructForce(openMMEnergy);
-    addForce(restrainTorsionsForce);
-
-    // Add Restrain-Groups force.
+    // Add Restrain Groups force.
     restrainGroupsForce = (RestrainGroupsForce) RestrainGroupsForce.constructForce(openMMEnergy);
     addForce(restrainGroupsForce);
 

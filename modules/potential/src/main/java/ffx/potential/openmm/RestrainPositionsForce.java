@@ -41,7 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.CustomExternalForce;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.RestrainPosition;
+import ffx.potential.bonded.RestrainPosition;
 
 import java.util.List;
 import java.util.logging.Level;
