@@ -240,6 +240,10 @@ class MutatePDB extends AlgorithmsScript {
     }
     pdbFilter.writeFile(structureFile, false)
 
+    for (PDBFilter.Mutation mut : mutations) {
+      mut.calculateTorsion()
+    }
+
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
 
     return this
