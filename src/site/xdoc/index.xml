@@ -62,7 +62,7 @@
               <p>Download</p>
               <p>
                 <a href="download.html">
-                  <img src="images/download.mp4" alt="Download" width="100" height="100"/>
+                  <img src="images/download.gif" alt="Download" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -70,7 +70,7 @@
               <p>Install</p>
               <p>
                 <a href="install.html">
-                  <img src="images/install.mp4" alt="Install" width="100" height="100"/>
+                  <img src="images/install.gif" alt="Install" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -78,7 +78,7 @@
               <p>User Manual</p>
               <p>
                 <a href="manual.html">
-                  <img src="images/manual.mp4" alt="Manual" width="100" height="100"/>
+                  <img src="images/manual.gif" alt="User Manual" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -86,7 +86,7 @@
               <p>Applications</p>
               <p>
                 <a href="applications.html">
-                  <img src="images/applications.mp4" alt="Applications" width="100" height="100"/>
+                  <img src="images/applications.gif" alt="Applications" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -96,7 +96,7 @@
               <p>Method Development</p>
               <p>
                 <a href="methods.html">
-                  <img src="images/algorithm.mp4" alt="Methods" width="100" height="100"/>
+                  <img src="images/algorithm.gif" alt="Method Development" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -104,7 +104,7 @@
               <p>Build from Source</p>
               <p>
                 <a href="source.html">
-                  <img src="images/build.mp4" alt="Build" width="100" height="100"/>
+                  <img src="images/build.gif" alt="Build from Source" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -112,7 +112,7 @@
               <p>Programmer Guide</p>
               <p>
                 <a href="modules.html">
-                  <img src="images/api.mp4" alt="API" width="100" height="100"/>
+                  <img src="images/api.gif" alt="Programmer Guide" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -120,7 +120,7 @@
               <p>Publications</p>
               <p>
                 <a href="publications.html">
-                  <img src="images/publications.mp4" alt="Publications" width="100" height="100"/>
+                  <img src="images/publications.gif" alt="Publications" width="100" height="100"/>
                 </a>
               </p>
             </td>

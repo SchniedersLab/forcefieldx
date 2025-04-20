@@ -1081,7 +1081,7 @@
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>9.0.1</git-commit-id.version>
     <gmavenplus.version>4.1.1</gmavenplus.version>
-    <graal.version>24.2.0</graal.version>
+    <graal.version>24.2.1</graal.version>
     <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
     <guava.version>33.4.8-jre</guava.version>
     <install.version>3.1.4</install.version>
@@ -1106,7 +1106,7 @@
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-    <picocli.version>4.7.6</picocli.version>
+    <picocli.version>4.7.7</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.version>3.26.0</pmd.version>
     <!-- Skip PMD because it does not handle Java language version 23 yet. -->
