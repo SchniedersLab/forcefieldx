@@ -122,7 +122,7 @@
             <additionalOptions>
               <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
             </additionalOptions>
-            <!-- doclint>all,-missing</doclint -->
+            <doclint>all,-missing</doclint>
           </configuration>
           <version>${javadoc.version}</version>
         </plugin>

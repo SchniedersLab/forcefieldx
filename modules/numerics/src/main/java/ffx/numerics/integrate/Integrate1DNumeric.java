@@ -219,7 +219,7 @@ public class Integrate1DNumeric {
    * @param ub            Ending value, inclusive
    * @param nPoints       Total number of points
    * @param halfWidthEnds If ends should have 1/2 regular separation
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   public static double[] generateXPoints(double lb, double ub, int nPoints, boolean halfWidthEnds) {
     if (lb >= ub) {

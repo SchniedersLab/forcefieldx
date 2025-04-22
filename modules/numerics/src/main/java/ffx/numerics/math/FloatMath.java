@@ -279,7 +279,7 @@ public class FloatMath {
   /**
    * logVector.
    *
-   * @param v     an array of {@link float} objects.
+   * @param v     an array of float values.
    * @param label a {@link String} object.
    */
   public static void log(float[] v, String label) {
@@ -426,7 +426,7 @@ public class FloatMath {
   /**
    * vectorToString.
    *
-   * @param v     an array of {@link float} objects.
+   * @param v     an array of float values.
    * @param label a {@link String} object.
    * @return Returns a String description of the vector.
    */

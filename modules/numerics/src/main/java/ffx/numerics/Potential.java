@@ -51,8 +51,8 @@ public interface Potential extends OptimizationInterface {
   /**
    * getAcceleration.
    *
-   * @param acceleration an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * @param acceleration an array of double values.
+   * @return an array of double values.
    */
   double[] getAcceleration(double[] acceleration);
 
@@ -90,8 +90,8 @@ public interface Potential extends OptimizationInterface {
   /**
    * getPreviousAcceleration.
    *
-   * @param previousAcceleration an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * @param previousAcceleration an array of double values.
+   * @return an array of double values.
    */
   double[] getPreviousAcceleration(double[] previousAcceleration);
 
@@ -105,29 +105,29 @@ public interface Potential extends OptimizationInterface {
   /**
    * getVelocity.
    *
-   * @param velocity an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * @param velocity an array of double values.
+   * @return an array of double values.
    */
   double[] getVelocity(double[] velocity);
 
   /**
    * setAcceleration.
    *
-   * @param acceleration an array of {@link double} objects.
+   * @param acceleration an array of double values.
    */
   void setAcceleration(double[] acceleration);
 
   /**
    * setPreviousAcceleration.
    *
-   * @param previousAcceleration an array of {@link double} objects.
+   * @param previousAcceleration an array of double values.
    */
   void setPreviousAcceleration(double[] previousAcceleration);
 
   /**
    * setVelocity.
    *
-   * @param velocity an array of {@link double} objects.
+   * @param velocity an array of double values.
    */
   void setVelocity(double[] velocity);
 

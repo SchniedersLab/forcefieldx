@@ -59,7 +59,7 @@ public class CosineWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*cos(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param a the magnitude.
    * @param n the periodicity.
    */
@@ -70,7 +70,7 @@ public class CosineWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*cos(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param halfWidthEnds Use half-width start and end bins.
    * @param a the magnitude.
    * @param n the periodicity.

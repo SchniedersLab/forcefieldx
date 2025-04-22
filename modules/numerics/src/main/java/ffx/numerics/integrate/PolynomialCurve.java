@@ -54,7 +54,7 @@ public class PolynomialCurve extends FunctionDataCurve {
    * Default constructor, assumes constant-width bins. Functional form will be a0 + a1x + a2x^2 +
    * a3x^3 + ... + anx^n.
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param coefficients Lowest-order coefficients first
    */
   public PolynomialCurve(double[] x, double[] coefficients) {
@@ -65,7 +65,7 @@ public class PolynomialCurve extends FunctionDataCurve {
    * Default constructor, assumes constant-width bins. Functional form will be a0 + a1x + a2x^2 +
    * a3x^3 + ... + anx^n.
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param halfWidthEnds Specifies that first and last bins are half-width.l
    * @param coefficients Lowest-order coefficients first
    */

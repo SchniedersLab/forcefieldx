@@ -55,9 +55,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * <p>This implementation uses different approximation formulas for different ranges of the input:
  * <ul>
- *   <li>|x| <= 0.46875: Uses a rational function approximation.</li>
- *   <li>0.46875 < |x| <= 4.0: Uses a rational function approximation for erfc.</li>
- *   <li>|x| > 4.0: Uses a rational function approximation for erfc with additional scaling.</li>
+ *   <li>|x| &lt;= 0.46875: Uses a rational function approximation.</li>
+ *   <li>0.46875 &lt; |x| &lt;= 4.0: Uses a rational function approximation for erfc.</li>
+ *   <li>|x| &gt; 4.0: Uses a rational function approximation for erfc with additional scaling.</li>
  * </ul>
  *
  * <p>Adapted from an original program written by W. J. Cody, Mathematics and Computer Science

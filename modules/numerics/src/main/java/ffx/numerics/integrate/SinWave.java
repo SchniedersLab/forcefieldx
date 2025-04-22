@@ -65,7 +65,7 @@ public class SinWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*sin(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param a magnitude.
    * @param n periodicity.
    */
@@ -76,7 +76,7 @@ public class SinWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*sin(nx).
    *
-   * @param x             an array of {@link double} objects.
+   * @param x             an array of double values.
    * @param halfWidthEnds Use half-width start and end bins.
    * @param a             magnitude.
    * @param n             periodicity.
