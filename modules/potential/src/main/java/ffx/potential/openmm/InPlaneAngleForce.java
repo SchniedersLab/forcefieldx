@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -128,7 +128,8 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
     if (nAngles > 0) {
       int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
       setForceGroup(forceGroup);
-      logger.log(Level.INFO, format("  In-Plane Angles \t%6d\t\t%1d", nAngles, forceGroup));
+      logger.info(format("  In-Plane Angles:                   %10d", nAngles));
+      logger.fine(format("   Force Group:                      %10d", forceGroup));
     }
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -53,8 +53,6 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionFo
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setShctd;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setSlevy;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 
 /**
  * Weeks-Chandler-Andersen Dispersion Force.
@@ -96,7 +94,7 @@ public class WcaDispersionForce extends Force {
    * @param epso The water oxygen epsilon parameter.
    */
   public void setEpso(double epso) {
-    OpenMM_AmoebaWcaDispersionForce_setEpso(pointer, epso * OpenMM_KJPerKcal);
+    OpenMM_AmoebaWcaDispersionForce_setEpso(pointer, epso);
   }
 
   /**
@@ -105,7 +103,7 @@ public class WcaDispersionForce extends Force {
    * @param epsh The water hydrogen epsilon parameter.
    */
   public void setEpsh(double epsh) {
-    OpenMM_AmoebaWcaDispersionForce_setEpsh(pointer, epsh * OpenMM_KJPerKcal);
+    OpenMM_AmoebaWcaDispersionForce_setEpsh(pointer, epsh);
   }
 
   /**
@@ -114,7 +112,7 @@ public class WcaDispersionForce extends Force {
    * @param rmino The water oxygen radius parameter.
    */
   public void setRmino(double rmino) {
-    OpenMM_AmoebaWcaDispersionForce_setRmino(pointer, rmino * OpenMM_NmPerAngstrom);
+    OpenMM_AmoebaWcaDispersionForce_setRmino(pointer, rmino);
   }
 
   /**
@@ -123,7 +121,7 @@ public class WcaDispersionForce extends Force {
    * @param rminh The water hydrogen radius parameter.
    */
   public void setRminh(double rminh) {
-    OpenMM_AmoebaWcaDispersionForce_setRminh(pointer, rminh * OpenMM_NmPerAngstrom);
+    OpenMM_AmoebaWcaDispersionForce_setRminh(pointer, rminh);
   }
 
   /**
@@ -132,7 +130,7 @@ public class WcaDispersionForce extends Force {
    * @param dispoff The dispersion offset.
    */
   public void setDispoff(double dispoff) {
-    OpenMM_AmoebaWcaDispersionForce_setDispoff(pointer, dispoff * OpenMM_NmPerAngstrom);
+    OpenMM_AmoebaWcaDispersionForce_setDispoff(pointer, dispoff);
   }
 
   /**
@@ -141,7 +139,7 @@ public class WcaDispersionForce extends Force {
    * @param awater The water density parameter.
    */
   public void setAwater(double awater) {
-    OpenMM_AmoebaWcaDispersionForce_setAwater(pointer, awater / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+    OpenMM_AmoebaWcaDispersionForce_setAwater(pointer, awater);
   }
 
   /**

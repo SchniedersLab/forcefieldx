@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,21 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
@@ -46,16 +60,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.sort;
 import static org.apache.commons.math3.util.FastMath.abs;
-
-import ffx.utilities.FFXProperty;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The TorsionTorsionType class defines a Torsion-Torsion spline.
@@ -627,6 +631,69 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
       tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f", tx[nxi], ty[nyi], energy[i]));
     }
     return tortorBuffer.toString();
+  }
+
+
+  /**
+   * Create an AmoebaTorsionTorsionForce Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField instance to grab constants from.
+   * @return the AmoebaTorsionTorsionForce Element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, TorsionTorsionType> types = forceField.getTorsionTorsionTypes();
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaTorsionTorsionForce");
+      int i = 0;
+      for (TorsionTorsionType torsionTorsionType : types.values()) {
+        torsionTorsionType.toXML(doc, node, i);
+        i++;
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write TorsionTorsionType to OpenMM XML format.
+   *
+   * @param doc        the Document instance.
+   * @param torTorNode the Element to attach TorsionTorsion and TorsionTorsionGrid to.
+   * @param label      the label used to match TorsionTorsion and TorsionTorsionGrid.
+   */
+  public void toXML(Document doc, Element torTorNode, int label) {
+    Element tortors = doc.createElement("TorsionTorsion");
+    Element ttGrid = doc.createElement("TorsionTorsionGrid");
+
+    // Set TorsionTorsion node
+    tortors.setAttribute("class1", format("%d", atomClasses[0]));
+    tortors.setAttribute("class2", format("%d", atomClasses[1]));
+    tortors.setAttribute("class3", format("%d", atomClasses[2]));
+    tortors.setAttribute("class4", format("%d", atomClasses[3]));
+    tortors.setAttribute("class5", format("%d", atomClasses[4]));
+    tortors.setAttribute("nx", format("%d", gridPoints[0]));
+    tortors.setAttribute("ny", format("%d", gridPoints[1]));
+
+    // Set TorsionTorsionGrid
+    ttGrid.setAttribute("nx", format("%d", gridPoints[0]));
+    ttGrid.setAttribute("ny", format("%d", gridPoints[1]));
+    for (int i = 0; i < energy.length; i++) {
+      int nxi = i % nx;
+      int nyi = i / ny;
+      // OpenMM appears to offer some support for storing dE/dX, dE/dY and d2E/dXdY
+      // instead of computing these values on the fly.
+      Element grid = doc.createElement("Grid");
+      grid.setAttribute("angle1", format("%f", tx[nxi]));
+      grid.setAttribute("angle2", format("%f", ty[nyi]));
+      grid.setAttribute("f", format("%f", energy[i] * KCAL_TO_KJ));
+      ttGrid.appendChild(grid);
+    }
+
+    tortors.setAttribute("grid", String.valueOf(label));
+    ttGrid.setAttribute("grid", String.valueOf(label));
+    torTorNode.appendChild(tortors);
+    torTorNode.appendChild(ttGrid);
   }
 
   /**

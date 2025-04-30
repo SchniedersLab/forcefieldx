@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -62,7 +62,7 @@ public class MinimizeTest extends AlgorithmsTest {
     Minimize minimize = new Minimize(binding).run();
     algorithmsScript = minimize;
 
-    double expectedTotalPotential = -279.09055265229296; // -279.9605291685508
+    double expectedTotalPotential = -279.0905532876412;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
@@ -91,7 +91,7 @@ public class MinimizeTest extends AlgorithmsTest {
     Minimize minimize = new Minimize(binding).run();
     algorithmsScript = minimize;
 
-    double expectedTotalPotential = -263.97288977384085; // -264.6944689980441;
+    double expectedTotalPotential = -263.972890377609;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);

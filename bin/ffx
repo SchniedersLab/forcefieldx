@@ -5,7 +5,7 @@
 #
 # Description: Force Field X - Software for Molecular Biophysics.
 #
-# Copyright: Copyright (c) Michael J. Schnieders 2001-2024.
+# Copyright: Copyright (c) Michael J. Schnieders 2001-2025.
 #
 # This file is part of Force Field X.
 #
@@ -115,7 +115,7 @@ if [ -n "$FFX_STACKSIZE" ]; then
   JVM_SS="$FFX_STACKSIZE"
 fi
 
-EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS}"
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS} --add-modules jdk.incubator.vector"
 
 if [ -z "$TMPDIR" ]; then
     if [ -z "$TMP" ]; then
@@ -137,16 +137,16 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs other than 21 or 22.
+# Detect JDK version; disallow JDKs other than 21 up to 24.
 if [ $hasAwkSed ]; then
     JVERS="$(java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g')"
     JVFIRST="$(echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }')"
 
-    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 22 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 or 22." 1>&2
+    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 24 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 24." 1>&2
     fi
 
-    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 
     nvccComm='which nvcc'
     hasNVCC=''
@@ -159,12 +159,12 @@ if [ $hasAwkSed ]; then
         CVERS="$(echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//')"
         NVFIRST="$(echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }')"
         if [ "$NVFIRST" -lt 10 ]; then
-          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 or later if you wish to use CUDA-accelerated OpenMM calculations"
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 11.1 or later if you wish to use CUDA-accelerated OpenMM calculations"
         fi
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 or 22 and (optionally) CUDA toolkit 10.1 or later."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 through 24 and (optionally) CUDA toolkit 11.1 or later."
 fi
 
 # For Cygwin, switch paths to Windows format before running java

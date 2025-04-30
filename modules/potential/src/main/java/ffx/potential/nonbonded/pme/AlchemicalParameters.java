@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,28 +37,43 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.potential.parameters.ForceField;
+
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 public class AlchemicalParameters {
 
   private static final Logger logger = Logger.getLogger(AlchemicalParameters.class.getName());
 
+  /**
+   * The polarization model to use.
+   */
   private final Polarization polarization;
-
-  /** Constant α in: r' = sqrt(r^2 + α*(1 - L)^2) */
+  /**
+   * The alchemical mode to use.
+   */
+  public final AlchemicalMode mode;
+  /**
+   * Constant α in: r' = sqrt(r^2 + α*(1 - L)^2)
+   */
   public double permLambdaAlpha = 1.0;
-  /** Power on L in front of the pairwise multipole potential. */
+  /**
+   * Power on L in front of the pairwise multipole potential.
+   */
   public double permLambdaExponent = 3.0;
-  /** Begin turning on permanent multipoles at Lambda = 0.4; */
+  /**
+   * Begin turning on permanent multipoles at Lambda = 0.4;
+   */
   public double permLambdaStart = 0.4;
-  /** Finish turning on permanent multipoles at Lambda = 1.0; */
+  /**
+   * Finish turning on permanent multipoles at Lambda = 1.0;
+   */
   public double permLambdaEnd = 1.0;
   /**
    * Start turning on polarization later in the Lambda path to prevent SCF convergence problems when
@@ -66,29 +81,41 @@ public class AlchemicalParameters {
    */
   public double polLambdaStart = 0.75;
   public double polLambdaEnd = 1.0;
-  /** Power on L in front of the polarization energy. */
+  /**
+   * Power on L in front of the polarization energy.
+   */
   public double polLambdaExponent = 3.0;
-  /** Intramolecular electrostatics for the ligand in vapor is included by default. */
+  /**
+   * Intramolecular electrostatics for the ligand in vapor is included by default.
+   */
   public boolean doLigandVaporElec = true;
-  /** Intramolecular electrostatics for the ligand in done in GK implicit solvent. */
+  /**
+   * Intramolecular electrostatics for the ligand in done in GK implicit solvent.
+   */
   public boolean doLigandGKElec = false;
   /**
    * Condensed phase SCF without the ligand present is included by default. For DualTopologyEnergy
    * calculations it can be turned off.
    */
   public boolean doNoLigandCondensedSCF = true;
-  /** lAlpha = α*(1 - L)^2 */
+  /**
+   * lAlpha = α*(1 - L)^2
+   */
   public double lAlpha = 0.0;
   public double dlAlpha = 0.0;
   public double d2lAlpha = 0.0;
   public double dEdLSign = 1.0;
-  /** lPowPerm = L^permanentLambdaExponent */
+  /**
+   * lPowPerm = L^permanentLambdaExponent
+   */
   public double lPowPerm = 1.0;
   public double dlPowPerm = 0.0;
   public double d2lPowPerm = 0.0;
   public boolean doPermanentRealSpace = true;
   public double permanentScale = 1.0;
-  /** lPowPol = L^polarizationLambdaExponent */
+  /**
+   * lPowPol = L^polarizationLambdaExponent
+   */
   public double lPowPol = 1.0;
   public double dlPowPol = 0.0;
   public double d2lPowPol = 0.0;
@@ -117,7 +144,9 @@ public class AlchemicalParameters {
    * permLambdaStart .. permLambdaEnd.
    */
   public double permLambda = 1.0;
-  /** Boundary conditions for the vapor end of the alchemical path. */
+  /**
+   * Boundary conditions for the vapor end of the alchemical path.
+   */
   public Crystal vaporCrystal = null;
   public int[][][] vaporLists = null;
   public Range[] vacuumRanges = null;
@@ -125,8 +154,18 @@ public class AlchemicalParameters {
   public IntegerSchedule vaporEwaldSchedule = null;
 
   public AlchemicalParameters(ForceField forceField, boolean lambdaTerm,
-      boolean nnTerm, Polarization polarization) {
+                              boolean nnTerm, Polarization polarization) {
     this.polarization = polarization;
+
+    AlchemicalMode tempMode;
+    try {
+      tempMode = AlchemicalMode.valueOf(forceField.getString("ALCHEMICAL_MODE", "OST").toUpperCase());
+    } catch (IllegalArgumentException e) {
+      logger.info(" Invalid value for alchemical-mode; reverting to OST");
+      tempMode = AlchemicalMode.OST;
+    }
+    mode = tempMode;
+
     if (lambdaTerm) {
       // Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable  trajectories.
       permLambdaAlpha = forceField.getDouble("PERMANENT_LAMBDA_ALPHA", 2.0);
@@ -177,7 +216,7 @@ public class AlchemicalParameters {
         permLambdaEnd = 1.0;
       }
 
-        /*
+      /*
          The POLARIZATION_LAMBDA_START defines the point in the lambda
          schedule when the condensed phase polarization of the ligand
          begins to be turned on. If the condensed phase polarization
@@ -192,7 +231,7 @@ public class AlchemicalParameters {
         polLambdaStart = 0.75;
       }
 
-        /*
+      /*
          The POLARIZATION_LAMBDA_END defines the point in the lambda
          schedule when the condensed phase polarization of ligand has
          been completely turned on. Values other than 1.0 have not been tested.
@@ -204,11 +243,17 @@ public class AlchemicalParameters {
         polLambdaEnd = 1.0;
       }
 
-      // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the ligand in vapor
+      // The LAMBDA_VAPOR_ELEC defines if intra-molecular electrostatics of the ligand in vapor
       // will be considered.
-      doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
-      doLigandGKElec = forceField.getBoolean("LIGAND_GK_ELEC", false);
-      doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
+      if (mode == AlchemicalMode.OST) {
+        doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+        doLigandGKElec = forceField.getBoolean("LIGAND_GK_ELEC", false);
+        doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
+      } else {
+        doLigandVaporElec = false;
+        doLigandGKElec = false;
+        doNoLigandCondensedSCF = false;
+      }
     } else if (nnTerm) {
       permLambdaAlpha = 0.0;
       permLambdaExponent = 1.0;
@@ -219,7 +264,11 @@ public class AlchemicalParameters {
       polLambdaEnd = 1.0;
       // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the neural network
       // atoms in vapor will be removed.
-      doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+      if (mode == AlchemicalMode.OST) {
+        doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+      } else {
+        doLigandVaporElec = false;
+      }
       doLigandGKElec = false;
       doNoLigandCondensedSCF = false;
     }
@@ -265,8 +314,8 @@ public class AlchemicalParameters {
    * @param lambda
    */
   public void update(double lambda) {
-
     lPowPerm = 1.0;
+    permLambda = 1.0;
     dlPowPerm = 0.0;
     d2lPowPerm = 0.0;
     lAlpha = 0.0;
@@ -274,56 +323,74 @@ public class AlchemicalParameters {
     d2lAlpha = 0.0;
     if (lambda < permLambdaStart) {
       lPowPerm = 0.0;
+      permLambda = 0.0;
     } else if (lambda <= permLambdaEnd) {
       double permWindow = permLambdaEnd - permLambdaStart;
       double permLambdaScale = 1.0 / permWindow;
       permLambda = permLambdaScale * (lambda - permLambdaStart);
+      if (mode == AlchemicalMode.OST) {
+        lAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
+        dlAlpha = permLambdaAlpha * (1.0 - permLambda);
+        d2lAlpha = -permLambdaAlpha;
 
-      lAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
-      dlAlpha = permLambdaAlpha * (1.0 - permLambda);
-      d2lAlpha = -permLambdaAlpha;
+        lPowPerm = pow(permLambda, permLambdaExponent);
+        dlPowPerm = permLambdaExponent * pow(permLambda, permLambdaExponent - 1.0);
+        d2lPowPerm = 0.0;
+        if (permLambdaExponent >= 2.0) {
+          d2lPowPerm =
+              permLambdaExponent
+                  * (permLambdaExponent - 1.0)
+                  * pow(permLambda, permLambdaExponent - 2.0);
+        }
 
-      lPowPerm = pow(permLambda, permLambdaExponent);
-      dlPowPerm = permLambdaExponent * pow(permLambda, permLambdaExponent - 1.0);
-      d2lPowPerm = 0.0;
-      if (permLambdaExponent >= 2.0) {
-        d2lPowPerm =
-            permLambdaExponent
-                * (permLambdaExponent - 1.0)
-                * pow(permLambda, permLambdaExponent - 2.0);
+        dlAlpha *= permLambdaScale;
+        d2lAlpha *= (permLambdaScale * permLambdaScale);
+        dlPowPerm *= permLambdaScale;
+        d2lPowPerm *= (permLambdaScale * permLambdaScale);
       }
-
-      dlAlpha *= permLambdaScale;
-      d2lAlpha *= (permLambdaScale * permLambdaScale);
-      dlPowPerm *= permLambdaScale;
-      d2lPowPerm *= (permLambdaScale * permLambdaScale);
     }
 
     // Polarization is turned on from polarizationLambdaStart .. polarizationLambdaEnd.
     lPowPol = 1.0;
+    polLambda = 1.0;
     dlPowPol = 0.0;
     d2lPowPol = 0.0;
     if (lambda < polLambdaStart) {
       lPowPol = 0.0;
+      polLambda = 0.0;
     } else if (lambda <= polLambdaEnd) {
       double polWindow = polLambdaEnd - polLambdaStart;
       double polLambdaScale = 1.0 / polWindow;
       polLambda = polLambdaScale * (lambda - polLambdaStart);
-      if (polLambdaExponent > 0.0) {
-        lPowPol = pow(polLambda, polLambdaExponent);
-        if (polLambdaExponent >= 1.0) {
-          dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
-          if (polLambdaExponent >= 2.0) {
-            d2lPowPol =
-                polLambdaExponent
-                    * (polLambdaExponent - 1.0)
-                    * pow(polLambda, polLambdaExponent - 2.0);
+      if (mode == AlchemicalMode.OST) {
+        if (polLambdaExponent > 0.0) {
+          lPowPol = pow(polLambda, polLambdaExponent);
+          if (polLambdaExponent >= 1.0) {
+            dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
+            if (polLambdaExponent >= 2.0) {
+              d2lPowPol =
+                  polLambdaExponent
+                      * (polLambdaExponent - 1.0)
+                      * pow(polLambda, polLambdaExponent - 2.0);
+            }
           }
         }
+        // Add the chain rule term due to shrinking the lambda range for the polarization energy.
+        dlPowPol *= polLambdaScale;
+        d2lPowPol *= (polLambdaScale * polLambdaScale);
       }
-      // Add the chain rule term due to shrinking the lambda range for the polarization energy.
-      dlPowPol *= polLambdaScale;
-      d2lPowPol *= (polLambdaScale * polLambdaScale);
     }
   }
+
+  /**
+   * For OST mode, we are calculating analytic dU/dL, d2U/dL2 and d2U/dL/dX for the permanent and
+   * polarization energy terms.
+   * <p>
+   * For SCALE mode, the permanent multipoles and polarizabilities are scaled by lambda for
+   * alchemical atoms.
+   */
+  public enum AlchemicalMode {
+    OST, SCALE
+  }
+
 }

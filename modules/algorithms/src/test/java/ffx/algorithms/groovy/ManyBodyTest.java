@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import static org.junit.Assert.assertEquals;
-
 import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo
@@ -226,7 +226,7 @@ public class ManyBodyTest extends AlgorithmsTest {
   @Test
   public void testManyBodyTitration() {
     // Set-up the input arguments for the script.
-    String[] args = {"--tR", "--pH","7.0","--eR",
+    String[] args = {"--tR", "--pH", "7.0", "--eR",
         getResourcePath("DEHK.rot.restart"),
         getResourcePath("DEHK.rot.pdb")
     };

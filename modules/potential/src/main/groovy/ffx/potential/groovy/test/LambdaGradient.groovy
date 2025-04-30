@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -39,6 +39,9 @@ package ffx.potential.groovy.test
 
 import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.nonbonded.ParticleMeshEwald
+import ffx.potential.nonbonded.pme.AlchemicalParameters
 import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
@@ -192,18 +195,35 @@ class LambdaGradient extends PotentialScript {
       }
     }
 
-    MolecularAssembly[] topologies =
-        topologyList.toArray(new MolecularAssembly[topologyList.size()])
+    MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
     potential = topologyOptions.assemblePotential(topologies, threadsAvail, sb)
+    logger.info(sb.toString())
 
-    if (potential instanceof OpenMMEnergy) {
+    // Detect the alchemical mode.
+    AlchemicalParameters.AlchemicalMode mode = AlchemicalParameters.AlchemicalMode.OST
+    for (MolecularAssembly assembly : topologies) {
+      ForceFieldEnergy energy = assembly.getPotentialEnergy()
+      ParticleMeshEwald pme = energy.getPmeNode()
+      if (pme == null) {
+        continue
+      }
+      AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters()
+      if (alchemicalParameters.mode != AlchemicalParameters.AlchemicalMode.OST) {
+        mode = AlchemicalParameters.AlchemicalMode.SCALE
+      }
+    }
+
+    boolean skipLambdaDerivatives = false
+    if (mode == AlchemicalParameters.AlchemicalMode.SCALE) {
+      skipLambdaDerivatives = true
+    }
+    if (potential instanceof OpenMMEnergy || mode == AlchemicalParameters.AlchemicalMode.SCALE) {
       skipSecondDerivatives = true
     }
 
-    logger.info(sb.toString())
 
     LambdaInterface lambdaInterface = (LambdaInterface) potential
 
@@ -224,8 +244,15 @@ class LambdaGradient extends PotentialScript {
     potential.getCoordinates(x)
 
     e0 = potential.energyAndGradient(x, gradient)
-    double dEdL = lambdaInterface.getdEdL()
-    logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
+
+    if (!skipLambdaDerivatives) {
+      double dEdL = lambdaInterface.getdEdL()
+      logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
+    } else {
+      logger.info(format(" L=%4.2f E=%12.6f", lambda, e0))
+    }
+
+
 
     // Scan intermediate lambda values.
     if (lambdaScan) {
@@ -233,8 +260,13 @@ class LambdaGradient extends PotentialScript {
         lambda = i * 0.1
         lambdaInterface.setLambda(lambda)
         double e = potential.energyAndGradient(x, gradient)
-        dEdL = lambdaInterface.getdEdL()
-        logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
+        if (!skipLambdaDerivatives) {
+          dEdL = lambdaInterface.getdEdL()
+          logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
+        } else {
+          logger.info(format(" L=%4.2f E=%12.6f", lambda, e))
+        }
+
       }
     }
 
@@ -242,8 +274,13 @@ class LambdaGradient extends PotentialScript {
     lambda = 1.0
     lambdaInterface.setLambda(lambda)
     e1 = potential.energyAndGradient(x, gradient)
-    dEdL = lambdaInterface.getdEdL()
-    logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
+    if (!skipLambdaDerivatives) {
+      dEdL = lambdaInterface.getdEdL()
+      logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
+    } else {
+      logger.info(format(" L=%4.2f E=%12.6f", lambda, e1))
+    }
+
     logger.info(format(" E(1)-E(0): %12.6f.\n", e1 - e0))
 
     // Finite-difference step size.
@@ -262,101 +299,104 @@ class LambdaGradient extends PotentialScript {
     double expGrad = 1000.0
 
     // Test Lambda gradient in the neighborhood of the lambda variable.
-    for (int j = 0; j < 3; j++) {
-      // Loop-local counter for printout.
-      int jd2EdXdLFailures = 0
+    if (!skipLambdaDerivatives) {
 
-      lambda = alchemicalOptions.initialLambda - lambdaMoveSize + lambdaMoveSize * j
+      for (int j = 0; j < 3; j++) {
+        // Loop-local counter for printout.
+        int jd2EdXdLFailures = 0
 
-      if (lambda - gradientOptions.dx < 0.0 || lambda + gradientOptions.dx > 1.0) {
-        continue
-      }
+        lambda = alchemicalOptions.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
-      logger.info(format(" Current lambda value %6.4f", lambda))
-      lambdaInterface.setLambda(lambda)
+        if (lambda - gradientOptions.dx < 0.0 || lambda + gradientOptions.dx > 1.0) {
+          continue
+        }
 
-      // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
-      double e = potential.energyAndGradient(x, gradient)
+        logger.info(format(" Current lambda value %6.4f", lambda))
+        lambdaInterface.setLambda(lambda)
 
-      // Analytic dEdL, d2E/dL2 and dE/dL/dX
-      dEdL = lambdaInterface.getdEdL()
+        // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
+        double e = potential.energyAndGradient(x, gradient)
 
-      double d2EdL2 = lambdaInterface.getd2EdL2()
-      for (int i = 0; i < n; i++) {
-        lambdaGrad[i] = 0.0
-      }
-      lambdaInterface.getdEdXdL(lambdaGrad)
+        // Analytic dEdL, d2E/dL2 and dE/dL/dX
+        dEdL = lambdaInterface.getdEdL()
 
-      // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
-      lambdaInterface.setLambda(lambda + gradientOptions.dx)
-      double lp = potential.energyAndGradient(x, lambdaGradFD[0])
-      double dedlp = lambdaInterface.getdEdL()
-      lambdaInterface.setLambda(lambda - gradientOptions.dx)
-      double lm = potential.energyAndGradient(x, lambdaGradFD[1])
-      double dedlm = lambdaInterface.getdEdL()
+        double d2EdL2 = lambdaInterface.getd2EdL2()
+        for (int i = 0; i < n; i++) {
+          lambdaGrad[i] = 0.0
+        }
+        lambdaInterface.getdEdXdL(lambdaGrad)
 
-      double dEdLFD = (lp - lm) / width
-      double d2EdL2FD = (dedlp - dedlm) / width
+        // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
+        lambdaInterface.setLambda(lambda + gradientOptions.dx)
+        double lp = potential.energyAndGradient(x, lambdaGradFD[0])
+        double dedlp = lambdaInterface.getdEdL()
+        lambdaInterface.setLambda(lambda - gradientOptions.dx)
+        double lm = potential.energyAndGradient(x, lambdaGradFD[1])
+        double dedlm = lambdaInterface.getdEdL()
 
-      double err = abs(dEdLFD - dEdL)
-      if (err < errTol) {
-        logger.info(format(" dE/dL passed:   %10.6f", err))
-      } else {
-        logger.info(format(" dE/dL failed: %10.6f", err))
-        ndEdLFailures++
-      }
-      logger.info(format(" Numeric:   %15.8f", dEdLFD))
-      logger.info(format(" Analytic:  %15.8f", dEdL))
+        double dEdLFD = (lp - lm) / width
+        double d2EdL2FD = (dedlp - dedlm) / width
 
-      if (!skipSecondDerivatives) {
-        err = abs(d2EdL2FD - d2EdL2)
+        double err = abs(dEdLFD - dEdL)
         if (err < errTol) {
-          logger.info(format(" d2E/dL2 passed: %10.6f", err))
+          logger.info(format(" dE/dL passed:   %10.6f", err))
         } else {
-          logger.info(format(" d2E/dL2 failed: %10.6f", err))
-          nd2EdL2Failures++
+          logger.info(format(" dE/dL failed: %10.6f", err))
+          ndEdLFailures++
         }
-        logger.info(format(" Numeric:   %15.8f", d2EdL2FD))
-        logger.info(format(" Analytic:  %15.8f", d2EdL2))
+        logger.info(format(" Numeric:   %15.8f", dEdLFD))
+        logger.info(format(" Analytic:  %15.8f", dEdL))
 
-        double rmsError = 0
-        for (int i = 0; i < nAtoms; i++) {
-          int ii = i * 3
-          double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-          double dXa = lambdaGrad[ii]
-          double eX = dX - dXa
-          ii++
-          double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-          double dYa = lambdaGrad[ii]
-          double eY = dY - dYa
-          ii++
-          double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-          double dZa = lambdaGrad[ii]
-          double eZ = dZ - dZa
-
-          double error = eX * eX + eY * eY + eZ * eZ
-          rmsError += error
-          error = sqrt(error)
-          if (error < errTol) {
-            logger.fine(format(" dE/dX/dL for degree of freedom %d passed: %10.6f", i + 1, error))
+        if (!skipSecondDerivatives) {
+          err = abs(d2EdL2FD - d2EdL2)
+          if (err < errTol) {
+            logger.info(format(" d2E/dL2 passed: %10.6f", err))
           } else {
-            logger.info(format(" dE/dX/dL for degree of freedom %d failed: %10.6f", i + 1, error))
-            logger.info(format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
-            logger.info(format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
-            ndEdXdLFailures++
-            jd2EdXdLFailures++
+            logger.info(format(" d2E/dL2 failed: %10.6f", err))
+            nd2EdL2Failures++
           }
+          logger.info(format(" Numeric:   %15.8f", d2EdL2FD))
+          logger.info(format(" Analytic:  %15.8f", d2EdL2))
+
+          double rmsError = 0
+          for (int i = 0; i < nAtoms; i++) {
+            int ii = i * 3
+            double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+            double dXa = lambdaGrad[ii]
+            double eX = dX - dXa
+            ii++
+            double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+            double dYa = lambdaGrad[ii]
+            double eY = dY - dYa
+            ii++
+            double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+            double dZa = lambdaGrad[ii]
+            double eZ = dZ - dZa
+
+            double error = eX * eX + eY * eY + eZ * eZ
+            rmsError += error
+            error = sqrt(error)
+            if (error < errTol) {
+              logger.fine(format(" dE/dX/dL for degree of freedom %d passed: %10.6f", i + 1, error))
+            } else {
+              logger.info(format(" dE/dX/dL for degree of freedom %d failed: %10.6f", i + 1, error))
+              logger.info(format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
+              logger.info(format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
+              ndEdXdLFailures++
+              jd2EdXdLFailures++
+            }
+          }
+          rmsError = sqrt(rmsError / nAtoms)
+          if (ndEdXdLFailures == 0) {
+            logger.info(
+                format(" dE/dX/dL passed for all degrees of freedom: RMS error %15.8f", rmsError))
+          } else {
+            logger.info(
+                format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", jd2EdXdLFailures,
+                    nAtoms, rmsError))
+          }
+          logger.info("")
         }
-        rmsError = sqrt(rmsError / nAtoms)
-        if (ndEdXdLFailures == 0) {
-          logger.info(
-              format(" dE/dX/dL passed for all degrees of freedom: RMS error %15.8f", rmsError))
-        } else {
-          logger.info(
-              format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", jd2EdXdLFailures,
-                  nAtoms, rmsError))
-        }
-        logger.info("")
       }
     }
 

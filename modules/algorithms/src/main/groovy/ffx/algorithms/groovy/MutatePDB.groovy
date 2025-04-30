@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -53,37 +53,39 @@ import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import static ffx.utilities.StringUtils.parseAtomRanges;
 
 /**
- * The MutatePDB script mutates a residue of a PDB file.
+ * The MutatePDB script mutates residue(s) of a PDB file.
  * <br>
  * Usage:
  * <br>
  * ffxc MutatePDB [options] &lt;pdb&gt;
  */
-@Command(description = " Mutate a PDB residue.", name = "MutatePDB")
+@Command(description = " Mutate PDB residue(s).", name = "MutatePDB")
 class MutatePDB extends AlgorithmsScript {
 
   /**
-   * -r or --resid Residue number.
+   * -r or --resid Residue numbers.
    */
   @Option(names = ['--resid', '-r'], paramLabel = '1', defaultValue = "1",
-      description = 'Residue number.')
-  int resID
+      description = 'Residue number(s).')
+//  int resID
+  String resIDs
 
   /**
-   * -n or --resname New residue name.
+   * -n or --resname New residue names.
    */
   @Option(names = ['--resname', '-n'], paramLabel = 'ALA', defaultValue = 'ALA',
-      description = 'New residue name.')
-  String resName
+      description = 'New residue name(s).')
+  String resNameString
 
   /**
    * -ch or --chain Single character chain name (default is ' '). If only one chain exists, that chain will be mutated.
    */
   @Option(names = ['--chain', '--ch'], paramLabel = ' ', defaultValue = ' ',
       description = 'Single character chain name (default is \' \').')
-  Character chain
+  String chainString
 
   /**
    * -R or --rotamer Rotamer number to apply.
@@ -143,19 +145,38 @@ class MutatePDB extends AlgorithmsScript {
       return this
     }
 
+    List<Integer> resIDint = parseAtomRanges("residueID", resIDs, falseAssembly.getAtomList().size())
+
+    String[] resNameArr = Arrays.stream(resNameString.split("\\.|,|;")).map(String::trim).toArray(String[]::new)
+
+    String[] chainStringArr = Arrays.stream(chainString.split("\\.|,|;")).map(String::trim).toArray(String[]::new)
+    String s = "";
+    for (String sub : chainStringArr) {
+      if (sub.size() >= 2) {
+        logger.warning("Chain ID's have to be single characters separated by commas!")
+        return this
+      } else {
+        s += sub
+      }
+    }
+    char[] chainArr = s.toCharArray()
+
     // For every chain, mutate the residue.
     Polymer[] chains = falseAssembly.getChains()
 
-    if (chains.size() == 1 && chain == ' ') {
-      chain = chains[0].getChainID()
+    if (chains.length == 1 && chainArr.length == 0) {
+      chainArr = chains[0].getChainID()
+    }
+
+    if (resIDint.size() != resNameArr.length || resIDint.size() != chainArr.length) {
+      logger.warning("The number of chains, residue names, and residue ids must be the same!")
+      return this
     }
 
     int destRotamer = 0
     if (rotamer > -1) {
       destRotamer = rotamer
     }
-
-    logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName)
 
     // Read in command line.
     File structureFile = new File(filename)
@@ -170,13 +191,21 @@ class MutatePDB extends AlgorithmsScript {
     molecularAssembly.setForceField(forceField)
 
     PDBFilter pdbFilter = new PDBFilter(structureFile, molecularAssembly, forceField, properties)
-    if (allChains) {
-      for (Polymer currentChain : chains) {
-        pdbFilter.mutate(currentChain.chainID, resID, resName)
+
+    List<PDBFilter.Mutation> mutations = new ArrayList<>()
+    for (int i=0; i <= resIDint.size()-1; i++) {
+      // need to add one to get the correct resID because parseAtomRanges removes one
+      logger.info("\n Mutating residue number " + resIDint[i]+1 + " of chain " + chainArr[i] + " to " + resNameArr[i])
+      if (allChains) {
+        for (Polymer currentChain : chains) {
+          mutations.add(new PDBFilter.Mutation(resIDint[i]+1, currentChain.chainID, resNameArr[i]))
+        }
+      } else {
+        mutations.add(new PDBFilter.Mutation(resIDint[i]+1, chainArr[i], resNameArr[i]))
       }
-    } else {
-      pdbFilter.mutate(chain, resID, resName)
     }
+    pdbFilter.mutate(mutations)
+
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
     molecularAssembly.finalize(true, forceField)
@@ -186,30 +215,32 @@ class MutatePDB extends AlgorithmsScript {
       if (allChains) {
         chains = molecularAssembly.getChains()
         for (Polymer currentChain : chains) {
-          Residue residue = currentChain.getResidue(resID)
+          for (int i = 0; i <= resIDint.size()-1; i++) {
+            Residue residue = currentChain.getResidue(resIDint[i]+1)
+            Rotamer[] rotamers = residue.getRotamers()
+            if (rotamers != null && rotamers.length > 0) {
+              RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
+            } else {
+              logger.info(" No rotamer to apply.")
+            }
+          }
+        }
+      } else {
+        for (int i = 0; i <= resIDint.size()-1; i++) {
+          Polymer polymer = molecularAssembly.getChain(chainArr[i].toString())
+          Residue residue = polymer.getResidue(resIDint[i]+1)
           Rotamer[] rotamers = residue.getRotamers()
-          if (rotamers != null && rotamers.length > 0) {
+          if (rotamers != null && rotamers.length > destRotamer) {
             RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
           } else {
             logger.info(" No rotamer to apply.")
           }
         }
-      } else {
-        Polymer polymer = molecularAssembly.getChain(chain.toString())
-        Residue residue = polymer.getResidue(resID)
-        Rotamer[] rotamers = residue.getRotamers()
-        if (rotamers != null && rotamers.length > 0) {
-          RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
-        } else {
-          logger.info(" No rotamer to apply.")
-        }
       }
     }
     pdbFilter.writeFile(structureFile, false)
-    String versionFileName = pdbFilter.getVersionFileName()
 
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
-    binding.setVariable('versionFileName', versionFileName)
 
     return this
   }

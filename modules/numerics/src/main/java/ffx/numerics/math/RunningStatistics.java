@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -71,7 +71,9 @@ public class RunningStatistics {
   private long dof = -1;
   private double comp = 0;
 
-  /** Constructs new running statistics accumulator. */
+  /**
+   * Constructs new running statistics accumulator.
+   */
   public RunningStatistics() {
     // Empty constructor; all variables are initialized at definition.
   }
@@ -88,7 +90,7 @@ public class RunningStatistics {
   /**
    * Add a value and update key variables.
    *
-   * @param val Value to add.
+   * @param val    Value to add.
    * @param weight Weight to give the value.
    */
   public void addValue(double val, double weight) {
@@ -116,6 +118,9 @@ public class RunningStatistics {
     }
   }
 
+  /**
+   * Add a RunningStatistics object to this one.
+   */
   public void reset() {
     // Weight-sensitive values.
     mean = 0;

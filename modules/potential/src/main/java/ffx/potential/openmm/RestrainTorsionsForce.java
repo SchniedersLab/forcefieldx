@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,6 @@ package ffx.potential.openmm;
 
 import ffx.openmm.Force;
 import ffx.openmm.PeriodicTorsionForce;
-import ffx.potential.bonded.RestraintTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.TorsionType;
 
@@ -64,17 +63,17 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy that contains the restraint-torsions.
    */
   public RestrainTorsionsForce(OpenMMEnergy openMMEnergy) {
-    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestrainTorsions();
-    if (restraintTorsions == null || restraintTorsions.isEmpty()) {
+    Torsion[] restrainTorsions = openMMEnergy.getRestrainTorsions();
+    if (restrainTorsions == null || restrainTorsions.length == 0) {
       return;
     }
 
-    for (RestraintTorsion restraintTorsion : restraintTorsions) {
-      int a1 = restraintTorsion.getAtom(0).getXyzIndex() - 1;
-      int a2 = restraintTorsion.getAtom(1).getXyzIndex() - 1;
-      int a3 = restraintTorsion.getAtom(2).getXyzIndex() - 1;
-      int a4 = restraintTorsion.getAtom(3).getXyzIndex() - 1;
-      TorsionType torsionType = restraintTorsion.torsionType;
+    for (Torsion restrainTorsion : restrainTorsions) {
+      int a1 = restrainTorsion.getAtom(0).getXyzIndex() - 1;
+      int a2 = restrainTorsion.getAtom(1).getXyzIndex() - 1;
+      int a3 = restrainTorsion.getAtom(2).getXyzIndex() - 1;
+      int a4 = restrainTorsion.getAtom(3).getXyzIndex() - 1;
+      TorsionType torsionType = restrainTorsion.torsionType;
       int nTerms = torsionType.phase.length;
       for (int j = 0; j < nTerms; j++) {
         addTorsion(a1, a2, a3, a4, j + 1,
@@ -83,9 +82,9 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
       }
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAINT_TORSION_FORCE_GROUP", 0);
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAIN_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Restraint-Torsions \t%6d\t\t%1d", restraintTorsions.size(), forceGroup));
+    logger.log(Level.INFO, format("  Restrain-Torsions \t%6d\t\t%1d", restrainTorsions.length, forceGroup));
   }
 
   /**
@@ -95,7 +94,7 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Torsion[] torsions = openMMEnergy.getTorsions();
+    Torsion[] torsions = openMMEnergy.getRestrainTorsions();
     if (torsions == null || torsions.length < 1) {
       return null;
     }
@@ -109,19 +108,19 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
     // Check if this system has restraintTorsions.
-    List<RestraintTorsion> restraintTorsions = openMMEnergy.getRestrainTorsions();
-    if (restraintTorsions == null || restraintTorsions.isEmpty()) {
+    Torsion[] restrainTorsions = openMMEnergy.getRestrainTorsions();
+    if (restrainTorsions == null || restrainTorsions.length == 0) {
       return;
     }
 
     int index = 0;
-    for (RestraintTorsion restraintTorsion : restraintTorsions) {
-      TorsionType torsionType = restraintTorsion.torsionType;
+    for (Torsion restrainTorsion : restrainTorsions) {
+      TorsionType torsionType = restrainTorsion.torsionType;
       int nTerms = torsionType.phase.length;
-      int a1 = restraintTorsion.getAtom(0).getXyzIndex() - 1;
-      int a2 = restraintTorsion.getAtom(1).getXyzIndex() - 1;
-      int a3 = restraintTorsion.getAtom(2).getXyzIndex() - 1;
-      int a4 = restraintTorsion.getAtom(3).getXyzIndex() - 1;
+      int a1 = restrainTorsion.getAtom(0).getXyzIndex() - 1;
+      int a2 = restrainTorsion.getAtom(1).getXyzIndex() - 1;
+      int a3 = restrainTorsion.getAtom(2).getXyzIndex() - 1;
+      int a4 = restrainTorsion.getAtom(3).getXyzIndex() - 1;
       for (int j = 0; j < nTerms; j++) {
         double forceConstant = OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j];
         setTorsionParameters(index++, a1, a2, a3, a4, j + 1,

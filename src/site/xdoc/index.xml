@@ -9,12 +9,12 @@
   </properties>
   <body>
     <section name="Welcome to Force Field X">
-      <subsection name="Introduction">
+      <subsection
+          name="A Computational Microscope to Study Genetic Variation and Organic Crystals Using Theory and Experiment">
         <table>
           <tr>
-            <td width="600">
-              <p>Force Field X is an open source polyglot software for molecular biophysics
-                that targets open research questions in the areas of:
+            <td width="500">
+              <p>The FFX platform targets open research questions in the areas of:
               </p>
               <ul>
                 <li>Understanding the effect of missense variants on protein structure, thermodynamics and molecular
@@ -24,10 +24,6 @@
                 </li>
                 <li>Designing biomolecules in both soluble and crystalline environments.</li>
               </ul>
-              <p>
-                The graphical user interface (GUI) screenshot to the right shows "Compound 23",
-                which was the 23rd molecule predicted as part of the CCDC crystal structure prediction series.
-              </p>
               <p>
                 <b>Performance</b>
               </p>
@@ -42,10 +38,10 @@
                 </li>
               </ul>
             </td>
-            <td width="600">
+            <td width="500">
               <p>
                 <a href="manual.html">
-                  <img src="images/ffx-gui.png" alt="Force Field X" width="600" align="right"/>
+                  <img src="images/FFX_Cover_Art.jpg" alt="Force Field X" width="500" align="middle"/>
                 </a>
               </p>
             </td>
@@ -66,7 +62,7 @@
               <p>Download</p>
               <p>
                 <a href="download.html">
-                  <img src="images/download.mp4" alt="Download" width="100" height="100"/>
+                  <img src="images/download.gif" alt="Download" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -74,7 +70,7 @@
               <p>Install</p>
               <p>
                 <a href="install.html">
-                  <img src="images/install.mp4" alt="Install" width="100" height="100"/>
+                  <img src="images/install.gif" alt="Install" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -82,7 +78,7 @@
               <p>User Manual</p>
               <p>
                 <a href="manual.html">
-                  <img src="images/manual.mp4" alt="Manual" width="100" height="100"/>
+                  <img src="images/manual.gif" alt="User Manual" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -90,7 +86,7 @@
               <p>Applications</p>
               <p>
                 <a href="applications.html">
-                  <img src="images/applications.mp4" alt="Applications" width="100" height="100"/>
+                  <img src="images/applications.gif" alt="Applications" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -100,7 +96,7 @@
               <p>Method Development</p>
               <p>
                 <a href="methods.html">
-                  <img src="images/algorithm.mp4" alt="Methods" width="100" height="100"/>
+                  <img src="images/algorithm.gif" alt="Method Development" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -108,7 +104,7 @@
               <p>Build from Source</p>
               <p>
                 <a href="source.html">
-                  <img src="images/build.mp4" alt="Build" width="100" height="100"/>
+                  <img src="images/build.gif" alt="Build from Source" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -116,7 +112,7 @@
               <p>Programmer Guide</p>
               <p>
                 <a href="modules.html">
-                  <img src="images/api.mp4" alt="API" width="100" height="100"/>
+                  <img src="images/api.gif" alt="Programmer Guide" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -124,7 +120,7 @@
               <p>Publications</p>
               <p>
                 <a href="publications.html">
-                  <img src="images/publications.mp4" alt="Publications" width="100" height="100"/>
+                  <img src="images/publications.gif" alt="Publications" width="100" height="100"/>
                 </a>
               </p>
             </td>
@@ -171,6 +167,16 @@
             <td>
               Mid-Career Scholar Award
             </td>
+          </tr>
+          <tr>
+            <td>
+              NSF CHE-2504153
+            </td>
+            <td>
+              NIH T32 GM152268
+            </td>
+            <td><!-- Empty cell --></td>
+            <td><!-- Empty cell --></td>
           </tr>
         </table>
       </subsection>

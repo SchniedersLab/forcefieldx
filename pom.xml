@@ -8,6 +8,11 @@
       <!-- Explicitly define plugins for FFX module pom.xml files. -->
       <plugins>
         <plugin>
+          <groupId>org.asciidoctor</groupId>
+          <artifactId>asciidoctor-maven-plugin</artifactId>
+          <version>${asciidoc.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>${antrun.version}</version>
         </plugin>
@@ -40,6 +45,8 @@
             <compilerArgs>
               <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
               <arg>-proc:none</arg>
+              <arg>--add-modules</arg>
+              <arg>jdk.incubator.vector</arg>
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
@@ -109,6 +116,13 @@
             <author>true</author>
             <defaultAuthor>Michael J. Schnieders</defaultAuthor>
             <defaultSince>1.0</defaultSince>
+            <failOnError>false</failOnError>
+            <quiet>false</quiet>
+            <debug>true</debug>
+            <additionalOptions>
+              <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+            </additionalOptions>
+            <doclint>all,-missing</doclint>
           </configuration>
           <version>${javadoc.version}</version>
         </plugin>
@@ -146,6 +160,7 @@
           <configuration>
             <!-- forkCount>1</forkCount -->
             <trimStackTrace>false</trimStackTrace>
+            <argLine>--add-modules jdk.incubator.vector</argLine>
           </configuration>
           <dependencies>
             <dependency>
@@ -179,6 +194,10 @@
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>${resources.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-wrapper-plugin</artifactId>
+          <version>${wrapper.version}</version>
         </plugin>
         <plugin>
           <groupId>io.github.git-commit-id</groupId>
@@ -243,7 +262,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[21,22.1]</version>
+                  <version>[21,24.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -381,7 +400,9 @@
         <configuration>
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
           <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
-          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
+          <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules
+            jdk.incubator.vector
+          </argLine>
           <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
             <exclude>**/ParentEnergyTest</exclude>
@@ -472,6 +493,7 @@
             </goals>
             <configuration>
               <propertyName>jacoco.agent.ut.arg</propertyName>
+              <skip>${jacoco.skip}</skip>
             </configuration>
           </execution>
           <!-- attached to Maven test phase -->
@@ -715,17 +737,27 @@
       <type>pom</type>
       <version>${groovy-all.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
-    <!-- dependency>
-        <artifactId>jaxb-api</artifactId>
-        <groupId>javax.xml.bind</groupId>
-        <version>${jaxb-api.version}</version>
-    </dependency -->
-    <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
     <dependency>
       <artifactId>jsr305</artifactId>
       <groupId>com.google.code.findbugs</groupId>
       <version>${findbugs.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>polyglot</artifactId>
+      <version>${graal.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>python</artifactId>
+      <version>${graal.version}</version>
+      <scope>runtime</scope>
+      <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.python</groupId>
+      <artifactId>python-embedding</artifactId>
+      <version>${graal.version}</version>
     </dependency>
   </dependencies>
   <description>Polyglot Software for Molecular Biophysics</description>
@@ -970,141 +1002,143 @@
   <packaging>pom</packaging>
   <profiles>
     <profile>
+      <id>graalpy</id>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <artifactId>clover-maven-plugin</artifactId>
-            <configuration>
-              <jdk>${compileVersion}</jdk>
-              <excludes>
-                <exclude>edu/**/*.java</exclude>
-                <exclude>ffx/ui/**/*.java</exclude>
-              </excludes>
-              <generateHtml>true</generateHtml>
-              <generateXml>true</generateXml>
-              <includesTestSourceRoots>false</includesTestSourceRoots>
-            </configuration>
-            <groupId>org.openclover</groupId>
-            <version>${clover.version}</version>
+            <groupId>org.graalvm.python</groupId>
+            <artifactId>graalpy-maven-plugin</artifactId>
+            <version>${graal.version}</version>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <configuration>
+                  <packages>
+                    <package>numpy==1.26.4</package>
+                    <package>torch==2.2.1</package>
+                  </packages>
+                  <pythonHome>
+	            <includes>
+                      <include>.*</include>
+                    </includes>
+                    <!-- excludes>
+                      <exclude>.*</exclude>
+                    </excludes -->
+                  </pythonHome>
+                  <pythonResourcesDirectory>
+                    ${project.basedir}/python-resources
+                  </pythonResourcesDirectory>
+                </configuration>
+                <goals>
+                  <goal>process-graalpy-resources</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
-      <id>ffx.clover</id>
-      <reporting>
-        <plugins>
-          <plugin>
-            <artifactId>clover-maven-plugin</artifactId>
-            <groupId>org.openclover</groupId>
-            <version>${clover.version}</version>
-          </plugin>
-        </plugins>
-      </reporting>
     </profile>
   </profiles>
   <properties>
-    <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-    <antlr4.version>4.13.1</antlr4.version>
+    <asciidoc.version>3.2.0</asciidoc.version>
+    <antlr4.version>4.13.2</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
-    <biojava.version>7.1.1</biojava.version>
-    <cdk.version>2.9</cdk.version>
+    <biojava.version>7.2.2</biojava.version>
+    <cdk.version>2.11</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
-    <checkstyle.version>3.4.0</checkstyle.version>
-    <ciftools-java.version>6.0.0</ciftools-java.version>
-    <clean.version>3.3.2</clean.version>
+    <checkstyle.version>3.6.0</checkstyle.version>
+    <ciftools-java.version>7.0.1</ciftools-java.version>
+    <clean.version>3.4.1</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
-    <commons-beanutils.version>1.9.4</commons-beanutils.version>
+    <commons-beanutils.version>1.10.1</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.10.1</commons-configuration2.version>
-    <commons-io.version>2.16.1</commons-io.version>
-    <commons-lang3.version>3.14.0</commons-lang3.version>
+    <commons-configuration2.version>2.11.0</commons-configuration2.version>
+    <commons-io.version>2.19.0</commons-io.version>
+    <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <!-- Versions of commons-text beyond 1.10.0 are not compatible with the IJava ipynb -->
-    <commons-text.version>1.10.0</commons-text.version>
+    <commons-text.version>1.13.1</commons-text.version>
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
-    <compiler.version>3.13.0</compiler.version>
-    <dependency.version>3.6.1</dependency.version>
+    <compiler.version>3.14.0</compiler.version>
+    <dependency.version>3.8.1</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.1.2</deploy.version>
+    <deploy.version>3.1.4</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
-    <exec.version>3.3.0</exec.version>
+    <exec.version>3.5.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>8.0.2</git-commit-id.version>
-    <gmavenplus.version>3.0.2</gmavenplus.version>
-    <graal.version>24.0.1</graal.version>
-    <groovy-all.version>5.0.0-alpha-8</groovy-all.version>
-    <guava.version>33.2.1-jre</guava.version>
-    <install.version>3.1.2</install.version>
-    <jacoco.version>0.8.12</jacoco.version>
-    <jar.version>3.4.1</jar.version>
-    <jarsigner.version>3.0.0</jarsigner.version>
-    <javaparser.version>3.26.0</javaparser.version>
+    <git-commit-id.version>9.0.1</git-commit-id.version>
+    <gmavenplus.version>4.1.1</gmavenplus.version>
+    <graal.version>24.2.1</graal.version>
+    <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
+    <guava.version>33.4.8-jre</guava.version>
+    <install.version>3.1.4</install.version>
+    <jacoco.version>0.8.13</jacoco.version>
+    <jacoco.skip>true</jacoco.skip>
+    <jar.version>3.4.2</jar.version>
+    <jarsigner.version>3.1.0</jarsigner.version>
+    <javaparser.version>3.26.4</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.7.0</javadoc.version>
+    <javadoc.version>3.11.2</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
-    <jdepend.version>2.0</jdepend.version>
-    <jna.version>5.14.0</jna.version>
+    <jdepend.version>2.1</jdepend.version>
+    <jna.version>5.17.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
-    <jopenmm.version>7.5.0-v11</jopenmm.version>
+    <jopenmm.version>8.1.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.4.0</jxr.version>
+    <jxr.version>3.6.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.23.1</log4j.version>
+    <log4j.version>2.24.3</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.7.6</picocli.version>
+    <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
+    <picocli.version>4.7.7</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.22.0</pmd.version>
-    <!-- Skip PMD because it does not handle Java language version 21 yet. -->
+    <pmd.version>3.26.0</pmd.version>
+    <!-- Skip PMD because it does not handle Java language version 23 yet. -->
     <pmd.skip>true</pmd.skip>
-    <project-info-reports.version>3.5.0</project-info-reports.version>
+    <project-info-reports.version>3.9.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.0.1</release.version>
+    <release.version>3.1.1</release.version>
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
-    <slf4j-nop.version>2.0.13</slf4j-nop.version>
-    <!-- AsciiDoc is not compatible with site version 4.0.0-M11 yet -->
-    <site.version>3.12.1</site.version>
-    <!-- site.version>4.0.0-M11</site.version -->
-    <asciidoc.version>2.2.4</asciidoc.version>
+    <slf4j-nop.version>2.0.17</slf4j-nop.version>
+    <site.version>3.21.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
-    <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.2.5</surefire.version>
+    <surefire.version>3.5.3</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
-    <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
-    <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>1.0.1</tornado.version>
+    <tornado.version>1.0.7</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.16.2</versions.version>
+    <versions.version>2.18.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
+    <wrapper.version>3.3.2</wrapper.version>
   </properties>
   <reporting>
     <plugins>
@@ -1154,6 +1188,11 @@
         <configuration>
           <failOnError>false</failOnError>
           <quiet>true</quiet>
+          <debug>false</debug>
+          <doclint>none</doclint>
+          <additionalOptions>
+            <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
+          </additionalOptions>
           <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
         </configuration>
         <inherited>true</inherited>
@@ -1194,23 +1233,6 @@
         </configuration>
         <version>${surefire.version}</version>
       </plugin>
-      <!-- plugin>
-          <artifactId>maven-changes-plugin</artifactId>
-          <version>2.12.1</version>
-          <reportSets>
-              <reportSet>
-                  <reports>
-                      <report>jira-report</report>
-                      <report>changes-report</report>
-                  </reports>
-              </reportSet>
-          </reportSets>
-      </plugin -->
-      <!-- plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-changelog-plugin</artifactId>
-          <version>2.2</version>
-      </plugin -->
       <plugin>
         <artifactId>maven-linkcheck-plugin</artifactId>
         <version>${linkcheck.version}</version>
@@ -1237,18 +1259,13 @@
         </reportSets>
         <version>${pmd.version}</version>
       </plugin>
-      <!-- plugin>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.0.0</version>
-          <configuration>
-              <goal>checkstyle-aggregate</goal>
-          </configuration>
-      </plugin -->
-      <!-- plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>jdepend-maven-plugin</artifactId>
-          <version>2.0</version>
-      </plugin -->
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.version}</version>
+        <configuration>
+          <goal>checkstyle-aggregate</goal>
+        </configuration>
+      </plugin>
     </plugins>
   </reporting>
   <pluginRepositories>
@@ -1334,17 +1351,6 @@
       </snapshots>
       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
     </repository>
-    <!-- repository>
-        <name>JFrog OpenSource Snapshots</name>
-        <id>6.jfrog.repo</id>
-        <url>https://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository -->
   </repositories>
   <scm>
     <connection>scm:git:https://github.com/SchniedersLab/forcefieldx.git</connection>

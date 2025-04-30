@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,21 +37,27 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.UREYBRAD;
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static java.lang.String.valueOf;
 
 /**
  * The UreyBradleyType class defines one harmonic UreyBradley cross term.
@@ -308,5 +314,41 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   public String toString() {
     return format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f", atomClasses[0], atomClasses[1],
         atomClasses[2], forceConstant, distance);
+  }
+
+  /**
+   * Create an AmoebaUreyBradleyForce element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to grab constants from.
+   * @return the AmoebaUreyBradleyForce element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, UreyBradleyType> types = forceField.getUreyBradleyTypes();
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaUreyBradleyForce");
+      node.setAttribute("cubic", valueOf(forceField.getDouble("urey-cubic", DEFAULT_UREY_CUBIC)));
+      node.setAttribute("quartic", valueOf(forceField.getDouble("urey-quartic", DEFAULT_UREY_QUARTIC)));
+      for (UreyBradleyType ureyBradleyType : types.values()) {
+        node.appendChild(ureyBradleyType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write UreyBradleyType to OpenMM XML format.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("UreyBradley");
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    // Convert from kcal/mol/A^2 to KJ/mol/nm^2
+    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (ANG_TO_NM * ANG_TO_NM)));
+    // Convert from Angstroms to nm
+    node.setAttribute("d", format("%f", distance * ANG_TO_NM));
+    return node;
   }
 }

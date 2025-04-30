@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -45,6 +45,7 @@ import static java.lang.String.format;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -271,7 +272,7 @@ public class XYZFilter extends SystemFilter {
       return nSnaps;
     } catch (Exception ex) {
       logger.log(Level.WARNING,
-          String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
+          String.format(" Exception reading trajectory file %s: %s", xyzFile, ex) + Utilities.stackTraceToString(ex));
       return 1;
     }
   }
@@ -376,10 +377,9 @@ public class XYZFilter extends SystemFilter {
         int type = parseInt(tokens[5]);
         AtomType atomType = forceField.getAtomType(Integer.toString(type));
         if (atomType == null) {
-          StringBuilder message = new StringBuilder("Check atom type ");
-          message.append(type).append(" for Atom ").append(i + 1);
-          message.append(" in ").append(activeMolecularAssembly.getFile().getName());
-          logger.warning(message.toString());
+          String message = "Check atom type " + type + " for Atom " + (i + 1) +
+                  " in " + activeMolecularAssembly.getFile().getName();
+          logger.warning(message);
           return false;
         }
         Atom a = new Atom(i + 1, atomName, atomType, d[i]);

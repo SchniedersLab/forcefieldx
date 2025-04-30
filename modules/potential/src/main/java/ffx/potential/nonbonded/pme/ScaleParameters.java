@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,15 +37,35 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
-import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
-import static java.lang.String.format;
-
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.utilities.FFXProperty;
 
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ChargeType.DEFAULT_CHG_12_SCALE;
+import static ffx.potential.parameters.ChargeType.DEFAULT_CHG_13_SCALE;
+import static ffx.potential.parameters.ChargeType.DEFAULT_CHG_14_SCALE;
+import static ffx.potential.parameters.ChargeType.DEFAULT_CHG_15_SCALE;
+import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
+import static ffx.potential.parameters.MultipoleType.DEFAULT_MPOLE_12_SCALE;
+import static ffx.potential.parameters.MultipoleType.DEFAULT_MPOLE_13_SCALE;
+import static ffx.potential.parameters.MultipoleType.DEFAULT_MPOLE_14_SCALE;
+import static ffx.potential.parameters.MultipoleType.DEFAULT_MPOLE_15_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_DIRECT_11_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_DIRECT_12_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_DIRECT_13_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_DIRECT_14_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_12_INTRA;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_12_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_13_INTRA;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_13_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_14_INTRA;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_14_SCALE;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_15_INTRA;
+import static ffx.potential.parameters.PolarizeType.DEFAULT_POLAR_15_SCALE;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
+import static java.lang.String.format;
 
 /**
  * Scale factors and masking rules for electrostatics.
@@ -53,15 +73,6 @@ import java.util.logging.Logger;
 public class ScaleParameters {
 
   private static final Logger logger = Logger.getLogger(ScaleParameters.class.getName());
-
-  private static final double DEFAULT_MPOLE_12_SCALE = 0.0;
-  private static final double DEFAULT_MPOLE_13_SCALE = 0.0;
-  private static final double DEFAULT_MPOLE_14_SCALE = 1.0;
-  private static final double DEFAULT_MPOLE_15_SCALE = 1.0;
-  private static final double DEFAULT_CHG_12_SCALE = 0.0;
-  private static final double DEFAULT_CHG_13_SCALE = 0.0;
-  private static final double DEFAULT_CHG_14_SCALE = 2.0;
-  private static final double DEFAULT_CHG_15_SCALE = 1.0;
 
   /**
    * The interaction energy between 1-2 multipoles is scaled by m12scale.
@@ -139,11 +150,6 @@ public class ScaleParameters {
           """)
   public final double m15scale;
 
-  private static final double DEFAULT_DIRECT_11_SCALE = 0.0;
-  private static final double DEFAULT_DIRECT_12_SCALE = 1.0;
-  private static final double DEFAULT_DIRECT_13_SCALE = 1.0;
-  private static final double DEFAULT_DIRECT_14_SCALE = 1.0;
-
   /**
    * DIRECT-11-SCALE factor.
    */
@@ -199,11 +205,6 @@ public class ScaleParameters {
           """)
   public final double d14scale;
 
-  private static final double DEFAULT_POLAR_12_SCALE = 0.0;
-  private static final double DEFAULT_POLAR_13_SCALE = 0.0;
-  private static final double DEFAULT_POLAR_14_SCALE = 1.0;
-  private static final double DEFAULT_POLAR_15_SCALE = 1.0;
-
   /**
    * The interaction energy between a permanent multipole and polarizable site that are 1-2 is scaled
    * by p12scale.
@@ -255,14 +256,6 @@ public class ScaleParameters {
           in either the parameter file or the property file.
           """)
   public final double p15scale;
-
-  private static final double DEFAULT_POLAR_12_INTRA = 0.0;
-
-  private static final double DEFAULT_POLAR_13_INTRA = 0.0;
-
-  private static final double DEFAULT_POLAR_14_INTRA = 0.5;
-
-  private static final double DEFAULT_POLAR_15_INTRA = 1.0;
 
   /**
    * An intra-12-scale factor other than 0.0 is not supported and will cause FFX to exit.

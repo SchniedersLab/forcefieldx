@@ -1,30 +1,30 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y wget unzip
+RUN apt-get install -y wget unzip curl zip
 RUN apt-get install -y libfreetype6 fontconfig fonts-dejavu
 RUN apt-get install -y python3-pip
 
-# Download GraalVM JDK 21 for x64 or Arm64
+# Download GraalVM JDK 22 for x64 or Arm64
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         JDK=graalvm-jdk-21_linux-aarch64_bin.tar.gz; \
+         JDK=jdk-22_linux-aarch64_bin.tar.gz; \
          ;; \
        amd64|i386:x86-64) \
-         JDK=graalvm-jdk-21_linux-x64_bin.tar.gz; \
+         JDK=jdk-22_linux-x64_bin.tar.gz; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    echo $JDK; \
-    wget https://download.oracle.com/graalvm/21/archive/${JDK}; \
+    echo ${JDK}; \
+    wget https://download.oracle.com/java/22/archive/${JDK}; \
     tar xzf ${JDK};
 
-ENV JAVA_HOME=/graalvm-jdk-21+35.1
+ENV JAVA_HOME=/jdk-22
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Add requirements.txt and install them using pip3
@@ -57,26 +57,21 @@ ENV FFX_LIB $FFX_HOME/lib
 ENV CLASSPATH $FFX_LIB/
 ENV PATH="${FFX_BIN}:${PATH}"
 
-# Set IJava kernel environment variables.
-ENV IJAVA_CLASSPATH $CLASSPATH
-ENV IJAVA_STARTUP_SCRIPTS_PATH $FFX_BIN/startup.jshell
-
-# Download Maven, unpack and build Force Field X
+# Build Force Field X
 RUN set -eux; \
   cd /home/ffx; \
-  wget https://dlcdn.apache.org/maven/maven-3/3.9.5/binaries/apache-maven-3.9.5-bin.tar.gz; \
-  tar xvzf apache-maven-3.9.5-bin.tar.gz; \
-  apache-maven-3.9.5/bin/mvn; \
-  rm apache-maven-3.9.5-bin.tar.gz; \
-  rm -rf apache-maven-3.9.5;
+  ./mvnw; 
 
-# Download, Unpack and install the IJava kernel
+# Download Java Jupyter Kernel
 RUN set -eux; \
-  wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip; \
-  unzip ijava-1.3.0.zip -d ijava-kernel; \
-  cd ijava-kernel; \
-  CLASSPATH=$(echo /home/ffx/lib/* | tr ' ' ':'); \
-  python3 install.py --sys-prefix --startup-scripts-path $IJAVA_STARTUP_SCRIPTS_PATH --classpath $CLASSPATH;
+  wget https://github.com/padreati/rapaio-jupyter-kernel/releases/download/2.1.0/rapaio-jupyter-kernel-2.1.0.jar; 
+
+# Install the rapaio-jupyter-kernel as $NB_USER
+RUN chown -R $NB_UID $HOME
+USER $NB_USER
+RUN set -eux; \
+  java -jar rapaio-jupyter-kernel-2.1.0.jar -i -auto; \
+  ls /home/ffx/.local/share/jupyter/kernels;
 
 # Set up the FFX Kotlin library
 # The allows the fillowing "magic" in Kotlin notebooks.
@@ -85,9 +80,6 @@ RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
 RUN cp $HOME/ipynb-kotlin/ffx.json $HOME/.jupyter_kotlin/libraries/.
 RUN cp -R $HOME/lib $HOME/.jupyter_kotlin/.
-
-RUN chown -R $NB_UID $HOME
-USER $NB_USER
 
 # Launch the notebook server
 WORKDIR $HOME

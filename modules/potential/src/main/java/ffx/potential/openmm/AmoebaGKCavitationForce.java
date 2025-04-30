@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -41,6 +41,7 @@ import ffx.openmm.Force;
 import ffx.openmm.amoeba.GKCavitationForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.nonbonded.implicit.GaussVol;
@@ -48,7 +49,7 @@ import ffx.potential.nonbonded.implicit.GaussVol;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_NonbondedMethod.OpenMM_AmoebaGKCavitationForce_NoCutoff;
+// import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_NonbondedMethod.OpenMM_AmoebaGKCavitationForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
@@ -68,6 +69,9 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
    * @param openMMEnergy OpenMM energy.
    */
   public AmoebaGKCavitationForce(OpenMMEnergy openMMEnergy) {
+    logger.severe(" The AmoebaGKCavitationForce is not currently supported.");
+    // TODO: Implement the AmoebaGKCavitationForce as a plugin.
+
     GeneralizedKirkwood generalizedKirkwood = openMMEnergy.getGK();
     if (generalizedKirkwood == null) {
       destroy();
@@ -100,7 +104,8 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
       addParticle(radius * OpenMM_NmPerAngstrom, surfaceTension, isHydrogen);
     }
 
-    setNonbondedMethod(OpenMM_AmoebaGKCavitationForce_NoCutoff);
+    // TODO: Uncomment this when the AmoebaGKCavitationForce plugin is ready.
+    // setNonbondedMethod(OpenMM_AmoebaGKCavitationForce_NoCutoff);
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("GK_FORCE_GROUP", 2);
     setForceGroup(forceGroup);
@@ -147,7 +152,9 @@ public class AmoebaGKCavitationForce extends GKCavitationForce {
 
     double surfaceTension = chandlerCavitation.getSurfaceTension()
         * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom / OpenMM_NmPerAngstrom;
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    double lambdaElec = pme.getAlchemicalParameters().permLambda;
 
     // Changing cavitation radii is not supported.
     // for (int i=0; i<nAtoms; i++) {

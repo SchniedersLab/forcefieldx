@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -90,7 +90,7 @@ public class DirectRegion extends ParallelRegion {
   private double aewald;
   private double aewald3;
 
-  private double dielectric;
+  private double soluteDielectric;
 
   public DirectRegion(int nt) {
     directLoop = new DirectLoop[nt];
@@ -120,7 +120,7 @@ public class DirectRegion extends ParallelRegion {
       boolean generalizedKirkwoodTerm,
       GeneralizedKirkwood generalizedKirkwood,
       EwaldParameters ewaldParameters,
-      double dielectric,
+      double soluteDielectric,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
       double[][] directDipole,
@@ -138,7 +138,7 @@ public class DirectRegion extends ParallelRegion {
     this.generalizedKirkwood = generalizedKirkwood;
     this.aewald = ewaldParameters.aewald;
     this.aewald3 = ewaldParameters.aewald3;
-    this.dielectric = dielectric;
+    this.soluteDielectric = soluteDielectric;
     // Output
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
@@ -190,8 +190,8 @@ public class DirectRegion extends ParallelRegion {
       fieldCR.reduce(lb, ub);
 
       // Scale the total direct field by the inverse dielectric.
-      if (dielectric > 1.0) {
-        double inverseDielectric = 1.0 / dielectric;
+      if (soluteDielectric > 1.0) {
+        double inverseDielectric = 1.0 / soluteDielectric;
         for (int i = lb; i <= ub; i++) {
           field.scale(0, i, inverseDielectric);
           fieldCR.scale(0, i, inverseDielectric);

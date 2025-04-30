@@ -90,9 +90,38 @@ class MBAR extends AlgorithmsScript {
             description = "Required for lambda energy evaluations. Ensure numLambda is consistent with the trajectory lambdas, i.e. gaps between traj can be filled easily. nL >> nTraj is recommended.")
     int numLambda = -1
 
+    @Option(names = ["--lambdaDerivative", "--lD"], paramLabel = "false",
+            description = "Calculate lambda derivatives for each snapshot.")
+    boolean lambdaDerivative = false
+
+    @Option(names = ["--continuousLambda", "--cL"], paramLabel = "false",
+            description = "Data comes from continuous lambda source and only contains mbar file.")
+    boolean continuousLambda = false
+
+    @Option(names = ["--outputDir", "--oD"], paramLabel = "",
+            description = "Where to place MBAR files. Default is ../mbarFiles/energy_(window#).mbar. Will write out a file called energy_0.mbar.")
+    String outputDirectory = ""
+
     @Option(names = ["--seed"], paramLabel = "BAR",
             description = "Seed MBAR calculation with this: ZEROS, ZWANZIG, BAR. Fallback to ZEROS if input is does not or is unlikely to converge.")
     String seedWith = "BAR"
+
+    @Option(names = ["--tol", "--tolerance"], paramLabel = "1e-7",
+            description = "Iteration change tolerance.")
+    double tol = 1e-7
+
+    @Option(names = ["--ss", "--startSnapshot"], paramLabel = "-1",
+            description = "Start at this snapshot when reading in tinker BAR files.")
+    int startingSnapshot = -1
+
+    @Option(names = ["--es", "--endSnapshot"], paramLabel = "-1",
+            description = "End at this snapshot when reading in tinker BAR files.")
+    private int endingSnapshot = -1
+
+    @Option(names = ["--verbose"], paramLabel = "false",
+            description = "Log weight matrices, iterations, and other details.")
+    boolean verbose = false
+
 
     /**
      * The path to MBAR/BAR files.
@@ -148,7 +177,7 @@ class MBAR extends AlgorithmsScript {
         }
         boolean isArc = !files[0].isDirectory()
 
-        // Write MBAR file
+        // Write MBAR file if option is set
         if(isArc){
             if (numLambda == -1){
                 logger.severe("numLambda must be specified for lambda energy evaluations.")
@@ -156,21 +185,37 @@ class MBAR extends AlgorithmsScript {
             }
             // Get list of fileNames & check validity
             File parent = files[0].getParentFile() // Run directory
-            int window = Integer.parseInt(parent.getName()) // Run name should be int
-            File outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
-            if(!outputDir.exists()) {
-                outputDir.mkdir()
+            int window;
+            File outputDir;
+            if (outputDirectory.isEmpty()) {
+                window = Integer.parseInt(parent.getName()) // Run name should be int
+                outputDir = new File(parent.getParentFile(), "mbarFiles") // Make mbarFiles
+                if(!outputDir.exists()) {
+                    outputDir.mkdir()
+                }
+            } else {
+                outputDir = new File(outputDirectory)
+                if(!outputDir.exists()) {
+                    outputDir.mkdir()
+                }
+                window = 0
             }
             // Write MBAR file with window number, although this will be reassigned by the file filter based on
             // placement relative to other fileNames with energy values.
             File outputFile = new File(outputDir, "energy_" + window + ".mbar")
             //TODO: Fix atrocious setting of temperatures
-            double[][] energies = getEnergyForLambdas(files, numLambda) // Long step!
+            double[][][] energiesAndDerivatives = getEnergyForLambdas(files, numLambda)
+            double[][] energies =  energiesAndDerivatives[0] // Long step!
             MultistateBennettAcceptanceRatio.writeFile(energies, outputFile, 298) // Assume 298 K
+            if (lambdaDerivative) {
+                double[][] lambdaDerivatives = energiesAndDerivatives[1]
+                File outputDerivFile = new File(outputDir, "derivatives_" + window + ".mbar")
+                MultistateBennettAcceptanceRatio.writeFile(lambdaDerivatives, outputDerivFile, 298)
+            }
             return this
         }
 
-        // Run MBAR calculation
+        // Run MBAR calculation if file write-out is not requested & files are correct
         File path = new File(fileList.get(0))
         if (!path.exists()) {
             logger.severe("Path to MBAR/BAR fileNames does not exist: " + path)
@@ -180,30 +225,53 @@ class MBAR extends AlgorithmsScript {
             logger.severe("Path to MBAR/BAR fileNames is not accessible: " + path)
             return this
         }
-        MBARFilter filter = new MBARFilter(path);
+        MBARFilter filter = new MBARFilter(path, continuousLambda);
+        if (startingSnapshot >= 0){
+            filter.setStartSnapshot(startingSnapshot)
+            logger.info("Starting with snapshot index: " + startingSnapshot)
+        }
+        if (endingSnapshot >= 0){
+            filter.setEndSnapshot(endingSnapshot)
+            logger.info("Ending with snapshot index: " + endingSnapshot)
+        }
         seedWith = seedWith.toUpperCase()
         SeedType seed = SeedType.valueOf(seedWith) as SeedType
         if (seed == null) {
             logger.severe("Invalid seed type: " + seedWith)
             return this
         }
+        MultistateBennettAcceptanceRatio.VERBOSE = verbose
 
-        mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType)
+        // Runs calculation on class creation
+        mbar = filter.getMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, tol)
         this.mbar = mbar
         if (mbar == null) {
             logger.severe("Could not create MBAR object.")
             return this
         }
+
+        // Print out results
         logger.info("\n MBAR Results:")
-        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", mbar.getFreeEnergy(),
-                mbar.getUncertainty()))
-        double[] dGs = mbar.getBinEnergies()
-        double[] uncertainties = mbar.getBinUncertainties()
-        double[][] uncertaintyMatrix = mbar.getDiffMatrix()
+        double[] dGs = mbar.getFreeEnergyDifferences()
+        double[] uncertainties = mbar.getUncertainties()
+        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", mbar.getFreeEnergyDifference(),
+                mbar.getTotalFEDifferenceUncertainty()))
         for (int i = 0; i < dGs.length; i++) {
-            logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+            logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }
+
+        logger.info("\n MBAR Enthalpy & Entropy Results:")
+        double[] enthalpies = mbar.getEnthalpyDifferences()
+        double[] entropies = mbar.getBinEntropies()
+        double totalEnthalpy = sum(enthalpies)
+        double totalEntropy = sum(entropies)
+        logger.info(format(" Total dG = %10.4f (dH) - %10.4f (TdS) kcal/mol\n", totalEnthalpy, totalEntropy))
+        for (int i = 0; i < enthalpies.length; i++) {
+            logger.info(format("   dG %3d = %10.4f (dH) - %10.4f (TdS) kcal/mol", i, enthalpies[i], entropies[i]))
+        }
+
         logger.info("\n MBAR uncertainty between all i & j: ")
+        double[][] uncertaintyMatrix = mbar.getUncertaintyMatrix()
         for(int i = 0; i < uncertaintyMatrix.length; i++) {
             StringBuilder sb = new StringBuilder()
             sb.append("    [")
@@ -213,33 +281,59 @@ class MBAR extends AlgorithmsScript {
             sb.append("]")
             logger.info(sb.toString())
         }
+
+        // Read in and compute expectations for observable data
+        boolean observableData = filter.readObservableData(true, false, true);
+        if (observableData){
+            logger.info("\n Observable data read in.")
+        }
+        boolean biasData = filter.readObservableData(true, true, false);
+        if(biasData){
+            logger.info(" Bias data read in.")
+        }
+        if(observableData) {
+            logger.info("\n MBAR Observable Data: ")
+            double[] observableValues = mbar.getObservationEnsembleAverages()
+            for (int i = 0; i < observableValues.length; i++) {
+                logger.info(format("     %3d = %10.4f ", i, observableValues[i]))
+            }
+            logger.info(" Integral:    " + mbar.getTIIntegral())
+        }
         logger.info("\n")
+        // BAR to compare (negligible difference if properly converged and doesn't take long at all)
         if(bar){
             try {
                 logger.info("\n BAR Results:")
                 BennettAcceptanceRatio bar = mbar.getBAR()
-                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bar.getFreeEnergy(),
-                        bar.getUncertainty()))
-                dGs = bar.getBinEnergies()
-                uncertainties = bar.getBinUncertainties()
+                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", bar.getFreeEnergyDifference(),
+                        bar.getTotalFEDifferenceUncertainty()))
+                dGs = bar.getFreeEnergyDifferences()
+                uncertainties = bar.getUncertainties()
                 for (int i = 0; i < dGs.length; i++) {
-                    logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                    logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                }
+                enthalpies = bar.getEnthalpyDifferences()
+                totalEnthalpy = sum(enthalpies)
+                logger.info(format("\n Total dH = %10.4f kcal/mol\n", totalEnthalpy))
+                for (int i = 0; i < enthalpies.length; i++) {
+                    logger.info(format("   dH %3d = %10.4f kcal/mol", i, enthalpies[i]))
                 }
             } catch (Exception ignored) {
                 logger.warning(" BAR calculation failed to converge.")
             }
         }
         logger.info("\n")
+        // Bootstrapping MBAR & BAR
         if(numBootstrap != 0) {
             EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
             bootstrapper.bootstrap(numBootstrap)
             logger.info("\n MBAR Bootstrap Results from " + numBootstrap + " Samples:")
-            logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-                    bootstrapper.getTotalUncertainty()))
-            dGs = bootstrapper.getFE()
-            uncertainties = bootstrapper.getUncertainty()
+            logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFreeEnergyDifference(),
+                    bootstrapper.getTotalFEDifferenceUncertainty()))
+            dGs = bootstrapper.getFreeEnergyDifferences()
+            uncertainties = bootstrapper.getFEDifferenceStdDevs()
             for (int i = 0; i < dGs.length; i++) {
-                logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
             }
             logger.info("\n")
             if (bar) {
@@ -247,61 +341,59 @@ class MBAR extends AlgorithmsScript {
                     logger.info("\n BAR Bootstrap Results:")
                     bootstrapper = new EstimateBootstrapper(mbar.getBAR())
                     bootstrapper.bootstrap(numBootstrap)
-                    logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-                            bootstrapper.getTotalUncertainty()))
-                    dGs = bootstrapper.getFE()
-                    uncertainties = bootstrapper.getUncertainty()
+                    logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFreeEnergyDifference(),
+                            bootstrapper.getTotalFEDifferenceUncertainty()))
+                    dGs = bootstrapper.getFreeEnergyDifferences()
+                    uncertainties = bootstrapper.getFEDifferenceStdDevs()
                     for (int i = 0; i < dGs.length; i++) {
-                        logger.info(format("    dG_%d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
+                        logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                     }
                 } catch (Exception ignored) {
                     logger.warning(" BAR calculation failed to converge.")
                 }
             }
         }
-
+        // Compare MBAR calculation across different tenths of the data
         if (convergence){
             MultistateBennettAcceptanceRatio.FORCE_ZEROS_SEED = true;
-            MultistateBennettAcceptanceRatio[] mbarTimeConvergence =
-                    filter.getTimeConvergenceMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
-            double[][] dGTime = new double[mbarTimeConvergence.length][]
-            for (int i = 0; i < mbarTimeConvergence.length; i++) {
-                dGTime[i] = mbarTimeConvergence[i].getBinEnergies()
-            }
             MultistateBennettAcceptanceRatio[] mbarPeriodComparison =
                     filter.getPeriodComparisonMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
             double[][] dGPeriod = new double[mbarPeriodComparison.length][]
             for (int i = 0; i < mbarPeriodComparison.length; i++) {
-                dGPeriod[i] = mbarPeriodComparison[i].getBinEnergies()
+                dGPeriod[i] = mbarPeriodComparison[i].getFreeEnergyDifferences()
             }
-            logger.info("\n MBAR Time Convergence Results:")
-            logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
-                    10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
-            for(int i = 0; i < dGTime[0].length; i++) {
-                StringBuilder sb = new StringBuilder()
-                sb.append(" dG_").append(i).append(": ")
-                for(int j = 0; j < dGTime.length; j++) {
-                    sb.append(format("%10.4f ", dGTime[j][i]))
-                }
-                logger.info(sb.toString())
-            }
-            logger.info("\n")
             logger.info("\n MBAR Period Comparison Results:")
             logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",
                     10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
-            for(int i = 0; i < dGTime[0].length; i++) {
+            double[] totals = new double[dGPeriod[0].length]
+            for(int i = 0; i < dGPeriod[0].length; i++) {
                 StringBuilder sb = new StringBuilder()
                 sb.append(" dG_").append(i).append(": ")
-                for(int j = 0; j < dGTime.length; j++) {
-                    sb.append(format("%10.4f ", dGTime[j][i]))
+                for(int j = 0; j < dGPeriod.length; j++) {
+                    sb.append(format("%10.4f ", dGPeriod[j][i]))
+                    totals[j] += dGPeriod[j][i]
                 }
                 logger.info(sb.toString())
             }
+            StringBuilder totalsSB = new StringBuilder()
+            for(int i = 0; i < totals.length; i++) {
+                totalsSB.append(format("%10.4f ", totals[i]))
+            }
+            logger.info("")
+            logger.info("  Tot: " + totalsSB.toString())
         }
         return this
     }
 
-    private double[][] getEnergyForLambdas(File[] files, int nLambda) {
+    private double sum(double[] values) {
+        double sum = 0
+        for (double value : values) {
+            sum += value
+        }
+        return sum
+    }
+
+    private double[][][] getEnergyForLambdas(File[] files, int nLambda) {
         // Stuff copied from BAR.groovy
         /*
             Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
@@ -354,9 +446,11 @@ class MBAR extends AlgorithmsScript {
         double[] x = new double[potential.getNumberOfVariables()]
         double[] lambdaValues = new double[nLambda]
         double[][] energy = new double[nLambda][nSnapshots]
+        double[][] lambdaDerivatives = new double[nLambda][nSnapshots]
         for (int k = 0; k < lambdaValues.length; k++) {
             lambdaValues[k] = k.toDouble() / (nLambda - 1)
             energy[k] = new double[nSnapshots]
+            lambdaDerivatives[k] = new double[nSnapshots]
         }
         LambdaInterface linter1 = (LambdaInterface) potential
         logger.info(format("\n\n Performing energy evaluations for %d snapshots.", nSnapshots))
@@ -374,15 +468,29 @@ class MBAR extends AlgorithmsScript {
 
             // Compute energies for each lambda
             StringBuilder sb2 = new StringBuilder().append("Snapshot ").append(i).append(" Energy Evaluations: ")
+            StringBuilder sb3 = new StringBuilder().append("Snapshot ").append(i).append(" Lambda Derivatives: ")
             for (int k = 0; k < lambdaValues.length; k++) {
                 double lambda = lambdaValues[k]
+                if (lambda <= 1E-6){
+                    lambda += .00275
+                }
+                if (lambda - 1.0 < 1E-6){
+                    lambda -= .00275
+                }
                 linter1.setLambda(lambda)
-                energy[k][i] = potential.energy(x, false)
+                energy[k][i] = potential.energyAndGradient(x, new double[x.length * 3])
+                if (lambdaDerivative) {
+                    lambdaDerivatives[k][i] = linter1.getdEdL()
+                    sb3.append(" ").append(lambdaDerivatives[k][i])
+                }
                 sb2.append(" ").append(energy[k][i])
             }
             logger.info(sb2.append("\n").toString())
+            if (lambdaDerivative) {
+                logger.info(sb3.append("\n").toString())
+            }
         }
 
-        return energy
+        return new double[][][]{energy, lambdaDerivatives}
     }
 }

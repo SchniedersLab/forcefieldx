@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,25 +37,31 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLEP;
+import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The AngleType class defines one harmonic angle bend energy term.
@@ -491,6 +497,56 @@ public final class AngleType extends BaseType implements Comparator<String> {
       angleString.append(format("  %6.2f", eq));
     }
     return angleString.toString();
+  }
+
+  /**
+   * Create an AmoebaAngleForce
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to define constants from.
+   * @return the AmoebaAngleForce Element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, AngleType> angMap = forceField.getAngleTypes();
+    angMap.putAll(forceField.getAnglepTypes());
+    if (!angMap.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaAngleForce");
+      node.setAttribute("angle-cubic", valueOf(forceField.getDouble("angle-cubic", DEFAULT_ANGLE_CUBIC)));
+      node.setAttribute("angle-quartic", valueOf(forceField.getDouble("angle-quartic", DEFAULT_ANGLE_QUARTIC)));
+      node.setAttribute("angle-pentic", valueOf(forceField.getDouble("angle-pentic", DEFAULT_ANGLE_PENTIC)));
+      node.setAttribute("angle-sextic", valueOf(forceField.getDouble("angle-sextic", DEFAULT_ANGLE_SEXTIC)));
+      for (AngleType angleType : angMap.values()) {
+        node.appendChild(angleType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write AngleType to OpenMM XML format.
+   *
+   * @param doc the Document instance.
+   * @return the Angle element.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Angle");
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    // Convert Kcal/mol/radian^2 to KJ/mol/deg^2
+    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
+    int i = 1;
+    for (double eq : angle) {
+      node.setAttribute(format("angle%d", i), format("%f", eq));
+      i++;
+    }
+    if (angleMode == AngleMode.NORMAL) {
+      node.setAttribute("inPlane", "False");
+    } else {
+      node.setAttribute("inPlane", "True");
+    }
+    return node;
   }
 
   /**

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -146,9 +146,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
    */
   public static final String version = "1.0.0";
   /**
-   * Constant <code>date="June 2024"</code>
+   * Constant <code>date="January 2025"</code>
    */
-  public static final String date = "June 2024";
+  public static final String date = "January 2025";
   /**
    * Constant
    */
@@ -283,17 +283,16 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         + " \n"
         + commitSCM // Will contain its own spacing/newline, or be empty.
         + " \n"
-        + """
-                Copyright (c)  Michael J. Schnieders  2001-2024
-                Portions Copyright (c):
-                  Timothy D. Fenn      2009-2024
-                  Jacob M. Litman      2015-2024
-                  Rae A. Corrigan      2019-2024
-                  Guowei Qi            2019-2024
-                  Mallory R. Tollefson 2019-2024
-                  Aaron J. Nessler     2021-2024
-                  Andrew C. Thiel      2021-2024
+        + """                
+                Please cite the following reference when using Force Field X:
         
+                RA Gogal, AJ Nessler, AC Thiel, HV Bernabe, RA Corrigan Grove,
+                LM Cousineau, JM Litman, JM Miller, G Qi, MJ Speranza,
+                MR Tollefson, TD Fenn, JJ Michaelson, O Okada, JP Piquemal,
+                JW Ponder, J Shen, RJH Smith, W Yang, P Ren and MJ Schnieders,
+                2024, Journal of Chemical Physics, 161 (1).
+        
+                Copyright (c)  Michael J. Schnieders  2001-2025
                 All Rights Reserved
         
                 Force Field X is distributed under the GPL v. 3 license
@@ -723,10 +722,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     modelingPanel = new ModelingPanel(this);
 
     JPanel treePane = new JPanel(new BorderLayout());
-    JScrollPane scrollPane =
-        new JScrollPane(
-            hierarchy,
-            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+    JScrollPane scrollPane = new JScrollPane(hierarchy, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
             JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     treePane.add(scrollPane, BorderLayout.CENTER);
 
@@ -735,12 +731,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
       GraphicsConfiguration gc = null;
       try {
-        gc =
-            GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getBestConfiguration(template3D);
-        // gc =
-        // GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
       } catch (Exception e) {
         logger.log(Level.SEVERE, " Exception encountered when trying to get the best GraphicsConfiguration", e);
       }

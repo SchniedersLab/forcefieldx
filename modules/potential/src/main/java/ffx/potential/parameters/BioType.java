@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,18 +37,18 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.BIOTYPE;
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-
 import ffx.utilities.FFXProperty;
 
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.BIOTYPE;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 /**
  * The BioType class maps PDB identifiers to atom types.
@@ -195,7 +195,7 @@ public final class BioType extends BaseType implements Comparator<String> {
   public String toString() {
     StringBuilder sb =
         new StringBuilder(
-            format("biotype  %5d  %-4s  \"%-23s\"  %5d", index, atomName, moleculeName, atomType));
+            format("biotype  %5d  %-4s  \"%s\"  %5d", index, atomName, moleculeName, atomType));
     if (bonds != null) {
       for (String bond : bonds) {
         sb.append(format("  %-4s", bond));

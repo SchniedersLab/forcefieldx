@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,18 +37,22 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 /**
  * The VDWPairType class defines a van der Waals Pair type.
@@ -194,8 +198,21 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
    */
   @Override
   public String toString() {
-    return format("vdwpr  %5d  %5d  %11.9f  %11.9f", atomClasses[0], atomClasses[1], radius,
-        wellDepth);
+    return format("vdwpr  %5d  %5d  %11.9f  %11.9f", atomClasses[0], atomClasses[1], radius, wellDepth);
+  }
+
+  /**
+   * Write VDWPairType to OpenMM XML format.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Pair");
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    // Convert Angstroms to nm.
+    node.setAttribute("sigma", format("%f", radius * ANG_TO_NM));
+    // Convert Kcal/mol to KJ/mol
+    node.setAttribute("epsilon", format("%f", wellDepth * KCAL_TO_KJ));
+    return node;
   }
 
   /**

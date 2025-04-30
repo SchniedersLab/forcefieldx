@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -52,7 +52,11 @@ public class BiotypeTest extends PotentialTest {
   @Test
   public void testBiotype() {
     // Set-up the input arguments for the Biotype script.
-    String[] args = {getResourcePath("acetanilide.xyz")};
+    String[] args = {
+        "--name", "ACE",
+        getResourcePath("acetanilide.xyz")
+    };
+
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -64,10 +68,9 @@ public class BiotypeTest extends PotentialTest {
     assertNotNull(bioTypes);
     assertEquals(19, bioTypes.size());
     BioType bioType = bioTypes.get(0);
-    assertTrue(
-        " Check the value of the first Biotype.",
+    assertTrue(" Check the value of the first Biotype.",
         bioType.toString().trim().equalsIgnoreCase(
-            "biotype      1  C     \"ace                    \"    405  C     C     N"));
+            "biotype      1  C0    \"ACE\"    405  C1    C5    N0"));
 
     // Check that the bioTypes variable is available via the Binding.
     assertEquals(bioTypes, binding.getVariable("bioTypes"));

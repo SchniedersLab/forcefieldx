@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -94,16 +94,13 @@ public class Resources {
         long totalPhysical = unixOS.getTotalMemorySize() / MB;
         long freeSwap = unixOS.getFreeSwapSpaceSize() / MB;
         long totalSwap = unixOS.getTotalSwapSpaceSize() / MB;
-        sb.append(format("  System memory:          %6d MB free out of %6d MB\n", freePhysical,
-            totalPhysical));
-        sb.append(
-            format("  System swap space:      %6d MB free out of %6d MB\n", freeSwap, totalSwap));
+        sb.append(format("  System memory:          %6d MB free out of %6d MB\n", freePhysical, totalPhysical));
+        sb.append(format("  System swap space:      %6d MB free out of %6d MB\n", freeSwap, totalSwap));
       }
 
       // JVM Memory.
-      sb.append(
-          format("  JVM memory:             %6d MB free out of %6d MB", runtime.freeMemory() / MB,
-              runtime.totalMemory() / MB));
+      sb.append(format("  JVM memory:             %6d MB free out of %6d MB",
+          runtime.freeMemory() / MB, runtime.totalMemory() / MB));
 
       logger.info(sb.toString());
     }

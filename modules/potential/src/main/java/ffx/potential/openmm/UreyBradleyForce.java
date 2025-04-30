@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -82,7 +82,8 @@ public class UreyBradleyForce extends HarmonicBondForce {
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
+    logger.info(format("  Urey-Bradleys:                     %10d", ureyBradleys.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

@@ -26,6 +26,9 @@
             <goals>
               <goal>report-aggregate</goal>
             </goals>
+            <configuration>
+              <skip>${jacoco.skip}</skip>
+            </configuration>
           </execution>
         </executions>
       </plugin>

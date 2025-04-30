@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -70,7 +70,6 @@ public class UIFileOpener implements FileOpener {
   MainPanel mainPanel;
   private boolean timer = true;
   private boolean gc = true;
-  private long occupiedMemory;
   private long time;
   private int nThreads = -1;
 
@@ -247,7 +246,6 @@ public class UIFileOpener implements FileOpener {
     if (gc) {
       runtime.gc();
     }
-    occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
     time -= System.nanoTime();
   }
 

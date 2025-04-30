@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -799,21 +799,17 @@ public class RealSpaceData implements DataContainer {
               grad[1] = grad[1] * nY;
               grad[2] = grad[2] * nZ;
               // transpose of toFractional
-              xyz[0] =
-                  grad[0] * getCrystal()[i].A00
+              xyz[0] = grad[0] * getCrystal()[i].A00
                       + grad[1] * getCrystal()[i].A01
                       + grad[2] * getCrystal()[i].A02;
-              xyz[1] =
-                  grad[0] * getCrystal()[i].A10
+              xyz[1] = grad[0] * getCrystal()[i].A10
                       + grad[1] * getCrystal()[i].A11
                       + grad[2] * getCrystal()[i].A12;
-              xyz[2] =
-                  grad[0] * getCrystal()[i].A20
+              xyz[2] = grad[0] * getCrystal()[i].A20
                       + grad[1] * getCrystal()[i].A21
                       + grad[2] * getCrystal()[i].A22;
               gradient.add(threadID, ia, scale * xyz[0], scale * xyz[1], scale * xyz[2]);
-              lambdaGrad.add(
-                  threadID, ia, scaledUdL * xyz[0], scaledUdL * xyz[1], scaledUdL * xyz[2]);
+              lambdaGrad.add(threadID, ia, scaledUdL * xyz[0], scaledUdL * xyz[1], scaledUdL * xyz[2]);
             }
           }
         }

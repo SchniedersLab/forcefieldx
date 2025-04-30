@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -40,12 +40,14 @@ package ffx.openmm.amoeba;
 import ffx.openmm.Context;
 import ffx.openmm.Force;
 
+/*
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_addParticle;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_destroy;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_setNonbondedMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_setParticleParameters;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_updateParametersInContext;
+ */
 
 /**
  * Implicit Solvent Cavitation Force.
@@ -56,7 +58,9 @@ public class GKCavitationForce extends Force {
    * Constructor.
    */
   public GKCavitationForce() {
-    pointer = OpenMM_AmoebaGKCavitationForce_create();
+    System.out.println(" The GKCavitationForce is not currently supported.");
+    System.exit(-1);
+    // pointer = OpenMM_AmoebaGKCavitationForce_create();
   }
 
   /**
@@ -67,7 +71,7 @@ public class GKCavitationForce extends Force {
    * @param isHydrogen     Is this a hydrogen atom?
    */
   public void addParticle(double radius, double surfaceTension, int isHydrogen) {
-    OpenMM_AmoebaGKCavitationForce_addParticle(pointer, radius, surfaceTension, isHydrogen);
+    // OpenMM_AmoebaGKCavitationForce_addParticle(pointer, radius, surfaceTension, isHydrogen);
   }
 
   /**
@@ -79,7 +83,7 @@ public class GKCavitationForce extends Force {
    * @param isHydrogen     Is this a hydrogen atom?
    */
   public void setParticleParameters(int index, double radius, double surfaceTension, int isHydrogen) {
-    OpenMM_AmoebaGKCavitationForce_setParticleParameters(pointer, index, radius, surfaceTension, isHydrogen);
+    // OpenMM_AmoebaGKCavitationForce_setParticleParameters(pointer, index, radius, surfaceTension, isHydrogen);
   }
 
   /**
@@ -88,7 +92,7 @@ public class GKCavitationForce extends Force {
    * @param method Nonbonded method.
    */
   public void setNonbondedMethod(int method) {
-    OpenMM_AmoebaGKCavitationForce_setNonbondedMethod(pointer, method);
+    // OpenMM_AmoebaGKCavitationForce_setNonbondedMethod(pointer, method);
   }
 
   /**
@@ -96,7 +100,7 @@ public class GKCavitationForce extends Force {
    */
   public void destroy() {
     if (pointer != null) {
-      OpenMM_AmoebaGKCavitationForce_destroy(pointer);
+      // OpenMM_AmoebaGKCavitationForce_destroy(pointer);
       pointer = null;
     }
   }
@@ -108,7 +112,7 @@ public class GKCavitationForce extends Force {
    */
   public void updateParametersInContext(Context context) {
     if (context.hasContextPointer()) {
-      OpenMM_AmoebaGKCavitationForce_updateParametersInContext(pointer, context.getPointer());
+      // OpenMM_AmoebaGKCavitationForce_updateParametersInContext(pointer, context.getPointer());
     }
   }
 }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,21 +37,27 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.BOND;
+import static ffx.utilities.Constants.ANG_TO_NM;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
+import static ffx.utilities.Constants.NM_TO_ANG;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The BondType class defines one harmonic bond stretch energy term.
@@ -121,7 +127,7 @@ public final class BondType extends BaseType implements Comparator<String> {
    */
   public final int[] atomClasses;
   /**
-   * Force constant (Kcal/mol).
+   * Force constant (Kcal/mol/A^2).
    */
   public final double forceConstant;
   /**
@@ -365,6 +371,32 @@ public final class BondType extends BaseType implements Comparator<String> {
   public String toString() {
     return format("bond  %5d  %5d  %7.2f  %7.4f", atomClasses[0], atomClasses[1], forceConstant,
         distance);
+  }
+
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, BondType> btMap = forceField.getBondTypes();
+    if (!btMap.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaBondForce");
+      node.setAttribute("bond-cubic", format("%f", forceField.getDouble("bond-cubic", DEFAULT_BOND_CUBIC) * NM_TO_ANG));
+      node.setAttribute("bond-quartic", format("%f", forceField.getDouble("bond-quartic", DEFAULT_BOND_QUARTIC) * NM_TO_ANG * NM_TO_ANG));
+      for (BondType bondType : btMap.values()) {
+        node.appendChild(bondType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write BondType to OpenMM XML format.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Bond");
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("length", format("%f", distance * ANG_TO_NM));
+    node.setAttribute("k", format("%f", forceConstant * NM_TO_ANG * NM_TO_ANG * KCAL_TO_KJ));
+    return node;
   }
 
   /**

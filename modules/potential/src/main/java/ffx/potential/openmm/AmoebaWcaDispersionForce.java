@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -85,7 +85,7 @@ public class AmoebaWcaDispersionForce extends WcaDispersionForce {
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 
@@ -139,11 +139,11 @@ public class AmoebaWcaDispersionForce extends WcaDispersionForce {
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
 
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.potential.parsers;
 
+import static ffx.potential.parsers.SystemFilter.version;
+import static java.lang.Double.isNaN;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -118,7 +120,6 @@ public class BARFilter {
     this.volume1 = volume1;
     this.volume2 = volume2;
     this.temp = temp;
-
   }
 
 
@@ -134,50 +135,58 @@ public class BARFilter {
     ArrayList<Double> ens2lam2 = new ArrayList<>();
     ArrayList<Double> vol1 = new ArrayList<>();
     ArrayList<Double> vol2 = new ArrayList<>();
+    // Processes all snapshots in a file.
     int snapshots = 0;
     int xyzCount = 0;
     try (BufferedReader br = new BufferedReader(new FileReader(barFile))) {
       String data;
       while ((data = br.readLine()) != null) {
-        count += 1;
+        count++;
         String[] tokens = data.trim().split(" +");
-        if (startingSnap != 0 || endingSnap != 0) {
-          if (startingSnap != 0 && endingSnap == 0) {
-            endingSnap = snaps;
-          }
-          if (data.contains(".xyz") || tokens.length < 3) {
+        int numTokens = tokens.length;
+        if (data.contains(".xyz") || data.contains(".pdb") || numTokens < 3) {
+          xyzCount++;
+          if (xyzCount == 1) {
             snaps = parseInt(tokens[0]);
+          } else if (xyzCount == 2) {
+            snaps2 = parseInt(tokens[0]);
           }
+          double newTemp = parseDouble(tokens[1]);
+          if(temp != newTemp){
+            temp = newTemp;
+          }
+        }else if (endingSnap != 0) {
           snapshots = (endingSnap - startingSnap) + 1;
           if (count >= startingSnap + 1 && count <= endingSnap + 1) {
-            if (tokens.length == 4) {
-              vol1.add(parseDouble(tokens[3]));
+            if(count <= snaps){
+              if (numTokens == 4) {
+                vol1.add(parseDouble(tokens[3]));
+              }
+              ens1lam1.add(parseDouble(tokens[1]));
+              ens1lam2.add(parseDouble(tokens[2]));
+            }else{
+              logger.warning(format(" BAR entry of (%3d) is larger than total entries (%3d).", count, snaps));
             }
-            ens1lam1.add(parseDouble(tokens[1]));
-            ens1lam2.add(parseDouble(tokens[2]));
           } else if (count >= snaps + startingSnap + 2 && count <= snaps + endingSnap + 2) {
-            if (tokens.length == 4) {
-              vol2.add(parseDouble(tokens[3]));
+            if(count <= snaps + snaps2 + 1){
+              if (numTokens == 4) {
+                vol2.add(parseDouble(tokens[3]));
+              }
+              ens2lam1.add(parseDouble(tokens[1]));
+              ens2lam2.add(parseDouble(tokens[2]));
+            } else{
+              logger.warning(format(" BAR entry of (%3d) is larger than total entries (%3d).", count, snaps + snaps2));
             }
-            ens2lam1.add(parseDouble(tokens[1]));
-            ens2lam2.add(parseDouble(tokens[2]));
           }
         } else {
-          if (data.contains(".xyz") || tokens.length < 3) {
-            xyzCount += 1;
-            if (xyzCount == 1) {
-              snaps = parseInt(tokens[0]);
-            } else if (xyzCount == 2) {
-              snaps2 = parseInt(tokens[0]);
-            }
-          } else if (count <= snaps + 1 && count != 1) {
-            if (tokens.length == 4) {
+          if (count <= snaps + 1 && count != 1) {
+            if (numTokens == 4) {
               vol1.add(parseDouble(tokens[3]));
             }
             ens1lam1.add(parseDouble(tokens[1]));
             ens1lam2.add(parseDouble(tokens[2]));
           } else if (count > snaps + 2) {
-            if (tokens.length == 4) {
+            if (numTokens == 4) {
               vol2.add(parseDouble(tokens[3]));
             }
             ens2lam1.add(parseDouble(tokens[1]));
@@ -225,7 +234,6 @@ public class BARFilter {
     return true;
   }
 
-
   /**
    * Write TINKER bar files
    *
@@ -234,16 +242,35 @@ public class BARFilter {
    * @return True if successful.
    */
   public boolean writeFile(String saveFile, boolean isPBC) {
+    return writeFile(saveFile, isPBC, true);
+  }
+
+  /**
+   * Write TINKER bar files
+   *
+   * @param saveFile The file to write to.
+   * @param isPBC include volume in the output file.
+   * @param append If the append flag is true, "saveFile" will be appended to. Otherwise, the default versioning scheme will be applied.
+   * @return True if successful.
+   */
+  public boolean writeFile(String saveFile, boolean isPBC, boolean append) {
     int snaps = e1l1.length;
     int snaps2 = e2l1.length;
     String name = barFile.getName();
 
     File newFile = new File(saveFile);
-    logger.info(format("\n Writing Tinker-compatible BAR file to %s.", newFile));
+    if (!append) {
+      newFile = version(newFile);
+    }
+
+    logger.info(format(" Writing BAR file: %s", newFile));
     try (FileWriter fw = new FileWriter(newFile,
-        newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
+            append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(format("%8d %9.3f %s\n", snaps, temp, name));
       for (int i = 0; i < snaps; i++) {
+        if(isNaN(e1l1[i]) || isNaN(e1l2[i])){
+          continue;
+        }
         if (isPBC) {
           bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e1l1[i], e1l2[i], volume2[i]));
         } else {
@@ -253,6 +280,9 @@ public class BARFilter {
 
       bw.write(format("%8d %9.3f  %s\n", snaps2, temp, name));
       for (int i = 0; i < snaps2; i++) {
+        if(isNaN(e2l1[i]) || isNaN(e2l2[i])){
+          continue;
+        }
         if (isPBC) {
           bw.write(format("%8d %20.10f %20.10f %20.10f\n", i + 1, e2l1[i], e2l2[i], volume2[i]));
         } else {
@@ -294,4 +324,7 @@ public class BARFilter {
     return snaps;
   }
 
+  public File getFile(){
+    return barFile;
+  }
 }

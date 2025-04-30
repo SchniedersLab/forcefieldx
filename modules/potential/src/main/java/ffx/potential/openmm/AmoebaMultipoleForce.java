@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -45,6 +45,7 @@ import ffx.openmm.amoeba.MultipoleForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ReciprocalSpace;
+import ffx.potential.nonbonded.pme.AlchemicalParameters;
 import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.nonbonded.pme.SCFAlgorithm;
 import ffx.potential.parameters.ForceField;
@@ -92,15 +93,16 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
-    double polarScale = 1.0;
-    SCFAlgorithm scfAlgorithm = null;
 
     ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
 
-    if (pme.getPolarizationType() != Polarization.MUTUAL) {
+    Polarization polarization = pme.getPolarizationType();
+    double doPolarization = 1.0;
+    SCFAlgorithm scfAlgorithm = null;
+    if (polarization != Polarization.MUTUAL) {
       setPolarizationType(OpenMM_AmoebaMultipoleForce_Direct);
       if (pme.getPolarizationType() == Polarization.NONE) {
-        polarScale = 0.0;
+        doPolarization = 0.0;
       }
     } else {
       String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
@@ -133,8 +135,10 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     DoubleArray dipoles = new DoubleArray(3);
     DoubleArray quadrupoles = new DoubleArray(9);
 
-    OpenMMSystem system = openMMEnergy.getSystem();
-    double lambdaElec = system.getLambdaElec();
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
+    boolean lambdaTerm = pme.getLambdaTerm();
+    double permLambda = alchemicalParameters.permLambda;
+    double polarLambda = alchemicalParameters.polLambda;
 
     Atom[] atoms = openMMEnergy.getMolecularAssembly().getAtomArray();
     int nAtoms = atoms.length;
@@ -158,21 +162,21 @@ public class AmoebaMultipoleForce extends MultipoleForce {
         useFactor = 0.0;
       }
 
-      double lambdaScale = lambdaElec; // Should be 1.0 at this point.
-      if (!atom.applyLambda()) {
-        lambdaScale = 1.0;
+      double permScale = useFactor;
+      double polarScale = doPolarization * useFactor;
+      if (lambdaTerm && atom.applyLambda()) {
+        permScale *= permLambda;
+        polarScale *= polarLambda;
       }
-
-      useFactor *= lambdaScale;
 
       // Load local multipole coefficients.
       for (int j = 0; j < 3; j++) {
-        dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
+        dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * permScale);
       }
       int l = 0;
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
-          quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion * useFactor / 3.0);
+          quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion * permScale / 3.0);
         }
       }
 
@@ -192,7 +196,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
         axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
       }
 
-      double charge = multipoleType.charge * useFactor;
+      double charge = multipoleType.charge * permScale;
 
       // Add the multipole.
       addMultipole(charge, dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis, polarType.thole,
@@ -202,10 +206,12 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     quadrupoles.destroy();
 
     Crystal crystal = openMMEnergy.getCrystal();
+    double cutoff = pme.getEwaldCutoff();
+    double aewald = pme.getEwaldCoefficient();
     if (!crystal.aperiodic()) {
       setNonbondedMethod(OpenMM_AmoebaMultipoleForce_PME);
-      setCutoffDistance(pme.getEwaldCutoff() * OpenMM_NmPerAngstrom);
-      setAEwald(pme.getEwaldCoefficient() / OpenMM_NmPerAngstrom);
+      setCutoffDistance(cutoff * OpenMM_NmPerAngstrom);
+      setAEwald(aewald / OpenMM_NmPerAngstrom);
 
       double ewaldTolerance = 1.0e-04;
       setEwaldErrorTolerance(ewaldTolerance);
@@ -222,7 +228,8 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     }
 
     setMutualInducedMaxIterations(500);
-    setMutualInducedTargetEpsilon(pme.getPolarEps());
+    double poleps = pme.getPolarEps();
+    setMutualInducedTargetEpsilon(poleps);
 
     int[][] ip11 = pme.getPolarization11();
 
@@ -271,10 +278,56 @@ public class AmoebaMultipoleForce extends MultipoleForce {
 
     int forceGroup = forceField.getInteger("PME_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  AMOEBA polarizable multipole force \t%d", forceGroup));
+    if (logger.isLoggable(Level.INFO)) {
+      StringBuilder sb = new StringBuilder();
+      sb.append("  Electrostatics\n");
+      sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
+      if (polarization == Polarization.MUTUAL) {
+        sb.append(format("    SCF Convergence Criteria:         %8.3e\n", poleps));
+      } else if (scfAlgorithm == SCFAlgorithm.EPT) {
+        sb.append(format("    SCF Algorithm:                     %8s\n", scfAlgorithm));
+      }
+      if (aewald > 0.0) {
+        sb.append("   Particle-mesh Ewald\n");
+        sb.append(format("    Ewald Coefficient:                 %8.3f\n", aewald));
+        sb.append(format("    Particle Cut-Off:                  %8.3f (A)", cutoff));
+      } else if (cutoff != Double.POSITIVE_INFINITY) {
+        sb.append(format("    Electrostatics Cut-Off:            %8.3f (A)", cutoff));
+      } else {
+        sb.append("    Electrostatics Cut-Off:                NONE");
+      }
+      logger.info(sb.toString());
 
-    if (scfAlgorithm == SCFAlgorithm.EPT) {
-      logger.info("   Using extrapolated perturbation theory for polarization energy.");
+      if (lambdaTerm) {
+        sb = new StringBuilder("   Alchemical Parameters\n");
+        double permLambdaStart = alchemicalParameters.permLambdaStart;
+        double permLambdaEnd = alchemicalParameters.permLambdaEnd;
+        sb.append(format("    Permanent Multipole Range:      %5.3f-%5.3f\n", permLambdaStart, permLambdaEnd));
+        double permLambdaAlpha = alchemicalParameters.permLambdaAlpha;
+        if (permLambdaAlpha != 0.0) {
+          logger.severe(" Permanent multipole softcore not supported for OpenMM.");
+        }
+        double permLambdaExponent = alchemicalParameters.permLambdaExponent;
+        sb.append(format("    Permanent Multipole Lambda Exponent:  %5.3f\n", permLambdaExponent));
+        if (polarization != Polarization.NONE) {
+          double polLambdaExponent = alchemicalParameters.polLambdaExponent;
+          double polLambdaStart = alchemicalParameters.polLambdaStart;
+          double polLambdaEnd = alchemicalParameters.polLambdaEnd;
+          sb.append(format("    Polarization Lambda Exponent:         %5.3f\n", polLambdaExponent));
+          sb.append(format("    Polarization Range:             %5.3f-%5.3f\n", polLambdaStart, polLambdaEnd));
+          boolean doNoLigandCondensedSCF = alchemicalParameters.doNoLigandCondensedSCF;
+          if (doNoLigandCondensedSCF) {
+            logger.severe(" Condensed SCF without a ligand is not supported for OpenMM.");
+          }
+        }
+        boolean doLigandGKElec = alchemicalParameters.doLigandGKElec;
+        if (doLigandGKElec) {
+          logger.severe(" Isolated ligand electrostatics are not supported for OpenMM.");
+        }
+        logger.info(sb.toString());
+      }
+
+      logger.log(Level.FINE, format("   Force group:\t\t%d\n", forceGroup));
     }
   }
 
@@ -298,15 +351,38 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
-    double polarScale = 1.0;
+    double doPolarization = 1.0;
     if (pme.getPolarizationType() == Polarization.NONE) {
-      polarScale = 0.0;
+      doPolarization = 0.0;
     }
 
     DoubleArray dipoles = new DoubleArray(3);
     DoubleArray quadrupoles = new DoubleArray(9);
 
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
+    boolean lambdaTerm = pme.getLambdaTerm();
+    if (lambdaTerm) {
+      AlchemicalParameters.AlchemicalMode alchemicalMode = alchemicalParameters.mode;
+      // Only scale mode is supported for OpenMM.
+      if (alchemicalMode != AlchemicalParameters.AlchemicalMode.SCALE) {
+        logger.severe(format(" Alchemical mode %s not supported for OpenMM.", alchemicalMode));
+      }
+      // Permanent multipole softcore is supported for OpenMM.
+      if (alchemicalParameters.permLambdaAlpha != 0.0) {
+        logger.severe(" Permanent multipole softcore not supported for OpenMM.");
+      }
+      // Isolated ligand electrostatics are not supported for OpenMM.
+      if (alchemicalParameters.doLigandGKElec || alchemicalParameters.doLigandVaporElec) {
+        logger.severe(" Isolated ligand electrostatics are not supported for OpenMM.");
+      }
+      // Condensed SCF without a ligand is not supported for OpenMM.
+      if (alchemicalParameters.doNoLigandCondensedSCF) {
+        logger.severe(" Condensed SCF without a ligand is not supported for OpenMM.");
+      }
+    }
+
+    double permLambda = alchemicalParameters.permLambda;
+    double polarLambda = alchemicalParameters.polLambda;
 
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;
@@ -314,16 +390,18 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       PolarizeType polarizeType = pme.getPolarizeType(index);
       int[] axisAtoms = atom.getAxisAtomIndices();
 
-      double useFactor = 1.0;
+      double permScale = 1.0;
+      double polarScale = doPolarization;
+
       if (!atom.getUse() || !atom.getElectrostatics()) {
-        useFactor = 0.0;
+        permScale = 0.0;
+        polarScale = 0.0;
       }
 
-      double lambdaScale = lambdaElec;
-      if (!atom.applyLambda()) {
-        lambdaScale = 1.0;
+      if (atom.applyLambda()) {
+        permScale *= permLambda;
+        polarScale *= polarLambda;
       }
-      useFactor *= lambdaScale;
 
       // Define the frame definition.
       int axisType = switch (multipoleType.frameDefinition) {
@@ -337,12 +415,12 @@ public class AmoebaMultipoleForce extends MultipoleForce {
 
       // Load local multipole coefficients.
       for (int j = 0; j < 3; j++) {
-        dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
+        dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * permScale);
       }
       int l = 0;
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
-          quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0 * useFactor);
+          quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0 * permScale);
         }
       }
 
@@ -363,10 +441,10 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       }
 
       // Set the multipole parameters.
-      setMultipoleParameters(index, multipoleType.charge * useFactor,
+      setMultipoleParameters(index, multipoleType.charge * permScale,
           dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis,
           polarizeType.thole, polarizeType.pdamp * dampingFactorConversion,
-          polarizeType.polarizability * polarityConversion * polarScale * useFactor);
+          polarizeType.polarizability * polarityConversion * polarScale);
     }
 
     dipoles.destroy();

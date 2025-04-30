@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -80,10 +80,8 @@ public class DistanceRegion extends ParallelRegion {
   /**
    * The minimum distance between atoms of a residue pair, taking into account interactions with
    * symmetry mates.
-   *
-   * <p>[residue1][rotamer1][residue2][rotamer2]
    */
-  private double[][][][] distanceMatrix;
+  private DistanceMatrix.NeighborDistances[][] distanceMatrix;
 
   public DistanceRegion(
       int nt, int nResidues, Crystal crystal, int[][][] lists, IntegerSchedule schedule) {
@@ -103,7 +101,7 @@ public class DistanceRegion extends ParallelRegion {
       MolecularAssembly molecularAssembly,
       Residue[] allResiduesArray,
       AlgorithmListener algorithmListener,
-      double[][][][] distanceMatrix) {
+      DistanceMatrix.NeighborDistances[][] distanceMatrix) {
     this.dM = dM;
     this.molecularAssembly = molecularAssembly;
     this.allResiduesArray = allResiduesArray;
@@ -159,11 +157,9 @@ public class DistanceRegion extends ParallelRegion {
               if (i == j) {
                 continue;
               }
-
               Residue residueJ = allResiduesArray[j];
               Rotamer[] rotamersJ = residueJ.getRotamers();
               int lengthRj = rotamersJ.length;
-
               // Loop over the neighbor's rotamers
               for (int rj = 0; rj < lengthRj; rj++) {
                 double[][] xj = getCoordinates(j, allResiduesArray, rotamersJ[rj]);
@@ -172,11 +168,9 @@ public class DistanceRegion extends ParallelRegion {
                 }
                 double r = dM.interResidueDistance(xi, xj, symOp);
                 if (i < j) {
-                  if (r < distanceMatrix[i][ri][j][rj]) {
-                    distanceMatrix[i][ri][j][rj] = r;
-                  }
-                } else if (r < distanceMatrix[j][rj][i][ri]) {
-                  distanceMatrix[j][rj][i][ri] = r;
+                  distanceMatrix[i][ri].storeDistance(j, rj, r);
+                } else {
+                  distanceMatrix[j][rj].storeDistance(i, ri, r);
                 }
               }
             }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -62,6 +62,7 @@ public enum SCFAlgorithm {
     if (openMM) {
       platforms.add(Platform.OMM);
       platforms.add(Platform.OMM_CUDA);
+      platforms.add(Platform.OMM_OPENCL);
       platforms.add(Platform.OMM_REF);
     }
     supportedPlatforms = Collections.unmodifiableList(platforms);

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -67,47 +67,53 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
    */
   void estimateDG(final boolean randomSamples);
 
-  /** Re-calculates free energy and enthalpy without bootstrapping. */
-  void estimateDG();
+  /**
+   * Re-calculates free energy and enthalpy without bootstrapping.
+   */
+  default void estimateDG() {
+    estimateDG(false);
+  }
 
   /**
-   * Obtains bootstrap free energy. Default implementation sums by-bin free energies.
+   * Obtains bootstrap total free energy difference.
+   * The default implementation sums by-bin free energies.
    *
    * <p>May be over-ridden by non-sequential estimators like MBAR.
    *
    * @param freeEnergyDifferences By-bin bootstrap results.
    * @return Overall free energy change.
    */
-  default double sumBootstrapResults(double[] freeEnergyDifferences) {
+  default double getTotalFreeEnergyDifference(final double[] freeEnergyDifferences) {
     return stream(freeEnergyDifferences).sum();
   }
 
   /**
-   * Obtains bootstrap enthalpy. Default implementation sums by-bin enthalpies.
-   *
-   * <p>May be over-ridden by non-sequential estimators like MBAR.
-   *
-   * @param totalEnthalpy By-bin bootstrap results.
-   * @return Overall enthalpy.
-   */
-  default double sumEnthalpyBootstrapResults(double[] totalEnthalpy) {
-    return stream(totalEnthalpy).sum();
-  }
-
-  /**
-   * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
+   * Obtains bootstrap free energy difference uncertainty.
+   * The default implementation is square root of summed variances.
    *
    * <p>May be over-ridden by non-sequential estimators like MBAR.
    *
    * @param variances Variance (not uncertainty) in by-bin bootstrap results.
    * @return Overall uncertainty.
    */
-  default double sumBootstrapUncertainty(double[] variances) {
+  default double getTotalFEDifferenceUncertainty(final double[] variances) {
     return sqrt(stream(variances).sum());
   }
 
   /**
-   * Obtains bootstrap enthalpy uncertainty. Default implementation is square root of summed enthalpy
+   * Obtains bootstrap total enthalpy change. The default implementation sums by-bin enthalpies.
+   *
+   * <p>May be over-ridden by non-sequential estimators like MBAR.
+   *
+   * @param enthalpyDifferences By-bin bootstrap results.
+   * @return Overall enthalpy.
+   */
+  default double getTotalEnthalpyDifference(final double[] enthalpyDifferences) {
+    return stream(enthalpyDifferences).sum();
+  }
+
+  /**
+   * Obtains bootstrap enthalpy uncertainty. The default implementation is square root of summed enthalpy
    * variances.
    *
    * <p>May be over-ridden by non-sequential estimators like MBAR.
@@ -115,7 +121,7 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
    * @param enthalpyVariances Variance (not uncertainty) in by-bin bootstrap results.
    * @return Overall enthalpy uncertainty.
    */
-  default double sumBootstrapEnthalpyUncertainty(double[] enthalpyVariances) {
+  default double getTotalEnthalpyUncertainty(final double[] enthalpyVariances) {
     return sqrt(stream(enthalpyVariances).sum());
   }
 }

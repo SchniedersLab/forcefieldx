@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -48,37 +48,37 @@ public class PMETimings {
 
   private static final Logger logger = Logger.getLogger(PMETimings.class.getName());
 
-  public final long[] realSpacePermTime;
   public final long[] realSpaceEnergyTime;
   public final long[] realSpaceSCFTime;
   /** Timing variables. */
   private final int numThreads;
 
-  public long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
+  public long realSpaceEnergyTotal, realSpaceSCFTotalTime;
   public long bornRadiiTotal, gkEnergyTotal;
 
   public PMETimings(int numThreads) {
     this.numThreads = numThreads;
-    realSpacePermTime = new long[numThreads];
     realSpaceEnergyTime = new long[numThreads];
     realSpaceSCFTime = new long[numThreads];
   }
 
   public void init() {
     for (int i = 0; i < numThreads; i++) {
-      realSpacePermTime[i] = 0;
       realSpaceEnergyTime[i] = 0;
       realSpaceSCFTime[i] = 0;
     }
-    realSpacePermTotal = 0;
     realSpaceEnergyTotal = 0;
-    realSpaceSCFTotal = 0;
+    realSpaceSCFTotalTime = 0;
     bornRadiiTotal = 0;
     gkEnergyTotal = 0;
   }
 
-  public void printRealSpaceTimings(int maxThreads, RealSpaceEnergyRegion realSpaceEnergyRegion) {
-    double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * NS2SEC;
+  public void printRealSpaceTimings(int maxThreads,
+                                    PermanentFieldRegion permanentFieldRegion,
+                                    RealSpaceEnergyRegion realSpaceEnergyRegion) {
+    long realSpacePermTotal = permanentFieldRegion.getRealSpacePermTime();
+
+    double total = (realSpacePermTotal + realSpaceSCFTotalTime + realSpaceEnergyTotal) * NS2SEC;
     logger.info(format("\n Real Space: %7.4f (sec)", total));
     logger.info("           Electric Field");
     logger.info(" Thread    Direct  SCF     Energy     Counts");
@@ -93,11 +93,12 @@ public class PMETimings {
 
     for (int i = 0; i < maxThreads; i++) {
       int count = realSpaceEnergyRegion.getCount(i);
+      long realSpacePermTime = permanentFieldRegion.getInitTime(i) + permanentFieldRegion.getPermTime(i);
       logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d",
-          i, realSpacePermTime[i] * NS2SEC, realSpaceSCFTime[i] * NS2SEC,
+          i, realSpacePermTime * NS2SEC, realSpaceSCFTime[i] * NS2SEC,
           realSpaceEnergyTime[i] * NS2SEC, count));
-      minPerm = min(realSpacePermTime[i], minPerm);
-      maxPerm = max(realSpacePermTime[i], maxPerm);
+      minPerm = min(realSpacePermTime, minPerm);
+      maxPerm = max(realSpacePermTime, maxPerm);
       minSCF = min(realSpaceSCFTime[i], minSCF);
       maxSCF = max(realSpaceSCFTime[i], maxSCF);
       minEnergy = min(realSpaceEnergyTime[i], minEnergy);
@@ -116,7 +117,7 @@ public class PMETimings {
         (maxCount - minCount)));
     logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
         realSpacePermTotal * NS2SEC,
-        realSpaceSCFTotal * NS2SEC,
+        realSpaceSCFTotalTime * NS2SEC,
         realSpaceEnergyTotal * NS2SEC,
         realSpaceEnergyRegion.getInteractions()));
   }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Annihilate;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
@@ -102,7 +103,7 @@ public class AmoebaVdwForce extends VdwForce {
     Crystal crystal = openMMEnergy.getCrystal();
 
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 
@@ -115,6 +116,10 @@ public class AmoebaVdwForce extends VdwForce {
       if (!vdwClassToOpenMMType.containsKey(atomClass)) {
         double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
         double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+        // OpenMM AMOEBA vdW class does not allow a radius of 0.
+        if (rad == 0) {
+          rad = OpenMM_NmPerAngstrom * radScale;
+        }
         int type = addParticleType(rad, eps);
         vdwClassToOpenMMType.put(atomClass, type);
         if (atomClass <= vdWClassForNoInteraction) {
@@ -172,8 +177,13 @@ public class AmoebaVdwForce extends VdwForce {
       setNonbondedMethod(OpenMM_AmoebaVdwForce_CutoffPeriodic);
     }
 
-    if (openMMEnergy.getSystem().getVdwLambdaTerm()) {
-      setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+    if (vdW.getLambdaTerm()) {
+      boolean annihilate = vdW.getIntramolecularSoftcore();
+      if (annihilate) {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Annihilate);
+      } else {
+        setAlchemicalMethod(OpenMM_AmoebaVdwForce_Decouple);
+      }
       setSoftcoreAlpha(vdW.getAlpha());
       setSoftcorePower((int) vdW.getBeta());
     }
@@ -200,7 +210,9 @@ public class AmoebaVdwForce extends VdwForce {
 
     int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  AMOEBA van der Waals force \t\t%d", forceGroup));
+
+    logger.log(Level.INFO, vdW.toString());
+    logger.log(Level.FINE, format("   Force group:\t\t%d\n", forceGroup));
   }
 
   /**
@@ -227,7 +239,7 @@ public class AmoebaVdwForce extends VdwForce {
     VanDerWaals vdW = openMMEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     double radScale = 1.0;
-    if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+    if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {
       radScale = 0.5;
     }
 

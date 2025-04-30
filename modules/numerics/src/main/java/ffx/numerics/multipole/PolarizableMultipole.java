@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -36,8 +36,6 @@
 //
 // ******************************************************************************
 package ffx.numerics.multipole;
-
-import static java.lang.Math.fma;
 
 /**
  * The PolarizableMultipole class defines a polarizable multipole.
@@ -92,11 +90,6 @@ public class PolarizableMultipole {
   protected double qyz;
 
   /**
-   * Array of permanent multipole moments.
-   */
-  private final double[] M = new double[10];
-
-  /**
    * Induced dipole x-component.
    */
   protected double ux;
@@ -132,6 +125,8 @@ public class PolarizableMultipole {
    * Averaged induced dipole + induced dipole chain-rule z-component: sz = 0.5 * (uz + pz).
    */
   protected double sz;
+  protected double Z;
+
 
   /**
    * PolarizableMultipole constructor with zero moments.
@@ -149,6 +144,20 @@ public class PolarizableMultipole {
   public PolarizableMultipole(double[] Q, double[] u, double[] uCR) {
     setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
+  }
+
+  /**
+   * PolarizableMultipole constructor.
+   *
+   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipole u[ux, uy, uz]
+   * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
+   */
+  public PolarizableMultipole(double[] Q, double[] u, double[] uCR, double Z) {
+    setPermanentMultipole(Q);
+    setInducedDipole(u, uCR);
+    this.Z = Z;
+    this.q = -Z + q;
   }
 
   /**
@@ -176,26 +185,15 @@ public class PolarizableMultipole {
    */
   public final void setPermanentMultipole(double[] Q) {
     q = Q[0];
-    dx = Q[1];
-    dy = Q[2];
-    dz = Q[3];
+    dx =  Q[1];
+    dy =  Q[2];
+    dz =  Q[3];
     qxx = Q[4] * oneThird;
     qyy = Q[5] * oneThird;
     qzz = Q[6] * oneThird;
     qxy = Q[7] * twoThirds;
     qxz = Q[8] * twoThirds;
     qyz = Q[9] * twoThirds;
-
-    M[0] = q;
-    M[1] = dx;
-    M[2] = dy;
-    M[3] = dz;
-    M[4] = qxx;
-    M[5] = qyy;
-    M[6] = qzz;
-    M[7] = qxy;
-    M[8] = qxz;
-    M[9] = qyz;
   }
 
   /**
@@ -245,16 +243,4 @@ public class PolarizableMultipole {
     sz = 0.5 * (uz * scaleEnergy + pz * scaleInduction);
   }
 
-  /**
-   * Contract this multipole with the potential and its derivatives.
-   *
-   * @return The permanent multipole energy.
-   */
-  protected final double multipoleEnergy(double[] field) {
-    double total = 0.0;
-    for (int i = 0; i < 10; i++) {
-      total = fma(M[i], field[i], total);
-    }
-    return total;
-  }
 }

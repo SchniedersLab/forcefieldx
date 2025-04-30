@@ -3,7 +3,7 @@
 @REM 
 @REM Description: Force Field X - Software for Molecular Biophysics.
 @REM 
-@REM Copyright: Copyright (c) Michael J. Schnieders 2001-2023.
+@REM Copyright: Copyright (c) Michael J. Schnieders 2001-2025.
 @REM 
 @REM This file is part of Force Field X.
 @REM 
@@ -92,7 +92,7 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\lib\*
 
-set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M --add-opens=java.desktop/sun.awt=ALL-UNNAMED
+set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M --add-modules jdk.incubator.vector --add-opens=java.desktop/sun.awt=ALL-UNNAMED --enable-native-access=ALL-UNNAMED
 
 goto endInit
 

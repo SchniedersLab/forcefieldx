@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -206,6 +206,7 @@ public class Float3 {
   /**
    * Returns the coordinate at position i.
    *
+   * @param i The coordinate index.
    * @return The coordinate.
    */
   public float get(int i) {

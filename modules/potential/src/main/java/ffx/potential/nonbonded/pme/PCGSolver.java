@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.special.Erf.erfc;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -62,6 +55,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.numerics.special.Erf.erfc;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 /**
  * Parallel pre-conditioned conjugate gradient solver for the self-consistent field.
  * <p>
@@ -73,20 +73,24 @@ import java.util.logging.Logger;
  * <p>
  * x: is the unknown vector of length N.
  * <p>
- * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_multipoles
+ * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_direct
  * <br>
  * where C = [alpha^-1 - T]
  * <br>
  * u are the induced dipoles.
  * <br>
- * E_multipoles is the direct field from permanent multipoles.
+ * E_direct is the direct field from permanent multipoles.
  * <p>
  * The matrix alpha^-1 is the inverse of the N x N diagonal polarizability matrix. The matrix T is
  * the N x N matrix that produces the field due to induced dipoles.
  * <p>
  * Initialization:
  * <br>
- * 1) Compute the residual:        r_0 = E_mutipoles - C u_direct = E_direct_induced
+ * 1) Compute the residual where x_0 is either u_direct or u_mutual (a pcg guess):<br>
+ * r_0 = b - A x_0<br>
+ * r_0 = E_direct - C u_0<br>
+ * r_0 = E_direct - [alpha^-1 - T] u_0<br>
+ * r_0 = (u_direct - u_0) * alpha^-1 - E_u_0
  * <br>
  * 2) Compute the preconditioner:  z_0 = M^1 r_0
  * <br>
@@ -284,7 +288,7 @@ public class PCGSolver {
    * Pairwise schedule for load balancing.
    */
   private IntegerSchedule realSpaceSchedule;
-  private long[] realSpaceSCFTime;
+  private PMETimings pmeTimings;
 
   /**
    * A preconditioner cut-off of 3 to 4 Angstroms generally works well.
@@ -459,7 +463,7 @@ public class PCGSolver {
       double dieletric,
       ParallelTeam parallelTeam,
       IntegerSchedule realSpaceSchedule,
-      long[] realSpaceSCFTime) {
+      PMETimings pmeTimings) {
     this.atoms = atoms;
     this.coordinates = coordinates;
     this.polarizability = polarizability;
@@ -477,7 +481,7 @@ public class PCGSolver {
     this.dieletric = dieletric;
     this.parallelTeam = parallelTeam;
     this.realSpaceSchedule = realSpaceSchedule;
-    this.realSpaceSCFTime = realSpaceSCFTime;
+    this.pmeTimings = pmeTimings;
   }
 
   public int scfByPCG(boolean print, long startTime, ParticleMeshEwald particleMeshEwald) {
@@ -620,10 +624,8 @@ public class PCGSolver {
         int nAtoms = atoms.length;
         execute(0, nAtoms - 1, initResidualLoops[ti]);
       } catch (Exception e) {
-        String message =
-            "Fatal exception computing the mutual induced dipoles in thread "
-                + getThreadIndex()
-                + "\n";
+        String message = "Fatal exception computing the mutual induced dipoles in thread "
+                + getThreadIndex() + "\n";
         logger.log(Level.SEVERE, message, e);
       }
     }
@@ -1222,6 +1224,16 @@ public class PCGSolver {
     }
 
     @Override
+    public void start() {
+      pmeTimings.realSpaceSCFTotalTime -= System.nanoTime();
+    }
+
+    @Override
+    public void finish() {
+      pmeTimings.realSpaceSCFTotalTime += System.nanoTime();
+    }
+
+    @Override
     public void run() {
       int threadIndex = getThreadIndex();
       if (inducedPreconditionerFieldLoop[threadIndex] == null) {
@@ -1249,7 +1261,7 @@ public class PCGSolver {
 
       @Override
       public void finish() {
-        realSpaceSCFTime[threadID] += System.nanoTime();
+        pmeTimings.realSpaceSCFTime[threadID] += System.nanoTime();
       }
 
       @Override
@@ -1550,7 +1562,7 @@ public class PCGSolver {
       @Override
       public void start() {
         threadID = getThreadIndex();
-        realSpaceSCFTime[threadID] -= System.nanoTime();
+        pmeTimings.realSpaceSCFTime[threadID] -= System.nanoTime();
         x = coordinates[0][0];
         y = coordinates[0][1];
         z = coordinates[0][2];

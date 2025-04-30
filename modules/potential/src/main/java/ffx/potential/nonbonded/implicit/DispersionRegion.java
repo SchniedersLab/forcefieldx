@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -51,8 +51,8 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE;
-import ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE;
+import ffx.potential.parameters.VDWType.EPSILON_RULE;
+import ffx.potential.parameters.VDWType.RADIUS_RULE;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 import java.util.logging.Level;
@@ -90,9 +90,9 @@ public class DispersionRegion extends ParallelRegion {
   /** AMOEBA '03 Water hydrogen Rmin (A). */
   private static final double RMINH = 1.3275;
   /** AMOEBA epsilon rule. */
-  private static final EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
+  private static final EPSILON_RULE epsilonRule = VDWType.EPSILON_RULE.HHG;
   /** AMOEBA radius rule. */
-  private static final RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
+  private static final RADIUS_RULE radiusRule = VDWType.RADIUS_RULE.CUBIC_MEAN;
 
   private final DispersionLoop[] dispersionLoop;
   private final SharedDouble sharedDispersion;

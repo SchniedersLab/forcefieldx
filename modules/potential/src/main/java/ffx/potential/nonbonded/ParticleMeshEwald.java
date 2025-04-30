@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -44,13 +44,34 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.multipole.MultipoleTensor;
+import ffx.numerics.multipole.MultipoleUtilities;
 import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.pme.*;
+import ffx.potential.nonbonded.pme.AlchemicalParameters;
+import ffx.potential.nonbonded.pme.DirectRegion;
+import ffx.potential.nonbonded.pme.EwaldParameters;
+import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
+import ffx.potential.nonbonded.pme.InducedDipoleFieldReduceRegion;
+import ffx.potential.nonbonded.pme.InducedDipoleFieldRegion;
+import ffx.potential.nonbonded.pme.InitializationRegion;
+import ffx.potential.nonbonded.pme.LambdaMode;
+import ffx.potential.nonbonded.pme.OPTRegion;
+import ffx.potential.nonbonded.pme.PCGSolver;
+import ffx.potential.nonbonded.pme.PMETimings;
+import ffx.potential.nonbonded.pme.PermanentFieldRegion;
+import ffx.potential.nonbonded.pme.Polarization;
+import ffx.potential.nonbonded.pme.RealSpaceEnergyRegion;
+import ffx.potential.nonbonded.pme.RealSpaceNeighborParameters;
+import ffx.potential.nonbonded.pme.ReciprocalEnergyRegion;
+import ffx.potential.nonbonded.pme.ReduceRegion;
+import ffx.potential.nonbonded.pme.SCFAlgorithm;
+import ffx.potential.nonbonded.pme.SCFPredictor;
+import ffx.potential.nonbonded.pme.SCFPredictorParameters;
+import ffx.potential.nonbonded.pme.SORRegion;
+import ffx.potential.nonbonded.pme.ScaleParameters;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
@@ -72,7 +93,18 @@ import java.util.logging.Logger;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_COEFFICIENT;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parameters.MultipoleType.*;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import static ffx.potential.parameters.MultipoleType.assignMultipole;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 import static ffx.utilities.Constants.NS2SEC;
 import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
@@ -81,7 +113,9 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static java.util.Collections.sort;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable mutlipole force field in
@@ -118,7 +152,7 @@ public class ParticleMeshEwald implements LambdaInterface {
   /**
    * Number of unique tensors for given order.
    */
-  private static final int tensorCount = MultipoleTensor.tensorCount(3);
+  private static final int tensorCount = MultipoleUtilities.tensorCount(3);
   /**
    * If lambdaTerm is true, some ligand atom interactions with the environment are being turned
    * on/off.
@@ -529,8 +563,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       // Can't know a-priori whether this is being constructed under an FFX or OpenMM
       // ForceFieldEnergy, so fine logging.
       logger.fine(format(
-              " SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!",
-              scfAlgorithm));
+          " SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!",
+          scfAlgorithm));
       scfAlgorithm = SCFAlgorithm.CG;
     }
 
@@ -693,6 +727,22 @@ public class ParticleMeshEwald implements LambdaInterface {
     return elecForm;
   }
 
+  /**
+   * If true, there are alchemical atoms impacted by the lambda state variable.
+   *
+   * @return True if there are alchemical atoms impacted by the lambda state variable.
+   */
+  public boolean getLambdaTerm() {
+    return lambdaTerm;
+  }
+
+  /**
+   * Return the PME AlchemicalParameters.
+   */
+  public AlchemicalParameters getAlchemicalParameters() {
+    return alchemicalParameters;
+  }
+
   public void computeInduceDipoleField() {
     expandInducedDipoles();
 
@@ -706,7 +756,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace, lambdaMode,
         ewaldParameters, field, fieldCR, pmeTimings);
     inducedDipoleFieldRegion.executeWith(sectionTeam);
-    pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
     if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
       reciprocalSpace.computeInducedPhi(
@@ -790,6 +839,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     // Initialize timing variables.
     pmeTimings.init();
+    permanentFieldRegion.initTimings();
+
     if (reciprocalSpace != null) {
       reciprocalSpace.initTimings();
     }
@@ -811,13 +862,10 @@ public class ParticleMeshEwald implements LambdaInterface {
     alchemicalParameters.polarizationScale = 1.0;
 
     // Expand coordinates and rotate multipoles into the global frame.
-    initializationRegion.init(lambdaTerm, extendedSystem,
+    initializationRegion.init(lambdaTerm, alchemicalParameters, extendedSystem,
         atoms, coordinates, crystal, frame, axisAtom, globalMultipole,
-        dMultipoledTirationESV, dMultipoledTautomerESV,
-        polarizability, dPolardTitrationESV, dPolardTautomerESV,
-        thole, ipdamp, use, neighborLists,
-        realSpaceNeighborParameters.realSpaceLists,
-        alchemicalParameters.vaporLists,
+        dMultipoledTirationESV, dMultipoledTautomerESV, polarizability, dPolardTitrationESV, dPolardTautomerESV,
+        thole, ipdamp, use, neighborLists, realSpaceNeighborParameters.realSpaceLists,
         grad, torque, lambdaGrad, lambdaTorque);
     initializationRegion.executeWith(parallelTeam);
 
@@ -846,20 +894,23 @@ public class ParticleMeshEwald implements LambdaInterface {
       }
 
       // Condensed phase SCF without ligand atoms.
-      lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
-      double temp = energy;
-      energy = condensedNoLigandSCF();
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(" Condensed no ligand energy: %20.8f", energy - temp));
-      }
-
-      // Vapor ligand electrostatics.
-      if (alchemicalParameters.doLigandVaporElec) {
-        lambdaMode = LambdaMode.VAPOR;
-        temp = energy;
-        energy = ligandElec();
+      if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.OST) {
+        // Condensed phase SCF without ligand atoms.
+        lambdaMode = LambdaMode.CONDENSED_NO_LIGAND;
+        double temp = energy;
+        energy = condensedNoLigandSCF();
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(" Vacuum energy: %20.8f", energy - temp));
+          logger.fine(format(" Condensed no ligand energy: %20.8f", energy - temp));
+        }
+
+        // Vapor ligand electrostatics.
+        if (alchemicalParameters.doLigandVaporElec) {
+          lambdaMode = LambdaMode.VAPOR;
+          temp = energy;
+          energy = ligandElec();
+          if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Vacuum energy: %20.8f", energy - temp));
+          }
         }
       }
     }
@@ -870,12 +921,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     */
     if (gradient || lambdaTerm) {
       reduceRegion.init(lambdaTerm, gradient, atoms, coordinates, frame, axisAtom, grad, torque, lambdaGrad, lambdaTorque);
-      reduceRegion.excuteWith(parallelTeam);
+      reduceRegion.executeWith(parallelTeam);
     }
 
     // Log some timings.
     if (logger.isLoggable(Level.FINE)) {
-      pmeTimings.printRealSpaceTimings(maxThreads, realSpaceEnergyRegion);
+      pmeTimings.printRealSpaceTimings(maxThreads, permanentFieldRegion, realSpaceEnergyRegion);
       if (ewaldParameters.aewald > 0.0 && reciprocalSpaceTerm) {
         reciprocalSpace.printTimings();
       }
@@ -1531,7 +1582,11 @@ public class ParticleMeshEwald implements LambdaInterface {
    * C. Polarization scaled by lambda.
    */
   private double condensedEnergy() {
-    if (lambda < alchemicalParameters.polLambdaStart) {
+    // Configure the polarization calculation.
+    if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.SCALE) {
+      alchemicalParameters.polarizationScale = 1.0;
+      alchemicalParameters.doPolarization = true;
+    } else if (lambda < alchemicalParameters.polLambdaStart) {
       /*
        If the polarization has been completely decoupled, the
        contribution of the complete system is zero.
@@ -1546,9 +1601,17 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.polarizationScale = 1.0;
       alchemicalParameters.doPolarization = true;
     }
-    alchemicalParameters.doPermanentRealSpace = true;
-    alchemicalParameters.permanentScale = alchemicalParameters.lPowPerm;
-    alchemicalParameters.dEdLSign = 1.0;
+
+    // Configure the permanent electrostatics calculation.
+    if (alchemicalParameters.mode == AlchemicalParameters.AlchemicalMode.SCALE) {
+      alchemicalParameters.doPermanentRealSpace = true;
+      alchemicalParameters.permanentScale = 1.0;
+      alchemicalParameters.dEdLSign = 1.0;
+    } else {
+      alchemicalParameters.doPermanentRealSpace = true;
+      alchemicalParameters.permanentScale = alchemicalParameters.lPowPerm;
+      alchemicalParameters.dEdLSign = 1.0;
+    }
 
     return computeEnergy(false);
   }
@@ -2112,12 +2175,10 @@ public class ParticleMeshEwald implements LambdaInterface {
           scaleParameters, use, molecule, ipdamp, thole, ip11,
           mask12, mask13, mask14, lambdaMode, reciprocalSpaceTerm, reciprocalSpace,
           ewaldParameters, pcgSolver, permanentSchedule, realSpaceNeighborParameters,
-          field, fieldCR, pmeTimings);
+          field, fieldCR);
       // The real space contribution can be calculated at the same time
       // the reciprocal space convolution is being done.
       sectionTeam.execute(permanentFieldRegion);
-
-      pmeTimings.realSpacePermTotal = permanentFieldRegion.getRealSpacePermTotal();
 
       // Collect the reciprocal space field.
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
@@ -2222,8 +2283,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           pcgSolver.init(atoms, coordinates, polarizability, ipdamp, thole,
               use, crystal, inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
               field, fieldCR, ewaldParameters, soluteDielectric, parallelTeam,
-              realSpaceNeighborParameters.realSpaceSchedule,
-              pmeTimings.realSpaceSCFTime);
+              realSpaceNeighborParameters.realSpaceSchedule, pmeTimings);
           yield pcgSolver.scfByPCG(print, startTime, this);
         }
       };
@@ -2239,24 +2299,10 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.fine(
               format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
         }
-        directRegion.init(
-            atoms,
-            polarizability,
-            globalMultipole,
-            cartesianMultipolePhi,
-            field,
-            fieldCR,
-            generalizedKirkwoodTerm,
-            generalizedKirkwood,
-            ewaldParameters,
-            soluteDielectric,
-            inducedDipole,
-            inducedDipoleCR,
-            directDipole,
-            directDipoleCR,
-            directField,
-            directFieldCR
-        );
+        directRegion.init(atoms, polarizability, globalMultipole, cartesianMultipolePhi,
+            field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood,
+            ewaldParameters, soluteDielectric, inducedDipole, inducedDipoleCR,
+            directDipole, directDipoleCR, directField, directFieldCR);
         directRegion.executeWith(parallelTeam);
         expandInducedDipoles();
         logger.info(" Direct induced dipoles computed due to SCF failure.");
@@ -2297,7 +2343,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             reciprocalSpaceTerm, reciprocalSpace, lambdaMode, ewaldParameters,
             field, fieldCR, pmeTimings);
         inducedDipoleFieldRegion.executeWith(sectionTeam);
-        pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
           reciprocalSpace.computeInducedPhi(
               cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
@@ -2403,7 +2448,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace, lambdaMode,
             ewaldParameters, field, fieldCR, pmeTimings);
         inducedDipoleFieldRegion.executeWith(sectionTeam);
-        pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
           reciprocalSpace.computeInducedPhi(

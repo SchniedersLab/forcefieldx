@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -54,11 +54,32 @@ package ffx.crystal;
  * @since 1.0
  */
 public enum CrystalSystem {
+  /**
+   * Triclinic crystal system.
+   */
   TRICLINIC,
+  /**
+   * Monoclinic crystal system.
+   */
   MONOCLINIC,
+  /**
+   * Orthorhombic crystal system.
+   */
   ORTHORHOMBIC,
+  /**
+   * Tetragonal crystal system.
+   */
   TETRAGONAL,
+  /**
+   * Trigonal crystal system.
+   */
   TRIGONAL,
+  /**
+   * Hexagonal crystal system.
+   */
   HEXAGONAL,
+  /**
+   * Cubic crystal system.
+   */
   CUBIC
 }

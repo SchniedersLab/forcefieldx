@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -62,6 +62,10 @@ import java.util.Comparator;
     """)
 public final class ChargeType extends BaseType implements Comparator<String> {
 
+  public static final double DEFAULT_CHG_12_SCALE = 0.0;
+  public static final double DEFAULT_CHG_13_SCALE = 0.0;
+  public static final double DEFAULT_CHG_14_SCALE = 2.0;
+  public static final double DEFAULT_CHG_15_SCALE = 1.0;
   /**
    * Partial atomic charge in units of electrons.
    */

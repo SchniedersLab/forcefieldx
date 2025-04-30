@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -57,9 +57,9 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff;
-import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import static ffx.potential.parameters.VDWType.EPSILON_RULE.GEOMETRIC;
+import static ffx.potential.parameters.VDWType.RADIUS_RULE.ARITHMETIC;
+import static ffx.potential.parameters.VDWType.VDW_TYPE.LENNARD_JONES;
 import static java.lang.String.format;
 
 /**
@@ -119,8 +119,8 @@ public class FixedChargeAlchemicalForces {
     // Get the Alpha and Beta constants from the VanDerWaals instance.
     OpenMMSystem openMMSystem = openMMEnergy.getSystem();
 
-    double alpha = openMMSystem.getVdWSoftcoreAlpha();
-    double beta = openMMSystem.getVdwSoftcorePower();
+    double alpha = vdW.getAlpha();
+    double beta = vdW.getBeta();
 
     fixedChargeSoftcoreForce.addGlobalParameter("vdw_lambda", 1.0);
     fixedChargeSoftcoreForce.addGlobalParameter("alpha", alpha);

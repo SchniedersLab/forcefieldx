@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -394,8 +394,7 @@ public class Minimize implements OptimizationListener, Terminatable {
 
     // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
     // is internally stored as a bit field.
-    private final EnumSet<Platform> platforms = EnumSet.noneOf(
-        Platform.class);
+    private final EnumSet<Platform> platforms = EnumSet.noneOf(Platform.class);
 
     /**
      * Constructs a DynamicsEngine using the two presently known types of Platform.
@@ -412,7 +411,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         platforms.add(Platform.OMM_REF);
         platforms.add(Platform.OMM_CUDA);
         platforms.add(Platform.OMM_OPENCL);
-        platforms.add(Platform.OMM_OPTCPU);
+        platforms.add(Platform.OMM_CPU);
       }
     }
 

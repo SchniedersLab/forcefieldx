@@ -6,7 +6,7 @@ import edu.rit.pj.ParallelTeam
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -89,7 +89,7 @@ class SortXPH extends AlgorithmsScript {
     private double pH = 7.4
 
     @Option(names = ['--pHGaps'], paramLabel = "1",
-            description = "Sets the size of the gaps in the pH latter")
+            description = "Sets the size of the gaps in the pH ladder")
     private double pHGap = 1
 
     @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",

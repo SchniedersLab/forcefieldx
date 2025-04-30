@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static org.apache.commons.math3.util.FastMath.exp;
+import static ffx.numerics.multipole.TholeTensorGlobal.tholeSource;
 
 /**
  * The TholeTensorQI class computes derivatives of Thole damping via recursion to order &lt;= 4 for
@@ -45,18 +45,12 @@ import static org.apache.commons.math3.util.FastMath.exp;
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
- *     Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
- *     computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
- *     Ed. J. Leczszynski, World Scientifc, 1996. </a>
+ * Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
+ * computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
+ * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
 public class TholeTensorQI extends CoulombTensorQI {
-
-  /** Constant <code>threeFifths=3.0 / 5.0</code> */
-  private static final double threeFifths = 3.0 / 5.0;
-
-  /** Constant <code>oneThirtyFifth=1.0 / 35.0</code> */
-  private static final double oneThirtyFifth = 1.0 / 35.0;
 
   /**
    * Thole damping parameter is set to min(pti,ptk)).
@@ -73,14 +67,15 @@ public class TholeTensorQI extends CoulombTensorQI {
    *
    * @param order Tensor order.
    * @param thole Thole damping parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
+   * @param AiAk  parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   public TholeTensorQI(int order, double thole, double AiAk) {
     super(order);
     this.thole = thole;
     this.AiAk = AiAk;
-    this.operator = OPERATOR.THOLE_FIELD;
+    this.operator = Operator.THOLE_FIELD;
 
+    // Source terms are currently defined up to order 4.
     assert (order <= 4);
   }
 
@@ -88,7 +83,7 @@ public class TholeTensorQI extends CoulombTensorQI {
    * Set Thole damping parameters
    *
    * @param thole a double.
-   * @param AiAk a double.
+   * @param AiAk  a double.
    */
   public void setThole(double thole, double AiAk) {
     this.thole = thole;
@@ -103,8 +98,7 @@ public class TholeTensorQI extends CoulombTensorQI {
    * @return True if -thole*u^3 is greater than -50.0.
    */
   public boolean checkThole(double r) {
-    double rAiAk = r * AiAk;
-    return (-thole * rAiAk * rAiAk * rAiAk > -50.0);
+    return TholeTensorGlobal.checkThole(thole, AiAk, r);
   }
 
   /**
@@ -114,26 +108,10 @@ public class TholeTensorQI extends CoulombTensorQI {
    */
   protected void source(double[] T000) {
     // Compute the normal Coulomb auxiliary term.
-    double ir = 1.0 / R;
-    double ir2 = ir * ir;
-    for (int n = 0; n < o1; n++) {
-      T000[n] = coulombSource[n] * ir;
-      ir *= ir2;
-    }
+    super.source(T000);
 
     // Add the Thole damping terms: edamp = exp(-thole*u^3).
-    double u = R * AiAk;
-    double u3 = thole * u * u * u;
-    double u6 = u3 * u3;
-    double u9 = u6 * u3;
-    double expU3 = exp(-u3);
-
-    // The zeroth order term is not calculated for Thole damping.
-    T000[0] = 0.0;
-    T000[1] *= expU3;
-    T000[2] *= (1.0 + u3) * expU3;
-    T000[3] *= (1.0 + u3 + threeFifths * u6) * expU3;
-    T000[4] *= (1.0 + u3 + (18.0 * u6 + 9.0 * u9) * oneThirtyFifth) * expU3;
+    tholeSource(thole, AiAk, R, false, T000);
   }
 
 }

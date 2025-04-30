@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -51,7 +51,7 @@ import java.io.Serial;
 import java.util.logging.Logger;
 
 /**
- * RestraintBond class.
+ * RestraintDistance class.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -84,7 +84,7 @@ public class RestrainDistance extends BondedTerm implements LambdaInterface {
    *
    * @param a1 First Atom.
    * @param a2 Second Atom.
-   * @param crystal Any Crystal used by the system.
+   * @param crystal The Crystal used by the system.
    * @param lambdaTerm Whether lambda affects this restraint.
    * @param lamStart At what lambda does the restraint begin to take effect?
    * @param lamEnd At what lambda does the restraint hit full strength?

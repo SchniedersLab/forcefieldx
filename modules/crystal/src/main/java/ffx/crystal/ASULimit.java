@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -44,13 +44,20 @@ package ffx.crystal;
  * @since 1.0
  */
 public enum ASULimit {
-  LT, LTE;
+  /**
+   * Less than operator.
+   */
+  LT,
+  /**
+   * Less than or equal to operator.
+   */
+  LTE;
 
   /**
    * Check the given point is within the asymmetric unit limit.
    *
    * @param limit a double.
-   * @param x a double.
+   * @param x     a double.
    * @return True if the point is within the real space asymmetric unit, false otherwise.
    */
   public boolean check(double limit, double x) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -38,38 +38,19 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static ffx.numerics.multipole.GKTensorMode.POTENTIAL;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+/**
+ * The GKSource class generates the source terms for the Generalized Kirkwood version of the tensor recursion.
+ */
 public class GKSource {
 
-  /**
-   * The "mode" for the tensor (either POTENTIAL or BORN).
-   */
-  public enum GK_TENSOR_MODE {POTENTIAL, BORN}
-
-  /**
-   * The GK tensor can be constructed for a monopole potential (GB), a dipole potential or a
-   * quadrupole potential.
-   */
-  public enum GK_MULTIPOLE_ORDER {
-    MONOPOLE(0), DIPOLE(1), QUADRUPOLE(2);
-
-    private final int order;
-
-    GK_MULTIPOLE_ORDER(int order) {
-      this.order = order;
-    }
-
-    public int getOrder() {
-      return order;
-    }
-  }
-
-  private GK_TENSOR_MODE mode = GK_TENSOR_MODE.POTENTIAL;
+  private GKTensorMode mode = POTENTIAL;
 
   /**
    * Born radius of atom i multiplied by the Born radius of atom j.
@@ -164,6 +145,12 @@ public class GKSource {
    */
   private final double[][] bnm;
 
+  /**
+   * Construct a new GKSource object.
+   *
+   * @param order Recursion order.
+   * @param gc    Generalized Kirkwood constant.
+   */
   public GKSource(int order, double gc) {
     this.order = order;
     this.gc = gc;
@@ -188,11 +175,14 @@ public class GKSource {
 
   /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
+   *
+   * @param work           The array to store the source terms.
+   * @param multipoleOrder The multipole order.
    */
-  protected void source(double[] work, GK_MULTIPOLE_ORDER multipoleOrder) {
+  protected void source(double[] work, GKMultipoleOrder multipoleOrder) {
     int mpoleOrder = multipoleOrder.getOrder();
     fill(work, 0, mpoleOrder, 0.0);
-    if (mode == GK_TENSOR_MODE.POTENTIAL) {
+    if (mode == POTENTIAL) {
       // Max derivatives.
       int derivatives = order - mpoleOrder;
       arraycopy(anm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
@@ -205,9 +195,15 @@ public class GKSource {
 
   /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
+   *
+   * @param mode      The tensor mode.
+   * @param multipole The multipole order.
+   * @param r2        Separation distance squared.
+   * @param ai        Born radius of atom i.
+   * @param aj        Born radius of atom j.
    */
-  public void generateSource(GK_TENSOR_MODE mode, GK_MULTIPOLE_ORDER multipole, double r2,
-      double ai, double aj) {
+  public void generateSource(GKTensorMode mode, GKMultipoleOrder multipole, double r2,
+                             double ai, double aj) {
     int multipoleOrder = multipole.getOrder();
     this.mode = mode;
 
@@ -222,7 +218,7 @@ public class GKSource {
     f1 = 1.0 - expTerm * igc;
     f2 = 2.0 * expTerm / (gc * gcAiAj);
 
-    if (mode == GK_TENSOR_MODE.POTENTIAL) {
+    if (mode == POTENTIAL) {
       // Prepare the GK Potential tensor.
       anm(order, order - multipoleOrder);
     } else {
@@ -238,7 +234,7 @@ public class GKSource {
    * potential and derivatives for dipoles. The third row is the GK potential and derivatives for
    * quadrupoles.
    *
-   * @param n Order.
+   * @param n           Order.
    * @param derivatives Number of derivatives.
    */
   private void anm(int n, int derivatives) {
@@ -273,7 +269,7 @@ public class GKSource {
    * The first row are derivatives for the monopole potential. The second row are derivatives for the
    * dipole potential. The third row are derivatives for the quadrupole potential.
    *
-   * @param n Order.
+   * @param n           Order.
    * @param derivatives Number of derivatives.
    */
   private void bnm(int n, int derivatives) {
@@ -462,7 +458,7 @@ public class GKSource {
   /**
    * Compute the Kirkwood dielectric function for a multipole of order n.
    *
-   * @param n Multipole order.
+   * @param n  Multipole order.
    * @param Eh Homogeneous dielectric.
    * @param Es Solvent dielectric.
    * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh)) / Eh.
@@ -472,6 +468,15 @@ public class GKSource {
     return ret / Eh;
   }
 
+  /**
+   * Compute the self-energy of a polarizable multipole.
+   *
+   * @param polarizableMultipole The polarizable multipole.
+   * @param ai                   Born radius of atom i.
+   * @param Eh                   Homogeneous dielectric.
+   * @param Es                   Solvent dielectric.
+   * @return Returns the self-energy of a polarizable multipole.
+   */
   public static double selfEnergy(PolarizableMultipole polarizableMultipole,
                                   double ai, double Eh, double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;

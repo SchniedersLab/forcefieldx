@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.atomic;
 
-import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -91,12 +90,19 @@ public class AtomicDoubleArray3D {
    */
   public AtomicDoubleArray3D(AtomicDoubleArrayImpl atomicDoubleArrayImpl, int size, int nThreads) {
     atomicDoubleArray = new AtomicDoubleArray[3];
-    atomicDoubleArray[0] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
-    atomicDoubleArray[1] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
-    atomicDoubleArray[2] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
+    atomicDoubleArray[0] = atomicDoubleArrayImpl.createInstance(nThreads, size);
+    atomicDoubleArray[1] = atomicDoubleArrayImpl.createInstance(nThreads, size);
+    atomicDoubleArray[2] = atomicDoubleArrayImpl.createInstance(nThreads, size);
     this.atomicDoubleArrayImpl = atomicDoubleArrayImpl;
   }
 
+  /**
+   * Construct an atomic 3D double array using the specified AtomicDoubleArray instances.
+   *
+   * @param x AtomicDoubleArray for the X dimension.
+   * @param y AtomicDoubleArray for the Y dimension.
+   * @param z AtomicDoubleArray for the Z dimension.
+   */
   public AtomicDoubleArray3D(AtomicDoubleArray x, AtomicDoubleArray y, AtomicDoubleArray z) {
     atomicDoubleArray = new AtomicDoubleArray[3];
     atomicDoubleArray[0] = x;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -39,19 +39,31 @@ package ffx.potential;
 
 /**
  * Platform describes a set of force field implementations that include a pure Java reference
- * implementation (FFX), and two OpenMM implementations (OMM_CUDA and OMM_REF are supported)
- *
- * <p>FFX: reference FFX implementation
- *
- * <p>OMM: Currently an alias for OMM_CUDA, may eventually become "try to find best OpenMM
- * implementation" OMM_CUDA:
- *
- * <p>OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
- *
- * <p>OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
- *
- * <p>OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
+ * implementation (FFX), and OpenMM implementations (Reference, CUDA and OpenCL).
  */
 public enum Platform {
-  FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL
+  /**
+   * Reference FFX implementation.
+   */
+  FFX,
+  /**
+   * An alias for the best GPU implementation (OMM_CUDA or OMM_OPENCL).
+   */
+  OMM,
+  /**
+   * OpenMM CUDA implementation.
+   */
+  OMM_CUDA,
+  /**
+   * OpenMM reference implementation.
+   */
+  OMM_REF,
+  /**
+   * OpenMM OpenCL implementation.
+   */
+  OMM_OPENCL,
+  /**
+   * Optimized OpenMM CPU implementation (no AMOEBA support).
+   */
+  OMM_CPU
 }

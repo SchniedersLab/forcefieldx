@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -49,6 +49,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <a href="http://sourceforge.net/projects/parallelcolt">ParallelColt library</a>.
  */
 public class ModifiedBessel {
+
+  private ModifiedBessel() {
+    // Prevent instantiation.
+  }
 
   /**
    * Chebyshev coefficients for exp(-x) i0(x) in the interval [0,8].
@@ -198,6 +202,14 @@ public class ModifiedBessel {
    * @return i0(x)
    */
   public static double i0(double x) {
+    // Handle special cases
+    if (Double.isNaN(x)) {
+      return Double.NaN;
+    }
+    if (Double.isInfinite(x)) {
+      return 0.0;
+    }
+
     double y;
     if (x < 0) {
       x = -x;
@@ -220,6 +232,14 @@ public class ModifiedBessel {
    * @return i1(x).
    */
   public static double i1(double x) {
+    // Handle special cases
+    if (Double.isNaN(x)) {
+      return Double.NaN;
+    }
+    if (Double.isInfinite(x)) {
+      return 0.0;
+    }
+
     double y, z;
 
     z = abs(x);
@@ -238,22 +258,93 @@ public class ModifiedBessel {
 
   /**
    * Compute the ratio of i1(x) to i0(x).
+   * <p>
+   * This implementation avoids redundant calculations by computing both i1(x) and i0(x)
+   * efficiently for different ranges of x.
    *
    * @param x input parameter
    * @return i1(x) / i0(x)
    */
   public static double i1OverI0(double x) {
-    return (i1(x) / i0(x));
+    // Handle special cases
+    if (Double.isNaN(x)) {
+      return Double.NaN;
+    }
+    if (Double.isInfinite(x)) {
+      return 0.0; // Both i1(±∞) and i0(±∞) are 0, but i1/i0 approaches 0 as x approaches ±∞
+    }
+    if (x == 0.0) {
+      return 0.0; // i1(0) = 0, i0(0) = 1
+    }
+
+    // For small values, use the direct calculation to avoid precision loss
+    if (abs(x) < 1.0) {
+      return i1(x) / i0(x);
+    }
+
+    double absX = abs(x);
+    double result;
+
+    if (absX <= 8.0) {
+      // For moderate values, calculate both functions with shared operations
+      double y = (absX * 0.5) - 2.0;
+      double expX = eToThe(absX);
+      double i0Val = expX * evaluateChebyshev(y, A_i0, 30);
+      double i1Val = evaluateChebyshev(y, A_i1, 29) * absX * expX;
+      result = i1Val / i0Val;
+    } else {
+      // For large values, use the asymptotic behavior
+      double ix = 1.0 / absX;
+      double expX = eToThe(absX);
+      double sqrtIx = sqrt(ix);
+      double i0Val = expX * evaluateChebyshev(32.0 * ix - 2.0, B_i0, 25) * sqrtIx;
+      double i1Val = expX * evaluateChebyshev(32.0 * ix - 2.0, B_i1, 25) * sqrtIx;
+      result = i1Val / i0Val;
+    }
+
+    // Adjust sign for negative x
+    return (x < 0.0) ? -result : result;
   }
 
   /**
    * Compute the natural log(i0(x)).
+   * <p>
+   * This implementation computes log(i0(x)) directly to avoid overflow for large x values.
+   * For large x, i0(x) ~ exp(x)/sqrt(2*pi*x), so log(i0(x)) ~ x - 0.5*log(2*pi*x).
    *
    * @param x input parameter.
    * @return the natural log(i0(x)).
    */
   public static double lnI0(double x) {
-    return log(i0(x));
+    // Handle special cases
+    if (Double.isNaN(x)) {
+      return Double.NaN;
+    }
+    if (Double.isInfinite(x)) {
+      return Double.NEGATIVE_INFINITY; // log(0) = -∞
+    }
+
+    // For small values, use the direct calculation to avoid precision loss
+    if (abs(x) <= 8.0) {
+      double i0Val = i0(x);
+      // Avoid log(0) which would return -Infinity
+      return i0Val > 0.0 ? log(i0Val) : Double.NEGATIVE_INFINITY;
+    }
+
+    // For large values, use asymptotic formula to avoid overflow
+    double absX = abs(x);
+    double ix = 1.0 / absX;
+
+    // Compute log(i0(x)) directly using the asymptotic formula
+    // log(i0(x)) = x + log(evaluateChebyshev(...) * sqrt(ix))
+    double chebyshevTerm = evaluateChebyshev(32.0 * ix - 2.0, B_i0, 25);
+
+    // Handle potential underflow in the Chebyshev evaluation
+    if (chebyshevTerm <= 0.0) {
+      return absX; // Fallback to the dominant term
+    }
+
+    return absX + log(chebyshevTerm * sqrt(ix));
   }
 
   /**
@@ -263,9 +354,9 @@ public class ModifiedBessel {
    * <p>
    * NOTE: Coefficients are in reverse; zero-order term is last.
    *
-   * @param x argument to the polynomial.
+   * @param x            argument to the polynomial.
    * @param coefficients the coefficients of the polynomial.
-   * @param N the number of coefficients.
+   * @param N            the number of coefficients.
    * @return the result
    */
   private static double evaluateChebyshev(double x, double[] coefficients, int N) {
@@ -288,17 +379,33 @@ public class ModifiedBessel {
   }
 
   /**
-   * Returns Double.MAX_VALUE in place of Double.POSITIVE_INFINITY; Returns Double.MIN_VALUE in place
-   * of Double.NEGATIVE_INFINITY
+   * Computes exp(x) with protection against overflow and underflow.
+   * <p>
+   * Returns Double.MAX_VALUE in place of Double.POSITIVE_INFINITY and
+   * Double.MIN_VALUE in place of Double.NEGATIVE_INFINITY. This prevents
+   * arithmetic operations from generating NaN results when overflow occurs.
    *
    * @param x input parameter
-   * @return exp(x)
+   * @return exp(x) with overflow/underflow protection
    */
   private static double eToThe(double x) {
+    // Handle NaN input
+    if (Double.isNaN(x)) {
+      return Double.NaN;
+    }
+
+    // Handle extreme values directly to avoid unnecessary computation
+    if (x > 709.0) { // Approximate threshold where exp(x) overflows to Infinity
+      return Double.MAX_VALUE;
+    }
+    if (x < -745.0) { // Approximate threshold where exp(x) underflows to 0
+      return Double.MIN_VALUE;
+    }
+
     double res = exp(x);
     if (res == Double.POSITIVE_INFINITY) {
       return Double.MAX_VALUE;
-    } else if (res == Double.NEGATIVE_INFINITY) {
+    } else if (res == Double.NEGATIVE_INFINITY || res == 0.0) {
       return Double.MIN_VALUE;
     }
     return res;

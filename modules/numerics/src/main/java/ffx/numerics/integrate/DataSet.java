@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -55,7 +55,7 @@ public interface DataSet {
   /**
    * Returns copy of the array of points f(x) to integrate (y-axis).
    *
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   double[] getAllFxPoints();
 
@@ -70,7 +70,7 @@ public interface DataSet {
   /**
    * Returns copy of the array of points x (x-axis).
    *
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   double[] getX();
 

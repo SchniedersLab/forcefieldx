@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -303,13 +303,6 @@ public class MultiDynamicsOptions {
     ropt.setResiduesIgnoreNull(residueList);
 
     RotamerLibrary.measureRotamers(residueList, false);
-
-    boolean lazyMat = properties.getBoolean("ro-lazyMatrix", false);
-    if (!lazyMat) {
-      properties.clearProperty("ro-lazyMatrix");
-      properties.addProperty("ro-lazyMatrix", true);
-    }
-
     ropt.optimize(RotamerOptimization.Algorithm.ALL);
     ropt.setCoordinatesToEnsemble(rank);
 
@@ -322,10 +315,6 @@ public class MultiDynamicsOptions {
 
     if (lambdaInterface != null) {
       lambdaInterface.setLambda(initLam);
-    }
-
-    if (!lazyMat) {
-      properties.clearProperty("ro-lazyMatrix");
     }
   }
 

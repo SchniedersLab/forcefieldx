@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -62,11 +62,11 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
-import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import static ffx.potential.parameters.VDWType.EPSILON_RULE.GEOMETRIC;
+import static ffx.potential.parameters.VDWType.RADIUS_RULE.ARITHMETIC;
+import static ffx.potential.parameters.VDWType.RADIUS_SIZE.RADIUS;
+import static ffx.potential.parameters.VDWType.RADIUS_TYPE.R_MIN;
+import static ffx.potential.parameters.VDWType.VDW_TYPE.LENNARD_JONES;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
@@ -313,13 +313,14 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
 
       if (applyLambda) {
         OpenMMSystem system = openMMEnergy.getSystem();
-        // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom
-        // Non-Bonded force.
-        if (system.getVdwLambdaTerm()) {
+        boolean vdwLambdaTerm = vdW.getLambdaTerm();
+        // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom Non-Bonded force.
+        if (vdwLambdaTerm) {
           eps = 0.0;
         }
         // Always scale the charge by lambdaElec
-        charge *= system.getLambdaElec();
+        double permLambda = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
+        charge *= permLambda;
       }
 
       if (!atom.getUse()) {
@@ -363,21 +364,23 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
       double minEpsilon = 1.0e-12;
 
       OpenMMSystem system = openMMEnergy.getSystem();
-      double lambdaValue = system.getLambdaElec();
-      boolean vdwLambdaTerm = system.getVdwLambdaTerm();
 
-      if (lambdaValue < minEpsilon) {
-        lambdaValue = minEpsilon;
+      ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+      double lambdaElec = pme.getAlchemicalParameters().permLambda;
+      boolean vdwLambdaTerm = vdW.getLambdaTerm();
+
+      if (lambdaElec < minEpsilon) {
+        lambdaElec = minEpsilon;
       }
 
       if (atom1.applyLambda()) {
-        qq *= lambdaValue;
+        qq *= lambdaElec;
         if (vdwLambdaTerm) {
           epsilon = minEpsilon;
         }
       }
       if (atom2.applyLambda()) {
-        qq *= lambdaValue;
+        qq *= lambdaElec;
         if (vdwLambdaTerm) {
           epsilon = minEpsilon;
         }

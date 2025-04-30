@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -127,7 +127,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
       case Platform.OMM:
       case Platform.OMM_CUDA:
       case Platform.OMM_OPENCL:
-      case Platform.OMM_OPTCPU:
+      case Platform.OMM_CPU:
       case Platform.OMM_REF:
         logger.fine(" Platform is appropriate for OpenMM Minimization.")
         break

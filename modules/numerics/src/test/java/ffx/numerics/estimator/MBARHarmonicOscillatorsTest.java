@@ -68,8 +68,8 @@ public class MBARHarmonicOscillatorsTest extends FFXTest {
 
     MultistateBennettAcceptanceRatio mbar = new MultistateBennettAcceptanceRatio(O_k, u_kln, temps, 1.0E-7, MultistateBennettAcceptanceRatio.SeedType.ZEROS);
     double[] mbarFEEstimates = mbar.getMBARFreeEnergies();
-    double[] mbarErrorEstimates = mbar.getBinUncertainties();
-    double[][] mbarDiffMatrix = mbar.getDiffMatrix();
+    double[] mbarErrorEstimates = mbar.getFEDifferenceUncertainties();
+    double[][] mbarDiffMatrix = mbar.getUncertaintyMatrix();
     double[] mbarFEExpected = new double[]{0.0, 0.3468272332334239, 0.554882810046907, 0.6909139007747198};
     double[] mbarErrorExpected = new double[]{0.00647778279366289, 0.006176323555016366, 0.008170508071621832};
     double[][] mbarDiffMatrixExpected = new double[][]{
@@ -90,6 +90,11 @@ public class MBARHarmonicOscillatorsTest extends FFXTest {
       for (int j = 0; j < mbarDiffMatrixExpected[i].length; j++) {
         assertEquals(mbarDiffMatrixExpected[i][j], mbarDiffMatrix[i][j], 1.0E-1);
       }
+    }
+
+    String[] testResults = MultistateBennettAcceptanceRatio.testMBARMethods();
+    for (String testResult : testResults) {
+      assertEquals("PASS", testResult);
     }
   }
 }

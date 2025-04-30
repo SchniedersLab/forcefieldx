@@ -21,6 +21,7 @@ catalog.xml
 .classpath
 .project
 
+testing/
 target/
 scripts/
 /groovy/
@@ -52,3 +53,6 @@ src/site/asciidoc/keywords
 src/site/asciidoc/properties
 
 ffx_venv/
+python-resources/
+
+modules/numerics/fft.txt

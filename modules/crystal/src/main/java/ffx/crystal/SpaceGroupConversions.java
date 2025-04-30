@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.crystal;
 
+import java.util.logging.Logger;
+
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import java.util.logging.Logger;
 
 /**
  * This class holds the functionality to convert between equivalent space groups.
@@ -55,6 +55,13 @@ public class SpaceGroupConversions {
    * The logger.
    */
   private static final Logger logger = Logger.getLogger(SpaceGroupConversions.class.getName());
+
+  /**
+   * Prevent instantiation.
+   */
+  private SpaceGroupConversions() {
+    // Prevent instantiation.
+  }
 
   /**
    * Convert between hexagonal and rhombohedral space groups.
@@ -70,17 +77,17 @@ public class SpaceGroupConversions {
   /**
    * Convert between hexagonal and rhombohedral space groups.
    *
-   * @param a proposed axis length
-   * @param b proposed axis length
-   * @param c proposed axis length
-   * @param alpha proposed angle
-   * @param beta proposed angle
-   * @param gamma proposed angle
+   * @param a         proposed axis length
+   * @param b         proposed axis length
+   * @param c         proposed axis length
+   * @param alpha     proposed angle
+   * @param beta      proposed angle
+   * @param gamma     proposed angle
    * @param currentSG Space group to be converted
    * @return Converted crystal satisfying other lattice system.
    */
   public static Crystal hrConversion(double a, double b, double c, double alpha, double beta,
-      double gamma, SpaceGroup currentSG) {
+                                     double gamma, SpaceGroup currentSG) {
     //Name for converted space group.
     String xtalName;
     // Going from hexagonal to rhombohedral (true), or visa versa (false).

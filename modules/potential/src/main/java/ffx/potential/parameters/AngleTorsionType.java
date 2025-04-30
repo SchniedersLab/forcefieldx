@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,22 +37,26 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGTORS;
 import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The AngleTorsionType class defines one angle-torsion energy type.
@@ -71,7 +75,9 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
 
   public static final double DEFAULT_ANGTOR_UNIT = 1.0 / DEGREES_PER_RADIAN;
 
-  /** Convert angle-torsion to kcal/mole. */
+  /**
+   * Convert angle-torsion to kcal/mole.
+   */
   @FFXProperty(name = "angtorunit", propertyGroup = EnergyUnitConversion, defaultValue = "Pi/180", description = """
       Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle
       cross term into units of kcal/mole. The correct value is force field dependent and typically provided in the
@@ -79,17 +85,23 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
       """)
   public double angtorunit = DEFAULT_ANGTOR_UNIT;
 
-  /** A Logger for the AngleTorsionType class. */
+  /**
+   * A Logger for the AngleTorsionType class.
+   */
   private static final Logger logger = Logger.getLogger(AngleTorsionType.class.getName());
-  /** Atom classes for this stretch-torsion type. */
+  /**
+   * Atom classes for this stretch-torsion type.
+   */
   public final int[] atomClasses;
-  /** Force constants. */
+  /**
+   * Force constants.
+   */
   public final double[] forceConstants;
 
   /**
    * AngleTorsionType Constructor.
    *
-   * @param atomClasses Atomic classes.
+   * @param atomClasses    Atomic classes.
    * @param forceConstants Force constants.
    */
   public AngleTorsionType(int[] atomClasses, double[] forceConstants) {
@@ -103,11 +115,11 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
    *
    * @param angleTorsionType1 a {@link ffx.potential.parameters.AngleTorsionType} object.
    * @param angleTorsionType2 a {@link ffx.potential.parameters.AngleTorsionType} object.
-   * @param atomClasses an array of {@link int} objects.
+   * @param atomClasses       an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
    */
   public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
-      AngleTorsionType angleTorsionType2, int[] atomClasses) {
+                                         AngleTorsionType angleTorsionType2, int[] atomClasses) {
     if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -126,7 +138,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
   /**
    * Construct an AngleTorsionType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return an AngleTorsionType instance.
    */
@@ -205,7 +217,9 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -218,7 +232,9 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     return Arrays.equals(atomClasses, angleTorsionType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);
@@ -283,5 +299,45 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
         atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3], forceConstants[0],
         forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4],
         forceConstants[5]);
+  }
+
+  /**
+   * Create an AmoebaAngleTorsionForce Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField instance to grab constants from.
+   * @return the AmoebaAngleTorsionForce Element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, AngleTorsionType> types = forceField.getAngleTorsionTypes();
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaAngleTorsionForce");
+      for (AngleTorsionType angleTorsionType : types.values()) {
+        node.appendChild(angleTorsionType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write AngleTorsionType to OpenMM XML format.
+   *
+   * @param doc the Document instance.
+   * @return the Torsion element.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Torsion");
+    node.setAttribute("class1", format("%d", atomClasses[0]));
+    node.setAttribute("class2", format("%d", atomClasses[1]));
+    node.setAttribute("class3", format("%d", atomClasses[2]));
+    node.setAttribute("class4", format("%d", atomClasses[3]));
+    node.setAttribute("v11", format("%f", forceConstants[0] * KCAL_TO_KJ));
+    node.setAttribute("v12", format("%f", forceConstants[1] * KCAL_TO_KJ));
+    node.setAttribute("v13", format("%f", forceConstants[2] * KCAL_TO_KJ));
+    node.setAttribute("v21", format("%f", forceConstants[3] * KCAL_TO_KJ));
+    node.setAttribute("v22", format("%f", forceConstants[4] * KCAL_TO_KJ));
+    node.setAttribute("v23", format("%f", forceConstants[5] * KCAL_TO_KJ));
+    return node;
   }
 }

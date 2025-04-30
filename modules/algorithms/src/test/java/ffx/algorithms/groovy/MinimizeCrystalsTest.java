@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -54,7 +54,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinConvergenceCriteria() {
     // Set-up the input arguments for the script.
-    String[] args = {"-e", "0.25", getResourcePath("acetamide.xtal.xyz")};
+    String[] args = {"-e", "0.25", "-f", "molecule", getResourcePath("acetamide.xtal.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -62,8 +62,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.72657973215976;
-
+    double expectedPotentialEnergy = -32.72658281436831;
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
     assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
@@ -73,7 +72,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinCoords() {
     // Set-up the input arguments for the script.
-    String[] args = {"-c", getResourcePath("acetamide.xtal.xyz")};
+    String[] args = {"-c", "-f", "molecule", getResourcePath("acetamide.xtal.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -100,7 +99,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.54443451197122;
+    double expectedPotentialEnergy = -32.54443798845555;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
@@ -122,7 +121,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testCrystalMinIterations() {
     // Set-up the input arguments for the script.
-    String[] args = {"-I", "1", "-e", "0.25", getResourcePath("acetamide.xtal.xyz")};
+    String[] args = {"-I", "1", "-e", "0.25", "-f", "molecule", getResourcePath("acetamide.xtal.xyz")};
 
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -131,7 +130,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.63131283241016;
+    double expectedPotentialEnergy = -32.63131694976352;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();

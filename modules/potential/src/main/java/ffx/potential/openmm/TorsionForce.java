@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -89,7 +89,8 @@ public class TorsionForce extends PeriodicTorsionForce {
 
     int forceGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Torsions \t\t%6d\t\t%1d", torsions.length, forceGroup));
+    logger.info(format("  Torsions:                          %10d", torsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
   }
 
   /**

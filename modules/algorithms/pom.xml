@@ -68,12 +68,15 @@
             <argument>ffx.algorithms.groovy.Cluster</argument>
             <argument>ffx.algorithms.groovy.Dynamics</argument>
             <argument>ffx.algorithms.groovy.ForEachFile</argument>
+            <argument>ffx.algorithms.groovy.GenZ</argument>
             <argument>ffx.algorithms.groovy.Histogram</argument>
             <argument>ffx.algorithms.groovy.ManyBody</argument>
+            <argument>ffx.algorithms.groovy.MBAR</argument>
             <argument>ffx.algorithms.groovy.Minimize</argument>
             <argument>ffx.algorithms.groovy.MinimizeCrystals</argument>
             <argument>ffx.algorithms.groovy.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.groovy.MutatePDB</argument>
+            <argument>ffx.algorithms.groovy.SaveRotamers</argument>
             <argument>ffx.algorithms.groovy.Scheduler</argument>
             <argument>ffx.algorithms.groovy.SortArc</argument>
             <argument>ffx.algorithms.groovy.Superpose</argument>
@@ -93,6 +96,7 @@
             <argument>ffx.algorithms.groovy.test.RaoBlackwellEstimator</argument>
             <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
             <argument>ffx.algorithms.groovy.test.SortXPH</argument>
+            <argument>ffx.algorithms.groovy.test.WeightedEnsemble</argument>
           </arguments>
         </configuration>
         <dependencies>

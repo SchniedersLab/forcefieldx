@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -151,6 +151,8 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 -3308.29464032, // Total Solvation
                                 136503,
                                 false
+                            // Generalized Kirkwood  -3308.29466860      0.032
+                            // Total Potential       -2181.51251119  (Kcal/mole)        1.155 (sec)
                         },
                         /*
                          * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match

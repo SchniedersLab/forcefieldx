@@ -17,19 +17,8 @@
     and multipole tensor recursions.
   </description>
   <build>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/numerics/fft
-        </directory>
-        <targetPath>ffx/numerics/fft</targetPath>
-        <includes>
-          <include>*.ptx</include>
-          <include>*.cl</include>
-        </includes>
-      </resource>
-    </resources>
     <plugins>
-      <!-- plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec.version}</version>
@@ -41,22 +30,33 @@
             </goals>
           </execution>
         </executions>
+        <!-- Flags to try:
+             -XX:ObjectAlignmentInBytes=8 (does a value larger than the default of 8 reduce cache line interference)
+             -XX:-UseNeon (default is off on MacOS with an M2 chip)
+        -->
         <configuration>
           <executable>java</executable>
           <arguments>
             <argument>-ms2G</argument>
             <argument>-mx2G</argument>
-            <argument>-Djava.library.path=/Data/ffx-project/ffx/bin/64-bit</argument>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>ffx.numerics.multipole.MultipoleTensor</argument>
-            <argument>6</argument>
-            <argument>1.1</argument>
-            <argument>1.2</argument>
-            <argument>1.3</argument>
+            <argument>--add-modules</argument>
+            <argument>jdk.incubator.vector</argument>
+            <argument>-Dfft.useSIMD=true</argument>
+            <argument>-Dfft.packFFTs=true</argument>
+            <argument>-Dfft.localZTranspose=false</argument>
+            <!-- argument>-XX:ObjectAlignmentInBytes=8</argument -->
+            <!-- argument>-XX:+UseNeon</argument -->
+            <argument>-Dffx.log=ALL</argument>
+            <argument>ffx.numerics.fft.Complex3DParallel</argument>
+            <argument>64</argument>
+            <argument>8</argument>
+            <argument>1000</argument>
+            <argument>true</argument>
           </arguments>
         </configuration>
-      </plugin -->
+      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -85,6 +85,28 @@
       <groupId>tornado</groupId>
       <artifactId>tornado-api</artifactId>
       <version>${tornado.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>word</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.sdk</groupId>
+          <artifactId>collections</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

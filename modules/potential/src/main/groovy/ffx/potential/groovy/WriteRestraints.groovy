@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -38,15 +38,15 @@
 package ffx.potential.groovy
 
 import ffx.potential.bonded.*
-import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.getExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
+
 
 /**
  * WriteRestraints logs "restrain-position" properties for a PDB file.
@@ -59,7 +59,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class WriteRestraints extends PotentialScript {
 
   /**
-   * -c or --chain to specify chain
+   * -c or --chain to specify the chain for a PDB file.
    */
   @Option(names = ['--chain', '-c'], description = 'Single character chain name.')
   String chain = null
@@ -68,28 +68,42 @@ class WriteRestraints extends PotentialScript {
    * -k or --forceConstant to specify the force constant in kcal/mol/A^2
    */
   @Option(names = ['-k', '--forceConstant'], defaultValue = '100.0', paramLabel = '100.0',
-      description = 'The force constant (kcal/mol/A^2).')
+          description = 'The force constant (kcal/mol/A^2).')
   double forceConstant = 100.0
 
   /**
    * -d or --flatBottom to specify the flat bottom distance in Angstroms.
    */
   @Option(names = ['-d', '--flatBottom'], defaultValue = '0.0', paramLabel = '0.0',
-      description = 'The flat bottom distance in Angstroms.')
+          description = 'The flat bottom distance in Angstroms.')
   double fbDistance = 0.0
 
   /**
-   * -s or --select Select every ith restraint. 
+   * --eh or --excludeHydrogen to exclude writing restraints for hydrogen atoms.
+   */
+  @Option(names = ['--eh', '--excludeHydrogen'], defaultValue = 'false', paramLabel = 'false',
+          description = 'Exclude writing restraints for hydrogen atoms.')
+  boolean excludeHydrogen = false
+
+  /**
+   * --ca or --cAlphas to only write AA alpha carbons and/or NA phosphorus's
+   */
+  @Option(names = ['--ca', '--cAlphas'], defaultValue = 'false', paramLabel = 'false',
+          description = "Only write restraints for alpha carbons and/or phosphorus's.")
+  boolean onlyCalphas = false
+
+  /**
+   * -s or --select Select every ith restraint.
    */
   @Option(names = ['-s', '--select'], defaultValue = '1', paramLabel = '1',
-      description = 'Select every ith matching restraint and ignore the rest.')
+          description = 'Select every ith matching restraint and ignore the rest.')
   int select = 1
 
   /**
    * The final argument is an XYZ or PDB coordinate file.
    */
   @Parameters(arity = '1', paramLabel = 'file',
-      description = 'The atomic coordinate file in XYZ or PDB format.')
+          description = 'The atomic coordinate file in XYZ or PDB format.')
   private String filename = null
 
   /**
@@ -127,44 +141,79 @@ class WriteRestraints extends PotentialScript {
 
     logger.info("\n Writing restraints for " + filename + "\n")
 
+    SystemFilter systemFilter = this.potentialFunctions.getFilter()
     int count = 0
 
-    Polymer[] polymers = activeAssembly.getChains()
-    for (Polymer polymer : polymers) {
-      if (chain != null && !chain.isEmpty()) {
-        char requested = chain.charAt(0).toUpperCase()
-        char current = polymer.getChainID().toUpperCase()
-        if (current != requested) {
-          logger.info(" Skipping chain " + current)
-          continue
-        } else {
-          logger.info(" Restraints for chain " + current)
+    if (systemFilter instanceof PDBFilter) {
+      Polymer[] polymers = activeAssembly.getChains()
+      for (Polymer polymer : polymers) {
+        if (chain != null && !chain.isEmpty()) {
+          char requested = chain.charAt(0).toUpperCase()
+          char current = polymer.getChainID().toUpperCase()
+          if (current != requested) {
+            logger.info(" Skipping chain " + current)
+            continue
+          } else {
+            logger.info(" Restraints for chain " + current)
+          }
+        }
+        Residue[] residues = polymer.getResidues()
+        for (Residue residue : residues) {
+          if (onlyCalphas) {
+            // Check for an amino acid c-alpha or a nucleic acid phosphate.
+            Atom atom = residue.getAtomByName("CA", true)
+            if (atom == null) {
+              atom = residue.getAtomByName("P", true)
+            }
+
+            // Continue if an atom isn't found.
+            if (atom == null) {
+              continue
+            }
+
+            if (count % select == 0) {
+              writeRestraints(atom)
+            }
+            count++
+          } else {
+            // use all atoms in residue
+            List<Atom> atoms = residue.getAtomList()
+            for (Atom atom : atoms) {
+              if (excludeHydrogen && atom.isHydrogen()) {
+                continue
+              }
+
+              if (count % select == 0) {
+                writeRestraints(atom)
+              }
+              count++
+            }
+          }
         }
       }
-      Residue[] residues = polymer.getResidues()
-      for (Residue residue : residues) {
-        // Check for an amino acid c-alpha or a nucleic acid phosphate.
-        Atom atom = residue.getAtomByName("CA", true)
-        if (atom == null) {
-          atom = residue.getAtomByName("P", true)
-        }
+    } else {
+      Atom[] atoms = activeAssembly.getAtomArray()
+      for (Atom atom : atoms) {
 
-        // Continue if an atom isn't found.
-        if (atom == null) {
+        if (excludeHydrogen && atom.isHydrogen()) {
           continue
         }
 
         if (count % select == 0) {
-          double x = atom.getX()
-          double y = atom.getY()
-          double z = atom.getZ()
-          logger.info(format("restrain-position %4d %18.15f %18.15f %18.15f %12.8f %12.8f",
-              atom.getIndex(), x, y, z, forceConstant, fbDistance))
+          writeRestraints(atom)
         }
         count++
       }
     }
 
     return this
+  }
+
+  private void writeRestraints(Atom atom) {
+    double x = atom.getX()
+    double y = atom.getY()
+    double z = atom.getZ()
+    logger.info(format("restrain-position %4d %19.15f %19.15f %19.15f %12.8f %12.8f",
+            atom.getIndex(), x, y, z, forceConstant, fbDistance))
   }
 }

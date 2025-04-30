@@ -5,7 +5,7 @@
 # 
 # Description: Force Field X - Software for Molecular Biophysics.
 # 
-# Copyright: Copyright (c) Michael J. Schnieders 2001-2024.
+# Copyright: Copyright (c) Michael J. Schnieders 2001-2025.
 # 
 # This file is part of Force Field X.
 # 
@@ -115,7 +115,7 @@ if [ -n "$FFX_STACKSIZE" ]; then
   JVM_SS="$FFX_STACKSIZE"
 fi
 
-EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS}"
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS} --add-modules jdk.incubator.vector"
 
 if [ -z "$TMPDIR" ]; then
     if [ -z "$TMP" ]; then
@@ -137,16 +137,16 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs other than 21 or 22.
+# Detect JDK version; disallow JDKs other than 21 up to 24.
 if [ $hasAwkSed ]; then
     JVERS="$(java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g')"
     JVFIRST="$(echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }')"
 
-    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 22 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 or 22." 1>&2
+    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 24 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 24." 1>&2
     fi
 
-    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 
     nvccComm='which nvcc'
     hasNVCC=''
@@ -159,12 +159,12 @@ if [ $hasAwkSed ]; then
         CVERS="$(echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//')"
         NVFIRST="$(echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }')"
         if [ "$NVFIRST" -lt 10 ]; then
-          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 or later if you wish to use CUDA-accelerated OpenMM calculations"
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 11.1 or later if you wish to use CUDA-accelerated OpenMM calculations"
         fi
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 or 22 and (optionally) CUDA toolkit 10.1 or later."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 through 24 and (optionally) CUDA toolkit 11.1 or later."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
@@ -198,19 +198,17 @@ if [ -n "$TORNADO_SDK" ] ; then
   echo "TORNADO detected at: $TORNADO_SDK"
 
   PROVIDERS=" \
-   -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
-   -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
-   -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
-   -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
-   -Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
-   -Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory \
-   -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
-   -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel"
+    -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
+    -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
+    -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
+    -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
+    -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel"
 
-   TORNADO_FLAGS="--module-path ${TORNADO_SDK}/share/java/tornado \
-      --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common \
+   TORNADO_FLAGS="
+      --module-path ${TORNADO_SDK}/share/java/tornado-ffx \
+      --upgrade-module-path ${TORNADO_SDK}/share/java/graalJars \
+      --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl \
       @${TORNADO_SDK}/etc/exportLists/common-exports \
-      --add-modules tornado.drivers.opencl \
       @${TORNADO_SDK}/etc/exportLists/opencl-exports "
 #      --add-modules tornado.drivers.ptx \
 #      @${TORNADO_SDK}/etc/exportLists/ptx-exports \
@@ -218,9 +216,7 @@ if [ -n "$TORNADO_SDK" ] ; then
 #      @${TORNADO_SDK}/etc/exportLists/spirv-exports" 
       
    JLP="${TORNADO_SDK}/lib:$JLP"
-
-#   JAVA_FLAGS="-Dtornado.threadInfo=True -Dtornado.debug=True -Dtornado.print.kernel=True -Dtornado.print.bytecodes=True -server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
-   JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
+   JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview ${TORNADO_FLAGS} ${PROVIDERS} "
 fi
 
 exec "$JAVACMD" $JAVA_FLAGS $EXTRA_JVM_ARGUMENTS \

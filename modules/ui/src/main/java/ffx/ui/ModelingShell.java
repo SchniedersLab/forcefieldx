@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -658,6 +658,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
       logger.info(" Detected script language: " + language);
       Source source = Source.newBuilder(language, file).build();
       try (Context context = getContext(language)) {
+
         // Get the bindings for the language.
         Value bindings = context.getBindings(language);
         // Use the Polyglot ProxyArray to pass the command line arguments to the script.
@@ -680,6 +681,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
     return null;
   }
 
+  /**
+   * Create a Polyglot Context for the specified language.
+   * @param language a String specifying the language.
+   * @return a Polyglot Context.
+   */
   private Context getContext(String language) {
     if (language.equalsIgnoreCase("python")) {
       // For Python, try to locate the Graal Python executable.
@@ -692,8 +698,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
       String graalpyString = System.getProperty("graalpy", graalpy.toString());
       graalpy = Paths.get(graalpyString);
       if (graalpy.toFile().exists()) {
-        logger.fine(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy);
-        return Context.newBuilder(language).allowAllAccess(true).option("python.Executable", graalpyString).build();
+        logger.info(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy);
+        return Context.newBuilder(language).allowAllAccess(true).
+            option("python.Executable", graalpyString).
+            option("python.PythonPath", ".").build();
       }
     }
     // Fall through to default.

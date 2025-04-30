@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,23 +37,30 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.OPBEND;
+import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
+import static ffx.utilities.Constants.KCAL_TO_KJ;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.LocalGeometryFunctionalForm;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The OutOfPlaneBendType class defines one Allinger style out-of-plane angle bending energy type.
@@ -341,5 +348,47 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
   public String toString() {
     return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
         atomClasses[2], atomClasses[3], forceConstant);
+  }
+
+  /**
+   * Create an AmoebaOutOfPlaneBendForce instance.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField to grab constants from.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, OutOfPlaneBendType> types = forceField.getOutOfPlaneBendTypes();
+    if (!types.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaOutOfPlaneBendForce");
+      node.setAttribute("type", forceField.getString("opbendtype", "ALLINGER"));
+      node.setAttribute("opbend-cubic", valueOf(forceField.getDouble("opbend-cubic", DEFAULT_OPBEND_CUBIC)));
+      node.setAttribute("opbend-quartic", valueOf(forceField.getDouble("opbend-quartic", DEFAULT_OPBEND_QUARTIC)));
+      node.setAttribute("opbend-pentic", valueOf(forceField.getDouble("opbend-pentic", DEFAULT_OPBEND_PENTIC)));
+      node.setAttribute("opbend-sextic", valueOf(forceField.getDouble("opbend-sextic", DEFAULT_OPBEND_SEXTIC)));
+      for (OutOfPlaneBendType outOfPlaneBendType : types.values()) {
+        node.appendChild(outOfPlaneBendType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write OutOfPlaneBendType to OpenMM XML format.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Angle");
+    int i = 1;
+    for (int ac : atomClasses) {
+      if (ac == 0) {
+        node.setAttribute(format("class%d", i), "");
+      } else {
+        node.setAttribute(format("class%d", i), format("%d", ac));
+      }
+      i++;
+    }
+    // Convert Kcal/mol/radian^2 to KJ/mol/deg^2
+    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (DEGREES_PER_RADIAN * DEGREES_PER_RADIAN)));
+    return node;
   }
 }

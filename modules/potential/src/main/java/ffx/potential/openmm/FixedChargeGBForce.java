@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -186,7 +186,7 @@ public class FixedChargeGBForce extends CustomGBForce {
     }
 
     DoubleArray parameters = new DoubleArray(0);
-    double lambdaElec = openMMEnergy.getSystem().getLambdaElec();
+    double lambdaElec = openMMEnergy.getPmeNode().getAlchemicalParameters().permLambda;
     for (Atom atom : atoms) {
       int index = atom.getXyzIndex() - 1;
       double chargeUseFactor = 1.0;

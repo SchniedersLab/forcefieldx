@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -72,7 +72,6 @@ import ffx.potential.bonded.RelativeSolvation;
 import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestrainDistance;
-import ffx.potential.bonded.RestraintTorsion;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
@@ -86,7 +85,7 @@ import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.RestrainGroups;
-import ffx.potential.nonbonded.RestrainPosition;
+import ffx.potential.bonded.RestrainPosition;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.openmm.OpenMMEnergy;
@@ -121,7 +120,7 @@ import java.util.stream.Stream;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
-import static ffx.potential.nonbonded.RestrainPosition.parseRestrainPositions;
+import static ffx.potential.bonded.RestrainPosition.parseRestrainPositions;
 import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -188,8 +187,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * ANI2x Neutral Network Potential.
    */
   private final ANIEnergy aniEnergy;
-
   private final List<Constraint> constraints;
+
+  /**
+   * RestrainMode specifies how restrain terms are applied for dual topology calculations.
+   */
+  public enum RestrainMode {
+    /**
+     * Restrain terms are applied with the energy.
+     */
+    ENERGY,
+    /**
+     * Restrain terms are applied with the alchemical restraints (Lambda Bonded Terms).
+     */
+    ALCHEMICAL
+  }
 
   @FFXProperty(name = "vdw-cutoff", propertyGroup = NonBondedCutoff, defaultValue = "12.0", description = """
       Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions.
@@ -372,116 +384,122 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * The array of Atoms being evaluated.
    */
-  private Atom[] atoms;
+  private final Atom[] atoms;
   /**
    * An array of Bond terms.
    */
-  private Bond[] bonds;
+  private final Bond[] bonds;
   /**
    * An array of Angle terms.
    */
-  private Angle[] angles;
+  private final Angle[] angles;
   /**
    * An array of Stretch-Bend terms.
    */
-  private StretchBend[] stretchBends;
+  private final StretchBend[] stretchBends;
   /**
    * An array of Urey-Bradley terms.
    */
-  private UreyBradley[] ureyBradleys;
+  private final UreyBradley[] ureyBradleys;
   /**
    * An array of Out of Plane Bend terms.
    */
-  private OutOfPlaneBend[] outOfPlaneBends;
+  private final OutOfPlaneBend[] outOfPlaneBends;
   /**
    * An array of Torsion terms.
    */
-  private Torsion[] torsions;
+  private final Torsion[] torsions;
   /**
    * An array of Improper Torsion terms.
    */
-  private ImproperTorsion[] improperTorsions;
+  private final ImproperTorsion[] improperTorsions;
   /**
    * An array of Pi-Orbital Torsion terms.
    */
-  private PiOrbitalTorsion[] piOrbitalTorsions;
+  private final PiOrbitalTorsion[] piOrbitalTorsions;
   /**
    * An array of Torsion-Torsion terms.
    */
-  private TorsionTorsion[] torsionTorsions;
+  private final TorsionTorsion[] torsionTorsions;
   /**
    * An array of Stretch-Torsion terms.
    */
-  private StretchTorsion[] stretchTorsions;
+  private final StretchTorsion[] stretchTorsions;
   /**
    * An array of Angle-Torsion terms.
    */
-  private AngleTorsion[] angleTorsions;
+  private final AngleTorsion[] angleTorsions;
+
   /**
-   * An array of Bond Restraint terms.
+   * An array of Restrain Distance terms.
    */
   private RestrainDistance[] restrainDistances;
   /**
-   * An array of Torsion Restraint terms.
+   * An array of Restrain Torsion terms.
    */
-  private RestraintTorsion[] restrainTorsions;
+  private Torsion[] restrainTorsions;
   /**
-   * An array of RestrainPosition terms.
+   * An array of Restrain Position terms.
    */
-  private RestrainPosition[] restrainPositions;
+  private final RestrainPosition[] restrainPositions;
   /**
-   * Restrain groups
+   * The Restrain Groups energy term.
    */
   private final RestrainGroups restrainGroups;
+  /**
+   * RestrainMode specifies how restrain terms are applied for dual topology calculations.
+   */
+  private final RestrainMode restrainMode;
 
   /**
    * Number of atoms in the system.
    */
-  private int nAtoms;
+  private final int nAtoms;
   /**
    * Number of bond terms in the system.
    */
-  private int nBonds;
+  private final int nBonds;
   /**
    * Number of angle terms in the system.
    */
-  private int nAngles;
+  private final int nAngles;
   /**
    * Number of stretch-bend terms in the system.
    */
-  private int nStretchBends;
+  private final int nStretchBends;
   /**
    * Number of Urey-Bradley terms in the system.
    */
-  private int nUreyBradleys;
+  private final int nUreyBradleys;
   /**
    * Number of Out of Plane Bend terms in the system.
    */
-  private int nOutOfPlaneBends;
+  private final int nOutOfPlaneBends;
   /**
    * Number of Torsion terms in the system.
    */
-  private int nTorsions;
+  private final int nTorsions;
   /**
    * Number of Improper Torsion terms in the system.
    */
-  private int nImproperTorsions;
+  private final int nImproperTorsions;
   /**
    * Number of Pi-Orbital Torsion terms in the system.
    */
-  private int nPiOrbitalTorsions;
+  private final int nPiOrbitalTorsions;
   /**
    * Number of Torsion-Torsion terms in the system.
    */
-  private int nTorsionTorsions;
+  private final int nTorsionTorsions;
   /**
    * Number of Angle-Torsion terms in the system.
    */
-  private int nAngleTorsions;
+  private final int nAngleTorsions;
   /**
    * Number of Stretch-Torsion terms in the system.
    */
-  private int nStretchTorsions;
+  private final int nStretchTorsions;
+
   /**
    * Number of RestrainDistance terms in the system.
    */
@@ -519,7 +537,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * A Parallel Java Region used to evaluate Bonded energy values.
    */
-  private BondedRegion bondedRegion;
+  private final BondedRegion bondedRegion;
 
   /**
    * Specifies use of an intramolecular neural network.
@@ -876,10 +894,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Time to evaluate all energy terms.
    */
   private long totalTime;
-  /**
-   * Value of each degree of freedom.
-   */
-  private double[] xyz;
+
   /**
    * Constant pH extended system (TODO: needs further testing).
    */
@@ -923,7 +938,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     this.molecularAssembly = molecularAssembly;
     atoms = molecularAssembly.getAtomArray();
     nAtoms = atoms.length;
-    xyz = new double[nAtoms * 3];
 
     // Check that atom ordering is correct and count the number of active atoms.
     for (int i = 0; i < nAtoms; i++) {
@@ -1001,11 +1015,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       restrainDistanceTerm = false;
     }
 
-    // Detect "restrain-torsion-cos" property.
-    if (properties.containsKey("restrain-torsion-cos")) {
+    // Detect "restrain-torsion" property.
+    if (properties.containsKey("restrain-torsion")) {
       restrainTorsionTerm = true;
     } else {
       restrainTorsionTerm = false;
+    }
+
+    String mode = forceField.getString("RESTRAIN_MODE", "ENERGY");
+    if (mode.equalsIgnoreCase("ALCHEMICAL")) {
+      restrainMode = RestrainMode.ALCHEMICAL;
+    } else {
+      restrainMode = RestrainMode.ENERGY;
+    }
+    if (restrainTorsionTerm) {
+      logger.info(" Restrain Torsion Mode: " + restrainMode);
     }
 
     // Detect "restrain-groups" property.
@@ -1092,8 +1116,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       } else {
         try {
           maxR = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
           // If Convex Hull approach fails (e.g., coplanar input, brute force...
+          logger.info(" Convex Hull operation failed with message " + ex + "\n Trying brute force approach...");
+          if (logger.isLoggable(Level.FINE)) {
+            logger.fine(Utilities.stackTraceToString(ex));
+          }
           for (int i = 0; i < nAtoms - 1; i++) {
             Double3 xi = atoms[i].getXYZ();
             for (int j = 1; j < nAtoms; j++) {
@@ -1508,16 +1536,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     if (restrainDistanceTerm) {
       // Apply restrain-distance records.
-      configureRestraintBonds(properties);
+      configureRestrainDistances(properties);
     }
 
     if (restrainTorsionTerm) {
-      nRestrainTorsions = configureRestraintTorsions(properties, forceField);
+      nRestrainTorsions = configureRestrainTorsions(properties, forceField);
     }
 
-
     bondedRegion = new BondedRegion();
-
     maxDebugGradient = forceField.getDouble("MAX_DEBUG_GRADIENT", Double.POSITIVE_INFINITY);
 
     molecularAssembly.setPotential(this);
@@ -1580,70 +1606,56 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param forceField Force field properties.
    * @return Number of restraint torsions.
    */
-  private int configureRestraintTorsions(CompositeConfiguration properties, ForceField forceField) {
-    String[] restrainTorsionCos = properties.getStringArray("restrain-torsion-cos");
-    double torsUnits = forceField.getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
-    List<RestraintTorsion> rTorsList = new ArrayList<>(restrainTorsionCos.length);
-    for (String rtc : restrainTorsionCos) {
-      String[] toks = rtc.split("\\s+");
-      int nTok = toks.length;
-      if (nTok < 7) {
-        throw new IllegalArgumentException(format(
-            "restrain-torsion-cos record %s must have 4 atom indices, amplitude, phase shift and periodicity!",
-            rtc));
-      }
-      int ai1 = Integer.parseInt(toks[0]) - 1;
-      int ai2 = Integer.parseInt(toks[1]) - 1;
-      int ai3 = Integer.parseInt(toks[2]) - 1;
-      int ai4 = Integer.parseInt(toks[3]) - 1;
+  private int configureRestrainTorsions(CompositeConfiguration properties, ForceField forceField) {
+    StringBuilder restrainLog = new StringBuilder("\n  Restrain-Torsions");
+
+    String[] restrainTorsions = properties.getStringArray("restrain-torsion");
+    double torsionUnits = forceField.getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
+    List<Torsion> restrainTorsionList = new ArrayList<>(restrainTorsions.length);
+    for (String restrainString : restrainTorsions) {
+      // Add the key back to the input line.
+      restrainString = "restrain-torsion " + restrainString;
+      // Split the line on the pound symbol to remove comments.
+      String input = restrainString.split("#+")[0];
+      // Split the line on whitespace.
+      String[] tokens = input.trim().split(" +");
+      // Restrain torsion records have a similar form as torsion records.
+      // The first four tokens are atom indices instead of atom classes.
+      TorsionType torsionType = TorsionType.parse(input, tokens);
+      torsionType.torsionUnit = torsionUnits;
+
+      // Collect the atom indices.
+      int[] atomIndices = torsionType.atomClasses;
+      int ai1 = atomIndices[0] - 1;
+      int ai2 = atomIndices[1] - 1;
+      int ai3 = atomIndices[2] - 1;
+      int ai4 = atomIndices[3] - 1;
       Atom a1 = atoms[ai1];
       Atom a2 = atoms[ai2];
       Atom a3 = atoms[ai3];
       Atom a4 = atoms[ai4];
-      int[] atomClasses = new int[]{-1, -1, -1, -1};
 
-      int startTerms = 4;
-      boolean lamEnabled = false;
-      boolean revLam = false;
-      if (toks[4].equalsIgnoreCase("lambda")) {
-        ++startTerms;
-        lamEnabled = true;
-        if (toks[5].toLowerCase().startsWith("reverse")) {
-          ++startTerms;
-          revLam = true;
-        }
-      }
-      if (!lambdaTerm) {
-        lamEnabled = false;
-      }
-
-      int nTerms = (nTok - startTerms) / 3;
-      assert (nTok - startTerms) % 3 == 0;
-      double[] amp = new double[nTerms];
-      double[] phase = new double[nTerms];
-      int[] period = new int[nTerms];
-
-      for (int i = 0; i < nTerms; i++) {
-        int i0 = startTerms + (3 * i);
-        amp[i] = Double.parseDouble(toks[i0]);
-        phase[i] = Double.parseDouble(toks[i0 + 1]);
-        period[i] = Integer.parseInt(toks[i0 + 2]);
-      }
-
-      // Lambda-enabled torsion restraints require lambda term to be true.
-      assert !lamEnabled || lambdaTerm;
-      TorsionType tType = new TorsionType(atomClasses, amp, phase, period);
-      rTorsList.add(new RestraintTorsion(a1, a2, a3, a4, tType, lamEnabled, revLam, torsUnits));
+      // Collect the bonds between the atoms making up the restrain torsion.
+      Bond firstBond = a1.getBond(a2);
+      Bond middleBond = a2.getBond(a3);
+      Bond lastBond = a3.getBond(a4);
+      Torsion torsion = new Torsion(firstBond, middleBond, lastBond);
+      torsion.setTorsionType(torsionType);
+      restrainTorsionList.add(torsion);
+      restrainLog.append("\n   ").append(torsion);
     }
 
-    if (!rTorsList.isEmpty()) {
-      logger.info(format(" Adding %4d cosine-based torsion restraints.", nRestrainTorsions));
+    if (!restrainTorsionList.isEmpty()) {
+      nRestrainTorsions = restrainTorsionList.size();
+      logger.info(restrainLog.toString());
+      logger.info(format("  Added %4d torsion restraints.", nRestrainTorsions));
       restrainTorsionTerm = true;
-      restrainTorsions = rTorsList.toArray(new RestraintTorsion[0]);
+      this.restrainTorsions = restrainTorsionList.toArray(new Torsion[0]);
       restrainTorsionEnergy = 0;
       restrainTorsionTime = 0;
-      return rTorsList.size();
+      return restrainTorsionList.size();
     }
+
     return 0;
   }
 
@@ -1652,7 +1664,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    *
    * @param properties Configuration properties.
    */
-  private void configureRestraintBonds(CompositeConfiguration properties) {
+  private void configureRestrainDistances(CompositeConfiguration properties) {
 
     String[] bondRestraints = properties.getStringArray("restrain-distance");
     for (String bondRest : bondRestraints) {
@@ -1840,12 +1852,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     try {
       Platform platform = Platform.valueOf(platformString);
       switch (platform) {
-        case OMM, OMM_REF, OMM_CUDA:
+        case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
           try {
             return new OpenMMEnergy(assembly, platform, numThreads);
           } catch (Exception ex) {
             logger.warning(format(" Exception creating OpenMMEnergy: %s", ex));
-
             ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
             if (ffxEnergy == null) {
               ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
@@ -1853,7 +1864,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             return ffxEnergy;
           }
-        case OMM_OPENCL, OMM_OPTCPU:
+        case OMM_CPU:
           logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
         default:
           ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
@@ -2161,7 +2172,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           + outOfPlaneBendEnergy + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
           + piOrbitalTorsionEnergy + improperTorsionEnergy + torsionTorsionEnergy
           + ncsEnergy + comRestraintEnergy
-          + restrainDistanceEnergy + restrainPositionEnergy + restrainGroupEnergy + restrainTorsionEnergy ;
+          + restrainDistanceEnergy + restrainPositionEnergy + restrainGroupEnergy + restrainTorsionEnergy;
 
       totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
       totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
@@ -2238,10 +2249,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   @Override
   public double energyAndGradient(double[] x, double[] g, boolean verbose) {
     assert Arrays.stream(x).allMatch(Double::isFinite);
-
     // Un-scale the coordinates.
     unscaleCoordinates(x);
-
     // Set coordinates.
     setCoordinates(x);
     double e = energy(true, verbose);
@@ -2780,8 +2789,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           }
         }
         if (restrainTorsionTerm && nRestrainTorsions > 0) {
-          for (RestraintTorsion restraintTorsion : restrainTorsions) {
-            restraintTorsion.setLambda(lambda);
+          for (Torsion restrainTorsion : restrainTorsions) {
+            restrainTorsion.setLambda(lambda);
           }
         }
 
@@ -3981,8 +3990,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (restrainTorsionTerm && nRestrainTorsions > 0) {
       logger.info("\n Restrain Torsion Interactions:");
-      for (RestraintTorsion restraintTorsion : restrainTorsions) {
-        logger.info(" Restrain Torsion \t" + restraintTorsion.toString());
+      for (Torsion restrainTorsion : restrainTorsions) {
+        logger.info(" Restrain Torsion \t" + restrainTorsion.toString());
       }
     }
     if (restrainPositionTerm && nRestrainPositions > 0) {
@@ -4183,14 +4192,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return null;
   }
 
+  public RestrainMode getRestrainMode() {
+    return restrainMode;
+  }
+
   /**
    * Getter for the field <code>restraintBonds</code>.
    *
    * @return a {@link java.util.List} object.
    */
-  public List<RestraintTorsion> getRestrainTorsions() {
+  public Torsion[] getRestrainTorsions() {
     if (restrainTorsions != null && restrainTorsions.length > 0) {
-      return Arrays.asList(restrainTorsions);
+      return restrainTorsions;
     } else {
       return null;
     }
@@ -4242,7 +4255,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private final BondedTermLoop[] angleTorsionLoops;
     private final BondedTermLoop[] torsionTorsionLoops;
     private final BondedTermLoop[] ureyBradleyLoops;
-
     private final BondedTermLoop[] restrainPositionLoops;
     private final BondedTermLoop[] restrainDistanceLoops;
     private final BondedTermLoop[] restrainTorsionLoops;
@@ -4509,44 +4521,48 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
 
       // Evaluate RestraintPosition terms in parallel.
-      if (restrainPositionTerm && nRestrainPositions > 0) {
-        if (restrainPositionLoops[threadID] == null) {
-          restrainPositionLoops[threadID] = new BondedTermLoop(restrainPositions, sharedRestrainPositionEnergy);
+      if ((restrainMode == RestrainMode.ENERGY) ||
+          (restrainMode == RestrainMode.ALCHEMICAL && lambdaBondedTerms)) {
+        boolean checkAlchemicalAtoms = (restrainMode == RestrainMode.ENERGY);
+        if (restrainPositionTerm && nRestrainPositions > 0) {
+          if (restrainPositionLoops[threadID] == null) {
+            restrainPositionLoops[threadID] = new BondedTermLoop(restrainPositions, sharedRestrainPositionEnergy, null, checkAlchemicalAtoms);
+          }
+          if (threadID == 0) {
+            restrainPositionTime = -System.nanoTime();
+          }
+          execute(0, nRestrainPositions - 1, restrainPositionLoops[threadID]);
+          if (threadID == 0) {
+            restrainPositionTime += System.nanoTime();
+          }
         }
-        if (threadID == 0) {
-          restrainPositionTime = -System.nanoTime();
-        }
-        execute(0, nRestrainPositions - 1, restrainPositionLoops[threadID]);
-        if (threadID == 0) {
-          restrainPositionTime += System.nanoTime();
-        }
-      }
 
-      // Evaluate RestrainDistance terms in parallel.
-      if (restrainDistanceTerm && nRestrainDistances > 0) {
-        if (restrainDistanceLoops[threadID] == null) {
-          restrainDistanceLoops[threadID] = new BondedTermLoop(restrainDistances, sharedRestrainDistanceEnergy);
+        // Evaluate RestrainDistance terms in parallel.
+        if (restrainDistanceTerm && nRestrainDistances > 0) {
+          if (restrainDistanceLoops[threadID] == null) {
+            restrainDistanceLoops[threadID] = new BondedTermLoop(restrainDistances, sharedRestrainDistanceEnergy, null, checkAlchemicalAtoms);
+          }
+          if (threadID == 0) {
+            restrainDistanceTime = -System.nanoTime();
+          }
+          execute(0, nRestrainDistances - 1, restrainDistanceLoops[threadID]);
+          if (threadID == 0) {
+            restrainDistanceTime += System.nanoTime();
+          }
         }
-        if (threadID == 0) {
-          restrainDistanceTime = -System.nanoTime();
-        }
-        execute(0, nRestrainDistances - 1, restrainDistanceLoops[threadID]);
-        if (threadID == 0) {
-          restrainDistanceTime += System.nanoTime();
-        }
-      }
 
-      // Evaluate RestrainTorsion terms in parallel.
-      if (restrainTorsionTerm && nRestrainTorsions > 0) {
-        if (restrainTorsionLoops[threadID] == null) {
-          restrainTorsionLoops[threadID] = new BondedTermLoop(restrainTorsions, sharedRestrainTorsionEnergy);
-        }
-        if (threadID == 0) {
-          restrainTorsionTime = -System.nanoTime();
-        }
-        execute(0, nRestrainTorsions - 1, restrainTorsionLoops[threadID]);
-        if (threadID == 0) {
-          restrainTorsionTime += System.nanoTime();
+        // Evaluate RestrainTorsion terms in parallel.
+        if (restrainTorsionTerm && nRestrainTorsions > 0) {
+          if (restrainTorsionLoops[threadID] == null) {
+            restrainTorsionLoops[threadID] = new BondedTermLoop(restrainTorsions, sharedRestrainTorsionEnergy, null, checkAlchemicalAtoms);
+          }
+          if (threadID == 0) {
+            restrainTorsionTime = -System.nanoTime();
+          }
+          execute(0, nRestrainTorsions - 1, restrainTorsionLoops[threadID]);
+          if (threadID == 0) {
+            restrainTorsionTime += System.nanoTime();
+          }
         }
       }
 
@@ -4652,6 +4668,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       private final BondedTerm[] terms;
       private final SharedDouble sharedEnergy;
       private final SharedDouble sharedRMSD;
+      private final boolean checkAlchemicalAtoms;
       private final boolean computeRMSD;
       private double localEnergy;
       private double localRMSD;
@@ -4662,10 +4679,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
 
       BondedTermLoop(BondedTerm[] terms, SharedDouble sharedEnergy, SharedDouble sharedRMSD) {
+        this(terms, sharedEnergy, sharedRMSD, true);
+      }
+
+      BondedTermLoop(BondedTerm[] terms, SharedDouble sharedEnergy, SharedDouble sharedRMSD, boolean checkAlchemicalAtoms) {
         this.terms = terms;
         this.sharedEnergy = sharedEnergy;
         this.sharedRMSD = sharedRMSD;
         computeRMSD = (sharedRMSD != null);
+        this.checkAlchemicalAtoms = checkAlchemicalAtoms;
       }
 
       @Override
@@ -4680,6 +4702,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       public void run(int first, int last) {
         for (int i = first; i <= last; i++) {
           BondedTerm term = terms[i];
+          boolean used = true;
           /*
            * The logic here deals with how DualTopologyEnergy (DTE) works.
            * If this ForceFieldEnergy (FFE) is not part of a DTE, lambdaBondedTerms is always false, and the term is always evaluated.
@@ -4696,7 +4719,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
            * If it is scaled internally by lambda, we assume that the energy term is not meant to be internally complemented.
            * In that case, we skip evaluation into restraintEnergy.
            */
-          boolean used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+          if (checkAlchemicalAtoms) {
+            used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+          }
           if (used) {
             localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
             if (computeRMSD) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -52,6 +52,13 @@ import static org.apache.commons.io.FileUtils.copyURLToFile;
 public class DownloadUtils {
 
   private static final Logger logger = Logger.getLogger(DownloadUtils.class.getName());
+
+  /**
+   * Default constructor.
+   */
+  private DownloadUtils() {
+    // Prevent instantiation.
+  }
 
   /**
    * Download a PDB file.

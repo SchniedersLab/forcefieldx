@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,12 +37,30 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.numerics.math.DoubleMath;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField.ELEC_FORM;
+import ffx.utilities.FFXProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.FIXED_CHARGE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
+import static ffx.utilities.Constants.ANG_TO_NM;
 import static ffx.utilities.Constants.BOHR;
 import static ffx.utilities.Constants.BOHR2;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
@@ -52,20 +70,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
-
-import ffx.numerics.math.DoubleMath;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField.ELEC_FORM;
-import ffx.utilities.FFXProperty;
-
-import java.io.BufferedReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -181,6 +185,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   public static final int t111 = 19;
 
   private static final Logger logger = Logger.getLogger(MultipoleType.class.getName());
+  public static final double DEFAULT_MPOLE_12_SCALE = 0.0;
+  public static final double DEFAULT_MPOLE_13_SCALE = 0.0;
+  public static final double DEFAULT_MPOLE_14_SCALE = 1.0;
+  public static final double DEFAULT_MPOLE_15_SCALE = 1.0;
   /**
    * Partial atomic charge (e).
    */
@@ -489,15 +497,16 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         yAxis[2] = frameCoords[2][2];
         sub(yAxis, localOrigin, yAxis);
         normalize(yAxis, yAxis);
-        add(zAxis, xAxis, zAxis);
-        add(zAxis, yAxis, zAxis);
-        normalize(zAxis, zAxis);
-        rotMat[0][2] = zAxis[0];
-        rotMat[1][2] = zAxis[1];
-        rotMat[2][2] = zAxis[2];
-        var dot = dot(xAxis, zAxis);
-        DoubleMath.scale(zAxis, dot, zAxis);
-        sub(xAxis, zAxis, xAxis);
+        double[] sum = new double[3];
+        add(zAxis, xAxis, sum);
+        add(sum, yAxis, sum);
+        normalize(sum, sum);
+        rotMat[0][2] = sum[0];
+        rotMat[1][2] = sum[1];
+        rotMat[2][2] = sum[2];
+        var dot = dot(zAxis, sum);
+        DoubleMath.scale(sum, dot, sum);
+        sub(zAxis, sum, xAxis);
         normalize(xAxis, xAxis);
       }
       case ZTHENX -> {
@@ -1044,9 +1053,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         } else {
           for (int k = 0; k < 3; k++) {
             double[] localQuadrupolek = quadrupole[k];
-            quadrupolei[j] +=
-                rotmati[k] * (rotmatj[0] * localQuadrupolek[0] + rotmatj[1] * localQuadrupolek[1]
-                    + rotmatj[2] * localQuadrupolek[2]);
+            quadrupolei[j] += rotmati[k] * (rotmatj[0] * localQuadrupolek[0]
+                + rotmatj[1] * localQuadrupolek[1]
+                + rotmatj[2] * localQuadrupolek[2]);
           }
         }
       }
@@ -1393,6 +1402,97 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         multipole[t101] / BOHR2, multipole[t011] / BOHR2, multipole[t002] / BOHR2,
         "                                      "));
     return multipoleBuffer.toString();
+  }
+
+  /**
+   * Create an AmoebaMultipoleForce Element.
+   *
+   * @param doc        the Document instance.
+   * @param forceField the ForceField used to define constants.
+   * @return the element.
+   */
+  public static Element getXMLForce(Document doc, ForceField forceField) {
+    Map<String, MultipoleType> mpMap = forceField.getMultipoleTypes();
+    Map<String, PolarizeType> polMap = forceField.getPolarizeTypes();
+    if (!mpMap.values().isEmpty() || !polMap.values().isEmpty()) {
+      Element node = doc.createElement("AmoebaMultipoleForce");
+      node.setAttribute("mpole12Scale", String.valueOf(forceField.getDouble("mpole-12-scale", DEFAULT_MPOLE_12_SCALE)));
+      node.setAttribute("mpole13Scale", String.valueOf(forceField.getDouble("mpole-13-scale", DEFAULT_MPOLE_13_SCALE)));
+      node.setAttribute("mpole14Scale", String.valueOf(forceField.getDouble("mpole-14-scale", DEFAULT_MPOLE_14_SCALE)));
+      node.setAttribute("mpole15Scale", String.valueOf(forceField.getDouble("mpole-15-scale", DEFAULT_MPOLE_15_SCALE)));
+      // Add PolarizeType attributes
+      PolarizeType.addXMLAttributes(node, forceField);
+      for (MultipoleType multipoleType : mpMap.values()) {
+        node.appendChild(multipoleType.toXML(doc));
+      }
+      for (PolarizeType polarizeType : polMap.values()) {
+        node.appendChild(polarizeType.toXML(doc));
+      }
+      return node;
+    }
+    return null;
+  }
+
+  /**
+   * Write MultipoleType to OpenMM XML format.
+   */
+  public Element toXML(Document doc) {
+    Element node = doc.createElement("Multipole");
+    switch (frameDefinition) {
+      case NONE -> node.setAttribute("type", format("%d", frameAtomTypes[0]));
+      case ZONLY -> {
+        node.setAttribute("type", format("%d", frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d", frameAtomTypes[1]));
+      }
+      case ZTHENX -> {
+        if (frameAtomTypes.length == 3) {
+          node.setAttribute("type", format("%d", frameAtomTypes[0]));
+          node.setAttribute("kz", format("%d", frameAtomTypes[1]));
+          node.setAttribute("kx", format("%d", frameAtomTypes[2]));
+        } else {
+          // Chiral
+          node.setAttribute("type", format("%d", frameAtomTypes[0]));
+          node.setAttribute("kz", format("%d", frameAtomTypes[1]));
+          node.setAttribute("kx", format("%d", frameAtomTypes[2]));
+          node.setAttribute("ky", format("%d", frameAtomTypes[3]));
+        }
+      }
+      case BISECTOR -> {
+        node.setAttribute("type", format("%d", frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d", -frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d", -frameAtomTypes[2]));
+      }
+      case ZTHENBISECTOR -> {
+        node.setAttribute("type", format("%d", frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d", frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d", -frameAtomTypes[2]));
+        node.setAttribute("ky", format("%d", -frameAtomTypes[3]));
+      }
+      case THREEFOLD -> {
+        node.setAttribute("type", format("%d", frameAtomTypes[0]));
+        node.setAttribute("kz", format("%d", -frameAtomTypes[1]));
+        node.setAttribute("kx", format("%d", -frameAtomTypes[2]));
+        node.setAttribute("ky", format("%d", -frameAtomTypes[3]));
+      }
+    }
+    node.setAttribute("c0", format("%f", multipole[t000]));
+    // FFX had dipoles in units of electrons / Angstrom.
+    // OpenMM expects dipole units to be electrons / nm.
+    node.setAttribute("d1", format("%f", multipole[t100] * ANG_TO_NM));
+    node.setAttribute("d2", format("%f", multipole[t010] * ANG_TO_NM));
+    node.setAttribute("d3", format("%f", multipole[t001] * ANG_TO_NM));
+    // FFX had quadrupoles in units of electrons / Angstrom^2.
+    // OpenMM expects quadrupoles units to be electrons / nm^2.
+    // FFX and Tinker follow the notation in the "Theory of Intermolecular Forces"
+    // by Anthony Stone and apply the factor of 1/3 within their respective energy routines.
+    // See Chapter 3 (e.g., Eq 3.1.3).
+    node.setAttribute("q11", format("%f", multipole[t200] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q21", format("%f", multipole[t110] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q22", format("%f", multipole[t020] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q31", format("%f", multipole[t101] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q32", format("%f", multipole[t011] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q33", format("%f", multipole[t002] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    return node;
   }
 
   /**

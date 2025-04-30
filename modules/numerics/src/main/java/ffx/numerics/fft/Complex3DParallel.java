@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -43,10 +43,12 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElseGet;
 
 /**
@@ -68,22 +70,121 @@ import static java.util.Objects.requireNonNullElseGet;
 public class Complex3DParallel {
 
   private static final Logger logger = Logger.getLogger(Complex3DParallel.class.getName());
-  private final int nX, nY, nZ;
-  private final int nY2, nZ2;
-  private final int strideX, strideY, strideZ;
+  /**
+   * The X-dimension.
+   */
+  private final int nX;
+  /**
+   * The Y-dimension.
+   */
+  private final int nY;
+  /**
+   * The Z-dimension.
+   */
+  private final int nZ;
+  /**
+   * The offset from any real value to its imaginary part.
+   */
+  private final int im;
+  /**
+   * The offset from any real value to the next real value (1 for blocked and 2 for interleaved).
+   */
+  private final int ii;
+  /**
+   * The offset to the next X value.
+   */
+  private final int nextX;
+  /**
+   * The offset to the next Y value.
+   */
+  private final int nextY;
+  /**
+   * The offset to the next Z value.
+   */
+  private final int nextZ;
+  /**
+   * The offset to the next X value for the transposed data.
+   */
+  private final int trNextX;
+  /**
+   * The offset to the next Y value for the transposed data.
+   */
+  private final int trNextY;
+  /**
+   * The offset to the next Z value for the transposed data.
+   */
+  private final int trNextZ;
+  /**
+   * The reciprocal space data.
+   */
   private final double[] recip;
-  private final long[] convolutionTime;
+  /**
+   * The number of threads to use.
+   */
   private final int threadCount;
+  /**
+   * The ParallelTeam instance.
+   */
   private final ParallelTeam parallelTeam;
-  private final Complex[] fftX;
-  private final Complex[] fftY;
+  /**
+   * The 2D FFTs for each thread for XY-planes.
+   */
+  private final Complex2D[] fftXY;
+  /**
+   * The 1D FFTs for each thread to compute FFTs along the Z-dimension.
+   * Each thread operates one YZ-plane at a time to complete nY FFTs.
+   */
   private final Complex[] fftZ;
+  /**
+   * The FFTs along the Z-dimension will use offset between real and imaginary parts.
+   */
+  private final int internalImZ;
+  /**
+   * The IntegerSchedule to use.
+   */
   private final IntegerSchedule schedule;
-  private final int nXm1, nYm1, nZm1;
+  /**
+   * The X-dimension minus 1.
+   */
+  private final int nXm1;
+  /**
+   * The Y-dimension minus 1.
+   */
+  private final int nYm1;
+  /**
+   * The Z-dimension minus 1.
+   */
+  private final int nZm1;
+  /**
+   * The FFTRegion for parallel calculation of a 3D FFT.
+   */
   private final FFTRegion fftRegion;
+  /**
+   * The IFFTRegion for parallel calculation of an inverse 3D FFT.
+   */
   private final IFFTRegion ifftRegion;
+  /**
+   * The ConvolutionRegion for parallel calculation of a convolution.
+   */
   private final ConvolutionRegion convRegion;
+  /**
+   * This is a reference to the input array for convenience.
+   * The input array must be of size 2 * nX * nY * nZ.
+   */
   public double[] input;
+  /**
+   * Use SIMD instructions if available.
+   */
+  private boolean useSIMD;
+  /**
+   * Pack the FFTs for optimal use of SIMD instructions.
+   */
+  private boolean packFFTs;
+  private final boolean localZTranspose;
+  /**
+   * Work array used for transforms along the Z-axis.
+   */
+  public final double[] work3D;
 
   /**
    * Initialize the 3D FFT for complex 3D matrix.
@@ -95,7 +196,21 @@ public class Complex3DParallel {
    * @since 1.0
    */
   public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam) {
-    this(nX, nY, nZ, parallelTeam, null);
+    this(nX, nY, nZ, parallelTeam, DataLayout3D.INTERLEAVED);
+  }
+
+  /**
+   * Initialize the 3D FFT for complex 3D matrix.
+   *
+   * @param nX           X-dimension.
+   * @param nY           Y-dimension.
+   * @param nZ           Z-dimension.
+   * @param parallelTeam A ParallelTeam instance.
+   * @param dataLayout   The data layout.
+   * @since 1.0
+   */
+  public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam, DataLayout3D dataLayout) {
+    this(nX, nY, nZ, parallelTeam, null, dataLayout);
   }
 
   /**
@@ -109,152 +224,200 @@ public class Complex3DParallel {
    * @since 1.0
    */
   public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam, @Nullable IntegerSchedule integerSchedule) {
+    this(nX, nY, nZ, parallelTeam, integerSchedule, DataLayout3D.INTERLEAVED);
+  }
+
+  /**
+   * Initialize the 3D FFT for complex 3D matrix.
+   *
+   * @param nX              X-dimension.
+   * @param nY              Y-dimension.
+   * @param nZ              Z-dimension.
+   * @param parallelTeam    A ParallelTeam instance.
+   * @param integerSchedule The IntegerSchedule to use.
+   * @param dataLayout      The data layout.
+   * @since 1.0
+   */
+  public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
+                           @Nullable IntegerSchedule integerSchedule, DataLayout3D dataLayout) {
     this.nX = nX;
     this.nY = nY;
     this.nZ = nZ;
     this.parallelTeam = parallelTeam;
     recip = new double[nX * nY * nZ];
-    nY2 = 2 * this.nY;
-    nZ2 = 2 * this.nZ;
-    strideX = 2;
-    strideY = 2 * this.nX;
-    strideZ = strideY * this.nY;
+
+    DataLayout1D dataLayout1D;
+    DataLayout2D dataLayout2D;
+    switch (dataLayout) {
+      default:
+      case INTERLEAVED:
+        // Interleaved data layout.
+        im = 1;
+        ii = 2;
+        nextX = 2;
+        nextY = 2 * nX;
+        nextZ = 2 * nX * nY;
+        // Internal FFTs will be performed in interleaved format.
+        dataLayout1D = DataLayout1D.INTERLEAVED;
+        dataLayout2D = DataLayout2D.INTERLEAVED;
+        // Transforms along the Z-axis will be repacked into 1D interleaved format.
+        internalImZ = 1;
+        trNextY = 2;
+        trNextZ = 2 * nY;
+        trNextX = 2 * nY * nZ;
+        break;
+      case BLOCKED_X:
+        // Blocking is along the X-axis.
+        im = nX;
+        ii = 1;
+        nextX = 1;
+        nextY = 2 * nX;
+        nextZ = 2 * nX * nY;
+        // Internal FFTs will be performed in blocked format.
+        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayout2D = DataLayout2D.BLOCKED_X;
+        // Transforms along the Z-axis will be repacked into 1D blocked format.
+        internalImZ = nZ * nY;
+        trNextY = 1;
+        trNextZ = nY;
+        trNextX = 2 * nY * nZ;
+        break;
+      case BLOCKED_XY:
+        // Blocking is based on 2D XY-planes.
+        im = nX * nY;
+        ii = 1;
+        nextX = 1;
+        nextY = nX;
+        nextZ = 2 * nY * nX;
+        // Internal FFTs will be performed in blocked format.
+        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayout2D = DataLayout2D.BLOCKED_XY;
+        // Transforms along the Z-axis will be repacked into 1D blocked format.
+        internalImZ = nY * nZ;
+        trNextY = 1;
+        trNextZ = nY;
+        trNextX = 2 * nY * nZ;
+        break;
+      case BLOCKED_XYZ:
+        // Blocking is based on 3D XYZ-volume with all real values followed by all imaginary.
+        im = nX * nY * nZ;
+        ii = 1;
+        nextX = 1;
+        nextY = nX;
+        nextZ = nY * nX;
+        // Internal 1D FFTs will be performed in blocked format.
+        dataLayout1D = DataLayout1D.BLOCKED;
+        dataLayout2D = DataLayout2D.BLOCKED_XY;
+        // Transforms along the Z-axis will be repacked into 1D blocked format.
+        internalImZ = nY * nZ;
+        trNextY = 1;
+        trNextZ = nY;
+        trNextX = 2 * nY * nZ;
+        break;
+    }
+
     nXm1 = this.nX - 1;
     nYm1 = this.nY - 1;
     nZm1 = this.nZ - 1;
     threadCount = parallelTeam.getThreadCount();
     schedule = requireNonNullElseGet(integerSchedule, IntegerSchedule::fixed);
-    fftX = new Complex[threadCount];
-    fftY = new Complex[threadCount];
+
+    // Do not use SIMD by default for now.
+    useSIMD = false;
+    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+    try {
+      useSIMD = Boolean.parseBoolean(simd);
+    } catch (Exception e) {
+      useSIMD = false;
+    }
+
+    packFFTs = false;
+    String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
+    try {
+      packFFTs = Boolean.parseBoolean(pack);
+    } catch (Exception e) {
+      packFFTs = false;
+    }
+
+    String localTranspose = System.getProperty("fft.localZTranspose", "true");
+    boolean local;
+    try {
+      local = Boolean.parseBoolean(localTranspose);
+    } catch (Exception e) {
+      local = true;
+    }
+    localZTranspose = local;
+
+    fftXY = new Complex2D[threadCount];
+    for (int i = 0; i < threadCount; i++) {
+      fftXY[i] = new Complex2D(nX, nY, dataLayout2D, im);
+      fftXY[i].setPackFFTs(packFFTs);
+      fftXY[i].setUseSIMD(useSIMD);
+    }
+
     fftZ = new Complex[threadCount];
     for (int i = 0; i < threadCount; i++) {
-      fftX[i] = new Complex(nX);
-      fftY[i] = new Complex(nY);
-      fftZ[i] = new Complex(nZ);
+      fftZ[i] = new Complex(nZ, dataLayout1D, internalImZ, nY);
+      fftZ[i].setUseSIMD(useSIMD);
+    }
+    if (!localZTranspose) {
+      work3D = new double[2 * nX * nY * nZ];
+    } else {
+      work3D = null;
     }
     fftRegion = new FFTRegion();
     ifftRegion = new IFFTRegion();
     convRegion = new ConvolutionRegion();
-    convolutionTime = new long[threadCount];
+  }
+
+  public String toString() {
+    return "Complex3DParallel {" +
+        "nX=" + nX +
+        ", nY=" + nY +
+        ", nZ=" + nZ +
+        ", im=" + im +
+        ", ii=" + ii +
+        ", nextX=" + nextX +
+        ", nextY=" + nextY +
+        ", nextZ=" + nextZ +
+        ", threadCount=" + threadCount +
+        ", parallelTeam=" + parallelTeam +
+        ", internalImZ=" + internalImZ +
+        ", schedule=" + schedule +
+        ", nXm1=" + nXm1 +
+        ", nYm1=" + nYm1 +
+        ", nZm1=" + nZm1 +
+        ", fftRegion=" + fftRegion +
+        ", ifftRegion=" + ifftRegion +
+        ", convRegion=" + convRegion +
+        ", useSIMD=" + useSIMD +
+        ", packFFTs=" + packFFTs +
+        '}';
   }
 
   /**
-   * Test the Complex3DParallel FFT.
+   * Use SIMD instructions if available.
    *
-   * @param args an array of {@link java.lang.String} objects.
-   * @throws java.lang.Exception if any.
-   * @since 1.0
+   * @param useSIMD True to use SIMD instructions.
    */
-  public static void main(String[] args) throws Exception {
-    int dimNotFinal = 128;
-    int nCPU = ParallelTeam.getDefaultThreadCount();
-    int reps = 5;
-    try {
-      dimNotFinal = Integer.parseInt(args[0]);
-      if (dimNotFinal < 1) {
-        dimNotFinal = 100;
-      }
-      nCPU = Integer.parseInt(args[1]);
-      if (nCPU < 1) {
-        nCPU = ParallelTeam.getDefaultThreadCount();
-      }
-      reps = Integer.parseInt(args[2]);
-      if (reps < 1) {
-        reps = 5;
-      }
-    } catch (Exception e) {
-      //
+  public void setUseSIMD(boolean useSIMD) {
+    this.useSIMD = useSIMD;
+    for (int i = 0; i < threadCount; i++) {
+      fftXY[i].setUseSIMD(useSIMD);
+      fftZ[i].setUseSIMD(useSIMD);
     }
-    final int dim = dimNotFinal;
-    System.out.printf("Initializing a %d cubed grid for %d CPUs.\n"
-            + "The best timing out of %d repetitions will be used.%n",
-        dim, nCPU, reps);
-    // One dimension of the serial array divided by the number of threads.
-    Complex3D complexDoubleFFT3D = new Complex3D(dim, dim, dim);
-    ParallelTeam parallelTeam = new ParallelTeam(nCPU);
-    Complex3DParallel parallelComplexDoubleFFT3D =
-        new Complex3DParallel(dim, dim, dim, parallelTeam);
-    final int dimCubed = dim * dim * dim;
-    final double[] data = new double[dimCubed * 2];
-    final double[] work = new double[dimCubed * 2];
-    // Parallel Array Initialization.
-    try {
-      parallelTeam.execute(
-          new ParallelRegion() {
-            @Override
-            public void run() {
-              try {
-                execute(
-                    0,
-                    dim - 1,
-                    new IntegerForLoop() {
-                      @Override
-                      public void run(final int lb, final int ub) {
-                        Random randomNumberGenerator = new Random(1);
-                        int index = dim * dim * lb * 2;
-                        for (int i = lb; i <= ub; i++) {
-                          for (int j = 0; j < dim; j++) {
-                            for (int k = 0; k < dim; k++) {
-                              double randomNumber = randomNumberGenerator.nextDouble();
-                              data[index] = randomNumber;
-                              index += 2;
-                            }
-                          }
-                        }
-                      }
-                    });
-              } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.exit(-1);
-              }
-            }
-          });
-    } catch (Exception e) {
-      System.out.println(e.getMessage());
-      System.exit(-1);
+  }
+
+  /**
+   * Pack the FFTs for optimal use of SIMD instructions.
+   *
+   * @param packFFTs True to pack the FFTs.
+   */
+  public void setPackFFTs(boolean packFFTs) {
+    this.packFFTs = packFFTs;
+    for (int i = 0; i < threadCount; i++) {
+      fftXY[i].setPackFFTs(packFFTs);
     }
-    double toSeconds = 0.000000001;
-    long parTime = Long.MAX_VALUE;
-    long seqTime = Long.MAX_VALUE;
-    complexDoubleFFT3D.setRecip(work);
-    parallelComplexDoubleFFT3D.setRecip(work);
-    for (int i = 0; i < reps; i++) {
-      System.out.printf("Iteration %d%n", i + 1);
-      long time = System.nanoTime();
-      complexDoubleFFT3D.fft(data);
-      complexDoubleFFT3D.ifft(data);
-      time = (System.nanoTime() - time);
-      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
-      if (time < seqTime) {
-        seqTime = time;
-      }
-      time = System.nanoTime();
-      complexDoubleFFT3D.convolution(data);
-      time = (System.nanoTime() - time);
-      System.out.printf("Sequential: %8.3f (Convolution)%n", toSeconds * time);
-      if (time < seqTime) {
-        seqTime = time;
-      }
-      time = System.nanoTime();
-      parallelComplexDoubleFFT3D.fft(data);
-      parallelComplexDoubleFFT3D.ifft(data);
-      time = (System.nanoTime() - time);
-      System.out.printf("Parallel:   %8.3f%n", toSeconds * time);
-      if (time < parTime) {
-        parTime = time;
-      }
-      time = System.nanoTime();
-      parallelComplexDoubleFFT3D.convolution(data);
-      time = (System.nanoTime() - time);
-      System.out.printf("Parallel:   %8.3f (Convolution)\n%n", toSeconds * time);
-      if (time < parTime) {
-        parTime = time;
-      }
-    }
-    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
-    System.out.printf("Best Parallel Time:    %8.3f%n", toSeconds * parTime);
-    System.out.printf("Speedup: %15.5f%n", (double) seqTime / parTime);
-    parallelTeam.shutdown();
   }
 
   /**
@@ -290,8 +453,13 @@ public class Complex3DParallel {
     }
   }
 
-  public long[] getTimings() {
-    return convolutionTime;
+  /**
+   * Get the timings for each thread.
+   *
+   * @return The timings for each thread.
+   */
+  public long[] getTiming() {
+    return convRegion.getTiming();
   }
 
   /**
@@ -311,10 +479,19 @@ public class Complex3DParallel {
     }
   }
 
+  /**
+   * Initialize the timing array.
+   */
   public void initTiming() {
-    for (int i = 0; i < threadCount; i++) {
-      convolutionTime[i] = 0;
-    }
+    convRegion.initTiming();
+  }
+
+  /**
+   * Get the timing string.
+   * @return The timing string.
+   */
+  public String timingString() {
+    return convRegion.timingString();
   }
 
   /**
@@ -323,14 +500,23 @@ public class Complex3DParallel {
    * @param recip an array of double.
    */
   public void setRecip(double[] recip) {
-    int offset, y, x, z, i;
-
-    // Reorder the reciprocal space data into the order it is needed by the convolution routine.
+    // Reorder the reciprocal space data for convolution.
+    // Input
+    // trNextY = ii
+    // trNextZ = nY*ii
+    // real[y, z] = work[y*trNextY + z*trNextZ]
+    // imag[y, z] = work[y*trNextY + z*trNextZ + internalImZ]
+    int recipNextY = nX;
+    int recipNextZ = nY * nX;
     int index = 0;
-    for (offset = 0, y = 0; y < nY; y++) {
-      for (x = 0; x < nX; x++, offset += 1) {
-        for (i = 0, z = offset; i < nZ2; i += 2, z += nX * nY) {
-          this.recip[index++] = recip[z];
+    for (int x = 0; x < nX; x++) {
+      int dx = x;
+      for (int z = 0; z < nZ; z++) {
+        int dz = dx + z * recipNextZ;
+        for (int y = 0; y < nY; y++) {
+          int conv = y * recipNextY + dz;
+          this.recip[index] = recip[conv];
+          index++;
         }
       }
     }
@@ -351,6 +537,8 @@ public class Complex3DParallel {
 
     private final FFTXYLoop[] fftXYLoop;
     private final FFTZLoop[] fftZLoop;
+    private final TransposeLoop[] transposeLoop;
+    private final UnTransposeLoop[] unTransposeLoop;
 
     private FFTRegion() {
       fftXYLoop = new FFTXYLoop[threadCount];
@@ -359,14 +547,32 @@ public class Complex3DParallel {
         fftXYLoop[i] = new FFTXYLoop();
         fftZLoop[i] = new FFTZLoop();
       }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
+      }
     }
 
     @Override
     public void run() {
       int threadIndex = getThreadIndex();
       try {
-        execute(0, nZm1, fftXYLoop[threadIndex]);
-        execute(0, nXm1, fftZLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, fftZLoop[threadIndex]);
+        } else {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, fftZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
@@ -388,6 +594,8 @@ public class Complex3DParallel {
 
     private final IFFTXYLoop[] ifftXYLoop;
     private final IFFTZLoop[] ifftZLoop;
+    private final TransposeLoop[] transposeLoop;
+    private final UnTransposeLoop[] unTransposeLoop;
 
     private IFFTRegion() {
       ifftXYLoop = new IFFTXYLoop[threadCount];
@@ -396,14 +604,32 @@ public class Complex3DParallel {
         ifftXYLoop[i] = new IFFTXYLoop();
         ifftZLoop[i] = new IFFTZLoop();
       }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
+      }
     }
 
     @Override
     public void run() {
       int threadIndex = getThreadIndex();
       try {
-        execute(0, nXm1, ifftZLoop[threadIndex]);
-        execute(0, nZm1, ifftXYLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nXm1, ifftZLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        } else {
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, ifftZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
@@ -425,49 +651,148 @@ public class Complex3DParallel {
   private class ConvolutionRegion extends ParallelRegion {
 
     private final FFTXYLoop[] fftXYLoop;
+    private final TransposeLoop[] transposeLoop;
     private final FFTZIZLoop[] fftZIZLoop;
+    private final UnTransposeLoop[] unTransposeLoop;
     private final IFFTXYLoop[] ifftXYLoop;
+    private final long[] convTime;
 
     private ConvolutionRegion() {
       fftXYLoop = new FFTXYLoop[threadCount];
       fftZIZLoop = new FFTZIZLoop[threadCount];
       ifftXYLoop = new IFFTXYLoop[threadCount];
+      convTime = new long[threadCount];
       for (int i = 0; i < threadCount; i++) {
         fftXYLoop[i] = new FFTXYLoop();
         fftZIZLoop[i] = new FFTZIZLoop();
         ifftXYLoop[i] = new IFFTXYLoop();
       }
+      if (!localZTranspose) {
+        transposeLoop = new TransposeLoop[threadCount];
+        unTransposeLoop = new UnTransposeLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i] = new TransposeLoop();
+          unTransposeLoop[i] = new UnTransposeLoop();
+        }
+      } else {
+        transposeLoop = null;
+        unTransposeLoop = null;
+      }
+    }
+
+    public void initTiming() {
+      for (int i = 0; i < threadCount; i++) {
+        fftXYLoop[i].time = 0;
+        fftZIZLoop[i].time = 0;
+        ifftXYLoop[i].time = 0;
+      }
+      if (!localZTranspose) {
+        for (int i = 0; i < threadCount; i++) {
+          transposeLoop[i].time = 0;
+          unTransposeLoop[i].time = 0;
+        }
+      }
+    }
+
+    public long[] getTiming() {
+      if (localZTranspose) {
+        for (int i = 0; i < threadCount; i++) {
+          convTime[i] = convRegion.fftXYLoop[i].time
+              + convRegion.fftZIZLoop[i].time
+              + convRegion.ifftXYLoop[i].time;
+        }
+      } else {
+        for (int i = 0; i < threadCount; i++) {
+          convTime[i] = convRegion.fftXYLoop[i].time
+              + convRegion.transposeLoop[i].time
+              + convRegion.fftZIZLoop[i].time
+              + convRegion.unTransposeLoop[i].time
+              + convRegion.ifftXYLoop[i].time;
+        }
+      }
+      return convTime;
+    }
+
+    public String timingString() {
+      StringBuilder sb = new StringBuilder();
+      if (localZTranspose) {
+        double xysum = 0.0;
+        double zizsum = 0.0;
+        double ixysum = 0.0;
+        for (int i = 0; i < threadCount; i++) {
+          double fftxy = fftXYLoop[i].getTime() * 1e-9;
+          double ziz = fftZIZLoop[i].getTime() * 1e-9;
+          double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
+          String s = format("  Thread %3d: FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
+              i, fftxy, ziz, ifftxy);
+          sb.append(s);
+          xysum += fftxy;
+          zizsum += ziz;
+          ixysum += ifftxy;
+        }
+        String s = format("  Sum       : FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
+            xysum, zizsum, ixysum);
+        sb.append(s);
+      } else {
+        double xysum = 0.0;
+        double transsum = 0.0;
+        double zizsum = 0.0;
+        double untranssum = 0.0;
+        double ixysum = 0.0;
+        for (int i = 0; i < threadCount; i++) {
+          double fftxy = fftXYLoop[i].getTime() * 1e-9;
+          double trans = transposeLoop[i].getTime() * 1e-9;
+          double ziz = fftZIZLoop[i].getTime() * 1e-9;
+          double untrans = unTransposeLoop[i].getTime() * 1e-9;
+          double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
+          String s = format("  Thread %3d: FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
+              i, fftxy, trans, ziz, untrans, ifftxy);
+          sb.append(s);
+          xysum += fftxy;
+          transsum += trans;
+          zizsum += ziz;
+          untranssum += untrans;
+          ixysum += ifftxy;
+        }
+        String s = format("  Sum       : FFTXY=%8.6f, Trans=%8.6f, FFTZIZ=%8.6f, UnTrans=%8.6f, IFFTXY=%8.6f\n",
+            xysum, transsum, zizsum, untranssum, ixysum);
+        sb.append(s);
+      }
+
+      return sb.toString();
     }
 
     @Override
     public void run() {
       int threadIndex = getThreadIndex();
-      convolutionTime[threadIndex] -= System.nanoTime();
       try {
-        execute(0, nZm1, fftXYLoop[threadIndex]);
-        execute(0, nYm1, fftZIZLoop[threadIndex]);
-        execute(0, nZm1, ifftXYLoop[threadIndex]);
+        if (localZTranspose) {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, fftZIZLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        } else {
+          execute(0, nZm1, fftXYLoop[threadIndex]);
+          execute(0, nXm1, transposeLoop[threadIndex]);
+          execute(0, nXm1, fftZIZLoop[threadIndex]);
+          execute(0, nZm1, unTransposeLoop[threadIndex]);
+          execute(0, nZm1, ifftXYLoop[threadIndex]);
+        }
       } catch (Exception e) {
         logger.severe(e.toString());
       }
-      convolutionTime[threadIndex] += System.nanoTime();
     }
   }
 
   private class FFTXYLoop extends IntegerForLoop {
 
-    private Complex localFFTX;
-    private Complex localFFTY;
+    private Complex2D localFFTXY;
+    private long time;
 
     @Override
     public void run(final int lb, final int ub) {
       for (int z = lb; z <= ub; z++) {
-        for (int offset = z * strideZ, y = 0; y < nY; y++, offset += strideY) {
-          localFFTX.fft(input, offset, strideX);
-        }
-        for (int offset = z * strideZ, x = 0; x < nX; x++, offset += strideX) {
-          localFFTY.fft(input, offset, strideY);
-        }
+        int offset = z * nextZ;
+        localFFTXY.fft(input, offset);
       }
     }
 
@@ -476,63 +801,81 @@ public class Complex3DParallel {
       return schedule;
     }
 
-    @Override
-    public void start() {
-      localFFTX = fftX[getThreadIndex()];
-      localFFTY = fftY[getThreadIndex()];
-    }
-  }
-
-  private class FFTZLoop extends IntegerForLoop {
-
-    private final double[] work;
-    private Complex localFFTZ;
-
-    private FFTZLoop() {
-      work = new double[nZ2];
+    public long getTime() {
+      return time;
     }
 
-    @Override
-    public void run(final int lb, final int ub) {
-      for (int x = lb, offset = lb * nY2; x <= ub; x++) {
-        for (int y = 0; y < nY; y++, offset += 2) {
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            work[i] = input[z];
-            work[i + 1] = input[z + 1];
-          }
-          localFFTZ.fft(work, 0, 2);
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            input[z] = work[i];
-            input[z + 1] = work[i + 1];
-          }
-        }
-      }
-    }
-
-    @Override
-    public IntegerSchedule schedule() {
-      return schedule;
+    public void finish() {
+      time += System.nanoTime();
     }
 
     @Override
     public void start() {
-      localFFTZ = fftZ[getThreadIndex()];
+      time -= System.nanoTime();
+      localFFTXY = fftXY[getThreadIndex()];
     }
   }
 
   private class IFFTXYLoop extends IntegerForLoop {
 
-    private Complex localFFTY;
-    private Complex localFFTX;
+    private Complex2D localFFTXY;
+    private long time;
 
     @Override
     public void run(final int lb, final int ub) {
       for (int z = lb; z <= ub; z++) {
-        for (int offset = z * strideZ, x = 0; x < nX; x++, offset += strideX) {
-          localFFTY.ifft(input, offset, strideY);
+        int offset = z * nextZ;
+        localFFTXY.ifft(input, offset);
+      }
+    }
+
+    @Override
+    public IntegerSchedule schedule() {
+      return schedule;
+    }
+
+    public long getTime() {
+      return time;
+    }
+
+    public void finish() {
+      time += System.nanoTime();
+    }
+
+    @Override
+    public void start() {
+      time -= System.nanoTime();
+      localFFTXY = fftXY[getThreadIndex()];
+    }
+  }
+
+  private class FFTZLoop extends IntegerForLoop {
+
+    private Complex localFFTZ;
+    private long time;
+    private final double[] work;
+
+    private FFTZLoop() {
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
+    }
+
+    @Override
+    public void run(final int lb, final int ub) {
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.fft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
         }
-        for (int offset = z * strideZ, y = 0; y < nY; y++, offset += strideY) {
-          localFFTX.ifft(input, offset, strideX);
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          int offset = x * nY * nZ * ii;
+          localFFTZ.fft(work3D, offset, ii);
         }
       }
     }
@@ -542,35 +885,50 @@ public class Complex3DParallel {
       return schedule;
     }
 
+    public long getTime() {
+      return time;
+    }
+
+    @Override
+    public void finish() {
+      time += System.nanoTime();
+    }
+
     @Override
     public void start() {
-      localFFTX = fftX[getThreadIndex()];
-      localFFTY = fftY[getThreadIndex()];
+      time -= System.nanoTime();
+      int threadID = getThreadIndex();
+      localFFTZ = fftZ[threadID];
     }
   }
 
   private class IFFTZLoop extends IntegerForLoop {
 
-    private final double[] work;
     private Complex localFFTZ;
+    private long time;
+    private final double[] work;
 
     private IFFTZLoop() {
-      work = new double[nZ2];
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
     }
 
     @Override
     public void run(final int lb, final int ub) {
-      for (int offset = lb * nY2, x = lb; x <= ub; x++) {
-        for (int y = 0; y < nY; y++, offset += 2) {
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            work[i] = input[z];
-            work[i + 1] = input[z + 1];
-          }
-          localFFTZ.ifft(work, 0, 2);
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            input[z] = work[i];
-            input[z + 1] = work[i + 1];
-          }
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.ifft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
+        }
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          int offset = x * nY * nZ * ii;
+          localFFTZ.ifft(work3D, offset, ii);
         }
       }
     }
@@ -580,41 +938,57 @@ public class Complex3DParallel {
       return schedule;
     }
 
+    public long getTime() {
+      return time;
+    }
+
+    @Override
+    public void finish() {
+      time += System.nanoTime();
+    }
+
     @Override
     public void start() {
-      localFFTZ = fftZ[getThreadIndex()];
+      time -= System.nanoTime();
+      int threadID = getThreadIndex();
+      localFFTZ = fftZ[threadID];
     }
   }
 
   private class FFTZIZLoop extends IntegerForLoop {
 
-    private final double[] work;
     private Complex localFFTZ;
+    private long time;
+    private final double[] work;
 
     private FFTZIZLoop() {
-      work = new double[nZ2];
+      if (localZTranspose) {
+        work = new double[2 * nY * nZ];
+      } else {
+        work = null;
+      }
     }
 
     @Override
     public void run(final int lb, final int ub) {
-      int index = nX * nZ * lb;
-      for (int offset = lb * strideY, y = lb; y <= ub; y++) {
-        for (int x = 0; x < nX; x++, offset += 2) {
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            work[i] = input[z];
-            work[i + 1] = input[z + 1];
-          }
-          localFFTZ.fft(work, 0, 2);
-          for (int i = 0; i < nZ2; i += 2) {
-            double r = recip[index++];
-            work[i] *= r;
-            work[i + 1] *= r;
-          }
-          localFFTZ.ifft(work, 0, 2);
-          for (int i = 0, z = offset; i < nZ2; i += 2, z += strideZ) {
-            input[z] = work[i];
-            input[z + 1] = work[i + 1];
-          }
+      if (localZTranspose) {
+        for (int x = lb; x <= ub; x++) {
+          int inputOffset = x * nextX;
+          transpose(input, inputOffset, work, 0);
+          localFFTZ.fft(work, 0, ii);
+          int recipOffset = x * nY * nZ;
+          recipConv(recipOffset, work, 0);
+          localFFTZ.ifft(work, 0, ii);
+          unTranspose(input, inputOffset, work, 0);
+        }
+      } else {
+        for (int x = lb; x <= ub; x++) {
+          // Offset into the work3D array.
+          int offset = x * nY * nZ * ii;
+          localFFTZ.fft(work3D, offset, ii);
+          int recipOffset = x * nY * nZ;
+          recipConv(recipOffset, work3D, offset);
+          localFFTZ.ifft(work3D, offset, ii);
         }
       }
     }
@@ -624,9 +998,356 @@ public class Complex3DParallel {
       return schedule;
     }
 
+    public long getTime() {
+      return time;
+    }
+
+    public void finish() {
+      time += System.nanoTime();
+    }
+
     @Override
     public void start() {
-      localFFTZ = fftZ[getThreadIndex()];
+      time -= System.nanoTime();
+      int threadID = getThreadIndex();
+      localFFTZ = fftZ[threadID];
     }
+  }
+
+  /**
+   * The input data order is X,Y,Z (X varies most quickly)
+   * real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
+   * imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
+   * The output data order is Y,Z,X (Y varies most quickly)
+   * real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
+   * imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
+   */
+  private class TransposeLoop extends IntegerForLoop {
+
+    private long time;
+
+    @Override
+    public void run(final int lb, final int ub) {
+      for (int x = lb; x <= ub; x++) {
+        for (int z = 0; z < nZ; z++) {
+          for (int y = 0; y < nY; y++) {
+            double real = input[x * nextX + y * nextY + z * nextZ];
+            double imag = input[x * nextX + y * nextY + z * nextZ + im];
+            work3D[y * trNextY + z * trNextZ + x * trNextX] = real;
+            work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ] = imag;
+          }
+        }
+      }
+    }
+
+    /**
+     * Use a fixed schedule to minimize cache interference.
+     *
+     * @return A fixed IntegerSchedule.
+     */
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
+    }
+
+    public long getTime() {
+      return time;
+    }
+
+    @Override
+    public void finish() {
+      time += System.nanoTime();
+    }
+
+    @Override
+    public void start() {
+      time -= System.nanoTime();
+    }
+  }
+
+  /**
+   * The transposed input data order is Y,Z,X (Y varies most quickly)
+   * real[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX]
+   * imag[x, y, z] = input[y*trNextY + z*trNextZ + x*trNextX + im]
+   * <p>
+   * The output data order is X,Y,Z (X varies most quickly)
+   * real[x, y, z] = input[x*nextX + y*nextY + z*nextZ]
+   * imag[x, y, z] = input[x*nextX + y*nextY + z*nextZ + im]
+   */
+  private class UnTransposeLoop extends IntegerForLoop {
+
+    private long time;
+
+    @Override
+    public void run(final int lb, final int ub) {
+      for (int x = 0; x < nX; x++) {
+        for (int y = 0; y < nY; y++) {
+          for (int z = lb; z <= ub; z++) {
+            double real = work3D[y * trNextY + z * trNextZ + x * trNextX];
+            double imag = work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ];
+            input[x * nextX + y * nextY + z * nextZ] = real;
+            input[x * nextX + y * nextY + z * nextZ + im] = imag;
+          }
+        }
+      }
+    }
+
+    /**
+     * Use a dynamic schedule to account mitigate latency reading from the work array.
+     *
+     * @return A dynamic IntegerSchedule.
+     */
+    @Override
+    public IntegerSchedule schedule() {
+      return IntegerSchedule.fixed();
+    }
+
+    public long getTime() {
+      return time;
+    }
+
+    @Override
+    public void finish() {
+      time += System.nanoTime();
+    }
+
+    @Override
+    public void start() {
+      time -= System.nanoTime();
+    }
+  }
+
+  /**
+   * Perform a multiplication by the reciprocal space data.
+   *
+   * @param recipOffset The offset into the reciprocal space data (x * nY * nZ).
+   * @param work        The input array.
+   * @param workOffset  The offset into the data array (x * nY * nZ * ii).
+   */
+  private void recipConv(int recipOffset, double[] work, int workOffset) {
+    int index = workOffset;
+    int rindex = recipOffset;
+    for (int i = 0; i < nY * nZ; i++) {
+      double r = recip[rindex++];
+      work[index] *= r;
+      work[index + internalImZ] *= r;
+      index += ii;
+    }
+  }
+
+  /**
+   * Load the Y-Z plane at fixed X into the work array.
+   *
+   * @param input        The input array.
+   * @param inputOffset  The input offset (typically x * nextX).
+   * @param output       The output array.
+   * @param outputOffset The output offset (typically zero).
+   */
+  private void transpose(double[] input, int inputOffset, double[] output, int outputOffset) {
+    // Typically the inputOffset is x * nextX.
+    // Typically the outputOffset is 0.
+    for (int z = 0; z < nZ; z++) {
+      for (int y = 0; y < nY; y++) {
+        double real = input[inputOffset + y * nextY + z * nextZ];
+        double imag = input[inputOffset + y * nextY + z * nextZ + im];
+        output[outputOffset + y * trNextY + z * trNextZ] = real;
+        output[outputOffset + y * trNextY + z * trNextZ + internalImZ] = imag;
+      }
+    }
+  }
+
+  /**
+   * Load the Y-Z plane at fixed X back into the input array.
+   *
+   * @param input        The input array.
+   * @param inputOffset  The input offset (typically x * nextX).
+   * @param output       The output array.
+   * @param outputOffset The output offset (typically zero).
+   */
+  private void unTranspose(double[] input, int inputOffset, double[] output, int outputOffset) {
+    // Typically the inputOffset is x * nextX.
+    // Typically the outputOffset is 0.
+    for (int z = 0; z < nZ; z++) {
+      for (int y = 0; y < nY; y++) {
+        double real = output[outputOffset + y * trNextY + z * trNextZ];
+        double imag = output[outputOffset + y * trNextY + z * trNextZ + internalImZ];
+        input[inputOffset + y * nextY + z * nextZ] = real;
+        input[inputOffset + y * nextY + z * nextZ + im] = imag;
+      }
+    }
+  }
+
+  /**
+   * Initialize a 3D data for testing purposes.
+   *
+   * @param dim          The dimension of the cube.
+   * @param parallelTeam The parallel team.
+   * @return The 3D data.
+   * @since 1.0
+   */
+  public static double[] initRandomData(int dim, ParallelTeam parallelTeam) {
+    int n = dim * dim * dim;
+    double[] data = new double[2 * n];
+    try {
+      parallelTeam.execute(
+          new ParallelRegion() {
+            @Override
+            public void run() {
+              try {
+                execute(
+                    0,
+                    dim - 1,
+                    new IntegerForLoop() {
+                      @Override
+                      public void run(final int lb, final int ub) {
+                        Random randomNumberGenerator = new Random(1);
+                        int index = dim * dim * lb * 2;
+                        for (int i = lb; i <= ub; i++) {
+                          for (int j = 0; j < dim; j++) {
+                            for (int k = 0; k < dim; k++) {
+                              double randomNumber = randomNumberGenerator.nextDouble();
+                              data[index] = randomNumber;
+                              index += 2;
+                            }
+                          }
+                        }
+                      }
+                    });
+              } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.exit(-1);
+              }
+            }
+          });
+    } catch (Exception e) {
+      System.out.println(e.getMessage());
+      System.exit(-1);
+    }
+    return data;
+  }
+
+  /**
+   * Test the Complex3DParallel FFT.
+   *
+   * @param args an array of {@link java.lang.String} objects.
+   * @throws java.lang.Exception if any.
+   * @since 1.0
+   */
+  public static void main(String[] args) throws Exception {
+    int dimNotFinal = 128;
+    int nCPU = ParallelTeam.getDefaultThreadCount();
+    int reps = 5;
+    boolean blocked = false;
+    try {
+      dimNotFinal = Integer.parseInt(args[0]);
+      if (dimNotFinal < 1) {
+        dimNotFinal = 100;
+      }
+      nCPU = Integer.parseInt(args[1]);
+      if (nCPU < 1) {
+        nCPU = ParallelTeam.getDefaultThreadCount();
+      }
+      reps = Integer.parseInt(args[2]);
+      if (reps < 1) {
+        reps = 5;
+      }
+      blocked = Boolean.parseBoolean(args[3]);
+    } catch (Exception e) {
+      //
+    }
+    final int dim = dimNotFinal;
+    System.out.printf("Initializing a %d cubed grid for %d CPUs.\n"
+            + "The best timing out of %d repetitions will be used.%n",
+        dim, nCPU, reps);
+    // One dimension of the serial array divided by the number of threads.
+    Complex3D complex3D;
+    Complex3DParallel complex3DParallel;
+    ParallelTeam parallelTeam = new ParallelTeam(nCPU);
+    if (blocked) {
+      complex3D = new Complex3D(dim, dim, dim, DataLayout3D.BLOCKED_X);
+      complex3DParallel = new Complex3DParallel(dim, dim, dim, parallelTeam, DataLayout3D.BLOCKED_X);
+    } else {
+      complex3D = new Complex3D(dim, dim, dim, DataLayout3D.INTERLEAVED);
+      complex3DParallel = new Complex3DParallel(dim, dim, dim, parallelTeam, DataLayout3D.INTERLEAVED);
+    }
+    final int dimCubed = dim * dim * dim;
+    final double[] data = initRandomData(dim, parallelTeam);
+    final double[] work = new double[dimCubed];
+    Arrays.fill(work, 1.0);
+
+    double toSeconds = 0.000000001;
+    long seqTime = Long.MAX_VALUE;
+    long parTime = Long.MAX_VALUE;
+    long seqTimeConv = Long.MAX_VALUE;
+    long parTimeConv = Long.MAX_VALUE;
+
+    complex3D.setRecip(work);
+    complex3DParallel.setRecip(work);
+
+    // Warm-up
+    System.out.println("Warm Up Sequential FFT");
+    complex3D.fft(data);
+    System.out.println("Warm Up Sequential IFFT");
+    complex3D.ifft(data);
+    System.out.println("Warm Up Sequential Convolution");
+    complex3D.convolution(data);
+    for (int i = 0; i < reps; i++) {
+      System.out.printf(" Iteration %d%n", i + 1);
+      long time = System.nanoTime();
+      complex3D.fft(data);
+      complex3D.ifft(data);
+      time = (System.nanoTime() - time);
+      System.out.printf("  Sequential FFT:  %9.6f (sec)%n", toSeconds * time);
+      if (time < seqTime) {
+        seqTime = time;
+      }
+      time = System.nanoTime();
+      complex3D.convolution(data);
+      time = (System.nanoTime() - time);
+      System.out.printf("  Sequential Conv: %9.6f (sec)%n", toSeconds * time);
+      if (time < seqTimeConv) {
+        seqTimeConv = time;
+      }
+    }
+
+    // Warm-up
+    System.out.println("Warm up Parallel FFT");
+    complex3DParallel.fft(data);
+    System.out.println("Warm up Parallel IFFT");
+    complex3DParallel.ifft(data);
+    System.out.println("Warm up Parallel Convolution");
+    complex3DParallel.convolution(data);
+    complex3DParallel.initTiming();
+
+    for (int i = 0; i < reps; i++) {
+      System.out.printf(" Iteration %d%n", i + 1);
+      long time = System.nanoTime();
+      complex3DParallel.fft(data);
+      complex3DParallel.ifft(data);
+      time = (System.nanoTime() - time);
+      System.out.printf("  Parallel FFT:  %9.6f (sec)%n", toSeconds * time);
+      if (time < parTime) {
+        parTime = time;
+      }
+
+      time = System.nanoTime();
+      complex3DParallel.convolution(data);
+      time = (System.nanoTime() - time);
+      System.out.printf("  Parallel Conv: %9.6f (sec)%n", toSeconds * time);
+      if (time < parTimeConv) {
+        parTimeConv = time;
+      }
+    }
+
+    System.out.printf(" Best Sequential FFT Time:   %9.6f (sec)%n", toSeconds * seqTime);
+    System.out.printf(" Best Sequential Conv. Time: %9.6f (sec)%n", toSeconds * seqTimeConv);
+    System.out.printf(" Best Parallel FFT Time:     %9.6f (sec)%n", toSeconds * parTime);
+    System.out.printf(" Best Parallel Conv. Time:   %9.6f (sec)%n", toSeconds * parTimeConv);
+    System.out.printf(" 3D FFT Speedup:             %9.6f X%n", (double) seqTime / parTime);
+    System.out.printf(" 3D Conv Speedup:            %9.6f X%n", (double) seqTimeConv / parTimeConv);
+
+    System.out.printf(" Parallel Convolution Timings:\n" + complex3DParallel.timingString());
+
+    parallelTeam.shutdown();
   }
 }

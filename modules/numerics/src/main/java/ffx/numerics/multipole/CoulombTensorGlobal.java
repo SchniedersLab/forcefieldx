@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static ffx.numerics.multipole.MultipoleUtilities.lmn;
+import static ffx.numerics.multipole.MultipoleUtilities.rlmn;
+import static ffx.numerics.multipole.MultipoleUtilities.term;
 import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -60,8 +63,8 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * @param order The order of the tensor.
    */
   public CoulombTensorGlobal(int order) {
-    super(COORDINATES.GLOBAL, order);
-    operator = OPERATOR.COULOMB;
+    super(CoordinateSystem.GLOBAL, order);
+    operator = Operator.COULOMB;
   }
 
   /**
@@ -137,15 +140,15 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     double term0002 = work[2];
     R000 = term0000;
     R100 = x * term0001;
+    R010 = y * term0001;
+    R001 = z * term0001;
     double term1001 = x * term0002;
     R200 = fma(x, term1001, term0001);
-    R010 = y * term0001;
     double term0101 = y * term0002;
     R020 = fma(y, term0101, term0001);
-    R110 = y * term1001;
-    R001 = z * term0001;
     double term0011 = z * term0002;
     R002 = fma(z, term0011, term0001);
+    R110 = y * term1001;
     R011 = z * term0101;
     R101 = z * term1001;
   }
@@ -1838,8 +1841,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * {@inheritDoc}
    */
   @Override
-  protected double Tlmnj(
-      final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
+  protected double Tlmnj(final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
     if (m == 0 && n == 0) {
       if (l > 1) {
         return r[0] * Tlmnj(l - 1, 0, 0, j + 1, r, T000)
@@ -2042,8 +2044,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * tensor[0] = 1/|r| <br> tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
    * <br>
    *
-   * <p>
-   *
    * @since 1.0
    */
   @Override
@@ -2230,4 +2230,189 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
     return sb.toString();
   }
+
+  /**
+   * Return the passed String if order < 0 or order == l + m + n.
+   *
+   * @param order The order to filter on.
+   * @param l     The number of d/dX derivatives.
+   * @param m     The number of d/dY derivatives.
+   * @param n     The number of d/dZ derivatives.
+   * @param ret   The String to return.
+   * @return The passed String or an empty String.
+   */
+  private static String store(int order, int l, int m, int n, String ret) {
+    if (order < 0 || l + m + n == order) {
+      return ret;
+    } else {
+      return "";
+    }
+  }
+
+  /**
+   * Return the passed String if order < 0 or order == l + m + n + j.
+   *
+   * @param order The order to filter on.
+   * @param l     The number of d/dX derivatives.
+   * @param m     The number of d/dY derivatives.
+   * @param n     The number of d/dZ derivatives.
+   * @param j     The auxiliary order.
+   * @param ret   The String to return.
+   * @return The passed String or an empty String.
+   */
+  private static String emit(int order, int l, int m, int n, int j, String ret) {
+    if (order < 0 || l + m + n + j == order) {
+      return ret;
+    } else {
+      return "";
+    }
+  }
+
+  /**
+   * Emit code to calculate the Cartesian multipole tensor using SIMD vectorization.
+   *
+   * @return the code to calculate the Cartesian multipole tensor using SIMD vectorization.
+   */
+  protected String codeVectorTensorRecursion() {
+    return codeVectorTensorRecursion(-1);
+  }
+
+  /**
+   * Emit code to calculate the Cartesian multipole tensor using SIMD vectorization.
+   *
+   * @param order The order of the multipole expansion.
+   * @return the code to calculate the Cartesian multipole tensor using SIMD vectorization.
+   */
+  protected String codeVectorTensorRecursion(int order) {
+    StringBuilder sb = new StringBuilder();
+
+    int lmn = 0;
+    String s = format("%s.intoArray(t, T%s);\n", term(0, 0, 0, 0), lmn(0, 0, 0));
+    sb.append(store(order, 0, 0, 0, s));
+    if (order == lmn) {
+      return sb.toString();
+    }
+
+    // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
+    // Any (d/dx) term can be formed as
+    // Tl00j = x * T(l-1)00(j+1) + (l-1) * T(l-2)00(j+1)
+    // All intermediate terms are indexed as l*il + m*im + n*in + j;
+    // Store the l=1 tensor T100 (d/dx)
+    s = format("x.mul(%s).intoArray(t, T%s);\n", term(0, 0, 0, 1), lmn(1, 0, 0));
+    sb.append(store(order, 1, 0, 0, s));
+    // Starting the loop at l=2 avoids an if statement.
+    for (int l = 2; l < o1; l++) {
+      // Initial condition for the inner loop is formation of T100(l-1).
+      // Starting the inner loop at a=2 avoid an if statement.
+      // T100(l-1) = x * T000(l)
+      s = format("DoubleVector %s = x.mul(%s);\n", term(1, 0, 0, l - 1), term(0, 0, 0, l));
+      sb.append(emit(order, 1, 0, 0, l - 1, s));
+      for (int a = 1; a < l - 1; a++) {
+        // T200(l-2) = x * T100(l-1) + (2 - 1) * T000(l-1)
+        // T300(l-3) = x * T200(l-2) + (3 - 1) * T100(l-2)
+        // ...
+        // T(l-1)001 = x * T(l-2)002 + (l - 2) * T(l-3)002
+        if (a > 1) {
+          s = format("DoubleVector %s = x.fma(%s, %s.mul(%d));\n",
+              term(a + 1, 0, 0, l - a - 1), term(a, 0, 0, l - a), term(a - 1, 0, 0, l - a), a);
+        } else {
+          s = format("DoubleVector %s = x.fma(%s, %s);\n",
+              term(a + 1, 0, 0, l - a - 1), term(a, 0, 0, l - a), term(0, 0, 0, l - a));
+        }
+        sb.append(emit(order, a + 1, 0, 0, l - a - 1, s));
+      }
+      // Store the Tl00 tensor (d/dx)^l
+      // Tl00 = x * [[ T(l-1)001 ]] + (l - 1) * T(l-2)001
+      if (l > 2) {
+        s = format("x.fma(%s, %s.mul(%d)).intoArray(t, T%s);\n",
+            term(l - 1, 0, 0, 1), term(l - 2, 0, 0, 1), (l - 1), lmn(l, 0, 0));
+      } else {
+        s = format("x.fma(%s, %s).intoArray(t, T%s);\n",
+            term(l - 1, 0, 0, 1), term(0, 0, 0, 1), lmn(l, 0, 0));
+      }
+      sb.append(store(order, l, 0, 0, s));
+    }
+    // Find (d/dx)^l * (d/dy)^m for l+m = 1..order (m > 0, n = 0)
+    // Any (d/dy) term can be formed as:
+    // Tlm0j = y * Tl(m-1)00(j+1) + (m-1) * Tl(m-2)00(j+1)
+    for (int l = 0; l < order; l++) {
+      // Store the m=1 tensor (d/dx)^l *(d/dy)
+      // Tl10 = y * Tl001
+      s = format("y.mul(%s).intoArray(t, T%s);\n", term(l, 0, 0, 1), lmn(l, 1, 0));
+      sb.append(store(order, l, 1, 0, s));
+      for (int m = 2; m + l < o1; m++) {
+        // Tl10(m-1) = y * Tl00m;
+        s = format("DoubleVector %s = y.mul(%s);\n", term(l, 1, 0, m - 1), term(l, 0, 0, m));
+        sb.append(emit(order, l, 1, 0, m - 1, s));
+        for (int a = 1; a < m - 1; a++) {
+          // Tl20(m-2) = Y * Tl10(m-1) + (2 - 1) * T100(m-1)
+          // Tl30(m-3) = Y * Tl20(m-2) + (3 - 1) * Tl10(m-2)
+          // ...
+          // Tl(m-1)01 = Y * Tl(m-2)02 + (m - 2) * T(m-3)02
+          if (a > 1) {
+            s = format("DoubleVector %s = y.fma(%s, %s.mul(%d));\n",
+                term(l, a + 1, 0, m - a - 1), term(l, a, 0, m - a), term(l, a - 1, 0, m - a), a);
+
+          } else {
+            s = format("DoubleVector %s = y.fma(%s, %s);\n",
+                term(l, a + 1, 0, m - a - 1), term(l, a, 0, m - a), term(l, 0, 0, m - a));
+          }
+          sb.append(emit(order, l, a + 1, 0, m - a - 1, s));
+        }
+        // Store the tensor (d/dx)^l * (d/dy)^m
+        // Tlm0 = y * Tl(m-1)01 + (m - 1) * Tl(m-2)01
+        if (m > 2) {
+          s = format("y.fma(%s, %s.mul(%d)).intoArray(t, T%s);\n",
+              term(l, m - 1, 0, 1), term(l, m - 2, 0, 1), (m - 1), lmn(l, m, 0));
+        } else {
+          s = format("y.fma(%s, %s).intoArray(t, T%s);\n",
+              term(l, m - 1, 0, 1), term(l, m - 2, 0, 1), lmn(l, m, 0));
+        }
+        sb.append(store(order, l, m, 0, s));
+      }
+    }
+    // Find (d/dx)^l * (d/dy)^m * (d/dz)^n for l+m+n = 1..order (n > 0)
+    // Any (d/dz) term can be formed as:
+    // Tlmnj = z * Tlm(n-1)(j+1) + (n-1) * Tlm(n-2)(j+1)
+    for (int l = 0; l < order; l++) {
+      for (int m = 0; m + l < order; m++) {
+        // Store the n=1 tensor (d/dx)^l *(d/dy)^m * (d/dz)
+        // Tlmn = z * Tlm01
+        s = format("z.mul(%s).intoArray(t, T%s);\n", term(l, m, 0, 1), lmn(l, m, 1));
+        sb.append(store(order, l, m, 1, s));
+        for (int n = 2; m + l + n < o1; n++) {
+          // Tlm1(n-1) = z * Tlm0n;
+          s = format("DoubleVector %s = z.mul(%s);\n", term(l, m, 1, n - 1), term(l, m, 0, n));
+          sb.append(emit(order, l, m, 1, n - 1, s));
+          final int n1 = n - 1;
+          for (int a = 1; a < n1; a++) {
+            // Tlm2(n-2) = z * Tlm1(n-1) + (2 - 1) * T1m0(n-1)
+            // Tlm3(n-3) = z * Tlm2(n-2) + (3 - 1) * Tlm1(n-2)
+            // ...
+            // Tlm(n-1)1 = z * Tlm(n-2)2 + (n - 2) * Tlm(n-3)2
+            if (a > 1) {
+              s = format("DoubleVector %s = z.fma(%s, %s.mul(%d));\n",
+                  term(l, m, a + 1, n - a - 1), term(l, m, a, n - a), term(l, m, a - 1, n - a), a);
+            } else {
+              s = format("DoubleVector %s = z.fma(%s, %s);\n",
+                  term(l, m, a + 1, n - a - 1), term(l, m, a, n - a), term(l, m, 0, n - a));
+            }
+            sb.append(emit(order, l, m, a + 1, n - a - 1, s));
+          }
+          // Store the tensor (d/dx)^l * (d/dy)^m * (d/dz)^n
+          // Tlmn = z * Tlm(n-1)1 + (n - 1) * Tlm(n-2)1
+          if (n > 2) {
+            s = format("z.fma(%s, %s.mul(%d)).intoArray(t, T%s);\n",
+                term(l, m, n - 1, 1), term(l, m, n - 2, 1), (n - 1), lmn(l, m, n));
+          } else {
+            s = format("z.fma(%s, %s).intoArray(t, T%s);\n",
+                term(l, m, n - 1, 1), term(l, m, n - 2, 1), lmn(l, m, n));
+          }
+          sb.append(store(order, l, m, n, s));
+        }
+      }
+    }
+    return sb.toString();
+  }
+
 }

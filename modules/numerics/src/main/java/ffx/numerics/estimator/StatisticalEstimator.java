@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,9 @@ package ffx.numerics.estimator;
 
 /**
  * The StatisticalEstimator interface defines a free energy estimator in the most generic sense.
- * Implementations should generally perform their estimation when constructed.
+ * Implementations should generally perform their estimation during initialization.
+ *
+ * <p>All energy values are typically expressed in units consistent with the software (e.g., kcal/mol).</p>
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -48,45 +50,52 @@ package ffx.numerics.estimator;
 public interface StatisticalEstimator {
 
   /**
-   * Gets the free energy change per bin/window.
+   * Gets the free energy difference between each pair of states.
    *
-   * @return Individual bin/window free energy changes.
+   * @return Array of free energy differences between states.
    */
-  double[] getBinEnergies();
+  double[] getFreeEnergyDifferences();
 
   /**
-   * Gets the uncertainty in free energy associated with each bin/window.
+   * Gets the uncertainty in free energy difference between each pair of states.
    *
-   * @return Individual bin/window uncertainties.
+   * @return Array of uncertainties in the free energy differences.
    */
-  double[] getBinUncertainties();
+  double[] getFEDifferenceUncertainties();
 
   /**
-   * Returns the estimated free energy (usually in kcal/mol).
+   * Returns the total free energy difference between the first and last state.
    *
-   * @return Free energy estimate.
+   * @return Total free energy difference estimate.
    */
-  double getFreeEnergy();
+  double getTotalFreeEnergyDifference();
 
   /**
-   * Returns the uncertainty in the free energy estimate.
+   * Returns the total uncertainty in the computed free energy difference between the first and last state.
    *
-   * @return Uncertainty in the free energy estimate.
+   * @return Total uncertainty in the free energy difference.
    */
-  double getUncertainty();
+  double getTotalFEDifferenceUncertainty();
 
   /**
    * Returns the number of windows (BAR, etc), bins (WHAM, etc), or other sub-values used to compute
-   * free energy.
+   * the total free energy difference.
    *
-   * @return Total number of sub-values used to compute free energy.
+   * @return Total number of windows used to compute the total free energy difference.
    */
-  int numberOfBins();
+  int getNumberOfBins();
 
   /**
-   * Gets the enthalpy per bin/window.
+   * Gets the total enthalpy difference between the first and last state.
    *
-   * @return Individual bin/window enthalpy.
+   * @return The enthalpy difference between each pair of states.
    */
-  double[] getBinEnthalpies();
+  double getTotalEnthalpyDifference();
+
+  /**
+   * Gets the enthalpy change between each pair of states.
+   *
+   * @return The enthalpy difference between each pair of states.
+   */
+  double[] getEnthalpyDifferences();
 }

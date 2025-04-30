@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -51,7 +51,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_resize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_set;
 
 /**
- * Bond Array.
+ * Bonds are specified by pairs of integers (the atom indices).
  */
 public class BondArray {
 

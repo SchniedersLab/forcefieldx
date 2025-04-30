@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -38,21 +38,17 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.ParallelTeam
+import ffx.algorithms.ParallelStateEnergy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.numerics.estimator.BennettAcceptanceRatio
-import ffx.numerics.estimator.EstimateBootstrapper
-import ffx.numerics.estimator.SequentialEstimator
-import ffx.numerics.math.BootStrapStatistics
+import ffx.numerics.estimator.FreeEnergyDifferenceReporter
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.BARFilter
 import ffx.potential.parsers.SystemFilter
-import ffx.utilities.Constants
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -60,8 +56,14 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import java.util.stream.Stream
+
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.min
 
 /**
  * The BAR script find the free energy difference across a lambda window. It presently assumes
@@ -81,6 +83,13 @@ class BAR extends AlgorithmsScript {
   @Mixin
   private TopologyOptions topology
 
+  /**
+   * --eb or --evaluateBARFiles Read in Tinker BAR files and evaluate the free energy difference.
+   */
+  @Option(names = ["--eb", "--evaluateBAR"], paramLabel = "false", defaultValue = "false",
+      description = "Evaluate Free Energy Differences from Tinker BAR files.")
+  private boolean evaluateBARFiles = false
+
   @Option(names = ["--l2", "--lambdaTwo"], paramLabel = "1.0",
       description = "Lambda value for the upper edge of the window")
   private double lambda2 = 1.0
@@ -93,92 +102,88 @@ class BAR extends AlgorithmsScript {
       description = "Write out snapshot volumes to the Tinker BAR file.")
   private boolean includeVolume = false
 
-  @Option(names = ["--tb", "--tinkerBAR"], paramLabel = "false",
-      description = "Write out a Tinker BAR file.")
-  private boolean tinkerBAR = false
-
-  @Option(names = ["--nw", "--nWindows"], paramLabel = "-1",
-      description = "If set, auto-determine lambda values and subdirectories (overrides other flags).")
-  private int nWindows = -1
-
-  @Option(names = ["--utb", "--useTinker"], paramLabel = "false",
-      description = "If set, use tinker BAR files for energy snapshots.")
-  private boolean useTinkerBAR = false
+  @Option(names = ["--ns", "--nStates"], paramLabel = "2",
+      description = "If not equal to two, auto-determine lambda values and subdirectories (overrides other flags).")
+  private int nStates = 2
 
   @Option(names = ["--sa", "--sortedArc"], paramLabel = "false",
       description = "If set, use sorted archive values.")
   private boolean sortedArc = false
 
   @Option(names = ["--ss", "--startSnapshot"], paramLabel = "0",
-      description = "Start at this snapshot when reading in tinker BAR files.")
+      description = "Start at this snapshot when reading in Tinker BAR files.")
   private int startingSnapshot = 0
 
   @Option(names = ["--es", "--endSnapshot"], paramLabel = "0",
-      description = "End at this snapshot when reading in tinker BAR files.")
+      description = "End at this snapshot when reading in Tinker BAR files.")
   private int endingSnapshot = 0
 
   /**
-   * The final argument(s) should be filenames for lambda windows in order.
+   * --ni or --nIterations Maximum number of allowable iterations for BAR calculation.
    */
-  @Parameters(arity = "1..*", paramLabel = "files",
+  @Option(names = ["--ni", "--nIterations"], paramLabel = "100",
+      description = "Specify the maximum number of iterations for BAR convergence.")
+  private int nIterations = 100
+
+  /**
+   * -e or --eps Convergence criterion for BAR iteration..
+   */
+  @Option(names = ["-e", "--eps"], paramLabel = "1.0E-7",
+      description = "Specify convergence cutoff for BAR calculation.")
+  private double eps = 1.0E-7
+
+  /**
+   * The final argument(s) can filenames for lambda windows in order.
+   */
+  @Parameters(arity = "0..*", paramLabel = "files",
       description = 'A single PDB/XYZ when windows are auto-determined (or two for dual topology). Two trajectory files for BAR between two ensembles (or four for dual topology).')
   List<String> filenames = null
 
+  /**
+   * Number of threads available to utilize.
+   */
   private int threadsAvail = ParallelTeam.getDefaultThreadCount()
+  /**
+   * Threads per walker
+   */
   private int threadsPer = threadsAvail
-  MolecularAssembly[] molecularAssemblies
-  CrystalPotential potential
-  SystemFilter[] openers
-  BARFilter[] barOpeners
-  BARFilter[] barWriters
-  List<String> windowDirectories = new ArrayList<>()
-  private Configuration additionalProperties
-  private String[] files
 
   /**
-   * Free energy difference from forward FEP.
+   * Additional properties
    */
-  private double forwardFEP
+  private Configuration additionalProperties
   /**
-   * Enthalpy difference from forward FEP.
+   * Molecular assemblies to compute energies.
    */
-  private double forwardEnthalpy
-  /**
-   * Entropy difference from forward FEP.
-   */
-  private double forwardEntropy
-  /**
-   * Free energy difference from backward FEP.
-   */
-  private double backwardFEP
-  /**
-   * Enthalpy difference from backward FEP.
-   */
-  private double backwardEnthalpy
-  /**
-   * Entropy difference from backward FEP.
-   */
-  private double backwardEntropy
-  /**
-   * Free energy difference from BAR.
-   */
-  private double barEnergy
-  /**
-   * Free energy difference from BAR using boot-strapping.
-   */
-  private double barEnergyBS
-  /**
-   * Enthalpy difference from BAR.
-   */
-  private double barEnthalpy
-  /**
-   * Entropy difference from BAR.
-   */
-  private double barEntropy
+  MolecularAssembly[] molecularAssemblies
   /**
    * Number of Topologies
    */
   private int numTopologies
+  /**
+   * Potential object for the crystal
+   */
+  CrystalPotential potential
+
+  /**
+   * Number of input files.
+   */
+  int nFiles
+  /**
+   * Input files for BAR.
+   */
+  private String[] files
+
+  /**
+   * Lambda values for each state.
+   */
+  double[] lambdaValues
+
+
+  /**
+   * Compute and log out the free energy differences.
+   */
+  private FreeEnergyDifferenceReporter reporter
 
   /**
    * Sets an optional Configuration with additional properties.
@@ -208,7 +213,7 @@ class BAR extends AlgorithmsScript {
    */
   @Override
   BAR run() {
-    // Begin boilerplate code.
+    // Initialize the script.
     if (!init()) {
       return this
     }
@@ -216,109 +221,158 @@ class BAR extends AlgorithmsScript {
     /**
      * Load user supplied files into an array.
      */
-    int nFiles = filenames.size()
-    files = new String[nFiles]
-    for (int i = 0; i < nFiles; i++) {
-      files[i] = filenames.get(i)
+    if (filenames == null) {
+      nFiles = 0
+      files = null
+    } else {
+      nFiles = filenames.size()
+      files = new String[nFiles]
+      for (int i = 0; i < nFiles; i++) {
+        files[i] = filenames.get(i)
+      }
     }
 
-    numTopologies = 1
-    if (nFiles <= 1 && nWindows < 2) {
-      logger.info(' At least two ensembles must be specified')
+    // Evaluate free energy differences from BAR files.
+    if (evaluateBARFiles) {
+      // 1) Define the number of states and concordant BAR files (windows = states - 1).
+      // 2) Read in the energy and volume data from BAR files.
+      // 3) Compute the free energy differences.
+      if (nFiles == 0) {
+        logger.info(" Please supply a BAR file or directory to be evaluated.")
+        return this
+      }
+
+      BARFilter[] barFilters = null
+      if (nStates == 2 && nFiles == 1) {
+        // If the number of states is 2, evaluate a single BAR file.
+        logger.info(format(" Evaluating a single BAR file: %s.", files[0].toString()))
+        barFilters = new BARFilter[1]
+        barFilters[0] = new BARFilter(new File(files[0]), startingSnapshot, endingSnapshot)
+        // Define the lambda values.
+        lambdaValues = new double[2]
+        lambdaValues[0] = alchemical.getInitialLambda()
+        lambdaValues[1] = lambda2
+      } else if (nStates > 2 && nFiles == 1) {
+        // If the number of states is greater than 2, evaluate multiple BAR files from a directory.
+        logger.info(format(" Evaluating BAR files from directory %s.", files[0].toString()))
+        // Auto-determine bar files from the "bar" subdirectory.
+        logger.info(" Auto-detecting BAR files and lambda values.")
+        Path subdirectoryPath = Paths.get(files[0])
+        // Regular expression to match files with the form "filename_XX.bar"
+        Pattern pattern = Pattern.compile(".*_(\\d+)\\.bar")
+        // List to hold file paths
+        List<String> fileList = new ArrayList<>()
+        try (Stream<Path> paths = Files.list(subdirectoryPath)) {
+          paths.filter(Files::isRegularFile)
+              .filter(path -> {
+                Matcher matcher = pattern.matcher(path.getFileName().toString())
+                return matcher.matches()
+              })
+              .sorted(Comparator.comparingInt(path -> {
+                Matcher matcher = pattern.matcher(path.getFileName().toString())
+                matcher.matches()
+                return Integer.parseInt(matcher.group(1))
+              }))
+              .forEach(path -> fileList.add(path.toString()))
+        } catch (IOException e) {
+          logger.info(" Error reading files from a directory.\n" + e.toString())
+          e.printStackTrace()
+          return this
+        }
+
+        int numFiles = fileList.size()
+        if (numFiles != nStates - 1) {
+          logger.info(format(" The number of bar files (%d) does not concord with the number of states (%d).", numFiles, nStates))
+          return this
+        }
+
+        // Define the lambda values.
+        lambdaValues = new double[nStates]
+        for (int l = 0; l < nStates; l++) {
+          lambdaValues[l] = alchemical.getInitialLambda(nStates, l, true)
+        }
+        barFilters = new BARFilter[numFiles]
+        for (int i = 0; i < numFiles; i++) {
+          String filename = fileList.get(i)
+          File barFile = new File(filename)
+          barFilters[i] = new BARFilter(barFile, startingSnapshot, endingSnapshot)
+          logger.info(format(" Window L=%6.4f to L=%6.4f from %s",
+              lambdaValues[i], lambdaValues[i + 1], filename))
+        }
+      }
+
+      // Allocate space for energy and volume arrays.
+      double[][] energiesLow = new double[nStates][]
+      double[][] energiesAt = new double[nStates][]
+      double[][] energiesHigh = new double[nStates][]
+      double[][] volume = new double[nStates][]
+
+      // Load BAR files.
+      readBARFiles(barFilters, energiesLow, energiesAt, energiesHigh, volume)
+
+      // Compute free energy differences.
+      double[] temperatures = new double[]{temperature}
+      reporter = new FreeEnergyDifferenceReporter(nStates, lambdaValues, temperatures, eps, nIterations,
+          energiesLow, energiesAt, energiesHigh, volume)
+      reporter.report()
+
+      // Exit the script.
       return this
-    } else if (nFiles == 1 && nWindows >= 2) {
-      logger.
-          info(format(' Auto-detecting %d windows for single topology:\n %s.',
-              nWindows, files[0]))
-    } else if (nFiles == 2 && nWindows >= 2) {
-      logger.info(format(' Auto-detecting %d windows for dual topology:\n %s\n %s.',
-          nWindows, files[0], files[1]))
+    }
+
+    // Create BAR files for later evaluation of free energy differences.
+    logger.info(" Writing BAR files.")
+
+    numTopologies = 1
+    if (nFiles <= 1 && nStates < 2) {
+      logger.info(' At least two states must be specified')
+      return this
+    } else if (nFiles == 1 && nStates >= 2) {
+      logger.info(format(' Auto-detecting %d states for single topology:\n %s.', nStates, files[0]))
+    } else if (nFiles == 2 && nStates >= 2) {
+      logger.info(format(' Auto-detecting %d states for dual topology:\n %s\n %s.', nStates, files[0], files[1]))
       numTopologies = 2
-    } else if (nFiles == 2 && nWindows < 2) {
-      logger.info(format(' Applying BAR between two single topology ensembles:\n %s\n %s.',
-          files[0], files[1]))
-    } else if (nFiles == 4 && nWindows < 2) {
+    } else if (nFiles == 2) {
+      logger.info(format(' Applying BAR between two single topology ensembles:\n %s\n %s.', files[0], files[1]))
+      nStates = 2
+    } else if (nFiles == 4) {
       logger.info(format(' Applying BAR between two dual topology ensembles:\n %s %s\n %s %s.',
           files[0], files[1], files[2], files[3]))
       numTopologies = 2
+      nStates = 2
     } else {
-      logger.info(' Inconsistent input of files and/or windows.')
+      logger.info(format(" Inconsistent input of files (%3d) and/or states (%3d).", nFiles, nStates))
       return this
     }
 
     boolean autodetect = false
-    double[] lambdaValues
-    if (nWindows > 1) {
+    if (nStates > 2) {
       autodetect = true
-      // Auto-determine subdirectories and their lambda values.
-      for (int i = 0; i < nWindows; i++) {
-        for (int j = 0; j < nFiles; j++) {
-          String fullPathToFile = FilenameUtils.getFullPath(files[j])
-          String directoryFullPath = fullPathToFile.replace(files[j], "") + i
-          windowDirectories.add(directoryFullPath + File.separator + i)
-        }
-      }
-      lambdaValues = new double[nWindows]
-      for (int i = 0; i < nWindows; i++) {
-        lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false)
+      lambdaValues = new double[nStates]
+      for (int i = 0; i < nStates; i++) {
+        lambdaValues[i] = alchemical.getInitialLambda(nStates, i, true)
       }
     } else {
       // Otherwise we assume two ensembles at then given lambda values.
       lambdaValues = new double[2]
-      lambdaValues[0] = alchemical.getInitialLambda()
+      lambdaValues[0] = alchemical.getInitialLambda(2,0, true)
       lambdaValues[1] = lambda2
-      nWindows = 2
+      nStates = 2
     }
 
+    // Could set "getInitialLambda"'s quiet flag to false, but better logging here?
     logger.info(" Lambda values for each window: ")
-    for (int i = 0; i < lambdaValues.length; i++) {
-      double l = lambdaValues[i]
-      logger.info(format(" %d: %6.4f", i, l))
+    int nLambda = lambdaValues.length
+    for (int i = 0; i < nLambda; i++) {
+      logger.info(format(" Window %3d: %6.4f", i, lambdaValues[i]))
     }
 
-    // If reading Tinker BAR file(s), allocate storage for file paths and openers.
-    String[][] fullFilePaths
-    if (useTinkerBAR) {
-      fullFilePaths = new String[nWindows][1]
-      barOpeners = new BARFilter[nWindows]
-    } else {
-      fullFilePaths = new String[nWindows][nFiles]
-    }
-
-    // If saving Tinker BAR file(s), allocate storage for writer(s).
-    if (tinkerBAR) {
-      barWriters = new BARFilter[nWindows]
-    }
-
-    File file = new File(files[0])
-    String directoryPath = file.getAbsoluteFile().getParent() + File.separator
-
-    // Loop over user supplied files.
-    for (int j = 0; j < nFiles; j++) {
-      // Loop over ensembles.
-      for (int i = 0; i < nWindows; i++) {
-        String archiveName
-        if (sortedArc) {
-          archiveName = FilenameUtils.getBaseName(files[j]) + "_E" + i.toString() + ".arc"
-        } else {
-          archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
-        }
-        if (useTinkerBAR && i != nWindows-1) {
-          // Path to Tinker BAR files.
-          fullFilePaths[i][0] = directoryPath + "barFiles" + File.separator + "energy_" + i + ".bar"
-        } else if (!autodetect) {
-          // Path to a file in the same directory as supplied archives.
-          fullFilePaths[i][j] = directoryPath + File.separator + archiveName
-        } else {
-          // Paths to auto-detected subdirectories.
-          fullFilePaths[i][j] = directoryPath + i + File.separator + archiveName
-        }
-      }
-    }
+    // Open assemblies if not using Tinker BAR files.
+    boolean isPBC
 
     // Allocate space for each topology
     molecularAssemblies = new MolecularAssembly[numTopologies]
-    openers = new SystemFilter[numTopologies]
+    SystemFilter[] openers = new SystemFilter[numTopologies]
 
     int numParallel = topology.getNumParallel(threadsAvail, numTopologies)
     threadsPer = (int) (threadsAvail / numParallel)
@@ -359,338 +413,116 @@ class BAR extends AlgorithmsScript {
         "\n Using BAR to analyze a free energy change for %s\n ", filenames))
     potential = (CrystalPotential) topology.assemblePotential(molecularAssemblies, threadsAvail, sb)
     Crystal unitCell = potential.getCrystal().getUnitCell()
+    isPBC = includeVolume && !unitCell.aperiodic()
 
-    boolean isPBC = includeVolume && !unitCell.aperiodic()
-    isPBC = isPBC && !unitCell.aperiodic()
-
-    int nSymm = 0
-    if (isPBC) {
-      nSymm = unitCell.getNumSymOps()
-    }
-
-    double[] currentLambdas
-    double[][] energyLow = new double[nWindows][]
-    double[][] energyAt = new double[nWindows][]
-    double[][] energyHigh = new double[nWindows][]
-    double[][] volume = new double[nWindows][]
-    double[][] energy
-    double[] energyMean = new double[nWindows]
-    double[] energySD = new double[nWindows]
-    double[] energyVar = new double[nWindows]
-
-    for (int w = 0; w < nWindows; w++) {
-
-      if (w == 0) {
-        currentLambdas = new double[2]
-        currentLambdas[0] = lambdaValues[w]
-        currentLambdas[1] = lambdaValues[w + 1]
-      } else if (w == nWindows - 1) {
-        currentLambdas = new double[2]
-        currentLambdas[0] = lambdaValues[w - 1]
-        currentLambdas[1] = lambdaValues[w]
-      } else {
-        currentLambdas = new double[3]
-        currentLambdas[0] = lambdaValues[w - 1]
-        currentLambdas[1] = lambdaValues[w]
-        currentLambdas[2] = lambdaValues[w + 1]
-      }
-      energy = new double[currentLambdas.length][]
-
-      if (useTinkerBAR) {
-        File barFile = new File(fullFilePaths[w][0])
-        barOpeners[w] = new BARFilter(barFile, startingSnapshot, endingSnapshot)
-        if (w != nWindows-1){
-          barOpeners[w].readFile()
-        }
-        if (w == 0) {
-          energyLow[w] = new double[barOpeners[w].getSnaps()]
-          energyAt[w] = barOpeners[w].getE1l1()
-          energyHigh[w] = barOpeners[w].getE1l2()
-        } else if (w == nWindows - 1) {
-          energyLow[w] = barOpeners[w-1].getE2l1()
-          energyAt[w] = barOpeners[w-1].getE2l2()
-          energyHigh[w] = new double[barOpeners[w].getSnaps()]
-        } else if (w > 0 && w < nWindows - 1) {
-          energyLow[w] = barOpeners[w - 1].getE2l1()
-          energyAt[w] = barOpeners[w].getE1l1()
-          energyHigh[w] = barOpeners[w].getE1l2()
-        }
-
-        if (isPBC) {
-          volume[w] = barOpeners[w].getVolume1()
-        }
-
-      } else {
-        volume[w] = getEnergyForLambdas(molecularAssemblies, currentLambdas,
-            fullFilePaths[w], energy, isPBC, nSymm)
-
-        if (w == 0) {
-          energyLow[w] = new double[energy[0].length]
-          energyAt[w] = energy[0]
-          energyHigh[w] = energy[1]
-        }else if (w == nWindows - 1) {
-          energyLow[w] = energy[0]
-          energyAt[w] = energy[1]
-          energyHigh[w] = new double[energy[0].length]
-        } else if (w > 0 && w < nWindows - 1) {
-          energyLow[w] = energy[0]
-          energyAt[w] = energy[1]
-          energyHigh[w] = energy[2]
+    String[][] fullFilePaths
+    String directoryPath
+    if (nFiles > 0) {
+      File file = new File(files[0])
+      directoryPath = file.getAbsoluteFile().getParent() + File.separator
+      fullFilePaths = new String[nStates][nFiles]
+      // Loop over user supplied files.
+      for (int j = 0; j < nFiles; j++) {
+        // Loop over ensembles.
+        for (int i = 0; i < nStates; i++) {
+          String archiveName
+          if (sortedArc) {
+            archiveName = FilenameUtils.getBaseName(files[j]) + "_E" + i.toString() + ".arc"
+          } else {
+            archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
+          }
+          if (!autodetect) {
+            // Path to a file in the same directory as supplied archives.
+            fullFilePaths[i][j] = directoryPath + File.separator + archiveName
+          } else {
+            // Paths to auto-detected subdirectories.
+            fullFilePaths[i][j] = directoryPath + i + File.separator + archiveName
+          }
         }
       }
-      BootStrapStatistics energyStats = new BootStrapStatistics(energyAt[w])
-      energyMean[w] = energyStats.mean
-      energySD[w] = energyStats.sd
-      energyVar[w] = energyStats.var
-    }
 
-    String tinkerFilePath = ""
-    if (tinkerBAR) {
-      String tinkerDirectoryPath = directoryPath + File.separator + "barFiles"
+      // Initialize the ParallelEnergy class.
+      ParallelStateEnergy pe = new ParallelStateEnergy(nStates, lambdaValues,
+          molecularAssemblies, potential, fullFilePaths, openers)
+
+      // Evaluate energies from snapshots.
+      double[][] energiesLow = new double[nStates][]
+      double[][] energiesAt = new double[nStates][]
+      double[][] energiesHigh = new double[nStates][]
+      double[][] volume = new double[nStates][]
+      pe.evaluateStates(energiesLow, energiesAt, energiesHigh, volume)
+
+      // Only node 0 will write out Tinker BAR files.
+      if (pe.getRank() != 0) {
+        return this
+      }
+
+      // Create file objects to write out TINKER style bar files.
+      String tinkerDirectoryPath = directoryPath + File.separator + "windows"
       File directory = new File(tinkerDirectoryPath)
-      tinkerFilePath = tinkerDirectoryPath + File.separator
+      String barFilePath = tinkerDirectoryPath + File.separator
       directory.mkdir()
-    }
 
-    File xyzFile = new File(filenames.get(0))
-    for (int w = 0; w < nWindows; w++) {
-      if (tinkerBAR) {
-        if (w == 0) {
-          barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
-              energyAt[w + 1], volume[w], volume[w + 1], this.temperature)
-        } else if (w != nWindows - 1) {
-          barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
-              energyAt[w + 1], volume[w], volume[w + 1], this.temperature)
+      for (int state = 0; state < nStates - 1; state++) {
+        File xyzFile = new File(filenames.get(0))
+        BARFilter barFilter
+        if (state == 0) {
+          barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
+              energiesAt[state + 1], volume[state], volume[state + 1], temperature)
+        } else {
+          barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
+              energiesAt[state + 1], volume[state], volume[state + 1], temperature)
         }
-        if (w != nWindows-1){
-          String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
-          barWriters[w].writeFile(barFileName, isPBC)
-        }
+        String barFileName = barFilePath + "window_" + state.toString() + ".bar"
+        // Write out the TINKER style bar file. An existing file will be overwritten.
+        barFilter.writeFile(barFileName, isPBC, false)
       }
-    }
-
-    for (int w = 0; w < nWindows + 1; w++) {
-      if (w == nWindows) {
-        logger.info("\n\n Evaluating Overall:")
-      } else {
-        logger.info(format("\n\n Evaluating Window %d:", w))
-      }
-
-      if (w == 0) {
-        currentLambdas = new double[2]
-        currentLambdas[0] = lambdaValues[w]
-        currentLambdas[1] = lambdaValues[w + 1]
-      } else if (w == nWindows - 1) {
-        currentLambdas = new double[2]
-        currentLambdas[0] = lambdaValues[w - 1]
-        currentLambdas[1] = lambdaValues[w]
-      } else if (w == nWindows) {
-        currentLambdas = lambdaValues
-      } else {
-        currentLambdas = new double[3]
-        currentLambdas[0] = lambdaValues[w - 1]
-        currentLambdas[1] = lambdaValues[w]
-        currentLambdas[2] = lambdaValues[w + 1]
-      }
-      double[][] energyWindowLow
-      double[][] energyWindowAt
-      double[][] energyWindowHigh
-
-      energyWindowLow = new double[currentLambdas.length][]
-      energyWindowAt = new double[currentLambdas.length][]
-      energyWindowHigh = new double[currentLambdas.length][]
-
-      if (w == 0) {
-        energyWindowLow[0] = energyLow[w]
-        energyWindowLow[1] = energyLow[w + 1]
-
-        energyWindowAt[0] = energyAt[w]
-        energyWindowAt[1] = energyAt[w + 1]
-
-        energyWindowHigh[0] = energyHigh[w]
-        energyWindowHigh[1] = energyHigh[w + 1]
-      } else if (w == nWindows - 1) {
-        energyWindowLow[0] = energyLow[w - 1]
-        energyWindowLow[1] = energyLow[w]
-
-        energyWindowAt[0] = energyAt[w - 1]
-        energyWindowAt[1] = energyAt[w]
-
-        energyWindowHigh[0] = energyHigh[w - 1]
-        energyWindowHigh[1] = energyHigh[w]
-      } else if (w == nWindows) {
-        energyWindowLow = energyLow
-        energyWindowAt = energyAt
-        energyWindowHigh = energyHigh
-      } else {
-        energyWindowLow[0] = energyLow[w - 1]
-        energyWindowLow[1] = energyLow[w]
-        energyWindowLow[2] = energyLow[w + 1]
-
-        energyWindowAt[0] = energyAt[w - 1]
-        energyWindowAt[1] = energyAt[w]
-        energyWindowAt[2] = energyAt[w + 1]
-
-        energyWindowHigh[0] = energyHigh[w - 1]
-        energyWindowHigh[1] = energyHigh[w]
-        energyWindowHigh[2] = energyHigh[w + 1]
-      }
-
-      SequentialEstimator bar = new BennettAcceptanceRatio(currentLambdas, energyWindowLow,
-          energyWindowAt, energyWindowHigh, temperature)
-      SequentialEstimator forwards = bar.getInitialForwardsGuess()
-      SequentialEstimator backwards = bar.getInitialBackwardsGuess()
-
-      EstimateBootstrapper barBS = new EstimateBootstrapper(bar)
-      EstimateBootstrapper forBS = new EstimateBootstrapper(forwards)
-      EstimateBootstrapper backBS = new EstimateBootstrapper(backwards)
-
-      long MAX_BOOTSTRAP_TRIALS = 100000L
-      long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volume.length, volume.length))
-      if (w == nWindows) {
-        logger.info("\n Free Energy Difference:\n")
-      } else {
-        logger.info(format("\n Free Energy Difference for Window %d\n", w))
-      }
-
-      long time = -System.nanoTime()
-      forBS.bootstrap(bootstrap)
-      time += System.nanoTime()
-      logger.fine(format(" Forward FEP Bootstrap Complete:      %7.4f sec", time * Constants.NS2SEC))
-      forwardFEP = forBS.getTotalFE()
-      forwardEnthalpy = forBS.getTotalEnthalpy()
-      double varForeFE = forBS.getTotalUncertainty()
-      double varEnthalpyFore = forBS.getTotalEnthalpyUncertainty()
-      logger.info(format(" Free energy via Forwards FEP:   %12.4f +/- %6.4f kcal/mol.", forwardFEP, varForeFE))
-
-      time = -System.nanoTime()
-      backBS.bootstrap(bootstrap)
-      time += System.nanoTime()
-      logger.fine(format(" Backward FEP Bootstrap Complete:     %7.4f sec", time * Constants.NS2SEC))
-
-      backwardFEP = backBS.getTotalFE()
-      backwardEnthalpy = backBS.getTotalEnthalpy()
-      double varBackFE = backBS.getTotalUncertainty()
-      double varEnthalpyBack = backBS.getTotalEnthalpyUncertainty()
-      logger.info(format(" Free energy via Backwards FEP:  %12.4f +/- %6.4f kcal/mol.", backwardFEP, varBackFE))
-      barEnergy = bar.getFreeEnergy()
-
-      logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy, bar.getUncertainty()))
-      time = -System.nanoTime()
-      barBS.bootstrap(bootstrap)
-      time += System.nanoTime()
-      logger.fine(format(" BAR Bootstrap Complete:              %7.4f sec", time * Constants.NS2SEC))
-
-      barEnergyBS = barBS.getTotalFE()
-      double varBARFE = barBS.getTotalUncertainty()
-      barEnthalpy = barBS.getTotalEnthalpy()
-      double varEnthalpy = barBS.getTotalEnthalpyUncertainty()
-      logger.info(format(" Free energy via BAR Bootstrap:  %12.4f +/- %6.4f kcal/mol.", barEnergyBS, varBARFE))
-
-      if (w == nWindows) {
-        logger.info("\n Enthalpy from Potential Energy Averages:\n")
-        for (int n = 0; n < nWindows; n++) {
-          logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.", n, energyMean[n], energySD[n]))
-        }
-        double enthalpyDiff = energyMean[nWindows - 1] - energyMean[0]
-        double enthalpyDiffSD = Math.sqrt(energyVar[nWindows - 1] + energyVar[0])
-        logger.info(format(" Enthalpy via Direct Estimate:     %12.4f +/- %6.4f kcal/mol.", enthalpyDiff, enthalpyDiffSD))
-        logger.info("\n Enthalpy and Entropy:\n")
-      } else {
-        logger.info(format("\n Enthalpy and Entropy for Window %d\n", w))
-      }
-
-      forwardEntropy = (forwardEnthalpy - forwardFEP) / temperature
-      backwardEntropy = (backwardEnthalpy - backwardFEP) / temperature
-
-      logger.info(format(" Enthalpy via Forward FEP:       %12.4f +/- %6.4f kcal/mol.", forwardEnthalpy, varEnthalpyFore))
-      logger.info(format(" Entropy via Forward FEP:        %12.4f kcal/mol/K.", forwardEntropy))
-      logger.info(format(" Forward FEP -T*ds Value:        %12.4f kcal/mol.", -(forwardEntropy * temperature)))
-
-      logger.info(format("\n Enthalpy via Backward FEP:      %12.4f +/- %6.4f kcal/mol.", backwardEnthalpy, varEnthalpyBack))
-      logger.info(format(" Entropy via Backward FEP:       %12.4f kcal/mol/K.", backwardEntropy))
-      logger.info(format(" Backward FEP -T*ds Value:       %12.4f kcal/mol.", -(backwardEntropy * temperature)))
-
-      double tsBar = barEnthalpy - barEnergyBS
-      double sBAR = tsBar / temperature
-      logger.info(format("\n Enthalpy via BAR:               %12.4f +/- %6.4f kcal/mol.", barEnthalpy, varEnthalpy))
-      logger.info(format(" Entropy via BAR:                %12.4f kcal/mol/K.", sBAR))
-      logger.info(format(" BAR Estimate of -T*ds:          %12.4f kcal/mol.", -(tsBar)))
-
     }
 
     return this
-
   }
 
-  private double[] getEnergyForLambdas(MolecularAssembly[] topologies, double[] lambdaValues,
-      String[] arcFileName, double[][] energy, boolean isPBC, int nSymm) {
-    for (int j = 0; j < numTopologies; j++) {
-      File archiveFile = new File(arcFileName[j])
-      openers[j].setFile(archiveFile)
-      topologies[j].setFile(archiveFile)
-      StringBuilder sb = new StringBuilder(format(
-          "\n Evaluating energies for %s\n ", arcFileName[j]))
-      logger.info(sb as String)
-    }
-    int nSnapshots = openers[0].countNumModels()
-
-    double[] x = new double[potential.getNumberOfVariables()]
-    double[] vol = new double[nSnapshots]
-    for (int k = 0; k < lambdaValues.length; k++) {
-      energy[k] = new double[nSnapshots]
-    }
-
-    LambdaInterface linter1 = (LambdaInterface) potential
-
-    int endWindow = nWindows - 1
-    String endWindows = endWindow + File.separator
-
-    if (arcFileName[0].contains(endWindows)) {
-      logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
-          "Energy Low", "Lambda At", "Energy At"))
-    } else if (arcFileName[0].contains("0/")) {
-      logger.info(format(" %s     %s   %s     %s   %s ", "Snapshot", "Lambda At",
-          "Energy At", "Lambda High", "Energy High"))
-    } else {
-      logger.info(format(" %s     %s   %s     %s   %s     %s   %s ", "Snapshot", "Lambda Low",
-          "Energy Low", "Lambda At", "Energy At", "Lambda High", "Energy High"))
+  /**
+   * Read energy and volume values from BAR files. The first dimension of the energy arrays
+   * corresponds to the state index. The second dimension corresponds to the snapshot index.
+   *
+   * The first dimension of each each array should be allocated to the number of states prior
+   * to calling this method.
+   *
+   * @param barFilters The BAR filters to use.
+   * @param energyLow The energy of each snapshot in state L evaluated at L-dL.
+   * @param energyAt The energy of each snapshot in L evaluated at L.
+   * @param energyHigh The energy from state L evaluated at L+dL.
+   * @param volume The volume of each snapshot from state L.
+   */
+  void readBARFiles(BARFilter[] barFilters,
+                    double[][] energyLow, double[][] energyAt,
+                    double[][] energyHigh, double[][] volume) {
+    // Read energy values from BAR files.
+    for (BARFilter barFilter : barFilters) {
+      barFilter.readFile()
     }
 
-    for (int i = 0; i < nSnapshots; i++) {
-      boolean resetPosition = (i == 0)
-      for (int n = 0; n < openers.length; n++) {
-        openers[n].readNext(resetPosition, false)
-      }
-
-      x = potential.getCoordinates(x)
-      for (int k = 0; k < lambdaValues.length; k++) {
-        double lambda = lambdaValues[k]
-        linter1.setLambda(lambda)
-        energy[k][i] = potential.energy(x, false)
-      }
-
-      if (lambdaValues.length == 2) {
-        logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1, lambdaValues[0],
-            energy[0][i], lambdaValues[1], energy[1][i]))
+    // Assign values to the state arrays.
+    for (int state = 0; state < nStates; state++) {
+      if (state == 0) {
+        energyAt[state] = barFilters[state].getE1l1()
+        energyHigh[state] = barFilters[state].getE1l2()
+        volume[state] = barFilters[state].getVolume1()
+      } else if (state == nStates - 1) {
+        energyLow[state] = barFilters[state - 1].getE2l1()
+        energyAt[state] = barFilters[state - 1].getE2l2()
+        volume[state] = barFilters[state - 1].getVolume2()
       } else {
-        logger.info(format(" %8d     %6.3f   %14.4f     %6.3f   %14.4f     %6.3f   %14.4f ", i + 1,
-            lambdaValues[0],
-            energy[0][i], lambdaValues[1], energy[1][i], lambdaValues[2], energy[2][i]))
-      }
-
-      if (isPBC) {
-        Crystal unitCell = potential.getCrystal().getUnitCell()
-        vol[i] = unitCell.volume / nSymm
-        logger.info(format(" %8d %14.4f",
-            i + 1, vol[i]))
+        energyLow[state] = barFilters[state - 1].getE2l1()
+        energyAt[state] = barFilters[state].getE1l1()
+        energyHigh[state] = barFilters[state].getE1l2()
+        volume[state] = barFilters[state].getVolume1()
       }
     }
-
-    return vol
   }
 
-/**
+  /**
  * {@inheritDoc}
  */
   @Override
@@ -707,55 +539,12 @@ class BAR extends AlgorithmsScript {
     return potentials
   }
 
-
-  double getBarEnergy() {
-    return barEnergy
-  }
-
-  double getBarEnergyBS() {
-    return barEnergyBS
-  }
-
-  double getFepFor() {
-    return forwardFEP
-  }
-
-  double getFepBack() {
-    return backwardFEP
-  }
-
-  double gethFor() {
-    return forwardEnthalpy
-  }
-
-  double gethBack() {
-    return backwardEnthalpy
-  }
-
-  double gethBAR() {
-    return barEnthalpy
-  }
-
-  double getsFor() {
-    return forwardEntropy
-  }
-
-  double getsBack() {
-    return backwardEntropy
-  }
-
-  double getsBAR() {
-    return barEntropy
+  /**
+   * Obtain the Free Energy Difference reporter for this class.
+   * @return The Free Energy Difference reporter.
+   */
+  FreeEnergyDifferenceReporter getReporter() {
+    return reporter
   }
 
 }
-
-
-
-
-
-
-
-
-
-
