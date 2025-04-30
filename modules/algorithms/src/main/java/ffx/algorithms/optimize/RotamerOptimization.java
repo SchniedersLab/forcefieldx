@@ -315,11 +315,11 @@ public class RotamerOptimization implements Terminatable {
   /**
    * In sliding window, whether to revert an unfavorable change.
    */
-  private boolean revert;
+  protected boolean revert;
   /**
    * The sliding window direction.
    */
-  private Direction direction = Direction.FORWARD;
+  protected Direction direction = Direction.FORWARD;
 
   /**
    * The distance that the distance matrix checks for.
@@ -427,11 +427,11 @@ public class RotamerOptimization implements Terminatable {
    * The array of optimum rotamers for the subset of residues being optimized during box or window
    * optimization.
    */
-  private int[] optimumSubset;
+  protected int[] optimumSubset;
   /**
    * If true, load an energy restart file.
    */
-  private boolean loadEnergyRestart = false;
+  protected boolean loadEnergyRestart = false;
   /**
    * Energy restart File instance.
    */
@@ -448,7 +448,7 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Flag to indicate use of box optimization.
    */
-  private boolean usingBoxOptimization = false;
+  protected boolean usingBoxOptimization = false;
   /**
    * If a pair of residues have two atoms closer together than the superposition threshold, the
    * energy is set to NaN.
@@ -482,7 +482,7 @@ public class RotamerOptimization implements Terminatable {
    * Sets whether files should be printed; true for standalone applications, false for some
    * applications which use rotamer optimization as part of a larger process.
    */
-  private boolean printFiles = true;
+  protected boolean printFiles = true;
   /**
    * Stores states of each ensemble if printFiles is false.
    */
@@ -494,7 +494,7 @@ public class RotamerOptimization implements Terminatable {
   /**
    * Writes energies to restart file.
    */
-  private BufferedWriter energyWriter;
+  protected BufferedWriter energyWriter;
 
   /**
    * False unless JUnit testing.

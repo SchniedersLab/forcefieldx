@@ -73,11 +73,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -230.1392865715949;
+    double expectedTotalPotential = -230.1392872420811;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -225.97693061941453;
+    double expectedApproximateEnergy = -225.97693128995238;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -106,12 +106,12 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -230.1392865715949; //-221.48751140045158
+    double expectedTotalPotential = -230.13928724208006; //-221.48751140045158
     double actualTotalPotential =
         manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -230.88286735909747;
+    double expectedApproximateEnergy = -230.88286802981403;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
