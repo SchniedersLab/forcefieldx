@@ -1793,9 +1793,26 @@ public final class PDBFilter extends SystemFilter {
    */
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
       boolean versioning, String[] extraLines) {
+
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
     if (saveFile == null) {
@@ -2221,9 +2238,25 @@ public final class PDBFilter extends SystemFilter {
    * @return a boolean.
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     activeMolecularAssembly.setFile(saveFile);
     activeMolecularAssembly.setName(saveFile.getName());
