@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -145,11 +145,11 @@ public class SSETest {
   /**
    * matVec.
    *
-   * @param A an array of {@link double} objects.
-   * @param x an array of {@link double} objects.
+   * @param A an array of double values.
+   * @param x an array of double values.
    * @param m the number of rows.
    * @param n the number of columns.
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   private double[] matVec(final double[][] A, final double[] x, final int m, final int n) {
     double[] y = new double[m];
@@ -165,11 +165,11 @@ public class SSETest {
   /**
    * matVec.
    *
-   * @param A an array of {@link double} objects.
-   * @param x an array of {@link double} objects.
+   * @param A an array of double values.
+   * @param x an array of double values.
    * @param m the number of rows.
    * @param n the number of columns.
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   private double[] matVec(final double[] A, final double[] x, final int m, final int n) {
     double[] y = new double[m];

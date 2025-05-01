@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -35,13 +35,10 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.bonded;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.BondedTerm;
-import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -433,6 +433,32 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
 
     assertEquals(0.200420, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
     assertEquals(0.601259, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
+  /**
+   * Test the automatic symmetry operator generation.
+   */
+  @Test
+  public void testAutoSymGeneration() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"--na", "1", "--as","--ih", "--mw", getResourcePath("2olx.xyz_xtal"), getResourcePath("2onx.xyz_xtal")};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Mean RMSD for 1 comparison.
+    assertEquals(1, superposeCrystals.runningStatistics.getCount());
+
+    // Only checks last of final groups RMSD_1 and could change if final group order is different... ultimately not helpful.
+    assertEquals(0.028228, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+
+    // Check generated symmetry operators are the correct length. This ONLY checks lengths... better than nothing?
+    assertEquals(1736, superposeCrystals.symOpsA.length());
+    assertEquals(1737, superposeCrystals.symOpsB.length());
   }
 
   @Test

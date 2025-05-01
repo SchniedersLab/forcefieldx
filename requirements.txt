@@ -1,4 +1,4 @@
-Jinja2==3.1.4
+Jinja2==3.1.6
 MarkupSafe==2.1.2
 Pygments==2.15.0
 Send2Trash==1.8.0

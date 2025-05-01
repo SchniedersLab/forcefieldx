@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.scale;
@@ -287,9 +286,9 @@ public class GaussVol {
     energy = new SharedDouble();
     AtomicDoubleArrayImpl atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
     grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
-    gradV = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
-    freeVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
-    selfVolume = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, nAtoms);
+    gradV = atomicDoubleArrayImpl.createInstance(nThreads, nAtoms);
+    freeVolume = atomicDoubleArrayImpl.createInstance(nThreads, nAtoms);
+    selfVolume = atomicDoubleArrayImpl.createInstance(nThreads, nAtoms);
   }
 
   /**

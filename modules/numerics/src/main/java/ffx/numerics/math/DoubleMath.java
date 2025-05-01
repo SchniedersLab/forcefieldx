@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -288,7 +288,7 @@ public final class DoubleMath {
   /**
    * logVector.
    *
-   * @param v an array of {@link double} objects.
+   * @param v an array of double values.
    * @param label a {@link String} object.
    */
   public static void log(double[] v, String label) {
@@ -430,7 +430,7 @@ public final class DoubleMath {
   /**
    * vectorToString.
    *
-   * @param v an array of {@link double} objects.
+   * @param v an array of double values.
    * @param label a {@link String} object.
    * @return Returns a String description of the vector.
    */

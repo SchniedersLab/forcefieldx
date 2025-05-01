@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -153,6 +153,8 @@ public class ManyBodyOptions {
       rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
       rotamerOptimization.setBoxStart(boxGroup.initialBox);
       rotamerOptimization.setBoxEnd(boxGroup.finalBox);
+      rotamerOptimization.setTitrationBoxes(boxGroup.boxTitration);
+      rotamerOptimization.setTitrationBoxSize(boxGroup.approxBoxLength);
     }
   }
 
@@ -404,14 +406,6 @@ public class ManyBodyOptions {
 
   public void setOnlyTitration(boolean onlyTitration) {
     residueGroup.onlyTitration = onlyTitration;
-  }
-
-  public boolean getOnlyProtons() {
-    return residueGroup.onlyProtons;
-  }
-
-  public void setOnlyProtons(boolean onlyProtons) {
-    residueGroup.onlyProtons = onlyProtons;
   }
 
   public int getInterestedResidue() {
@@ -724,6 +718,10 @@ public class ManyBodyOptions {
     boxGroup.boxInclusionCriterion = boxInclusionCriterion;
   }
 
+  public void setBoxTitration(boolean boxTitration){boxGroup.boxTitration = boxTitration;}
+
+  public boolean getBoxTitration(){return boxGroup.boxTitration;}
+
   public void setTitrationPH(double pH) {
     group.titrationPH = pH;
   }
@@ -748,7 +746,7 @@ public class ManyBodyOptions {
     return group.titration;
   }
 
-  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration, boolean onlyProtons,
+  public String selectInclusionResidues(final List<Residue> residueList, int mutatingResidue, boolean onlyTitration,
                                        double inclusionCutoff){
     String listResidues = "";
     if (mutatingResidue != -1 && inclusionCutoff != -1) {
@@ -768,7 +766,7 @@ public class ManyBodyOptions {
         }
       }
       listResidues = listResidues.substring(1);
-    } else if (onlyTitration || onlyProtons){
+    } else if (onlyTitration){
       String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
       List<String> titratableResiudesList = Arrays.asList(titratableResidues);
       for (Residue residue : residueList) {
@@ -962,11 +960,18 @@ public class ManyBodyOptions {
     private int initialBox;
 
     /**
-     * --bf or --boxFinal Final box to optimize.
+     * --fB or --boxFinal Final box to optimize.
      */
     @Option(names = {"--fB", "--finalBox"}, defaultValue = "2147483647", // Integer.MAX_VALUE
         description = "Final box to optimize.")
     private int finalBox;
+
+    /**
+     * --bT or --boxTitration Center boxes around titratable residues.
+     */
+    @Option(names = {"--bT", "--boxTitration"}, defaultValue = "false", // Integer.MAX_VALUE
+            description = "Center boxes around titratable residues.")
+    private boolean boxTitration;
 
   }
 
@@ -1075,11 +1080,6 @@ public class ManyBodyOptions {
     @Option(names = {"--oT",
             "--onlyTitration"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only titratable residues.")
     private boolean onlyTitration;
-
-    /** --oP or --onlyProtons Rotamer optimize only proton movement. */
-    @Option(names = {"--oP",
-            "--onlyProtons"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only proton movement.")
-    private boolean onlyProtons;
 
     /** --iR or --interestedResidue Optimize rotamers within some distance of a specific residue. */
     @Option(names = {"--iR",

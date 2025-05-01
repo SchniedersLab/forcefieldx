@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -55,10 +55,20 @@ public class AdderDoubleArray implements AtomicDoubleArray {
 
   private static final Logger logger = Logger.getLogger(AdderDoubleArray.class.getName());
 
-  /** Atomic operations are handled by an Array of DoubleAdder instances. */
-  private DoubleAdder[] array;
+  /**
+   * The zero value used for resetting the array.
+   */
+  private static final double ZERO_VALUE = 0.0;
 
-  private int size;
+  /**
+   * Atomic operations are handled by an array of DoubleAdder instances.
+   */
+  private DoubleAdder[] doubleAdders;
+
+  /**
+   * The size of the array.
+   */
+  private int arraySize;
 
   /**
    * Construct an AdderDoubleArray.
@@ -66,35 +76,49 @@ public class AdderDoubleArray implements AtomicDoubleArray {
    * @param size Size of the array.
    */
   public AdderDoubleArray(int size) {
-    this.size = size;
-    array = new DoubleAdder[size];
-    for (int i = 0; i < size; i++) {
-      array[i] = new DoubleAdder();
-    }
+    this.arraySize = size;
+    this.doubleAdders = createDoubleAdders(size);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Creates the internal array of DoubleAdder instances.
+   *
+   * @param size The size of the array.
+   * @return An array of initialized DoubleAdder objects.
+   */
+  private DoubleAdder[] createDoubleAdders(int size) {
+    DoubleAdder[] adders = new DoubleAdder[size];
+    for (int i = 0; i < size; i++) {
+      adders[i] = new DoubleAdder();
+    }
+    return adders;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void add(int threadID, int index, double value) {
-    array[index].add(value);
+    doubleAdders[index].add(value);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void alloc(int size) {
-    this.size = size;
-    if (array.length < size) {
-      array = new DoubleAdder[size];
-      for (int i = 0; i < size; i++) {
-        array[i] = new DoubleAdder();
-      }
+    this.arraySize = size;
+    if (doubleAdders.length < size) {
+      this.doubleAdders = createDoubleAdders(size);
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double get(int index) {
-    return array[index].sum();
+    return doubleAdders[index].sum();
   }
 
   /**
@@ -113,16 +137,17 @@ public class AdderDoubleArray implements AtomicDoubleArray {
     // Nothing to do.
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void reset(int threadID, int lb, int ub) {
-    for (int i = lb; i <= ub; i++) {
-      array[i].reset();
-      array[i].add(0.0);
-    }
+    resetRange(lb, ub);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void reset(ParallelTeam parallelTeam, int lb, int ub) {
     try {
@@ -130,45 +155,70 @@ public class AdderDoubleArray implements AtomicDoubleArray {
           new ParallelRegion() {
             @Override
             public void run() throws Exception {
-              execute(
-                  lb,
-                  ub,
+              execute(lb, ub,
                   new IntegerForLoop() {
                     @Override
                     public void run(int first, int last) {
-                      reset(getThreadIndex(), first, last);
+                      resetRange(first, last);
                     }
                   });
             }
           });
     } catch (Exception e) {
-      logger.log(Level.WARNING, " Exception resetting an AdderDoubleArray", e);
+      logger.log(Level.WARNING, "Exception resetting an AdderDoubleArray", e);
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Resets an inclusive range of DoubleAdders in the array.
+   */
+  private void resetRange(int start, int end) {
+    for (int i = start; i <= end; i++) {
+      resetAdder(doubleAdders[i]);
+    }
+  }
+
+  /**
+   * Resets a single DoubleAdder to the zero value.
+   *
+   * @param adder The DoubleAdder to reset.
+   */
+  private void resetAdder(DoubleAdder adder) {
+    adder.reset();
+    adder.add(ZERO_VALUE);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void scale(int threadID, int index, double value) {
-    double current = array[index].sumThenReset();
-    array[index].add(current * value);
+    double current = doubleAdders[index].sumThenReset();
+    doubleAdders[index].add(current * value);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void set(int threadID, int index, double value) {
-    array[index].reset();
-    array[index].add(value);
+    resetAdder(doubleAdders[index]);
+    doubleAdders[index].add(value);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int size() {
-    return size;
+    return arraySize;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void sub(int threadID, int index, double value) {
-    array[index].add(-value);
+    doubleAdders[index].add(-value);
   }
 }

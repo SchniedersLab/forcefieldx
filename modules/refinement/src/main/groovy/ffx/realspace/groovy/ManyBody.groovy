@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -151,7 +151,7 @@ class ManyBody extends AlgorithmsScript {
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
-          resNumberList, titrationPH)
+          resNumberList, titrationPH, manyBodyOptions)
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
@@ -189,7 +189,7 @@ class ManyBody extends AlgorithmsScript {
 
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
-            optimalRotamers)
+            optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       } else {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -307,10 +307,8 @@ public class GKEnergyRegion extends ParallelRegion {
     int nAtoms = atoms.length;
     int nThreads = gkEnergyLoop.length;
     if (selfEnergy == null || selfEnergy.size() != atoms.length) {
-      selfEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
-          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
-      crossEnergy = AtomicDoubleArray.atomicDoubleArrayFactory(
-          AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+      selfEnergy = AtomicDoubleArrayImpl.MULTI.createInstance(nThreads, nAtoms);
+      crossEnergy = AtomicDoubleArrayImpl.MULTI.createInstance(nThreads, nAtoms);
     } else {
       selfEnergy.reset(parallelTeam, 0, nAtoms - 1);
       crossEnergy.reset(parallelTeam, 0, nAtoms - 1);

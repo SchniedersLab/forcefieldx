@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -43,11 +43,10 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
+import ffx.potential.nonbonded.NeighborList;
+import ffx.utilities.StringOutputStream;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static ffx.crystal.SymOp.applyFracSymOp;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
@@ -160,8 +159,8 @@ public class ManyBodyCell {
     double[] atXYZ = new double[3];
     atXYZ = atom.getXYZ(atXYZ);
     crystal.toFractionalCoordinates(atXYZ, atXYZ);
-    moveValuesBetweenZeroAndOne(atXYZ);
     applyFracSymOp(atXYZ, atXYZ, symOp);
+    moveValuesBetweenZeroAndOne(atXYZ);
     return checkIfContained(atXYZ);
   }
 

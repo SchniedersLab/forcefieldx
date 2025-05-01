@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -108,7 +108,7 @@ public final class PDBFilter extends SystemFilter {
 
     String[] constantPhNames = {"C", "CA", "N", "O", "OXT", "OT2", "H", "HA", "H1", "H2", "H3"};
     constantPhBackboneNames = Set.of(constantPhNames);
-    
+
     String[] naNames = {"P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "C1'"};
     naBackboneNames = Set.of(naNames);
   }
@@ -244,7 +244,7 @@ public final class PDBFilter extends SystemFilter {
    *     object.
    */
   public PDBFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField,
-      CompositeConfiguration properties) {
+                   CompositeConfiguration properties) {
     super(files, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -261,7 +261,7 @@ public final class PDBFilter extends SystemFilter {
    *     object.
    */
   public PDBFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
-      CompositeConfiguration properties) {
+                   CompositeConfiguration properties) {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -278,7 +278,7 @@ public final class PDBFilter extends SystemFilter {
    *     object.
    */
   public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies, ForceField forceField,
-      CompositeConfiguration properties) {
+                   CompositeConfiguration properties) {
     super(file, molecularAssemblies, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -297,7 +297,7 @@ public final class PDBFilter extends SystemFilter {
    *     optimization.
    */
   public PDBFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
-      CompositeConfiguration properties, List<Integer> resNumberList) {
+                   CompositeConfiguration properties, List<Integer> resNumberList) {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -359,8 +359,8 @@ public final class PDBFilter extends SystemFilter {
       } catch (IllegalArgumentException ex) {
         String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
         logger.info(
-            format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
-                xyz[i], atom, newValue));
+                format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
+                        xyz[i], atom, newValue));
         decimals.append(newValue);
       }
     }
@@ -368,16 +368,16 @@ public final class PDBFilter extends SystemFilter {
       decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
     } catch (IllegalArgumentException ex) {
       logger.severe(
-          format(" Occupancy %6.2f for atom %s must be between 0 and 1.", atom.getOccupancy(),
-              atom));
+              format(" Occupancy %6.2f for atom %s must be between 0 and 1.", atom.getOccupancy(),
+                      atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
     } catch (IllegalArgumentException ex) {
       String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
       logger.info(
-          format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
-              atom.getTempFactor(), atom, newValue));
+              format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
+                      atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
 
@@ -418,7 +418,7 @@ public final class PDBFilter extends SystemFilter {
   @Override
   public int countNumModels() {
     Set<File> files = systems.stream().map(MolecularAssembly::getFile).map(File::toString).distinct()
-        .map(File::new).collect(Collectors.toSet());
+            .map(File::new).collect(Collectors.toSet());
 
     // Dangers of parallelism are minimized by: unique files/filenames, read-only access.
     return files.parallelStream().mapToInt((File fi) -> {
@@ -540,12 +540,12 @@ public final class PDBFilter extends SystemFilter {
               if (!chainIDs.contains(mtn.chainChar)) {
                 if (chainIDs.size() == 1) {
                   logger.warning(
-                      format(" Chain ID %c for mutation not found: only one chain %c found.",
-                          mtn.chainChar, chainIDs.get(0)));
+                          format(" Chain ID %c for mutation not found: only one chain %c found.",
+                                  mtn.chainChar, chainIDs.get(0)));
                 } else {
                   logger.warning(
-                      format(" Chain ID %c for mutation not found: mutation will not proceed.",
-                          mtn.chainChar));
+                          format(" Chain ID %c for mutation not found: mutation will not proceed.",
+                                  mtn.chainChar));
                 }
               }
             }
@@ -740,7 +740,7 @@ public final class PDBFilter extends SystemFilter {
                   a.setAnisou(adp);
                 } else {
                   logger.info(
-                      format(" No ATOM record for ANISOU serial number %d has been found.", serial));
+                          format(" No ATOM record for ANISOU serial number %d has been found.", serial));
                   logger.info(format(" This ANISOU record will be ignored:\n %s", line));
                 }
                 break;
@@ -777,7 +777,7 @@ public final class PDBFilter extends SystemFilter {
                   serial = Hybrid36.decode(5, line.substring(6, 11));
                   name = line.substring(12, 16).trim();
                   if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
-                      || name.toUpperCase().contains("3H")) {
+                          || name.toUpperCase().contains("3H")) {
                     // VERSION3_2 is presently just a placeholder for "anything non-standard".
                     fileStandard = VERSION3_2;
                   }
@@ -785,12 +785,11 @@ public final class PDBFilter extends SystemFilter {
                   if (!altLocs.contains(altLoc)) {
                     altLocs.add(altLoc);
                   }
-                  if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+
+                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
                     break;
                   }
-                  // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                  //  break;
-                  // }
+
                   resName = line.substring(17, 20).trim();
                   chainID = line.substring(21, 22).charAt(0);
                   segID = getSegID(chainID);
@@ -800,9 +799,9 @@ public final class PDBFilter extends SystemFilter {
                   if (insertionCode != ' ' && !containsInsCode) {
                     containsInsCode = true;
                     logger.warning(
-                        " FFX support for files with " + "insertion codes is experimental. "
-                            + "Residues will be renumbered to " + "eliminate insertion codes (52A "
-                            + "becomes 53, 53 becomes 54, etc)");
+                            " FFX support for files with " + "insertion codes is experimental. "
+                                    + "Residues will be renumbered to " + "eliminate insertion codes (52A "
+                                    + "becomes 53, 53 becomes 54, etc)");
                   }
 
                   int offset = insertionCodeCount.getOrDefault(chainID, 0);
@@ -815,8 +814,8 @@ public final class PDBFilter extends SystemFilter {
                     resSeq += offset;
                     if (offset != 0) {
                       logger.info(
-                          format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d", chainID,
-                              pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
+                              format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d", chainID,
+                                      pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                     }
                     String newNum = format("%c%d", chainID, resSeq);
                     pdbToNewResMap.put(pdbResNum, newNum);
@@ -829,6 +828,8 @@ public final class PDBFilter extends SystemFilter {
                     boolean doBreak = false;
                     for (Mutation mtn : mutations) {
                       if (chainID == mtn.chainChar && resSeq == mtn.resID) {
+                        mtn.origResName = resName;
+                        resName = mtn.resName;
                         String atomName = name.toUpperCase();
 
                         int isAA = AminoAcidUtils.getAminoAcidNumber(resName);
@@ -836,58 +837,40 @@ public final class PDBFilter extends SystemFilter {
 
                         if ((isNA != -1 && naBackboneNames.contains(atomName)) || (isAA != -1 && backboneNames.contains(atomName))) {
                           printAtom = true;
-                          resName = mtn.resName;
                         } else {
-                          // pyrimidines: need N1 & C2 | purines: need N9 & C4
-                          if (resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU")) {
-                            boolean isMtnPyrimidine = mtn.resName.equals("DCY") || mtn.resName.equals("DTY");
-                            // log the deletion to get alchemical atoms from WT (don't include H primes)
-                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
+                          // grab pur-pur or pyr-pyr alchem. atoms
+                          ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(false);
+                          if (alchAtoms == null) {
+                            // test to see if atom is involved in glycosyl torsion and if needs renaming (pyr-pur/pur-pyr)
+                            String newName = mtn.isNonAlchemicalAtom(atomName);
+                            if (newName != null) { // if not null -- use name it
+                              printAtom = true;
+                              if (newName.startsWith("~")) { // switch from purine to pyrmidine or v.v.
+                                // switch name and include it as an alchemical atom
+                                name = newName.substring(1);
+                                logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                              } else {
+                                // replace name but do not include as an alchemical atom
+                                name = newName;
+                              }
+                              doBreak = false;
+                            } else if (!atomName.contains("'")) {
                               logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                            }
-                            if (atomName.equals("N9")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPyrimidine) {
-                                name = "N1"; // change N9 to N1
-                              }
-                            } else if (atomName.equals("C4")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPyrimidine) {
-                                name = "C2"; // change C4 to C2
-                              }
-                            } else {
                               doBreak = true;
-                              break;
-                            }
-                          } else if (resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY")) {
-                            boolean isMtnPurine = mtn.resName.equals("DAD") || mtn.resName.equals("DGU");
-                            if (!atomName.contains("'") || !atomName.startsWith("H")) {
-                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
-                            }
-                            if (atomName.equals("N1")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPurine) {
-                                name = "N9"; // change N1 to N9
-                              }
-                            } else if (atomName.equals("C2")) {
-                              printAtom = true;
-                              resName = mtn.resName;
-                              if (isMtnPurine) {
-                                name = "C4"; // change C2 to C4
-                              }
                             } else {
-                              doBreak = true;
-                              break;
+                              printAtom = true;
+                              doBreak = false;
                             }
                           } else {
-                            logger.info(format(" Deleting atom %s of %s %d", atomName, resName, resSeq));
-                            // don't have alchemical atom logging because this would be for AA
-                            doBreak = true;
-                            break;
+                            if (alchAtoms.contains(atomName) && !atomName.contains("'")) {
+                              logger.info(format(" DELETING atom %d %s of %s %d in chain %s", serial, atomName, resName, resSeq, chainID));
+                              doBreak = true;
+                            } else {
+                              printAtom = true;
+                              doBreak = false;
+                            }
                           }
+                          break;
                         }
                       }
                     }
@@ -1008,8 +991,8 @@ public final class PDBFilter extends SystemFilter {
                 if (insertionCode != ' ' && !containsInsCode) {
                   containsInsCode = true;
                   logger.warning(" FFX support for files with " + "insertion codes is experimental. "
-                      + "Residues will be renumbered to " + "eliminate insertion codes (52A "
-                      + "becomes 53, 53 becomes 54, etc)");
+                          + "Residues will be renumbered to " + "eliminate insertion codes (52A "
+                          + "becomes 53, 53 becomes 54, etc)");
                 }
 
                 int offset = insertionCodeCount.getOrDefault(chainID, 0);
@@ -1022,8 +1005,8 @@ public final class PDBFilter extends SystemFilter {
                   resSeq += offset;
                   if (offset != 0) {
                     logger.info(
-                        format(" Chain %c " + "molecule %s-%s renumbered to %c %s-%d", chainID,
-                            pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
+                            format(" Chain %c " + "molecule %s-%s renumbered to %c %s-%d", chainID,
+                                    pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                   }
                   String newNum = format("%c%d", chainID, resSeq);
                   pdbToNewResMap.put(pdbResNum, newNum);
@@ -1322,7 +1305,7 @@ public final class PDBFilter extends SystemFilter {
                 if (line.length() >= 68) {
                   String remarkType = line.substring(7, 10).trim();
                   if (remarkType.matches("\\d+") && parseInt(remarkType) == 350 && line.substring(13,
-                      18).equalsIgnoreCase("BIOMT")) {
+                          18).equalsIgnoreCase("BIOMT")) {
                     properties.addProperty("BIOMTn", new StringBuilder(line.substring(24, 68)));
                   }
                 }
@@ -1350,7 +1333,7 @@ public final class PDBFilter extends SystemFilter {
     // Record the number of atoms read in from the PDB file before applying
     // algorithms that may build new atoms.
     int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
-
+    removeExcessHydrogens();
     // Build missing backbone atoms in loops.
     buildMissingResidues(xyzIndex, activeMolecularAssembly, seqRes, dbRef);
 
@@ -1371,6 +1354,50 @@ public final class PDBFilter extends SystemFilter {
       numberAtoms(activeMolecularAssembly);
     }
     return true;
+  }
+
+  public void removeExcessHydrogens(){
+    logger.info(" Removing excess Hydrogens");
+    for(Residue residue: activeMolecularAssembly.getResidueList()){
+      if(residue.getName().equals("ACE") || residue.getName().equals("NME") || residue.getResidueType() != Residue.ResidueType.AA){
+        break;
+      }
+      String trueResName = residue.getAtomByName("CA", true).getResidueName();
+      Atom atom;
+      switch (trueResName) {
+        case "HID", "GLU" -> {
+          // No HE2
+          atom = residue.getAtomByName("HE2", true);
+        }
+        case "HIE" -> {
+          // No HD1
+          atom = residue.getAtomByName("HD1", true);
+        }
+        case "ASP" -> {
+          // No HD2
+          atom = residue.getAtomByName("HD2", true);
+        }
+        case "LYD" -> {
+          // No HZ3
+          atom = residue.getAtomByName("HZ3", true);
+        }
+        case "CYD" -> {
+          // No HG
+          atom = residue.getAtomByName("HG", true);
+        }
+        default -> {
+          atom = null;
+        }
+        // Do nothing.
+      }
+      if(atom != null){
+        int index = activeMolecularAssembly.getResidueList().indexOf(residue);
+        MSNode atoms = residue.getAtomNode();
+        atoms.remove(atom);
+        residue.setName(trueResName);
+        activeMolecularAssembly.getResidueList().set(index, residue);
+      }
+    }
   }
 
   /** {@inheritDoc} */
@@ -1464,6 +1491,8 @@ public final class PDBFilter extends SystemFilter {
         }
 
         // Begin parsing the model.
+        currentChainID = null;
+        currentSegID = null;
         boolean modelDone = false;
         line = currentReader.readLine();
         while (line != null) {
@@ -1502,7 +1531,7 @@ public final class PDBFilter extends SystemFilter {
               case HETATM:
                 String name = line.substring(12, 16).trim();
                 if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
-                    || name.toUpperCase().contains("3H")) {
+                        || name.toUpperCase().contains("3H")) {
                   // VERSION3_2 is presently just a placeholder for "anything non-standard".
                   fileStandard = VERSION3_2;
                 }
@@ -1524,7 +1553,7 @@ public final class PDBFilter extends SystemFilter {
                 double occupancy = 1.0;
                 double tempFactor = 1.0;
                 Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
-                    tempFactor, segID);
+                        tempFactor, segID);
                 newAtom.setHetero(hetatm);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
@@ -1594,7 +1623,7 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                   // TODO: Handle changes in space groups... Means recalculating force field terms.
                   logger.warning(format(" Original space group %s could not be changed to %s",
-                      crystal.spaceGroup.shortName, spaceGroup.shortName));
+                          crystal.spaceGroup.shortName, spaceGroup.shortName));
                 }
                 break;
               case ENDMDL:
@@ -1626,8 +1655,8 @@ public final class PDBFilter extends SystemFilter {
         return true;
       } catch (IOException ex) {
         logger.info(
-            format(" Exception in parsing frame %d of %s:" + " %s", modelsRead, system.toString(),
-                ex));
+                format(" Exception in parsing frame %d of %s:" + " %s", modelsRead, system.toString(),
+                        ex));
       }
     }
     return false;
@@ -1782,7 +1811,7 @@ public final class PDBFilter extends SystemFilter {
    * @return Success of writing.
    */
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
-      boolean versioning) {
+                           boolean versioning) {
     return writeFile(saveFile, append, toExclude, writeEnd, versioning, null);
   }
 
@@ -1800,10 +1829,26 @@ public final class PDBFilter extends SystemFilter {
    * @return Success of writing.
    */
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
-      boolean versioning, String[] extraLines) {
+                           boolean versioning, String[] extraLines) {
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
     if (saveFile == null) {
@@ -1814,8 +1859,8 @@ public final class PDBFilter extends SystemFilter {
     }
     if (nSymOp > -1) {
       logger.info(format(" Saving atoms using the symmetry operator:\n%s\n",
-          activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.getSymOp(nSymOp)
-              .toString()));
+              activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.getSymOp(nSymOp)
+                      .toString()));
     }
 
     // Create StringBuilders for ATOM, ANISOU and TER records that can be reused.
@@ -1847,7 +1892,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     try (FileWriter fw = new FileWriter(newFile, append);
-        BufferedWriter bw = new BufferedWriter(fw)) {
+         BufferedWriter bw = new BufferedWriter(fw)) {
       /*
        Will come before CRYST1 and ATOM records, but after anything
        written by writeFileWithHeader (particularly X-ray refinement statistics).
@@ -1938,12 +1983,12 @@ public final class PDBFilter extends SystemFilter {
           for (Residue residue : residues) {
             if (residue.getName().equalsIgnoreCase("CYS")) {
               List<Atom> cysAtoms = residue.getAtomList().stream()
-                  .filter(a -> !atomExclusions.contains(a)).toList();
+                      .filter(a -> !atomExclusions.contains(a)).toList();
               Atom SG1 = null;
               for (Atom atom : cysAtoms) {
                 String atName = atom.getName().toUpperCase();
                 if (atName.equals("SG") || atName.equals("SH")
-                    || atom.getAtomType().atomicNumber == 16) {
+                        || atom.getAtomType().atomicNumber == 16) {
                   SG1 = atom;
                   break;
                 }
@@ -1955,9 +2000,9 @@ public final class PDBFilter extends SystemFilter {
                   if (SG1.getIndex() < SG2.getIndex()) {
                     bond.energy(false);
                     bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n", serNum++,
-                        SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
-                        SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()), "",
-                        bond.getValue()));
+                            SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                            SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()), "",
+                            bond.getValue()));
                   }
                 }
               }
@@ -2010,14 +2055,22 @@ public final class PDBFilter extends SystemFilter {
             sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
             // Loop over atoms
             List<Atom> residueAtoms = residue.getAtomList().stream()
-                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
+                    .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
             for (Atom atom : residueAtoms) {
               if (mutate) {
                 for (Mutation mtn : mutations) {
                   if (resID == mtn.resID) {
-                    if (residue.getBackboneAtoms().contains(atom)) {
-                      logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                    ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(true);
+                    if (alchAtoms != null) {
+                      if (residue.getBackboneAtoms().contains(atom) && alchAtoms.contains(atom.getName())) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                      }
+                    } else {
+                      // treating pur-pyr or pyr-pur N9/N1 & C2/C4 as alchemical
+                      if (residue.getBackboneAtoms().contains(atom)) {
+                        logger.info(format(" MUTATION atom is %d chain %s",serial, currentChainID));
+                      }
                     }
                   }
                 }
@@ -2039,10 +2092,10 @@ public final class PDBFilter extends SystemFilter {
                   altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 }
                 residueAtoms = altResidue.getAtomList().stream()
-                    .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
+                        .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
                 for (Atom atom : residueAtoms) {
                   if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                      .equals('A')) {
+                          .equals('A')) {
                     sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
@@ -2082,7 +2135,7 @@ public final class PDBFilter extends SystemFilter {
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
         // List<Atom> moleculeAtoms = molecule.getAtomList();
         List<Atom> moleculeAtoms = molecule.getAtomList().stream()
-            .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
+                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : moleculeAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2099,7 +2152,7 @@ public final class PDBFilter extends SystemFilter {
             moleculeAtoms = altmolecule.getAtomList();
             for (Atom atom : moleculeAtoms) {
               if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                  .equals('A')) {
+                      .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2121,7 +2174,7 @@ public final class PDBFilter extends SystemFilter {
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
         // List<Atom> ionAtoms = ion.getAtomList();
         List<Atom> ionAtoms = ion.getAtomList().stream().filter(a -> !atomExclusions.contains(a))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : ionAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2138,7 +2191,7 @@ public final class PDBFilter extends SystemFilter {
             ionAtoms = altion.getAtomList();
             for (Atom atom : ionAtoms) {
               if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                  .equals('A')) {
+                      .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2159,7 +2212,7 @@ public final class PDBFilter extends SystemFilter {
         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
         List<Atom> waterAtoms = wat.getAtomList().stream().filter(a -> !atomExclusions.contains(a))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : waterAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2176,7 +2229,7 @@ public final class PDBFilter extends SystemFilter {
             waterAtoms = altwater.getAtomList();
             for (Atom atom : waterAtoms) {
               if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                  .equals('A')) {
+                      .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2243,15 +2296,31 @@ public final class PDBFilter extends SystemFilter {
    * @return a boolean.
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     activeMolecularAssembly.setFile(saveFile);
     activeMolecularAssembly.setName(saveFile.getName());
 
     try (FileWriter fw = new FileWriter(saveFile, append); BufferedWriter bw = new BufferedWriter(
-        fw)) {
+            fw)) {
       bw.write(header);
       bw.newLine();
     } catch (Exception e) {
@@ -2301,13 +2370,40 @@ public final class PDBFilter extends SystemFilter {
       c = 'A';
     }
 
+    // If the chain ID has not changed, return the existing segID.
+    if (c.equals(currentChainID)) {
+      return currentSegID;
+    } else {
+      currentChainID = null;
+    }
+
     List<String> segIDs = segidMap.get(c);
     if (segIDs != null) {
-      String segID = segIDs.get(0);
       if (segIDs.size() > 1) {
-        logger.log(Level.INFO, format(" Multiple SegIDs for to chain %s; using %s.", c, segID));
+        if (currentSegID == null) {
+          currentChainID = c;
+          currentSegID = segIDs.get(0);
+          return segIDs.get(0);
+        } else if (currentSegID.length() == 1) {
+          currentChainID = c;
+          currentSegID = segIDs.get(1);
+          return segIDs.get(1);
+        } else if (currentSegID.length() == 2) {
+          String s = currentSegID.substring(0,1);
+          int num = -2;
+          try {
+            num = Integer.parseInt(s);
+          } catch (NumberFormatException e) {
+            logger.severe(" SegID of length 2 does not start with an integer.");
+          }
+          currentChainID = c;
+          currentSegID = segIDs.get(num+1);
+          return segIDs.get(num+1);
+        } else {
+          logger.info(" Too many repeated chains. Using single letter for segID.");
+        }
       }
-      return segID;
+      return segIDs.get(0);
     } else {
       logger.log(Level.INFO, format(" Creating SegID for to chain %s", c));
       return getSegID(c);
@@ -2371,7 +2467,7 @@ public final class PDBFilter extends SystemFilter {
    * @throws java.io.IOException if any.
    */
   private void writeAtom(Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB,
-      BufferedWriter bw) throws IOException {
+                         BufferedWriter bw) throws IOException {
     String name = atom.getName();
     int nameLength = name.length();
     if (nameLength > 4) {
@@ -2424,8 +2520,8 @@ public final class PDBFilter extends SystemFilter {
       } catch (IllegalArgumentException ex) {
         String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
         logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
-            + "overflowed bounds of 8.3f string specified by PDB "
-            + "format; truncating value to %s", i, xyz[i], atom, newValue));
+                + "overflowed bounds of 8.3f string specified by PDB "
+                + "format; truncating value to %s", i, xyz[i], atom, newValue));
         decimals.append(newValue);
       }
     }
@@ -2433,16 +2529,16 @@ public final class PDBFilter extends SystemFilter {
       decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
     } catch (IllegalArgumentException ex) {
       logger.severe(
-          format(" Occupancy %f for atom %s is impossible; " + "value must be between 0 and 1",
-              atom.getOccupancy(), atom));
+              format(" Occupancy %f for atom %s is impossible; " + "value must be between 0 and 1",
+                      atom.getOccupancy(), atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
     } catch (IllegalArgumentException ex) {
       String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
       logger.info(format(" Atom temp factor %6.2f for atom %s overflowed "
-              + "bounds of 6.2f string specified by PDB format; truncating " + "value to %s",
-          atom.getTempFactor(), atom, newValue));
+                      + "bounds of 6.2f string specified by PDB format; truncating " + "value to %s",
+              atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
     sb.replace(30, 66, decimals.toString());
@@ -2478,9 +2574,9 @@ public final class PDBFilter extends SystemFilter {
     if (anisou != null) {
       anisouSB.replace(6, 80, sb.substring(6, 80));
       anisouSB.replace(28, 70,
-          format("%7d%7d%7d%7d%7d%7d", (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
-              (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4), (int) (anisou[4] * 1e4),
-              (int) (anisou[5] * 1e4)));
+              format("%7d%7d%7d%7d%7d%7d", (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+                      (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4), (int) (anisou[4] * 1e4),
+                      (int) (anisou[5] * 1e4)));
       bw.write(anisouSB.toString());
       bw.newLine();
     }
@@ -2504,6 +2600,8 @@ public final class PDBFilter extends SystemFilter {
     final String resName;
     /** Character for the chain ID of the residue that will be mutated. */
     final char chainChar;
+    /** Residue name before mutation. */
+    String origResName;
 
     public Mutation(int resID, char chainChar, String newResName) {
       newResName = newResName.toUpperCase();
@@ -2518,6 +2616,144 @@ public final class PDBFilter extends SystemFilter {
       this.resID = resID;
       this.chainChar = chainChar;
       this.resName = newResName;
+    }
+
+    /**
+     * Check to see if an atom is involved in the mutated base's glycosyl torsion. If the mutation is a switch from
+     * purine to pyrimidine or vice versa, it will return '~name', meaning the name should be replaced but to include it
+     * as an alchemical atom.
+     * @param atomName atom name to check
+     * @return new name to use if it is involved in glycosyl torsion, null otherwise
+     */
+    public String isNonAlchemicalAtom(String atomName) {
+      if (isWtPurine()) {
+        if (atomName.equals("N9")) {
+          if (isMtnPyrimidine()) {
+            return "~N1";
+          }
+          return atomName;
+        } else if (atomName.equals("C4")) {
+          if (isMtnPyrimidine()) {
+            return "~C2";
+          }
+          return atomName;
+        }
+        return null;
+      }
+
+      if (isWtPyrimidine()) {
+        if (atomName.equals("N1")) {
+          if (isMtnPurine()) {
+            // here
+            return "~N9";
+          }
+          return atomName;
+        } else if (atomName.equals("C2")) {
+          if (isMtnPurine()) {
+            // here
+            return "~C4";
+          }
+          return atomName;
+        }
+        return null;
+      }
+
+      return null;
+    }
+
+    /**
+     * Determines what atoms should be alchemical for a purine to purine or pyrimidine to pyrimidine mutation.
+     * @param isWriting true if writing the pdb, false if reading the pdb
+     * @return ArrayList of alchemical atoms, null if not a pur-pur or pyr-pyr mutation
+     */
+    public ArrayList<String> getAlchemicalAtoms(boolean isWriting) {
+      // Log warning that the mutation input is the same residue and return nothing so prev. functionality is not changed
+      if (resName.equals(origResName)) {
+        logger.severe("Desired Mutation residue is the same as the original.");
+        return null;
+      }
+
+      boolean purpur;
+      if (isMtnPurine() && isWtPurine()) {
+        purpur = true;
+      } else if (isMtnPyrimidine() && isWtPyrimidine()) {
+        purpur = false;
+      } else {
+        // Return nothing so previous functionality is not changed
+        return null;
+      }
+
+      String res;
+
+      // look at the mutation residue if writing or the original (wild type) residue if reading
+      if (isWriting) {
+        res = resName;
+      } else {
+        res = origResName;
+      }
+
+      ArrayList<String> list = new ArrayList<>();
+      if (purpur) { // purine: either A to G or G to A
+        if (res.equals("DAD") || res.equals("DA")) { // MTN is A
+          list.add("N6");
+          list.add("H61");
+          list.add("H62");
+          list.add("H2");
+        } else { // MTN is G
+          list.add("H1");
+          list.add("N2");
+          list.add("H21");
+          list.add("H22");
+          list.add("O6");
+        }
+      } else { // pyrimidine: either T to C or C to T
+        if (res.equals("DTY") || res.equals("DT")) { // MTN is T
+          list.add("H3");
+          list.add("O4");
+          list.add("C7");
+          list.add("H71");
+          list.add("H72");
+          list.add("H73");
+        } else { // MTN is C
+          list.add("N4");
+          list.add("H41");
+          list.add("H42");
+          list.add("H5");
+        }
+      }
+      return list;
+    }
+
+    /**
+     * Determine if the mutation residue is purine.
+     * @return true if mutation is purine
+     */
+    public boolean isMtnPurine() {
+      return resName.equals("DA") || resName.equals("DG") || resName.equals("DAD") || resName.equals("DGU");
+    }
+
+    /**
+     * Determine if the mutation residue is pyrimidine.
+     * @return true if mutation is pyrimidine
+     */
+    public boolean isMtnPyrimidine() {
+      return resName.equals("DC") || resName.equals("DT") || resName.equals("DCY") || resName.equals("DTY");
+    }
+
+    /**
+     * Determine if original (wild type) residue is purine.
+     * @return true if original residue is purine
+     */
+    public boolean isWtPurine() {
+      return origResName.equals("DA") || origResName.equals("DG") || origResName.equals("DAD") || origResName.equals("DGU");
+    }
+
+    /**
+     * Determine if original (wild type) residue is pyrimidine.
+     * @return true if original residue is pyrimidine
+     */
+    public boolean isWtPyrimidine() {
+      return origResName.equals("DT") || origResName.equals("DC") || origResName.equals("DTY") || origResName.equals("DCY");
     }
   }
 }

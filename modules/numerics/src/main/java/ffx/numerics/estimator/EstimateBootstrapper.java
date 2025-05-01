@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -46,6 +46,7 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Bootstrap Free Energy Estimate.
@@ -57,8 +58,8 @@ public class EstimateBootstrapper {
 
   private final BootstrappableEstimator estimate;
   private final int nWindows;
-  private final SummaryStatistics[] bootstrapFEResults;
-  private final SummaryStatistics[] bootstrapEnthalpyResults;
+  private final SummaryStatistics[] freeEnergyDifferenceResults;
+  private final SummaryStatistics[] enthalpyResults;
 
   /**
    * Constructor.
@@ -67,9 +68,9 @@ public class EstimateBootstrapper {
    */
   public EstimateBootstrapper(BootstrappableEstimator estimator) {
     this.estimate = estimator;
-    nWindows = estimate.numberOfBins();
-    bootstrapFEResults = new SummaryStatistics[nWindows];
-    bootstrapEnthalpyResults = new SummaryStatistics[nWindows];
+    nWindows = estimate.getNumberOfBins();
+    freeEnergyDifferenceResults = new SummaryStatistics[nWindows];
+    enthalpyResults = new SummaryStatistics[nWindows];
   }
 
   /**
@@ -134,12 +135,12 @@ public class EstimateBootstrapper {
   }
 
   /**
-   * Get Bootstrap Free Energy results for each window.
+   * Get bootstrap Enthalpy results for each window.
    *
    * @return Bootstrap Enthalpy results for each window.
    */
-  public SummaryStatistics[] getBootstrapEnthalpyResults() {
-    return bootstrapEnthalpyResults;
+  public SummaryStatistics[] getEnthalpyResults() {
+    return enthalpyResults;
   }
 
   /**
@@ -172,8 +173,8 @@ public class EstimateBootstrapper {
 
       estimate.estimateDG(true);
 
-      double[] fe = estimate.getBinEnergies();
-      double[] enthalpy = estimate.getBinEnthalpies();
+      double[] fe = estimate.getFreeEnergyDifferences();
+      double[] enthalpy = estimate.getEnthalpyDifferences();
       for (int j = 0; j < nWindows; j++) {
         windows[j].addValue(fe[j]);
         enthalpyWindows[j].addValue(enthalpy[j]);
@@ -181,27 +182,9 @@ public class EstimateBootstrapper {
     }
 
     for (int i = 0; i < nWindows; i++) {
-      bootstrapFEResults[i] = new SummaryStatistics(windows[i]);
-      bootstrapEnthalpyResults[i] = new SummaryStatistics(enthalpyWindows[i]);
+      freeEnergyDifferenceResults[i] = new SummaryStatistics(windows[i]);
+      enthalpyResults[i] = new SummaryStatistics(enthalpyWindows[i]);
     }
-  }
-
-  /**
-   * Get bootstrap free energy estimate for each window.
-   *
-   * @return Return the bootstrap free energy difference estimate for each window.
-   */
-  public double[] getFE() {
-    return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getMean).toArray();
-  }
-
-  /**
-   * Get bootstrap enthalpy estimate for each window.
-   *
-   * @return Return the bootstrap enthalpy estimate for each window.
-   */
-  public double[] getEnthalpy() {
-    return stream(bootstrapEnthalpyResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
 
   /**
@@ -209,8 +192,8 @@ public class EstimateBootstrapper {
    *
    * @return The total free energy difference estimate.
    */
-  public double getTotalFE() {
-    return getTotalFE(getFE());
+  public double getTotalFreeEnergyDifference() {
+    return getTotalFreeEnergyDifference(getFreeEnergyDifferences());
   }
 
   /**
@@ -218,78 +201,95 @@ public class EstimateBootstrapper {
    *
    * @return The total enthalpy estimate.
    */
-
-  public double getTotalEnthalpy() {
-    return getTotalEnthalpy(getEnthalpy());
+  public double getTotalEnthalpyChange() {
+    return getTotalEnthalpyChange(getEnthalpyChanges());
   }
 
-
   /**
-   * Get the total free energy difference estimate from per window bootstrap analysis.
+   * Get the total entropy change (-TdS) from bootstrap analysis.
    *
-   * @param fe The free energy difference estimate for each window.
-   * @return The total free energy difference estimate from bootstrap analysis.
+   * @return The total entropy change (-TdS).
    */
-  public double getTotalFE(double[] fe) {
-    return estimate.sumBootstrapResults(fe);
+  public double getTotalEntropyChange() {
+    // dG = dH - TdS
+    double dG = getTotalFreeEnergyDifference();
+    double dH = getTotalEnthalpyChange();
+    return dG - dH;
   }
 
   /**
-   * Get the total enthalpy estimate from per window bootstrap analysis.
+   * Get bootstrap free energy estimate for each window.
+   * <p>
+   * getFreeEnergyDifferences
    *
-   * @param enthalpy The enthalpy estimate for each window.
-   * @return The total enthalpy difference estimate from bootstrap analysis.
+   * @return Return the bootstrap free energy difference estimate for each window.
    */
-  public double getTotalEnthalpy(double[] enthalpy) {
-    return estimate.sumBootstrapResults(enthalpy);
+  public double[] getFreeEnergyDifferences() {
+    return stream(freeEnergyDifferenceResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
 
   /**
-   * Get the total free energy difference variance estimate from bootstrap analysis.
+   * Get bootstrap enthalpy estimate for each window.
    *
-   * @return The total free energy difference variance estimate.
+   * @return Return the bootstrap enthalpy estimate for each window.
    */
-  public double getTotalUncertainty() {
-    return getTotalUncertainty(getVariance());
+  public double[] getEnthalpyChanges() {
+    return stream(enthalpyResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
 
   /**
-   * Get the total free energy difference estimate from per window bootstrap analysis.
+   * Get bootstrap entropy estimate for each window (-TdS).
    *
-   * @param var The free energy difference variance estimate (not uncertainty) for each window.
-   * @return The total free energy difference variance estimate from bootstrap analysis.
+   * @return Return the bootstrap entropy estimate (-TdS) for each window.
    */
-  public double getTotalUncertainty(double[] var) {
-    return estimate.sumBootstrapUncertainty(var);
+  public double[] getEntropyChanges() {
+    double[] dG = getFreeEnergyDifferences();
+    double[] dH = getEnthalpyChanges();
+    double[] dS = new double[nWindows];
+    for (int i = 0; i < nWindows; i++) {
+      dS[i] = dG[i] - dH[i];
+    }
+    return dS;
   }
 
   /**
-   * Get the total enthalpy variance estimate from bootstrap analysis.
+   * Get the total free energy difference uncertainty estimate from bootstrap analysis.
    *
-   * @return The total enthalpy variance estimate.
+   * @return The total free energy difference uncertainty estimate.
+   */
+  public double getTotalFEDifferenceUncertainty() {
+    return getTotalFEDifferenceUncertainty(getFEDifferenceVariances());
+  }
+
+  /**
+   * Get the total enthalpy uncertainty estimate from bootstrap analysis.
+   *
+   * @return The total enthalpy uncertainty estimate.
    */
   public double getTotalEnthalpyUncertainty() {
-    return getTotalEnthalpyUncertainty(getEnthalpyVariance());
+    return getTotalEnthalpyUncertainty(getEnthalpyVariances());
   }
 
   /**
-   * Get the total enthalpy estimate from per window bootstrap analysis.
+   * Get the total entropy uncertainty estimate from bootstrap analysis.
+   * This is computed as the sqrt of the sum of the free energy and enthalpy variances.
    *
-   * @param var The enthalpy variance estimate (not uncertainty) for each window.
-   * @return The total enthalpy variance estimate from bootstrap analysis.
+   * @return The total enthalpy uncertainty estimate.
    */
-  public double getTotalEnthalpyUncertainty(double[] var) {
-    return estimate.sumBootstrapEnthalpyUncertainty(var);
+  public double getTotalEntropyUncertainty() {
+    double dG = getTotalFEDifferenceUncertainty();
+    double dH = getTotalEnthalpyUncertainty();
+    return sqrt(dG * dG + dH * dH);
   }
 
   /**
-   * Get the free energy difference standard deviation estimate from bootstrap analysis for each
+   * Get the free energy difference uncertainties (standard deviations) from bootstrap analysis for each
    * window.
    *
    * @return Returns free energy difference standard deviation estimate for each window.
    */
-  public double[] getUncertainty() {
-    return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getSd).toArray();
+  public double[] getFEDifferenceStdDevs() {
+    return stream(freeEnergyDifferenceResults).mapToDouble(SummaryStatistics::getSd).toArray();
   }
 
   /**
@@ -297,8 +297,35 @@ public class EstimateBootstrapper {
    *
    * @return Returns enthalpy standard deviation estimate for each window.
    */
-  public double[] getEnthalpyUncertainty() {
-    return stream(bootstrapEnthalpyResults).mapToDouble(SummaryStatistics::getSd).toArray();
+  public double[] getEnthalpyStdDevs() {
+    return stream(enthalpyResults).mapToDouble(SummaryStatistics::getSd).toArray();
+  }
+
+  /**
+   * Get the entropy standard deviation estimate from bootstrap analysis for each window.
+   * <p>
+   * This is computed as the sqrt of the sum of the free energy and enthalpy variances for each window.
+   *
+   * @return Returns enthalpy standard deviation estimate for each window.
+   */
+  public double[] getEntropyStdDevs() {
+    double[] dG = getFEDifferenceStdDevs();
+    double[] dH = getEnthalpyStdDevs();
+    double[] dS = new double[nWindows];
+    for (int i = 0; i < nWindows; i++) {
+      dS[i] = sqrt(dG[i] * dG[i] + dH[i] * dH[i]);
+    }
+    return dS;
+  }
+
+  /**
+   * Get the total free energy difference estimate from per window bootstrap analysis.
+   *
+   * @param freeEnergyDifferences The free energy difference estimate for each window.
+   * @return The total free energy difference estimate from bootstrap analysis.
+   */
+  public double getTotalFreeEnergyDifference(double[] freeEnergyDifferences) {
+    return estimate.getTotalFreeEnergyDifference(freeEnergyDifferences);
   }
 
   /**
@@ -306,8 +333,38 @@ public class EstimateBootstrapper {
    *
    * @return Returns free energy difference variance estimate for each window.
    */
-  public double[] getVariance() {
-    return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getVar).toArray();
+  public double[] getFEDifferenceVariances() {
+    return stream(freeEnergyDifferenceResults).mapToDouble(SummaryStatistics::getVar).toArray();
+  }
+
+  /**
+   * Get the total free energy difference uncertainty estimate from per window bootstrap analysis.
+   *
+   * @param variances The free energy difference variance estimate (not uncertainty) for each window.
+   * @return The total free energy difference uncertainty from bootstrap analysis.
+   */
+  public double getTotalFEDifferenceUncertainty(double[] variances) {
+    return estimate.getTotalFEDifferenceUncertainty(variances);
+  }
+
+  /**
+   * Get the total enthalpy estimate from per window bootstrap analysis.
+   *
+   * @param enthalpyChanges The enthalpy estimate for each window.
+   * @return The total enthalpy difference estimate from bootstrap analysis.
+   */
+  public double getTotalEnthalpyChange(double[] enthalpyChanges) {
+    return estimate.getTotalFreeEnergyDifference(enthalpyChanges);
+  }
+
+  /**
+   * Get the total enthalpy uncertainty estimate from per window bootstrap analysis.
+   *
+   * @param variances The enthalpy variance estimate (not uncertainty) for each window.
+   * @return The total enthalpy uncertainty estimate from bootstrap analysis.
+   */
+  public double getTotalEnthalpyUncertainty(double[] variances) {
+    return estimate.getTotalEnthalpyUncertainty(variances);
   }
 
   /**
@@ -315,7 +372,7 @@ public class EstimateBootstrapper {
    *
    * @return Returns enthalpy variance estimate for each window.
    */
-  public double[] getEnthalpyVariance() {
-    return stream(bootstrapEnthalpyResults).mapToDouble(SummaryStatistics::getVar).toArray();
+  public double[] getEnthalpyVariances() {
+    return stream(enthalpyResults).mapToDouble(SummaryStatistics::getVar).toArray();
   }
 }

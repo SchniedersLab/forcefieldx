@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -69,28 +69,32 @@ public class MultiDoubleArray implements AtomicDoubleArray {
   /**
    * Constructor for MultiDoubleArray.
    *
-   * @param nThreads the number of threads.
-   * @param size the size of the array.
+   * @param threadCount the number of threads.
+   * @param arraySize   the size of the array.
    */
-  public MultiDoubleArray(int nThreads, int size) {
-    this.size = size;
-    array = new double[nThreads][size];
-    threadCount = nThreads;
+  public MultiDoubleArray(int threadCount, int arraySize) {
+    this.size = arraySize;
+    array = new double[threadCount][arraySize];
+    this.threadCount = threadCount;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void add(int threadID, int index, double value) {
     array[threadID][index] += value;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public void alloc(int size) {
-    this.size = size;
+  public void alloc(int arraySize) {
+    this.size = arraySize;
     for (int i = 0; i < threadCount; i++) {
-      if (array[i].length < size) {
-        array[i] = new double[size];
+      if (array[i].length < arraySize) {
+        array[i] = new double[arraySize];
       }
     }
   }
@@ -104,46 +108,53 @@ public class MultiDoubleArray implements AtomicDoubleArray {
   }
 
   /**
-   * {@inheritDoc}
-   * <p>
-   * Reduce the contributions from each thread into array[0];
+   * Reduce contributions from each thread into the main thread's array.
+   *
+   * @param lb lower bound index.
+   * @param ub upper bound index.
    */
   @Override
   public void reduce(int lb, int ub) {
-    double[] gx = array[0];
+    double[] mainArray = array[0];
     for (int t = 1; t < threadCount; t++) {
-      double[] gxt = array[t];
-      for (int i = lb; i <= ub; i++) {
-        gx[i] += gxt[i];
-      }
+      double[] threadArray = array[t];
+      reduceFromThreads(mainArray, threadArray, lb, ub);
+    }
+  }
+
+  /**
+   * Perform reductions from one thread's array to the main array.
+   *
+   * @param mainArray   the main array where reductions are stored.
+   * @param threadArray the thread-specific array contributing to the reduction.
+   * @param lb          the lower bound for the range to reduce.
+   * @param ub          the upper bound for the range to reduce.
+   */
+  private void reduceFromThreads(double[] mainArray, double[] threadArray, int lb, int ub) {
+    for (int i = lb; i <= ub; i++) {
+      mainArray[i] += threadArray[i];
     }
   }
 
   /**
    * {@inheritDoc}
-   * <p>
-   * Reduce the contributions from each thread into array[0];
    */
   @Override
   public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
     try {
-      parallelTeam.execute(
-          new ParallelRegion() {
+      parallelTeam.execute(new ParallelRegion() {
+        @Override
+        public void run() throws Exception {
+          execute(lb, ub, new IntegerForLoop() {
             @Override
-            public void run() throws Exception {
-              execute(
-                  lb,
-                  ub,
-                  new IntegerForLoop() {
-                    @Override
-                    public void run(int first, int last) {
-                      reduce(first, last);
-                    }
-                  });
+            public void run(int first, int last) {
+              reduce(first, last);
             }
           });
+        }
+      });
     } catch (Exception e) {
-      logger.log(Level.WARNING, " Exception reducing an MultiDoubleArray", e);
+      logger.log(Level.WARNING, "Exception reducing a MultiDoubleArray", e);
     }
   }
 
@@ -152,9 +163,7 @@ public class MultiDoubleArray implements AtomicDoubleArray {
    */
   @Override
   public void reset(int threadID, int lb, int ub) {
-    // Note that fill is appears slightly faster than arraycopy for 10,000 to 100,000 elements.
     Arrays.fill(array[threadID], 0.0);
-    // System.arraycopy(zeros, 0, array[threadID], 0, size);
   }
 
   /**
@@ -163,47 +172,51 @@ public class MultiDoubleArray implements AtomicDoubleArray {
   @Override
   public void reset(ParallelTeam parallelTeam, int lb, int ub) {
     try {
-      parallelTeam.execute(
-          new ParallelRegion() {
+      parallelTeam.execute(new ParallelRegion() {
+        @Override
+        public void run() throws Exception {
+          execute(0, threadCount - 1, new IntegerForLoop() {
             @Override
-            public void run() throws Exception {
-              execute(
-                  0,
-                  threadCount - 1,
-                  new IntegerForLoop() {
-                    @Override
-                    public void run(int first, int last) {
-                      for (int i = first; i <= last; i++) {
-                        reset(i, lb, ub);
-                      }
-                    }
-                  });
+            public void run(int first, int last) {
+              for (int i = first; i <= last; i++) {
+                reset(i, lb, ub);
+              }
             }
           });
+        }
+      });
     } catch (Exception e) {
-      logger.log(Level.WARNING, " Exception resetting an MultiDoubleArray", e);
+      logger.log(Level.WARNING, "Exception resetting a MultiDoubleArray", e);
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void scale(int threadID, int index, double value) {
     array[threadID][index] *= value;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void set(int threadID, int index, double value) {
     array[threadID][index] = value;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int size() {
     return size;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void sub(int threadID, int index, double value) {
     array[threadID][index] -= value;

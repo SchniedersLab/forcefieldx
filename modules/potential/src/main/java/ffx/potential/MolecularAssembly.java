@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -151,6 +151,8 @@ public class MolecularAssembly extends MSGroup {
   private boolean visible = false;
   private FractionalMode fractionalMode = FractionalMode.MOLECULE;
   private double[][] fractionalCoordinates;
+  private boolean titrateConformer = false;
+  private Atom atomInitial;
 
   /**
    * Constructor for MolecularAssembly.
@@ -219,6 +221,18 @@ public class MolecularAssembly extends MSGroup {
     List<MSNode> Polymers = getAtomNodeList();
     if (o instanceof Atom) {
       Atom atom = (Atom) o;
+      for (Atom currentAtom : getAtomArray()) {
+        if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
+                && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
+                atom.getName().equals(currentAtom.getName())) {
+          titrateConformer = true;
+          atomInitial = currentAtom;
+          return getResidue(atom, true);
+        } else {
+          titrateConformer = false;
+          atomInitial = null;
+        }
+      }
       if (atom.isModRes()) {
         return getResidue(atom, true, Residue.ResidueType.AA);
       } else if (!atom.isHetero()) {
@@ -1997,8 +2011,19 @@ public class MolecularAssembly extends MSGroup {
     if (polymer == null) {
       return null;
     }
-    Residue res = polymer.getResidue(resName, resNum, create, defaultRT);
+
+    Residue res;
+    if(titrateConformer){
+      res = polymer.getResidue(atomInitial.getResidueName(), atomInitial.getResidueNumber(), create, defaultRT);
+      res.setName(atom.getResidueName());
+    } else {
+      res = polymer.getResidue(resName, resNum, create, defaultRT);
+    }
     if (create && res != null) {
+      res.setTitrateConformers(titrateConformer);
+      if(titrateConformer){
+        res.setAtomInitial(atomInitial);
+      }
       return (Atom) res.addMSNode(atom);
     }
     return null;

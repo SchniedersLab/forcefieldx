@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -187,6 +187,27 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * If this is set, then ASP, GLU, LYS and HIS Rotamers will be titratable.
    */
   private TitrationUtils titrationUtils = null;
+  private boolean titrateConformers = false;
+
+  public boolean isTitrateConformers() {
+    return titrateConformers;
+  }
+
+  public void setTitrateConformers(boolean titrateConformers) {
+    this.titrateConformers = titrateConformers;
+  }
+
+  public Atom getAtomInitial() {
+    return atomInitial;
+  }
+
+  public void setAtomInitial(Atom atomInitial) {
+    this.atomInitial = atomInitial;
+  }
+
+  private Atom atomInitial;
+
+
 
   /**
    * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4', and
@@ -297,7 +318,16 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       Character newAlt = newAtom.getAltLoc();
       MSNode atoms = getAtomNode();
       currentAtom = (Atom) atoms.contains(newAtom);
-      if (currentAtom == null) {
+      if (titrateConformers) {
+        currentAtom = atomInitial;
+        newAtom.setXyzIndex(currentAtom.getXyzIndex());
+        atoms.remove(currentAtom);
+        currentAtom = newAtom;
+        currentAtom.setResName(newAtom.getResidueName());
+        currentAtom.setResidueNumber(resNumber);
+        atoms.add(currentAtom);
+        setFinalized(false);
+      } else if (currentAtom == null){
         currentAtom = newAtom;
         currentAtom.setResName(getName());
         currentAtom.setResidueNumber(resNumber);
@@ -311,10 +341,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             newAtom.setXyzIndex(currentAtom.getXyzIndex());
             atoms.remove(currentAtom);
             currentAtom = newAtom;
-
             currentAtom.setResName(getName());
             currentAtom.setResidueNumber(resNumber);
-
             atoms.add(currentAtom);
             setFinalized(false);
           }

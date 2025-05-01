@@ -252,16 +252,16 @@ class MBAR extends AlgorithmsScript {
 
         // Print out results
         logger.info("\n MBAR Results:")
-        double[] dGs = mbar.getBinEnergies()
-        double[] uncertainties = mbar.getBinUncertainties()
-        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", mbar.getFreeEnergy(),
-                mbar.getUncertainty()))
+        double[] dGs = mbar.getFreeEnergyDifferences()
+        double[] uncertainties = mbar.getUncertainties()
+        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", mbar.getFreeEnergyDifference(),
+                mbar.getTotalFEDifferenceUncertainty()))
         for (int i = 0; i < dGs.length; i++) {
             logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }
 
         logger.info("\n MBAR Enthalpy & Entropy Results:")
-        double[] enthalpies = mbar.getBinEnthalpies()
+        double[] enthalpies = mbar.getEnthalpyDifferences()
         double[] entropies = mbar.getBinEntropies()
         double totalEnthalpy = sum(enthalpies)
         double totalEntropy = sum(entropies)
@@ -305,14 +305,14 @@ class MBAR extends AlgorithmsScript {
             try {
                 logger.info("\n BAR Results:")
                 BennettAcceptanceRatio bar = mbar.getBAR()
-                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", bar.getFreeEnergy(),
-                        bar.getUncertainty()))
-                dGs = bar.getBinEnergies()
-                uncertainties = bar.getBinUncertainties()
+                logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", bar.getFreeEnergyDifference(),
+                        bar.getTotalFEDifferenceUncertainty()))
+                dGs = bar.getFreeEnergyDifferences()
+                uncertainties = bar.getUncertainties()
                 for (int i = 0; i < dGs.length; i++) {
                     logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                 }
-                enthalpies = bar.getBinEnthalpies()
+                enthalpies = bar.getEnthalpyDifferences()
                 totalEnthalpy = sum(enthalpies)
                 logger.info(format("\n Total dH = %10.4f kcal/mol\n", totalEnthalpy))
                 for (int i = 0; i < enthalpies.length; i++) {
@@ -328,10 +328,10 @@ class MBAR extends AlgorithmsScript {
             EstimateBootstrapper bootstrapper = new EstimateBootstrapper(mbar)
             bootstrapper.bootstrap(numBootstrap)
             logger.info("\n MBAR Bootstrap Results from " + numBootstrap + " Samples:")
-            logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-                    bootstrapper.getTotalUncertainty()))
-            dGs = bootstrapper.getFE()
-            uncertainties = bootstrapper.getUncertainty()
+            logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFreeEnergyDifference(),
+                    bootstrapper.getTotalFEDifferenceUncertainty()))
+            dGs = bootstrapper.getFreeEnergyDifferences()
+            uncertainties = bootstrapper.getFEDifferenceStdDevs()
             for (int i = 0; i < dGs.length; i++) {
                 logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
             }
@@ -341,10 +341,10 @@ class MBAR extends AlgorithmsScript {
                     logger.info("\n BAR Bootstrap Results:")
                     bootstrapper = new EstimateBootstrapper(mbar.getBAR())
                     bootstrapper.bootstrap(numBootstrap)
-                    logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFE(),
-                            bootstrapper.getTotalUncertainty()))
-                    dGs = bootstrapper.getFE()
-                    uncertainties = bootstrapper.getUncertainty()
+                    logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol", bootstrapper.getTotalFreeEnergyDifference(),
+                            bootstrapper.getTotalFEDifferenceUncertainty()))
+                    dGs = bootstrapper.getFreeEnergyDifferences()
+                    uncertainties = bootstrapper.getFEDifferenceStdDevs()
                     for (int i = 0; i < dGs.length; i++) {
                         logger.info(format("    dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
                     }
@@ -360,7 +360,7 @@ class MBAR extends AlgorithmsScript {
                     filter.getPeriodComparisonMBAR(seed as MultistateBennettAcceptanceRatio.SeedType, 1e-7)
             double[][] dGPeriod = new double[mbarPeriodComparison.length][]
             for (int i = 0; i < mbarPeriodComparison.length; i++) {
-                dGPeriod[i] = mbarPeriodComparison[i].getBinEnergies()
+                dGPeriod[i] = mbarPeriodComparison[i].getFreeEnergyDifferences()
             }
             logger.info("\n MBAR Period Comparison Results:")
             logger.info(format("     %10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%%%10d%% ",

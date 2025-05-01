@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -497,15 +497,16 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         yAxis[2] = frameCoords[2][2];
         sub(yAxis, localOrigin, yAxis);
         normalize(yAxis, yAxis);
-        add(zAxis, xAxis, zAxis);
-        add(zAxis, yAxis, zAxis);
-        normalize(zAxis, zAxis);
-        rotMat[0][2] = zAxis[0];
-        rotMat[1][2] = zAxis[1];
-        rotMat[2][2] = zAxis[2];
-        var dot = dot(xAxis, zAxis);
-        DoubleMath.scale(zAxis, dot, zAxis);
-        sub(xAxis, zAxis, xAxis);
+        double[] sum = new double[3];
+        add(zAxis, xAxis, sum);
+        add(sum, yAxis, sum);
+        normalize(sum, sum);
+        rotMat[0][2] = sum[0];
+        rotMat[1][2] = sum[1];
+        rotMat[2][2] = sum[2];
+        var dot = dot(zAxis, sum);
+        DoubleMath.scale(sum, dot, sum);
+        sub(zAxis, sum, xAxis);
         normalize(xAxis, xAxis);
       }
       case ZTHENX -> {

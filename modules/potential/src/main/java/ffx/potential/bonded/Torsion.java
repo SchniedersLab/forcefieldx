@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -98,15 +98,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    */
   private static final double TORSION_TOLERANCE = 1.0e-4;
 
-
   /**
    * Create a Torsion from 3 connected bonds (no error checking)
    *
-   * @param b1 Bond
-   * @param b2 Bond
-   * @param b3 Bond
+   * @param b1 The first Bond.
+   * @param b2 The middle Bond.
+   * @param b3 The last Bond.
    */
-  protected Torsion(Bond b1, Bond b2, Bond b3) {
+  public Torsion(Bond b1, Bond b2, Bond b3) {
     super();
     bonds = new Bond[3];
     bonds[0] = b1;

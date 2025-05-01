@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -80,7 +80,7 @@ public class Integration {
   /**
    * generateTestData_v1.
    *
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   public static double[] generateTestData_v1() {
     double[] y = new double[202];
@@ -95,7 +95,7 @@ public class Integration {
   /**
    * halfBinComposite.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @param mode      the integration mode.
    * @param side      a {@link java.lang.String} object.
    * @return a double.
@@ -153,7 +153,7 @@ public class Integration {
   /**
    * leftBoole.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double leftBoole(double[] inputData) {
@@ -177,7 +177,7 @@ public class Integration {
   /**
    * leftRectangularMethod.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double leftRectangularMethod(double[] inputData) {
@@ -194,7 +194,7 @@ public class Integration {
   /**
    * leftSimpsons.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double leftSimpsons(double[] inputData) {
@@ -213,7 +213,7 @@ public class Integration {
   /**
    * leftTrapInput.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double leftTrapInput(double[] inputData) {
@@ -296,7 +296,7 @@ public class Integration {
   /**
    * rightBoole.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double rightBoole(double[] inputData) {
@@ -321,7 +321,7 @@ public class Integration {
   /**
    * rightRectangularMethod.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double rightRectangularMethod(double[] inputData) {
@@ -338,7 +338,7 @@ public class Integration {
   /**
    * rightSimpsons.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double rightSimpsons(double[] inputData) {
@@ -358,7 +358,7 @@ public class Integration {
   /**
    * rightTrapInput.
    *
-   * @param inputData an array of {@link double} objects.
+   * @param inputData an array of double values.
    * @return a double.
    */
   public static double rightTrapInput(double[] inputData) {

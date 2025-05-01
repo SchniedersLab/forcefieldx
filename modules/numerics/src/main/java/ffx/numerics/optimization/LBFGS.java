@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.optimization;
 
+import ffx.numerics.OptimizationInterface;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+
+import javax.annotation.Nullable;
+import java.util.logging.Logger;
+
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.Math.fma;
@@ -47,22 +53,28 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.OptimizationInterface;
-import ffx.numerics.optimization.LineSearch.LineSearchResult;
-
-import javax.annotation.Nullable;
-import java.util.logging.Logger;
-
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) algorithm for
- * large-scale multidimensional unconstrained optimization problems.<br>
+ * large-scale multidimensional unconstrained optimization problems.
  *
- * @author Michael J. Schnieders<br> Derived from: <br> Robert Dodier's Java translation of original
- * FORTRAN code by Jorge Nocedal. <br> J. Nocedal, "Updating Quasi-Newton Matrices with Limited
- * Storage", Mathematics of Computation, 35, 773-782 (1980) <br> D. C. Lui and J. Nocedal, "On
- * the Limited Memory BFGS Method for Large Scale Optimization", Mathematical Programming, 45,
- * 503-528 (1989) <br> J. Nocedal and S. J. Wright, "Numerical Optimization", Springer-Verlag,
- * New York, 1999, Section 9.1
+ * <p>The L-BFGS algorithm is a quasi-Newton method that approximates the Broyden–Fletcher–Goldfarb–Shanno
+ * (BFGS) algorithm using a limited amount of computer memory. It is particularly well suited for
+ * optimization problems with a large number of variables.
+ *
+ * <p>The algorithm works by storing a sparse representation of the approximate inverse Hessian matrix,
+ * using only a few vectors that represent the approximation implicitly. Unlike the original BFGS method,
+ * L-BFGS stores only a few vectors that represent the approximation implicitly, which makes it particularly
+ * well suited for problems with many variables.
+ *
+ * <p>This implementation uses a line search procedure to ensure sufficient decrease in the objective
+ * function and to maintain positive definiteness of the Hessian approximation.
+ *
+ * @author Michael J. Schnieders
+ * <br> Derived from:
+ * <br> Robert Dodier's Java translation of original FORTRAN code by Jorge Nocedal.
+ * <br> J. Nocedal, "Updating Quasi-Newton Matrices with Limited Storage", Mathematics of Computation, 35, 773-782 (1980)
+ * <br> D. C. Lui and J. Nocedal, "On the Limited Memory BFGS Method for Large Scale Optimization", Mathematical Programming, 45, 503-528 (1989)
+ * <br> J. Nocedal and S. J. Wright, "Numerical Optimization", Springer-Verlag, New York, 1999, Section 9.1
  * @since 1.0
  */
 public class LBFGS {
@@ -117,6 +129,7 @@ public class LBFGS {
    * Make the constructor private so that the L-BFGS cannot be instantiated.
    */
   private LBFGS() {
+    // Private constructor to prevent instantiation
   }
 
   /**
@@ -131,47 +144,84 @@ public class LBFGS {
    * </code> to the inverse of the Hessian is obtained by applying <code>m</code> BFGS updates to a
    * diagonal matrix <code>Hk0</code>, using information from the previous <code>m</code> steps.
    *
-   * <p>The user specifies the number <code>m</code>, which determines the amount of storage
-   * required by the routine.
+   * <p>The user specifies the number <code>mSave</code>, which determines the amount of storage
+   * required by the routine. This is the number of previous steps that will be used to approximate
+   * the Hessian. Larger values of <code>mSave</code> can lead to better convergence but require more
+   * memory and computation per iteration.
    *
-   * <p>The user is required to calculate the function value <code>f</code> and its gradient <code>g
-   * </code>.
+   * <p>The algorithm works as follows:
+   * <ol>
+   *   <li>Initialize with the current point, function value, and gradient</li>
+   *   <li>Compute a search direction using the L-BFGS approximation of the inverse Hessian</li>
+   *   <li>Perform a line search along this direction to find a new point with sufficient decrease in the function value</li>
+   *   <li>Update the L-BFGS approximation using the new point and gradient</li>
+   *   <li>Repeat until convergence or maximum iterations reached</li>
+   * </ol>
    *
    * <p>The step length is determined at each iteration by means of the line search routine <code>
    * lineSearch</code>, which is a slight modification of the routine <code>CSRCH</code> written by
-   * More and Thuente.
+   * More and Thuente. This ensures that the function value decreases sufficiently and that the
+   * Hessian approximation remains positive definite.
    *
-   * @param n             The number of variables in the minimization problem. Restriction: <code>n &gt; 0
-   *                      </code>.
+   * @param n             The number of variables in the minimization problem. Must be positive.
    * @param mSave         The number of corrections used in the BFGS update. Values of <code>mSave</code>
    *                      less than 3 are not recommended; large values of <code>mSave</code> will result in excessive
    *                      computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended.
-   *                      <p>
-   *                      Restriction: <code>mSave &gt; 0</code>.
+   *                      Must be non-negative. If <code>mSave</code> is 0, the method will use steepest descent.
    * @param x             On initial entry this must be set by the user to the values of the initial estimate
    *                      of the solution vector. On exit, it contains the values of the variables at the best point
-   *                      found (usually a solution).
+   *                      found (usually a solution). The array must have length at least <code>n</code>.
    * @param f             The value of the function <code>f</code> at the point <code>x</code>.
    * @param g             The components of the gradient <code>g</code> at the point <code>x</code>.
+   *                      On exit, it contains the gradient at the final point. The array must have length at least <code>n</code>.
    * @param eps           Determines the accuracy with which the solution is to be found. The subroutine
-   *                      terminates when <code>G RMS &lt; EPS</code>
-   * @param maxIterations Maximum number of optimization steps.
+   *                      terminates when <code>G RMS &lt; EPS</code>. Should be positive.
+   * @param maxIterations Maximum number of optimization steps. Must be positive.
    * @param potential     Implements the {@link ffx.numerics.Potential} interface to supply function
-   *                      values and gradients.
+   *                      values and gradients. Cannot be null.
    * @param listener      Implements the {@link OptimizationListener} interface and will be notified
-   *                      after each successful step.
-   * @return status code (0 = success, 1 = max iterations reached, -1 = failed)
+   *                      after each successful step. Can be null, in which case progress will be logged
+   *                      but no callbacks will be made.
+   * @return status code:
+   * <ul>
+   *   <li>0 = success (convergence achieved)</li>
+   *   <li>1 = maximum iterations reached without convergence</li>
+   *   <li>-1 = optimization failed (e.g., line search failure, invalid inputs)</li>
+   * </ul>
    * @since 1.0
    */
   public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
                              final double eps, final int maxIterations, OptimizationInterface potential,
                              @Nullable OptimizationListener listener) {
 
-    assert (n > 0);
-    assert (mSave > -1);
-    assert (maxIterations > 0);
-    assert (x != null && x.length >= n);
-    assert (g != null && g.length >= n);
+    // Validate input parameters with explicit checks instead of assertions
+    if (n <= 0) {
+      logger.severe("Number of variables must be positive.");
+      return -1;
+    }
+    if (mSave < 0) {
+      logger.severe("Number of correction vectors must be non-negative.");
+      return -1;
+    }
+    if (maxIterations <= 0) {
+      logger.severe("Maximum number of iterations must be positive.");
+      return -1;
+    }
+    if (x == null || x.length < n) {
+      logger.severe("Coordinate array is null or too small.");
+      return -1;
+    }
+    if (g == null || g.length < n) {
+      logger.severe("Gradient array is null or too small.");
+      return -1;
+    }
+    if (potential == null) {
+      logger.severe("Potential interface cannot be null.");
+      return -1;
+    }
+    if (eps <= 0.0) {
+      logger.warning("Convergence criterion (eps) should be positive.");
+    }
 
     if (mSave > n) {
       logger.fine(format(" Resetting the number of saved L-BFGS vectors to %d.", n));
@@ -307,6 +357,14 @@ public class LBFGS {
       f = lineSearch.search(n, x, f, g, p, angle, df, info, nFunctionEvals, potential);
       evaluations += nFunctionEvals[0];
 
+      // Check for NaN or infinite gradient values after line search
+      for (int i = 0; i < n; i++) {
+        if (isNaN(g[i]) || isInfinite(g[i])) {
+          logger.warning(format("The gradient of variable %d is %8.3f after line search. Terminating optimization.", i, g[i]));
+          return -1;
+        }
+      }
+
       // Update variables based on the results of this iteration.
       if (mSave > 0) {
         for (int i = 0; i < n; i++) {
@@ -413,6 +471,11 @@ public class LBFGS {
 
   /**
    * Compute the sum of a vector times a scalar plus another vector.
+   * <p>
+   * This operation computes: v2 = a * v1 + v2
+   * <p>
+   * The method is optimized for the common case where both step sizes are 1 and
+   * both start indices are 0, which is the most frequent usage pattern in the LBFGS algorithm.
    *
    * @param n       The number of points.
    * @param a       The scalar.
@@ -434,6 +497,15 @@ public class LBFGS {
       return;
     }
 
+    // Optimize for the common case where both step sizes are 1 and both start indices are 0
+    if (v1Step == 1 && v2Step == 1 && v1Start == 0 && v2Start == 0) {
+      for (int i = 0; i < n; i++) {
+        v2[i] = fma(a, v1[i], v2[i]);
+      }
+      return;
+    }
+
+    // General case with arbitrary step sizes and start indices
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
       v2[j] = fma(a, v1[i], v2[j]);
@@ -471,6 +543,11 @@ public class LBFGS {
 
   /**
    * Compute the dot product of two vectors.
+   * <p>
+   * This operation computes: sum(v1[i] * v2[i]) for i = 0 to n-1
+   * <p>
+   * The method is optimized for the common case where both step sizes are 1 and
+   * both start indices are 0, which is the most frequent usage pattern in the LBFGS algorithm.
    *
    * @param n       Number of entries to include.
    * @param v1      The X array.
@@ -490,6 +567,16 @@ public class LBFGS {
       return 0;
     }
 
+    // Optimize for the common case where both step sizes are 1 and both start indices are 0
+    if (v1Step == 1 && v2Step == 1 && v1Start == 0 && v2Start == 0) {
+      double sum = 0.0;
+      for (int i = 0; i < n; i++) {
+        sum = fma(v1[i], v2[i], sum);
+      }
+      return sum;
+    }
+
+    // General case with arbitrary step sizes and start indices
     double sum = 0.0;
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {

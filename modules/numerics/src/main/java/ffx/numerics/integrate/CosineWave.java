@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2024.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
 //
 // This file is part of Force Field X.
 //
@@ -59,7 +59,7 @@ public class CosineWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*cos(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param a the magnitude.
    * @param n the periodicity.
    */
@@ -70,7 +70,7 @@ public class CosineWave extends FunctionDataCurve {
   /**
    * Constructs f(x) = a*cos(nx).
    *
-   * @param x an array of {@link double} objects.
+   * @param x an array of double values.
    * @param halfWidthEnds Use half-width start and end bins.
    * @param a the magnitude.
    * @param n the periodicity.
