@@ -711,57 +711,57 @@ public class EnergyExpansion {
             switch (name) {
                 case "ASP":
                     if (pH <= 3.94) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                        pHrestraint = KpH * Math.pow(pH - 3.94, 2);
                     }
                     break;
                 case "ASH":
                     if (pH >= 3.94) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                        pHrestraint = KpH * Math.pow(pH - 3.94, 2);
                     }
                     break;
                 case "GLU":
                     if (pH <= 4.25) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                        pHrestraint = KpH * Math.pow(pH  - 4.25, 2);
                     }
                     break;
                 case "GLH":
                     if (pH >= 4.25) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                        pHrestraint = KpH * Math.pow(pH  - 4.25, 2);
                     }
                     break;
                 case "HIS":
                     if (pH >= 6.6) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                        pHrestraint = KpH * Math.pow(pH - 6.6, 2);
                     }
                     break;
                 case "HID":
                     if (pH <= 7.0) {
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 7.0, 2);
+                        pHrestraint = KpH * Math.pow(pH - 7.0, 2);
                     }
                     break;
                 case "HIE":
                     if(pH <= 6.6){
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                        pHrestraint = KpH * Math.pow(pH - 6.6, 2);
                     }
                     break;
                 case "LYD":
                     if(pH <= 10.4){
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                        pHrestraint = KpH * Math.pow(pH - 10.4, 2);
                     }
                     break;
                 case "LYS":
                     if(pH >= 10.4){
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                        pHrestraint = KpH * Math.pow(pH - 10.4, 2);
                     }
                     break;
                 case "CYD":
                     if(pH - 8.55 <= 0){
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                        pHrestraint = KpH * Math.pow(pH - 8.55,2);
                     }
                     break;
                 case "CYS":
                     if(pH - 8.55 >= 0){
-                        pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                        pHrestraint = KpH * Math.pow(pH - 8.55,2);
                     }
                     break;
                 default:
@@ -796,57 +796,57 @@ public class EnergyExpansion {
                 switch (rot[ri].getName()) {
                     case "ASP":
                         if (pH <= 3.94) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                            pHrestraint = KpH * Math.pow(pH - 3.94, 2);
                         }
                         break;
                     case "ASH":
                         if (pH >= 3.94) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 3.94, 2);
+                            pHrestraint = KpH * Math.pow(pH - 3.94, 2);
                         }
                         break;
                     case "GLU":
                         if (pH <= 4.25) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                            pHrestraint = KpH * Math.pow(pH  - 4.25, 2);
                         }
                         break;
                     case "GLH":
                         if (pH >= 4.25) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH  - 4.25, 2);
+                            pHrestraint = KpH * Math.pow(pH  - 4.25, 2);
                         }
                         break;
                     case "HIS":
                         if (pH >= 6.6) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                            pHrestraint = KpH * Math.pow(pH - 6.6, 2);
                         }
                         break;
                     case "HID":
                         if (pH <= 7.0) {
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 7.0, 2);
+                            pHrestraint = KpH * Math.pow(pH - 7.0, 2);
                         }
                         break;
                     case "HIE":
                         if(pH <= 6.6){
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 6.6, 2);
+                            pHrestraint = KpH * Math.pow(pH - 6.6, 2);
                         }
                         break;
                     case "LYD":
                         if(pH <= 10.4){
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                            pHrestraint = KpH * Math.pow(pH - 10.4, 2);
                         }
                         break;
                     case "LYS":
                         if(pH >= 10.4){
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 10.4, 2);
+                            pHrestraint = KpH * Math.pow(pH - 10.4, 2);
                         }
                         break;
                     case "CYD":
                         if(pH - 8.55 <= 0){
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                            pHrestraint = KpH * Math.pow(pH - 8.55,2);
                         }
                         break;
                     case "CYS":
                         if(pH - 8.55 >= 0){
-                            pHrestraint = 0.5 * KpH * Math.pow(pH - 8.55,2);
+                            pHrestraint = KpH * Math.pow(pH - 8.55,2);
                         }
                         break;
                     default:
@@ -1026,57 +1026,57 @@ public class EnergyExpansion {
                 switch (name) {
                     case "ASP":
                         if (rO.getPH() <= 3.94) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
                         }
                         break;
                     case "ASH":
                         if (rO.getPH() >= 3.94) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 3.94, 2);
                         }
                         break;
                     case "GLU":
                         if (rO.getPH() <= 4.25) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
                         break;
                     case "GLH":
                         if (rO.getPH() >= 4.25) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 4.25, 2);
                         }
                         break;
                     case "HIS":
                         if (rO.getPH() >= 6.6) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "HID":
                         if (rO.getPH() <= 7.0) {
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 7.0, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 7.0, 2);
                         }
                         break;
                     case "HIE":
                         if(rO.getPH() <= 6.6){
-                            pHRestraint = 0.5 * rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
+                            pHRestraint = rO.getPHRestraint() * Math.pow(rO.getPH() - 6.6, 2);
                         }
                         break;
                     case "LYD":
                         if(rO.getPH() <= 10.4){
-                           pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
+                           pHRestraint = rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
                         }
                         break;
                     case "LYS":
                         if(rO.getPH() >= 10.4){
-                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
+                            pHRestraint = rO.getPHRestraint()*Math.pow(rO.getPH()- 10.4,2);
                         }
                         break;
                     case "CYD":
                         if(rO.getPH() - 8.55 <= 0){
-                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 8.55,2);
+                            pHRestraint = rO.getPHRestraint()*Math.pow(rO.getPH()- 8.55,2);
                         }
                         break;
                     case "CYS":
                         if(rO.getPH() - 8.55 >= 0){
-                            pHRestraint = 0.5*rO.getPHRestraint()*Math.pow(rO.getPH()- 8.55,2);
+                            pHRestraint = rO.getPHRestraint()*Math.pow(rO.getPH()- 8.55,2);
                         }
                         break;
                     default:

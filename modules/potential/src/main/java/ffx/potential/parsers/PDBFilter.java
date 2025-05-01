@@ -785,12 +785,11 @@ public final class PDBFilter extends SystemFilter {
                   if (!altLocs.contains(altLoc)) {
                     altLocs.add(altLoc);
                   }
-                  if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+
+                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
                     break;
                   }
-                  // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                  //  break;
-                  // }
+
                   resName = line.substring(17, 20).trim();
                   chainID = line.substring(21, 22).charAt(0);
                   segID = getSegID(chainID);
@@ -1334,7 +1333,7 @@ public final class PDBFilter extends SystemFilter {
     // Record the number of atoms read in from the PDB file before applying
     // algorithms that may build new atoms.
     int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
-
+    removeExcessHydrogens();
     // Build missing backbone atoms in loops.
     buildMissingResidues(xyzIndex, activeMolecularAssembly, seqRes, dbRef);
 
@@ -1355,6 +1354,50 @@ public final class PDBFilter extends SystemFilter {
       numberAtoms(activeMolecularAssembly);
     }
     return true;
+  }
+
+  public void removeExcessHydrogens(){
+    logger.info(" Removing excess Hydrogens");
+    for(Residue residue: activeMolecularAssembly.getResidueList()){
+      if(residue.getName().equals("ACE") || residue.getName().equals("NME") || residue.getResidueType() != Residue.ResidueType.AA){
+        break;
+      }
+      String trueResName = residue.getAtomByName("CA", true).getResidueName();
+      Atom atom;
+      switch (trueResName) {
+        case "HID", "GLU" -> {
+          // No HE2
+          atom = residue.getAtomByName("HE2", true);
+        }
+        case "HIE" -> {
+          // No HD1
+          atom = residue.getAtomByName("HD1", true);
+        }
+        case "ASP" -> {
+          // No HD2
+          atom = residue.getAtomByName("HD2", true);
+        }
+        case "LYD" -> {
+          // No HZ3
+          atom = residue.getAtomByName("HZ3", true);
+        }
+        case "CYD" -> {
+          // No HG
+          atom = residue.getAtomByName("HG", true);
+        }
+        default -> {
+          atom = null;
+        }
+        // Do nothing.
+      }
+      if(atom != null){
+        int index = activeMolecularAssembly.getResidueList().indexOf(residue);
+        MSNode atoms = residue.getAtomNode();
+        atoms.remove(atom);
+        residue.setName(trueResName);
+        activeMolecularAssembly.getResidueList().set(index, residue);
+      }
+    }
   }
 
   /** {@inheritDoc} */
@@ -1787,9 +1830,25 @@ public final class PDBFilter extends SystemFilter {
    */
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
                            boolean versioning, String[] extraLines) {
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
     if (saveFile == null) {
@@ -2237,9 +2296,25 @@ public final class PDBFilter extends SystemFilter {
    * @return a boolean.
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
+    // Set standardize atom names to false in the presence of deuterium
+    List<Atom> deuteriumAtoms = new ArrayList<>();
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(atom.getName().startsWith("D")){
+        String name = atom.getName().replace("D","H");
+        atom.setName(name);
+        deuteriumAtoms.add(atom);
+      }
+    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
+    }
+
+    for(Atom atom: activeMolecularAssembly.getAtomArray()){
+      if(deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")){
+        String name = atom.getName().replace("H","D");
+        atom.setName(name);
+      }
     }
     activeMolecularAssembly.setFile(saveFile);
     activeMolecularAssembly.setName(saveFile.getName());

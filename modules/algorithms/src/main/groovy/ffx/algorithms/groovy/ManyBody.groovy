@@ -141,11 +141,10 @@ class ManyBody extends AlgorithmsScript {
     }
 
     String listResidues = "";
-    if(manyBodyOptions.getOnlyTitration() || manyBodyOptions.getOnlyProtons() ||
+    if(manyBodyOptions.getOnlyTitration() ||
             manyBodyOptions.getInterestedResidue() != -1 && manyBodyOptions.getDistanceCutoff() != -1){
       listResidues = manyBodyOptions.selectDistanceResidues(activeAssembly.getResidueList(),
-              manyBodyOptions.getInterestedResidue(),manyBodyOptions.getOnlyTitration(),
-              manyBodyOptions.getOnlyProtons(),manyBodyOptions.getDistanceCutoff())
+              manyBodyOptions.getInterestedResidue(),manyBodyOptions.getOnlyTitration(),manyBodyOptions.getDistanceCutoff())
       manyBodyOptions.setListResidues(listResidues)
     }
 
@@ -178,7 +177,7 @@ class ManyBody extends AlgorithmsScript {
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-          resNumberList, titrationPH)
+          resNumberList, titrationPH, manyBodyOptions)
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
@@ -195,7 +194,6 @@ class ManyBody extends AlgorithmsScript {
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         potentialEnergy, algorithmListener)
     rotamerOptimization.setPHRestraint(manyBodyOptions.getPHRestraint())
-    rotamerOptimization.setOnlyProtons(manyBodyOptions.getOnlyProtons())
     rotamerOptimization.setpH(titrationPH)
 
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)

@@ -77,7 +77,7 @@ public abstract class SystemFilter {
   /**
    * Standardize atom names to PDB standard by default.
    */
-  protected final boolean standardizeAtomNames;
+  protected boolean standardizeAtomNames;
   /**
    * True if atoms are to be printed to their van der Waals centers instead of nuclear centers
    * (applies primarily to hydrogen).

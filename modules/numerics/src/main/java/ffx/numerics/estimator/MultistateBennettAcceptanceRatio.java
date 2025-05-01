@@ -282,7 +282,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           seedEnergies();
           return;
         }
-      case SeedType.ZEROS:
+      case ZEROS:
         fill(mbarFEEstimates, 0.0);
         break;
       default:
