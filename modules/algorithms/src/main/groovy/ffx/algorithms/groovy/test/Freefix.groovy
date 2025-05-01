@@ -109,7 +109,7 @@ class Freefix extends AlgorithmsScript {
         double volume1 = 0.0, volume2, volume3 = 0.0;
 
         if (innerRadius != 0.0) {
-            double term1_v1 = 2.0 * Math.PI * innerRadius * (-2.0 + Math.exp(-Math.pow(innerRadius, 2) * innerForce / kt));
+            double term1_v1 = 2.0 * Math.PI * innerRadius * (-2.0 + Math.exp(-Math.pow(innerRadius, 2) * innerForce / kt)) * kt / innerForce;
             double term2_v1 = Math.sqrt(kt * Math.pow(Math.PI / innerForce, 3)) *
                     (2.0 * innerForce * Math.pow(innerRadius, 2) + kt) * Erf.erf(innerRadius * Math.sqrt(innerForce / kt));
             volume1 = term1_v1 + term2_v1;
