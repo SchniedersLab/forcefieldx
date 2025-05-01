@@ -11,7 +11,7 @@ class FindRestraints extends AlgorithmsScript{
     /**
      * --hostName Molecule name of the host in the file.
      */
-    @CommandLine.Option(names = ['--hostName'], paramLabel = 'None',
+    @CommandLine.Option(names = ['--hostName'], paramLabel = 'BCD',
             description = 'Host molecule name in the file.')
     String hostName = "BCD"
 
@@ -73,24 +73,40 @@ class FindRestraints extends AlgorithmsScript{
 
         Molecule[] molArr = activeAssembly.getMoleculeArray()
 
+        List<Atom> restrainHostList = new ArrayList<Atom>()
         List<Atom> restrainList = new ArrayList<Atom>()
         double[] COM = new double[3]
+        double[] subCOM = new double[3]
+        int[] restrainHostIndices = new int[]{11,16,17,20,23,26,31,32,39,40,51,63,64,70,71,82,94,95,101,102,113,125,126,132,133,144,156,157,163,164,175,187,188,191,198}
         for (Molecule molecule: molArr) {
             logger.info(format("Molecule name: "+ molecule.getName()))
             if (molecule.getName().contains(hostName)) {
                 Atom[] host_atoms = molecule.getAtomList()
                 COM = getCOM(host_atoms)
                 logger.info(format("Center of mass of host molecule: "+ COM))
+                for (Atom atom : host_atoms) {
+                    if (atom.getIndex() in restrainHostIndices) {
+                        restrainHostList.add(atom)
+                        logger.info(format("Atom: "+ atom))
+                    }
+                }
+                Atom[] subAtoms = restrainHostList
+                subCOM = getCOM(subAtoms)
+                logger.info(format("Center of mass of subsection host atoms: "+ subCOM))
+                double comdist = Math.sqrt(Math.pow(subCOM[0] - COM[0], 2) +
+                        Math.pow(subCOM[1] - COM[1], 2) +
+                        Math.pow(subCOM[2] - COM[2], 2))
+                logger.info(format("Distance between COMs: "+ comdist))
             }
             else if (molecule.getName().contains(guestName)) {
                 Atom[] guest_atoms = molecule.getAtomList()
                 for (Atom atom : guest_atoms) {
-                    double dist = Math.sqrt(Math.pow(atom.getXYZ().get()[0] - COM[0], 2) +
-                            Math.pow(atom.getXYZ().get()[1] - COM[1], 2) +
-                            Math.pow(atom.getXYZ().get()[2] - COM[2], 2))
-                    logger.info(format("Atom: "+ atom))
-                    logger.info(format("XYZ: "+ atom.getXYZ().get()))
-                    logger.info(format("Distance from host COM: "+ dist))
+                    double dist = Math.sqrt(Math.pow(atom.getXYZ().get()[0] - subCOM[0], 2) +
+                            Math.pow(atom.getXYZ().get()[1] - subCOM[1], 2) +
+                            Math.pow(atom.getXYZ().get()[2] - subCOM[2], 2))
+                    //logger.info(format("Atom: "+ atom))
+                    //logger.info(format("XYZ: "+ atom.getXYZ().get()))
+                    //logger.info(format("Distance from host COM: "+ dist))
 
                     if (dist < distanceCutoff && atom.isHeavy()) {
                         restrainList.add(atom)
