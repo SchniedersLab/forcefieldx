@@ -2701,8 +2701,14 @@ public final class PDBFilter extends SystemFilter {
     }
 
     public void calculateTorsion() {
-      double tors = DoubleMath.dihedralAngle(glyco[0], glyco[1], glyco[2], glyco[3]);
-      logger.info(format("restrain-torsion %d %d %d %d  5.000  %f 1", glycoAtomIndex[0], glycoAtomIndex[1], glycoAtomIndex[2], glycoAtomIndex[3], -180.0 - toDegrees(tors)));
+      double tors = toDegrees(DoubleMath.dihedralAngle(glyco[0], glyco[1], glyco[2], glyco[3]));
+      double delta;
+      if (tors > 0) {
+        delta = tors - 180.0;
+      } else {
+        delta = tors + 180.0;
+      }
+      logger.info(format("restrain-torsion %d %d %d %d  5.000  %f 1", glycoAtomIndex[0], glycoAtomIndex[1], glycoAtomIndex[2], glycoAtomIndex[3], delta));
     }
   }
 }
