@@ -1,3 +1,40 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.potential.bonded;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -7,9 +44,18 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
 
-import static org.apache.commons.math3.util.FastMath.*;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-public class RestraintTorsion extends BondedTerm implements LambdaInterface {
+/**
+ * RestraintTorsion is a class that restrains the torsion angle defined by four atoms.
+ *
+ * @author Michael J. Schnieders
+ * @see 1.0
+ */
+public class RestrainTorsion extends BondedTerm implements LambdaInterface {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -24,13 +70,25 @@ public class RestraintTorsion extends BondedTerm implements LambdaInterface {
   private double dEdL = 0.0;
   private double d2EdL2 = 0.0;
 
-  public RestraintTorsion(Atom a1, Atom a2, Atom a3, Atom a4, TorsionType tType, boolean lamEnabled,
-      boolean revLam, double units) {
-    atoms = new Atom[] {a1, a2, a3, a4};
-    this.torsionType = tType;
-    lambdaTerm = lamEnabled;
+  /**
+   * Constructor for RestrainTorsion.
+   *
+   * @param a1            First torsional atom.
+   * @param a2            Second torsional atom.
+   * @param a3            Third torsional atom.
+   * @param a4            Fourth torsional atom.
+   * @param torsionType   TorsionType.
+   * @param lambdaEnabled True if the lambda term is enabled.
+   * @param reverseLambda True if the lambda term should be reversed.
+   * @param units         Units for the energy term.
+   */
+  public RestrainTorsion(Atom a1, Atom a2, Atom a3, Atom a4, TorsionType torsionType,
+                         boolean lambdaEnabled, boolean reverseLambda, double units) {
+    atoms = new Atom[]{a1, a2, a3, a4};
+    this.torsionType = torsionType;
+    lambdaTerm = lambdaEnabled;
     if (this.lambdaTerm) {
-      if (revLam) {
+      if (reverseLambda) {
         lamMapper = (double l) -> 1.0 - l;
       } else {
         lamMapper = (double l) -> l;
@@ -172,6 +230,6 @@ public class RestraintTorsion extends BondedTerm implements LambdaInterface {
 
   @Override
   public String toString() {
-    return String.format(" t-type %s, val %.3f, e %.3f", torsionType, value, energy);
+    return format(" Restrain-Torsion %s, Angle: %.3f, Energy: %.3f", torsionType, value, energy);
   }
 }

@@ -76,28 +76,28 @@ class SaveAsXYZ extends PotentialScript {
    * -p or --pos-offset to set the positive atom type offset
    */
   @Option(names = ['-p', '--pos-offset'], paramLabel = "0",
-      description = 'Positive offset of atom types in the new file')
+          description = 'Positive offset of atom types in the new file')
   int posOffset = 0
 
   /**
    * -n or --neg-offset to set the negative atom type offset
    */
   @Option(names = ['-n', '--neg-offset'], paramLabel = "0",
-      description = 'Negative offset of atom types in the new file.')
+          description = 'Negative offset of atom types in the new file.')
   int negOffset = 0
 
   /**
    * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
    */
   @Option(names = ['-r', '--random'], paramLabel = "X",
-      description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
+          description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
   double scalar = -1
 
   /**
    * --fs or --firstSnapshot Provide the number of the first snapshot to be written.
    */
   @Option(names = ['--fs', '--firstSnapshot'], paramLabel = "-1", defaultValue = "-1",
-      description = 'First snapshot to write out (indexed from 0).')
+          description = 'First snapshot to write out (indexed from 0).')
   private int firstSnapshot = 0
 
   /**
@@ -125,14 +125,14 @@ class SaveAsXYZ extends PotentialScript {
    * --alt or --alternateLocation Choose an alternate location for a PDB file.
    */
   @Option(names = ['--alt', '--alternateLocation'], paramLabel = "A", defaultValue = "A",
-      description = 'Choose an alternate location for the PDB file (not supported for PDBs with multiple models.')
+          description = 'Choose an alternate location for the PDB file (not supported for PDBs with multiple models.')
   private Character alternateLocation = 'A'
 
   /**
    * The final argument is a PDB coordinate file.
    */
   @Parameters(arity = "1", paramLabel = "file",
-      description = 'The atomic coordinate file PDB format.')
+          description = 'The atomic coordinate file PDB format.')
   private String filename = null
 
   /**
@@ -226,7 +226,7 @@ class SaveAsXYZ extends PotentialScript {
     // Choose a single snapshot to write out from an archive.
     if (firstSnapshot >= 0) {
       XYZFilter snapshotFilter = new XYZFilter(new File(dirString + name),
-          activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+              activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
       int counter = 0
       int snapshotCounter = 0
@@ -237,7 +237,7 @@ class SaveAsXYZ extends PotentialScript {
 //        counter++
         // No more resets
         reset = false
-        int counterOffset = counter - firstSnapshot // todo fix
+        int counterOffset = counter - firstSnapshot
         // Write out the snapshot if it is within the range and the increment is met.
         if (counter >= firstSnapshot && counter <= lastSnapshot && counterOffset % snapshotIncrement == 0) {
           File snapshotFile

@@ -55,7 +55,7 @@ public interface DataSet {
   /**
    * Returns copy of the array of points f(x) to integrate (y-axis).
    *
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   double[] getAllFxPoints();
 
@@ -70,7 +70,7 @@ public interface DataSet {
   /**
    * Returns copy of the array of points x (x-axis).
    *
-   * @return an array of {@link double} objects.
+   * @return an array of double values.
    */
   double[] getX();
 

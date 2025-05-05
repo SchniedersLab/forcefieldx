@@ -41,7 +41,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.nonbonded.RestrainPosition;
 import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -78,7 +77,7 @@ public abstract class SystemFilter {
   /**
    * Standardize atom names to PDB standard by default.
    */
-  protected final boolean standardizeAtomNames;
+  protected boolean standardizeAtomNames;
   /**
    * True if atoms are to be printed to their van der Waals centers instead of nuclear centers
    * (applies primarily to hydrogen).

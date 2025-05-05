@@ -37,9 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.special;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import ffx.utilities.FFXTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,7 +44,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** @author Michael J. Schnieders */
+import java.util.Arrays;
+import java.util.Collection;
+
+/**
+ * @author Michael J. Schnieders
+ */
 @RunWith(Parameterized.class)
 public class ErfTest extends FFXTest {
 
@@ -76,27 +78,86 @@ public class ErfTest extends FFXTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
-          {"Test 0.0", 0.0e0, 0.0e0},
-          {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
-          {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
-          {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
-          {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
-          {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
+        new Object[][]{
+            {"Test 0.0", 0.0e0, 0.0e0},
+
+            // Very small value tests
+            {"Test 1.0e-16; near xSmall threshold.", 1.0e-16, 1.128379167095513e-16},
+            {"Test 1.0e-10; small value.", 1.0e-10, 1.128379167095513e-10},
+
+            {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182849},
+            {"Test 0.46; just below first branch point.", 0.46, 0.4846553900016797},
+            {"Test 0.46875; at the first branch point.", 0.46875, 0.492613473217938},
+            {"Test 0.47; just above first branch point.", 0.47, 0.4937450508860821},
+            {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949715},
+            {"Test 3.9; just below second branch point.", 3.9, 1.0 - 3.479224859723177e-8},
+            {"Test 4.0; at the second branch point.", 4.0, 1.0 - 1.5417257900280018852e-8},
+            {"Test 4.1; just above second branch point.", 4.1, 1.0 - 6.700027654084919e-9},
+            {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12},
+
+            // Very large value tests
+            {"Test 10.0; large value.", 10.0e0, 1.0 - 2.088487583762545e-45},
+            {"Test 26.0; near xBig threshold.", 26.0, 1.0e0},
+
+            // Negative value tests (erf is an odd function: erf(-x) = -erf(x))
+            {"Test -0.1; negative value below first branch point.", -0.1e0, -0.1124629160182849},
+            {"Test -1.0; negative value between branch points.", -1.0e0, -0.842700792949715},
+            {"Test -5.0; negative value above second branch point.", -5.0e0, -1.0e0 + 1.5374597944280348502e-12}
         });
   }
 
-  /** Test of erf method, of class Erf. */
+  /**
+   * Test of erf method, of class Erf.
+   */
   @Test
   public void testErf() {
     double actual = Erf.erf(x);
     Assert.assertEquals(info, expected, actual, tolerance);
   }
 
-  /** Test of erfc method, of class Erf. */
+  /**
+   * Test of erfc method, of class Erf.
+   */
   @Test
   public void testErfc() {
     double actual = Erf.erfc(x);
     Assert.assertEquals(info, 1.0 - expected, actual, tolerance);
   }
+
+  /**
+   * Test of erf method with special values.
+   */
+  @Test
+  public void testErfSpecialCases() {
+    // Test NaN - not using parameterized test to avoid issues with NaN comparison
+    double nanResult = Erf.erf(Double.NaN);
+    Assert.assertTrue("erf(NaN) should be NaN", Double.isNaN(nanResult));
+
+    // Test positive infinity
+    double posInfResult = Erf.erf(Double.POSITIVE_INFINITY);
+    Assert.assertEquals("erf(+Infinity) should be 1.0", 1.0, posInfResult, 0.0);
+
+    // Test negative infinity
+    double negInfResult = Erf.erf(Double.NEGATIVE_INFINITY);
+    Assert.assertEquals("erf(-Infinity) should be -1.0", -1.0, negInfResult, 0.0);
+  }
+
+  /**
+   * Test of erfc method with special values.
+   */
+  @Test
+  public void testErfcSpecialCases() {
+    // Test NaN - not using parameterized test to avoid issues with NaN comparison
+    double nanResult = Erf.erfc(Double.NaN);
+    Assert.assertTrue("erfc(NaN) should be NaN", Double.isNaN(nanResult));
+
+    // Test positive infinity
+    double posInfResult = Erf.erfc(Double.POSITIVE_INFINITY);
+    Assert.assertEquals("erfc(+Infinity) should be 0.0", 0.0, posInfResult, 0.0);
+
+    // Test negative infinity
+    double negInfResult = Erf.erfc(Double.NEGATIVE_INFINITY);
+    Assert.assertEquals("erfc(-Infinity) should be 2.0", 2.0, negInfResult, 0.0);
+  }
+
 }

@@ -418,6 +418,8 @@ public abstract class MultipoleTensorSIMD {
 
   /**
    * Return the source terms.
+   *
+   * @return A DoubleVector array of source terms.
    */
   public DoubleVector[] getSource() {
     source(work);
@@ -444,6 +446,13 @@ public abstract class MultipoleTensorSIMD {
     return total;
   }
 
+  /**
+   * Contract a multipole with the potential and its derivatives.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return The permanent multipole energy.
+   */
   public DoubleVector multipoleEnergy(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK) {
     multipoleIPotentialAtK(mI, 2);
     return multipoleEnergy(mK);
@@ -500,7 +509,7 @@ public abstract class MultipoleTensorSIMD {
    * Compute the torque on a permanent multipole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void multipoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
     // Torque on the permanent dipole due to the field.
@@ -526,7 +535,7 @@ public abstract class MultipoleTensorSIMD {
    * Compute the torque on a permanent dipole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void dipoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
     // Torque on the permanent dipole due to the field.
@@ -544,7 +553,7 @@ public abstract class MultipoleTensorSIMD {
    * Compute the torque on a permanent quadrupole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void quadrupoleTorque(PolarizableMultipoleSIMD m, DoubleVector[] torque) {
     // Torque on the permanent quadrupole due to the gradient of the field.
@@ -593,9 +602,9 @@ public abstract class MultipoleTensorSIMD {
    * @param inductionMask a double.
    * @param energyMask    a double.
    * @param mutualMask    a double.
-   * @param Gi            an array of {@link double} objects.
-   * @param Ti            an array of {@link double} objects.
-   * @param Tk            an array of {@link double} objects.
+   * @param Gi            an array of double values.
+   * @param Ti            an array of double values.
+   * @param Tk            an array of double values.
    * @return a double.
    */
   public DoubleVector polarizationEnergyAndGradient(PolarizableMultipoleSIMD mI, PolarizableMultipoleSIMD mK,
@@ -729,16 +738,28 @@ public abstract class MultipoleTensorSIMD {
    */
   protected abstract void order6();
 
+  /**
+   * Compute the field components due to site I multipole at site K.
+   *
+   * @param mI    PolarizableMultipoleSIMD at site I.
+   * @param order Potential order.
+   */
   @SuppressWarnings("fallthrough")
   protected abstract void multipoleIPotentialAtK(PolarizableMultipoleSIMD mI, int order);
 
+  /**
+   * Compute the field components due to site K multipole at site I.
+   *
+   * @param mK    PolarizableMultipoleSIMD at site I.
+   * @param order Potential order.
+   */
   @SuppressWarnings("fallthrough")
   protected abstract void multipoleKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
 
   /**
    * Compute the field components due to site K charge at site I.
    *
-   * @param mK    MultipoleTensorSIMD at site K.
+   * @param mK    PolarizableMultipoleSIMD at site K.
    * @param order Potential order.
    */
   protected abstract void chargeKPotentialAtI(PolarizableMultipoleSIMD mK, int order);
@@ -764,7 +785,7 @@ public abstract class MultipoleTensorSIMD {
   /**
    * Compute the field components due to site I charge at site K.
    *
-   * @param mI    MultipoleTensorSIMD at site I.
+   * @param mI    PolarizableMultipoleSIMD at site I.
    * @param order Potential order.
    */
   protected abstract void chargeIPotentialAtK(PolarizableMultipoleSIMD mI, int order);

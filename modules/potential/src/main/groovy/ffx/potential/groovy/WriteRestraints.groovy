@@ -68,21 +68,21 @@ class WriteRestraints extends PotentialScript {
    * -k or --forceConstant to specify the force constant in kcal/mol/A^2
    */
   @Option(names = ['-k', '--forceConstant'], defaultValue = '100.0', paramLabel = '100.0',
-      description = 'The force constant (kcal/mol/A^2).')
+          description = 'The force constant (kcal/mol/A^2).')
   double forceConstant = 100.0
 
   /**
    * -d or --flatBottom to specify the flat bottom distance in Angstroms.
    */
   @Option(names = ['-d', '--flatBottom'], defaultValue = '0.0', paramLabel = '0.0',
-      description = 'The flat bottom distance in Angstroms.')
+          description = 'The flat bottom distance in Angstroms.')
   double fbDistance = 0.0
 
   /**
    * --eh or --excludeHydrogen to exclude writing restraints for hydrogen atoms.
    */
   @Option(names = ['--eh', '--excludeHydrogen'], defaultValue = 'false', paramLabel = 'false',
-      description = 'Exclude writing restraints for hydrogen atoms.')
+          description = 'Exclude writing restraints for hydrogen atoms.')
   boolean excludeHydrogen = false
 
   /**
@@ -93,17 +93,17 @@ class WriteRestraints extends PotentialScript {
   boolean onlyCalphas = false
 
   /**
-   * -s or --select Select every ith restraint. 
+   * -s or --select Select every ith restraint.
    */
   @Option(names = ['-s', '--select'], defaultValue = '1', paramLabel = '1',
-      description = 'Select every ith matching restraint and ignore the rest.')
+          description = 'Select every ith matching restraint and ignore the rest.')
   int select = 1
 
   /**
    * The final argument is an XYZ or PDB coordinate file.
    */
   @Parameters(arity = '1', paramLabel = 'file',
-      description = 'The atomic coordinate file in XYZ or PDB format.')
+          description = 'The atomic coordinate file in XYZ or PDB format.')
   private String filename = null
 
   /**

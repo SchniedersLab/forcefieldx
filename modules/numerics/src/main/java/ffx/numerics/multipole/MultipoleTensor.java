@@ -414,7 +414,7 @@ public abstract class MultipoleTensor {
   /**
    * log.
    *
-   * @param tensor an array of {@link double} objects.
+   * @param tensor an array of double values.
    */
   public void log(double[] tensor) {
     log(this.operator, this.order, tensor);
@@ -507,9 +507,9 @@ public abstract class MultipoleTensor {
    * @param inductionMask a double.
    * @param energyMask    a double.
    * @param mutualMask    a double.
-   * @param Gi            an array of {@link double} objects.
-   * @param Ti            an array of {@link double} objects.
-   * @param Tk            an array of {@link double} objects.
+   * @param Gi            an array of double values.
+   * @param Ti            an array of double values.
+   * @param Tk            an array of double values.
    * @return a double.
    */
   public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
@@ -632,7 +632,7 @@ public abstract class MultipoleTensor {
   /**
    * For the MultipoleTensorTest class and testing.
    *
-   * @param r an array of {@link double} objects.
+   * @param r an array of double values.
    */
   public final void generateTensor(double[] r) {
     setR(r);
@@ -1579,7 +1579,7 @@ public abstract class MultipoleTensor {
    * Compute the torque on a permanent multipole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void multipoleTorque(PolarizableMultipole m, double[] torque) {
     // Torque on the permanent dipole due to the field.
@@ -1605,7 +1605,7 @@ public abstract class MultipoleTensor {
    * Compute the torque on a permanent dipole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void dipoleTorque(PolarizableMultipole m, double[] torque) {
     // Torque on the permanent dipole due to the field.
@@ -1623,7 +1623,7 @@ public abstract class MultipoleTensor {
    * Compute the torque on a permanent quadrupole.
    *
    * @param m      PolarizableMultipole at the site of the potential.
-   * @param torque an array of {@link double} objects.
+   * @param torque an array of double values.
    */
   protected final void quadrupoleTorque(PolarizableMultipole m, double[] torque) {
     // Torque on the permanent quadrupole due to the gradient of the field.
@@ -1667,7 +1667,7 @@ public abstract class MultipoleTensor {
   /**
    * Load the tensor components.
    *
-   * @param T an array of {@link double} objects.
+   * @param T an array of double values.
    */
   @SuppressWarnings("fallthrough")
   protected final void getTensor(double[] T) {
@@ -1752,7 +1752,7 @@ public abstract class MultipoleTensor {
   /**
    * Set the tensor components.
    *
-   * @param T an array of {@link double} objects.
+   * @param T an array of double values.
    */
   @SuppressWarnings("fallthrough")
   protected final void setTensor(double[] T) {

@@ -89,13 +89,13 @@ class AnalyzeNEQ extends AlgorithmsScript {
    * The final argument(s) should be filenames for lambda windows in order.
    */
   @Parameters(arity = "2", paramLabel = "path",
-      description = 'Two paths to directories. The first to the forward work directory and second to the reverse work directory.')
+          description = 'Two paths to directories. The first to the forward work directory and second to the reverse work directory.')
   List<String> directories = null
 
   /**
    * BAR Constructor.
    */
-    AnalyzeNEQ() {
+  AnalyzeNEQ() {
     this(new Binding())
   }
 
@@ -103,7 +103,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
    * BAR Constructor.
    * @param binding The Groovy Binding to use.
    */
-    AnalyzeNEQ(Binding binding) {
+  AnalyzeNEQ(Binding binding) {
     super(binding)
   }
 
@@ -150,16 +150,16 @@ class AnalyzeNEQ extends AlgorithmsScript {
     List<String> commandArgs = new ArrayList<>()
 
     // Options
-    commandArgs.add("--nw")
+    commandArgs.add("--ns")
     commandArgs.add("2")
     commandArgs.add("--ni")
     commandArgs.add(barIterations as String)
     commandArgs.add("--useTinker")
-    commandArgs.add("--tinkerDir")
+    commandArgs.add("--bf")
     commandArgs.add(outputName)
 
     // Parameters
-    commandArgs.add("test.pdb") // todo fix - need coord file
+    // commandArgs.add("test.pdb") // todo fix - need coord file
 
     Binding binding = new Binding()
     binding.setVariable("args", commandArgs)

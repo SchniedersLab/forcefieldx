@@ -131,7 +131,6 @@ class ManyBody extends AlgorithmsScript {
     if (filenames != null && filenames.size() > 0) {
       molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
       activeAssembly = molecularAssemblies[0]
-      logger.info(molecularAssemblies.length.toString())
       modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
@@ -168,7 +167,7 @@ class ManyBody extends AlgorithmsScript {
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
-          resNumberList, titrationPH)
+          resNumberList, titrationPH, manyBodyOptions)
       MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
       setActiveAssembly(protonatedAssemblies[0])
       potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
@@ -230,7 +229,7 @@ class ManyBody extends AlgorithmsScript {
       e = refinementEnergy.energy(x, true)
 
       if (isTitrating) {
-        double phBias = EnergyExpansion.getTotalRotamerPhBias(residueList, optimalRotamers)
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers, titrationPH, manyBodyOptions.getPHRestraint())
         logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
         logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
       } else {

@@ -263,7 +263,7 @@ public class BARFilter {
       newFile = version(newFile);
     }
 
-    logger.info(format("\n Writing Tinker-compatible BAR file to %s.", newFile));
+    logger.info(format(" Writing BAR file: %s", newFile));
     try (FileWriter fw = new FileWriter(newFile,
             append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(format("%8d %9.3f %s\n", snaps, temp, name));
@@ -322,5 +322,9 @@ public class BARFilter {
 
   public int getSnaps() {
     return snaps;
+  }
+
+  public File getFile(){
+    return barFile;
   }
 }

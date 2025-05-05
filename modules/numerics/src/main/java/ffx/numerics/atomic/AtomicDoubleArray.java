@@ -49,114 +49,96 @@ import edu.rit.pj.ParallelTeam;
 public interface AtomicDoubleArray {
 
   /**
-   * Factory method to create an AtomicDoubleArray instance.
+   * Add a value to the double array at the specified index.
    *
-   * @param atomicDoubleArrayImpl The implementation to use.
-   * @param threads               The number of threads.
-   * @param size                  The size of the array.
-   * @return An AtomicDoubleArray instance.
-   */
-  static AtomicDoubleArray atomicDoubleArrayFactory(
-      AtomicDoubleArrayImpl atomicDoubleArrayImpl, int threads, int size) {
-    return switch (atomicDoubleArrayImpl) {
-      case ADDER -> new AdderDoubleArray(size);
-      case PJ -> new PJDoubleArray(size);
-      // MULTI is the default.
-      default -> new MultiDoubleArray(threads, size);
-    };
-  }
-
-  /**
-   * Add value to the double array at the specified index.
-   *
-   * @param threadID the thread ID.
-   * @param index    the index.
-   * @param value    the value to add.
+   * @param threadID The thread ID.
+   * @param index    The index of the array.
+   * @param value    The value to add.
    */
   void add(int threadID, int index, double value);
 
   /**
-   * Ensure the AtomicDoubleArray instance is greater than or equal to size.
+   * Ensure the AtomicDoubleArray instance has at least the specified size.
    *
-   * @param size The size of the array.
+   * @param size The required size of the array.
    */
   void alloc(int size);
 
   /**
-   * Get the value of the array at the specified index. The <code>reduce</code> method should be
-   * called first when using the MULTI implementation.
+   * Get the value of the array at the specified index.
+   * Note: The `reduce` method should be called first when using the MULTI implementation.
    *
-   * @param index the index.
-   * @return the value of the array at the specified index.
+   * @param index The index of the array.
+   * @return The value at the specified index.
    */
   double get(int index);
 
   /**
-   * Perform reduction between the given lower bound (lb) and upper bound (up) if necessary.
+   * Perform reduction between the given lower and upper bounds, if necessary.
    *
-   * @param lb the lower bound.
-   * @param ub the upper bound.
+   * @param lowerBound The lower bound of the range.
+   * @param upperBound The upper bound of the range.
    */
-  void reduce(int lb, int ub);
+  void reduce(int lowerBound, int upperBound);
 
   /**
-   * Perform reduction between the given lower bound (lb) and upper bound (up) using a ParallelTeam.
+   * Perform reduction between the given bounds using a ParallelTeam.
    *
-   * @param parallelTeam ParallelTeam to use.
-   * @param lb           the lower bound.
-   * @param ub           the upper bound.
+   * @param parallelTeam The ParallelTeam to use.
+   * @param lowerBound   The lower bound of the range.
+   * @param upperBound   The upper bound of the range.
    */
-  void reduce(ParallelTeam parallelTeam, int lb, int ub);
+  void reduce(ParallelTeam parallelTeam, int lowerBound, int upperBound);
 
   /**
-   * Reset the double array to Zero.
+   * Reset the double array values to zero within the specified bounds.
    *
-   * @param threadID the thread ID.
-   * @param lb       the lower bound.
-   * @param ub       the upper bound.
+   * @param threadID   The thread ID.
+   * @param lowerBound The lower bound of the reset range.
+   * @param upperBound The upper bound of the reset range.
    */
-  void reset(int threadID, int lb, int ub);
+  void reset(int threadID, int lowerBound, int upperBound);
 
   /**
-   * Reset the double array to Zero using a ParallelTeam.
+   * Reset the double array values to zero within the specified bounds using a ParallelTeam.
    *
-   * @param parallelTeam ParallelTeam to use.
-   * @param lb           the lower bound.
-   * @param ub           the upper bound.
+   * @param parallelTeam The ParallelTeam to use.
+   * @param lowerBound   The lower bound of the reset range.
+   * @param upperBound   The upper bound of the reset range.
    */
-  void reset(ParallelTeam parallelTeam, int lb, int ub);
+  void reset(ParallelTeam parallelTeam, int lowerBound, int upperBound);
 
   /**
-   * Scale the double array at the specified index by the given value.
+   * Scale the value of the double array at the specified index.
    *
-   * @param threadID the thread ID.
-   * @param index    the index.
-   * @param value    the value to scale by.
+   * @param threadID The thread ID.
+   * @param index    The index of the array.
+   * @param value    The value to scale by.
    */
   void scale(int threadID, int index, double value);
 
   /**
-   * Set the double array at the specified index to the given value.
+   * Set the value of the double array at the specified index.
    *
-   * @param threadID the thread ID.
-   * @param index    the index.
-   * @param value    the value to set.
+   * @param threadID The thread ID.
+   * @param index    The index of the array.
+   * @param value    The value to set.
    */
   void set(int threadID, int index, double value);
 
   /**
-   * Get the size of the array.
+   * Get the current size of the array.
    *
-   * @return Returns the size of the array.
+   * @return The size of the array.
    */
   int size();
 
   /**
-   * Subtract value to the double array at the specified index.
+   * Subtract a value from the double array at the specified index.
    *
-   * @param threadID the thread ID.
-   * @param index    the index.
-   * @param value    the value to subtract.
+   * @param threadID The thread ID.
+   * @param index    The index of the array.
+   * @param value    The value to subtract.
    */
   void sub(int threadID, int index, double value);
 
@@ -167,14 +149,40 @@ public interface AtomicDoubleArray {
     /**
      * A java.util.concurrent.atomic.DoubleAdder implementation.
      */
-    ADDER,
+    ADDER {
+      @Override
+      public AtomicDoubleArray createInstance(int threads, int size) {
+        return new AdderDoubleArray(size);
+      }
+    },
+
     /**
      * Each thread has its own array, and reduction is performed by the user.
      */
-    MULTI,
+    MULTI {
+      @Override
+      public AtomicDoubleArray createInstance(int threads, int size) {
+        return new MultiDoubleArray(threads, size);
+      }
+    },
+
     /**
      * Parallel Java edu.rit.pj.reduction.SharedDoubleArray implementation.
      */
-    PJ
+    PJ {
+      @Override
+      public AtomicDoubleArray createInstance(int threads, int size) {
+        return new PJDoubleArray(size);
+      }
+    };
+
+    /**
+     * Factory method to create an AtomicDoubleArray instance.
+     *
+     * @param threads The number of threads.
+     * @param size    The size of the array.
+     * @return A new instance of AtomicDoubleArray.
+     */
+    public abstract AtomicDoubleArray createInstance(int threads, int size);
   }
 }

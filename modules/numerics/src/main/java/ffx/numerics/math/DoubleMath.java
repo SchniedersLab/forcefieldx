@@ -288,7 +288,7 @@ public final class DoubleMath {
   /**
    * logVector.
    *
-   * @param v an array of {@link double} objects.
+   * @param v an array of double values.
    * @param label a {@link String} object.
    */
   public static void log(double[] v, String label) {
@@ -430,7 +430,7 @@ public final class DoubleMath {
   /**
    * vectorToString.
    *
-   * @param v an array of {@link double} objects.
+   * @param v an array of double values.
    * @param label a {@link String} object.
    * @return Returns a String description of the vector.
    */

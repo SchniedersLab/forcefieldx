@@ -239,14 +239,14 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     switch (seedType) {
       case BAR:
         try {
-          if (eLow == null || eAt == null || eHigh == null) {
+          if (eLambdaMinusdL == null || eLambda == null || eLambdaPlusdL == null) {
             seedType = SeedType.ZEROS;
             seedEnergies();
             return;
           }
-          SequentialEstimator barEstimator = new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
+          SequentialEstimator barEstimator = new BennettAcceptanceRatio(lamValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperatures);
           mbarFEEstimates[0] = 0.0;
-          double[] barEstimates = barEstimator.getBinEnergies();
+          double[] barEstimates = barEstimator.getFreeEnergyDifferences();
           for (int i = 0; i < nFreeEnergyDiffs; i++) {
             mbarFEEstimates[i + 1] = mbarFEEstimates[i] + barEstimates[i];
           }
@@ -259,15 +259,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         }
       case ZWANZIG:
         try {
-          if (eLow == null || eAt == null || eHigh == null) {
+          if (eLambdaMinusdL == null || eLambda == null || eLambdaPlusdL == null) {
             seedType = SeedType.ZEROS;
             seedEnergies();
             return;
           }
-          Zwanzig forwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, FORWARDS);
-          Zwanzig backwardsFEP = new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, BACKWARDS);
-          double[] forwardZwanzig = forwardsFEP.getBinEnergies();
-          double[] backwardZwanzig = backwardsFEP.getBinEnergies();
+          Zwanzig forwardsFEP = new Zwanzig(lamValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperatures, FORWARDS);
+          Zwanzig backwardsFEP = new Zwanzig(lamValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperatures, BACKWARDS);
+          double[] forwardZwanzig = forwardsFEP.getFreeEnergyDifferences();
+          double[] backwardZwanzig = backwardsFEP.getFreeEnergyDifferences();
           mbarFEEstimates[0] = 0.0;
           for (int i = 0; i < nFreeEnergyDiffs; i++) {
             mbarFEEstimates[i + 1] = mbarFEEstimates[i] + .5 * (forwardZwanzig[i] + backwardZwanzig[i]);
@@ -282,7 +282,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           seedEnergies();
           return;
         }
-      case SeedType.ZEROS:
+      case ZEROS:
         fill(mbarFEEstimates, 0.0);
         break;
       default:
@@ -339,7 +339,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
       // Build random indices vector maintaining snapshot nums!
       int[] randomIndices = new int[numEvaluations];
       int sum = 0;
-      for (int snap : snaps) {
+      for (int snap : nSamples) {
         System.arraycopy(getBootstrapIndices(snap, random), 0, randomIndices, sum, snap);
         sum += snap;
       }
@@ -379,7 +379,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     ArrayList<Integer> zeroSnapLambdas = new ArrayList<>();
     ArrayList<Integer> sampledLambdas = new ArrayList<>();
     for (int i = 0; i < nLambdaStates; i++) {
-      if (snaps[i] == 0) {
+      if (nSamples[i] == 0) {
         zeroSnapLambdas.add(i);
       } else {
         sampledLambdas.add(i);
@@ -395,7 +395,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
         if (!zeroSnapLambdas.contains(i)) {
           reducedPotentialsTemp[index] = reducedPotentials[i];
           mbarFEEstimatesTemp[index] = mbarFEEstimates[i];
-          snapsTemp[index] = snaps[i];
+          snapsTemp[index] = nSamples[i];
           index++;
         }
       }
@@ -404,7 +404,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     } else { // If there aren't any zero snap lambdas, just use the original arrays
       reducedPotentialsTemp = reducedPotentials;
       mbarFEEstimatesTemp = mbarFEEstimates;
-      snapsTemp = snaps;
+      snapsTemp = nSamples;
     }
 
     // SCI iterations used to start optimization of MBAR objective function.
@@ -471,7 +471,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     int sciIter = 0;
     while (!converged(prevMBAR) && sciIter < 1000) {
       prevMBAR = copyOf(mbarFEEstimates, nLambdaStates);
-      mbarFEEstimates = mbarSelfConsistentUpdate(reducedPotentials, snaps, mbarFEEstimates);
+      mbarFEEstimates = mbarSelfConsistentUpdate(reducedPotentials, nSamples, mbarFEEstimates);
       for (int i = 0; i < nLambdaStates; i++) { // SOR for acceleration
         mbarFEEstimates[i] = omega * mbarFEEstimates[i] + (1 - omega) * prevMBAR[i];
       }
@@ -485,7 +485,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     }
 
     // Calculate uncertainties
-    double[][] theta = mbarTheta(reducedPotentials, snaps, mbarFEEstimates); // Quite expensive
+    double[][] theta = mbarTheta(reducedPotentials, nSamples, mbarFEEstimates); // Quite expensive
     mbarUncertainties = mbarUncertaintyCalc(theta);
     totalMBARUncertainty = mbarTotalUncertaintyCalc(theta);
     uncertaintyMatrix = diffMatrixCalculation(theta);
@@ -536,15 +536,15 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    */
   private void logWeights() {
     logger.info(" MBAR Weight Matrix Information Collapsed:");
-    double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    double[][] W = mbarW(reducedPotentials, nSamples, mbarFEEstimates);
     double[][] collapsedW = new double[W.length][W.length]; // Collapse W trajectory-wise (into K x K)
-    for (int i = 0; i < snaps.length; i++) {
+    for (int i = 0; i < nSamples.length; i++) {
       for (int j = 0; j < W.length; j++) {
         int start = 0;
         for (int k = 0; k < i; k++) {
-          start += snaps[k];
+          start += nSamples[k];
         }
-        for (int k = 0; k < snaps[i]; k++) {
+        for (int k = 0; k < nSamples[i]; k++) {
           collapsedW[j][i] += W[j][start + k];
         }
       }
@@ -908,7 +908,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return
    */
   private double[] computeExpectations(double[] samples) {
-    double[][] W = mbarW(reducedPotentials, snaps, mbarFEEstimates);
+    double[][] W = mbarW(reducedPotentials, nSamples, mbarFEEstimates);
     if (W[0].length != samples.length) {
       logger.severe("Samples and W matrix are not the same length. Exiting.");
     }
@@ -952,7 +952,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
           maxTemp = temp[j];
         }
       }
-      log_denom_n[i] = logSumExp(temp, snaps, maxTemp);
+      log_denom_n[i] = logSumExp(temp, nSamples, maxTemp);
       for (int j = 0; j < nStates; j++) {
         logCATerms[j][i] = log(samples[i]) - reducedPotentials[j][i] - log_denom_n[i];
         if (logCATerms[j][i] > maxLogCATerm[i]) {
@@ -994,8 +994,8 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
    * @return
    */
   private double[] computeExpectationStd(double[] samples) {
-    int[] extendedSnaps = new int[snaps.length * 2];
-    System.arraycopy(snaps, 0, extendedSnaps, 0, snaps.length);
+    int[] extendedSnaps = new int[nSamples.length * 2];
+    System.arraycopy(nSamples, 0, extendedSnaps, 0, nSamples.length);
     RealMatrix theta = MatrixUtils.createRealMatrix(mbarTheta(extendedSnaps, mbarAugmentedW(samples)));
     double[] expectations = computeExpectations(samples);
     double[] diag = new double[expectations.length * 2];
@@ -1321,7 +1321,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (int i = 1; i < x.length; i++) {
       x[i] -= tempO;
     }
-    return mbarObjectiveFunction(reducedPotentials, snaps, x);
+    return mbarObjectiveFunction(reducedPotentials, nSamples, x);
   }
 
   /**
@@ -1338,9 +1338,9 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     for (int i = 1; i < x.length; i++) {
       x[i] -= tempO;
     }
-    double[] tempG = mbarGradient(reducedPotentials, snaps, x);
+    double[] tempG = mbarGradient(reducedPotentials, nSamples, x);
     arraycopy(tempG, 0, g, 0, g.length);
-    return mbarObjectiveFunction(reducedPotentials, snaps, x);
+    return mbarObjectiveFunction(reducedPotentials, nSamples, x);
   }
 
   @Override
@@ -1366,10 +1366,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   public double getTotalEnergy() {
     return 0;
   }
-  //////// Getters and setters ////////
+
+  /// ///// Getters and setters ////////
 
   public BennettAcceptanceRatio getBAR() {
-    return new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures);
+    return new BennettAcceptanceRatio(lamValues, eLambdaMinusdL, eLambda, eLambdaPlusdL, temperatures);
   }
 
   @Override
@@ -1378,7 +1379,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   @Override
-  public double[] getBinEnergies() {
+  public double[] getFreeEnergyDifferences() {
     return mbarFEDifferenceEstimates;
   }
 
@@ -1391,11 +1392,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   public int[] getSnaps() {
-    return snaps;
+    return nSamples;
   }
 
   @Override
-  public double[] getBinUncertainties() {
+  public double[] getFEDifferenceUncertainties() {
     return mbarUncertainties;
   }
 
@@ -1412,23 +1413,31 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   @Override
-  public double getFreeEnergy() {
+  public double getTotalFreeEnergyDifference() {
     return totalMBAREstimate;
   }
 
   @Override
-  public double getUncertainty() {
+  public double getTotalFEDifferenceUncertainty() {
     return totalMBARUncertainty;
   }
 
   @Override
-  public int numberOfBins() {
+  public int getNumberOfBins() {
     return nFreeEnergyDiffs;
   }
 
   @Override
-  public double[] getBinEnthalpies() {
+  public double[] getEnthalpyDifferences() {
     return mbarEnthalpy;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public double getTotalEnthalpyDifference() {
+    return getTotalEnthalpyDifference(mbarEnthalpy);
   }
 
   public double[] getBinEntropies() {

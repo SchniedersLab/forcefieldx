@@ -422,9 +422,9 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param energyMask    This is ignored, since masking/scaling is not applied to GK interactions
    *                      (everything is intermolecular).
    * @param mutualMask    This should be set to zero for direction polarization.
-   * @param Gi            an array of {@link double} objects.
-   * @param Ti            an array of {@link double} objects.
-   * @param Tk            an array of {@link double} objects.
+   * @param Gi            an array of double values.
+   * @param Ti            an array of double values.
+   * @param Tk            an array of double values.
    * @return a double.
    */
   @Override
@@ -443,7 +443,7 @@ public class GKTensorQI extends CoulombTensorQI {
    *
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
-   * @param Gi an array of {@link double} objects.
+   * @param Gi an array of double values.
    * @return a double.
    */
   public double monopolePolarizationEnergyAndGradient(PolarizableMultipole mI,
@@ -482,9 +482,9 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param mI         PolarizableMultipole at site I.
    * @param mK         PolarizableMultipole at site K.
    * @param mutualMask This should be set to zero for direction polarization.
-   * @param Gi         an array of {@link double} objects.
-   * @param Ti         an array of {@link double} objects.
-   * @param Tk         an array of {@link double} objects.
+   * @param Gi         an array of double values.
+   * @param Ti         an array of double values.
+   * @param Tk         an array of double values.
    * @return a double.
    */
   public double dipolePolarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
@@ -577,9 +577,9 @@ public class GKTensorQI extends CoulombTensorQI {
    *
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
-   * @param Gi an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
+   * @param Gi an array of double values.
+   * @param Ti an array of double values.
+   * @param Tk an array of double values.
    * @return a double.
    */
   public double quadrupolePolarizationEnergyAndGradient(PolarizableMultipole mI,

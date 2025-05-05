@@ -56,68 +56,101 @@ import static java.util.Arrays.stream;
  */
 public abstract class SequentialEstimator implements StatisticalEstimator {
 
-  protected final double[] lamValues;
-  protected final double[][] eLow;
-  protected final double[][] eAt;
-  protected final double[][] eHigh;
-  protected final double[][][] eAll; // [lambdaWindow][perturbations][energies]
-  protected double[][] eAllFlat; // [lambda][evaluationsAtThisLambdaFromAllOtherLambda]
   /**
-   * The number of snaps in each lambda trajectory file.
+   * The lambda values at which the samples were collected.
    */
-  protected int[] snaps;
+  protected final double[] lamValues;
+  /**
+   * The number of states from which samples were collected.
+   */
+  protected final int nStates;
+  /**
+   * The potential energy of each snapshot at lambda - dL.
+   */
+  protected final double[][] eLambdaMinusdL;
+  /**
+   * The potential energy of each snapshot at lambda.
+   */
+  protected final double[][] eLambda;
+  /**
+   * The potential energy of each snapshot at lambda + dL.
+   */
+  protected final double[][] eLambdaPlusdL;
+  /**
+   * The potential energies of the snapshots at all other lambda values.
+   * <p>
+   * eAll[lambdaWindow][perturbations][energies]
+   */
+  protected final double[][][] eAll;
+  /**
+   * The potential energies of the snapshots at all other lambda values.
+   * <p>
+   * eAllFlat[lambda][evaluationsAtThisLambdaFromAllOtherLambda]
+   */
+  protected double[][] eAllFlat;
+  /**
+   * The number of samples for each lambda state.
+   */
+  protected int[] nSamples;
+  /**
+   * The temperatures at which the samples were collected.
+   */
   protected final double[] temperatures;
-  protected final int nTrajectories;
 
   /**
    * The SequentialEstimator constructor largely just copies its parameters into local variables.
    * Most arrays are duplicated (rather a just copying their reference).
    * The temperature array can be of length 1 if all elements are meant to be the same temperature.
    *
-   * <p>The first dimension of the energies arrays corresponds to the lambda values/windows. The
+   * <p>The first dimension of the energies arrays corresponds to the lambda values. The
    * second dimension (can be of uneven length) corresponds to potential energies of snapshots
-   * sampled from that lambda value, calculated either at that lambda value, the lambda value below,
-   * or the lambda value above. The arrays energiesLow[0] and energiesHigh[n-1] is expected to be all
+   * sampled at that lambda value, calculated either at that lambda value, the lambda value below,
+   * or the lambda value above. The arrays eLambdaMindL[0] and eLambdaPlusdL[n-1] is expected to be all
    * NaN.
    *
-   * @param lambdaValues Values of lambda dynamics was run at.
-   * @param energiesLow  Potential energies of trajectory L at lambda L-dL.
-   * @param energiesAt   Potential energies of trajectory L at lambda L.
-   * @param energiesHigh Potential energies of trajectory L at lambda L+dL.
-   * @param temperature  Temperature each lambda window was run at (single-element indicates
-   *                     identical temperatures).
+   * @param lambdaValues   Values of lambda for sampled states.
+   * @param eLambdaMinusdL Potential energies of state L at L-dL.
+   * @param eLambda        Potential energies of state L at L.
+   * @param eLambdaPlusdL  Potential energies of state L at L+dL.
+   * @param temperature    Temperature each state (single-element for a constant temperature).
    */
-  public SequentialEstimator(double[] lambdaValues, double[][] energiesLow, double[][] energiesAt,
-                             double[][] energiesHigh, double[] temperature) {
-    nTrajectories = lambdaValues.length;
+  public SequentialEstimator(double[] lambdaValues, double[][] eLambdaMinusdL, double[][] eLambda,
+                             double[][] eLambdaPlusdL, double[] temperature) {
+    nStates = lambdaValues.length;
     eAll = null;
     eAllFlat = null;
-    snaps = null;
+    nSamples = null;
 
-    assert stream(energiesLow[0]).allMatch(Double::isNaN)
-        && stream(energiesHigh[nTrajectories - 1]).allMatch(Double::isNaN);
+    assert stream(eLambdaMinusdL[0]).allMatch(Double::isNaN)
+        && stream(eLambdaPlusdL[nStates - 1]).allMatch(Double::isNaN);
 
-    assert nTrajectories == energiesAt.length
-        && nTrajectories == energiesLow.length
-        && nTrajectories == energiesHigh.length
+    assert nStates == eLambda.length
+        && nStates == eLambdaMinusdL.length
+        && nStates == eLambdaPlusdL.length
         : "One of the energy arrays is of the incorrect length in the first dimension!";
 
-    this.lamValues = copyOf(lambdaValues, nTrajectories);
-    temperatures = new double[nTrajectories];
+    this.lamValues = copyOf(lambdaValues, nStates);
+    temperatures = new double[nStates];
     if (temperature.length == 1) {
       fill(temperatures, temperature[0]);
     } else {
-      arraycopy(temperature, 0, temperatures, 0, nTrajectories);
+      arraycopy(temperature, 0, temperatures, 0, nStates);
     }
 
     // Just in case, copy the arrays rather than storing them as provided.
-    eLow = new double[nTrajectories][];
-    eAt = new double[nTrajectories][];
-    eHigh = new double[nTrajectories][];
-    for (int i = 0; i < nTrajectories; i++) {
-      eLow[i] = copyOf(energiesLow[i], energiesLow[i].length);
-      eAt[i] = copyOf(energiesAt[i], energiesAt[i].length);
-      eHigh[i] = copyOf(energiesHigh[i], energiesHigh[i].length);
+    this.eLambdaMinusdL = new double[nStates][];
+    this.eLambda = new double[nStates][];
+    this.eLambdaPlusdL = new double[nStates][];
+    for (int i = 0; i < nStates; i++) {
+      if (i != 0) {
+        // There is no perturbation below first state (usually L = 0).
+        this.eLambdaMinusdL[i] = copyOf(eLambdaMinusdL[i], eLambdaMinusdL[i].length);
+      }
+      this.eLambda[i] = copyOf(eLambda[i], eLambda[i].length);
+      if (i != nStates - 1) {
+        // There is no perturbation above the final state (usually L = 1).
+        this.eLambdaPlusdL[i] = copyOf(eLambdaPlusdL[i], eLambdaPlusdL[i].length);
+      }
     }
   }
 
@@ -141,29 +174,28 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * calculations can be performed and compared.
    *
    * @param lambdaValues Values of lambda dynamics was run at.
-   * @param energiesAll  Potential energy snaps of trajectories at all other lambdas. (Missing states are NaN)
-   * @param temperature  Temperature each lambda window was run at (single-element indicates
-   *                     identical temperatures).
+   * @param energiesAll  Potential energy of each sample at all other lambdas. (Missing states are NaN)
+   * @param temperature  Temperature each state (single-element for a constant temperature).
    */
   public SequentialEstimator(double[] lambdaValues, double[][][] energiesAll, double[] temperature) {
-    nTrajectories = lambdaValues.length;
-    assert nTrajectories == energiesAll.length
+    nStates = lambdaValues.length;
+    assert nStates == energiesAll.length
         : "The energy arrays is of the incorrect length in the first lambda dimension!";
-    assert nTrajectories == energiesAll[0].length
+    assert nStates == energiesAll[0].length
         : "The energy arrays is of the incorrect length in the second lambda dimension!";
 
-    this.lamValues = copyOf(lambdaValues, nTrajectories);
-    temperatures = new double[nTrajectories];
+    this.lamValues = copyOf(lambdaValues, nStates);
+    temperatures = new double[nStates];
     if (temperature.length == 1) {
       fill(temperatures, temperature[0]);
     } else {
-      arraycopy(temperature, 0, temperatures, 0, nTrajectories);
+      arraycopy(temperature, 0, temperatures, 0, nStates);
     }
 
     // Just in case, deep copy the array rather than storing them as provided.
-    eAll = new double[nTrajectories][][];
+    eAll = new double[nStates][][];
     int maxSnaps = 0;
-    for (int i = 0; i < nTrajectories; i++) {
+    for (int i = 0; i < nStates; i++) {
       eAll[i] = new double[energiesAll[i].length][];
       for (int j = 0; j < energiesAll[i].length; j++) {
         eAll[i][j] = copyOf(energiesAll[i][j], energiesAll[i][j].length);
@@ -172,8 +204,8 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     }
 
     // Remove jagged edges from eAll with NaN values in case it hasn't been done for you
-    for (int i = 0; i < nTrajectories; i++) {
-      for (int j = 0; j < nTrajectories; j++) {
+    for (int i = 0; i < nStates; i++) {
+      for (int j = 0; j < nStates; j++) {
         if (eAll[i][j].length < maxSnaps) {
           double[] temp = new double[maxSnaps];
           System.arraycopy(eAll[i][j], 0, temp, 0, eAll[i][j].length);
@@ -186,12 +218,12 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     }
 
     // Flatten the eAll array into a 2D array of [lambda][allEvaluationsAtThisLambda]
-    snaps = new int[nTrajectories];
-    int[] nanCount = new int[nTrajectories];
-    eAllFlat = new double[nTrajectories][];
-    for (int i = 0; i < nTrajectories; i++) {
+    nSamples = new int[nStates];
+    int[] nanCount = new int[nStates];
+    eAllFlat = new double[nStates][];
+    for (int i = 0; i < nStates; i++) {
       ArrayList<Double> temp = new ArrayList<>();
-      for (int j = 0; j < nTrajectories; j++) {
+      for (int j = 0; j < nStates; j++) {
         int count = 0;
         int countNaN = 0;
         for (int k = 0; k < eAll[j][i].length; k++) {
@@ -203,25 +235,25 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
             countNaN++;
           }
         }
-        snaps[j] = count;
+        nSamples[j] = count;
         nanCount[j] = countNaN;
       }
       eAllFlat[i] = temp.stream().mapToDouble(Double::doubleValue).toArray();
     }
 
-    for (int i = 0; i < nTrajectories; i++) {
-      if (snaps[i] + nanCount[i] != maxSnaps) {
+    for (int i = 0; i < nStates; i++) {
+      if (nSamples[i] + nanCount[i] != maxSnaps) {
         throw new IllegalArgumentException("Lambda window " + i
             + " is not set properly. You need to fill in the missing states with NaN.");
       }
     }
 
     // Assert that lengths of the energiesAll arrays are correct.
-    for (int i = 0; i < nTrajectories; i++) {
-      assert eAll[i].length == nTrajectories :
+    for (int i = 0; i < nStates; i++) {
+      assert eAll[i].length == nStates :
           "The energy arrays is of the incorrect length in the second lambda dimension at lambda " + i + "!";
       int nSnapshots = eAll[i][0].length;
-      for (int j = 0; j < nTrajectories; j++) {
+      for (int j = 0; j < nStates; j++) {
         assert eAll[i][j].length == nSnapshots :
             "The energy arrays is of the incorrect length in numSnaps dimension at lambda " +
                 i + " for evaluation at lambda " + j + "!";
@@ -231,26 +263,26 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
     // Initialize the eLow, eAt, and eHigh arrays to their expected values from eAll. Don't include NaN values.
     // Handle zero sample cases for BAR
     ArrayList<Integer> nonZeroSampleStates = new ArrayList<>();
-    for (int i = 0; i < nTrajectories; i++) {
-      if (snaps[i] != 0) {
+    for (int i = 0; i < nStates; i++) {
+      if (nSamples[i] != 0) {
         nonZeroSampleStates.add(i);
       }
     }
-    eLow = new double[nonZeroSampleStates.size()][eAll[0][0].length];
-    fill(eLow[0], Double.NaN);
-    eAt = new double[nonZeroSampleStates.size()][];
-    eHigh = new double[nonZeroSampleStates.size()][eAll[0][0].length];
-    fill(eHigh[nonZeroSampleStates.size() - 1], Double.NaN);
+    eLambdaMinusdL = new double[nonZeroSampleStates.size()][eAll[0][0].length];
+    fill(eLambdaMinusdL[0], Double.NaN);
+    eLambda = new double[nonZeroSampleStates.size()][];
+    eLambdaPlusdL = new double[nonZeroSampleStates.size()][eAll[0][0].length];
+    fill(eLambdaPlusdL[nonZeroSampleStates.size() - 1], Double.NaN);
     for (int i = 0; i < nonZeroSampleStates.size(); i++) {
       int index = nonZeroSampleStates.get(i); // Contains out of bounds index for e;
       if (i != 0) {
         int indexLow = nonZeroSampleStates.get(i - 1);
-        eLow[i] = copyOf(eAll[index][indexLow], snaps[index]);
+        eLambdaMinusdL[i] = copyOf(eAll[index][indexLow], nSamples[index]);
       }
-      eAt[i] = copyOf(eAll[index][index], snaps[index]);
+      eLambda[i] = copyOf(eAll[index][index], nSamples[index]);
       if (i != nonZeroSampleStates.size() - 1) {
         int indexHigh = nonZeroSampleStates.get(i + 1);
-        eHigh[i] = copyOf(eAll[index][indexHigh], snaps[index]);
+        eLambdaPlusdL[i] = copyOf(eAll[index][indexHigh], nSamples[index]);
       }
     }
   }
@@ -260,30 +292,30 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
    * snap counts, they are all set to the same number).
    *
    * @param lambdaValues Lambda values.
-   * @param snaps        Number of snapshots in each lambda window.
+   * @param nSamples     Number of samples for each state.
    * @param eAllFlat     Flattened energy evaluations at all lambda values.
-   * @param temperature  Temperature each lambda window was run at (a single-element indicates identical temperatures).
+   * @param temperature  Temperature each state (single-element for a constant temperature).
    */
-  public SequentialEstimator(double[] lambdaValues, int[] snaps, double[][] eAllFlat, double[] temperature) {
-    nTrajectories = lambdaValues.length;
-    assert nTrajectories == eAllFlat.length
+  public SequentialEstimator(double[] lambdaValues, int[] nSamples, double[][] eAllFlat, double[] temperature) {
+    nStates = lambdaValues.length;
+    assert nStates == eAllFlat.length
         : "The energy arrays is of the incorrect length in the first lambda dimension!";
 
-    this.lamValues = copyOf(lambdaValues, nTrajectories);
-    temperatures = new double[nTrajectories];
+    this.lamValues = copyOf(lambdaValues, nStates);
+    temperatures = new double[nStates];
     if (temperature.length == 1) {
       fill(temperatures, temperature[0]);
     } else {
-      arraycopy(temperature, 0, temperatures, 0, nTrajectories);
+      arraycopy(temperature, 0, temperatures, 0, nStates);
     }
 
     this.eAllFlat = eAllFlat;
-    this.snaps = snaps;
+    this.nSamples = nSamples;
     // No way of knowing the snap counts for each lambda window & therefore no way to break data into these matrices,
     // so just set these all to null.
-    eLow = null;
-    eAt = null;
-    eHigh = null;
+    eLambdaMinusdL = null;
+    eLambda = null;
+    eLambdaPlusdL = null;
     eAll = null;
   }
 }

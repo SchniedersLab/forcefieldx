@@ -35,13 +35,10 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.bonded;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.BondedTerm;
-import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 

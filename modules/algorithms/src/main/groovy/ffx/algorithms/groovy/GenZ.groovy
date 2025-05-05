@@ -77,13 +77,28 @@ class GenZ extends AlgorithmsScript {
             description = "XYZ or PDB input file.")
     private List<String> filenames = null
 
+
     ForceFieldEnergy potentialEnergy
     TitrationManyBody titrationManyBody
+    /**
+     * Assembly with mutations after running mutate pdb
+     */
     MolecularAssembly mutatedAssembly
+    /**
+     * Binding to run mutate pdb
+     */
     Binding mutatorBinding
+    /**
+     * All the residues
+     */
     List<Residue> residues
+    /**
+     * Residues included in the partition function
+     */
     List<Residue> selectedResidues
-
+    /**
+     * File to save the unfolded state of a protein for free energy prediction
+     */
     private String unfoldedFileName
 
     /**
@@ -110,16 +125,18 @@ class GenZ extends AlgorithmsScript {
             return this
         }
 
+        // Get all the important flags from the manybody options
         double titrationPH = manyBodyOptions.getTitrationPH()
         double inclusionCutoff = manyBodyOptions.getInclusionCutoff()
         int mutatingResidue = manyBodyOptions.getInterestedResidue()
-        boolean onlyProtons = manyBodyOptions.getOnlyProtons()
         boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         double pHRestraint = manyBodyOptions.getPHRestraint()
+        // Set system property to propagate titration
         if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
         }
 
+        // If soft coring
         boolean lambdaTerm = alchemicalOptions.hasSoftcore()
         if (lambdaTerm) {
             // Turn on softcore van der Waals
@@ -129,6 +146,7 @@ class GenZ extends AlgorithmsScript {
             // Turn on intra-molecular softcore
             System.setProperty("intramolecular-softcore", "true");
         }
+        // Set the energy cutoff for permutations to include in the ensemble
         System.setProperty("ro-ensembleEnergy", ensembleEnergy)
         activeAssembly = getActiveAssembly(filenames.get(0))
 
@@ -151,21 +169,14 @@ class GenZ extends AlgorithmsScript {
             setActiveAssembly(getActiveAssembly(unfoldedFileName))
         }
 
-        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"]
-        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+        //Allocate arrays for different values coming out of the partition function
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
-        double[][] populationArray = new double[1][54]
+        double[][] populationArray = new double[1][55]
         double[][] titrateBoltzmann
         double[] protonationBoltzmannSums
         double totalBoltzmann = 0
         List<Residue> residueList = activeAssembly.getResidueList()
-
-        List<Integer> residueNumber = new ArrayList<>()
-        for (Residue residue : residueList) {
-            residueNumber.add(residue.getResidueNumber())
-        }
-
 
         String mutatedFileName = ""
         //Call the MutatePDB script and mutate the residue of interest
@@ -184,8 +195,8 @@ class GenZ extends AlgorithmsScript {
         String listResidues = ""
         // Select residues with alpha carbons within the inclusion cutoff or
         // Select only the titrating residues or the titrating residues and those within the inclusion cutoff
-        if (mutatingResidue != -1 && inclusionCutoff != -1 || onlyTitration || onlyProtons) {
-            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, onlyProtons, inclusionCutoff)
+        if (mutatingResidue != -1 && inclusionCutoff != -1 || onlyTitration) {
+            listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, inclusionCutoff)
         }
 
         String filename = filenames.get(0)
@@ -196,7 +207,9 @@ class GenZ extends AlgorithmsScript {
             numLoop = 2
         }
 
-        List<Residue> titrateResidues = new ArrayList<>()
+        //Prepare variables for saving out the highest population rotamers (optimal rotamers)
+        int[] optimalRotamers
+        Set<Atom> excludeAtoms = new HashSet<>()
 
         //Calculate all possible permutations for the number of assembles
         for (int j = 0; j < numLoop; j++) {
@@ -227,13 +240,14 @@ class GenZ extends AlgorithmsScript {
                 renameAtomsToPDBStandard(activeAssembly)
             }
 
+            // Update the potential energy to match current assembly
             activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
             potentialEnergy = activeAssembly.getPotentialEnergy()
 
-            if (!pKa || onlyTitration || onlyProtons) {
+            // Selecting residues
+            if (!pKa || onlyTitration) {
                 manyBodyOptions.setListResidues(listResidues)
             }
-
 
             // Collect residues to optimize.
             residues = manyBodyOptions.collectResidues(activeAssembly)
@@ -250,21 +264,17 @@ class GenZ extends AlgorithmsScript {
                 List<Integer> resNumberList = new ArrayList<>()
                 for (Residue residue : residues) {
                     resNumberList.add(residue.getResidueNumber())
-                    if (pKa) {
-                        if (titratableResiudesList.contains(residue.getName())) {
-                            titrateResidues.add(residue)
-                        }
-                    }
                 }
 
                 // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
                 titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-                        resNumberList, titrationPH)
+                        resNumberList, titrationPH, manyBodyOptions)
                 MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
             }
 
+            // Turn on softcoring lambda
             if (lambdaTerm) {
                 alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
                 LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
@@ -273,19 +283,20 @@ class GenZ extends AlgorithmsScript {
                 lambdaInterface.setLambda(lambda)
             }
 
-            //Run rotamer optimization with specified parameter
+            //Run rotamer optimization with specified parameters
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
                     potentialEnergy, algorithmListener)
             rotamerOptimization.setPrintFiles(printFiles)
             rotamerOptimization.setWriteEnergyRestart(printFiles)
             rotamerOptimization.setPHRestraint(pHRestraint)
-            rotamerOptimization.setOnlyProtons(onlyProtons)
             rotamerOptimization.setRecomputeSelf(recomputeSelf)
             rotamerOptimization.setpH(titrationPH)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
+            // Initialize fractions for selected residues
             selectedResidues = rotamerOptimization.getResidues()
+            rotamerOptimization.initFraction(selectedResidues)
 
             logger.info("\n Initial Potential Energy:")
             potentialEnergy.energy(false, true)
@@ -299,58 +310,56 @@ class GenZ extends AlgorithmsScript {
             int[] currentRotamers = new int[selectedResidues.size()]
 
             //Calculate possible permutations for assembly
-            rotamerOptimization.getPopulations(selectedResidues.toArray() as Residue[], 0, currentRotamers)
+            rotamerOptimization.getFractions(selectedResidues.toArray() as Residue[], 0, currentRotamers)
 
             //Collect the Bolztmann weights and calculated offset of each assembly
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
             offsets[j] = rotamerOptimization.getRefEnergy()
 
-            //Calculate the populations for the all residue rotamers
+            //Calculate the populations for the residue rotamers
             populationArray = rotamerOptimization.getFraction()
             if (printBoltzmann) {
                 titrateBoltzmann = rotamerOptimization.getPopulationBoltzmann()
                 totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
             }
 
+            // Collect the most populous rotamers
+            optimalRotamers = rotamerOptimization.getOptimumRotamers()
+            if (manyBodyOptions.getTitration()) {
+                // Remove excess atoms from titratable residues
+                titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, selectedResidues)
+            }
+
+            // Calculate the protonation populations
+            if(pKa){
+                rotamerOptimization.getProtonationPopulations(selectedResidues.toArray() as Residue[])
+            }
+
+
         }
 
         //Print information from the fraction protonated calculations
-
         FileWriter fileWriter = new FileWriter("populations.txt")
         int residueIndex = 0
         for (Residue residue : selectedResidues) {
             fileWriter.write("\n")
             protonationBoltzmannSums = new double[selectedResidues.size()]
             // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-            double protSum = 0
-            double deprotSum = 0
-            double tautomerSum = 0
             Rotamer[] rotamers = residue.getRotamers()
-            for (Rotamer rotamer : rotamers) {
-                String rotPop = format("%.6f", populationArray[residueIndex][rotamer.getRotIndex()])
-                fileWriter.write("\n " + residue.getName() + residue.getResidueNumber() + "\t" +
-                        rotamer.toString() + "\t" + rotPop + "\n")
+            for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
+                String rotPop = format("%.6f", populationArray[residueIndex][rotIndex])
+                fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
+                        rotamers[rotIndex].toString() + "\t" + rotPop + "\n")
                 if (pKa) {
-                    switch (rotamer.getName()) {
+                    switch (rotamers[rotIndex].getName()) {
                         case "HIS":
                         case "LYS":
                         case "GLH":
                         case "ASH":
                         case "CYS":
-                            protSum += populationArray[residueIndex][rotamer.getRotIndex()]
                             if (printBoltzmann) {
-                                protonationBoltzmannSums[residueIndex] += titrateBoltzmann[residueIndex][rotamer.getRotIndex()]
+                                protonationBoltzmannSums[residueIndex] += titrateBoltzmann[residueIndex][rotIndex]
                             }
-                            break
-                        case "HIE":
-                        case "LYD":
-                        case "GLU":
-                        case "ASP":
-                        case "CYD":
-                            deprotSum += populationArray[residueIndex][rotamer.getRotIndex()]
-                            break
-                        case "HID":
-                            tautomerSum += populationArray[residueIndex][rotamer.getRotIndex()]
                             break
                         default:
                             break
@@ -358,46 +367,33 @@ class GenZ extends AlgorithmsScript {
                 }
 
             }
+            // Print protonated and total boltzmann values
             if (printBoltzmann) {
                 logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
                         protonationBoltzmannSums[residueIndex])
                 logger.info("\n Total Boltzmann: " + totalBoltzmann)
             }
-            if (pKa){
-                String formatedProtSum = format("%.6f", protSum)
-                String formatedDeprotSum = format("%.6f", deprotSum)
-                String formatedTautomerSum = format("%.6f", tautomerSum)
-                switch (residue.getName()) {
-                    case "HIS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
-                                "HIE" + "\t" + formatedDeprotSum + "\t" +
-                                "HID" + "\t" + formatedTautomerSum)
-                        break
-                    case "LYS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
-                                "LYD" + "\t" + formatedDeprotSum)
-                        break
-                    case "ASH":
-                        logger.info("\n " + residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
-                                "ASH" + "\t" + formatedProtSum)
-                        break
-                    case "GLH":
-                        logger.info("\n " + residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
-                                "GLH" + "\t" + formatedProtSum)
-                        break
-                    case "CYS":
-                        logger.info("\n " + residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
-                                "CYD" + "\t" + formatedDeprotSum)
-                        break
-                    default:
-                        break
-                }
-            }
             residueIndex += 1
         }
-
         fileWriter.close()
         System.out.println("\n Successfully wrote to the populations file.")
+
+
+        // Save the pdb file with the most popular rotamers for all residues included in the partition function
+        System.setProperty("standardizeAtomNames", "false")
+        File modelFile = saveDirFile(activeAssembly.getFile())
+        PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+                activeAssembly.getProperties())
+        if (manyBodyOptions.getTitration()) {
+            String remark = format("Titration pH: %6.3f", titrationPH)
+            if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+                logger.info(format(" Save failed for %s", activeAssembly))
+            }
+        } else {
+            if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+                logger.info(format(" Save failed for %s", activeAssembly))
+            }
+        }
         if (mutatingResidue != -1) {
             //Calculate Gibbs free energy change of mutating residues
             double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]))
@@ -408,11 +404,17 @@ class GenZ extends AlgorithmsScript {
         return this
     }
 
+
+
     /**
      * Returns the potential energy of the active assembly. Used during testing assertions.
      * @return potentialEnergy Potential energy of the active assembly.
      */
     ForceFieldEnergy getPotential() {
         return potentialEnergy
+    }
+
+    double[][] getPopulationArray(){
+        return populationArray
     }
 }
