@@ -221,21 +221,21 @@ public class MolecularAssembly extends MSGroup {
     List<MSNode> Polymers = getAtomNodeList();
     if (o instanceof Atom) {
       Atom atom = (Atom) o;
-      for (Atom currentAtom : getAtomArray()) {
-        if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
-                && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
-                atom.getName().equals(currentAtom.getName())) {
-          titrateConformer = true;
-          atomInitial = currentAtom;
-          return getResidue(atom, true);
-        } else {
-          titrateConformer = false;
-          atomInitial = null;
-        }
-      }
       if (atom.isModRes()) {
         return getResidue(atom, true, Residue.ResidueType.AA);
       } else if (!atom.isHetero()) {
+        for (Atom currentAtom : getAtomArray()) {
+          if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
+                  && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
+                  atom.getName().equals(currentAtom.getName())) {
+            titrateConformer = true;
+            atomInitial = currentAtom;
+            return getResidue(atom, true);
+          } else {
+            titrateConformer = false;
+            atomInitial = null;
+          }
+        }
         return getResidue(atom, true);
       } else {
         return getMolecule(atom, true);
