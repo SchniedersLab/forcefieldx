@@ -526,7 +526,12 @@ public class PhReplicaExchange implements Terminatable {
       //Arrays.sort(residueRatios[i]);
 
       // L-BFGS minimization of the Henderson-Hasselbalch equation to find the best fit hill coeff and pKa
-      double[] temp = TitrationUtils.predictHillCoeffandPka(pHScale, residueRatios[i]);
+      // Create Array of pH to match ordering residueRatios
+      double[] pHArray = new double[nReplicas];
+      for(int j=0; j < nReplicas; j++){
+        pHArray[j] = parameters[j][0];
+      }
+      double[] temp = TitrationUtils.predictHillCoeffandPka(pHArray, residueRatios[i]);
       n[i] = temp[0];
       pka[i] = temp[1];
 
@@ -534,7 +539,7 @@ public class PhReplicaExchange implements Terminatable {
       String residueName = extendedSystem.getTitratingResidueList().get(i).toString();
       output.append(" Residue: ").append(residueName).append("\n");
       output.append(" Fractions (Dep / (Dep + Pro)): ").append(Arrays.toString(residueRatios[i])).append("\n");
-      output.append(" pH window: ").append(Arrays.toString(pHScale)).append("\n");
+      output.append(" pH window: ").append(Arrays.toString(pHArray)).append("\n");
       output.append(" n: ").append(n[i]).append("\n");
       output.append(" pKa: ").append(pka[i]).append("\n");
       output.append("\n");
