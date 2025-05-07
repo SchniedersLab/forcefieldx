@@ -221,21 +221,40 @@ public class MolecularAssembly extends MSGroup {
     List<MSNode> Polymers = getAtomNodeList();
     if (o instanceof Atom) {
       Atom atom = (Atom) o;
-      for (Atom currentAtom : getAtomArray()) {
-        if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
-                && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
-                atom.getName().equals(currentAtom.getName())) {
-          titrateConformer = true;
-          atomInitial = currentAtom;
-          return getResidue(atom, true);
-        } else {
-          titrateConformer = false;
-          atomInitial = null;
-        }
-      }
       if (atom.isModRes()) {
         return getResidue(atom, true, Residue.ResidueType.AA);
       } else if (!atom.isHetero()) {
+        String resName = atom.getResidueName();
+        switch (resName){
+          case "HIS":
+          case "HIE":
+          case "HID":
+          case "ASP":
+          case "ASH":
+          case "GLU":
+          case "GLH":
+          case "LYS":
+          case "LYD":
+            for (Residue residue: getResidueList()){
+              if(residue.getResidueNumber() == atom.getResidueNumber()){
+                for (Atom currentAtom : residue.getAtomList()) {
+                  if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
+                          && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
+                          atom.getName().equals(currentAtom.getName())) {
+                    titrateConformer = true;
+                    atomInitial = currentAtom;
+                    return getResidue(atom, true);
+                  } else {
+                    titrateConformer = false;
+                    atomInitial = null;
+                  }
+                }
+              }
+            }
+            break;
+          default:
+            break;
+        }
         return getResidue(atom, true);
       } else {
         return getMolecule(atom, true);
