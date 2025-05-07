@@ -224,17 +224,36 @@ public class MolecularAssembly extends MSGroup {
       if (atom.isModRes()) {
         return getResidue(atom, true, Residue.ResidueType.AA);
       } else if (!atom.isHetero()) {
-        for (Atom currentAtom : getAtomArray()) {
-          if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
-                  && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
-                  atom.getName().equals(currentAtom.getName())) {
-            titrateConformer = true;
-            atomInitial = currentAtom;
-            return getResidue(atom, true);
-          } else {
-            titrateConformer = false;
-            atomInitial = null;
-          }
+        String resName = atom.getResidueName();
+        switch (resName){
+          case "HIS":
+          case "HIE":
+          case "HID":
+          case "ASP":
+          case "ASH":
+          case "GLU":
+          case "GLH":
+          case "LYS":
+          case "LYD":
+            for (Residue residue: getResidueList()){
+              if(residue.getResidueNumber() == atom.getResidueNumber()){
+                for (Atom currentAtom : residue.getAtomList()) {
+                  if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
+                          && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
+                          atom.getName().equals(currentAtom.getName())) {
+                    titrateConformer = true;
+                    atomInitial = currentAtom;
+                    return getResidue(atom, true);
+                  } else {
+                    titrateConformer = false;
+                    atomInitial = null;
+                  }
+                }
+              }
+            }
+            break;
+          default:
+            break;
         }
         return getResidue(atom, true);
       } else {
