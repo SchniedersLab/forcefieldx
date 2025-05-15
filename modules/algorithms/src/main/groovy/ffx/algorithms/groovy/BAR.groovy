@@ -43,6 +43,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
+import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.FreeEnergyDifferenceReporter
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AlchemicalOptions
@@ -128,9 +129,9 @@ class BAR extends AlgorithmsScript {
   /**
    * -e or --eps Convergence criterion for BAR iteration..
    */
-  @Option(names = ["-e", "--eps"], paramLabel = "1.0E-7",
+  @Option(names = ["-e", "--eps"], paramLabel = "1.0E-4",
       description = "Specify convergence cutoff for BAR calculation.")
-  private double eps = 1.0E-7
+  private double eps = 1.0E-4
 
   /**
    * The final argument(s) can filenames for lambda windows in order.
@@ -306,12 +307,12 @@ class BAR extends AlgorithmsScript {
       double[][] energiesAt = new double[nStates][]
       double[][] energiesHigh = new double[nStates][]
       double[][] volume = new double[nStates][]
+      double[] temperatures = new double[nStates]
 
       // Load BAR files.
-      readBARFiles(barFilters, energiesLow, energiesAt, energiesHigh, volume)
+      readBARFiles(barFilters, energiesLow, energiesAt, energiesHigh, volume, temperatures)
 
       // Compute free energy differences.
-      double[] temperatures = new double[]{temperature}
       reporter = new FreeEnergyDifferenceReporter(nStates, lambdaValues, temperatures, eps, nIterations,
           energiesLow, energiesAt, energiesHigh, volume)
       reporter.report()
@@ -468,10 +469,10 @@ class BAR extends AlgorithmsScript {
         BARFilter barFilter
         if (state == 0) {
           barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
-              energiesAt[state + 1], volume[state], volume[state + 1], temperature)
+              energiesAt[state + 1], volume[state], volume[state + 1], temperature, temperature)
         } else {
           barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
-              energiesAt[state + 1], volume[state], volume[state + 1], temperature)
+              energiesAt[state + 1], volume[state], volume[state + 1], temperature, temperature)
         }
         String barFileName = barFilePath + "window_" + state.toString() + ".bar"
         // Write out the TINKER style bar file. An existing file will be overwritten.
@@ -497,7 +498,9 @@ class BAR extends AlgorithmsScript {
    */
   void readBARFiles(BARFilter[] barFilters,
                     double[][] energyLow, double[][] energyAt,
-                    double[][] energyHigh, double[][] volume) {
+                    double[][] energyHigh, double[][] volume,
+                    double[] temperatures) {
+
     // Read energy values from BAR files.
     for (BARFilter barFilter : barFilters) {
       barFilter.readFile()
@@ -509,15 +512,18 @@ class BAR extends AlgorithmsScript {
         energyAt[state] = barFilters[state].getE1l1()
         energyHigh[state] = barFilters[state].getE1l2()
         volume[state] = barFilters[state].getVolume1()
+        temperatures[state] = barFilters[state].getTemperature1()
       } else if (state == nStates - 1) {
         energyLow[state] = barFilters[state - 1].getE2l1()
         energyAt[state] = barFilters[state - 1].getE2l2()
         volume[state] = barFilters[state - 1].getVolume2()
+        temperatures[state] = barFilters[state - 1].getTemperature2()
       } else {
         energyLow[state] = barFilters[state - 1].getE2l1()
         energyAt[state] = barFilters[state].getE1l1()
         energyHigh[state] = barFilters[state].getE1l2()
         volume[state] = barFilters[state].getVolume1()
+        temperatures[state] = barFilters[state].getTemperature1()
       }
     }
   }
