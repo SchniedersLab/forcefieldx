@@ -122,9 +122,9 @@ class BAR extends AlgorithmsScript {
   /**
    * --ni or --nIterations Maximum number of allowable iterations for BAR calculation.
    */
-  @Option(names = ["--ni", "--nIterations"], paramLabel = "100",
+  @Option(names = ["--ni", "--nIterations"], paramLabel = "1000",
       description = "Specify the maximum number of iterations for BAR convergence.")
-  private int nIterations = 100
+  private int nIterations = 1000
 
   /**
    * -e or --eps Convergence criterion for BAR iteration..

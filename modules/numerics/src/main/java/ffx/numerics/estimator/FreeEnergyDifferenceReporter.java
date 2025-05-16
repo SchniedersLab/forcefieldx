@@ -103,9 +103,9 @@ public class FreeEnergyDifferenceReporter {
   private final int nIterations;
 
   /**
-   * Maximum number of trials to be used for bootstrap.
+   * Minimum number of trials to be used for bootstrap.
    */
-  final long MAX_BOOTSTRAP_TRIALS = 100000L;
+  final long MIN_BOOTSTRAP_TRIALS = 1000L;
 
   /**
    * Free energy difference from forward FEP.
@@ -203,8 +203,9 @@ public class FreeEnergyDifferenceReporter {
     EstimateBootstrapper backwardBS = new EstimateBootstrapper(bar.getInitialBackwardsGuess());
 
     int numSnapshots = energiesAt[0].length;
-    long bootstrap = min(MAX_BOOTSTRAP_TRIALS, numSnapshots);
-    logger.info(format(" Number of bootstrap trials: %d", numSnapshots));
+    int trials = (int) (1.0e8 / numSnapshots);
+    long bootstrap = min(MIN_BOOTSTRAP_TRIALS, trials);
+    logger.info(format(" Number of bootstrap trials: %d", bootstrap));
 
     long time = -System.nanoTime();
     forwardBS.bootstrap(bootstrap);

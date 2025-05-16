@@ -89,7 +89,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
   /**
    * Default maximum number of BAR iterations.
    */
-  private static final int DEFAULT_MAX_BAR_ITERATIONS = 100;
+  private static final int DEFAULT_MAX_BAR_ITERATIONS = 1000;
   /**
    * Number of state pairs.
    */
@@ -312,7 +312,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     }
   }
 
-
   /**
    * Computes one half of the BAR variance.
    *
@@ -377,8 +376,10 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         logger.warning(format(" Window %3d bin energies produced unreasonable value(s) for forward Zwanzig (%8.4f) and/or backward Zwanzig (%8.4f)", i, forwardZwanzigFEDifferences[i], backwardZwanzigFEDifferences[i]));
       }
       double c = 0.5 * (forwardZwanzigFEDifferences[i] + backwardZwanzigFEDifferences[i]);
+      // double c = 0.0;
+
       if (!randomSamples) {
-        logger.fine(format(" BAR Iteration   %2d: %12.4f Kcal/mol", 0, c));
+        logger.fine(format(" BAR Iteration Seed: %12.4f Kcal/mol", c));
       }
 
       double cold = c;
@@ -439,7 +440,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
         cycleCounter++;
         converged = (abs(c - cold) < tolerance);
 
-        if (!converged && cycleCounter > nIterations) {
+        if (!randomSamples && !converged && cycleCounter > nIterations) {
           throw new IllegalArgumentException(
               format(" BAR required too many iterations (%d) to converge! (%9.8f > %9.8f)", cycleCounter, abs(c - cold), tolerance));
         }
