@@ -143,7 +143,8 @@ class AnalyzeNEQ extends AlgorithmsScript {
 
     File barFile = new File(".", "this.xyz")
     double temp = 300.0 // todo could be specified
-    BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length], new double[3], new double[3], temp)
+    BARFilter barFilter = new BARFilter(barFile, new double[fworks.length], fworks, rworks, new double[rworks.length],
+        new double[3], new double[3], temp, temp)
     barFilter.writeFile(outputName, false, false)
 
     // Create a Binding for command line arguments.

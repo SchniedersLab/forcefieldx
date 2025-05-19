@@ -1018,19 +1018,11 @@
                 <configuration>
                   <packages>
                     <package>numpy==1.26.4</package>
-                    <package>torch==2.2.1</package>
+                    <package>torch==2.4.1</package>
                   </packages>
-                  <pythonHome>
-	            <includes>
-                      <include>.*</include>
-                    </includes>
-                    <!-- excludes>
-                      <exclude>.*</exclude>
-                    </excludes -->
-                  </pythonHome>
-                  <pythonResourcesDirectory>
+                  <externalDirectory>
                     ${project.basedir}/python-resources
-                  </pythonResourcesDirectory>
+                  </externalDirectory>
                 </configuration>
                 <goals>
                   <goal>process-graalpy-resources</goal>
@@ -1061,7 +1053,7 @@
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.10.1</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.11.0</commons-configuration2.version>
+    <commons-configuration2.version>2.12.0</commons-configuration2.version>
     <commons-io.version>2.19.0</commons-io.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
@@ -1080,7 +1072,7 @@
     <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>9.0.1</git-commit-id.version>
-    <gmavenplus.version>4.1.1</gmavenplus.version>
+    <gmavenplus.version>4.2.0</gmavenplus.version>
     <graal.version>24.2.1</graal.version>
     <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
     <guava.version>33.4.8-jre</guava.version>
@@ -1132,7 +1124,7 @@
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>1.0.7</tornado.version>
+    <tornado.version>1.1.0</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
     <versions.version>2.18.0</versions.version>
@@ -1342,7 +1334,7 @@
     </repository>
     <repository>
       <id>6.u.manchester.repo</id>
-      <name>Tornadovm Repository</name>
+      <name>TornadoVM Repository</name>
       <releases>
         <enabled>true</enabled>
       </releases>
