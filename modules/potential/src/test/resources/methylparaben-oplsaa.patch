@@ -1,5 +1,5 @@
 
-forcefield opls-aa
+forcefield opls-aa-2008
 
 vdwindex                TYPE
 vdwtype                 LENNARD-JONES
