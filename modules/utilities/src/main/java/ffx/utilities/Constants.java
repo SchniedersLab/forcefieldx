@@ -105,7 +105,7 @@ public class Constants {
   /**
    * Constant <code>LITERS_PER_CUBIC_ANGSTROM=1E-30</code>
    */
-  public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-30;
+  public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-27;
   /**
    * Constant <code>ATM_TO_BAR=1.01325</code>
    */

@@ -513,8 +513,7 @@ class Solvator extends PotentialScript {
       // @formatter:on
       double volume = newBox[0] * newBox[1] * newBox[2]
       // newCrystal.volume may also work.
-      // The L -> mL and M -> mM conversions cancel.
-      double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO
+      double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO * 1E-3
 
       List<IonAddition> byConc = new ArrayList<>()
       IonAddition neutAnion = null
