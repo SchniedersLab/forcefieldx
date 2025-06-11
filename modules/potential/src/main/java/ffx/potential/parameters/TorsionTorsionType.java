@@ -320,13 +320,40 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         for (int i = 0; i < points; i++) {
           input = br.readLine();
           tokens = input.trim().split(" +");
-          if (tokens.length != 3) {
+          if (tokens.length == 3) {
+            torsion1[i] = parseDouble(tokens[0]);
+            torsion2[i] = parseDouble(tokens[1]);
+            energy[i] = parseDouble(tokens[2]);
+          } else if (tokens.length == 6) {
+            // First entry.
+            torsion1[i] = parseDouble(tokens[0]);
+            torsion2[i] = parseDouble(tokens[1]);
+            energy[i] = parseDouble(tokens[2]);
+            // Second entry.
+            torsion1[i + 1] = parseDouble(tokens[3]);
+            torsion2[i + 1] = parseDouble(tokens[4]);
+            energy[i + 1] = parseDouble(tokens[5]);
+            // Increment i by 1 since we read 2 values.
+            i += 1;
+          } else if (tokens.length == 9) {
+            // First entry.
+            torsion1[i] = parseDouble(tokens[0]);
+            torsion2[i] = parseDouble(tokens[1]);
+            energy[i] = parseDouble(tokens[2]);
+            // Second entry.
+            torsion1[i + 1] = parseDouble(tokens[3]);
+            torsion2[i + 1] = parseDouble(tokens[4]);
+            energy[i + 1] = parseDouble(tokens[5]);
+            // Third entry.
+            torsion1[i + 2] = parseDouble(tokens[6]);
+            torsion2[i + 2] = parseDouble(tokens[7]);
+            energy[i + 2] = parseDouble(tokens[8]);
+            // Increment i by 2 since we read 3 values.
+            i += 2;
+          } else {
             logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
             return null;
           }
-          torsion1[i] = parseDouble(tokens[0]);
-          torsion2[i] = parseDouble(tokens[1]);
-          energy[i] = parseDouble(tokens[2]);
         }
         return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
       } catch (NumberFormatException | IOException e) {
@@ -626,9 +653,24 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
     tortorBuffer.append(format("  %2d  %2d", gridPoints[0], gridPoints[1]));
     for (int i = 0; i < energy.length; i++) {
+      // Emit one entry.
       int nxi = i % nx;
       int nyi = i / ny;
       tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f", tx[nxi], ty[nyi], energy[i]));
+      // Emit a second entry if available.
+      if (i < energy.length - 1) {
+        i++;
+        nxi = i % nx;
+        nyi = i / ny;
+        tortorBuffer.append(format("  % 6.1f  % 6.1f  % 8.5f", tx[nxi], ty[nyi], energy[i]));
+      }
+      // Emit a third entry if available.
+      if (i < energy.length - 1) {
+        i++;
+        nxi = i % nx;
+        nyi = i / ny;
+        tortorBuffer.append(format("  % 6.1f  % 6.1f  % 8.5f", tx[nxi], ty[nyi], energy[i]));
+      }
     }
     return tortorBuffer.toString();
   }

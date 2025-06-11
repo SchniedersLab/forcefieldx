@@ -1959,7 +1959,48 @@ public class ForceField {
    * Available force fields.
    */
   public enum ForceFieldName {
-    AMBER_1994, AMBER_1996, AMBER_1998, AMBER_1999, AMBER_1999_SB, AMOEBA_2004, AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2018, AMOEBA_BIO_2018_CPHMD, AMOEBA_NUC_2017, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2013, AMOEBA_WATER_2003, AMOEBA_WATER_2014, CHARMM_22, CHARMM_22_CMAP, IAMOEBA_WATER, OPLS_AA, OPLS_AAL
+    // Amber FF 1994.
+    AMBER_1994,
+    // Amber FF 1996.
+    AMBER_1996,
+    // Amber FF 1998.
+    AMBER_1998,
+    // Amber FF 1999.
+    AMBER_1999,
+    // Amber FF 1999 SB.
+    AMBER_1999_SB,
+    // AMOEBA Small Molecule Force Field 2004.
+    AMOEBA_2004,
+    // AMOEBA Small Molecule Force Field 2009.
+    AMOEBA_2009,
+    // AMOEBA Biomolecular Force Field 2009.
+    AMOEBA_BIO_2009,
+    // AMOEBA Biomolecular Force Field 2018.
+    AMOEBA_BIO_2018,
+    // AMOEBA Biomolecular Force Field 2018 for CpHMD.
+    AMOEBA_BIO_2018_CPHMD,
+    // AMOEBA Nucleic Acid Force Field 2017.
+    AMOEBA_NUC_2017,
+    // AMOEBA Protein Force Field 2004.
+    AMOEBA_PROTEIN_2004,
+    // AMOEBA Protein Force Field 2013.
+    AMOEBA_PROTEIN_2013,
+    // AMOEBA Water Force Field 2003.
+    AMOEBA_WATER_2003,
+    // AMOEBA Water Force Field 2014.
+    AMOEBA_WATER_2014,
+    // CHARMM 22 Force Field.
+    CHARMM_22,
+    // CHARMM 27 Force Field.
+    CHARMM_27,
+    // CHARMM 36 Force Field.
+    CHARMM_36,
+    // Direct AMOEBA Water Force Field.
+    IAMOEBA_WATER,
+    // OPLS-AA Force Field.
+    OPLS_AA_2008,
+    // OPLS-AA/L Force Field.
+    OPLS_AAL
   }
 
   public enum ForceFieldType {

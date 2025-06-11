@@ -262,7 +262,8 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[21,24.1]</version>
+                  <!-- version>[21,24.1]</version -->
+                  <version>[21,25.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -1048,10 +1049,10 @@
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.6.0</checkstyle.version>
     <ciftools-java.version>7.0.1</ciftools-java.version>
-    <clean.version>3.4.1</clean.version>
+    <clean.version>3.5.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
-    <commons-beanutils.version>1.10.1</commons-beanutils.version>
+    <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.12.0</commons-configuration2.version>
     <commons-io.version>2.19.0</commons-io.version>
@@ -1065,16 +1066,16 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.4</deploy.version>
     <enforcer.version>3.5.0</enforcer.version>
-    <exec.version>3.5.0</exec.version>
+    <exec.version>3.5.1</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <git-commit-id.version>9.0.1</git-commit-id.version>
+    <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.0</gmavenplus.version>
     <graal.version>24.2.1</graal.version>
-    <groovy-all.version>5.0.0-alpha-12</groovy-all.version>
+    <groovy-all.version>5.0.0-beta-1</groovy-all.version>
     <guava.version>33.4.8-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.13</jacoco.version>

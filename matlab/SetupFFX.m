@@ -23,7 +23,7 @@ FFX_HOME = "/Users/mjschnie/Data/ffx-project/forcefieldx";
 ffxlib = FFX_HOME + "/lib/"
 jarfiles = dir(ffxlib)
 
-% Add JAR files "javaclasspath.txt" in the Matlab pref directory. 
+% Add JAR files to "javaclasspath.txt" in the Matlab pref directory. 
 cd(prefdir)
 fid = fopen('javaclasspath.txt','wt');
 for n = 1:length(jarfiles)
