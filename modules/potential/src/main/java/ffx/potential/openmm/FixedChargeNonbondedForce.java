@@ -39,7 +39,6 @@ package ffx.potential.openmm;
 
 import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
-import edu.uiowa.jopenmm.OpenMMLibrary;
 import ffx.crystal.Crystal;
 import ffx.openmm.BondArray;
 import ffx.openmm.Force;
@@ -62,6 +61,8 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME;
 import static ffx.potential.parameters.VDWType.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.parameters.VDWType.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.parameters.VDWType.RADIUS_SIZE.RADIUS;
@@ -150,6 +151,7 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
     if (pme != null) {
       coulomb14Scale = pme.getScale14();
     }
+
     Bond[] bonds = openMMEnergy.getBonds();
     if (bonds != null && bonds.length > 0) {
       BondArray bondArray = new BondArray(0);
@@ -192,12 +194,11 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
 
     Crystal crystal = openMMEnergy.getCrystal();
     if (crystal.aperiodic()) {
-      setNonbondedMethod(OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
+      setNonbondedMethod(OpenMM_NonbondedForce_NoCutoff);
     } else {
-      setNonbondedMethod(OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
+      setNonbondedMethod(OpenMM_NonbondedForce_PME);
       if (pme != null) {
-        // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to
-        // (Nm^-1).
+        // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
         double aEwald = OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
         int nx = pme.getReciprocalSpace().getXDim();
         int ny = pme.getReciprocalSpace().getYDim();
@@ -312,7 +313,6 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
       double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
 
       if (applyLambda) {
-        OpenMMSystem system = openMMEnergy.getSystem();
         boolean vdwLambdaTerm = vdW.getLambdaTerm();
         // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom Non-Bonded force.
         if (vdwLambdaTerm) {
@@ -363,10 +363,12 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
       */
       double minEpsilon = 1.0e-12;
 
-      OpenMMSystem system = openMMEnergy.getSystem();
-
+      double lambdaElec = 1.0;
       ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-      double lambdaElec = pme.getAlchemicalParameters().permLambda;
+      if (pme != null) {
+        lambdaElec = pme.getAlchemicalParameters().permLambda;
+      }
+
       boolean vdwLambdaTerm = vdW.getLambdaTerm();
 
       if (lambdaElec < minEpsilon) {

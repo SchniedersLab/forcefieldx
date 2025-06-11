@@ -172,10 +172,10 @@ public class Crystal {
   private static final int ZZ = 2;
 
   /**
-   * Matrix to convert from fractional to Cartesian coordinates.
-   * <br>a-axis vector is the first row of A^(-1).
-   * <br>b-axis vector is the second row of A^(-1).
-   * <br>c-axis vector is the third row of A^(-1).
+   * Real space Lattice vectors.
+   * <br>A-axis vector is the first row.
+   * <br>B-axis vector is the second row.
+   * <br>C-axis vector is the third row.
    */
   public final double[][] Ai = new double[3][3];
   /**
@@ -195,13 +195,25 @@ public class Crystal {
    */
   public double volume;
   /**
-   * Matrix to convert from Cartesian to fractional coordinates.
+   * Reciprocal lattice vectors.
+   * <br>A* reciprocal space vector is the first column.
+   * <br>B* reciprocal space vector is the second column.
+   * <br>C* reciprocal space vector is the third column.
    */
   public double[][] A;
   /**
-   * Entry in the A matrix.
+   * A* reciprocal lattice vector.
    */
-  public double A00, A01, A02, A10, A11, A12, A20, A21, A22;
+  public double A00, A10, A20;
+  /**
+   * B* reciprocal lattice vector (A01 is zero).
+   */
+  public double A11, A21;
+  /**
+   * C* reciprocal lattice vector (A02 and A12 are zero).
+   */
+  public double A22;
+
   /**
    * Interfacial radius in the direction of the A-axis.
    */
@@ -223,9 +235,17 @@ public class Crystal {
    */
   public int scaleN;
   /**
-   * Entry in the Ai matrix.
+   * A-axis lattice vector in Cartesian coordinates.
    */
-  public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
+  public double Ai00;
+  /**
+   * B-axis lattice vector in Cartesian coordinates.
+   */
+  public double Ai10, Ai11;
+  /**
+   * C-axis lattice vector in Cartesian coordinates.
+   */
+  public double Ai20, Ai21, Ai22;
   /**
    * Change in the volume with respect to a.
    */
@@ -590,16 +610,16 @@ public class Crystal {
       double zc = z[i];
       // Convert to fractional coordinates.
       double xi = xc * A00 + yc * A10 + zc * A20;
-      double yi = xc * A01 + yc * A11 + zc * A21;
-      double zi = xc * A02 + yc * A12 + zc * A22;
+      double yi = yc * A11 + zc * A21;
+      double zi = zc * A22;
       // Apply Symmetry Operator.
       double fx = rot00 * xi + rot01 * yi + rot02 * zi + t0;
       double fy = rot10 * xi + rot11 * yi + rot12 * zi + t1;
       double fz = rot20 * xi + rot21 * yi + rot22 * zi + t2;
       // Convert back to Cartesian coordinates.
       mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-      mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-      mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+      mateY[i] = fy * Ai11 + fz * Ai21;
+      mateZ[i] = fz * Ai22;
     }
   }
 
@@ -638,16 +658,16 @@ public class Crystal {
       var zc = xyz[index + ZZ];
       // Convert to fractional coordinates.
       var xi = xc * A00 + yc * A10 + zc * A20;
-      var yi = xc * A01 + yc * A11 + zc * A21;
-      var zi = xc * A02 + yc * A12 + zc * A22;
+      var yi = yc * A11 + zc * A21;
+      var zi = zc * A22;
       // Apply Symmetry Operator.
       var fx = r00 * xi + r01 * yi + r02 * zi + t0;
       var fy = r10 * xi + r11 * yi + r12 * zi + t1;
       var fz = r20 * xi + r21 * yi + r22 * zi + t2;
       // Convert back to Cartesian coordinates.
       mate[index + XX] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-      mate[index + YY] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-      mate[index + ZZ] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+      mate[index + YY] = fy * Ai11 + fz * Ai21;
+      mate[index + ZZ] = fz * Ai22;
     }
   }
 
@@ -666,8 +686,8 @@ public class Crystal {
     double zc = xyz[2];
     // Convert to fractional coordinates.
     double xi = xc * A00 + yc * A10 + zc * A20;
-    double yi = xc * A01 + yc * A11 + zc * A21;
-    double zi = xc * A02 + yc * A12 + zc * A22;
+    double yi = yc * A11 + zc * A21;
+    double zi = zc * A22;
 
     // Apply Symmetry Operator.
     double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi;
@@ -676,8 +696,8 @@ public class Crystal {
 
     // Convert back to Cartesian coordinates.
     mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-    mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-    mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    mate[1] = fy * Ai11 + fz * Ai21;
+    mate[2] = fz * Ai22;
   }
 
   /**
@@ -1024,14 +1044,14 @@ public class Crystal {
       return x * x + y * y + z * z;
     }
     double xf = x * A00 + y * A10 + z * A20;
-    double yf = x * A01 + y * A11 + z * A21;
-    double zf = x * A02 + y * A12 + z * A22;
+    double yf = y * A11 + z * A21;
+    double zf = z * A22;
     xf = floor(abs(xf) + 0.5) * signum(-xf) + xf;
     yf = floor(abs(yf) + 0.5) * signum(-yf) + yf;
     zf = floor(abs(zf) + 0.5) * signum(-zf) + zf;
     x = xf * Ai00 + yf * Ai10 + zf * Ai20;
-    y = xf * Ai01 + yf * Ai11 + zf * Ai21;
-    z = xf * Ai02 + yf * Ai12 + zf * Ai22;
+    y = yf * Ai11 + zf * Ai21;
+    z = zf * Ai22;
     xyz[0] = x;
     xyz[1] = y;
     xyz[2] = z;
@@ -1051,14 +1071,14 @@ public class Crystal {
       return dx * dx + dy * dy + dz * dz;
     }
     double xf = dx * A00 + dy * A10 + dz * A20;
-    double yf = dx * A01 + dy * A11 + dz * A21;
-    double zf = dx * A02 + dy * A12 + dz * A22;
+    double yf = dy * A11 + dz * A21;
+    double zf = dz * A22;
     xf = floor(abs(xf) + 0.5) * signum(-xf) + xf;
     yf = floor(abs(yf) + 0.5) * signum(-yf) + yf;
     zf = floor(abs(zf) + 0.5) * signum(-zf) + zf;
     dx = xf * Ai00 + yf * Ai10 + zf * Ai20;
-    dy = xf * Ai01 + yf * Ai11 + zf * Ai21;
-    dz = xf * Ai02 + yf * Ai12 + zf * Ai22;
+    dy = yf * Ai11 + zf * Ai21;
+    dz = zf * Ai22;
     return dx * dx + dy * dy + dz * dz;
   }
 
@@ -1246,8 +1266,8 @@ public class Crystal {
       double yi = yf[i];
       double zi = zf[i];
       x[i] = xi * Ai00 + yi * Ai10 + zi * Ai20;
-      y[i] = xi * Ai01 + yi * Ai11 + zi * Ai21;
-      z[i] = xi * Ai02 + yi * Ai12 + zi * Ai22;
+      y[i] = yi * Ai11 + zi * Ai21;
+      z[i] = zi * Ai22;
     }
   }
 
@@ -1270,8 +1290,8 @@ public class Crystal {
       double yf = frac[iY];
       double zf = frac[iZ];
       cart[iX] = xf * Ai00 + yf * Ai10 + zf * Ai20;
-      cart[iY] = xf * Ai01 + yf * Ai11 + zf * Ai21;
-      cart[iZ] = xf * Ai02 + yf * Ai12 + zf * Ai22;
+      cart[iY] = yf * Ai11 + zf * Ai21;
+      cart[iZ] = zf * Ai22;
     }
   }
 
@@ -1286,8 +1306,8 @@ public class Crystal {
     double fy = xf[1];
     double fz = xf[2];
     x[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-    x[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-    x[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    x[1] = fy * Ai11 + fz * Ai21;
+    x[2] = fz * Ai22;
   }
 
   /**
@@ -1308,8 +1328,8 @@ public class Crystal {
       double yc = y[i];
       double zc = z[i];
       xf[i] = xc * A00 + yc * A10 + zc * A20;
-      yf[i] = xc * A01 + yc * A11 + zc * A21;
-      zf[i] = xc * A02 + yc * A12 + zc * A22;
+      yf[i] = yc * A11 + zc * A21;
+      zf[i] = zc * A22;
     }
   }
 
@@ -1332,8 +1352,8 @@ public class Crystal {
       double yc = cart[iY];
       double zc = cart[iZ];
       frac[iX] = xc * A00 + yc * A10 + zc * A20;
-      frac[iY] = xc * A01 + yc * A11 + zc * A21;
-      frac[iZ] = xc * A02 + yc * A12 + zc * A22;
+      frac[iY] = yc * A11 + zc * A21;
+      frac[iZ] = zc * A22;
     }
   }
 
@@ -1348,8 +1368,8 @@ public class Crystal {
     double yc = x[1];
     double zc = x[2];
     xf[0] = xc * A00 + yc * A10 + zc * A20;
-    xf[1] = xc * A01 + yc * A11 + zc * A21;
-    xf[2] = xc * A02 + yc * A12 + zc * A22;
+    xf[1] = yc * A11 + zc * A21;
+    xf[2] = zc * A22;
   }
 
   /**
@@ -1381,15 +1401,9 @@ public class Crystal {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-    sb.append(
-        format("  A-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", a, Ai00, Ai01,
-            Ai02));
-    sb.append(
-        format("  B-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", b, Ai10, Ai11,
-            Ai12));
-    sb.append(
-        format("  C-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", c, Ai20, Ai21,
-            Ai22));
+    sb.append(format("  A-axis length:                       %8.3f\n", a));
+    sb.append(format("  B-axis length:                       %8.3f\n", b));
+    sb.append(format("  C-axis length:                       %8.3f\n", c));
     sb.append(format("  Alpha:                               %8.3f\n", alpha));
     sb.append(format("  Beta:                                %8.3f\n", beta));
     sb.append(format("  Gamma:                               %8.3f\n", gamma));
@@ -1397,7 +1411,15 @@ public class Crystal {
     sb.append(format("   Number:                                  %3d\n", spaceGroup.number));
     sb.append(format("   Symbol:                             %8s\n", spaceGroup.shortName));
     sb.append(
-        format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
+        format("   Number of Symmetry Operators:            %3d\n", spaceGroup.getNumberOfSymOps()));
+    sb.append("  Lattice Vectors\n");
+    sb.append(format("   A:              %8.3f, %8.3f, %8.3f\n", Ai00, 0.0, 0.0));
+    sb.append(format("   B:              %8.3f, %8.3f, %8.3f\n", Ai10, Ai11, 0.0));
+    sb.append(format("   C:              %8.3f, %8.3f, %8.3f\n", Ai20, Ai21, Ai22));
+    sb.append("  Reciprocal Lattice Vectors\n");
+    sb.append(format("   A*:             %8.3f, %8.3f, %8.3f\n", A00, A10, A20));
+    sb.append(format("   B*:             %8.3f, %8.3f, %8.3f\n", 0.0, A11, A21));
+    sb.append(format("   C*:             %8.3f, %8.3f, %8.3f", 0.0, 0.0, A22));
     return sb.toString();
   }
 
@@ -1502,12 +1524,12 @@ public class Crystal {
     Ai[2][1] = c * beta_term;
     Ai[2][2] = c * gamma_term;
 
+    // A-axis in Cartesian coordinates.
     Ai00 = Ai[0][0];
-    Ai01 = Ai[0][1];
-    Ai02 = Ai[0][2];
+    // B-axis in Cartesian coordinates.
     Ai10 = Ai[1][0];
     Ai11 = Ai[1][1];
-    Ai12 = Ai[1][2];
+    // C-axis in Cartesian coordinates.
     Ai20 = Ai[2][0];
     Ai21 = Ai[2][1];
     Ai22 = Ai[2][2];
@@ -1517,41 +1539,49 @@ public class Crystal {
     m = new LUDecomposition(m).getSolver().getInverse();
     A = m.getData();
 
-    // The columns of A are the reciprocal basis vectors
+    // The columns of A are the reciprocal lattice vectors
+    // A* reciprocal lattice vector.
     A00 = A[0][0];
     A10 = A[1][0];
     A20 = A[2][0];
-    A01 = A[0][1];
+    // B* reciprocal lattice vector (A01 is zero).
     A11 = A[1][1];
     A21 = A[2][1];
-    A02 = A[0][2];
-    A12 = A[1][2];
+    // C* reciprocal lattice vector (A02 and A12 are zero).
     A22 = A[2][2];
 
-    // Reciprocal basis vector lengths
+    // Reciprocal lattice vector lengths
     double aStar = 1.0 / sqrt(A00 * A00 + A10 * A10 + A20 * A20);
-    double bStar = 1.0 / sqrt(A01 * A01 + A11 * A11 + A21 * A21);
-    double cStar = 1.0 / sqrt(A02 * A02 + A12 * A12 + A22 * A22);
+    double bStar = 1.0 / sqrt(A11 * A11 + A21 * A21);
+    double cStar = 1.0 / sqrt(A22 * A22);
+
+    /*
+      In Amber (PMEMD), interfacial diameters are defined by the dot product of the
+      real and reciprocal vectors multiplied by half the reciprocal lengths.
+      However, the real and reciprocal vectors are orthonormal (A dot A* = 1.0).
+
+      Here, the interfacial radii are defined by reciprocal lengths divided by 2.
+
+      This approach concurs with the Tinker code for triclinic cells:
+        xlimit = volbox / (2.0d0*ybox*zbox*alpha_sin)
+        ylimit = volbox / (2.0d0*xbox*zbox*beta_sin)
+        zlimit = volbox / (2.0d0*xbox*ybox*gamma_sin)
+      where volbox is the volume of the periodic box in Angstroms^3,
+      xbox is the length of the a-axis in Angstroms,
+      and alpha_sin is the sine of the alpha periodic box angle
+     */
+
+    // Divide by 2 to get the interfacial radii.
+    interfacialRadiusA = aStar / 2.0;
+    interfacialRadiusB = bStar / 2.0;
+    interfacialRadiusC = cStar / 2.0;
+
     if (logger.isLoggable(Level.FINEST)) {
-      logger.finest(
-          format(" Reciprocal Lattice Lengths: (%8.3f, %8.3f, %8.3f)", aStar, bStar, cStar));
-    }
-
-    // Interfacial diameters from the dot product of the real and reciprocal vectors
-    interfacialRadiusA = (Ai00 * A00 + Ai01 * A10 + Ai02 * A20) * aStar;
-    interfacialRadiusB = (Ai10 * A01 + Ai11 * A11 + Ai12 * A21) * bStar;
-    interfacialRadiusC = (Ai20 * A02 + Ai21 * A12 + Ai22 * A22) * cStar;
-
-    // Divide by 2 to get radii.
-    interfacialRadiusA /= 2.0;
-    interfacialRadiusB /= 2.0;
-    interfacialRadiusC /= 2.0;
-
-    if (logger.isLoggable(Level.FINEST)) {
-      logger.finest(
-          format(
-              " Interfacial radii: (%8.3f, %8.3f, %8.3f)",
-              interfacialRadiusA, interfacialRadiusB, interfacialRadiusC));
+      // Compare the interfacial radii with the half lattice lengths.
+      logger.finest(format(" Half lattice lengths: (%12.6f, %12.6f, %12.6f)",
+          a / 2.0, b / 2.0, c / 2.0));
+      logger.finest(format(" Interfacial radii:    (%12.6f, %12.6f, %12.6f)",
+          interfacialRadiusA, interfacialRadiusB, interfacialRadiusC));
     }
 
     List<SymOp> symOps = spaceGroup.symOps;

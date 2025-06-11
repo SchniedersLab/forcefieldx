@@ -103,9 +103,9 @@ public class Constants {
    */
   public static final int K_CD_SI = 683;
   /**
-   * Constant <code>LITERS_PER_CUBIC_ANGSTROM=1E-30</code>
+   * Constant <code>LITERS_PER_CUBIC_ANGSTROM=1E-27</code>
    */
-  public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-30;
+  public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-27;
   /**
    * Constant <code>ATM_TO_BAR=1.01325</code>
    */

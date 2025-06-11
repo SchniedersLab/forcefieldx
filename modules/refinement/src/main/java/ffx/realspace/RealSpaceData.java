@@ -799,12 +799,9 @@ public class RealSpaceData implements DataContainer {
               grad[1] = grad[1] * nY;
               grad[2] = grad[2] * nZ;
               // transpose of toFractional
-              xyz[0] = grad[0] * getCrystal()[i].A00
-                      + grad[1] * getCrystal()[i].A01
-                      + grad[2] * getCrystal()[i].A02;
+              xyz[0] = grad[0] * getCrystal()[i].A00;
               xyz[1] = grad[0] * getCrystal()[i].A10
-                      + grad[1] * getCrystal()[i].A11
-                      + grad[2] * getCrystal()[i].A12;
+                      + grad[1] * getCrystal()[i].A11;
               xyz[2] = grad[0] * getCrystal()[i].A20
                       + grad[1] * getCrystal()[i].A21
                       + grad[2] * getCrystal()[i].A22;
