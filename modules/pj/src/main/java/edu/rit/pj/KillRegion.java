@@ -58,6 +58,6 @@ public class KillRegion extends ParallelRegion {
     /** {@inheritDoc} */
     @Override
     public void run() throws Exception {
-        // Does precisely nothing save exist.
+        // Empty run method.
     }
 }

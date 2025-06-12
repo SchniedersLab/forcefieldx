@@ -54,9 +54,9 @@ import java.util.concurrent.Semaphore;
  * @version 20-Dec-2007
  */
 class ParallelTeamThread
-        extends Thread {
+        implements Runnable {
 
-// Hidden data members.
+    // Hidden data members.
     // Reference to the parallel team.
     ParallelTeam myTeam;
 
@@ -86,26 +86,52 @@ class ParallelTeamThread
     // Exception thrown while setting up a parallel construct, or null if none.
     volatile Throwable myConstructException;
 
+    // The thread instance
+    private final Thread thread;
+
     // 128 bytes of extra padding to avert cache interference.
     private long p0, p1, p2, p3, p4, p5, p6, p7;
     private long p8, p9, pa, pb, pc, pd, pe, pf;
 
 // Exported constructors.
+
     /**
      * Construct a new parallel team thread.
      *
-     * @param theTeam Parallel team to which this thread belongs.
+     * @param theTeam  Parallel team to which this thread belongs.
      * @param theIndex Index of this thread within the team.
      */
     public ParallelTeamThread(ParallelTeam theTeam,
-            int theIndex) {
+                              int theIndex) {
         myTeam = theTeam;
         myIndex = theIndex;
-        setDaemon(true);
-        start();
+
+        boolean isVirtual = PJProperties.getPjVt();
+        if (isVirtual) {
+            // Create a virtual thread
+            thread = Thread.ofVirtual()
+                .name("ParallelTeamThread-" + theIndex)
+                .unstarted(this);
+        } else {
+            // Create a new thread for this parallel team thread.
+            thread = new Thread(this, "ParallelTeamThread-" + theIndex);
+        }
+
+        thread.setDaemon(true);
+        thread.start();
     }
 
 // Exported operations.
+
+    /**
+     * Get the underlying thread.
+     *
+     * @return The Thread instance
+     */
+    public Thread getThread() {
+        return thread;
+    }
+
     /**
      * Run this parallel team thread.
      */

@@ -148,16 +148,13 @@ public abstract class ParallelConstruct {
         if (myTeam == null) {
             throw new IllegalStateException("ParallelConstruct.getCurrentThread(): No parallel team executing");
         }
-        try {
-            ParallelTeamThread current = (ParallelTeamThread) Thread.currentThread();
-            if (current.myTeam != this.myTeam) {
-                throw new IllegalStateException("ParallelConstruct.getCurrentThread(): Current thread is not executing this parallel construct");
+        Thread currentThread = Thread.currentThread();
+        for (ParallelTeamThread teamThread : myTeam.myThread) {
+            if (teamThread.getThread() == currentThread) {
+                return teamThread;
             }
-            return current;
-        } catch (ClassCastException exc) {
-            throw new IllegalStateException("ParallelConstruct.getCurrentThread(): Current thread is not a parallel team thread",
-                    exc);
         }
+        throw new IllegalStateException("ParallelConstruct.getCurrentThread(): Current thread is not executing this parallel construct");
     }
 
 }

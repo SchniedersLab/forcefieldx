@@ -234,6 +234,26 @@ public class PJProperties {
     }
 
     /**
+     * Determine whether a {@linkplain ParallelTeam} should use virtual threads.
+     * <p>
+     * If the <code>"pj.vt"</code> Java system property is true, then virtual threads
+     * will be used. If the property is false or not specified, then the
+     * program will use platform threads.
+     * <p>
+     * The default is false, meaning that the program will use platform threads.
+     * <p>
+     * @return true if the program should use virtual threads, false otherwise.
+     */
+    public static boolean getPjVt() {
+        String pjVtProperty = System.getProperty("pj.vt");
+        if (pjVtProperty != null) {
+            return Boolean.parseBoolean(pjVtProperty);
+        } else {
+            return false; // Default is false
+        }
+    }
+
+    /**
      * Determine the schedule for a parallel loop in an SMP parallel program.
      * This is the schedule that will be used if the parallel for loop has a
      * runtime schedule. For further information, see class {@linkplain
