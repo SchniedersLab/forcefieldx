@@ -2598,8 +2598,11 @@ public final class PDBFilter extends SystemFilter {
     final char chainChar;
     /** Residue name before mutation. */
     String origResName;
+    /** The 4 x,y,z glycosyl torsion atom coordinates. */
     double[][] glyco = new double[4][3];
+    /** The 4 atom indices of glycosyl torsion atoms. */
     int[] glycoAtomIndex = new int[4];
+    /** Index correction. */
     int indCorr;
 
     public Mutation(int resID, char chainChar, String newResName) {
