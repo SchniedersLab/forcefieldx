@@ -1484,8 +1484,11 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
       alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
       alchemicalParameters.vacuumRanges = new Range[maxThreads];
-      vacuumNeighborList.setDisableUpdates(
-          forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
+      try {
+        vacuumNeighborList.destroy();
+      } catch (Exception ex) {
+        logger.warning(" Exception in destroying vacuumNeighborList");
+      }
     } else {
       alchemicalParameters.vaporCrystal = null;
       alchemicalParameters.vaporLists = null;

@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.Random;
 
 import ffx.utilities.FFXTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -99,6 +100,11 @@ public class Complex3DParallelTest extends FFXTest {
       expected[i] = r;
       recip[i] = 1.0e0;
     }
+  }
+
+  @After
+  public void after() throws Exception {
+    parallelTeam.shutdown();
   }
 
   /** Test of convolution method, of class Complex3D. */

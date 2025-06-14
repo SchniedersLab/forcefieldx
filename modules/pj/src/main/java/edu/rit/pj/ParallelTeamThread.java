@@ -44,6 +44,7 @@
 //******************************************************************************
 package edu.rit.pj;
 
+import edu.rit.pj.reduction.SharedLong;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -89,6 +90,11 @@ class ParallelTeamThread
     // The thread instance
     private final Thread thread;
 
+    /**
+     * Number of threads created by the ParallelTeamThread constructor.
+     */
+    public static SharedLong totalThreads = new SharedLong(0);
+
     // 128 bytes of extra padding to avert cache interference.
     private long p0, p1, p2, p3, p4, p5, p6, p7;
     private long p8, p9, pa, pb, pc, pd, pe, pf;
@@ -106,18 +112,21 @@ class ParallelTeamThread
         myTeam = theTeam;
         myIndex = theIndex;
 
+        String name = "ParallelTeamThread-" + theIndex;
+
         boolean isVirtual = PJProperties.getPjVt();
         if (isVirtual) {
-            // Create a virtual thread
-            thread = Thread.ofVirtual()
-                .name("ParallelTeamThread-" + theIndex)
-                .unstarted(this);
+            // Create a virtual thread (all virtual threads are daemon threads).
+            thread = Thread.ofVirtual().name(name).unstarted(this);
         } else {
             // Create a new thread for this parallel team thread.
-            thread = new Thread(this, "ParallelTeamThread-" + theIndex);
+            thread = Thread.ofPlatform().name(name).unstarted(this);
+            thread.setDaemon(true);
         }
 
-        thread.setDaemon(true);
+        long numThreads = totalThreads.incrementAndGet();
+        // System.out.printf(" Creating team %s thread %s out of %d.\n", myTeam, name, numThreads);
+
         thread.start();
     }
 
@@ -135,6 +144,7 @@ class ParallelTeamThread
     /**
      * Run this parallel team thread.
      */
+    @Override
     public void run() {
         for (;;) {
             // Wait until released by the main thread.
@@ -146,6 +156,8 @@ class ParallelTeamThread
                 } catch (Exception ex) {
                     System.err.printf("Error exiting parallel team thread: %s%n", ex);
                 }
+
+                // Exit the for loop and run method, which will allow threads to be garbage collected.
                 break;
             }
             
