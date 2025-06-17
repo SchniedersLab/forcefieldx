@@ -297,8 +297,8 @@ public class ConformationScan {
     private double[] minimizeVector(double[] hBondVector, int lowBound, int highBound) {
         highBound += 1; // To include the highBound
         // Grid search from lowBound to highBound w/ 1 ang steps
-        double[] coarsePotentialSurface = new double[(int) Math.abs(highBound - lowBound)];
-        double[] zSearched = new double[(int) Math.abs(highBound - lowBound)]; // Relative to hBondVector[2]
+        double[] coarsePotentialSurface = new double[Math.abs(highBound - lowBound)];
+        double[] zSearched = new double[Math.abs(highBound - lowBound)]; // Relative to hBondVector[2]
         double[] coarseVector = new double[3];
         int minIndex = -1;
         double minE = Double.MAX_VALUE;

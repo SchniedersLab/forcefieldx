@@ -354,23 +354,23 @@ public class WeightedEnsembleManager {
     private void resample(){
         logger.info("\n\n ----------------------------- Resampling ----------------------------- ");
         // Initialize
-        ArrayList<Integer>[] binRank = new ArrayList[numBins];
+        List<List<Integer>> binRank = new ArrayList<>();
         PriorityQueue<Decision> merges = new PriorityQueue<>(); // Head is the lowest weight for priority queues
         PriorityQueue<Decision> splits = new PriorityQueue<>();
         for (int i = 0; i < numBins; i++){
-            binRank[i] = new ArrayList<>();
+            binRank.add(new ArrayList<>());
         }
 
         // Sort ranks into bins
         for (int i = 0; i < worldSize; i++){
             int bin = (int) Math.round(weightsBins[i][1]);
-            binRank[bin].add(i);
+            binRank.get(bin).add(i);
         }
 
         // Analyze each bin
         int m = 2;  // Number of particles to split into (default 2 -- must be > 1)
         for (int i = 0; i < numBins; i++){
-            List<Integer> ranks = binRank[i]
+            List<Integer> ranks = binRank.get(i)
                     .stream()
                     .sorted((a, b) -> Double.compare(weightsBins[a][0], weightsBins[b][0]))
                     .toList();
@@ -454,7 +454,8 @@ public class WeightedEnsembleManager {
             }
             desiredFreeRanks -= decision.ranks.size()-1;
             // Sample a rank to merge into from all ranks in the decision to find target
-            ArrayList<Double> weights = (ArrayList<Double>) decision.weights.clone();
+
+            ArrayList<Double> weights = new ArrayList<>(decision.weights);
             double totalWeight = weights.stream().mapToDouble(Double::doubleValue).sum();
             weights.replaceAll(a -> a /totalWeight);
             double rand = random.nextDouble();
