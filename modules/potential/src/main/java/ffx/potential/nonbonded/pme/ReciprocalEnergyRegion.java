@@ -226,7 +226,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
       permanentReciprocalEnergy += permanentReciprocalEnergyLoop[i].eRecip;
     }
 
-    if (totalCharge == 0.0) {
+    if (totalCharge == 0.0 || (esvTerm && !extendedSystem.useTotalChargeCorrection)) {
       chargeCorrectionEnergy = 0.0;
     } else {
       Crystal unitCell = crystal.getUnitCell();
