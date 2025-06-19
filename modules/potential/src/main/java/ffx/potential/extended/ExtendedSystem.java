@@ -149,6 +149,7 @@ public class ExtendedSystem implements Potential {
      */
     private final double LYStitrBiasMag;
     private final List<Constraint> constraints;
+    public final boolean useTotalChargeCorrection;
     private final boolean doBias;
     private final boolean doElectrostatics;
     private final boolean doPolarization;
@@ -317,6 +318,7 @@ public class ExtendedSystem implements Potential {
         doElectrostatics = properties.getBoolean("esv.elec", true);
         doBias = properties.getBoolean("esv.bias", true);
         doPolarization = properties.getBoolean("esv.polarization", true);
+        useTotalChargeCorrection = properties.getBoolean("esv.total.charge.correction", false);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
 

@@ -226,7 +226,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
       permanentReciprocalEnergy += permanentReciprocalEnergyLoop[i].eRecip;
     }
 
-    if (totalCharge == 0.0) {
+    if (totalCharge == 0.0 || (esvTerm && !extendedSystem.useTotalChargeCorrection)) {
       chargeCorrectionEnergy = 0.0;
     } else {
       Crystal unitCell = crystal.getUnitCell();
@@ -240,6 +240,16 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
       if (lambdaTerm) {
         shareddEdLambda.addAndGet(chargeCorrectionEnergy * dlPowPerm * dEdLSign);
         sharedd2EdLambda2.addAndGet(chargeCorrectionEnergy * d2lPowPerm * dEdLSign);
+      }
+      if (esvTerm){
+        for(int i=0; i<atoms.length;i++){
+          if(extendedSystem.isTitrating(i)){
+            double[] in = globalMultipole[0][i];
+            double[] indot = titrationMultipole[0][i];
+            double chargeCorrectiondUdL = -0.5 * electric * PI * indot[t000] * (2*totalCharge) / denom;
+            extendedSystem.addPermElecDeriv(i,chargeCorrectiondUdL,0.0);
+          }
+        }
       }
       chargeCorrectionEnergy = chargeCorrectionEnergy * permanentScale;
     }
