@@ -566,10 +566,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param nEQSteps       Number of lambda steps.
    * @param reverseNEQ     True if lambda path should be reversed.
    */
-  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ) {
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ, double initLambda) {
     nonEquilibriumLambda = nonEquilibrium;
     if (nonEquilibriumLambda) {
-      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ);
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ, initLambda);
     } else {
       nonEquilibriumDynamics = null;
     }
@@ -1131,16 +1131,27 @@ public class MolecularDynamics implements Runnable, Terminatable {
     double[] v = state.v();
     double[] a = state.a();
     double[] aPrevious = state.aPrevious();
-    if (dynFilter.writeDYN(restartFile, molecularAssembly[0].getCrystal(), x, v, a, aPrevious)) {
+
+    double[] neq = new double[2];
+    if (nonEquilibriumLambda) {
+      LambdaInterface lambdaInterface = (LambdaInterface) potential;
+      neq[0] = lambdaInterface.getLambda(); // current lambda
+      neq[1] = nonEquilibriumDynamics.getWork(); // current NEQ work
+    } else {
+      neq = null;
+    }
+
+    if (dynFilter.writeDYN(restartFile, molecularAssembly[0].getCrystal(), x, v, a, aPrevious, neq)) {
       logger.log(basicLogging, format(" Wrote dynamics restart to:  %s.", dynName));
     } else {
       logger.log(basicLogging, format(" Writing dynamics restart failed:  %s.", dynName));
     }
+
     if (esvSystem != null) {
       esvSystem.writeRestart();
       esvSystem.writeLambdaHistogram(false);
     }
-    potential.writeAdditionalRestartInfo(true);
+    potential.writeAdditionalRestartInfo(true); // todo - could write lambda file here
   }
 
   /**
@@ -1226,13 +1237,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         double[] v = state.v();
         double[] a = state.a();
         double[] aPrevious = state.aPrevious();
-        if (!dynFilter.readDYN(restartFile, crystal, x, v, a, aPrevious)) {
+        double[] neq = new double[2];
+        if (!dynFilter.readDYN(restartFile, crystal, x, v, a, aPrevious, neq)) {
           String message = " Could not load the restart file - dynamics terminated.";
           logger.log(Level.WARNING, message);
           done = true;
           throw new IllegalStateException(message);
         } else {
           molecularAssembly[0].setCrystal(crystal);
+          if (neq != null && nonEquilibriumLambda) {
+            logger.info(format("READ LAMBDA: %f and READ NEQ WORK: %f", neq[0], neq[1]));
+            nonEquilibriumDynamics.setRestartLambda(neq[0]);
+            nonEquilibriumDynamics.addWork(neq[1]);
+          }
         }
       } else {
         // Initialize using current atomic coordinates.
@@ -1501,16 +1518,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         LambdaInterface lambdaInterface = (LambdaInterface) potential;
         double currentLambda = lambdaInterface.getLambda();
-        double currentEnergy = state.getPotentialEnergy();
+//        double currentEnergy = state.getPotentialEnergy();
+        double currentEnergy = potential.energy(state.x()); // TODO - is this what is causing the difference in energy??
         // Update the lambda value.
         double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
+        logger.info("STEP: " + step + " CURRLAMBDA: " + currentLambda + " NEWLAMBDA: " + newLambda);
         lambdaInterface.setLambda(newLambda);
         // Compute the new energy.
         double newEnergy = potential.energy(state.x());
         // The non-equilibrium work is the difference in energy.
         double dW = newEnergy - currentEnergy;
         nonEquilibriumDynamics.addWork(dW);
-        logger.info(format(" Non-equilibrium L=%5.3f Work=%12.6f", newLambda, nonEquilibriumDynamics.getWork()));
+        logger.info(format(" Non-equilibrium L=%5.4f Work=%12.6f", newLambda, nonEquilibriumDynamics.getWork()));
 
         // Reset the Respa State.
         if (integrator instanceof Respa) {

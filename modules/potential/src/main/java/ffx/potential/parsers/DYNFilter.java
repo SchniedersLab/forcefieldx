@@ -82,7 +82,7 @@ public class DYNFilter {
    * @return a boolean.
    */
   public boolean readDYN(File dynFile, Crystal crystal, double[] x, double[] v, double[] a,
-      double[] ap) {
+      double[] ap, double[] neq) {
     if (!dynFile.exists() || !dynFile.canRead()) {
       return false;
     }
@@ -96,8 +96,24 @@ public class DYNFilter {
       }
       int numAtoms = Integer.parseInt(tokens[0]);
 
+      // Non-equilibrium Dynamics
+      data = br.readLine().trim();
+      tokens = data.split(" +");
+      if (tokens[1].equals("Lambda")) {
+        data = br.readLine().trim();
+        tokens = data.split(" +");
+        if (tokens.length != 2) {
+          return false;
+        }
+        neq[0] = parseDouble(tokens[0]); // lambda
+        neq[1] = parseDouble(tokens[1]); // work
+        br.readLine();
+      } else {
+        neq = null;
+      }
+
       // Box size and angles
-      br.readLine();
+//      br.readLine();
       data = br.readLine().trim();
       tokens = data.split(" +");
       if (tokens.length != 3) {
@@ -192,13 +208,17 @@ public class DYNFilter {
    * @return Returns true if the file was written successfully.
    */
   public boolean writeDYN(File dynFile, Crystal crystal, double[] x, double[] v, double[] a,
-      double[] ap) {
+      double[] ap, double[] neqInfo) {
     try (FileWriter fw = new FileWriter(dynFile); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(" Number of Atoms and Title :\n");
       assert (x.length % 3 == 0);
       int numberOfAtoms = x.length / 3;
       String output = format("%7d  %s\n", numberOfAtoms, label);
       bw.write(output);
+      if (neqInfo != null) {
+        bw.write(" Current Lambda and Work :\n");
+        bw.write(format("%26.16E%26.16E\n",neqInfo[0],neqInfo[1]));
+      }
       bw.write(" Periodic Box Dimensions :\n");
       Crystal unitCell = crystal.getUnitCell();
       bw.write(format("%26.16E%26.16E%26.16E\n", unitCell.a, unitCell.b, unitCell.c));

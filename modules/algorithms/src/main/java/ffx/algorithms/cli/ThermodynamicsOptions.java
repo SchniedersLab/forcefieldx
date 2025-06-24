@@ -171,8 +171,12 @@ public class ThermodynamicsOptions {
     boolean initVelocities = true;
     long nSteps = dynamicsOptions.getSteps();
     molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
+
+    LambdaInterface lambdaInterfaceInit = (LambdaInterface) crystalPotential;
+    double lambda = lambdaInterfaceInit.getLambda();
+
     // Start sampling.
-    if (group.equilibrationSteps > 0) {
+    if (group.equilibrationSteps > 0 && (lambda == 0 || lambda == 1)) { // todo - maybe only need lambda == 0
       double initialLambda = group.reverseNEQ ? 1.0 : 0.0;
       logger.info(format("\n Beginning Equilibration (at L=%5.3f)", initialLambda));
       LambdaInterface lambdaInterface = (LambdaInterface) crystalPotential;
@@ -184,14 +188,20 @@ public class ThermodynamicsOptions {
       initVelocities = false;
     } else if (nSteps > 0) {
       logger.info("\n Beginning Non-Equilibrium Sampling Without Equilibration");
-      if (!group.resetNumSteps) {
-        // Workaround for being unable to pick up pre-existing steps.
+      // todo if dyn doesn't exist ? (doing if initLambda < 0 for now)
+      if (lambda == 0 || lambda == 1) { // todo - maybe only need lambda == 0
         initVelocities = true;
+      } else {
+        initVelocities = false;
       }
+//      if (!group.resetNumSteps) {
+//        // Workaround for being unable to pick up pre-existing steps.
+//        initVelocities = true;
+//      }
     }
 
     if (nSteps > 0) {
-      molDyn.setNonEquilibriumLambda(true, group.nonEquilibriumSteps, group.reverseNEQ);
+      molDyn.setNonEquilibriumLambda(true, group.nonEquilibriumSteps, group.reverseNEQ, lambda);
       runDynamics(molDyn, nSteps, dynamicsOptions, writeoutOptions, initVelocities, dyn);
     }
 

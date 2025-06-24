@@ -58,7 +58,7 @@ public class NonEquilbriumDynamics {
   /**
    * The number of non-equilibrium lambda steps.
    */
-  private final int nonEquilibriumLambdaSteps;
+  private int nonEquilibriumLambdaSteps;
   /**
    * The non-equilibrium work values.
    */
@@ -75,19 +75,29 @@ public class NonEquilbriumDynamics {
    */
   private long nonEquilibiumLambdaUpdateFrequency = Long.MAX_VALUE;
 
+  private double restartLambda;
+
+  private boolean restartFromDYN = false;
+
   /**
    * Constructor for NonEquilbriumDynamics.
    *
    * @param nonEquilibriumLambdaSteps The number of non-equilibrium lambda steps.
    * @param reverseNEQ                If true, lambda values should decrease from 1 to 0.
+   * @param initLambda                Lambda to restart NEQ dynamics.
    */
-  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps, boolean reverseNEQ) {
+  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps, boolean reverseNEQ, double initLambda) {
     if (nonEquilibriumLambdaSteps < 1) {
       this.nonEquilibriumLambdaSteps = 100;
     } else {
       this.nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps;
     }
     this.reverseNEQ = reverseNEQ;
+    if (initLambda >= 0.0 || initLambda <= 1.0) {
+      restartLambda = initLambda;
+    } else {
+      restartLambda = 0.0;
+    }
     nonEquilibriumWorkValues = new RunningStatistics();
   }
 
@@ -105,7 +115,18 @@ public class NonEquilbriumDynamics {
    * @return The initial lambda value.
    */
   public double getInitialLambda() {
-    return reverseNEQ ? 1.0 : 0.0;
+
+//    return reverseNEQ ? 1.0 : 0.0;
+    if (reverseNEQ) {
+      return 1.0;
+    } else { // todo can't handle reverseNEQ yet
+      return restartLambda;
+    }
+  }
+
+  public void setRestartLambda(double dynLambda) {
+    restartLambda = dynLambda;
+    restartFromDYN = true;
   }
 
   /**
@@ -127,7 +148,18 @@ public class NonEquilbriumDynamics {
       nSteps = nSteps - (nSteps % nonEquilibriumLambdaSteps);
       logger.info(format(" Number of steps adjusted to %d.", nSteps));
     }
-    nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps;
+
+    nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps; // staying the same
+    logger.info("BEFORE: nSteps= " + nSteps + " nEQlambdaSteps= " + nonEquilibriumLambdaSteps);
+    if (restartFromDYN) {
+//      long freq = nSteps / nonEquilibriumLambdaSteps; // doesn't change
+      double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps; // doesn't change
+//      int binReached = (int) (restartLambda / lambdaStepSize); // last bin from the previous run
+      int binReached = (int) Math.round(restartLambda / lambdaStepSize);
+      nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps - binReached;
+      nSteps = nonEquilibiumLambdaUpdateFrequency * nonEquilibriumLambdaSteps;
+    }
+    logger.info("AFTER: nSteps= " + nSteps + " nEQlambdaSteps= " + nonEquilibriumLambdaSteps);
     totalMDSteps = nSteps;
     return nSteps;
   }
@@ -147,7 +179,7 @@ public class NonEquilbriumDynamics {
     if (step == totalMDSteps) {
       return true;
     }
-    return (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0;
+    return (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0; // && step > 1; todo not doing this, instead doing bin
   }
 
   /**
@@ -178,11 +210,12 @@ public class NonEquilbriumDynamics {
   public double getNextLambda(long step, double currentLambda) {
     if (isUpdateStep(step)) {
       int lambdaBin = getCurrentLambdaBin(step);
-      double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
+//      double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
+      double lambdaStepSize = (1.0 - restartLambda) / nonEquilibriumLambdaSteps;
       if (reverseNEQ) {
         return 1.0 - lambdaBin * lambdaStepSize;
       } else {
-        return lambdaBin * lambdaStepSize;
+        return lambdaBin * lambdaStepSize + restartLambda;
       }
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
@@ -202,7 +235,7 @@ public class NonEquilbriumDynamics {
     if (step == totalMDSteps) {
       return nonEquilibriumLambdaSteps;
     } else if (isUpdateStep(step)) {
-      return (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency);
+      return (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency) + 1; // todo - could make an if to not do normally --> skipping 0 bin
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
           nonEquilibiumLambdaUpdateFrequency, step - 1));
