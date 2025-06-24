@@ -1377,6 +1377,9 @@ public class Complex3DParallel {
     complex3D.ifft(data);
     System.out.println("Warm Up Sequential Convolution");
     complex3D.convolution(data);
+
+
+
     for (int i = 0; i < reps; i++) {
       System.out.printf(" Iteration %d%n", i + 1);
       long time = System.nanoTime();
@@ -1406,6 +1409,11 @@ public class Complex3DParallel {
     complex3DParallel.initTiming();
 
     for (int i = 0; i < reps; i++) {
+      // Reset timings after half the iterations.
+      if (i == reps / 2) {
+        complex3DParallel.initTiming();
+      }
+
       System.out.printf(" Iteration %d%n", i + 1);
       long time = System.nanoTime();
       complex3DParallel.fft(data);
@@ -1423,6 +1431,7 @@ public class Complex3DParallel {
       if (time < parTimeConv) {
         parTimeConv = time;
       }
+
     }
 
     System.out.printf(" Best Sequential FFT Time:   %9.6f (sec)%n", toSeconds * seqTime);
