@@ -1249,6 +1249,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.info(format("READ LAMBDA: %f and READ NEQ WORK: %f", neq[0], neq[1]));
             nonEquilibriumDynamics.setRestartLambda(neq[0]);
             nonEquilibriumDynamics.addWork(neq[1]);
+            LambdaInterface lambdaInterface = (LambdaInterface) potential;
+            lambdaInterface.setLambda(neq[0]);
           }
         }
       } else {
@@ -1502,7 +1504,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       double lambda = nonEquilibriumDynamics.getInitialLambda();
-      lambdaInterface.setLambda(lambda);
+      lambdaInterface.setLambda(lambda); // todo - this has already been done if opening a dyn file
     }
 
     // Main MD loop to take molecular dynamics steps.
@@ -1518,11 +1520,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         LambdaInterface lambdaInterface = (LambdaInterface) potential;
         double currentLambda = lambdaInterface.getLambda();
-//        double currentEnergy = state.getPotentialEnergy();
-        double currentEnergy = potential.energy(state.x()); // TODO - is this what is causing the difference in energy??
+        double currentEnergy = state.getPotentialEnergy();
         // Update the lambda value.
         double newLambda = nonEquilibriumDynamics.getNextLambda(step, currentLambda);
-        logger.info("STEP: " + step + " CURRLAMBDA: " + currentLambda + " NEWLAMBDA: " + newLambda);
         lambdaInterface.setLambda(newLambda);
         // Compute the new energy.
         double newEnergy = potential.energy(state.x());

@@ -179,7 +179,7 @@ public class NonEquilbriumDynamics {
     if (step == totalMDSteps) {
       return true;
     }
-    return (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0; // && step > 1; todo not doing this, instead doing bin
+    return (step - 1) % nonEquilibiumLambdaUpdateFrequency == 0;
   }
 
   /**
@@ -235,7 +235,12 @@ public class NonEquilbriumDynamics {
     if (step == totalMDSteps) {
       return nonEquilibriumLambdaSteps;
     } else if (isUpdateStep(step)) {
-      return (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency) + 1; // todo - could make an if to not do normally --> skipping 0 bin
+      int bin = (int) ((step - 1) / nonEquilibiumLambdaUpdateFrequency);
+      if (restartFromDYN) {
+        return bin + 1;
+      } else {
+        return bin;
+      }
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
           nonEquilibiumLambdaUpdateFrequency, step - 1));
