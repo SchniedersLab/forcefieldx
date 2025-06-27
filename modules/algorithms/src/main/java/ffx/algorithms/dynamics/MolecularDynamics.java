@@ -566,10 +566,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param nEQSteps       Number of lambda steps.
    * @param reverseNEQ     True if lambda path should be reversed.
    */
-  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ, double initLambda) {
+  public void setNonEquilibriumLambda(boolean nonEquilibrium, int nEQSteps, boolean reverseNEQ) {
     nonEquilibriumLambda = nonEquilibrium;
     if (nonEquilibriumLambda) {
-      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ, initLambda);
+      nonEquilibriumDynamics = new NonEquilbriumDynamics(nEQSteps, reverseNEQ);
     } else {
       nonEquilibriumDynamics = null;
     }
@@ -1146,12 +1146,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     } else {
       logger.log(basicLogging, format(" Writing dynamics restart failed:  %s.", dynName));
     }
-
     if (esvSystem != null) {
       esvSystem.writeRestart();
       esvSystem.writeLambdaHistogram(false);
     }
-    potential.writeAdditionalRestartInfo(true); // todo - could write lambda file here
+    potential.writeAdditionalRestartInfo(true);
   }
 
   /**
@@ -1246,7 +1245,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         } else {
           molecularAssembly[0].setCrystal(crystal);
           if (neq != null && nonEquilibriumLambda) {
-            logger.info(format("READ LAMBDA: %f and READ NEQ WORK: %f", neq[0], neq[1]));
             nonEquilibriumDynamics.setRestartLambda(neq[0]);
             nonEquilibriumDynamics.addWork(neq[1]);
             LambdaInterface lambdaInterface = (LambdaInterface) potential;
@@ -1504,7 +1502,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       nSteps = nonEquilibriumDynamics.setMDSteps(nSteps);
       LambdaInterface lambdaInterface = (LambdaInterface) potential;
       double lambda = nonEquilibriumDynamics.getInitialLambda();
-      lambdaInterface.setLambda(lambda); // todo - this has already been done if opening a dyn file
+      lambdaInterface.setLambda(lambda); // this has already been done if opening an NEQ DYN file
     }
 
     // Main MD loop to take molecular dynamics steps.

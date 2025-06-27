@@ -74,9 +74,18 @@ public class NonEquilbriumDynamics {
    * the total number of MD times steps and the number of non-equilibrium lambda steps.
    */
   private long nonEquilibiumLambdaUpdateFrequency = Long.MAX_VALUE;
-
+  /**
+   * The non-equilibrium lambda step size.
+   */
+  private double lambdaStepSize;
+  /**
+   * The lambda value to restart non-equilibrium dynamics.
+   * Set to 0.0 or 1.0 if doing a new forward or reverse simulation, respectively.
+   */
   private double restartLambda;
-
+  /**
+   * Restarted from a DYN file. Will cause a change in the number of MD steps, NEQ steps, and what lambda to start at.
+   */
   private boolean restartFromDYN = false;
 
   /**
@@ -84,20 +93,14 @@ public class NonEquilbriumDynamics {
    *
    * @param nonEquilibriumLambdaSteps The number of non-equilibrium lambda steps.
    * @param reverseNEQ                If true, lambda values should decrease from 1 to 0.
-   * @param initLambda                Lambda to restart NEQ dynamics.
    */
-  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps, boolean reverseNEQ, double initLambda) {
+  public NonEquilbriumDynamics(int nonEquilibriumLambdaSteps, boolean reverseNEQ) {
     if (nonEquilibriumLambdaSteps < 1) {
       this.nonEquilibriumLambdaSteps = 100;
     } else {
       this.nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps;
     }
     this.reverseNEQ = reverseNEQ;
-    if (initLambda >= 0.0 || initLambda <= 1.0) {
-      restartLambda = initLambda;
-    } else {
-      restartLambda = 0.0;
-    }
     nonEquilibriumWorkValues = new RunningStatistics();
   }
 
@@ -115,15 +118,17 @@ public class NonEquilbriumDynamics {
    * @return The initial lambda value.
    */
   public double getInitialLambda() {
-
-//    return reverseNEQ ? 1.0 : 0.0;
-    if (reverseNEQ) {
-      return 1.0;
-    } else { // todo can't handle reverseNEQ yet
-      return restartLambda;
+    if (!restartFromDYN) {
+      restartLambda = reverseNEQ ? 1.0 : 0.0;
     }
+    return restartLambda;
   }
 
+  /**
+   * Set the lambda value read from a DYN file. Will be read as the initial lambda value.
+   *
+   * @param dynLambda The lambda value read from DYN file.
+   */
   public void setRestartLambda(double dynLambda) {
     restartLambda = dynLambda;
     restartFromDYN = true;
@@ -149,17 +154,18 @@ public class NonEquilbriumDynamics {
       logger.info(format(" Number of steps adjusted to %d.", nSteps));
     }
 
-    nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps; // staying the same
-    logger.info("BEFORE: nSteps= " + nSteps + " nEQlambdaSteps= " + nonEquilibriumLambdaSteps);
+    nonEquilibiumLambdaUpdateFrequency = nSteps / nonEquilibriumLambdaSteps;
+    lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
     if (restartFromDYN) {
-//      long freq = nSteps / nonEquilibriumLambdaSteps; // doesn't change
-      double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps; // doesn't change
-//      int binReached = (int) (restartLambda / lambdaStepSize); // last bin from the previous run
-      int binReached = (int) Math.round(restartLambda / lambdaStepSize);
+      int binReached; // last bin from the previous run
+      if (reverseNEQ) {
+        binReached = (int) Math.round((1.0-restartLambda) / lambdaStepSize);
+      } else {
+        binReached = (int) Math.round(restartLambda / lambdaStepSize);
+      }
       nonEquilibriumLambdaSteps = nonEquilibriumLambdaSteps - binReached;
-      nSteps = nonEquilibiumLambdaUpdateFrequency * nonEquilibriumLambdaSteps;
+      nSteps = nonEquilibiumLambdaUpdateFrequency * nonEquilibriumLambdaSteps - (nonEquilibiumLambdaUpdateFrequency-1); // remove 9 steps
     }
-    logger.info("AFTER: nSteps= " + nSteps + " nEQlambdaSteps= " + nonEquilibriumLambdaSteps);
     totalMDSteps = nSteps;
     return nSteps;
   }
@@ -210,12 +216,10 @@ public class NonEquilbriumDynamics {
   public double getNextLambda(long step, double currentLambda) {
     if (isUpdateStep(step)) {
       int lambdaBin = getCurrentLambdaBin(step);
-//      double lambdaStepSize = 1.0 / nonEquilibriumLambdaSteps;
-      double lambdaStepSize = (1.0 - restartLambda) / nonEquilibriumLambdaSteps;
       if (reverseNEQ) {
-        return 1.0 - lambdaBin * lambdaStepSize;
+        return restartLambda - lambdaBin * lambdaStepSize;
       } else {
-        return lambdaBin * lambdaStepSize + restartLambda;
+        return restartLambda + lambdaBin * lambdaStepSize;
       }
     } else {
       logger.warning(format(" Non-equilibrium lambda update frequency is %d, but step %d is not a multiple of this frequency.",
