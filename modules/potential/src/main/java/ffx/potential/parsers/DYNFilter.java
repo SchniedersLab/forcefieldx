@@ -79,6 +79,7 @@ public class DYNFilter {
    * @param v an array of double.
    * @param a an array of double.
    * @param ap an array of double.
+   * @param neq an array of double.
    * @return a boolean.
    */
   public boolean readDYN(File dynFile, Crystal crystal, double[] x, double[] v, double[] a,
@@ -108,12 +109,9 @@ public class DYNFilter {
         neq[0] = parseDouble(tokens[0]); // lambda
         neq[1] = parseDouble(tokens[1]); // work
         br.readLine();
-      } else {
-        neq = null;
       }
 
       // Box size and angles
-//      br.readLine();
       data = br.readLine().trim();
       tokens = data.split(" +");
       if (tokens.length != 3) {

@@ -1244,7 +1244,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
           throw new IllegalStateException(message);
         } else {
           molecularAssembly[0].setCrystal(crystal);
-          if (neq != null && nonEquilibriumLambda) {
+          if (nonEquilibriumLambda) {
+            if (neq[0] == 0.0 && neq[1] == 0.0) {
+              neq[0] = nonEquilibriumDynamics.getInitialLambda(); // will set to 1.0 if reverse
+            }
             nonEquilibriumDynamics.setRestartLambda(neq[0]);
             nonEquilibriumDynamics.addWork(neq[1]);
             LambdaInterface lambdaInterface = (LambdaInterface) potential;
