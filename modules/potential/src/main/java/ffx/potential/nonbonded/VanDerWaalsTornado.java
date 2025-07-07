@@ -530,8 +530,8 @@ public class VanDerWaalsTornado extends VanDerWaals {
 
     // Initialize periodic boundary conditions.
     Crystal c = crystal;
-    double[] A = {c.A00, c.A01, c.A02, c.A10, c.A11, c.A12, c.A20, c.A21, c.A22};
-    double[] Ai = {c.Ai00, c.Ai01, c.Ai02, c.Ai10, c.Ai11, c.Ai12, c.Ai20, c.Ai21, c.Ai22};
+    double[] A = {c.A00, 0.0, 0.0, c.A10, c.A11, 0.0, c.A20, c.A21, c.A22};
+    double[] Ai = {c.Ai00, 0.0, 0.0, c.Ai10, c.Ai11, 0.0, c.Ai20, c.Ai21, c.Ai22};
     double[] bondedScaleFactors = {vdwForm.scale12, vdwForm.scale13, vdwForm.scale14};
     double aperiodic = 0.0;
     if (crystal.aperiodic()) {

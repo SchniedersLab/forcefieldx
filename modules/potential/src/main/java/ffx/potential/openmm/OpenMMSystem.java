@@ -637,7 +637,8 @@ public class OpenMMSystem extends ffx.openmm.System {
 
     // Update fixed charge non-bonded parameters.
     if (fixedChargeNonBondedForce != null) {
-      fixedChargeNonBondedForce.updateForce(atoms, openMMEnergy);
+      // Need to pass all atoms due to non-bonded exceptions.
+      fixedChargeNonBondedForce.updateForce(this.atoms, openMMEnergy);
     }
 
     // Update fixed charge GB parameters.

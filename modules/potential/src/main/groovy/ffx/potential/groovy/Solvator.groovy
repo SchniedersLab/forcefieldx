@@ -63,6 +63,9 @@ import java.util.stream.Collectors
 import static org.apache.commons.math3.util.FastMath.round
 import static java.lang.String.format
 
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.utils.StructureMetrics
+
 /**
  * The Solvator script puts a box of solvent around a solute.
  * <br>
@@ -77,7 +80,7 @@ class Solvator extends PotentialScript {
    * --sFi or --solventFile specifies the file to read for the solvent. There is currently no default.
    */
   @Option(names = ['--sFi', '--solventFile'], paramLabel = "water",
-      description = 'A file containing the solvent box to be used. There is currently no default.')
+          description = 'A file containing the solvent box to be used. There is currently no default.')
   private String solventFileName = null
 
   /**
@@ -85,7 +88,7 @@ class Solvator extends PotentialScript {
    * with format ReferenceAtomStart ReferenceAtomEnd Concentration [Charge]. See forcefieldx/examples/nacl.ions.
    */
   @Option(names = ['--iFi', '--ionFile'], paramLabel = "ions",
-      description = "Name of the file containing ions. Must also have a .ions file (e.g. nacl.pdb must also have nacl.ions). Default: no ions.")
+          description = "Name of the file containing ions. Must also have a .ions file (e.g. nacl.pdb must also have nacl.ions). Default: no ions.")
   private String ionFileName = null
 
   /**
@@ -93,21 +96,21 @@ class Solvator extends PotentialScript {
    * but is not recommended for simulations long enough to see solute rotation.
    */
   @Option(names = ['-r', '--rectangular'], paramLabel = "false", defaultValue = "false",
-      description = "Use a rectangular prism rather than a cube for solvation.")
+          description = "Use a rectangular prism rather than a cube for solvation.")
   private boolean rectangular = false
 
   /**
    * -p or --padding Sets the minimum amount of solvent padding around the solute.
    */
   @Option(names = ['-p', '--padding'], paramLabel = "9.0", defaultValue = "9.0",
-      description = "Sets the minimum amount of solvent padding around the solute.")
+          description = "Sets the minimum amount of solvent padding around the solute.")
   private double padding = 9.0
 
   /**
    * -b or --boundary Delete solvent molecules that infringe closer than this to the solute.
    */
   @Option(names = ['-b', '--boundary'], paramLabel = "2.5", defaultValue = "2.5",
-      description = "Delete solvent molecules that infringe closer than this to the solute.")
+          description = "Delete solvent molecules that infringe closer than this to the solute.")
   private double boundary = 2.5
 /**
  * -x or --translate Move solute molecules to center of box.
@@ -120,18 +123,22 @@ class Solvator extends PotentialScript {
    * --abc or --boxLengths Specify unit cell box lengths, instead of calculating them.
    */
   @Option(names = ['--abc', '--boxLengths'], paramLabel = "a,b,c",
-      description = "Specify a comma-separated set of unit cell box lengths, instead of calculating them (a,b,c)")
+          description = "Specify a comma-separated set of unit cell box lengths, instead of calculating them (a,b,c)")
   private String manualBox = null
 
   @Option(names = ['-s', '--randomSeed'], paramLabel = "auto",
-      description = "Specify a random seed for ion placement.")
+          description = "Specify a random seed for ion placement.")
   private String seedString = null
+
+  @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
+          description = 'pH value for the system. If set, titration states will be initialized based on this pH.')
+  private Double pH = null
 
   /**
    * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
   @Parameters(arity = "1", paramLabel = "file",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
+          description = 'The atomic coordinate file in PDB or XYZ format.')
   String filename = null
 
   private MolecularAssembly solute
@@ -193,9 +200,56 @@ class Solvator extends PotentialScript {
       return this
     }
 
+    // Calculate the monopole moment (total charge) of the system
+    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+
+    // If pH is specified, create and attach an ExtendedSystem
+    if (pH != null) {
+      logger.info("\n Initializing titration states for pH " + pH)
+
+      ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, null)
+      forceFieldEnergy.attachExtendedSystem(esvSystem)
+
+      // Set titration states based on pH
+      esvSystem.reGuessLambdas()
+      logger.info(esvSystem.getLambdaList())
+
+    }
+
+    // Coordinates and energy call to ensure PME and other potentials are fully initialized
+    int nVars = forceFieldEnergy.getNumberOfVariables()
+    double[] x = new double[nVars]
+    forceFieldEnergy.getCoordinates(x)
+    forceFieldEnergy.energy(x, true)
+
+    // Now safely compute the monopole (total charge)
+    if (forceFieldEnergy.getPmeNode() == null) {
+      logger.severe("PME (electrostatics) is not initialized. Check force field settings.")
+      return this
+    }
+
+    Atom[] activeAtoms = activeAssembly.getActiveAtomArray()
+    if (activeAtoms == null || activeAtoms.length == 0) {
+      logger.severe("No active atoms found in the assembly.")
+      return this
+    }
+
+    double[] moments
+    try {
+      moments = forceFieldEnergy.getPmeNode().computeMoments(activeAtoms, false)
+      if (moments == null || moments.length == 0) {
+        logger.severe("Failed to compute moments (null or empty array returned).")
+        return this
+      }
+      //double totalCharge = moments[0] // First element is net charge
+      logger.info(format("\n System has a total charge of %8.4g before solvation", moments[0]))
+    } catch (Exception e) {
+      logger.severe("Error computing moments: " + e.getMessage())
+      return this
+    }
+
     solute = activeAssembly
     ForceFieldEnergy soluteEnergy = activeAssembly.getPotentialEnergy()
-
 
     solvent = potentialFunctions.open(solventFileName)
     Atom[] baseSolventAtoms = solvent.getActiveAtomArray()
@@ -223,14 +277,13 @@ class Solvator extends PotentialScript {
 
     if (!soluteCrystal.aperiodic()) {
       if (!soluteCrystal.spaceGroup.shortName.equalsIgnoreCase("P1")){
-       logger.severe(" Solute must be aperiodic or strictly P1 periodic")
+        logger.severe(" Solute must be aperiodic or strictly P1 periodic")
       }
     }
 
     if (solventCrystal.aperiodic() || !solventCrystal.spaceGroup.shortName.equalsIgnoreCase("P1")) {
       logger.severe(" Solvent box must be periodic (and P1)!")
     }
-
 
     for (int i = 0; i < nSolute; i++) {
       Atom ati = soluteAtoms[i]
@@ -292,7 +345,7 @@ class Solvator extends PotentialScript {
         }
       } else {
         logger.severe(
-            " The manualBox option requires either 1 box length, or 3 comma-separated values.")
+                " The manualBox option requires either 1 box length, or 3 comma-separated values.")
       }
     } else {
       if (rectangular) {
@@ -307,8 +360,8 @@ class Solvator extends PotentialScript {
     }
 
     logger.info(
-        format(" Molecule will be solvated in a periodic box of size %10.4g, %10.4g, %10.4g",
-            newBox[0], newBox[1], newBox[2]))
+            format(" Molecule will be solvated in a periodic box of size %10.4g, %10.4g, %10.4g",
+                    newBox[0], newBox[1], newBox[2]))
 
     if(translate){
       double[] soluteTranslate = new double[3]
@@ -334,8 +387,8 @@ class Solvator extends PotentialScript {
     }
 
     logger.info(
-        format(" Solute size: %12.4g, %12.4g, %12.4g", soluteBoundingBox[0], soluteBoundingBox[1],
-            soluteBoundingBox[2]))
+            format(" Solute size: %12.4g, %12.4g, %12.4g", soluteBoundingBox[0], soluteBoundingBox[1],
+                    soluteBoundingBox[2]))
 
     int[] solventReplicas = new int[3]
     double[] solventBoxVectors = new double[3]
@@ -348,7 +401,7 @@ class Solvator extends PotentialScript {
     }
 
     Crystal newCrystal = new Crystal(newBox[0], newBox[1], newBox[2], 90, 90, 90, "P1")
-    soluteEnergy.setCrystal(newCrystal, true)
+    forceFieldEnergy.setCrystal(newCrystal, true)
 
     List<MSNode> bondedNodes = solvent.getAllBondedEntities()
     MSNode[] solventEntities = bondedNodes.toArray(new MSNode[bondedNodes.size()])
@@ -381,10 +434,10 @@ class Solvator extends PotentialScript {
 
     double[] xyzOffset = new double[3]
     int currXYZIndex = Arrays.stream(soluteAtoms).
-        mapToInt({
-          it.getXyzIndex()
-        })
-        .max().getAsInt()
+            mapToInt({
+              it.getXyzIndex()
+            })
+            .max().getAsInt()
     int currResSeq = 1
 
     char[] possibleChains = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'] as char[]
@@ -442,13 +495,13 @@ class Solvator extends PotentialScript {
               comi[j] = xyzOffset[j] + solventCOMs[i][j]
               if (comi[j] < 0) {
                 logger.warning(format(
-                    " Skipping a copy of solvent molecule %d for violating minimum boundary 0,0,0. This should not occur!",
-                    i))
+                        " Skipping a copy of solvent molecule %d for violating minimum boundary 0,0,0. This should not occur!",
+                        i))
                 continue MoleculePlace
               } else if (comi[j] > newBox[j]) {
                 logger.fine(format(
-                    " Skipping a copy of solvent molecule %d for violating maximum boundary %12.4g,%12.4g,%12.4g",
-                    i, newBox[0], newBox[1], newBox[2]))
+                        " Skipping a copy of solvent molecule %d for violating maximum boundary %12.4g,%12.4g,%12.4g",
+                        i, newBox[0], newBox[1], newBox[2]))
                 continue MoleculePlace
               }
             }
@@ -466,10 +519,10 @@ class Solvator extends PotentialScript {
                 newXYZ[j] += xyzOffset[j]
               }
               Atom newAtom = new Atom(++currXYZIndex, parentAtom, newXYZ, currResSeq, solventChain,
-                  Character.toString(solventChain))
+                      Character.toString(solventChain))
               logger.fine(
-                  format(" New atom %s at chain %c on residue %s-%d", newAtom, newAtom.getChainID(),
-                      newAtom.getResidueName(), newAtom.getResidueNumber()))
+                      format(" New atom %s at chain %c on residue %s-%d", newAtom, newAtom.getChainID(),
+                              newAtom.getResidueName(), newAtom.getResidueNumber()))
               newAtom.setHetero(!moli instanceof Polymer)
               newAtom.setResName(moli.getName())
               if (newAtom.getAltLoc() == null) {
@@ -488,7 +541,7 @@ class Solvator extends PotentialScript {
 
             if (overlapFound) {
               logger.fine(
-                  format(" Skipping a copy of molecule %d for overlapping with the solute.", i))
+                      format(" Skipping a copy of molecule %d for overlapping with the solute.", i))
               continue MoleculePlace
             }
 
@@ -513,8 +566,7 @@ class Solvator extends PotentialScript {
       // @formatter:on
       double volume = newBox[0] * newBox[1] * newBox[2]
       // newCrystal.volume may also work.
-      // The L -> mL and M -> mM conversions cancel.
-      double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO
+      double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO * 1E-3
 
       List<IonAddition> byConc = new ArrayList<>()
       IonAddition neutAnion = null
@@ -522,7 +574,7 @@ class Solvator extends PotentialScript {
 
       BufferedReader br
       Pattern ionicPattern =
-          Pattern.compile("^\\s*([0-9]+) +([0-9]+) +([0-9]+(?:\\.[0-9]*)?|NEUT\\S*)")
+              Pattern.compile("^\\s*([0-9]+) +([0-9]+) +([0-9]+(?:\\.[0-9]*)?|NEUT\\S*)")
       Pattern concPatt = Pattern.compile("^[0-9]+(?:\\.[0-9]*)?")
       // Parse .ions file to figure out which ions need to be added.
       try {
@@ -560,7 +612,7 @@ class Solvator extends PotentialScript {
                 neutAnion = ia
               } else {
                 logger.severe(format(" Specified a neutralizing ion %s with no net charge!",
-                    ia.toString()))
+                        ia.toString()))
               }
             } else {
               byConc.add(ia)
@@ -576,7 +628,8 @@ class Solvator extends PotentialScript {
       int ionResSeq = 0
 
       // Begin swapping waters for ions.
-      double initialCharge = activeAssembly.getCharge(false)
+      // Use the monopole moment (total charge) we calculated earlier
+      double initialCharge = moments[0]
       // @formatter:off
       logger.info(" Charge before addition of ions is ${initialCharge}")
       // @formatter:on
@@ -587,7 +640,7 @@ class Solvator extends PotentialScript {
         if (nIons > newMolecules.size()) {
           // @formatter:off
           logger.severe(
-              " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
+                  " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
           // @formatter:on
         }
         logger.info(format(" Number of ions to place: %d\n", nIons))
@@ -604,7 +657,7 @@ class Solvator extends PotentialScript {
       if (initialCharge > 0) {
         if (neutAnion == null) {
           logger.info(
-              " No counter-anion specified; system will be cationic at charge ${initialCharge}")
+                  " No counter-anion specified; system will be cationic at charge ${initialCharge}")
         } else {
           logger.info(" Neutralizing system with ${neutAnion.toString()}")
           double charge = neutAnion.charge
@@ -612,7 +665,7 @@ class Solvator extends PotentialScript {
           double netCharge = initialCharge + (nAnions * charge)
           if (nAnions > newMolecules.size()) {
             logger.severe(
-                " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!")
+                    " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!")
           }
           for (int i = 0; i < nAnions; i++) {
             Atom[] newIon = swapIon(newMolecules, neutAnion, currXYZIndex, ionChain, ionResSeq++)
@@ -620,13 +673,13 @@ class Solvator extends PotentialScript {
             addedIons.add(newIon)
           }
           logger.info(
-              format(" System neutralized to %8.4g charge with %d counter-anions", netCharge,
-                  nAnions))
+                  format(" System neutralized to %8.4g charge with %d counter-anions", netCharge,
+                          nAnions))
         }
       } else if (initialCharge < 0) {
         if (neutCation == null) {
           logger.info(
-              " No counter-cation specified; system will be anionic at charge ${initialCharge}")
+                  " No counter-cation specified; system will be anionic at charge ${initialCharge}")
         } else {
           logger.info(" Neutralizing system with ${neutCation.toString()}")
           double charge = neutCation.charge
@@ -634,7 +687,7 @@ class Solvator extends PotentialScript {
           double netCharge = initialCharge + (nCations * charge)
           if (nCations > newMolecules.size()) {
             logger.severe(
-                " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!")
+                    " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!")
             // @formatter:on
           }
           for (int i = 0; i < nCations; i++) {
@@ -643,8 +696,8 @@ class Solvator extends PotentialScript {
             addedIons.add(newIon)
           }
           logger.info(
-              format(" System neutralized to %8.4g charge with %d counter-cations", netCharge,
-                  nCations))
+                  format(" System neutralized to %8.4g charge with %d counter-cations", netCharge,
+                          nCations))
         }
       } else {
         logger.info(" System is neutral; no neutralizing ions needed.")
@@ -822,7 +875,7 @@ class Solvator extends PotentialScript {
               }
             }
             logger.fine(format(" Constructing domain %3d-%3d-%3d with %d atoms.", i, j, k,
-                neighborAtoms.size()))
+                    neighborAtoms.size()))
             logger.fine(format(" Neighbors along X: %s", neighborsI.toListString()))
             logger.fine(format(" Neighbors along Y: %s", neighborsJ.toListString()))
             logger.fine(format(" Neighbors along Z: %s\n", neighborsK.toListString()))
@@ -836,8 +889,8 @@ class Solvator extends PotentialScript {
       double avgAtoms = ((double) soluteAtoms.length) / nBoxes
       time += System.nanoTime()
       logger.info(format(
-          " Decomposed the solute into %d domains of side length %11.4g, averaging %10.3g atoms apiece in %8.3g sec.",
-          nBoxes, domainLength, avgAtoms, (time * 1E-9)))
+              " Decomposed the solute into %d domains of side length %11.4g, averaging %10.3g atoms apiece in %8.3g sec.",
+              nBoxes, domainLength, avgAtoms, (time * 1E-9)))
     }
 
     /**
@@ -854,27 +907,27 @@ class Solvator extends PotentialScript {
       int k = (int) (xyz[2] / domainLength)
       if (i >= nX) {
         logger.fine(
-            format(" Atom %s violates the X boundary at %12.7g Angstroms", a.toString(), xyz[0]))
+                format(" Atom %s violates the X boundary at %12.7g Angstroms", a.toString(), xyz[0]))
         i = 0
       }
       if (j >= nY) {
         logger.fine(
-            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[1]))
+                format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[1]))
         j = 0
       }
       if (k >= nZ) {
         logger.fine(
-            format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[2]))
+                format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[2]))
         k = 0
       }
 
       return Arrays.stream(withAdjacent[i][j][k]).
-          anyMatch({Atom s ->
-            double[] xyzS = new double[3]
-            xyzS = s.getXYZ(xyzS)
-            double dist = crystal.minDistOverSymOps(xyz, xyzS)
-            return dist < threshold
-          })
+              anyMatch({Atom s ->
+                double[] xyzS = new double[3]
+                xyzS = s.getXYZ(xyzS)
+                double dist = crystal.minDistOverSymOps(xyz, xyzS)
+                return dist < threshold
+              })
     }
   }
 
@@ -958,9 +1011,9 @@ class Solvator extends PotentialScript {
           newXYZ[j] += atomOffsets[i][j]
         }
         Atom newAtom = new Atom(++currXYZIndex, fromAtom, newXYZ, resSeq, chain,
-            Character.toString(chain))
+                Character.toString(chain))
         logger.fine(format(" New ion atom %s at chain %c on ion molecule %s-%d", newAtom,
-            newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()))
+                newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()))
         newAtom.setHetero(true)
         newAtom.setResName(fromAtom.getResidueName())
         if (newAtom.getAltLoc() == null) {
@@ -974,8 +1027,8 @@ class Solvator extends PotentialScript {
     @Override
     String toString() {
       StringBuilder sb = new StringBuilder(
-          format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
-              "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize))
+              format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
+                      "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize))
       for (Atom atom : atoms) {
         sb.append("\n").append(" Includes atom ").append(atom.toString())
       }
@@ -1018,7 +1071,7 @@ class Solvator extends PotentialScript {
    * @return Newly created set of ion atoms.
    */
   private static Atom[] swapIon(List<Atom[]> solvent, IonAddition ia, int currXYZIndex, char chain,
-      int resSeq) {
+                                int resSeq) {
     int nSolv = solvent.size() - 1
     Atom[] lastSolvent = solvent.get(nSolv)
     solvent.remove(nSolv)

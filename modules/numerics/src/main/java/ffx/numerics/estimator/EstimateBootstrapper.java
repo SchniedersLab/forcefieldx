@@ -54,7 +54,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class EstimateBootstrapper {
 
   private static final Logger logger = Logger.getLogger(EstimateBootstrapper.class.getName());
-  private static final long DEFAULT_LOG_INTERVAL = 25;
+  private static final int DEFAULT_LOG_INTERVAL = 100;
 
   private final BootstrappableEstimator estimate;
   private final int nWindows;
