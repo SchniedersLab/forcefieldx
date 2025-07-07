@@ -1251,7 +1251,7 @@ public class ExtendedSystem implements Potential {
     public void reGuessLambdas() {
         logger.info(" Reinitializing lambdas to match RepEx window pH");
         for (Residue residue : titratingResidueList) {
-            double lambda = initialTitrationState(residue, 1.0, guessTitrState);
+            double lambda = initialTitrationState(residue, 1.0, true);
             setTitrationLambda(residue, lambda);
             double resNum = residue.getResidueNumber();
             double tautomerLambda = specialResidues.contains(resNum) && !specialInitTautomer.isEmpty() &&
