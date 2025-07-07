@@ -1100,9 +1100,7 @@
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <picocli.version>4.7.7</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.version>3.26.0</pmd.version>
-    <!-- Skip PMD because it does not handle Java language version 23 yet. -->
-    <pmd.skip>true</pmd.skip>
+    <pmd.version>3.27.0</pmd.version>
     <project-info-reports.version>3.9.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

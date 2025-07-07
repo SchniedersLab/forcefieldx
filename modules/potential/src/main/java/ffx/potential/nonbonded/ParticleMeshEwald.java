@@ -1473,8 +1473,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporCrystal =
           new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
       alchemicalParameters.vaporCrystal.setAperiodic(true);
-      NeighborList vacuumNeighborList = new NeighborList(null,
-          alchemicalParameters.vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
+      NeighborList vacuumNeighborList = new NeighborList(alchemicalParameters.vaporCrystal,
+          atoms, vacuumOff, 2.0, parallelTeam);
       vacuumNeighborList.setIntermolecular(false);
 
       alchemicalParameters.vaporLists = new int[1][nAtoms][];
@@ -1558,8 +1558,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporCrystal = new Crystal(10.0, 10.0, 10.0,
           90.0, 90.0, 90.0, "P1");
       alchemicalParameters.vaporCrystal.setAperiodic(true);
-      NeighborList vacuumNeighborList = new NeighborList(null,
-          alchemicalParameters.vaporCrystal, atoms, Double.POSITIVE_INFINITY, 2.0, parallelTeam);
+      NeighborList vacuumNeighborList = new NeighborList(alchemicalParameters.vaporCrystal,
+          atoms, Double.POSITIVE_INFINITY, 2.0, parallelTeam);
       vacuumNeighborList.setIntermolecular(false);
 
       alchemicalParameters.vaporLists = new int[1][nAtoms][];
