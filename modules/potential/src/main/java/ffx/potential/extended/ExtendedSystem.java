@@ -231,8 +231,6 @@ public class ExtendedSystem implements Potential {
      * Number of titrating ESVs attached to the molecular assembly.
      */
     private final int nTitr;
-    private final ArrayList<Double> specialInitTautomer;
-    private final ArrayList<Double> specialInitTitration;
     private final ArrayList<Double> specialResiduePKAs;
     private final ArrayList<Double> specialResidues;
     private final int[] tautomerIndexMap;
@@ -326,9 +324,7 @@ public class ExtendedSystem implements Potential {
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
-        specialInitTautomer = getPropertyList(properties, "esv.special.residues.tautomer");
-        specialInitTitration = getPropertyList(properties, "esv.special.residues.titration");
-        initSpecialResidues(specialResidues, specialResiduePKAs, specialInitTautomer, specialInitTitration, mola);
+        initSpecialResidues(specialResidues, specialResiduePKAs, mola);
 
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
@@ -516,10 +512,7 @@ public class ExtendedSystem implements Potential {
                                     atom.getAtomType().type + " " + atom.getAtomType().atomClass);
                         }
                         isTautomerizing[atomIndex] = true;
-                        double resNum = residue.getResidueNumber();
-                        tautomerLambdas[atomIndex] = specialResidues.contains(resNum) && !specialInitTautomer.isEmpty() &&
-                                Math.abs(specialInitTitration.get(specialResidues.indexOf(resNum)) + 1) > 1e-4
-                                ? specialInitTitration.get(specialResidues.indexOf(resNum)) : initialTautomerLambda;
+                        tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
                         tautomerIndexMap[atomIndex] = tautomerIndex;
                         tautomerDirections[atomIndex] = TitrationUtils.getTitratingHydrogenDirection(residue.getAminoAcid3(), atom);
@@ -568,10 +561,6 @@ public class ExtendedSystem implements Potential {
                 double initialTitrLambda = initialTitrationState(residue, initialTitrationLambda, guessTitrState);
                 initializeThetaArrays(i, initialTitrLambda);
             } else {
-                double resNum = extendedResidueList.get(i).getResidueNumber();
-                initialTautomerLambda = specialResidues.contains(resNum) && !specialInitTautomer.isEmpty() &&
-                        Math.abs(specialInitTitration.get(specialResidues.indexOf(resNum)) + 1) > 1e-4
-                        ? specialInitTitration.get(specialResidues.indexOf(resNum)) : initialTautomerLambda;
                 initializeThetaArrays(i, initialTautomerLambda);
             }
         }
@@ -599,11 +588,8 @@ public class ExtendedSystem implements Potential {
     /**
      * Initialize special residues specified in the key file
      */
-    private void initSpecialResidues(ArrayList<Double> specialResidues, ArrayList<Double> specialResiduePKAs, ArrayList<Double> specialInitTautomer, ArrayList<Double> specialInitTitration, MolecularAssembly mola) {
-        if ((specialResidues.size() != specialResiduePKAs.size() && !specialResiduePKAs.isEmpty())
-                || (specialResidues.size() != specialInitTautomer.size() && !specialInitTautomer.isEmpty())
-                || (specialResidues.size() != specialInitTitration.size() && !specialInitTitration.isEmpty())
-        ) {
+    private void initSpecialResidues(ArrayList<Double> specialResidues, ArrayList<Double> specialResiduePKAs, MolecularAssembly mola) {
+        if (specialResidues.size() != specialResiduePKAs.size() && !specialResiduePKAs.isEmpty()) {
             logger.severe("The number of special residues and their associated values do not match.");
         } else if (!specialResidues.isEmpty()) {
             logger.info("\nSpecial residues and their associated values:");
@@ -614,23 +600,11 @@ public class ExtendedSystem implements Potential {
                             mola.getResidueList().get(resNum).getName()
                             + " Pka: " + specialResiduePKAs.get(i));
                 }
-                if (!specialInitTautomer.isEmpty()) {
-                    logger.info("Residue: " + specialResidues.get(i) + "-" +
-                            mola.getResidueList().get(resNum).getName()
-                            + " Tautomer: " + specialInitTautomer.get(i));
-                }
-                if (!specialInitTitration.isEmpty()) {
-                    logger.info("Residue: " + specialResidues.get(i) + "-" +
-                            mola.getResidueList().get(resNum).getName()
-                            + " Titration: " + specialInitTitration.get(i));
-                }
             }
             logger.info(" ");
         }
         logger.info("Special residues: " + specialResidues);
         logger.info("Special residues pKa: " + specialResiduePKAs);
-        logger.info("Special residues titration: " + specialInitTitration);
-        logger.info("Special residues tautomer: " + specialInitTautomer);
         for (Residue res : mola.getResidueList()) {
             if (!isTitratable(res) && specialResidues.contains((double) res.getResidueNumber())) {
                 logger.severe("Given special residue: " + res + " is not titratable.");
@@ -1193,12 +1167,6 @@ public class ExtendedSystem implements Potential {
                 initialTitrationLambda =
                         (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
             }
-            if (!specialInitTitration.isEmpty()) { // Override the pKa value if we have a special initial titration state
-                double value = specialInitTitration.get(specialResidues.indexOf(residueNumber));
-                if (Math.abs(value + 1) > 1e-4) { // If the value is not -1
-                    initialTitrationLambda = value;
-                }
-            }
         } else if (!guessTitrState) { // If we do not want to guess the titration state but instead use the value
             // passed in via the initialLambda parameter.
             initialTitrationLambda = initialLambda;
@@ -1253,10 +1221,7 @@ public class ExtendedSystem implements Potential {
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0, true);
             setTitrationLambda(residue, lambda);
-            double resNum = residue.getResidueNumber();
-            double tautomerLambda = specialResidues.contains(resNum) && !specialInitTautomer.isEmpty() &&
-                    Math.abs(specialInitTitration.get(specialResidues.indexOf(resNum)) + 1) > 1e-4
-                    ? specialInitTitration.get(specialResidues.indexOf(resNum)) : (int) Math.round(random());
+            double tautomerLambda = (int) Math.round(random());
             setTautomerLambda(residue, tautomerLambda);
         }
     }
