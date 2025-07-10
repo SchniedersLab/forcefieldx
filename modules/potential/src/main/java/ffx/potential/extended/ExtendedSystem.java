@@ -231,8 +231,16 @@ public class ExtendedSystem implements Potential {
      * Number of titrating ESVs attached to the molecular assembly.
      */
     private final int nTitr;
+    /**
+     * Special Residues may be used to store a list of residues for which should be initialized at a different value from their model value.
+     * Special Residue pKas is the corresponding list of pKas that the selected residues should be initialized around.
+     */
     private final ArrayList<Double> specialResiduePKAs;
     private final ArrayList<Double> specialResidues;
+    /**
+     * Select residues for Extended System to be built for. Any normally titratable residue not included in this list will not titrate.
+     */
+    private final ArrayList<Double> selectResidues;
     private final int[] tautomerIndexMap;
     /**
      * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
@@ -319,11 +327,12 @@ public class ExtendedSystem implements Potential {
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
 
         lockStates = properties.getBoolean("lock.esv.states", false); // Prevents setTitrationLambda/setTautomerLambda
-        double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
-        double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
+        double initialTitrationLambda = properties.getDouble("initial.titration.lambda", 0.5);
+        double initialTautomerLambda = properties.getDouble("initial.tautomer.lambda", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
+        selectResidues = getPropertyList(properties, "esv.select.residues");
         initSpecialResidues(specialResidues, specialResiduePKAs, mola);
 
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
@@ -396,12 +405,12 @@ public class ExtendedSystem implements Potential {
 
         // Log all of the tautomer bias magnitudes for each tautomerizable residue.
         logger.info("\n Tautomer bias magnitudes:");
-        logger.info(" Aspartic acid tautomer bias magnitude: " + ASHtautBiasMag);
-        logger.info(" Glutamic acid tautomer bias magnitude: " + GLHtautBiasMag);
         logger.info(" Histidine tautomer bias magnitude: " + HIStautBiasMag);
+        logger.info(" Glutamic acid tautomer bias magnitude: " + GLHtautBiasMag);
+        logger.info(" Aspartic acid tautomer bias magnitude: " + ASHtautBiasMag);
 
         // Log all of  th cubic, quadratic, and linear terms for all of the amino acid terms
-        logger.info("\n Titration bias terms:");
+        logger.info("\n Titration model bias (Umod) terms:");
         logger.info(" Lysine cubic term: " + LYSFmod[3]);
         logger.info(" Lysine quadratic term: " + LYSFmod[2]);
         logger.info(" Lysine linear term: " + LYSFmod[1]);
@@ -422,7 +431,7 @@ public class ExtendedSystem implements Potential {
         logger.info(" Glutamic acid linear term: " + GLHFmod[1]);
         logger.info(" Aspartic acid cubic term: " + ASHFmod[3]);
         logger.info(" Aspartic acid quadratic term: " + ASHFmod[2]);
-        logger.info(" Aspartic acid linear term: " + ASHFmod[1]);
+        logger.info(" Aspartic acid linear term: " + ASHFmod[1] + "\n");
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
@@ -458,7 +467,6 @@ public class ExtendedSystem implements Potential {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
-        //logger.info(residueList.toString());
         List<Residue> preprocessList = new ArrayList<>(residueList);
         for (Residue residue : preprocessList) {
             List<Atom> atomList = residue.getSideChainAtoms();
@@ -471,55 +479,52 @@ public class ExtendedSystem implements Potential {
                 }
             }
         }
-        //logger.info(residueList.toString());
         // Use only a list that contains AminoAcid residues so remove Nucleic Acid residues
         residueList.removeIf(residue -> (residue.getResidueType() == Residue.ResidueType.NA));
         for (Residue residue : residueList) {
             if (isTitratable(residue)) {
-                titratingResidueList.add(residue);
-                List<Atom> atomList = residue.getSideChainAtoms();
-                for (Atom atom : atomList) {
-                    int atomIndex = atom.getArrayIndex();
-                    residueNames[atomIndex] = residue.getAminoAcid3();
-                    isTitrating[atomIndex] = true;
-                    titrationLambdas[atomIndex] = initialTitrationState(residue, initialTitrationLambda, guessTitrState);
-                    int titrationIndex = titratingResidueList.indexOf(residue);
-                    titrationIndexMap[atomIndex] = titrationIndex;
-                    isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
-                    isTitratingHeavy[atomIndex] = TitrationUtils.isTitratingHeavy(residue.getAminoAcid3(), atom);
-                    // Average out pdamp values of the atoms with changing polarizability which will then be used as fixed values throughout simulation.
-                    // When testing end state energies don't average pdamp.
-                    // Default pdamp is set from protonated polarizability, so it must be changed when testing deprotonated end state (Titration lambda = 0.0.)
-                    if (isTitratingHeavy(atomIndex)) {
-                        //If polarization is turned off atom.getPolarizeType() will return null
-                        if (atom.getPolarizeType() != null) {
-                            double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
-                            double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
-                            double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
-                            PolarizeType esvPolarizingHeavyAtom = new PolarizeType(atom.getType(), avgPolar, atom.getPolarizeType().thole,
-                                    atom.getPolarizeType().ddp, atom.getPolarizeType().polarizationGroup);
-                            atom.setPolarizeType(esvPolarizingHeavyAtom);
-                        }
-                    }
-                }
-                // If is a tautomer, it must also be titrating.
-                if (isTautomer(residue)) {
-                    tautomerizingResidueList.add(residue);
+                if(selectResidues.isEmpty() ||  selectResidues.contains((double) residue.getResidueNumber())){
+                    titratingResidueList.add(residue);
+                    List<Atom> atomList = residue.getSideChainAtoms();
                     for (Atom atom : atomList) {
                         int atomIndex = atom.getArrayIndex();
-                        if (isTitratingHydrogen[atomIndex]) {
-                            logger.info("Residue: " + residue + " Atom: " + atom + " atomType: " +
-                                    atom.getAtomType().type + " " + atom.getAtomType().atomClass);
+                        residueNames[atomIndex] = residue.getAminoAcid3();
+                        isTitrating[atomIndex] = true;
+                        titrationLambdas[atomIndex] = initialTitrationState(residue, initialTitrationLambda, guessTitrState);
+                        int titrationIndex = titratingResidueList.indexOf(residue);
+                        titrationIndexMap[atomIndex] = titrationIndex;
+                        isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
+                        isTitratingHeavy[atomIndex] = TitrationUtils.isTitratingHeavy(residue.getAminoAcid3(), atom);
+                        // Average out pdamp values of the atoms with changing polarizability which will then be used as fixed values throughout simulation.
+                        // When testing end state energies don't average pdamp.
+                        // Default pdamp is set from protonated polarizability, so it must be changed when testing deprotonated end state (Titration lambda = 0.0.)
+                        if (isTitratingHeavy(atomIndex)) {
+                            //If polarization is turned off atom.getPolarizeType() will return null
+                            if (atom.getPolarizeType() != null) {
+                                double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
+                                double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
+                                double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
+                                PolarizeType esvPolarizingHeavyAtom = new PolarizeType(atom.getType(), avgPolar, atom.getPolarizeType().thole,
+                                        atom.getPolarizeType().ddp, atom.getPolarizeType().polarizationGroup);
+                                atom.setPolarizeType(esvPolarizingHeavyAtom);
+                            }
                         }
-                        isTautomerizing[atomIndex] = true;
-                        tautomerLambdas[atomIndex] = initialTautomerLambda;
-                        int tautomerIndex = tautomerizingResidueList.indexOf(residue);
-                        tautomerIndexMap[atomIndex] = tautomerIndex;
-                        tautomerDirections[atomIndex] = TitrationUtils.getTitratingHydrogenDirection(residue.getAminoAcid3(), atom);
                     }
+                    // If is a tautomer, it must also be titrating.
+                    if (isTautomer(residue)) {
+                        tautomerizingResidueList.add(residue);
+                        for (Atom atom : atomList) {
+                            int atomIndex = atom.getArrayIndex();
+                            isTautomerizing[atomIndex] = true;
+                            tautomerLambdas[atomIndex] = initialTautomerLambda;
+                            int tautomerIndex = tautomerizingResidueList.indexOf(residue);
+                            tautomerIndexMap[atomIndex] = tautomerIndex;
+                            tautomerDirections[atomIndex] = TitrationUtils.getTitratingHydrogenDirection(residue.getAminoAcid3(), atom);
+                        }
+                    }
+                    // Test the multipole frames during unit testing.
+                    assert (titrationUtils.testResidueTypes(residue));
                 }
-                // Test the multipole frames during unit testing.
-                assert (titrationUtils.testResidueTypes(residue));
             }
         }
 
@@ -583,6 +588,7 @@ public class ExtendedSystem implements Potential {
                 updateLambdas();
             }
         }
+        logger.info("\n Extended System created for the following residues: " + titratingResidueList);
     }
 
     /**
@@ -592,19 +598,19 @@ public class ExtendedSystem implements Potential {
         if (specialResidues.size() != specialResiduePKAs.size() && !specialResiduePKAs.isEmpty()) {
             logger.severe("The number of special residues and their associated values do not match.");
         } else if (!specialResidues.isEmpty()) {
-            logger.info("\nSpecial residues and their associated values:");
+            logger.info("\n Special residues and their associated values:");
             for (int i = 0; i < specialResidues.size(); i++) {
                 int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber(); // Shift pdb index by first residue number
                 if (!specialResiduePKAs.isEmpty()) {
-                    logger.info("Residue: " + specialResidues.get(i) + "-" +
+                    logger.info(" Residue: " + specialResidues.get(i) + "-" +
                             mola.getResidueList().get(resNum).getName()
                             + " Pka: " + specialResiduePKAs.get(i));
                 }
             }
             logger.info(" ");
         }
-        logger.info("Special residues: " + specialResidues);
-        logger.info("Special residues pKa: " + specialResiduePKAs);
+        logger.info(" Special residues: " + specialResidues);
+        logger.info(" Special residues pKa: " + specialResiduePKAs);
         for (Residue res : mola.getResidueList()) {
             if (!isTitratable(res) && specialResidues.contains((double) res.getResidueNumber())) {
                 logger.severe("Given special residue: " + res + " is not titratable.");
@@ -1217,7 +1223,7 @@ public class ExtendedSystem implements Potential {
      * Reset initialized lambdas to a naive guess based on the model pKa for each extended residue
      */
     public void reGuessLambdas() {
-        logger.info(" Reinitializing lambdas to match RepEx window pH");
+        logger.info(" Reinitializing lambdas to match pH");
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0, true);
             setTitrationLambda(residue, lambda);
