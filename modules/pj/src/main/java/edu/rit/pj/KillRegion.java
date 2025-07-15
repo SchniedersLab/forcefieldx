@@ -55,9 +55,14 @@ package edu.rit.pj;
  * @author Jacob Litman
  */
 public class KillRegion extends ParallelRegion {
+
     /** {@inheritDoc} */
     @Override
     public void run() throws Exception {
-        // Does precisely nothing save exist.
+        // Empty run method.
+        ParallelTeamThread currentThread = getCurrentThread();
+        Thread thread = currentThread.getThread();
+        long totalThreads = ParallelTeamThread.totalThreads.getAndDecrement();
+        // System.out.printf(" Killing team %s thread %s of %d\n", currentThread.myTeam, thread, totalThreads);
     }
 }

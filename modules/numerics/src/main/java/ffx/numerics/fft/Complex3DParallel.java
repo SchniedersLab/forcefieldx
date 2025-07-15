@@ -331,6 +331,7 @@ public class Complex3DParallel {
       useSIMD = false;
     }
 
+    // Do not pack FFTs by default for now.
     packFFTs = false;
     String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
     try {
@@ -360,11 +361,13 @@ public class Complex3DParallel {
       fftZ[i] = new Complex(nZ, dataLayout1D, internalImZ, nY);
       fftZ[i].setUseSIMD(useSIMD);
     }
-    if (!localZTranspose) {
-      work3D = new double[2 * nX * nY * nZ];
-    } else {
+
+    if (localZTranspose) {
       work3D = null;
+    } else {
+      work3D = new double[2 * nX * nY * nZ];
     }
+
     fftRegion = new FFTRegion();
     ifftRegion = new IFFTRegion();
     convRegion = new ConvolutionRegion();
@@ -488,6 +491,7 @@ public class Complex3DParallel {
 
   /**
    * Get the timing string.
+   *
    * @return The timing string.
    */
   public String timingString() {
@@ -1030,11 +1034,15 @@ public class Complex3DParallel {
     public void run(final int lb, final int ub) {
       for (int x = lb; x <= ub; x++) {
         for (int z = 0; z < nZ; z++) {
+          int inputOffset = x * nextX + z * nextZ;
+          int workOffset = x * trNextX + z * trNextZ;
           for (int y = 0; y < nY; y++) {
-            double real = input[x * nextX + y * nextY + z * nextZ];
-            double imag = input[x * nextX + y * nextY + z * nextZ + im];
-            work3D[y * trNextY + z * trNextZ + x * trNextX] = real;
-            work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ] = imag;
+            int inputIndex = inputOffset + y * nextY;
+            double real = input[inputIndex];
+            double imag = input[inputIndex + im];
+            int workIndex = workOffset + y * trNextY;
+            work3D[workIndex] = real;
+            work3D[workIndex + internalImZ] = imag;
           }
         }
       }
@@ -1082,11 +1090,15 @@ public class Complex3DParallel {
     public void run(final int lb, final int ub) {
       for (int x = 0; x < nX; x++) {
         for (int y = 0; y < nY; y++) {
+          int workOffset = x * trNextX + y * trNextY;
+          int inputOffset = x * nextX + y * nextY;
           for (int z = lb; z <= ub; z++) {
-            double real = work3D[y * trNextY + z * trNextZ + x * trNextX];
-            double imag = work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ];
-            input[x * nextX + y * nextY + z * nextZ] = real;
-            input[x * nextX + y * nextY + z * nextZ + im] = imag;
+            int workIndex = workOffset + z * trNextZ;
+            double real = work3D[workIndex];
+            double imag = work3D[workIndex + internalImZ];
+            int inputIndex = inputOffset + z * nextZ;
+            input[inputIndex] = real;
+            input[inputIndex + im] = imag;
           }
         }
       }

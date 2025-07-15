@@ -320,6 +320,7 @@ public class ParticleMeshEwald implements LambdaInterface {
   protected double permanentRealSpaceEnergy;
   protected double permanentSelfEnergy;
   protected double permanentReciprocalEnergy;
+  protected double permanentChargeCorrectionEnergy;
   /**
    * Polarization energy = inducedRealSpaceEnergy + inducedSelfEnergy + inducedReciprocalEnergy.
    */
@@ -435,27 +436,27 @@ public class ParticleMeshEwald implements LambdaInterface {
    */
   private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
   /**
-   * Field array for each thread. [threadID][X/Y/Z][atomID]
+   * Field array for each thread.
    */
   private AtomicDoubleArray3D field;
   /**
-   * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
+   * Chain rule field array for each thread.
    */
   private AtomicDoubleArray3D fieldCR;
   /**
-   * Gradient array for each thread. [threadID][X/Y/Z][atomID]
+   * Gradient array for each thread.
    */
   private AtomicDoubleArray3D grad;
   /**
-   * Torque array for each thread. [threadID][X/Y/Z][atomID]
+   * Torque array for each thread.
    */
   private AtomicDoubleArray3D torque;
   /**
-   * Partial derivative of the gradient with respect to Lambda. [threadID][X/Y/Z][atomID]
+   * Partial derivative of the gradient with respect to Lambda.
    */
   private AtomicDoubleArray3D lambdaGrad;
   /**
-   * Partial derivative of the torque with respect to Lambda. [threadID][X/Y/Z][atomID]
+   * Partial derivative of the torque with respect to Lambda.
    */
   private AtomicDoubleArray3D lambdaTorque;
 
@@ -827,6 +828,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     permanentRealSpaceEnergy = 0.0;
     permanentSelfEnergy = 0.0;
     permanentReciprocalEnergy = 0.0;
+    permanentChargeCorrectionEnergy = 0.0;
     polarizationEnergy = 0.0;
     inducedRealSpaceEnergy = 0.0;
     inducedSelfEnergy = 0.0;
@@ -1077,6 +1079,10 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   public double getPermRecipEnergy() {
     return permanentReciprocalEnergy;
+  }
+
+  public double getPermanentChargeCorrectionEnergy() {
+    return permanentChargeCorrectionEnergy;
   }
 
   public double getPolarEps() {
@@ -1484,8 +1490,11 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
       alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
       alchemicalParameters.vacuumRanges = new Range[maxThreads];
-      vacuumNeighborList.setDisableUpdates(
-          forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
+      try {
+        vacuumNeighborList.destroy();
+      } catch (Exception ex) {
+        logger.warning(" Exception in destroying vacuumNeighborList");
+      }
     } else {
       alchemicalParameters.vaporCrystal = null;
       alchemicalParameters.vaporLists = null;
@@ -1960,6 +1969,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     double eself = 0.0;
     double erecip = 0.0;
+    double ecorrect = 0.0;
     double eselfi = 0.0;
     double erecipi = 0.0;
     if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
@@ -1973,6 +1983,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       reciprocalEnergyRegion.executeWith(parallelTeam);
       eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
       erecip = reciprocalEnergyRegion.getPermanentReciprocalEnergy();
+      ecorrect = reciprocalEnergyRegion.getPermanentChargeCorrectionEnergy();
       eselfi = reciprocalEnergyRegion.getInducedDipoleSelfEnergy();
       erecipi = reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
       interactions += nAtoms;
@@ -2131,10 +2142,11 @@ public class ParticleMeshEwald implements LambdaInterface {
     permanentRealSpaceEnergy += ereal;
     permanentSelfEnergy += eself;
     permanentReciprocalEnergy += erecip;
+    permanentChargeCorrectionEnergy += ecorrect;
     inducedRealSpaceEnergy += ereali;
     inducedSelfEnergy += eselfi;
     inducedReciprocalEnergy += erecipi;
-    permanentMultipoleEnergy += eself + erecip + ereal;
+    permanentMultipoleEnergy += eself + erecip + ereal + ecorrect;
     polarizationEnergy += eselfi + erecipi + ereali;
     totalMultipoleEnergy += ereal + eself + erecip + ereali + eselfi + erecipi;
 
@@ -2142,11 +2154,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder sb = new StringBuilder();
       sb.append(format("\n Global Cartesian PME, lambdaMode=%s\n", lambdaMode.toString()));
-      sb.append(format(" Multipole Self-Energy:   %16.8f\n", eself));
       sb.append(format(" Multipole Reciprocal:    %16.8f\n", erecip));
+      sb.append(format(" Multipole Self-Energy:   %16.8f\n", eself));
+      sb.append(format(" Multipole Correction:    %16.8f\n", ecorrect));
       sb.append(format(" Multipole Real Space:    %16.8f\n", ereal));
-      sb.append(format(" Polarization Self-Energy:%16.8f\n", eselfi));
       sb.append(format(" Polarization Reciprocal: %16.8f\n", erecipi));
+      sb.append(format(" Polarization Self-Energy:%16.8f\n", eselfi));
       sb.append(format(" Polarization Real Space: %16.8f\n", ereali));
       if (generalizedKirkwoodTerm) {
         sb.append(format(" Generalized Kirkwood:    %16.8f\n", solvationEnergy));

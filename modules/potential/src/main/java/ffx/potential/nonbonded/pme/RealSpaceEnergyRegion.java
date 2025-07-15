@@ -267,6 +267,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
    * <p>Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for parts 2 & 3.
    */
   private double polarizationScale = 1.0;
+
   // *************************************************************************
   // Mutable Particle Mesh Ewald constants.
   private double aewald;

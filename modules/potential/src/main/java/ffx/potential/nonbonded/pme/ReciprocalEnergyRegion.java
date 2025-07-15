@@ -57,6 +57,8 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
+import static java.lang.Math.PI;
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -83,9 +85,10 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(ReciprocalEnergyRegion.class.getName());
 
-  private static final double SQRT_PI = sqrt(Math.PI);
+  private static final double SQRT_PI = sqrt(PI);
   private static final int tensorCount = MultipoleUtilities.tensorCount(3);
   private final double electric;
+  private final double aewald;
   private final double aewald1;
   private final double aewald2;
   private final double aewald3;
@@ -110,6 +113,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private double[][] fracMultipolePhi;
   private double[][] fracInducedDipolePhi;
   private double[][] fracInducedDipolePhiCR;
+  private double chargeCorrectionEnergy;
   private double permanentSelfEnergy;
   private double permanentReciprocalEnergy;
   /** An ordered array of atoms in the system. */
@@ -182,8 +186,8 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     inducedDipoleSelfEnergy = new SharedDouble();
     inducedDipoleRecipEnergy = new SharedDouble();
     maxThreads = nt;
-
     this.electric = electric;
+    this.aewald = aewald;
     aewald1 = -electric * aewald / SQRT_PI;
     aewald2 = 2.0 * aewald * aewald;
     aewald3 = -2.0 / 3.0 * electric * aewald * aewald * aewald / SQRT_PI;
@@ -215,9 +219,39 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     */
     permanentSelfEnergy = 0.0;
     permanentReciprocalEnergy = 0.0;
+    double totalCharge = 0.0;
     for (int i = 0; i < maxThreads; i++) {
+      totalCharge += permanentReciprocalEnergyLoop[i].totalCharge;
       permanentSelfEnergy += permanentReciprocalEnergyLoop[i].eSelf;
       permanentReciprocalEnergy += permanentReciprocalEnergyLoop[i].eRecip;
+    }
+
+    if (totalCharge == 0.0 || (esvTerm && !extendedSystem.useTotalChargeCorrection)) {
+      chargeCorrectionEnergy = 0.0;
+    } else {
+      Crystal unitCell = crystal.getUnitCell();
+      int nSymm = unitCell.getNumSymOps();
+      // Compute the total charge for the unit cell from the asymmetric unit total.
+      totalCharge = totalCharge * nSymm;
+      double denom = unitCell.volume * aewald * aewald;
+      chargeCorrectionEnergy = -0.5 * electric * PI * (totalCharge * totalCharge) / denom;
+      // Normalize the unit cell correction to the asymmetric unit.
+      chargeCorrectionEnergy = chargeCorrectionEnergy / nSymm;
+      if (lambdaTerm) {
+        shareddEdLambda.addAndGet(chargeCorrectionEnergy * dlPowPerm * dEdLSign);
+        sharedd2EdLambda2.addAndGet(chargeCorrectionEnergy * d2lPowPerm * dEdLSign);
+      }
+      if (esvTerm){
+        for(int i=0; i<atoms.length;i++){
+          if(extendedSystem.isTitrating(i)){
+            double[] in = globalMultipole[0][i];
+            double[] indot = titrationMultipole[0][i];
+            double chargeCorrectiondUdL = -0.5 * electric * PI * indot[t000] * (2*totalCharge) / denom;
+            extendedSystem.addPermElecDeriv(i,chargeCorrectiondUdL,0.0);
+          }
+        }
+      }
+      chargeCorrectionEnergy = chargeCorrectionEnergy * permanentScale;
     }
   }
 
@@ -235,6 +269,10 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
   public double getPermanentSelfEnergy() {
     return permanentSelfEnergy;
+  }
+
+  public double getPermanentChargeCorrectionEnergy() {
+    return chargeCorrectionEnergy;
   }
 
   public void init(
@@ -343,6 +381,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private class PermanentReciprocalEnergyLoop extends IntegerForLoop {
 
     int threadID;
+    double totalCharge;
     double eSelf;
     double eRecip;
 
@@ -353,12 +392,13 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     }
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) {
 
       // Permanent multipole self energy and gradient.
       for (int i = lb; i <= ub; i++) {
         if (use[i]) {
           double[] in = globalMultipole[0][i];
+          totalCharge += in[t000];
           double cii = in[t000] * in[t000];
           double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
           double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
@@ -495,6 +535,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
     @Override
     public void start() {
+      totalCharge = 0.0;
       eSelf = 0.0;
       eRecip = 0.0;
       threadID = getThreadIndex();
