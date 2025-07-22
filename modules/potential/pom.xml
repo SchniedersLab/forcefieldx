@@ -62,6 +62,7 @@
             <argument>ffx.potential.groovy.FeatureMap</argument>
             <argument>ffx.potential.groovy.Frac2Cart</argument>
             <argument>ffx.potential.groovy.MoveIntoUnitCell</argument>
+            <argument>ffx.potential.groovy.PhEnergy</argument>
             <argument>ffx.potential.groovy.PrepareSpaceGroups</argument>
             <argument>ffx.potential.groovy.SaveAsP1</argument>
             <argument>ffx.potential.groovy.SaveAsPDB</argument>
@@ -77,7 +78,6 @@
             <argument>ffx.potential.groovy.test.LambdaGradient</argument>
             <argument>ffx.potential.groovy.test.MultiRes</argument>
             <argument>ffx.potential.groovy.test.MultiTopTimer</argument>
-            <argument>ffx.potential.groovy.test.PhEnergy</argument>
             <argument>ffx.potential.groovy.test.PhGradient</argument>
             <argument>ffx.potential.groovy.test.PrmToProperty</argument>
             <argument>ffx.potential.groovy.test.ReorderAtoms</argument>

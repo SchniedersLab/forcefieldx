@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test
+package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
@@ -65,9 +65,9 @@ import static java.lang.String.format
  * <br>
  * Usage:
  * <br>
- * ffxc test.PhDynamics [options] &lt;filename&gt; [file2...]
+ * ffxc PhDynamics [options] &lt;filename&gt; [file2...]
  */
-@Command(description = " Run constant pH dynamics on a system.", name = "test.PhDynamics")
+@Command(description = " Run constant pH dynamics on a system.", name = "PhDynamics")
 class PhDynamics extends AlgorithmsScript {
   @Mixin
   AtomSelectionOptions atomSelectionOptions

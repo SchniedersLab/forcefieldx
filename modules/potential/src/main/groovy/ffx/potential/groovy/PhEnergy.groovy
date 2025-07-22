@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy.test
+package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
@@ -70,10 +70,10 @@ import static org.apache.commons.math3.util.FastMath.pow
  * <br>
  * Usage:
  * <br>
- * ffxc test.PhEnergy &lt;filename&gt;
+ * ffxc PhEnergy &lt;filename&gt;
  */
 @Command(description = " Compute the force field potential energy for a CpHMD system.",
-    name = "test.PhEnergy")
+    name = "PhEnergy")
 class PhEnergy extends PotentialScript {
 
     @Mixin
