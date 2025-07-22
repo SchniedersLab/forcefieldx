@@ -508,9 +508,9 @@ public class NeighborList extends ParallelRegion {
       for(int j = 0; j < nB; j++){
         int[] group = new int[M];
         // Slow in-order add, but typically fast due to small # zCol atoms
-        PriorityQueue<AtomIndex>[] atomQueue = new PriorityQueue[nSymm];
+        List<PriorityQueue<AtomIndex>> atomQueue = new ArrayList<>(nSymm);
         for(int k = 0; k < nSymm; k++){
-          atomQueue[k] = new PriorityQueue<>();
+          atomQueue.add(new PriorityQueue<>());
         }
         for(int k = 0; k < nC; k++){
           // Walk up z-columns adding to groups of size M
@@ -519,11 +519,12 @@ public class NeighborList extends ParallelRegion {
           for(int l = 0; l < cell.list.size(); l++){
             int iSymm = cell.list.get(l).iSymm;
             // Sort by z height
-            atomQueue[iSymm].add(cell.list.get(l));
+            PriorityQueue<AtomIndex> queue = atomQueue.get(iSymm);
+            queue.add(cell.list.get(l));
             // Flush queue into groups
-            while(atomQueue[iSymm].size() >= M){
+            while(queue.size() >= M){
               for(int m = 0; m < M; m++){
-                AtomIndex atom = atomQueue[iSymm].poll();
+                AtomIndex atom = queue.poll();
                 assert(atom != null); // with while-loop cond.
                 group[m] = atom.i;
               }
@@ -533,13 +534,14 @@ public class NeighborList extends ParallelRegion {
           }
         }
         for(int k = 0; k < nSymm; k++) {
-          if (atomQueue[k].isEmpty()) {
+          PriorityQueue<AtomIndex> queue = atomQueue.get(k);
+          if (queue.isEmpty()) {
             continue;
           }
           // Fill in last group with -1 filler
           for (int l = 0; l < M; l++) {
-            if (!atomQueue[k].isEmpty()) {
-              AtomIndex atom = atomQueue[k].poll();
+            if (!queue.isEmpty()) {
+              AtomIndex atom = queue.poll();
               assert (atom != null);
               group[l] = atom.i;
             } else {
