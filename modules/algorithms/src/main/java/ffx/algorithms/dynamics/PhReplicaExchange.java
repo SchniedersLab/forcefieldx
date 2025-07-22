@@ -401,7 +401,6 @@ public class PhReplicaExchange implements Terminatable {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
-    extendedSystem.reGuessLambdas();
     replica.setCoordinates(x);
     int startCycle = 0;
     if (initDynamics > 0 && !restart) {
@@ -435,6 +434,8 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" ");
       logger.info(" ------------------End of Equilibration Dynamics------------------\n");
       logger.info(" ");
+    } else if (initDynamics == 0 && !restart){
+      extendedSystem.reGuessLambdas();
     } else if (restart) {
       logger.info(" Omitting initialization steps because this is a restart.");
       startCycle = (int) (restartStep / titrSteps) + 1;

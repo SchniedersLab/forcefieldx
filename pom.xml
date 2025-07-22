@@ -922,7 +922,6 @@
       </roles>
       <timezone>-5</timezone>
     </developer>
-
   </developers>
   <distributionManagement>
     <downloadUrl>https://ffx.biochem.uiowa.edu/download.html</downloadUrl>
@@ -1082,7 +1081,7 @@
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.1.0</jarsigner.version>
-    <javaparser.version>3.26.4</javaparser.version>
+    <javaparser.version>3.27.0</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
     <javadoc.version>3.11.2</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>

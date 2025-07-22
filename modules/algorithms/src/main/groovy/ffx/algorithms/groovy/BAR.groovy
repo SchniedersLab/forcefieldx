@@ -112,11 +112,11 @@ class BAR extends AlgorithmsScript {
   private boolean sortedArc = false
 
   @Option(names = ["--ss", "--startSnapshot"], paramLabel = "0",
-      description = "Start at this snapshot when reading in Tinker BAR files.")
+      description = "Start at this snapshot when reading in Tinker BAR files (indexed from 0).")
   private int startingSnapshot = 0
 
   @Option(names = ["--es", "--endSnapshot"], paramLabel = "0",
-      description = "End at this snapshot when reading in Tinker BAR files.")
+      description = "End at this snapshot when reading in Tinker BAR files (indexed from 0).")
   private int endingSnapshot = 0
 
   /**

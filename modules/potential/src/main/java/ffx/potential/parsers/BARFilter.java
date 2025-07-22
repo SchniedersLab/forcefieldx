@@ -150,7 +150,6 @@ public class BARFilter {
     try (BufferedReader br = new BufferedReader(new FileReader(barFile))) {
       String data;
       while ((data = br.readLine()) != null) {
-        count++;
         String[] tokens = data.trim().split(" +");
         int numTokens = tokens.length;
         if (data.contains(".xyz") || data.contains(".pdb") || numTokens < 3) {
@@ -163,6 +162,7 @@ public class BARFilter {
             temperature2 = parseDouble(tokens[1]);
           }
         } else if (endingSnap != 0) {
+          count++;
           snapshots = (endingSnap - startingSnap) + 1;
           if (count >= startingSnap + 1 && count <= endingSnap + 1) {
             if (count <= snaps1) {
@@ -174,7 +174,7 @@ public class BARFilter {
             } else {
               logger.warning(format(" BAR entry of (%3d) is larger than total entries (%3d).", count, snaps1));
             }
-          } else if (count >= snaps1 + startingSnap + 2 && count <= snaps1 + endingSnap + 2) {
+          } else if (count >= snaps1 + startingSnap + 1 && count <= snaps1 + endingSnap + 1) {
             if (count <= snaps1 + snaps2 + 1) {
               if (numTokens == 4) {
                 vol2.add(parseDouble(tokens[3]));
@@ -186,13 +186,14 @@ public class BARFilter {
             }
           }
         } else {
-          if (count <= snaps1 + 1 && count != 1) {
+          count++;
+          if (count <= snaps1) {
             if (numTokens == 4) {
               vol1.add(parseDouble(tokens[3]));
             }
             ens1lam1.add(parseDouble(tokens[1]));
             ens1lam2.add(parseDouble(tokens[2]));
-          } else if (count > snaps1 + 2) {
+          } else {
             if (numTokens == 4) {
               vol2.add(parseDouble(tokens[3]));
             }

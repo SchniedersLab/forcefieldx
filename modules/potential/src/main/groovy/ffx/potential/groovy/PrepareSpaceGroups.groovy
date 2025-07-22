@@ -222,8 +222,8 @@ class PrepareSpaceGroups extends PotentialScript {
         continue
       }
 
-      logger.info(format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-          spacegroup2.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
+      logger.info(format("\n Preparing %d %s (CSD percent: %7.4f, PDB Rank: %d)",
+          num, spacegroup2.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
 
       // Create the directory.
       String sgDirName = spacegroup2.shortName.replace('/', '_')
