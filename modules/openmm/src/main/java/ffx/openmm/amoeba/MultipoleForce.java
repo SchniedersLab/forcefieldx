@@ -45,6 +45,7 @@ import ffx.openmm.IntArray;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_addMultipole;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_destroy;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_getCovalentMap;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setAEwald;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setCovalentMap;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setCutoffDistance;
@@ -201,6 +202,21 @@ public class MultipoleForce extends Force {
    */
   public void setCovalentMap(int i, int covalentType, IntArray covalentMap) {
     OpenMM_AmoebaMultipoleForce_setCovalentMap(pointer, i, covalentType, covalentMap.getPointer());
+  }
+
+  /**
+   * Get the covalent map for a given atom index and covalent type.
+   *
+   * @param i            The atom index.
+   * @param covalentType The covalent type.
+   * @return An IntArray representing the covalent map for the specified atom index and covalent type.
+   */
+  public IntArray getCovalentMap(int i, int covalentType) {
+    IntArray covalentMap = new IntArray(0);
+    if (pointer != null) {
+      OpenMM_AmoebaMultipoleForce_getCovalentMap(pointer, i, covalentType, covalentMap.getPointer());
+    }
+    return covalentMap;
   }
 
   /**

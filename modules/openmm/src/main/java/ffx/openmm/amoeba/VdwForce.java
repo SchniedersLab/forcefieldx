@@ -54,6 +54,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setPar
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setSoftcoreAlpha;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setSoftcorePower;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setUseDispersionCorrection;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setUseLambdaComplement;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_updateParametersInContext;
 
 /**
@@ -119,6 +120,15 @@ public class VdwForce extends Force {
   public void setParticleParameters(int index, int ired, double rad, double eps, double reductionFactor,
                                     int isAlchemical, int type, double scaleFactor) {
     OpenMM_AmoebaVdwForce_setParticleParameters(pointer, index, ired, rad, eps, reductionFactor, isAlchemical, type, scaleFactor);
+  }
+
+  /**
+   * Set the Use Lambda Complement flag.
+   *
+   * @param useLambdaComplement The flag to use lambda complement.
+   */
+  public void setUseLambdaComplement(int useLambdaComplement) {
+    OpenMM_AmoebaVdwForce_setUseLambdaComplement(pointer, useLambdaComplement);
   }
 
   /**

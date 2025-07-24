@@ -392,8 +392,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     double buff = 2.0;
     nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
     multiplicativeSwitch = new MultiplicativeSwitch(vdwTaper, vdwCutoff);
-    neighborList = new NeighborList(null, this.crystal,
-        atoms, neighborListCutoff, buff, parallelTeam);
+    neighborList = new NeighborList(crystal, atoms, neighborListCutoff, buff, parallelTeam);
     pairwiseSchedule = neighborList.getPairwiseSchedule();
     neighborLists = new int[nSymm][][];
 
@@ -2186,7 +2185,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private class NeighborListBarrier extends BarrierAction {
 
       @Override
-      public void run() throws Exception {
+      public void run() {
         neighborListTotalTime = -System.nanoTime();
         neighborList.buildList(reduced, neighborLists, null, forceNeighborListRebuild, false);
         neighborListTotalTime += System.nanoTime();

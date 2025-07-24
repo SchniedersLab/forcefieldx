@@ -162,7 +162,7 @@ public class ParallelTeam {
 
         // Record parallel region.
         myRegion = theRegion;
-        myExceptionMap = new ConcurrentHashMap<Integer, Throwable>(K, 0.75f, K);
+        myExceptionMap = new ConcurrentHashMap<>(K, 0.75f, K);
         theRegion.myTeam = this;
 
         try {

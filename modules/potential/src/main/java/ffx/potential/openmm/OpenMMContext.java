@@ -123,7 +123,7 @@ public class OpenMMContext extends Context {
   private final Atom[] atoms;
 
   /**
-   * Create an OpenMM Context.
+   * Create an OpenMM Context for a single topology OpenMM system.
    *
    * @param platform     OpenMM Platform.
    * @param openMMSystem OpenMM System.

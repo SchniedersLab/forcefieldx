@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.Random;
 
 import ffx.utilities.FFXTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -106,6 +107,11 @@ public class Real3DParallelTest extends FFXTest {
         paddedIndex += 2;
       }
     }
+  }
+
+  @After
+  public void after() throws Exception {
+    parallelTeam.shutdown();
   }
 
   /** Test of convolution method, of class Real3DParallel. */

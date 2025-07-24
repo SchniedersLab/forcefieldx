@@ -1415,6 +1415,7 @@ public final class PDBFilter extends SystemFilter {
 
   /** {@inheritDoc} */
   @Override
+  @SuppressWarnings("fallthrough")
   public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
     modelsRead = resetPosition ? 1 : modelsRead + 1;
     if (!parse) {

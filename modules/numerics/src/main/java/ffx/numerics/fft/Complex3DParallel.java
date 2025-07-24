@@ -48,6 +48,10 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorShuffle;
+import jdk.incubator.vector.VectorSpecies;
+
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -176,6 +180,12 @@ public class Complex3DParallel {
    * Use SIMD instructions if available.
    */
   private boolean useSIMD;
+  private final VectorSpecies<Double> species = DoubleVector.SPECIES_PREFERRED;
+  private final int vectorSize = species.length();
+  private final int[] shuffle = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
+  private final VectorShuffle<Double> expandFirstHalf = VectorShuffle.fromArray(species, shuffle, 0);
+  private final VectorShuffle<Double> expandSecondHalf = VectorShuffle.fromArray(species, shuffle, vectorSize);
+
   /**
    * Pack the FFTs for optimal use of SIMD instructions.
    */
@@ -331,6 +341,7 @@ public class Complex3DParallel {
       useSIMD = false;
     }
 
+    // Do not pack FFTs by default for now.
     packFFTs = false;
     String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
     try {
@@ -360,11 +371,13 @@ public class Complex3DParallel {
       fftZ[i] = new Complex(nZ, dataLayout1D, internalImZ, nY);
       fftZ[i].setUseSIMD(useSIMD);
     }
-    if (!localZTranspose) {
-      work3D = new double[2 * nX * nY * nZ];
-    } else {
+
+    if (localZTranspose) {
       work3D = null;
+    } else {
+      work3D = new double[2 * nX * nY * nZ];
     }
+
     fftRegion = new FFTRegion();
     ifftRegion = new IFFTRegion();
     convRegion = new ConvolutionRegion();
@@ -488,6 +501,7 @@ public class Complex3DParallel {
 
   /**
    * Get the timing string.
+   *
    * @return The timing string.
    */
   public String timingString() {
@@ -1030,11 +1044,15 @@ public class Complex3DParallel {
     public void run(final int lb, final int ub) {
       for (int x = lb; x <= ub; x++) {
         for (int z = 0; z < nZ; z++) {
+          int inputOffset = x * nextX + z * nextZ;
+          int workOffset = x * trNextX + z * trNextZ;
           for (int y = 0; y < nY; y++) {
-            double real = input[x * nextX + y * nextY + z * nextZ];
-            double imag = input[x * nextX + y * nextY + z * nextZ + im];
-            work3D[y * trNextY + z * trNextZ + x * trNextX] = real;
-            work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ] = imag;
+            int inputIndex = inputOffset + y * nextY;
+            double real = input[inputIndex];
+            double imag = input[inputIndex + im];
+            int workIndex = workOffset + y * trNextY;
+            work3D[workIndex] = real;
+            work3D[workIndex + internalImZ] = imag;
           }
         }
       }
@@ -1082,11 +1100,15 @@ public class Complex3DParallel {
     public void run(final int lb, final int ub) {
       for (int x = 0; x < nX; x++) {
         for (int y = 0; y < nY; y++) {
+          int workOffset = x * trNextX + y * trNextY;
+          int inputOffset = x * nextX + y * nextY;
           for (int z = lb; z <= ub; z++) {
-            double real = work3D[y * trNextY + z * trNextZ + x * trNextX];
-            double imag = work3D[y * trNextY + z * trNextZ + x * trNextX + internalImZ];
-            input[x * nextX + y * nextY + z * nextZ] = real;
-            input[x * nextX + y * nextY + z * nextZ + im] = imag;
+            int workIndex = workOffset + z * trNextZ;
+            double real = work3D[workIndex];
+            double imag = work3D[workIndex + internalImZ];
+            int inputIndex = inputOffset + z * nextZ;
+            input[inputIndex] = real;
+            input[inputIndex + im] = imag;
           }
         }
       }
@@ -1125,6 +1147,23 @@ public class Complex3DParallel {
    * @param workOffset  The offset into the data array (x * nY * nZ * ii).
    */
   private void recipConv(int recipOffset, double[] work, int workOffset) {
+    if (useSIMD && internalImZ == 1) {
+      // Only for interleaved data at the moment.
+      recipConvSIMD(recipOffset, work, workOffset);
+      // recipConvScalar(recipOffset, work, workOffset);
+    } else {
+      recipConvScalar(recipOffset, work, workOffset);
+    }
+  }
+
+  /**
+   * Scalar implementation of reciprocal space multiplication.
+   *
+   * @param recipOffset The offset into the reciprocal space data (x * nY * nZ).
+   * @param work        The input array.
+   * @param workOffset  The offset into the data array (x * nY * nZ * ii).
+   */
+  private void recipConvScalar(int recipOffset, double[] work, int workOffset) {
     int index = workOffset;
     int rindex = recipOffset;
     for (int i = 0; i < nY * nZ; i++) {
@@ -1132,6 +1171,53 @@ public class Complex3DParallel {
       work[index] *= r;
       work[index + internalImZ] *= r;
       index += ii;
+    }
+  }
+
+  /**
+   * Preliminary SIMD implementation of reciprocal space multiplication.
+   *
+   * @param recipOffset The offset into the reciprocal space data (x * nY * nZ).
+   * @param work        The input array.
+   * @param workOffset  The offset into the data array (x * nY * nZ * ii).
+   */
+  private void recipConvSIMD(int recipOffset, double[] work, int workOffset) {
+
+    // Check if the data is interleaved.
+    if (internalImZ != 1) {
+      logger.severe(" Real and imaginary parts must be interleaved.");
+    }
+
+    // Calculate the number of elements to process
+    int length = nY * nZ * 2;
+    // One load of from the reciprocal space data is used for two loads for the work array.
+    int vectorSize2 = vectorSize * 2;
+    int vectorizedLength = (length / vectorSize2) * vectorSize2;
+
+    // Process elements in chunks of 2 * vectorSize.
+    int i = 0;
+    for (; i < vectorizedLength; i += vectorSize2) {
+      // Load reciprocal space scalars for two chunks of complex numbers.
+      DoubleVector recipVector = DoubleVector.fromArray(species, recip, recipOffset + i / 2);
+
+      // Load the first chunk of complex numbers and perform the reciprocal multiplication
+      DoubleVector complexVector = DoubleVector.fromArray(species, work, workOffset + i);
+      DoubleVector firstHalf = recipVector.rearrange(expandFirstHalf);
+      complexVector = complexVector.mul(firstHalf);
+      complexVector.intoArray(work, workOffset + i);
+
+      // Load the second chunk of complex numbers and perform the reciprocal multiplication
+      complexVector = DoubleVector.fromArray(species, work, workOffset + vectorSize + i);
+      DoubleVector secondHalf = recipVector.rearrange(expandSecondHalf);
+      complexVector = complexVector.mul(secondHalf);
+      complexVector.intoArray(work, workOffset + vectorSize + i);
+    }
+
+    // Process remaining elements
+    for (; i < length; i+=2) {
+      double r = recip[recipOffset + i / 2];
+      work[workOffset + i] *= r;
+      work[workOffset + i + internalImZ] *= r;
     }
   }
 
@@ -1291,6 +1377,9 @@ public class Complex3DParallel {
     complex3D.ifft(data);
     System.out.println("Warm Up Sequential Convolution");
     complex3D.convolution(data);
+
+
+
     for (int i = 0; i < reps; i++) {
       System.out.printf(" Iteration %d%n", i + 1);
       long time = System.nanoTime();
@@ -1320,6 +1409,11 @@ public class Complex3DParallel {
     complex3DParallel.initTiming();
 
     for (int i = 0; i < reps; i++) {
+      // Reset timings after half the iterations.
+      if (i == reps / 2) {
+        complex3DParallel.initTiming();
+      }
+
       System.out.printf(" Iteration %d%n", i + 1);
       long time = System.nanoTime();
       complex3DParallel.fft(data);
@@ -1337,6 +1431,7 @@ public class Complex3DParallel {
       if (time < parTimeConv) {
         parTimeConv = time;
       }
+
     }
 
     System.out.printf(" Best Sequential FFT Time:   %9.6f (sec)%n", toSeconds * seqTime);
