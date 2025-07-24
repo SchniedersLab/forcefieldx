@@ -82,6 +82,11 @@ public class AmoebaMultipoleForce extends MultipoleForce {
 
   private static final Logger logger = Logger.getLogger(AmoebaMultipoleForce.class.getName());
 
+  /**
+   * Construct an AMOEBA Multipole Force.
+   *
+   * @param openMMEnergy The OpenMMEnergy instance that contains the multipole information.
+   */
   public AmoebaMultipoleForce(OpenMMEnergy openMMEnergy) {
     ParticleMeshEwald pme = openMMEnergy.getPmeNode();
     if (pme == null) {
@@ -89,56 +94,19 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       return;
     }
 
+    double doPolarization = configureForce(openMMEnergy);
+
     int[][] axisAtom = pme.getAxisAtoms();
     double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
-
-    Polarization polarization = pme.getPolarizationType();
-    double doPolarization = 1.0;
-    SCFAlgorithm scfAlgorithm = null;
-    if (polarization != Polarization.MUTUAL) {
-      setPolarizationType(OpenMM_AmoebaMultipoleForce_Direct);
-      if (pme.getPolarizationType() == Polarization.NONE) {
-        doPolarization = 0.0;
-      }
-    } else {
-      String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
-      try {
-        algorithm = algorithm.replaceAll("-", "_").toUpperCase();
-        scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
-      } catch (Exception e) {
-        scfAlgorithm = SCFAlgorithm.CG;
-      }
-
-      if (scfAlgorithm == SCFAlgorithm.EPT) {
-        /*
-         * Citation:
-         * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R.,
-         * Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
-         */
-        setPolarizationType(OpenMM_AmoebaMultipoleForce_Extrapolated);
-        DoubleArray exptCoefficients = new DoubleArray(4);
-        exptCoefficients.set(0, -0.154);
-        exptCoefficients.set(1, 0.017);
-        exptCoefficients.set(2, 0.657);
-        exptCoefficients.set(3, 0.475);
-        setExtrapolationCoefficients(exptCoefficients);
-        exptCoefficients.destroy();
-      } else {
-        setPolarizationType(OpenMM_AmoebaMultipoleForce_Mutual);
-      }
-    }
-
-    DoubleArray dipoles = new DoubleArray(3);
-    DoubleArray quadrupoles = new DoubleArray(9);
-
-    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
     boolean lambdaTerm = pme.getLambdaTerm();
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
     double permLambda = alchemicalParameters.permLambda;
     double polarLambda = alchemicalParameters.polLambda;
+    DoubleArray dipoles = new DoubleArray(3);
+    DoubleArray quadrupoles = new DoubleArray(9);
 
     Atom[] atoms = openMMEnergy.getMolecularAssembly().getAtomArray();
     int nAtoms = atoms.length;
@@ -158,7 +126,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       };
 
       double useFactor = 1.0;
-      if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+      if (!atom.getUse() || !atom.getElectrostatics()) {
         useFactor = 0.0;
       }
 
@@ -205,34 +173,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     dipoles.destroy();
     quadrupoles.destroy();
 
-    Crystal crystal = openMMEnergy.getCrystal();
-    double cutoff = pme.getEwaldCutoff();
-    double aewald = pme.getEwaldCoefficient();
-    if (!crystal.aperiodic()) {
-      setNonbondedMethod(OpenMM_AmoebaMultipoleForce_PME);
-      setCutoffDistance(cutoff * OpenMM_NmPerAngstrom);
-      setAEwald(aewald / OpenMM_NmPerAngstrom);
-
-      double ewaldTolerance = 1.0e-04;
-      setEwaldErrorTolerance(ewaldTolerance);
-
-      IntArray gridDimensions = new IntArray(3);
-      ReciprocalSpace recip = pme.getReciprocalSpace();
-      gridDimensions.set(0, recip.getXDim());
-      gridDimensions.set(1, recip.getYDim());
-      gridDimensions.set(2, recip.getZDim());
-      setPmeGridDimensions(gridDimensions);
-      gridDimensions.destroy();
-    } else {
-      setNonbondedMethod(OpenMM_AmoebaMultipoleForce_NoCutoff);
-    }
-
-    setMutualInducedMaxIterations(500);
-    double poleps = pme.getPolarEps();
-    setMutualInducedTargetEpsilon(poleps);
-
     int[][] ip11 = pme.getPolarization11();
-
     IntArray covalentMap = new IntArray(0);
     for (int i = 0; i < nAtoms; i++) {
       Atom ai = atoms[i];
@@ -275,6 +216,284 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       // AMOEBA does not scale between 1-2, 1-3, etc. polarization groups.
     }
     covalentMap.destroy();
+  }
+
+  /**
+   * Construct an AMOEBA Multipole Force.
+   *
+   * @param topology                 The topology index for the dual topology system.
+   * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the multipole parameters.
+   */
+  public AmoebaMultipoleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    if (pme == null) {
+      destroy();
+      return;
+    }
+
+    // Get the other OpenMMEnergy instance for the dual topology.
+    OpenMMEnergy otherOpenMMEnergy;
+    if (topology == 0) {
+      otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(1);
+    } else {
+      otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(0);
+    }
+    ParticleMeshEwald pmeOther = otherOpenMMEnergy.getPmeNode();
+    if (pmeOther == null) {
+      destroy();
+      return;
+    }
+
+    double doPolarization = configureForce(openMMEnergy);
+
+    // Dual-topology scale factor.
+    // double scaleDT = Math.sqrt(openMMDualTopologyEnergy.getTopologyScale(topology));
+
+    double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+    double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+    double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
+
+    boolean lambdaTerm = pme.getLambdaTerm();
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
+    double permLambda = alchemicalParameters.permLambda;
+    double polarLambda = alchemicalParameters.polLambda;
+    DoubleArray dipoles = new DoubleArray(3);
+    DoubleArray quadrupoles = new DoubleArray(9);
+
+    int nAtoms = openMMDualTopologyEnergy.getNumberOfAtoms();
+
+    // Add a particle for each atom in the dual topology.
+    for (int i = 0; i < nAtoms; i++) {
+      Atom atom = openMMDualTopologyEnergy.getDualTopologyAtom(topology, i);
+      if (atom.getTopologyIndex() == topology) {
+        int index = atom.getArrayIndex();
+        MultipoleType multipoleType = pme.getMultipoleType(index);
+        PolarizeType polarType = pme.getPolarizeType(index);
+
+        // Define the frame definition.
+        int axisType = switch (multipoleType.frameDefinition) {
+          case NONE -> OpenMM_AmoebaMultipoleForce_NoAxisType;
+          case ZONLY -> OpenMM_AmoebaMultipoleForce_ZOnly;
+          case ZTHENX -> OpenMM_AmoebaMultipoleForce_ZThenX;
+          case BISECTOR -> OpenMM_AmoebaMultipoleForce_Bisector;
+          case ZTHENBISECTOR -> OpenMM_AmoebaMultipoleForce_ZBisect;
+          case THREEFOLD -> OpenMM_AmoebaMultipoleForce_ThreeFold;
+        };
+
+        // All multipoles are scaled by the dual topology scale factor.
+        // double useFactor = scaleDT;
+        double useFactor = 1.0;
+
+        // Check if the atom is used and has electrostatics.
+        if (!atom.getUse() || !atom.getElectrostatics()) {
+          // This atom is not used or does not have electrostatics.
+          useFactor = 0.0;
+        }
+
+        // Further scale the multipole coefficients for alchemical atoms.
+        double permScale = useFactor;
+        double polarScale = doPolarization * useFactor;
+        if (lambdaTerm && atom.applyLambda()) {
+          permScale *= permLambda;
+          polarScale *= polarLambda;
+        }
+
+        // Load local multipole coefficients.
+        double charge = multipoleType.charge * permScale;
+        for (int j = 0; j < 3; j++) {
+          dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * permScale);
+        }
+        int l = 0;
+        for (int j = 0; j < 3; j++) {
+          for (int k = 0; k < 3; k++) {
+            quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion * permScale / 3.0);
+          }
+        }
+
+        int zaxis = -1;
+        int xaxis = -1;
+        int yaxis = -1;
+        int[] refAtoms = atom.getAxisAtomIndices();
+        if (refAtoms != null) {
+          zaxis = refAtoms[0];
+          zaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, zaxis);
+          if (refAtoms.length > 1) {
+            xaxis = refAtoms[1];
+            xaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, xaxis);
+            if (refAtoms.length > 2) {
+              yaxis = refAtoms[2];
+              yaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, yaxis);
+            }
+          }
+        } else {
+          axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+        }
+
+        // Add the multipole.
+        addMultipole(charge, dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis,
+            polarType.thole, polarType.pdamp * dampingFactorConversion,
+            polarType.polarizability * polarityConversion * polarScale);
+      } else {
+        // Add a fake multipole.
+        // Define the frame definition.
+        int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+        // Load zero multipole coefficients.
+        double charge = 0.0;
+        for (int j = 0; j < 3; j++) {
+          dipoles.set(j, 0.0);
+        }
+        int l = 0;
+        for (int j = 0; j < 3; j++) {
+          for (int k = 0; k < 3; k++) {
+            quadrupoles.set(l++, 0.0);
+          }
+        }
+        // No frame defining atoms.
+        int zaxis = -1;
+        int xaxis = -1;
+        int yaxis = -1;
+        // Polarization parameters.
+        double thole = 0.39;
+        double pdamp = 1.0;
+        // Add the fake site.
+        addMultipole(charge, dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis,
+            thole, pdamp, 0.0);
+      }
+    }
+    dipoles.destroy();
+    quadrupoles.destroy();
+
+    int[][] ip11 = pme.getPolarization11();
+    int[][] ip11Other = pmeOther.getPolarization11();
+
+    IntArray covalentMap = new IntArray(0);
+    for (int i = 0; i < nAtoms; i++) {
+      Atom atom = openMMDualTopologyEnergy.getDualTopologyAtom(topology, i);
+      int index = atom.getArrayIndex();
+
+      // 1-2 Mask
+      covalentMap.resize(0);
+      for (Atom ak : atom.get12List()) {
+        covalentMap.append(ak.getTopologyAtomIndex());
+      }
+      setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent12, covalentMap);
+
+      // 1-3 Mask
+      covalentMap.resize(0);
+      for (Atom ak : atom.get13List()) {
+        covalentMap.append(ak.getTopologyAtomIndex());
+      }
+      setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent13, covalentMap);
+
+      // 1-4 Mask
+      covalentMap.resize(0);
+      for (Atom ak : atom.get14List()) {
+        covalentMap.append(ak.getTopologyAtomIndex());
+      }
+      setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent14, covalentMap);
+
+      // 1-5 Mask
+      covalentMap.resize(0);
+      for (Atom ak : atom.get15List()) {
+        covalentMap.append(ak.getTopologyAtomIndex());
+      }
+      setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent15, covalentMap);
+
+      // 1-1 Polarization Groups.
+      covalentMap.resize(0);
+
+      int top = atom.getTopologyIndex();
+      int[] polMask;
+      if (top == topology) {
+        polMask = ip11[index];
+      } else {
+        // Use the other topology's polarization mask.
+        polMask = ip11Other[index];
+      }
+      for (int k : polMask) {
+        int value = openMMDualTopologyEnergy.mapToDualTopologyIndex(top, k);
+        covalentMap.append(value);
+      }
+      setCovalentMap(i, OpenMM_AmoebaMultipoleForce_PolarizationCovalent11, covalentMap);
+      // AMOEBA does not scale between 1-2, 1-3, etc. polarization groups.
+    }
+    covalentMap.destroy();
+  }
+
+  /**
+   * Configure the AMOEBA Multipole Force based on the OpenMM Energy instance.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the multipole information.
+   * @return The polarization factor for the force, which is 1.0 if polarization is enabled, or 0.0 if not.
+   */
+  private double configureForce(OpenMMEnergy openMMEnergy) {
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+
+    Polarization polarization = pme.getPolarizationType();
+    double doPolarization = 1.0;
+    SCFAlgorithm scfAlgorithm = null;
+    if (polarization != Polarization.MUTUAL) {
+      setPolarizationType(OpenMM_AmoebaMultipoleForce_Direct);
+      if (pme.getPolarizationType() == Polarization.NONE) {
+        doPolarization = 0.0;
+      }
+    } else {
+      String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
+      try {
+        algorithm = algorithm.replaceAll("-", "_").toUpperCase();
+        scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
+      } catch (Exception e) {
+        scfAlgorithm = SCFAlgorithm.CG;
+      }
+      if (scfAlgorithm == SCFAlgorithm.EPT) {
+        /*
+         * Citation:
+         * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R.,
+         * Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
+         */
+        setPolarizationType(OpenMM_AmoebaMultipoleForce_Extrapolated);
+        DoubleArray exptCoefficients = new DoubleArray(4);
+        exptCoefficients.set(0, -0.154);
+        exptCoefficients.set(1, 0.017);
+        exptCoefficients.set(2, 0.657);
+        exptCoefficients.set(3, 0.475);
+        setExtrapolationCoefficients(exptCoefficients);
+        exptCoefficients.destroy();
+      } else {
+        setPolarizationType(OpenMM_AmoebaMultipoleForce_Mutual);
+      }
+    }
+
+    Crystal crystal = openMMEnergy.getCrystal();
+    double cutoff = pme.getEwaldCutoff();
+    double aewald = pme.getEwaldCoefficient();
+    if (!crystal.aperiodic()) {
+      setNonbondedMethod(OpenMM_AmoebaMultipoleForce_PME);
+      setCutoffDistance(cutoff * OpenMM_NmPerAngstrom);
+      setAEwald(aewald / OpenMM_NmPerAngstrom);
+
+      double ewaldTolerance = 1.0e-04;
+      setEwaldErrorTolerance(ewaldTolerance);
+
+      IntArray gridDimensions = new IntArray(3);
+      ReciprocalSpace recip = pme.getReciprocalSpace();
+      gridDimensions.set(0, recip.getXDim());
+      gridDimensions.set(1, recip.getYDim());
+      gridDimensions.set(2, recip.getZDim());
+      setPmeGridDimensions(gridDimensions);
+      gridDimensions.destroy();
+    } else {
+      setNonbondedMethod(OpenMM_AmoebaMultipoleForce_NoCutoff);
+    }
+
+    setMutualInducedMaxIterations(500);
+    double poleps = pme.getPolarEps();
+    setMutualInducedTargetEpsilon(poleps);
+
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
+    boolean lambdaTerm = pme.getLambdaTerm();
 
     int forceGroup = forceField.getInteger("PME_FORCE_GROUP", 1);
     setForceGroup(forceGroup);
@@ -297,7 +516,6 @@ public class AmoebaMultipoleForce extends MultipoleForce {
         sb.append("    Electrostatics Cut-Off:                NONE");
       }
       logger.info(sb.toString());
-
       if (lambdaTerm) {
         sb = new StringBuilder("   Alchemical Parameters\n");
         double permLambdaStart = alchemicalParameters.permLambdaStart;
@@ -326,9 +544,9 @@ public class AmoebaMultipoleForce extends MultipoleForce {
         }
         logger.info(sb.toString());
       }
-
       logger.log(Level.FINE, format("   Force group:\t\t%d\n", forceGroup));
     }
+    return doPolarization;
   }
 
   /**
@@ -345,6 +563,28 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     return new AmoebaMultipoleForce(openMMEnergy);
   }
 
+  /**
+   * Convenience method to construct an AMOEBA Multipole Force.
+   *
+   * @param topology                 The topology index for the dual topology system.
+   * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the vdW information.
+   * @return An AMOEBA Multipole Force, or null if there are no multipole interactions.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    if (pme == null) {
+      return null;
+    }
+    return new AmoebaMultipoleForce(topology, openMMDualTopologyEnergy);
+  }
+
+  /**
+   * Update the force parameters for the AMOEBA Multipole Force.
+   *
+   * @param atoms        The array of Atoms for which the force parameters are to be updated.
+   * @param openMMEnergy The OpenMMEnergy instance that contains the multipole information.
+   */
   public void updateForce(Atom[] atoms, OpenMMEnergy openMMEnergy) {
     ParticleMeshEwald pme = openMMEnergy.getPmeNode();
     double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
@@ -367,7 +607,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       if (alchemicalMode != AlchemicalParameters.AlchemicalMode.SCALE) {
         logger.severe(format(" Alchemical mode %s not supported for OpenMM.", alchemicalMode));
       }
-      // Permanent multipole softcore is supported for OpenMM.
+      // Permanent multipole softcore is not supported for OpenMM.
       if (alchemicalParameters.permLambdaAlpha != 0.0) {
         logger.severe(" Permanent multipole softcore not supported for OpenMM.");
       }
@@ -450,6 +690,132 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     dipoles.destroy();
     quadrupoles.destroy();
     updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update the force parameters for the AMOEBA Multipole Force in a dual topology system.
+   *
+   * @param atoms                    The array of Atoms for which the force parameters are to be updated.
+   * @param topology                 The topology index for the dual topology system.
+   * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the multipole parameters.
+   */
+  public void updateForce(Atom[] atoms, int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+    double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+    double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
+
+    double doPolarization = 1.0;
+    if (pme.getPolarizationType() == Polarization.NONE) {
+      doPolarization = 0.0;
+    }
+
+    // Dual-topology scale factor.
+    double scaleDT = Math.sqrt(openMMDualTopologyEnergy.getTopologyScale(topology));
+
+    DoubleArray dipoles = new DoubleArray(3);
+    DoubleArray quadrupoles = new DoubleArray(9);
+
+    AlchemicalParameters alchemicalParameters = pme.getAlchemicalParameters();
+    boolean lambdaTerm = pme.getLambdaTerm();
+    if (lambdaTerm) {
+      AlchemicalParameters.AlchemicalMode alchemicalMode = alchemicalParameters.mode;
+      // Only scale mode is supported for OpenMM.
+      if (alchemicalMode != AlchemicalParameters.AlchemicalMode.SCALE) {
+        logger.severe(format(" Alchemical mode %s not supported for OpenMM.", alchemicalMode));
+      }
+      // Permanent multipole softcore is not supported for OpenMM.
+      if (alchemicalParameters.permLambdaAlpha != 0.0) {
+        logger.severe(" Permanent multipole softcore not supported for OpenMM.");
+      }
+      // Isolated ligand electrostatics are not supported for OpenMM.
+      if (alchemicalParameters.doLigandGKElec || alchemicalParameters.doLigandVaporElec) {
+        logger.severe(" Isolated ligand electrostatics are not supported for OpenMM.");
+      }
+      // Condensed SCF without a ligand is not supported for OpenMM.
+      if (alchemicalParameters.doNoLigandCondensedSCF) {
+        logger.severe(" Condensed SCF without a ligand is not supported for OpenMM.");
+      }
+    }
+
+    double permLambda = alchemicalParameters.permLambda;
+    double polarLambda = alchemicalParameters.polLambda;
+
+    for (Atom atom : atoms) {
+      if (atom.getTopologyIndex() != topology) {
+        // Skip atoms that are not in this topology.
+        continue;
+      }
+
+      int index = atom.getArrayIndex();
+      MultipoleType multipoleType = pme.getMultipoleType(index);
+      PolarizeType polarizeType = pme.getPolarizeType(index);
+      int[] axisAtoms = atom.getAxisAtomIndices();
+
+      double permScale = scaleDT;
+      double polarScale = doPolarization;
+      if (!atom.getUse() || !atom.getElectrostatics()) {
+        permScale = 0.0;
+        polarScale = 0.0;
+      }
+
+      if (atom.applyLambda()) {
+        permScale *= permLambda;
+        polarScale *= polarLambda;
+      }
+
+      // Define the frame definition.
+      int axisType = switch (multipoleType.frameDefinition) {
+        case NONE -> OpenMM_AmoebaMultipoleForce_NoAxisType;
+        case ZONLY -> OpenMM_AmoebaMultipoleForce_ZOnly;
+        case ZTHENX -> OpenMM_AmoebaMultipoleForce_ZThenX;
+        case BISECTOR -> OpenMM_AmoebaMultipoleForce_Bisector;
+        case ZTHENBISECTOR -> OpenMM_AmoebaMultipoleForce_ZBisect;
+        case THREEFOLD -> OpenMM_AmoebaMultipoleForce_ThreeFold;
+      };
+
+      // Load local multipole coefficients.
+      for (int j = 0; j < 3; j++) {
+        dipoles.set(j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * permScale);
+      }
+      int l = 0;
+      for (int j = 0; j < 3; j++) {
+        for (int k = 0; k < 3; k++) {
+          quadrupoles.set(l++, multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0 * permScale);
+        }
+      }
+
+      int zaxis = 1;
+      int xaxis = 1;
+      int yaxis = 1;
+
+      if (axisAtoms != null) {
+        zaxis = axisAtoms[0];
+        zaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, zaxis);
+        if (axisAtoms.length > 1) {
+          xaxis = axisAtoms[1];
+          xaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, xaxis);
+          if (axisAtoms.length > 2) {
+            yaxis = axisAtoms[2];
+            yaxis = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, yaxis);
+          }
+        }
+      } else {
+        axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+      }
+
+      // Set the multipole parameters.
+      int dualTopologyIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, index);
+      setMultipoleParameters(dualTopologyIndex, multipoleType.charge * permScale,
+          dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis,
+          polarizeType.thole, polarizeType.pdamp * dampingFactorConversion,
+          polarizeType.polarizability * polarityConversion * polarScale);
+    }
+
+    dipoles.destroy();
+    quadrupoles.destroy();
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 
 }

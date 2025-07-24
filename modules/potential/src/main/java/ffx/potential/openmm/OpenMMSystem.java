@@ -91,130 +91,142 @@ public class OpenMMSystem extends ffx.openmm.System {
   private static final Logger logger = Logger.getLogger(OpenMMSystem.class.getName());
 
   /**
-   * The ForceFieldEnergyOpenMM instance.
+   * The OpenMMEnergy instance.
    */
-  private final OpenMMEnergy openMMEnergy;
+  protected OpenMMEnergy openMMEnergy;
   /**
    * The Force Field in use.
    */
-  private final ForceField forceField;
+  protected ForceField forceField;
   /**
    * Array of atoms in the system.
    */
-  private final Atom[] atoms;
+  protected Atom[] atoms;
+
   /**
    * This flag indicates bonded force constants and equilibria are updated (e.g. during ManyBody
    * titration).
    */
-  private boolean updateBondedTerms = false;
-  /**
-   * OpenMM Custom Bond Force
-   */
-  private BondForce bondForce = null;
-  /**
-   * OpenMM Custom Angle Force
-   */
-  private AngleForce angleForce = null;
-  /**
-   * OpenMM Custom In-Plane Angle Force
-   */
-  private InPlaneAngleForce inPlaneAngleForce = null;
-  /**
-   * OpenMM Custom Stretch-Bend Force
-   */
-  private StretchBendForce stretchBendForce = null;
-  /**
-   * OpenMM Custom Urey-Bradley Force
-   */
-  private UreyBradleyForce ureyBradleyForce = null;
-  /**
-   * OpenMM Custom Out-of-Plane Bend Force
-   */
-  private OutOfPlaneBendForce outOfPlaneBendForce = null;
-  /**
-   * OpenMM Custom Pi-Torsion Force
-   */
-  private PiOrbitalTorsionForce piOrbitalTorsionForce = null;
-  /**
-   * OpenMM AMOEBA Torsion Force.
-   */
-  private TorsionForce torsionForce = null;
-  /**
-   * OpenMM Improper Torsion Force.
-   */
-  private ImproperTorsionForce improperTorsionForce = null;
-  /**
-   * OpenMM Torsion-Torsion Force.
-   */
-  private AmoebaTorsionTorsionForce amoebaTorsionTorsionForce = null;
-  /**
-   * OpenMM Stretch-Torsion Force.
-   */
-  private StretchTorsionForce stretchTorsionForce = null;
-  /**
-   * OpenMM Angle-Torsion Force.
-   */
-  private AngleTorsionForce angleTorsionForce = null;
-  /**
-   * OpenMM Restraint-Torsion Force.
-   */
-  private RestrainTorsionsForce restrainTorsionsForce = null;
-  /**
-   * OpenMM Restrain-Position Force.
-   */
-  private RestrainPositionsForce restrainPositionsForce = null;
-  /**
-   * OpenMM Restrain-Groups Force.
-   */
-  private RestrainGroupsForce restrainGroupsForce = null;
-  /**
-   * OpenMM AMOEBA van der Waals Force.
-   */
-  private AmoebaVdwForce amoebaVDWForce = null;
-  /**
-   * OpenMM AMOEBA Multipole Force.
-   */
-  private AmoebaMultipoleForce amoebaMultipoleForce = null;
-  /**
-   * OpenMM Generalized Kirkwood Force.
-   */
-  private AmoebaGeneralizedKirkwoodForce amoebaGeneralizedKirkwoodForce = null;
-  /**
-   * OpenMM AMOEBA WCA Dispersion Force.
-   */
-  private AmoebaWcaDispersionForce amoebaWcaDispersionForce = null;
-  /**
-   * OpenMM AMOEBA WCA Cavitation Force.
-   */
-  private AmoebaGKCavitationForce amoebaGKCavitationForce = null;
-  /**
-   * OpenMM Custom GB Force.
-   */
-  private FixedChargeGBForce fixedChargeGBForce = null;
-  /**
-   * OpenMM Fixed Charge Non-Bonded Force.
-   */
-  private FixedChargeNonbondedForce fixedChargeNonBondedForce = null;
-  /**
-   * Custom forces to handle alchemical transformations for fixed charge systems.
-   */
-  private FixedChargeAlchemicalForces fixedChargeAlchemicalForces = null;
-  /**
-   * OpenMM thermostat. Currently, an Andersen thermostat is supported.
-   */
-  private AndersenThermostat andersenThermostat = null;
-  /**
-   * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
-   */
-  private MonteCarloBarostat monteCarloBarostat = null;
-  /**
-   * OpenMM center-of-mass motion remover.
-   */
-  private CMMotionRemover cmMotionRemover = null;
+  protected boolean updateBondedTerms = false;
   /**
    * Fixed charge softcore vdW force boolean.
    */
-  private boolean softcoreCreated = false;
+  protected boolean softcoreCreated = false;
+
+  /**
+   * OpenMM Custom Bond Force
+   */
+  protected BondForce bondForce = null;
+  /**
+   * OpenMM Custom Angle Force
+   */
+  protected AngleForce angleForce = null;
+  /**
+   * OpenMM Custom In-Plane Angle Force
+   */
+  protected InPlaneAngleForce inPlaneAngleForce = null;
+  /**
+   * OpenMM Custom Stretch-Bend Force
+   */
+  protected StretchBendForce stretchBendForce = null;
+  /**
+   * OpenMM Custom Urey-Bradley Force
+   */
+  protected UreyBradleyForce ureyBradleyForce = null;
+  /**
+   * OpenMM Custom Out-of-Plane Bend Force
+   */
+  protected OutOfPlaneBendForce outOfPlaneBendForce = null;
+  /**
+   * OpenMM Custom Pi-Torsion Force
+   */
+  protected PiOrbitalTorsionForce piOrbitalTorsionForce = null;
+  /**
+   * OpenMM AMOEBA Torsion Force.
+   */
+  protected TorsionForce torsionForce = null;
+  /**
+   * OpenMM Improper Torsion Force.
+   */
+  protected ImproperTorsionForce improperTorsionForce = null;
+  /**
+   * OpenMM Torsion-Torsion Force.
+   */
+  protected AmoebaTorsionTorsionForce amoebaTorsionTorsionForce = null;
+  /**
+   * OpenMM Stretch-Torsion Force.
+   */
+  protected StretchTorsionForce stretchTorsionForce = null;
+  /**
+   * OpenMM Angle-Torsion Force.
+   */
+  protected AngleTorsionForce angleTorsionForce = null;
+  /**
+   * OpenMM Restraint-Torsion Force.
+   */
+  protected RestrainTorsionsForce restrainTorsionsForce = null;
+  /**
+   * OpenMM Restrain-Position Force.
+   */
+  protected RestrainPositionsForce restrainPositionsForce = null;
+  /**
+   * OpenMM Restrain-Groups Force.
+   */
+  protected RestrainGroupsForce restrainGroupsForce = null;
+  /**
+   * OpenMM AMOEBA van der Waals Force.
+   */
+  protected AmoebaVdwForce amoebaVDWForce = null;
+  /**
+   * OpenMM AMOEBA Multipole Force.
+   */
+  protected AmoebaMultipoleForce amoebaMultipoleForce = null;
+  /**
+   * OpenMM Generalized Kirkwood Force.
+   */
+  protected AmoebaGeneralizedKirkwoodForce amoebaGeneralizedKirkwoodForce = null;
+  /**
+   * OpenMM AMOEBA WCA Dispersion Force.
+   */
+  protected AmoebaWcaDispersionForce amoebaWcaDispersionForce = null;
+  /**
+   * OpenMM AMOEBA WCA Cavitation Force.
+   */
+  protected AmoebaGKCavitationForce amoebaGKCavitationForce = null;
+  /**
+   * OpenMM Custom GB Force.
+   */
+  protected FixedChargeGBForce fixedChargeGBForce = null;
+  /**
+   * OpenMM Fixed Charge Non-Bonded Force.
+   */
+  protected FixedChargeNonbondedForce fixedChargeNonBondedForce = null;
+  /**
+   * Custom forces to handle alchemical transformations for fixed charge systems.
+   */
+  protected FixedChargeAlchemicalForces fixedChargeAlchemicalForces = null;
+
+  /**
+   * OpenMM thermostat. Currently, an Andersen thermostat is supported.
+   */
+  protected AndersenThermostat andersenThermostat = null;
+  /**
+   * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
+   */
+  protected MonteCarloBarostat monteCarloBarostat = null;
+  /**
+   * OpenMM center-of-mass motion remover.
+   */
+  protected CMMotionRemover cmMotionRemover = null;
+
+  /**
+   * OpenMMSystem constructor.
+   */
+  public OpenMMSystem() {
+    openMMEnergy = null;
+    forceField = null;
+    atoms = null;
+  }
 
   /**
    * OpenMMSystem constructor.
@@ -236,7 +248,6 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
 
     logger.info(format("\n OpenMM system created with %d atoms.", atoms.length));
-
   }
 
   /**
@@ -536,7 +547,7 @@ public class OpenMMSystem extends ffx.openmm.System {
    * particular, a must point in the x direction, b must point "mostly" in the y direction, and c
    * must point "mostly" in the z direction. See the documentation for details.
    */
-  private void setDefaultPeriodicBoxVectors() {
+  protected void setDefaultPeriodicBoxVectors() {
     Crystal crystal = openMMEnergy.getCrystal();
     if (!crystal.aperiodic()) {
       OpenMM_Vec3 a = new OpenMM_Vec3();
@@ -676,7 +687,7 @@ public class OpenMMSystem extends ffx.openmm.System {
    * Adds atoms from the molecular assembly to the OpenMM System and reports to the user the number
    * of particles added.
    */
-  private void addAtoms() throws Exception {
+  protected void addAtoms() throws Exception {
     for (Atom atom : atoms) {
       double mass = atom.getMass();
       if (mass < 0.0) {
@@ -710,7 +721,7 @@ public class OpenMMSystem extends ffx.openmm.System {
   /**
    * Add a constraint to every bond.
    */
-  private void addUpBondConstraints() {
+  protected void addUpBondConstraints() {
     Bond[] bonds = openMMEnergy.getBonds();
     if (bonds == null || bonds.length < 1) {
       return;
@@ -729,7 +740,7 @@ public class OpenMMSystem extends ffx.openmm.System {
   /**
    * Add a constraint to every bond that includes a hydrogen atom.
    */
-  private void addHydrogenConstraints() {
+  protected void addHydrogenConstraints() {
     Bond[] bonds = openMMEnergy.getBonds();
     if (bonds == null || bonds.length < 1) {
       return;
@@ -751,7 +762,7 @@ public class OpenMMSystem extends ffx.openmm.System {
   /**
    * Add a constraint to every angle that includes two hydrogen atoms.
    */
-  private void setUpHydrogenAngleConstraints() {
+  protected void setUpHydrogenAngleConstraints() {
     Angle[] angles = openMMEnergy.getAngles();
     if (angles == null || angles.length < 1) {
       return;
@@ -794,7 +805,7 @@ public class OpenMMSystem extends ffx.openmm.System {
    * @param angle Angle to check.
    * @return boolean indicating whether an angle is a hydrogen angle that is less than 160 degrees.
    */
-  private boolean isHydrogenAngle(Angle angle) {
+  protected boolean isHydrogenAngle(Angle angle) {
     if (angle.containsHydrogen()) {
       // Equilibrium angle value in degrees.
       double angleVal = angle.angleType.angle[angle.nh];

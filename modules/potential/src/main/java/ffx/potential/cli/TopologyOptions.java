@@ -262,7 +262,7 @@ public class TopologyOptions {
       }
       case 2 -> {
         sb.append("Dual Topology ");
-        DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+        DualTopologyEnergy dte = DualTopologyEnergy.energyFactory(topologies[0], topologies[1], sf);
         if (numParallel == 2) {
           dte.setParallel(true);
         }

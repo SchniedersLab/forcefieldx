@@ -1887,6 +1887,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
+   * Get all atoms that make up this ForceFieldEnergy.
+   * @return An array of Atoms.
+   */
+  public Atom[] getAtomArray() {
+    return atoms;
+  }
+
+  /**
    * Applies constraints to positions
    *
    * @param xPrior Prior coodinates.

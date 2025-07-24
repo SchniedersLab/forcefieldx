@@ -77,7 +77,6 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@SuppressWarnings("deprecation")
 public class OpenMMEnergy extends ForceFieldEnergy {
 
   private static final Logger logger = Logger.getLogger(OpenMMEnergy.class.getName());
@@ -95,7 +94,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   private OpenMMSystem openMMSystem;
   /**
-   * The atoms this ForceFieldEnergyOpenMM operates on.
+   * The atoms this OpenMMEnergy operates on.
    */
   private final Atom[] atoms;
   /**
@@ -117,7 +116,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     Crystal crystal = getCrystal();
     int symOps = crystal.spaceGroup.getNumberOfSymOps();
     if (symOps > 1) {
-      logger.info("");
       logger.severe(" OpenMM does not support symmetry operators.");
     }
 
@@ -317,6 +315,27 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   }
 
   /**
+   * Compute the energy using the pure Java code path.
+   *
+   * @param x Atomic coordinates.
+   * @return The energy (kcal/mol)
+   */
+  public double energyFFX(double[] x) {
+    return super.energy(x, false);
+  }
+
+  /**
+   * Compute the energy using the pure Java code path.
+   *
+   * @param x       Input atomic coordinates
+   * @param verbose Use verbose logging.
+   * @return The energy (kcal/mol)
+   */
+  public double energyFFX(double[] x, boolean verbose) {
+    return super.energy(x, verbose);
+  }
+
+  /**
    * {@inheritDoc}
    */
   @Override
@@ -418,27 +437,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   public double energyAndGradientFFX(double[] x, double[] g, boolean verbose) {
     return super.energyAndGradient(x, g, verbose);
-  }
-
-  /**
-   * Compute the energy using the pure Java code path.
-   *
-   * @param x Atomic coordinates.
-   * @return The energy (kcal/mol)
-   */
-  public double energyFFX(double[] x) {
-    return super.energy(x, false);
-  }
-
-  /**
-   * Compute the energy using the pure Java code path.
-   *
-   * @param x       Input atomic coordinates
-   * @param verbose Use verbose logging.
-   * @return The energy (kcal/mol)
-   */
-  public double energyFFX(double[] x, boolean verbose) {
-    return super.energy(x, verbose);
   }
 
   /**

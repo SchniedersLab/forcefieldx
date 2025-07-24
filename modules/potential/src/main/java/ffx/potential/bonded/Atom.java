@@ -279,6 +279,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   private int xyzIndex = -1;
   /**
+   * The index of this atom into the dual-topology atom array.
+   * This runs from 1 to the number of dual-topology atoms. The order is:
+   * 1) Atoms that are shared between topology 1 and topology 2.
+   * 2) Alchemical atoms that are unique to topology 1.
+   * 3) Alchemical atoms that are unique to topology 2.
+   * This index is -1 if the atom is not part of a dual topology.
+   */
+  private int topologyAtomIndex = -1;
+  /**
+   * This is the topology index of this atom in a dual topology system.
+   * The topology index is 0 for topology 1, and 1 for topology 2.
+   * This is -1 if the atom is not part of a dual topology.
+   */
+  private int topologyIndex = -1;
+
+  /**
    * PDB "resname" record.
    *
    * @since 1.0
@@ -967,6 +983,42 @@ public class Atom extends MSNode implements Comparable<Atom> {
       arraycopy(this.anisouVelocity, 0, anisouVelocity, 0, 6);
     }
     return anisouVelocity;
+  }
+
+  /**
+   * Dual-topology atom index.
+   *
+   * @return The index of this atom in the dual-topology atom array.
+   */
+  public final int getTopologyAtomIndex() {
+    return topologyAtomIndex;
+  }
+
+  /**
+   * Dual-topology atom index.
+   *
+   * @param topologyAtomIndex The index of this atom in the dual-topology atom array.
+   */
+  public final void setTopologyAtomIndex(int topologyAtomIndex) {
+    this.topologyAtomIndex = topologyAtomIndex;
+  }
+
+  /**
+   * Get the topology index of this atom.
+   *
+   * @return The topology index of this atom in the dual-topology atom array.
+   */
+  public final int getTopologyIndex() {
+    return topologyIndex;
+  }
+
+  /**
+   * Set the topology index of this atom.
+   *
+   * @param topologyIndex The topology index of this atom in a dual topology system.
+   */
+  public final void setTopologyIndex(int topologyIndex) {
+    this.topologyIndex = topologyIndex;
   }
 
   /**
