@@ -80,6 +80,14 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   protected BondForce bondForce2 = null;
   /**
+   * OpenMM Custom Angle Force for topology 2.
+   */
+  protected AngleForce angleForce2 = null;
+  /**
+   * OpenMM Custom Urey-Bradley Force for topology 2.
+   */
+  protected UreyBradleyForce ureyBradleyForce2 = null;
+  /**
    * OpenMM AMOEBA van der Waals Force for topology 2.
    */
   private AmoebaVdwForce amoebaVDWForce2 = null;
@@ -138,6 +146,18 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     bondForce2 = (BondForce) BondForce.constructForce(1, openMMDualTopologyEnergy);
     addForce(bondForce);
     addForce(bondForce2);
+
+    // Add Angle Force.
+    angleForce = (AngleForce) AngleForce.constructForce(0, openMMDualTopologyEnergy);
+    angleForce2 = (AngleForce) AngleForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(angleForce);
+    addForce(angleForce2);
+
+    // Add Urey-Bradley Force.
+    ureyBradleyForce = (UreyBradleyForce) UreyBradleyForce.constructForce(0, openMMDualTopologyEnergy);
+    ureyBradleyForce2 = (UreyBradleyForce) UreyBradleyForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(ureyBradleyForce);
+    addForce(ureyBradleyForce2);
 
     VanDerWaals vdW1 = openMMEnergy.getVdwNode();
     VanDerWaals vdW2 = openMMEnergy2.getVdwNode();
@@ -227,6 +247,7 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   @Override
   public void updateParameters(@Nullable Atom[] atoms) {
+    logger.info("IN UPDATEPARAMS");
     VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
     if (vanDerWaals != null && vanDerWaals.getLambdaTerm()) {
       double lambdaVDW = vanDerWaals.getLambda();
@@ -234,6 +255,33 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
       openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
     }
 
+//    if (updateBondedTerms) {
+    logger.info("IN UPDATEPARAMS AFTER LAMBDA");
+    if (bondForce != null) {
+      bondForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+
+    if (bondForce2 != null) {
+      bondForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+
+    if (angleForce != null) {
+      angleForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+
+    if (angleForce2 != null) {
+      angleForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+
+    if (ureyBradleyForce != null) {
+      ureyBradleyForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+
+    if (ureyBradleyForce2 != null) {
+      ureyBradleyForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+
+    logger.info("IN UPDATEPARAMS AFTER BONDED");
     if (amoebaVDWForce != null) {
       atoms = openMMEnergy.getAtomArray();
       amoebaVDWForce.updateForce(atoms, 0, openMMDualTopologyEnergy);

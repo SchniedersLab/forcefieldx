@@ -108,6 +108,7 @@ public class BondForce extends CustomBondForce {
     setName("AmoebaBond");
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+    logger.info("CONSTRUCTOR BOND SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
     DoubleArray parameters = new DoubleArray(0);
@@ -174,8 +175,8 @@ public class BondForce extends CustomBondForce {
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (Bond bond : bonds) {
-      int i1 = bond.getAtom(0).getXyzIndex() - 1;
-      int i2 = bond.getAtom(1).getXyzIndex() - 1;
+      int i1 = bond.getAtom(0).getArrayIndex();
+      int i2 = bond.getAtom(1).getArrayIndex();
       BondType bondType = bond.bondType;
       double r0 = bondType.distance * OpenMM_NmPerAngstrom;
       double k = kParameterConversion * bondType.forceConstant * bondType.bondUnit;
@@ -202,13 +203,14 @@ public class BondForce extends CustomBondForce {
     }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+    logger.info("UPDATE BOND SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (Bond bond : bonds) {
-      int i1 = bond.getAtom(0).getXyzIndex() - 1;
-      int i2 = bond.getAtom(1).getXyzIndex() - 1;
+      int i1 = bond.getAtom(0).getArrayIndex();
+      int i2 = bond.getAtom(1).getArrayIndex();
       BondType bondType = bond.bondType;
       double r0 = bondType.distance * OpenMM_NmPerAngstrom;
       double k = scale * kParameterConversion * bondType.forceConstant * bondType.bondUnit;
@@ -220,7 +222,7 @@ public class BondForce extends CustomBondForce {
       parameters.resize(0);
     }
     parameters.destroy();
-    updateParametersInContext(openMMEnergy.getContext());
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 
 }
