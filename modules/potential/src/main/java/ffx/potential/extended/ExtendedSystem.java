@@ -1511,7 +1511,7 @@ public class ExtendedSystem implements Potential {
     /**
      * Companion to getExtendedAtoms() for vdw::setAtoms and pme::setAtoms.
      *
-     * @return an array of {@link int} objects.
+     * @return the molecule ID for each extended atom.
      */
     public int[] getExtendedMolecule() {
         return extendedMolecules;

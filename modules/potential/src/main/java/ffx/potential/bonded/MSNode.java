@@ -277,7 +277,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     return getList(ImproperTorsion.class);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Returns a List of all MSNodes below the present MSNode.
+   *
+   * @return a {@link java.util.List} object.
+   */
   public <T extends TreeNode> List<T> getList(Class<T> c) {
     return getList(c, new ArrayList<>());
   }

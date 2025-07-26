@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -149,15 +150,16 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   }
 
   /**
-   * average.
+   * Average two UreyBradleyType objects.
    *
-   * @param ureyBradleyType1 a {@link ffx.potential.parameters.UreyBradleyType} object.
-   * @param ureyBradleyType2 a {@link ffx.potential.parameters.UreyBradleyType} object.
-   * @param atomClasses      an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
+   * @param ureyBradleyType1 First UreyBradleyType.
+   * @param ureyBradleyType2 Second UreyBradleyType.
+   * @param atomClasses       Atom classes to use for the average.
+   * @return A new UreyBradleyType with averaged properties, or null if inputs are invalid.
    */
-  public static UreyBradleyType average(UreyBradleyType ureyBradleyType1,
-                                        UreyBradleyType ureyBradleyType2, int[] atomClasses) {
+  public static UreyBradleyType average(@Nullable UreyBradleyType ureyBradleyType1,
+                                        @Nullable UreyBradleyType ureyBradleyType2,
+                                        @Nullable int[] atomClasses) {
     if (ureyBradleyType1 == null || ureyBradleyType2 == null || atomClasses == null) {
       return null;
     }

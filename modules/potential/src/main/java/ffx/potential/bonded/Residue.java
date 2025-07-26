@@ -943,9 +943,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * storeCoordinateArray.
+   * Returns the coordinates of all atoms in this Residue as a 2D array.
    *
-   * @return an array of {@link double} objects.
+   * @return the coordinates of all atoms in this Residue as a 2D array.
    */
   public double[][] storeCoordinateArray() {
     List<Atom> atomList = getAtomList();

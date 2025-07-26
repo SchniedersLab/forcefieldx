@@ -75,7 +75,7 @@ public class GradientSchedule extends IntegerSchedule {
   /**
    * Getter for the field <code>lowerBounds</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return a copy of the lower bounds array.
    */
   public int[] getLowerBounds() {
     int[] boundsToReturn = new int[nThreads];
@@ -86,7 +86,7 @@ public class GradientSchedule extends IntegerSchedule {
   /**
    * getThreadWeights.
    *
-   * @return an array of {@link int} objects.
+   * @return a copy of the thread weights array.
    */
   public int[] getThreadWeights() {
     int[] weightsToReturn = new int[nThreads];

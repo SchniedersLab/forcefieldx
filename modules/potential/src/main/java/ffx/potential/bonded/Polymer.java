@@ -205,9 +205,12 @@ public class Polymer extends MSGroup {
   }
 
   /**
-   * {@inheritDoc}
+   * Form a Joint between two residues.
    *
-   * <p>Joiner joins Moieties m1 and m2 and returns the Geometry objects formed in a Joint.
+   * @param residue1 The first Residue.
+   * @param residue2 The second Residue.
+   * @param forceField The ForceField to use for the Joint.
+   * @return a {@link ffx.potential.bonded.Joint} object.
    */
   public Joint createJoint(Residue residue1, Residue residue2, ForceField forceField) {
     Joint joint = null;

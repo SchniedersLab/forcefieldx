@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -191,12 +192,14 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Average two BondType instances. The atom classes that define the new type must be supplied.
    *
-   * @param bondType1   a {@link ffx.potential.parameters.BondType} object.
-   * @param bondType2   a {@link ffx.potential.parameters.BondType} object.
-   * @param atomClasses an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.BondType} object.
+   * @param bondType1   the first {@link ffx.potential.parameters.BondType} object.
+   * @param bondType2   the second {@link ffx.potential.parameters.BondType} object.
+   * @param atomClasses the atom classes that define the new type.
+   * @return a {@link ffx.potential.parameters.BondType} object or null if the bond functions differ.
    */
-  public static BondType average(BondType bondType1, BondType bondType2, int[] atomClasses) {
+  public static BondType average(@Nullable BondType bondType1,
+                                 @Nullable BondType bondType2,
+                                 @Nullable int[] atomClasses) {
     if (bondType1 == null || bondType2 == null || atomClasses == null) {
       return null;
     }

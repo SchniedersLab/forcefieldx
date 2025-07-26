@@ -370,7 +370,8 @@ public class NeighborList extends ParallelRegion {
   /**
    * Set the group size for group-based Verlet lists.
    * <p>
-   * If M is <= 1, then the NeighborList will not build group-based Verlet lists.
+   * If M is less than or equal to 1, then the NeighborList will not
+   * build group-based Verlet lists.
    *
    * @param M The size of the groups to build.
    */

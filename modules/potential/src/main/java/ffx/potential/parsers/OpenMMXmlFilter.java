@@ -72,8 +72,9 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * The OpenMMXmlFilter class creates an OpenMM-style XML file from a ForceField object. Work is underway to parse
- * OpenMM XML files into ForceField objects (AMBER & CHARMM).
+ * The OpenMMXmlFilter class creates an OpenMM-style XML file from a ForceField object.
+ *
+ * Work is underway to parse OpenMM XML files into ForceField objects (AMBER and CHARMM).
  *
  * @author Jacob M. Miller
  */

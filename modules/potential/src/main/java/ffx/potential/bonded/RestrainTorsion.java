@@ -53,7 +53,7 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
  * RestraintTorsion is a class that restrains the torsion angle defined by four atoms.
  *
  * @author Michael J. Schnieders
- * @see 1.0
+ * @since 1.0
  */
 public class RestrainTorsion extends BondedTerm implements LambdaInterface {
 
