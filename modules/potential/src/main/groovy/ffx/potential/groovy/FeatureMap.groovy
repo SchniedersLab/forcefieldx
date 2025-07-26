@@ -45,7 +45,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
 
-import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "FeatureMap")
@@ -151,7 +150,7 @@ class FeatureMap extends PotentialScript {
                 fileIsoform = geneSplit[1]
             } else {
                 geneSplit = baseName.replace(".pdb", "").split("_")
-                int index = 0;
+                int index = 0
                 for(int i=0; i<geneSplit.length; i++){
                     if(geneSplit[i].equalsIgnoreCase("NP")){
                         index = i
@@ -180,18 +179,18 @@ class FeatureMap extends PotentialScript {
         if (ddgFile != null) {
             try {
                 File freeEnergyFile = new File(ddgFile)
-                txtReader = new BufferedReader(new FileReader(freeEnergyFile));
-                String line = txtReader.readLine();
+                txtReader = new BufferedReader(new FileReader(freeEnergyFile))
+                String line = txtReader.readLine()
                 while (line != null) {
                     if (line.contains('.pdb')) {
                         ddgunLines.add(line)
                     }
                     // read next line
-                    line = txtReader.readLine();
+                    line = txtReader.readLine()
                 }
-                txtReader.close();
+                txtReader.close()
             } catch (IOException e) {
-                e.printStackTrace();
+                e.printStackTrace()
             }
             // Get ddGun features
             ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
@@ -203,8 +202,8 @@ class FeatureMap extends PotentialScript {
             }
         }
 
-        BufferedReader br = null;
-        BufferedWriter bw = null;
+        BufferedReader br = null
+        BufferedWriter bw = null
 
         // Write a new csv file with all the original data and the features determined through this script
         try {
@@ -220,11 +219,10 @@ class FeatureMap extends PotentialScript {
                 bw = new BufferedWriter(fw)
             }
 
-            String line = null
             int i = 0
             int npIndex
             int isoformIndex
-            for (line = br.readLine(); line != null; line = br.readLine(), i++) {
+            for (String line = br.readLine(); line != null; line = br.readLine(), i++) {
                 StringBuilder newCSVLine = new StringBuilder()
                 if (i == 0) {
                     if (!rerun) {
@@ -349,12 +347,12 @@ class FeatureMap extends PotentialScript {
 
             }
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println(e)
         } finally {
             if (br != null)
-                br.close();
+                br.close()
             if (bw != null)
-                bw.close();
+                bw.close()
         }
 
         logger.info(" Wrote variants with feature data to update_" + filenames[1])
