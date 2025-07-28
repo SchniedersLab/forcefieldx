@@ -739,9 +739,10 @@
       <version>${groovy-all.version}</version>
     </dependency>
     <dependency>
-      <artifactId>jsr305</artifactId>
-      <groupId>com.google.code.findbugs</groupId>
-      <version>${findbugs.version}</version>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.graalvm.polyglot</groupId>
@@ -1070,7 +1071,6 @@
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
-    <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
     <graal.version>24.2.2</graal.version>
@@ -1118,6 +1118,7 @@
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
+    <spotbugs.version>4.9.3</spotbugs.version>
     <surefire.version>3.5.3</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>

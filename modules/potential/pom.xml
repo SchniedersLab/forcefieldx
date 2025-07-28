@@ -48,19 +48,22 @@
         <configuration>
           <includeProjectDependencies>true</includeProjectDependencies>
           <includePluginDependencies>true</includePluginDependencies>
+          <daemonThreadJoinTimeout>100</daemonThreadJoinTimeout>
           <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
           <arguments>
+            <argument>-f</argument>
             <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
             <argument>ffx.potential.groovy.Biotype</argument>
             <argument>ffx.potential.groovy.Cart2Frac</argument>
             <argument>ffx.potential.groovy.ChainBreaks</argument>
-            <argument>ffx.potential.groovy.ImportCIF</argument>
             <argument>ffx.potential.groovy.Density</argument>
             <argument>ffx.potential.groovy.Energy</argument>
             <argument>ffx.potential.groovy.ExportQE</argument>
             <argument>ffx.potential.groovy.Fasta</argument>
             <argument>ffx.potential.groovy.FeatureMap</argument>
+            <argument>ffx.potential.groovy.FFtoXML</argument>
             <argument>ffx.potential.groovy.Frac2Cart</argument>
+            <argument>ffx.potential.groovy.ImportCIF</argument>
             <argument>ffx.potential.groovy.MoveIntoUnitCell</argument>
             <argument>ffx.potential.groovy.PrepareSpaceGroups</argument>
             <argument>ffx.potential.groovy.SaveAsP1</argument>

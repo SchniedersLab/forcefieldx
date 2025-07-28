@@ -261,9 +261,6 @@ public class RotamerOptimization implements Terminatable {
      */
     private int evaluatedPermutationsPrint = 0;
     /**
-     * List of residues to optimize; they may not be contiguous or all members of the same chain.
-     */
-    /**
      * Total boltzmann calculated during the partition function
      */
     private double totalBoltzmann = 0;
