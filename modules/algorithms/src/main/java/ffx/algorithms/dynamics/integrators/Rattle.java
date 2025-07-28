@@ -75,7 +75,7 @@ public class Rattle {
    *
    * @param nVariables a int.
    * @param molAss a {@link ffx.potential.MolecularAssembly} object.
-   * @param v an array of {@link double} objects.
+   * @param v the initial velocities of the atoms.
    */
   public Rattle(int nVariables, MolecularAssembly molAss, double[] v) {
 

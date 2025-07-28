@@ -127,7 +127,7 @@ public class AndersenThermostat extends Force {
   /**
    * Returns whether this force makes use of periodic boundary conditions.
    *
-   * @returns the Andersen Thermostat always returns false.
+   * @return the Andersen Thermostat always returns false.
    */
   public boolean usesPeriodicBoundaryConditions() {
     return false;

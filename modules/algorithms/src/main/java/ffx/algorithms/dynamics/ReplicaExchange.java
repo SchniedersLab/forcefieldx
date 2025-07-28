@@ -181,7 +181,7 @@ public class ReplicaExchange implements Terminatable {
   /**
    * Setter for the field <code>temperatures</code>.
    *
-   * @param temperatures an array of {@link double} objects.
+   * @param temperatures The temperatures for each replica.
    */
   public void setTemperatures(double[] temperatures) {
     assert (temperatures.length == nReplicas);

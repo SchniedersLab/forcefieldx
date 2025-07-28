@@ -904,9 +904,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * getOptimumCoordinates.
+     * The coordinates of the lowest energy structure found during optimization.
      *
-     * @return an array of {@link double} objects.
+     * @return the coordinates of the lowest energy structure found during optimization.
      */
     public double[] getOptimumCoordinates() {
       if (optimumEnergy < Double.MAX_VALUE) {

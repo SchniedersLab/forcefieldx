@@ -243,7 +243,7 @@ public class MonteCarloOST extends BoltzmannMC {
 
   /**
    * The goal is to sample lambda and coordinates (X) simultaneously to converge the ensemble average
-   * dU/dL for every state (lambda) along the thermodynamic path. Note that the order of 1 & 2 below
+   * dU/dL for every state (lambda) along the thermodynamic path. Note that the order of 1 and 2 below
    * can be swapped (i.e. run MD and then change lambda). Here the order is random for each trial.
    * <p>
    * 1.) Randomly change the value of Lambda.
