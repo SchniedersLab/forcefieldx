@@ -247,7 +247,6 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   @Override
   public void updateParameters(@Nullable Atom[] atoms) {
-    logger.info("IN UPDATEPARAMS");
     VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
     if (vanDerWaals != null && vanDerWaals.getLambdaTerm()) {
       double lambdaVDW = vanDerWaals.getLambda();
@@ -256,7 +255,6 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     }
 
 //    if (updateBondedTerms) {
-    logger.info("IN UPDATEPARAMS AFTER LAMBDA");
     if (bondForce != null) {
       bondForce.updateForce(0, openMMDualTopologyEnergy);
     }
@@ -281,7 +279,6 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
       ureyBradleyForce2.updateForce(1, openMMDualTopologyEnergy);
     }
 
-    logger.info("IN UPDATEPARAMS AFTER BONDED");
     if (amoebaVDWForce != null) {
       atoms = openMMEnergy.getAtomArray();
       amoebaVDWForce.updateForce(atoms, 0, openMMDualTopologyEnergy);

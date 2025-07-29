@@ -37,9 +37,7 @@
 // ******************************************************************************
 package ffx.openmm;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_updateParametersInContext;
+import static edu.uiowa.jopenmm.OpenMMLibrary.*;
 
 /**
  * Harmonic Bond Force.
@@ -72,7 +70,7 @@ public class HarmonicBondForce extends Force {
    * @param k      The force constant.
    */
   public void setBondParameters(int i, int i1, int i2, double length, double k) {
-    OpenMM_HarmonicBondForce_addBond(pointer, i1, i2, length, k);
+    OpenMM_HarmonicBondForce_setBondParameters(pointer, i, i1, i2, length, k);
   }
 
   /**

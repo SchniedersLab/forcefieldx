@@ -108,7 +108,6 @@ public class BondForce extends CustomBondForce {
     setName("AmoebaBond");
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("CONSTRUCTOR BOND SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
     DoubleArray parameters = new DoubleArray(0);
@@ -117,7 +116,12 @@ public class BondForce extends CustomBondForce {
       int i2 = bond.getAtom(1).getArrayIndex();
       BondType bondType = bond.bondType;
       double r0 = bondType.distance * OpenMM_NmPerAngstrom;
-      double k = scale * kParameterConversion * bondType.forceConstant * bond.bondType.bondUnit;
+      double k = kParameterConversion * bondType.forceConstant * bond.bondType.bondUnit;
+      // Don't apply lambda scale to alchemical bond
+      if (!bond.applyLambda()) {
+        k = k * scale;
+      }
+//      k = k * scale;
       parameters.append(r0);
       parameters.append(k);
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
@@ -203,7 +207,6 @@ public class BondForce extends CustomBondForce {
     }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("UPDATE BOND SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
     DoubleArray parameters = new DoubleArray(0);
@@ -213,7 +216,15 @@ public class BondForce extends CustomBondForce {
       int i2 = bond.getAtom(1).getArrayIndex();
       BondType bondType = bond.bondType;
       double r0 = bondType.distance * OpenMM_NmPerAngstrom;
-      double k = scale * kParameterConversion * bondType.forceConstant * bondType.bondUnit;
+      double k = kParameterConversion * bondType.forceConstant * bondType.bondUnit;
+      // Don't apply lambda scale to alchemical bond
+      if (!bond.applyLambda()) {
+        k = k * scale;
+      }
+//      else {
+//        logger.info("NO LAMBDA: " + topology + " - " + i1 + " " + i2 + " = " + k);
+//      }
+//      k = k * scale;
       parameters.append(r0);
       parameters.append(k);
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);

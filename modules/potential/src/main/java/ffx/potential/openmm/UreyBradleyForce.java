@@ -100,11 +100,9 @@ public class UreyBradleyForce extends HarmonicBondForce {
     }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("CONSTRUCTOR U-B SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
-    int index = 0; // todo delete
     for (UreyBradley ureyBradley : ureyBradleys) {
       int i1 = ureyBradley.getAtom(0).getArrayIndex();
       int i2 = ureyBradley.getAtom(2).getArrayIndex();
@@ -112,12 +110,15 @@ public class UreyBradleyForce extends HarmonicBondForce {
       double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
       // The implementation of UreyBradley in FFX & Tinker: k x^2
       // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
-      double k = scale * 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
-      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1); // todo - tried this, not in angle/bond - still does not fixed omm issue
+      double k = 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
+      // Don't apply lambda scale to alchemical Urey-Bradley
+      if (!ureyBradley.applyLambda()) {
+        k = k * scale;
+      }
+//      k = k * scale;
+      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
-      logger.info("CONTRUCTOR U-B: " + index + " " + i1 + " " + i2);
       addBond(i1, i2, length, k);
-      index++; // todo delete
     }
 
     int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
@@ -198,7 +199,6 @@ public class UreyBradleyForce extends HarmonicBondForce {
     }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("UPDATE U-B SCALE: " + scale);
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
@@ -206,15 +206,18 @@ public class UreyBradleyForce extends HarmonicBondForce {
     for (UreyBradley ureyBradley : ureyBradleys) {
       int i1 = ureyBradley.getAtom(0).getArrayIndex();
       int i2 = ureyBradley.getAtom(2).getArrayIndex();
-      logger.info("UPDATE ORIG U-B: " + index + " " + i1 + " " + i2);
       UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
       double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
       // The implementation of UreyBradley in FFX & Tinker: k x^2
       // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
-      double k = scale * 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
+      double k = 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
+      // Don't apply lambda scale to alchemical Urey-Bradley
+      if (!ureyBradley.applyLambda()) {
+        k = k * scale;
+      }
+//      k = k * scale;
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
-      logger.info("UPDATE U-B: " + index + " " + i1 + " " + i2);
       setBondParameters(index++, i1, i2, length, k);
     }
 

@@ -135,9 +135,7 @@ public class AngleForce extends CustomAngleForce {
     rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("CONSTRUCTOR ANGLE SCALE: " + scale);
 
-    int index = 0; // todo delete
     DoubleArray parameters = new DoubleArray(0);
     for (Angle angle : angles) {
       AngleType angleType = angle.angleType;
@@ -150,7 +148,12 @@ public class AngleForce extends CustomAngleForce {
         int i3 = angle.getAtom(2).getArrayIndex();
 
         double theta0 = angleType.angle[angle.nh];
-        double k = scale * OpenMM_KJPerKcal * angleType.angleUnit * angleType.forceConstant;
+        double k = OpenMM_KJPerKcal * angleType.angleUnit * angleType.forceConstant;
+        // Don't apply lambda scale to alchemical angle
+        if (!angle.applyLambda()) {
+          k = k * scale;
+        }
+//        k = k * scale;
         if (angleMode == AngleType.AngleMode.IN_PLANE) {
           // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
           // Normal Angle during in the udpateAngleForce.
@@ -158,11 +161,12 @@ public class AngleForce extends CustomAngleForce {
         }
         parameters.append(theta0);
         parameters.append(k);
-        logger.info("CONSTRUCTOR ANGLES: " + index + " " + i1 + " " + i2 + " " + i3);
+        i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+        i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+        i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
         addAngle(i1, i2, i3, parameters);
         nAngles++;
         parameters.resize(0);
-        index++; // todo delete
       }
     }
     parameters.destroy();
@@ -266,7 +270,6 @@ public class AngleForce extends CustomAngleForce {
     }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-    logger.info("UPDATE ANGLE SCALE: " + scale);
 
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
@@ -276,9 +279,13 @@ public class AngleForce extends CustomAngleForce {
         int i1 = angle.getAtom(0).getArrayIndex();
         int i2 = angle.getAtom(1).getArrayIndex();
         int i3 = angle.getAtom(2).getArrayIndex();
-        logger.info("UPDATE ORIG ANGLES: " + index + " " + i1 + " " + i2 + " " + i3);
         double theta0 = angle.angleType.angle[angle.nh];
-        double k = scale * OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
+        double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
+        // Don't apply lambda scale to alchemical angle
+        if (!angle.applyLambda()) {
+          k = k * scale;
+        }
+//        k = k * scale;
         if (angleMode == AngleType.AngleMode.IN_PLANE) {
           // Zero the force constant for In-Plane Angles.
           k = 0.0;
@@ -288,7 +295,6 @@ public class AngleForce extends CustomAngleForce {
         i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
         i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
         i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
-        logger.info("UPDATE INDEX ANGLES: " + index + " " + i1 + " " + i2 + " " + i3);
         setAngleParameters(index++, i1, i2, i3, parameters);
         parameters.resize(0);
       }
