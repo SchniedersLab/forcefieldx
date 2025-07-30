@@ -1236,7 +1236,6 @@
           <minimumTokens>500</minimumTokens>
           <targetJdk>${targetVersion}</targetJdk>
           <typeResolution>true</typeResolution>
-          <aggregate>true</aggregate>
         </configuration>
         <reportSets>
           <reportSet>

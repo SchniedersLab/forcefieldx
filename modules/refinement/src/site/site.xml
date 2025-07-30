@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        name="Xray" xmlns="http://maven.apache.org/DECORATION/1.7.0"
-        xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
+<site xmlns="http://maven.apache.org/SITE/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
+      name="Experimental Refinement">
     <body>
         <menu name="X-Ray Refinement">
             <item name="Introduction" href="/index.html"/>
@@ -10,4 +9,4 @@
             <item name="Publications" href="/publications.html"/>
         </menu>
     </body>
-</project>
+</site>
