@@ -76,11 +76,66 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     DoubleArray parameters = new DoubleArray(0);
     for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
       OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
-      int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
-      int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
-      int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
-      int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
+      int i1 = outOfPlaneBend.getAtom(0).getArrayIndex();
+      int i2 = outOfPlaneBend.getAtom(1).getArrayIndex();
+      int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
+      int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
+      particles.append(i1);
+      particles.append(i2);
+      particles.append(i3);
+      particles.append(i4);
+      parameters.append(k);
+      addBond(particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+    setForceGroup(forceGroup);
+    logger.info(format("  Out-of-Plane Bends:                %10d", outOfPlaneBends.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
+   * Create an Out-of-Plane Bend Force for Dual Topology.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public OutOfPlaneBendForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getOutOfPlaneEnergyString());
+
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+      return;
+    }
+
+    addPerBondParameter("k");
+    setName("OutOfPlaneBend");
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+      OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
+      int i1 = outOfPlaneBend.getAtom(0).getArrayIndex();
+      int i2 = outOfPlaneBend.getAtom(1).getArrayIndex();
+      int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
+      int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
+      double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
+      // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
+//      if (!outOfPlaneBend.applyLambda()) {
+//        k = k * scale;
+//      }
+      k = k * scale;
+      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+      i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+      i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
+      i4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i4);
       particles.append(i1);
       particles.append(i2);
       particles.append(i3);
@@ -113,6 +168,22 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
   }
 
   /**
+   * Convenience method to construct a Dual-Topology OpenMM Out-of-Plane Bend Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return An OpenMM Out-of-Plane Bend Force, or null if there are no out-of-plane bends.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+      return null;
+    }
+    return new OutOfPlaneBendForce(topology, openMMDualTopologyEnergy);
+  }
+
+  /**
    * Update an existing angle force for the OpenMM System.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
@@ -128,10 +199,10 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     int index = 0;
     for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
       OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
-      int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
-      int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
-      int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
-      int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
+      int i1 = outOfPlaneBend.getAtom(0).getArrayIndex();
+      int i2 = outOfPlaneBend.getAtom(1).getArrayIndex();
+      int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
+      int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
       particles.append(i1);
       particles.append(i2);
@@ -146,5 +217,54 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     parameters.destroy();
 
     updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update an existing angle force for the Dual-Topology OpenMM System.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+      return;
+    }
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    int index = 0;
+    for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+      OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
+      int i1 = outOfPlaneBend.getAtom(0).getArrayIndex();
+      int i2 = outOfPlaneBend.getAtom(1).getArrayIndex();
+      int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
+      int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
+      double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
+      // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
+//      if (!outOfPlaneBend.applyLambda()) {
+//        k = k * scale;
+//      }
+      k = k * scale;
+      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+      i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+      i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
+      i4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i4);
+      particles.append(i1);
+      particles.append(i2);
+      particles.append(i3);
+      particles.append(i4);
+      parameters.append(k);
+      setBondParameters(index++, particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 }

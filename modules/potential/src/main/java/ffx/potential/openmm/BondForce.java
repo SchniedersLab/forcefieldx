@@ -121,7 +121,6 @@ public class BondForce extends CustomBondForce {
       if (!bond.applyLambda()) {
         k = k * scale;
       }
-//      k = k * scale;
       parameters.append(r0);
       parameters.append(k);
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
@@ -221,10 +220,6 @@ public class BondForce extends CustomBondForce {
       if (!bond.applyLambda()) {
         k = k * scale;
       }
-//      else {
-//        logger.info("NO LAMBDA: " + topology + " - " + i1 + " " + i2 + " = " + k);
-//      }
-//      k = k * scale;
       parameters.append(r0);
       parameters.append(k);
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);

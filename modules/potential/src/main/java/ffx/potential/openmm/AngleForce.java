@@ -153,7 +153,6 @@ public class AngleForce extends CustomAngleForce {
         if (!angle.applyLambda()) {
           k = k * scale;
         }
-//        k = k * scale;
         if (angleMode == AngleType.AngleMode.IN_PLANE) {
           // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
           // Normal Angle during in the udpateAngleForce.
@@ -285,7 +284,6 @@ public class AngleForce extends CustomAngleForce {
         if (!angle.applyLambda()) {
           k = k * scale;
         }
-//        k = k * scale;
         if (angleMode == AngleType.AngleMode.IN_PLANE) {
           // Zero the force constant for In-Plane Angles.
           k = 0.0;

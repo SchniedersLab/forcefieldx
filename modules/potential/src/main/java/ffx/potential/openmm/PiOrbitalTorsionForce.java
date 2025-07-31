@@ -75,14 +75,77 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
     for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
-      int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
-      int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
-      int a3 = piOrbitalTorsion.getAtom(2).getXyzIndex() - 1;
-      int a4 = piOrbitalTorsion.getAtom(3).getXyzIndex() - 1;
-      int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
-      int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
+      int a1 = piOrbitalTorsion.getAtom(0).getArrayIndex();
+      int a2 = piOrbitalTorsion.getAtom(1).getArrayIndex();
+      int a3 = piOrbitalTorsion.getAtom(2).getArrayIndex();
+      int a4 = piOrbitalTorsion.getAtom(3).getArrayIndex();
+      int a5 = piOrbitalTorsion.getAtom(4).getArrayIndex();
+      int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
+      particles.append(a1);
+      particles.append(a2);
+      particles.append(a3);
+      particles.append(a4);
+      particles.append(a5);
+      particles.append(a6);
+      parameters.append(k);
+      addBond(particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
+    setForceGroup(forceGroup);
+    logger.info(format("  Pi-Orbital Torsions:               %10d", piOrbitalTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+
+  /**
+   * Create an Pi-Orbital Torsion Force for Dual Topology.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public PiOrbitalTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(6, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getPiOrbitalTorsionEnergyString());
+
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+      return;
+    }
+
+    addPerBondParameter("k");
+    setName("PiOrbitalTorsion");
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+      int a1 = piOrbitalTorsion.getAtom(0).getArrayIndex();
+      int a2 = piOrbitalTorsion.getAtom(1).getArrayIndex();
+      int a3 = piOrbitalTorsion.getAtom(2).getArrayIndex();
+      int a4 = piOrbitalTorsion.getAtom(3).getArrayIndex();
+      int a5 = piOrbitalTorsion.getAtom(4).getArrayIndex();
+      int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
+      PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
+      double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
+      // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
+//      if (!outOfPlaneBend.applyLambda()) {
+//        k = k * scale;
+//      }
+      k = k * scale;
+      a1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a1);
+      a2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a2);
+      a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
+      a4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a4);
+      a5 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a5);
+      a6 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a6);
       particles.append(a1);
       particles.append(a2);
       particles.append(a3);
@@ -118,6 +181,22 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
   }
 
   /**
+   * Convenience method to construct a Dual-Topology OpenMM Pi-Orbital Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return An OpenMM Pi-Orbital Torsion Force, or null if there are no pi-orbital torsions.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+      return null;
+    }
+    return new PiOrbitalTorsionForce(topology, openMMDualTopologyEnergy);
+  }
+
+  /**
    * Update the Pi-Orbital Torsion force.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the pi-orbital torsions.
@@ -132,12 +211,12 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
     for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
-      int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
-      int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
-      int a3 = piOrbitalTorsion.getAtom(2).getXyzIndex() - 1;
-      int a4 = piOrbitalTorsion.getAtom(3).getXyzIndex() - 1;
-      int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
-      int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
+      int a1 = piOrbitalTorsion.getAtom(0).getArrayIndex();
+      int a2 = piOrbitalTorsion.getAtom(1).getArrayIndex();
+      int a3 = piOrbitalTorsion.getAtom(2).getArrayIndex();
+      int a4 = piOrbitalTorsion.getAtom(3).getArrayIndex();
+      int a5 = piOrbitalTorsion.getAtom(4).getArrayIndex();
+      int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
       particles.append(a1);
@@ -154,5 +233,59 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
     updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update the Pi-Orbital Torsion force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+      return;
+    }
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    int index = 0;
+    for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+      int a1 = piOrbitalTorsion.getAtom(0).getArrayIndex();
+      int a2 = piOrbitalTorsion.getAtom(1).getArrayIndex();
+      int a3 = piOrbitalTorsion.getAtom(2).getArrayIndex();
+      int a4 = piOrbitalTorsion.getAtom(3).getArrayIndex();
+      int a5 = piOrbitalTorsion.getAtom(4).getArrayIndex();
+      int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
+      PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
+      double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
+      // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
+//      if (!outOfPlaneBend.applyLambda()) {
+//        k = k * scale;
+//      }
+      k = k * scale;
+      a1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a1);
+      a2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a2);
+      a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
+      a4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a4);
+      a5 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a5);
+      a6 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a6);
+      particles.append(a1);
+      particles.append(a2);
+      particles.append(a3);
+      particles.append(a4);
+      particles.append(a5);
+      particles.append(a6);
+      parameters.append(k);
+      setBondParameters(index++, particles, parameters);
+      particles.resize(0);
+      parameters.resize(0);
+    }
+    particles.destroy();
+    parameters.destroy();
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 }

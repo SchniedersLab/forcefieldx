@@ -115,7 +115,6 @@ public class UreyBradleyForce extends HarmonicBondForce {
       if (!ureyBradley.applyLambda()) {
         k = k * scale;
       }
-//      k = k * scale;
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
       addBond(i1, i2, length, k);
@@ -215,7 +214,6 @@ public class UreyBradleyForce extends HarmonicBondForce {
       if (!ureyBradley.applyLambda()) {
         k = k * scale;
       }
-//      k = k * scale;
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
       setBondParameters(index++, i1, i2, length, k);
