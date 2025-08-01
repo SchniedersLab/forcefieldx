@@ -408,6 +408,15 @@ public class AmoebaVdwForce extends VdwForce {
       radScale = 0.5;
     }
 
+    double vdwLambda = vdW.getLambda();
+//    double scale;
+//    scale = sqrt(vdW.getLambda()); // todo - matches ends - both on at l = .5
+//    if (topology == 0) {
+//      scale = sqrt(vdW.getLambda());
+//    } else {
+//      scale = sqrt(1.0 - vdW.getLambda()); // todo matches l = 0.5
+//    }
+
     // Remap the reduction index to the dual topology index.
     int[] ired = vdW.getReductionIndex();
 
@@ -430,10 +439,19 @@ public class AmoebaVdwForce extends VdwForce {
         // Get the OpenMM index for a special vdW type that has no interactions.
         type = vdwClassToOpenMMType.get(vdWClassForNoInteraction);
       }
-      int isAlchemical = atom.applyLambda() ? 1 : 0;
+//      int isAlchemical = atom.applyLambda() ? 1 : 0;
+      double vdwScale = scale;
+      int isAlchemical = 0; // todo - this (and below) gives correct l = 0, 0.5, 1 , but not intermediate states
+      if (atom.applyLambda()) { // todo - can combine above statement -- TRY removing above statement (always false) to see what it does - don't expect this to do anything
+        vdwScale *= vdwLambda;
+//        scale *= vdwLambda;
+      }
+      if (isAlchemical == 1) {
+        logger.info("VDW SCALE and LAMBDA: " + vdwScale + " " + vdwLambda); // todo - is start/stop lambda being used?
+      }
       double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
       double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-      setParticleParameters(indexDT, ir, rad, eps, vdwType.reductionFactor, isAlchemical, type, scale);
+      setParticleParameters(indexDT, ir, rad, eps, vdwType.reductionFactor, isAlchemical, type, vdwScale);
     }
     updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }

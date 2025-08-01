@@ -97,7 +97,74 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
 
       IntArray particles = new IntArray(0);
       for (int i = 0; i < 4; i++) {
-        particles.append(atoms[i].getXyzIndex() - 1);
+        particles.append(atoms[i].getArrayIndex());
+      }
+
+      addBond(particles, parameters);
+      parameters.destroy();
+      particles.destroy();
+    }
+
+    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
+
+    setForceGroup(forceGroup);
+    logger.info(format("  Angle-Torsions:                    %10d", angleTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
+   * Create a Dual Topology OpenMM Angle-Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public AngleTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, AngleTorsion.angleTorsionForm());
+
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    AngleTorsion[] angleTorsions = openMMEnergy.getAngleTorsions();
+    if (angleTorsions == null || angleTorsions.length < 1) {
+      // Free the memory created by the call to super.
+      destroy();
+      return;
+    }
+    addGlobalParameter("phi1", 0);
+    addGlobalParameter("phi2", Math.PI);
+    addGlobalParameter("phi3", 0);
+    for (int m = 1; m < 3; m++) {
+      for (int n = 1; n < 4; n++) {
+        addPerBondParameter(format("k%d%d", m, n));
+      }
+    }
+    for (int m = 1; m < 3; m++) {
+      addPerBondParameter(format("a%d", m));
+    }
+
+    double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    for (AngleTorsion angleTorsion : angleTorsions) {
+      double scale = 1.0;
+      // Don't apply lambda scale to alchemical stretch-torsion
+      if (!angleTorsion.applyLambda()) { // todo - not sure if needed
+        scale = scaleDT;
+      }
+      double[] constants = angleTorsion.getConstants();
+      DoubleArray parameters = new DoubleArray(0);
+      for (int m = 0; m < 2; m++) {
+        for (int n = 0; n < 3; n++) {
+          int index = (3 * m) + n;
+          parameters.append(constants[index] * OpenMM_KJPerKcal * scale);
+        }
+      }
+      Atom[] atoms = angleTorsion.getAtomArray(true);
+      parameters.append(angleTorsion.angleType1.angle[0] * OpenMM_RadiansPerDegree);
+      parameters.append(angleTorsion.angleType2.angle[0] * OpenMM_RadiansPerDegree);
+
+      IntArray particles = new IntArray(0);
+      for (int i = 0; i < 4; i++) {
+        int atomIndex = atoms[i].getArrayIndex();
+        atomIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, atomIndex);
+        particles.append(atomIndex);
       }
 
       addBond(particles, parameters);
@@ -124,5 +191,21 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
       return null;
     }
     return new AngleTorsionForce(openMMEnergy);
+  }
+
+  /**
+   * Convenience method to construct a Dual Topology OpenMM Angle-Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return An OpenMM Stretch-Bend Force, or null if there are no angle-torsion.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    AngleTorsion[] angleTorsions = openMMEnergy.getAngleTorsions();
+    if (angleTorsions == null || angleTorsions.length < 1) {
+      return null;
+    }
+    return new AngleTorsionForce(topology, openMMDualTopologyEnergy);
   }
 }

@@ -133,6 +133,9 @@ public class AngleForce extends CustomAngleForce {
 
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
     rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
+    if (manyBodyTitration || rigidHydrogenAngles) {
+      logger.severe("Dual Topology does not support rigid hydrogen angles or many body titration.");
+    }
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 
@@ -140,8 +143,8 @@ public class AngleForce extends CustomAngleForce {
     for (Angle angle : angles) {
       AngleType angleType = angle.angleType;
       AngleType.AngleMode angleMode = angleType.angleMode;
-      if (manyBodyTitration || rigidHydrogenAngles) {
-        logger.severe("Dual Topology does not support rigid hydrogen angles or many body titration.");
+      if (angleMode == AngleType.AngleMode.IN_PLANE) {
+        // Skip In-Plane angles.
       } else {
         int i1 = angle.getAtom(0).getArrayIndex();
         int i2 = angle.getAtom(1).getArrayIndex();
@@ -152,11 +155,6 @@ public class AngleForce extends CustomAngleForce {
         // Don't apply lambda scale to alchemical angle
         if (!angle.applyLambda()) {
           k = k * scale;
-        }
-        if (angleMode == AngleType.AngleMode.IN_PLANE) {
-          // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
-          // Normal Angle during in the udpateAngleForce.
-          k = 0.0;
         }
         parameters.append(theta0);
         parameters.append(k);
@@ -274,7 +272,11 @@ public class AngleForce extends CustomAngleForce {
     int index = 0;
     for (Angle angle : angles) {
       AngleType.AngleMode angleMode = angle.angleType.angleMode;
-      if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
+      if (angleMode == AngleType.AngleMode.IN_PLANE) {
+        // Skip In-Plane angles.
+      }
+      // Update angles.
+      else {
         int i1 = angle.getAtom(0).getArrayIndex();
         int i2 = angle.getAtom(1).getArrayIndex();
         int i3 = angle.getAtom(2).getArrayIndex();

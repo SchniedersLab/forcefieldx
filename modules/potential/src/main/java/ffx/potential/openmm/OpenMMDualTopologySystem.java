@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
@@ -84,6 +85,10 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   protected AngleForce angleForce2 = null;
   /**
+   * OpenMM Custom In-Plane Angle Force for topology 2.
+   */
+  protected InPlaneAngleForce inPlaneAngleForce2 = null;
+  /**
    * OpenMM Custom Stetch-Bend Force for topology 2.
    */
   protected StretchBendForce stretchBendForce2 = null;
@@ -103,6 +108,22 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    * OpenMM Custom Torsion Force for topology 2.
    */
   protected TorsionForce torsionForce2 = null;
+  /**
+   * OpenMM Custom Improper Torsion Force for topology 2.
+   */
+  protected ImproperTorsionForce improperTorsionForce2 = null;
+  /**
+   * OpenMM Custom Stretch-Torsion Force for topology 2.
+   */
+  protected StretchTorsionForce stretchTorsionForce2 = null;
+  /**
+   * OpenMM Custom Angle-Torsion Force for topology 2.
+   */
+  protected AngleTorsionForce angleTorsionForce2 = null;
+  /**
+   * OpenMM Custom Torsion-Torsion Force for topology 2.
+   */
+  protected AmoebaTorsionTorsionForce amoebaTorsionTorsionForce2 = null;
   /**
    * OpenMM AMOEBA van der Waals Force for topology 2.
    */
@@ -169,6 +190,12 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     addForce(angleForce);
     addForce(angleForce2);
 
+    // Add In-Plane Angle Force.
+    inPlaneAngleForce = (InPlaneAngleForce) InPlaneAngleForce.constructForce(0, openMMDualTopologyEnergy);
+    inPlaneAngleForce2 = (InPlaneAngleForce) InPlaneAngleForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(inPlaneAngleForce);
+    addForce(inPlaneAngleForce2);
+
     // Add Stretch-Bend Force.
     stretchBendForce = (StretchBendForce) StretchBendForce.constructForce(0, openMMDualTopologyEnergy);
     stretchBendForce2 = (StretchBendForce) StretchBendForce.constructForce(1, openMMDualTopologyEnergy);
@@ -198,6 +225,30 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     torsionForce2 = (TorsionForce) TorsionForce.constructForce(1, openMMDualTopologyEnergy);
     addForce(torsionForce);
     addForce(torsionForce2);
+
+    // Add Improper Torsion Force.
+    improperTorsionForce = (ImproperTorsionForce) ImproperTorsionForce.constructForce(0, openMMDualTopologyEnergy);
+    improperTorsionForce2 = (ImproperTorsionForce) ImproperTorsionForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(improperTorsionForce);
+    addForce(improperTorsionForce2);
+
+    // Add Stretch-Torsion coupling terms.
+    stretchTorsionForce = (StretchTorsionForce) StretchTorsionForce.constructForce(0, openMMDualTopologyEnergy);
+    stretchTorsionForce2 = (StretchTorsionForce) StretchTorsionForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(stretchTorsionForce);
+    addForce(stretchTorsionForce2);
+
+    // Add Angle-Torsion coupling terms.
+    angleTorsionForce = (AngleTorsionForce) AngleTorsionForce.constructForce(0, openMMDualTopologyEnergy);
+    angleTorsionForce2 = (AngleTorsionForce) AngleTorsionForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(angleTorsionForce);
+    addForce(angleTorsionForce2);
+
+    // Add Torsion-Torsion Force.
+    amoebaTorsionTorsionForce = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(0, openMMDualTopologyEnergy);
+    amoebaTorsionTorsionForce2 = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(1, openMMDualTopologyEnergy);
+    addForce(amoebaTorsionTorsionForce);
+    addForce(amoebaTorsionTorsionForce2);
 
     VanDerWaals vdW1 = openMMEnergy.getVdwNode();
     VanDerWaals vdW2 = openMMEnergy2.getVdwNode();
@@ -293,91 +344,78 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
       // Update the lambda value.
       openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
     }
-    logger.info("IN UPDATE");
 
 //    if (updateBondedTerms) {
     if (bondForce != null) {
       bondForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (bondForce2 != null) {
       bondForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST BOND");
-
     if (angleForce != null) {
       angleForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (angleForce2 != null) {
       angleForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST ANGLE");
-
+    if (inPlaneAngleForce != null) {
+      inPlaneAngleForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (inPlaneAngleForce2 != null) {
+      inPlaneAngleForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
     if (stretchBendForce != null) {
       stretchBendForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (stretchBendForce2 != null) {
       stretchBendForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST STRETCH");
-
     if (ureyBradleyForce != null) {
       ureyBradleyForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (ureyBradleyForce2 != null) {
       ureyBradleyForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST UB");
-
     if (outOfPlaneBendForce != null) {
       outOfPlaneBendForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (outOfPlaneBendForce2 != null) {
       outOfPlaneBendForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST OOP");
-
     if (piOrbitalTorsionForce != null) {
       piOrbitalTorsionForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (piOrbitalTorsionForce2 != null) {
       piOrbitalTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST PIORBITAL");
-
     if (torsionForce != null) {
       torsionForce.updateForce(0, openMMDualTopologyEnergy);
     }
-
     if (torsionForce2 != null) {
       torsionForce2.updateForce(1, openMMDualTopologyEnergy);
     }
-    logger.info("PAST TORSION");
+    if (improperTorsionForce != null) {
+      improperTorsionForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (improperTorsionForce2 != null) {
+      improperTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
 
     if (amoebaVDWForce != null) {
       atoms = openMMEnergy.getAtomArray();
       amoebaVDWForce.updateForce(atoms, 0, openMMDualTopologyEnergy);
     }
-
     if (amoebaVDWForce2 != null) {
       atoms = openMMEnergy2.getAtomArray();
       amoebaVDWForce2.updateForce(atoms, 1, openMMDualTopologyEnergy);
     }
-
     if (amoebaMultipoleForce != null) {
       atoms = openMMEnergy.getAtomArray();
       amoebaMultipoleForce.updateForce(atoms, 0, openMMDualTopologyEnergy);
     }
-
     if (amoebaMultipoleForce2 != null) {
       atoms = openMMEnergy2.getAtomArray();
       amoebaMultipoleForce2.updateForce(atoms, 1, openMMDualTopologyEnergy);
     }
-    logger.info("DONE UPDATING");
   }
 }

@@ -91,9 +91,9 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
       } else {
         double theta0 = angle.angleType.angle[angle.nh];
         double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
+        int i1 = angle.getAtom(0).getArrayIndex();
+        int i2 = angle.getAtom(1).getArrayIndex();
+        int i3 = angle.getAtom(2).getArrayIndex();
         int i4 = 0;
         if (angleMode == AngleType.AngleMode.NORMAL) {
           // This is a place-holder Angle, in case the Normal Angle is switched to an
@@ -101,15 +101,87 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
           k = 0.0;
           Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
           if (fourthAtom != null) {
-            i4 = fourthAtom.getXyzIndex() - 1;
+            i4 = fourthAtom.getArrayIndex();
           } else {
             while (i1 == i4 || i2 == i4 || i3 == i4) {
               i4++;
             }
           }
         } else {
-          i4 = angle.getAtom4().getXyzIndex() - 1;
+          i4 = angle.getAtom4().getArrayIndex();
         }
+        particles.append(i1);
+        particles.append(i2);
+        particles.append(i3);
+        particles.append(i4);
+        parameters.append(theta0);
+        parameters.append(k);
+        addBond(particles, parameters);
+        nAngles++;
+        particles.resize(0);
+        parameters.resize(0);
+      }
+    }
+    particles.destroy();
+    parameters.destroy();
+
+    if (nAngles > 0) {
+      int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
+      setForceGroup(forceGroup);
+      logger.info(format("  In-Plane Angles:                   %10d", nAngles));
+      logger.fine(format("   Force Group:                      %10d", forceGroup));
+    }
+  }
+
+  /**
+   * Create a Dual Topology OpenMM Angle Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public InPlaneAngleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getInPlaneAngleEnergyString());
+
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+    manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
+    Angle[] angles = openMMEnergy.getAngles();
+    if (angles == null || angles.length < 1) {
+      // Clean up the Memory allocated by the OpenMMCustomCompoundBondForce constructor.
+      destroy();
+      return;
+    }
+    if (manyBodyTitration) {
+      logger.severe("Dual Topology does not support many body titration.");
+    }
+    addPerBondParameter("theta0");
+    addPerBondParameter("k");
+    setName("InPlaneAngle");
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    for (Angle angle : angles) {
+      AngleType.AngleMode angleMode = angle.angleType.angleMode;
+
+      if (angleMode == AngleType.AngleMode.NORMAL) {
+        // Skip Normal angles.
+      } else {
+        double theta0 = angle.angleType.angle[angle.nh];
+        double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
+        // Don't apply lambda scale to alchemical in-plane angle
+        if (!angle.applyLambda()) { // todo - not sure if needed
+          k *= scale;
+        }
+        int i1 = angle.getAtom(0).getArrayIndex();
+        int i2 = angle.getAtom(1).getArrayIndex();
+        int i3 = angle.getAtom(2).getArrayIndex();
+        int i4 = angle.getAtom4().getArrayIndex();
+        i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+        i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+        i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
+        i4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i4);
         particles.append(i1);
         particles.append(i2);
         particles.append(i3);
@@ -152,6 +224,26 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
   }
 
   /**
+   * Convenience method to construct a Dual Topology OpenMM In-Plane Angle Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return An OpenMM Angle Force, or null if there are no angles.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    Angle[] angles = openMMEnergy.getAngles();
+    if (angles == null || angles.length < 1) {
+      return null;
+    }
+    InPlaneAngleForce angleForce = new InPlaneAngleForce(topology, openMMDualTopologyEnergy);
+    if (angleForce.nAngles > 0) {
+      return angleForce;
+    }
+    return null;
+  }
+
+  /**
    * Update an existing angle force for the OpenMM System.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
@@ -171,9 +263,9 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
       } else {
         double theta0 = angle.angleType.angle[angle.nh];
         double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
+        int i1 = angle.getAtom(0).getArrayIndex();
+        int i2 = angle.getAtom(1).getArrayIndex();
+        int i3 = angle.getAtom(2).getArrayIndex();
         // There is no 4th atom for normal angles, so set the index to first atom.
         int i4 = 0;
         if (angleMode == AngleType.AngleMode.NORMAL) {
@@ -181,14 +273,14 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
           k = 0.0;
           Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
           if (fourthAtom != null) {
-            i4 = fourthAtom.getXyzIndex() - 1;
+            i4 = fourthAtom.getArrayIndex();
           } else {
             while (i1 == i4 || i2 == i4 || i3 == i4) {
               i4++;
             }
           }
         } else {
-          i4 = angle.getAtom4().getXyzIndex() - 1;
+          i4 = angle.getAtom4().getArrayIndex();
         }
         particles.append(i1);
         particles.append(i2);
@@ -204,5 +296,58 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
     updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update an existing angle force for the Dual Topology OpenMM System.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    Angle[] angles = openMMEnergy.getAngles();
+    if (angles == null || angles.length < 1) {
+      return;
+    }
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    IntArray particles = new IntArray(0);
+    DoubleArray parameters = new DoubleArray(0);
+    int index = 0;
+    for (Angle angle : angles) {
+      AngleType.AngleMode angleMode = angle.angleType.angleMode;
+      if (angleMode == AngleType.AngleMode.NORMAL) {
+        // Skip Normal angles.
+      } else {
+        double theta0 = angle.angleType.angle[angle.nh];
+        double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
+        // Don't apply lambda scale to alchemical in-plane angle
+        if (!angle.applyLambda()) { // todo - not sure if needed
+          k *= scale;
+        }
+        int i1 = angle.getAtom(0).getArrayIndex();
+        int i2 = angle.getAtom(1).getArrayIndex();
+        int i3 = angle.getAtom(2).getArrayIndex();
+        int i4 = angle.getAtom4().getArrayIndex();
+        i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+        i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+        i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
+        i4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i4);
+        particles.append(i1);
+        particles.append(i2);
+        particles.append(i3);
+        particles.append(i4);
+        parameters.append(theta0);
+        parameters.append(k);
+        setBondParameters(index++, particles, parameters);
+        particles.resize(0);
+        parameters.resize(0);
+      }
+    }
+    particles.destroy();
+    parameters.destroy();
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 }
