@@ -72,12 +72,13 @@ public class VariableLangevinIntegrator extends Integrator {
    * @param errorTol      The error tolerance for adaptive step sizing.
    */
   public VariableLangevinIntegrator(double temperature, double frictionCoeff, double errorTol) {
-    pointer = OpenMM_VariableLangevinIntegrator_create(temperature, frictionCoeff, errorTol);
+    super(OpenMM_VariableLangevinIntegrator_create(temperature, frictionCoeff, errorTol));
   }
 
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_VariableLangevinIntegrator_destroy(pointer);

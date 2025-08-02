@@ -66,7 +66,7 @@ public class Continuous1DFunction extends TabulatedFunction {
    * @param periodic Whether the function is periodic.
    */
   public Continuous1DFunction(PointerByReference values, double min, double max, boolean periodic) {
-    pointer = OpenMM_Continuous1DFunction_create(values, min, max, periodic ? 1 : 0);
+    super(OpenMM_Continuous1DFunction_create(values, min, max, periodic ? 1 : 0));
   }
 
   /**

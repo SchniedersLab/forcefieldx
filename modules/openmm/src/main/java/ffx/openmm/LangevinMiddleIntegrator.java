@@ -60,7 +60,7 @@ public class LangevinMiddleIntegrator extends Integrator {
    * @param gamma The friction coefficient.
    */
   public LangevinMiddleIntegrator(double dt, double temp, double gamma) {
-    pointer = OpenMM_LangevinMiddleIntegrator_create(temp, gamma, dt);
+    super(OpenMM_LangevinMiddleIntegrator_create(temp, gamma, dt));
   }
 
   /**

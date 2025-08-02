@@ -110,7 +110,7 @@ public class CustomHbondForce extends Force {
    * @param energy The energy expression for the hydrogen bond interaction.
    */
   public CustomHbondForce(String energy) {
-    pointer = OpenMM_CustomHbondForce_create(energy);
+    super(OpenMM_CustomHbondForce_create(energy));
   }
 
   /**
@@ -263,6 +263,7 @@ public class CustomHbondForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomHbondForce_destroy(pointer);

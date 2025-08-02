@@ -68,7 +68,7 @@ public class RBTorsionForce extends Force {
    * Create a new RBTorsionForce.
    */
   public RBTorsionForce() {
-    pointer = OpenMM_RBTorsionForce_create();
+    super(OpenMM_RBTorsionForce_create());
   }
 
   /**
@@ -95,6 +95,7 @@ public class RBTorsionForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_RBTorsionForce_destroy(pointer);

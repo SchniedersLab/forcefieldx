@@ -71,10 +71,8 @@ public class Continuous2DFunction extends TabulatedFunction {
    * @param ymax     The value of y corresponding to the last element of values.
    * @param periodic Whether the interpolated function is periodic.
    */
-  public Continuous2DFunction(PointerByReference values, int xsize, int ysize, double xmin, double xmax, double ymin, double ymax,
-                              boolean periodic) {
-    pointer = OpenMM_Continuous2DFunction_create(xsize, ysize, values, xmin, xmax, ymin, ymax,
-        periodic ? 1 : 0);
+  public Continuous2DFunction(PointerByReference values, int xsize, int ysize, double xmin, double xmax, double ymin, double ymax, boolean periodic) {
+    super(OpenMM_Continuous2DFunction_create(xsize, ysize, values, xmin, xmax, ymin, ymax, periodic ? 1 : 0));
   }
 
   /**

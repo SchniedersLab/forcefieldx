@@ -72,7 +72,7 @@ public class CustomVolumeForce extends Force {
    * @param energy The algebraic expression that gives the energy as a function of the volume.
    */
   public CustomVolumeForce(String energy) {
-    pointer = OpenMM_CustomVolumeForce_create(energy);
+    super(OpenMM_CustomVolumeForce_create(energy));
   }
 
   /**
@@ -100,6 +100,7 @@ public class CustomVolumeForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomVolumeForce_destroy(pointer);

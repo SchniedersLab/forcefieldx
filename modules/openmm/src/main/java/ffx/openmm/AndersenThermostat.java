@@ -60,12 +60,13 @@ public class AndersenThermostat extends Force {
    * @param frequency   the default collision frequency (in 1/ps)
    */
   public AndersenThermostat(double temperature, double frequency) {
-    pointer = OpenMM_AndersenThermostat_create(temperature, frequency);
+    super(OpenMM_AndersenThermostat_create(temperature, frequency));
   }
 
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AndersenThermostat_destroy(pointer);

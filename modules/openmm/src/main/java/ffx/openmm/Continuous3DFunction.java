@@ -76,8 +76,7 @@ public class Continuous3DFunction extends TabulatedFunction {
    */
   public Continuous3DFunction(PointerByReference values, int xsize, int ysize, int zsize, double xmin, double xmax,
                               double ymin, double ymax, double zmin, double zmax, boolean periodic) {
-    pointer = OpenMM_Continuous3DFunction_create(xsize, ysize, zsize, values, xmin, xmax,
-        ymin, ymax, zmin, zmax, periodic ? 1 : 0);
+    super(OpenMM_Continuous3DFunction_create(xsize, ysize, zsize, values, xmin, xmax, ymin, ymax, zmin, zmax, periodic ? 1 : 0));
   }
 
   /**

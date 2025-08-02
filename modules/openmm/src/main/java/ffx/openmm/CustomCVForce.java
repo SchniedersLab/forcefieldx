@@ -85,7 +85,7 @@ public class CustomCVForce extends Force {
    * @param energy The energy function as an algebraic expression.
    */
   public CustomCVForce(String energy) {
-    pointer = OpenMM_CustomCVForce_create(energy);
+    super(OpenMM_CustomCVForce_create(energy));
   }
 
   /**
@@ -175,6 +175,7 @@ public class CustomCVForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomCVForce_destroy(pointer);

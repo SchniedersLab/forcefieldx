@@ -81,8 +81,7 @@ public class MonteCarloMembraneBarostat extends Force {
    */
   public MonteCarloMembraneBarostat(double defaultPressure, double defaultSurfaceTension,
                                     double defaultTemperature, int xymode, int zmode, int frequency) {
-    pointer = OpenMM_MonteCarloMembraneBarostat_create(defaultPressure, defaultSurfaceTension,
-        defaultTemperature, xymode, zmode, frequency);
+    super(OpenMM_MonteCarloMembraneBarostat_create(defaultPressure, defaultSurfaceTension, defaultTemperature, xymode, zmode, frequency));
   }
 
   /**

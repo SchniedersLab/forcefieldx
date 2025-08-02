@@ -63,7 +63,7 @@ public class MonteCarloBarostat extends Force {
    * @param frequency   The frequency to apply the barostat.
    */
   public MonteCarloBarostat(double pressure, double temperature, int frequency) {
-    pointer = OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency);
+    super(OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency));
   }
 
   /**
@@ -79,6 +79,7 @@ public class MonteCarloBarostat extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_MonteCarloBarostat_destroy(pointer);

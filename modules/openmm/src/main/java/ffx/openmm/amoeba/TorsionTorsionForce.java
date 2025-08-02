@@ -63,7 +63,7 @@ public class TorsionTorsionForce extends Force {
    * Create an OpenMM TorsionTorsion Force.
    */
   public TorsionTorsionForce() {
-    pointer = OpenMM_AmoebaTorsionTorsionForce_create();
+    super(OpenMM_AmoebaTorsionTorsionForce_create());
   }
 
   /**
@@ -84,6 +84,7 @@ public class TorsionTorsionForce extends Force {
   /**
    * Destroy the Amoeba Torsion-Torsion Force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AmoebaTorsionTorsionForce_destroy(pointer);

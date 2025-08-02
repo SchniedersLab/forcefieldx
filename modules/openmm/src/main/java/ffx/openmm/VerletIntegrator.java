@@ -52,7 +52,7 @@ public class VerletIntegrator extends Integrator {
    * @param dt The time step.
    */
   public VerletIntegrator(double dt) {
-    pointer = OpenMM_VerletIntegrator_create(dt);
+    super(OpenMM_VerletIntegrator_create(dt));
   }
 
   /**

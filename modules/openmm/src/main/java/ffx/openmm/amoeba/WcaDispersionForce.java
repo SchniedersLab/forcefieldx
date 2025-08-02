@@ -76,7 +76,7 @@ public class WcaDispersionForce extends Force {
    * Create a new Amoeba WCA dispersion force.
    */
   public WcaDispersionForce() {
-    pointer = OpenMM_AmoebaWcaDispersionForce_create();
+    super(OpenMM_AmoebaWcaDispersionForce_create());
   }
 
   /**
@@ -92,6 +92,7 @@ public class WcaDispersionForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AmoebaWcaDispersionForce_destroy(pointer);

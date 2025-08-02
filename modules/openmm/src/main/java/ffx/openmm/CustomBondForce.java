@@ -79,7 +79,7 @@ public class CustomBondForce extends Force {
    * @param energy The energy expression for the force.
    */
   public CustomBondForce(String energy) {
-    pointer = OpenMM_CustomBondForce_create(energy);
+    super(OpenMM_CustomBondForce_create(energy));
   }
 
   /**
@@ -127,6 +127,7 @@ public class CustomBondForce extends Force {
   /**
    * Destroy the OpenMM CustomBondForce.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomBondForce_destroy(pointer);

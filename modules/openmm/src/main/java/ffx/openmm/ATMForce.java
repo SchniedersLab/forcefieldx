@@ -86,7 +86,7 @@ public class ATMForce extends Force {
    * @param energy The energy function for the ATM force.
    */
   public ATMForce(String energy) {
-    pointer = OpenMM_ATMForce_create(energy);
+    super(OpenMM_ATMForce_create(energy));
   }
 
   /**
@@ -104,9 +104,8 @@ public class ATMForce extends Force {
    */
   public ATMForce(double lambda1, double lambda2, double alpha, double uh, double w0,
                   double umax, double ubcore, double acore, double direction) {
-    pointer = OpenMM_ATMForce_create_2(lambda1, lambda2, alpha, uh, w0, umax, ubcore, acore, direction);
+    super(OpenMM_ATMForce_create_2(lambda1, lambda2, alpha, uh, w0, umax, ubcore, acore, direction));
   }
-
 
   /**
    * Add an energy parameter derivative.
@@ -173,6 +172,7 @@ public class ATMForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_ATMForce_destroy(pointer);

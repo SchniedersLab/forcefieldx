@@ -75,7 +75,7 @@ public class CustomExternalForce extends Force {
    * @param energy The energy expression for the force.
    */
   public CustomExternalForce(String energy) {
-    pointer = OpenMM_CustomExternalForce_create(energy);
+    super(OpenMM_CustomExternalForce_create(energy));
   }
 
   /**
@@ -113,6 +113,7 @@ public class CustomExternalForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomExternalForce_destroy(pointer);

@@ -64,12 +64,13 @@ public class VariableVerletIntegrator extends Integrator {
    * @param errorTol The error tolerance for adaptive step sizing.
    */
   public VariableVerletIntegrator(double errorTol) {
-    pointer = OpenMM_VariableVerletIntegrator_create(errorTol);
+    super(OpenMM_VariableVerletIntegrator_create(errorTol));
   }
 
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_VariableVerletIntegrator_destroy(pointer);

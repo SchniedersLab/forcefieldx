@@ -80,13 +80,13 @@ public class MonteCarloAnisotropicBarostat extends Force {
    */
   public MonteCarloAnisotropicBarostat(OpenMM_Vec3 defaultPressure, double defaultTemperature,
                                        int scaleX, int scaleY, int scaleZ, int frequency) {
-    pointer = OpenMM_MonteCarloAnisotropicBarostat_create(defaultPressure, defaultTemperature,
-        scaleX, scaleY, scaleZ, frequency);
+    super(OpenMM_MonteCarloAnisotropicBarostat_create(defaultPressure, defaultTemperature, scaleX, scaleY, scaleZ, frequency));
   }
 
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_MonteCarloAnisotropicBarostat_destroy(pointer);

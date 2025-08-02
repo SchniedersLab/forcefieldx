@@ -87,7 +87,7 @@ public class CustomTorsionForce extends Force {
    * @param energy The algebraic expression that gives the interaction energy of each torsion as a function of theta, the torsion angle.
    */
   public CustomTorsionForce(String energy) {
-    pointer = OpenMM_CustomTorsionForce_create(energy);
+    super(OpenMM_CustomTorsionForce_create(energy));
   }
 
   /**
@@ -167,6 +167,7 @@ public class CustomTorsionForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomTorsionForce_destroy(pointer);

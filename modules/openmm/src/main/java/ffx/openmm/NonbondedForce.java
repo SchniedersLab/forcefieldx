@@ -71,7 +71,7 @@ public class NonbondedForce extends Force {
    * Create a new NonbondedForce.
    */
   public NonbondedForce() {
-    pointer = OpenMM_NonbondedForce_create();
+    super(OpenMM_NonbondedForce_create());
   }
 
   /**
@@ -115,6 +115,7 @@ public class NonbondedForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_NonbondedForce_destroy(pointer);

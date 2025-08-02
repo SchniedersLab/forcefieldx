@@ -108,7 +108,7 @@ public class CustomManyParticleForce extends Force {
    * @param energy          The algebraic expression that gives the interaction energy for each set of particles.
    */
   public CustomManyParticleForce(int particlesPerSet, String energy) {
-    pointer = OpenMM_CustomManyParticleForce_create(particlesPerSet, energy);
+    super(OpenMM_CustomManyParticleForce_create(particlesPerSet, energy));
   }
 
   /**
@@ -210,6 +210,7 @@ public class CustomManyParticleForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomManyParticleForce_destroy(pointer);

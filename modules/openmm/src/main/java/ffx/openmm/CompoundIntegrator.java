@@ -75,7 +75,7 @@ public class CompoundIntegrator extends Integrator {
    * Create a CompoundIntegrator.
    */
   public CompoundIntegrator() {
-    pointer = OpenMM_CompoundIntegrator_create();
+    super(OpenMM_CompoundIntegrator_create());
   }
 
   /**
@@ -91,6 +91,7 @@ public class CompoundIntegrator extends Integrator {
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CompoundIntegrator_destroy(pointer);
@@ -133,12 +134,8 @@ public class CompoundIntegrator extends Integrator {
    * @param index The index of the integrator to get.
    * @return The integrator at the specified index.
    */
-  public Integrator getIntegrator(int index) {
-    PointerByReference integratorPointer = OpenMM_CompoundIntegrator_getIntegrator(pointer, index);
-    Integrator integrator = new Integrator() {
-    };
-    integrator.setPointer(integratorPointer);
-    return integrator;
+  public PointerByReference getIntegrator(int index) {
+    return OpenMM_CompoundIntegrator_getIntegrator(pointer, index);
   }
 
   /**

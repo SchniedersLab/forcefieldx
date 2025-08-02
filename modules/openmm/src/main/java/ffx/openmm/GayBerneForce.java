@@ -77,7 +77,7 @@ public class GayBerneForce extends Force {
    * Create a new GayBerneForce.
    */
   public GayBerneForce() {
-    pointer = OpenMM_GayBerneForce_create();
+    super(OpenMM_GayBerneForce_create());
   }
 
   /**
@@ -118,6 +118,7 @@ public class GayBerneForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_GayBerneForce_destroy(pointer);

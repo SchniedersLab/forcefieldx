@@ -68,12 +68,13 @@ public class RMSDForce extends Force {
    * @param referencePositions The reference positions for the particles.
    */
   public RMSDForce(PointerByReference particles, PointerByReference referencePositions) {
-    pointer = OpenMM_RMSDForce_create(particles, referencePositions);
+    super(OpenMM_RMSDForce_create(particles, referencePositions));
   }
 
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_RMSDForce_destroy(pointer);

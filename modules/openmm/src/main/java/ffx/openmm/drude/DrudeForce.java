@@ -92,7 +92,7 @@ public class DrudeForce extends Force {
    * as the electrostatic interactions involving Drude charges.
    */
   public DrudeForce() {
-    pointer = OpenMM_DrudeForce_create();
+    super(OpenMM_DrudeForce_create());
   }
 
   /**

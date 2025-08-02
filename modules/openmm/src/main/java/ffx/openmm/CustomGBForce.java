@@ -101,7 +101,7 @@ public class CustomGBForce extends Force {
    * Create a CustomGBForce.
    */
   public CustomGBForce() {
-    pointer = OpenMM_CustomGBForce_create();
+    super(OpenMM_CustomGBForce_create());
   }
 
   /**
@@ -207,6 +207,7 @@ public class CustomGBForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomGBForce_destroy(pointer);

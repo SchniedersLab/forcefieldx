@@ -68,7 +68,7 @@ public class CMAPTorsionForce extends Force {
    * Create a new CMAPTorsionForce.
    */
   public CMAPTorsionForce() {
-    pointer = OpenMM_CMAPTorsionForce_create();
+    super(OpenMM_CMAPTorsionForce_create());
   }
 
   /**
@@ -103,6 +103,7 @@ public class CMAPTorsionForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CMAPTorsionForce_destroy(pointer);

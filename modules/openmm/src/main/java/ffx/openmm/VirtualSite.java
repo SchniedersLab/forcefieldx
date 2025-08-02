@@ -39,7 +39,6 @@ package ffx.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VirtualSite_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VirtualSite_getNumParticles;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VirtualSite_getParticle;
 
@@ -68,7 +67,7 @@ public abstract class VirtualSite {
   /**
    * The pointer is allocated and deallocated by classes that extend VirtualSite.
    */
-  protected PointerByReference pointer = null;
+  protected PointerByReference pointer;
 
   /**
    * Create a VirtualSite from an existing pointer.
@@ -82,12 +81,7 @@ public abstract class VirtualSite {
   /**
    * Destroy the virtual site.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_VirtualSite_destroy(pointer);
-      pointer = null;
-    }
-  }
+  public abstract void destroy();
 
   /**
    * Get the number of particles this virtual site depends on.

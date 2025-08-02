@@ -68,7 +68,7 @@ public class Discrete2DFunction extends TabulatedFunction {
    * @param values The tabulated values of the function f(x,y).
    */
   public Discrete2DFunction(int xsize, int ysize, PointerByReference values) {
-    pointer = OpenMM_Discrete2DFunction_create(xsize, ysize, values);
+    super(OpenMM_Discrete2DFunction_create(xsize, ysize, values));
   }
 
   /**

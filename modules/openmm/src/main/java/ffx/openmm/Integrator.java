@@ -39,7 +39,6 @@ package ffx.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getConstraintTolerance;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getIntegrationForceGroups;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getStepSize;
@@ -65,19 +64,14 @@ public abstract class Integrator {
   /**
    * Constructor.
    */
-  public Integrator() {
-    pointer = null;
+  public Integrator(PointerByReference pointer) {
+    this.pointer = pointer;
   }
 
   /**
    * This method will be called by subclasses when the integrator is destroyed.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Integrator_destroy(pointer);
-      pointer = null;
-    }
-  }
+  public abstract void destroy();
 
   /**
    * Get the tolerance within which constraints must be satisfied during the simulation.

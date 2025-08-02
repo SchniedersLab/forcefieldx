@@ -63,7 +63,7 @@ public class HarmonicBondForce extends Force {
    * Create a new HarmonicBondForce.
    */
   public HarmonicBondForce() {
-    pointer = OpenMM_HarmonicBondForce_create();
+    super(OpenMM_HarmonicBondForce_create());
   }
 
   /**
@@ -82,6 +82,7 @@ public class HarmonicBondForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_HarmonicBondForce_destroy(pointer);

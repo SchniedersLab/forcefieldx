@@ -76,7 +76,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 public class GeneralizedKirkwoodForce extends Force {
 
   public GeneralizedKirkwoodForce() {
-    pointer = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
+    super(OpenMM_AmoebaGeneralizedKirkwoodForce_create());
   }
 
   /**
@@ -107,6 +107,7 @@ public class GeneralizedKirkwoodForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AmoebaGeneralizedKirkwoodForce_destroy(pointer);

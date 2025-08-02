@@ -68,7 +68,7 @@ public class HarmonicAngleForce extends Force {
    * Create a new HarmonicAngleForce.
    */
   public HarmonicAngleForce() {
-    pointer = OpenMM_HarmonicAngleForce_create();
+    super(OpenMM_HarmonicAngleForce_create());
   }
 
   /**
@@ -88,6 +88,7 @@ public class HarmonicAngleForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_HarmonicAngleForce_destroy(pointer);

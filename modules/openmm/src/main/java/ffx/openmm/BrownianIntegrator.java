@@ -70,12 +70,13 @@ public class BrownianIntegrator extends Integrator {
    * @param stepSize      The step size with which to integrate the system (in ps).
    */
   public BrownianIntegrator(double temperature, double frictionCoeff, double stepSize) {
-    pointer = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, stepSize);
+    super(OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, stepSize));
   }
 
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_BrownianIntegrator_destroy(pointer);

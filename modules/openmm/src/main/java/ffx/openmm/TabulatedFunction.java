@@ -40,7 +40,6 @@ package ffx.openmm;
 import com.sun.jna.ptr.PointerByReference;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TabulatedFunction_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TabulatedFunction_getPeriodic;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TabulatedFunction_getUpdateCount;
 
@@ -57,17 +56,25 @@ public abstract class TabulatedFunction {
   /**
    * The pointer is allocated and deallocated by classes that extend TabulatedFunction.
    */
-  protected PointerByReference pointer = null;
+  protected PointerByReference pointer;
+
+  /**
+   * Constructor for TabulatedFunction.
+   *
+   * @param pointer Pointer to the OpenMM TabulatedFunction.
+   * @throws IllegalArgumentException if the pointer is null.
+   */
+  public TabulatedFunction(PointerByReference pointer) {
+    if (pointer == null || pointer.getValue() == null) {
+      throw new IllegalArgumentException("Pointer cannot be null.");
+    }
+    this.pointer = pointer;
+  }
 
   /**
    * Destroy the tabulated function.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_TabulatedFunction_destroy(pointer);
-      pointer = null;
-    }
-  }
+  public abstract void destroy();
 
   /**
    * Get the pointer to the OpenMM TabulatedFunction.

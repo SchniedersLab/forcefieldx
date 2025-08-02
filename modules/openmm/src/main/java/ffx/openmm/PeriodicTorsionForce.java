@@ -63,7 +63,7 @@ public class PeriodicTorsionForce extends Force {
    * Create a new PeriodicTorsionForce.
    */
   public PeriodicTorsionForce() {
-    pointer = OpenMM_PeriodicTorsionForce_create();
+    super(OpenMM_PeriodicTorsionForce_create());
   }
 
   /**
@@ -85,6 +85,7 @@ public class PeriodicTorsionForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_PeriodicTorsionForce_destroy(pointer);

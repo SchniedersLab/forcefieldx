@@ -98,7 +98,7 @@ public class VdwForce extends Force {
    * Create an OpenMM VdwForce.
    */
   public VdwForce() {
-    pointer = OpenMM_AmoebaVdwForce_create();
+    super(OpenMM_AmoebaVdwForce_create());
   }
 
   /**
@@ -156,6 +156,7 @@ public class VdwForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AmoebaVdwForce_destroy(pointer);

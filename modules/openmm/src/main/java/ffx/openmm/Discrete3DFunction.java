@@ -69,7 +69,7 @@ public class Discrete3DFunction extends TabulatedFunction {
    * @param values The tabulated values of the function f(x,y,z).
    */
   public Discrete3DFunction(int xsize, int ysize, int zsize, PointerByReference values) {
-    pointer = OpenMM_Discrete3DFunction_create(xsize, ysize, zsize, values);
+    super(OpenMM_Discrete3DFunction_create(xsize, ysize, zsize, values));
   }
 
   /**

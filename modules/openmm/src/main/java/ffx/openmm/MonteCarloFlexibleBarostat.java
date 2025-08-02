@@ -78,8 +78,7 @@ public class MonteCarloFlexibleBarostat extends Force {
    */
   public MonteCarloFlexibleBarostat(double defaultPressure, double defaultTemperature,
                                     int frequency, int scaleMoleculesAsRigid) {
-    pointer = OpenMM_MonteCarloFlexibleBarostat_create(defaultPressure, defaultTemperature,
-        frequency, scaleMoleculesAsRigid);
+    super(OpenMM_MonteCarloFlexibleBarostat_create(defaultPressure, defaultTemperature, frequency, scaleMoleculesAsRigid));
   }
 
   /**
@@ -95,6 +94,7 @@ public class MonteCarloFlexibleBarostat extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_MonteCarloFlexibleBarostat_destroy(pointer);

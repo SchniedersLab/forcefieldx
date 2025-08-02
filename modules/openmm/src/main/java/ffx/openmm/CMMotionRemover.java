@@ -55,7 +55,7 @@ public class CMMotionRemover extends Force {
    * @param frequency The frequency to apply the CMMotionRemover.
    */
   public CMMotionRemover(int frequency) {
-    pointer = OpenMM_CMMotionRemover_create(frequency);
+    super(OpenMM_CMMotionRemover_create(frequency));
   }
 
   /**
@@ -70,6 +70,7 @@ public class CMMotionRemover extends Force {
   /**
    * Destroy the OpenMM CMMotionRemover.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CMMotionRemover_destroy(pointer);

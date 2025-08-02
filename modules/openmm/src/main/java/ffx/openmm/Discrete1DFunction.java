@@ -62,7 +62,7 @@ public class Discrete1DFunction extends TabulatedFunction {
    * @param values The tabulated values of the function f(x) at discrete values of x.
    */
   public Discrete1DFunction(PointerByReference values) {
-    pointer = OpenMM_Discrete1DFunction_create(values);
+    super(OpenMM_Discrete1DFunction_create(values));
   }
 
   /**

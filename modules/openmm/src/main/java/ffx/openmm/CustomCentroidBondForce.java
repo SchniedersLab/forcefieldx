@@ -173,7 +173,7 @@ public class CustomCentroidBondForce extends Force {
    *                  and per-bond parameters
    */
   public CustomCentroidBondForce(int numGroups, String energy) {
-    pointer = OpenMM_CustomCentroidBondForce_create(numGroups, energy);
+    super(OpenMM_CustomCentroidBondForce_create(numGroups, energy));
   }
 
   /**
@@ -246,6 +246,7 @@ public class CustomCentroidBondForce extends Force {
   /**
    * Destroy the OpenMM CustomCentroidBondForce.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomCentroidBondForce_destroy(pointer);

@@ -74,10 +74,19 @@ public class NoseHooverIntegrator extends Integrator {
   /**
    * Create a NoseHooverIntegrator with a single thermostat.
    *
+   * @param pointer A pointer to the native OpenMM NoseHooverIntegrator object.
+   */
+  public NoseHooverIntegrator(PointerByReference pointer) {
+    super(pointer);
+  }
+
+  /**
+   * Create a NoseHooverIntegrator with a single thermostat.
+   *
    * @param stepSize The step size with which to integrate the system (in ps).
    */
   public NoseHooverIntegrator(double stepSize) {
-    pointer = OpenMM_NoseHooverIntegrator_create(stepSize);
+    super(OpenMM_NoseHooverIntegrator_create(stepSize));
   }
 
   /**
@@ -92,8 +101,8 @@ public class NoseHooverIntegrator extends Integrator {
    */
   public NoseHooverIntegrator(double stepSize, double temperature, double collisionFrequency,
                               int numMTS, int numYoshidaSuzuki, int numNoseHoover) {
-    pointer = OpenMM_NoseHooverIntegrator_create_2(stepSize, temperature, collisionFrequency,
-        numMTS, numYoshidaSuzuki, numNoseHoover);
+    super(OpenMM_NoseHooverIntegrator_create_2(stepSize, temperature, collisionFrequency,
+        numMTS, numYoshidaSuzuki, numNoseHoover));
   }
 
   /**
@@ -148,6 +157,7 @@ public class NoseHooverIntegrator extends Integrator {
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_NoseHooverIntegrator_destroy(pointer);

@@ -89,7 +89,7 @@ public class HippoNonbondedForce extends Force {
    * Create a new HippoNonbondedForce.
    */
   public HippoNonbondedForce() {
-    pointer = OpenMM_HippoNonbondedForce_create();
+    super(OpenMM_HippoNonbondedForce_create());
   }
 
   /**
@@ -146,6 +146,7 @@ public class HippoNonbondedForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_HippoNonbondedForce_destroy(pointer);

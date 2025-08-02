@@ -41,7 +41,6 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_getForceGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_getName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
@@ -82,14 +81,21 @@ public abstract class Force {
   private int forceIndex = -1;
 
   /**
+   * Create a new Force object with the specified pointer.
+   *
+   * @param pointer A pointer to the native OpenMM Force object.
+   */
+  public Force(PointerByReference pointer) {
+    if (pointer == null || pointer.getValue() == null) {
+      throw new IllegalArgumentException("Pointer cannot be null.");
+    }
+    this.pointer = pointer;
+  }
+
+  /**
    * Destroy the force.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Force_destroy(pointer);
-      pointer = null;
-    }
-  }
+  public abstract void destroy();
 
   /**
    * Get the pointer to the OpenMM Force.

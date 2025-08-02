@@ -74,7 +74,7 @@ public class GBSAOBCForce extends Force {
    * Create a new GBSAOBCForce.
    */
   public GBSAOBCForce() {
-    pointer = OpenMM_GBSAOBCForce_create();
+    super(OpenMM_GBSAOBCForce_create());
   }
 
   /**
@@ -92,6 +92,7 @@ public class GBSAOBCForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_GBSAOBCForce_destroy(pointer);

@@ -80,7 +80,7 @@ public class DrudeIntegrator extends Integrator {
    * @param pointer A pointer to the native OpenMM Drude integrator object.
    */
   public DrudeIntegrator(PointerByReference pointer) {
-    this.pointer = pointer;
+    super(pointer);
   }
 
   /**
@@ -93,7 +93,7 @@ public class DrudeIntegrator extends Integrator {
    * @param stepSize The integration step size in picoseconds.
    */
   public DrudeIntegrator(double stepSize) {
-    pointer = OpenMM_DrudeIntegrator_create(stepSize);
+    super(OpenMM_DrudeIntegrator_create(stepSize));
   }
 
   /**

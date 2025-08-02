@@ -91,7 +91,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 public class MultipoleForce extends Force {
 
   public MultipoleForce() {
-    pointer = OpenMM_AmoebaMultipoleForce_create();
+    super(OpenMM_AmoebaMultipoleForce_create());
   }
 
   /**
@@ -117,6 +117,7 @@ public class MultipoleForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_AmoebaMultipoleForce_destroy(pointer);

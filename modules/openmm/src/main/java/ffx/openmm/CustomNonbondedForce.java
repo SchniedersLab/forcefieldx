@@ -112,7 +112,7 @@ public class CustomNonbondedForce extends Force {
    * @param energy The energy expression for the force.
    */
   public CustomNonbondedForce(String energy) {
-    pointer = OpenMM_CustomNonbondedForce_create(energy);
+    super(OpenMM_CustomNonbondedForce_create(energy));
   }
 
   /**
@@ -225,6 +225,7 @@ public class CustomNonbondedForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomNonbondedForce_destroy(pointer);

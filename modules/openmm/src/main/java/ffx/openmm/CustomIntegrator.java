@@ -91,7 +91,7 @@ public class CustomIntegrator extends Integrator {
    * @param dt The time step.
    */
   public CustomIntegrator(double dt) {
-    pointer = OpenMM_CustomIntegrator_create(dt);
+    super(OpenMM_CustomIntegrator_create(dt));
   }
 
   /**
@@ -210,6 +210,7 @@ public class CustomIntegrator extends Integrator {
   /**
    * Destroy the integrator.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomIntegrator_destroy(pointer);

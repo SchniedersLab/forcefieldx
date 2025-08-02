@@ -79,7 +79,7 @@ public class CustomAngleForce extends Force {
    * @param energy The energy expression for the force.
    */
   public CustomAngleForce(String energy) {
-    pointer = OpenMM_CustomAngleForce_create(energy);
+    super(OpenMM_CustomAngleForce_create(energy));
   }
 
   /**
@@ -128,6 +128,7 @@ public class CustomAngleForce extends Force {
   /**
    * Destroy the force.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CustomAngleForce_destroy(pointer);

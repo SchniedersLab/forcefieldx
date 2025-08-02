@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.openmm.drude;
 
+import ffx.openmm.NoseHooverIntegrator;
+
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegrator_computeDrudeKineticEnergy;
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegrator_computeDrudeTemperature;
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegrator_computeSystemTemperature;
@@ -65,7 +67,7 @@ import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegra
  * noise inherent in Langevin dynamics, making it particularly suitable for studies
  * requiring precise temperature control and long-time dynamical properties.
  */
-public class DrudeNoseHooverIntegrator extends DrudeIntegrator {
+public class DrudeNoseHooverIntegrator extends NoseHooverIntegrator {
 
   /**
    * Create a new DrudeNoseHooverIntegrator.
@@ -165,7 +167,6 @@ public class DrudeNoseHooverIntegrator extends DrudeIntegrator {
    *
    * @return The maximum Drude distance in nanometers.
    */
-  @Override
   public double getMaxDrudeDistance() {
     return OpenMM_DrudeNoseHooverIntegrator_getMaxDrudeDistance(pointer);
   }
@@ -180,7 +181,6 @@ public class DrudeNoseHooverIntegrator extends DrudeIntegrator {
    *
    * @param distance The maximum Drude distance in nanometers.
    */
-  @Override
   public void setMaxDrudeDistance(double distance) {
     OpenMM_DrudeNoseHooverIntegrator_setMaxDrudeDistance(pointer, distance);
   }
