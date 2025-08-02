@@ -42,19 +42,22 @@ import edu.uiowa.jopenmm.OpenMM_Vec3;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getDataTypes;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getEnergyParameterDerivatives;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getParameters;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVectors;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVolume;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getStepCount;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getTime;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
 /**
  * A State object records a snapshot of the current state of a simulation at a point in time.
  * You create it by calling getState() on a Context.
- *
+ * <p>
  * When a State is created, you specify what information should be stored in it.  This saves
  * time and memory by only copying in the information that you actually want.  This is especially
  * important for forces and energies, since they may need to be calculated.  If you query a
@@ -78,12 +81,13 @@ public class State {
   }
 
   /**
-   * Get the pointer to the state.
-   *
-   * @return The pointer to the state.
+   * Destroy the state.
    */
-  public PointerByReference getPointer() {
-    return pointer;
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_State_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
@@ -96,23 +100,12 @@ public class State {
   }
 
   /**
-   * Get the positions.
+   * Get the energy parameter derivatives.
    *
-   * @return The positions.
+   * @return The energy parameter derivatives.
    */
-  public double[] getPositions() {
-    Vec3Array positions = new Vec3Array(OpenMM_State_getPositions(pointer));
-    return positions.getArray();
-  }
-
-  /**
-   * Get the velocities.
-   *
-   * @return The velocities.
-   */
-  public double[] getVelocities() {
-    Vec3Array velocities = new Vec3Array(OpenMM_State_getVelocities(pointer));
-    return velocities.getArray();
+  public PointerByReference getEnergyParameterDerivatives() {
+    return OpenMM_State_getEnergyParameterDerivatives(pointer);
   }
 
   /**
@@ -126,15 +119,6 @@ public class State {
   }
 
   /**
-   * Get the time.
-   *
-   * @return The time.
-   */
-  public double getTime() {
-    return OpenMM_State_getTime(pointer);
-  }
-
-  /**
    * Get the kinetic energy.
    *
    * @return The kinetic energy.
@@ -144,12 +128,12 @@ public class State {
   }
 
   /**
-   * Get the potential energy.
+   * Get the parameters.
    *
-   * @return The potential energy.
+   * @return The parameters.
    */
-  public double getPotentialEnergy() {
-    return OpenMM_State_getPotentialEnergy(pointer);
+  public PointerByReference getParameters() {
+    return OpenMM_State_getParameters(pointer);
   }
 
   /**
@@ -185,13 +169,59 @@ public class State {
   }
 
   /**
-   * Destroy the state.
+   * Get the pointer to the state.
+   *
+   * @return The pointer to the state.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_State_destroy(pointer);
-      pointer = null;
-    }
+  public PointerByReference getPointer() {
+    return pointer;
+  }
+
+  /**
+   * Get the positions.
+   *
+   * @return The positions.
+   */
+  public double[] getPositions() {
+    Vec3Array positions = new Vec3Array(OpenMM_State_getPositions(pointer));
+    return positions.getArray();
+  }
+
+  /**
+   * Get the potential energy.
+   *
+   * @return The potential energy.
+   */
+  public double getPotentialEnergy() {
+    return OpenMM_State_getPotentialEnergy(pointer);
+  }
+
+  /**
+   * Get the step count.
+   *
+   * @return The step count.
+   */
+  public long getStepCount() {
+    return OpenMM_State_getStepCount(pointer);
+  }
+
+  /**
+   * Get the time.
+   *
+   * @return The time.
+   */
+  public double getTime() {
+    return OpenMM_State_getTime(pointer);
+  }
+
+  /**
+   * Get the velocities.
+   *
+   * @return The velocities.
+   */
+  public double[] getVelocities() {
+    Vec3Array velocities = new Vec3Array(OpenMM_State_getVelocities(pointer));
+    return velocities.getArray();
   }
 
 }

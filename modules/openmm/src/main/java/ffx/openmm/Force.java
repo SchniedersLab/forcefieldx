@@ -41,6 +41,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_getForceGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_getName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
@@ -79,6 +80,16 @@ public abstract class Force {
    * The forceIndex is returned by OpenMMSystem.addForce and is used to remove the force.
    */
   private int forceIndex = -1;
+
+  /**
+   * Destroy the force.
+   */
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_Force_destroy(pointer);
+      pointer = null;
+    }
+  }
 
   /**
    * Get the pointer to the OpenMM Force.

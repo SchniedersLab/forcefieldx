@@ -37,12 +37,23 @@
 // ******************************************************************************
 package ffx.openmm.amoeba;
 
+import com.sun.jna.ptr.DoubleByReference;
 import ffx.openmm.Context;
 import ffx.openmm.Force;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_addParticle;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_destroy;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getAwater;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getDispoff;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getEpsh;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getEpso;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getNumParticles;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getParticleParameters;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getRminh;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getRmino;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getShctd;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_getSlevy;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setAwater;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setDispoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setEpsh;
@@ -53,6 +64,8 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionFo
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setShctd;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setSlevy;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_updateParametersInContext;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_usesPeriodicBoundaryConditions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
  * Weeks-Chandler-Andersen Dispersion Force.
@@ -77,60 +90,105 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Set the parameters for a particle.
-   *
-   * @param index   The index of the particle to set.
-   * @param radius  The radius of the particle.
-   * @param epsilon The well depth of the particle.
+   * Destroy the force.
    */
-  public void setParticleParameters(int index, double radius, double epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_setParticleParameters(pointer, index, radius, epsilon);
-  }
-
-
-  /**
-   * Set the water oxygen epsilon parameter.
-   *
-   * @param epso The water oxygen epsilon parameter.
-   */
-  public void setEpso(double epso) {
-    OpenMM_AmoebaWcaDispersionForce_setEpso(pointer, epso);
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_AmoebaWcaDispersionForce_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
-   * Set the water hydrogen epsilon parameter.
+   * Get the water density parameter.
    *
-   * @param epsh The water hydrogen epsilon parameter.
+   * @return The water density parameter.
    */
-  public void setEpsh(double epsh) {
-    OpenMM_AmoebaWcaDispersionForce_setEpsh(pointer, epsh);
+  public double getAwater() {
+    return OpenMM_AmoebaWcaDispersionForce_getAwater(pointer);
   }
 
   /**
-   * Set the water oxygen radius parameter.
+   * Get the dispersion offset.
    *
-   * @param rmino The water oxygen radius parameter.
+   * @return The dispersion offset.
    */
-  public void setRmino(double rmino) {
-    OpenMM_AmoebaWcaDispersionForce_setRmino(pointer, rmino);
+  public double getDispoff() {
+    return OpenMM_AmoebaWcaDispersionForce_getDispoff(pointer);
   }
 
   /**
-   * Set the water hydrogen radius parameter.
+   * Get the water hydrogen epsilon parameter.
    *
-   * @param rminh The water hydrogen radius parameter.
+   * @return The water hydrogen epsilon parameter.
    */
-  public void setRminh(double rminh) {
-    OpenMM_AmoebaWcaDispersionForce_setRminh(pointer, rminh);
+  public double getEpsh() {
+    return OpenMM_AmoebaWcaDispersionForce_getEpsh(pointer);
   }
 
   /**
-   * Set the dispersion offset.
+   * Get the water oxygen epsilon parameter.
    *
-   * @param dispoff The dispersion offset.
+   * @return The water oxygen epsilon parameter.
    */
-  public void setDispoff(double dispoff) {
-    OpenMM_AmoebaWcaDispersionForce_setDispoff(pointer, dispoff);
+  public double getEpso() {
+    return OpenMM_AmoebaWcaDispersionForce_getEpso(pointer);
+  }
+
+  /**
+   * Get the number of particles.
+   *
+   * @return The number of particles.
+   */
+  public int getNumParticles() {
+    return OpenMM_AmoebaWcaDispersionForce_getNumParticles(pointer);
+  }
+
+  /**
+   * Get the parameters for a particle.
+   *
+   * @param index   The index of the particle.
+   * @param radius  The radius of the particle (output).
+   * @param epsilon The well depth of the particle (output).
+   */
+  public void getParticleParameters(int index, DoubleByReference radius, DoubleByReference epsilon) {
+    OpenMM_AmoebaWcaDispersionForce_getParticleParameters(pointer, index, radius, epsilon);
+  }
+
+  /**
+   * Get the water hydrogen radius parameter.
+   *
+   * @return The water hydrogen radius parameter.
+   */
+  public double getRminh() {
+    return OpenMM_AmoebaWcaDispersionForce_getRminh(pointer);
+  }
+
+  /**
+   * Get the water oxygen radius parameter.
+   *
+   * @return The water oxygen radius parameter.
+   */
+  public double getRmino() {
+    return OpenMM_AmoebaWcaDispersionForce_getRmino(pointer);
+  }
+
+  /**
+   * Get the overlap factor.
+   *
+   * @return The overlap factor.
+   */
+  public double getShctd() {
+    return OpenMM_AmoebaWcaDispersionForce_getShctd(pointer);
+  }
+
+  /**
+   * Get the Levy parameter.
+   *
+   * @return The Levy parameter.
+   */
+  public double getSlevy() {
+    return OpenMM_AmoebaWcaDispersionForce_getSlevy(pointer);
   }
 
   /**
@@ -143,12 +201,59 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Set the Levy parameter.
+   * Set the dispersion offset.
    *
-   * @param slevy The Levy parameter.
+   * @param dispoff The dispersion offset.
    */
-  public void setSlevy(double slevy) {
-    OpenMM_AmoebaWcaDispersionForce_setSlevy(pointer, slevy);
+  public void setDispoff(double dispoff) {
+    OpenMM_AmoebaWcaDispersionForce_setDispoff(pointer, dispoff);
+  }
+
+  /**
+   * Set the water hydrogen epsilon parameter.
+   *
+   * @param epsh The water hydrogen epsilon parameter.
+   */
+  public void setEpsh(double epsh) {
+    OpenMM_AmoebaWcaDispersionForce_setEpsh(pointer, epsh);
+  }
+
+  /**
+   * Set the water oxygen epsilon parameter.
+   *
+   * @param epso The water oxygen epsilon parameter.
+   */
+  public void setEpso(double epso) {
+    OpenMM_AmoebaWcaDispersionForce_setEpso(pointer, epso);
+  }
+
+  /**
+   * Set the parameters for a particle.
+   *
+   * @param index   The index of the particle to set.
+   * @param radius  The radius of the particle.
+   * @param epsilon The well depth of the particle.
+   */
+  public void setParticleParameters(int index, double radius, double epsilon) {
+    OpenMM_AmoebaWcaDispersionForce_setParticleParameters(pointer, index, radius, epsilon);
+  }
+
+  /**
+   * Set the water hydrogen radius parameter.
+   *
+   * @param rminh The water hydrogen radius parameter.
+   */
+  public void setRminh(double rminh) {
+    OpenMM_AmoebaWcaDispersionForce_setRminh(pointer, rminh);
+  }
+
+  /**
+   * Set the water oxygen radius parameter.
+   *
+   * @param rmino The water oxygen radius parameter.
+   */
+  public void setRmino(double rmino) {
+    OpenMM_AmoebaWcaDispersionForce_setRmino(pointer, rmino);
   }
 
   /**
@@ -158,6 +263,15 @@ public class WcaDispersionForce extends Force {
    */
   public void setShctd(double shctd) {
     OpenMM_AmoebaWcaDispersionForce_setShctd(pointer, shctd);
+  }
+
+  /**
+   * Set the Levy parameter.
+   *
+   * @param slevy The Levy parameter.
+   */
+  public void setSlevy(double slevy) {
+    OpenMM_AmoebaWcaDispersionForce_setSlevy(pointer, slevy);
   }
 
   /**
@@ -172,12 +286,13 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Destroy the force.
+   * Check if the force uses periodic boundary conditions.
+   *
+   * @return True if the force uses periodic boundary conditions.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_AmoebaWcaDispersionForce_destroy(pointer);
-      pointer = null;
-    }
+  @Override
+  public boolean usesPeriodicBoundaryConditions() {
+    int pbc = OpenMM_AmoebaWcaDispersionForce_usesPeriodicBoundaryConditions(pointer);
+    return pbc == OpenMM_True;
   }
 }

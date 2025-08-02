@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.openmm;
 
-import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
@@ -78,12 +77,22 @@ public class StringArray {
   }
 
   /**
-   * Get the number of strings in the String Array.
+   * Append a String to the String Array.
    *
-   * @return The number of strings in the String Array.
+   * @param string The String to append.
    */
-  public int getSize() {
-    return OpenMM_StringArray_getSize(pointer);
+  public void append(String string) {
+    OpenMM_StringArray_append(pointer, string);
+  }
+
+  /**
+   * Destroy the String Array.
+   */
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_StringArray_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
@@ -105,6 +114,24 @@ public class StringArray {
   }
 
   /**
+   * Get the pointer to the String Array.
+   *
+   * @return The pointer to the String Array.
+   */
+  public PointerByReference getPointer() {
+    return pointer;
+  }
+
+  /**
+   * Get the number of strings in the String Array.
+   *
+   * @return The number of strings in the String Array.
+   */
+  public int getSize() {
+    return OpenMM_StringArray_getSize(pointer);
+  }
+
+  /**
    * Resize the String Array.
    *
    * @param size The new size of the String Array.
@@ -114,36 +141,13 @@ public class StringArray {
   }
 
   /**
-   * Append a String to the String Array.
-   *
-   * @param string The String to append.
-   */
-  public void append(String string) {
-    Pointer ref = new Memory(string.length() + 1);
-    ref.setString(0, string);
-    OpenMM_StringArray_append(pointer, ref);
-  }
-
-  /**
    * Set the String at index i.
    *
    * @param i      The index of the String to set.
    * @param string The String to set.
    */
   public void set(int i, String string) {
-    Pointer ref = new Memory(string.length() + 1);
-    ref.setString(0, string);
-    OpenMM_StringArray_set(pointer, i, ref);
-  }
-
-  /**
-   * Destroy the String Array.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_StringArray_destroy(pointer);
-      pointer = null;
-    }
+    OpenMM_StringArray_set(pointer, i, string);
   }
 
 }

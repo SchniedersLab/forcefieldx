@@ -62,17 +62,6 @@ public class DoubleArray3D {
   }
 
   /**
-   * Set the value of the array at the given index.
-   *
-   * @param d1    The first dimension index.
-   * @param d2    The second dimension index.
-   * @param value The value to set.
-   */
-  public void set(int d1, int d2, DoubleArray value) {
-    OpenMM_3D_DoubleArray_set(pointer, d1, d2, value.getPointer());
-  }
-
-  /**
    * Destroy the array.
    */
   public void destroy() {
@@ -82,7 +71,6 @@ public class DoubleArray3D {
     }
   }
 
-
   /**
    * Get the pointer to the array.
    *
@@ -90,6 +78,17 @@ public class DoubleArray3D {
    */
   public PointerByReference getPointer() {
     return pointer;
+  }
+
+  /**
+   * Set the value of the array at the given index.
+   *
+   * @param d1    The first dimension index.
+   * @param d2    The second dimension index.
+   * @param value The value to set.
+   */
+  public void set(int d1, int d2, DoubleArray value) {
+    OpenMM_3D_DoubleArray_set(pointer, d1, d2, value.getPointer());
   }
 
 }

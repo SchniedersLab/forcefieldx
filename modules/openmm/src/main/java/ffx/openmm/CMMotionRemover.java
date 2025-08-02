@@ -37,8 +37,12 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_getFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_setFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions;
 
 /**
  * Center of Mass Motion Remover.
@@ -55,6 +59,15 @@ public class CMMotionRemover extends Force {
   }
 
   /**
+   * Get the frequency at which center of mass motion should be removed.
+   *
+   * @return The frequency at which center of mass motion should be removed.
+   */
+  public int getFrequency() {
+    return OpenMM_CMMotionRemover_getFrequency(pointer);
+  }
+
+  /**
    * Destroy the OpenMM CMMotionRemover.
    */
   public void destroy() {
@@ -64,4 +77,23 @@ public class CMMotionRemover extends Force {
     }
   }
 
+  /**
+   * Set the frequency at which center of mass motion should be removed.
+   *
+   * @param frequency The frequency at which center of mass motion should be removed.
+   */
+  public void setFrequency(int frequency) {
+    OpenMM_CMMotionRemover_setFrequency(pointer, frequency);
+  }
+
+  /**
+   * Returns whether this force makes use of periodic boundary conditions.
+   *
+   * @return The CMMotionRemover always returns false.
+   */
+  @Override
+  public boolean usesPeriodicBoundaryConditions() {
+    int pbc = OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(pointer);
+    return pbc != OpenMM_False;
+  }
 }

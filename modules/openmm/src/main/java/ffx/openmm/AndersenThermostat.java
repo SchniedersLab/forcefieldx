@@ -45,6 +45,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_getRando
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultCollisionFrequency;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultTemperature;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setRandomNumberSeed;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_usesPeriodicBoundaryConditions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 
 /**
  * This class uses the Andersen method to maintain constant temperature.
@@ -62,13 +64,22 @@ public class AndersenThermostat extends Force {
   }
 
   /**
-   * Set the default temperature of the heat bath. This will affect any new Contexts
-   * you create, but not ones that already exist.
-   *
-   * @param temperature the default temperature of the heat bath (in Kelvin).
+   * Destroy the force.
    */
-  public void setDefaultTemperature(double temperature) {
-    OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_AndersenThermostat_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
+   * Get the default collision frequency (in 1/ps).
+   *
+   * @return the default collision frequency (in 1/ps).
+   */
+  public double getDefaultCollisionFrequency() {
+    return OpenMM_AndersenThermostat_getDefaultCollisionFrequency(pointer);
   }
 
   /**
@@ -78,6 +89,15 @@ public class AndersenThermostat extends Force {
    */
   public double getDefaultTemperature() {
     return OpenMM_AndersenThermostat_getDefaultTemperature(pointer);
+  }
+
+  /**
+   * Get the random number seed. See setRandomNumberSeed() for details.
+   *
+   * @return The random number seed.
+   */
+  public int getRandomNumberSeed() {
+    return OpenMM_AndersenThermostat_getRandomNumberSeed(pointer);
   }
 
   /**
@@ -91,12 +111,13 @@ public class AndersenThermostat extends Force {
   }
 
   /**
-   * Get the default collision frequency (in 1/ps).
+   * Set the default temperature of the heat bath. This will affect any new Contexts
+   * you create, but not ones that already exist.
    *
-   * @return the default collision frequency (in 1/ps).
+   * @param temperature the default temperature of the heat bath (in Kelvin).
    */
-  public double getDefaultCollisionFrequency() {
-    return OpenMM_AndersenThermostat_getDefaultCollisionFrequency(pointer);
+  public void setDefaultTemperature(double temperature) {
+    OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
   }
 
   /**
@@ -118,28 +139,13 @@ public class AndersenThermostat extends Force {
   }
 
   /**
-   * Get the random number seed. See setRandomNumberSeed() for details.
-   */
-  public int getRandomNumberSeed() {
-    return OpenMM_AndersenThermostat_getRandomNumberSeed(pointer);
-  }
-
-  /**
    * Returns whether this force makes use of periodic boundary conditions.
    *
    * @return the Andersen Thermostat always returns false.
    */
+  @Override
   public boolean usesPeriodicBoundaryConditions() {
-    return false;
-  }
-
-  /**
-   * Destroy the force.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_AndersenThermostat_destroy(pointer);
-      pointer = null;
-    }
+    int pbc = OpenMM_AndersenThermostat_usesPeriodicBoundaryConditions(pointer);
+    return pbc != OpenMM_False;
   }
 }
