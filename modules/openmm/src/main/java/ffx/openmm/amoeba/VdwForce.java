@@ -68,12 +68,12 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getSof
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getSoftcorePower;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getTypePairParameters;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getUseDispersionCorrection;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getUseLambdaComplement;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getUseParticleTypes;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setAlchemicalMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setCutoffDistance;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setEpsilonCombiningRule;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setLambdaName;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setNonbondedMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setParticleExclusions;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setParticleParameters;
@@ -84,7 +84,6 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setSof
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setSoftcorePower;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setTypePairParameters;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setUseDispersionCorrection;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setUseLambdaComplement;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_usesPeriodicBoundaryConditions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
@@ -210,7 +209,7 @@ public class VdwForce extends Force {
    * @return The lambda parameter.
    */
   public Pointer getLambda() {
-    return OpenMM_AmoebaVdwForce_Lambda();
+    return OpenMM_AmoebaVdwForce_Lambda(pointer);
   }
 
   /**
@@ -356,16 +355,7 @@ public class VdwForce extends Force {
   public int getUseDispersionCorrection() {
     return OpenMM_AmoebaVdwForce_getUseDispersionCorrection(pointer);
   }
-
-  /**
-   * Get whether to use lambda complement.
-   *
-   * @return 1 if lambda complement is used, 0 otherwise.
-   */
-  public int getUseLambdaComplement() {
-    return OpenMM_AmoebaVdwForce_getUseLambdaComplement(pointer);
-  }
-
+  
   /**
    * Get whether to use particle types.
    *
@@ -409,6 +399,15 @@ public class VdwForce extends Force {
    */
   public void setEpsilonCombiningRule(String rule) {
     OpenMM_AmoebaVdwForce_setEpsilonCombiningRule(pointer, rule);
+  }
+
+  /**
+   * Set the lambda parameter name.
+   *
+   * @param name The name of the lambda parameter.
+   */
+  public void setLambdaName(String name) {
+    OpenMM_AmoebaVdwForce_setLambdaName(pointer, name);
   }
 
   /**
@@ -514,16 +513,7 @@ public class VdwForce extends Force {
   public void setUseDispersionCorrection(int value) {
     OpenMM_AmoebaVdwForce_setUseDispersionCorrection(pointer, value);
   }
-
-  /**
-   * Set whether to use lambda complement.
-   *
-   * @param useLambdaComplement 1 to use lambda complement, 0 otherwise.
-   */
-  public void setUseLambdaComplement(int useLambdaComplement) {
-    OpenMM_AmoebaVdwForce_setUseLambdaComplement(pointer, useLambdaComplement);
-  }
-
+  
   /**
    * Update the parameters in the context.
    *

@@ -35,9 +35,10 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.openmm;
+package ffx.openmm.amoeba;
 
 import com.sun.jna.ptr.PointerByReference;
+import ffx.openmm.DoubleArray;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_destroy;

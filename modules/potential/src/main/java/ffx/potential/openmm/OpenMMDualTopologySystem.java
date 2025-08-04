@@ -152,7 +152,7 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
       if (vdW2 != null) {
         // Add the vdW Force for Topology 2.
         amoebaVDWForce2 = (AmoebaVdwForce) AmoebaVdwForce.constructForce(1, openMMDualTopologyEnergy);
-        amoebaVDWForce2.setUseLambdaComplement(OpenMM_True);
+        amoebaVDWForce2.setLambdaName("AmoebaVdwLambda2");
         addForce(amoebaVDWForce2);
       }
 
@@ -227,19 +227,23 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   @Override
   public void updateParameters(@Nullable Atom[] atoms) {
-    VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
-    if (vanDerWaals != null && vanDerWaals.getLambdaTerm()) {
-      double lambdaVDW = vanDerWaals.getLambda();
-      // Update the lambda value.
-      openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
-    }
 
     if (amoebaVDWForce != null) {
+      VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
+      if (vanDerWaals.getLambdaTerm()) {
+        double lambdaVDW = vanDerWaals.getLambda();
+        openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
+      }
       atoms = openMMEnergy.getAtomArray();
       amoebaVDWForce.updateForce(atoms, 0, openMMDualTopologyEnergy);
     }
 
     if (amoebaVDWForce2 != null) {
+      VanDerWaals vanDerWaals = openMMEnergy2.getVdwNode();
+      if (vanDerWaals.getLambdaTerm()) {
+        double lambdaVDW = vanDerWaals.getLambda();
+        openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda2", lambdaVDW);
+      }
       atoms = openMMEnergy2.getAtomArray();
       amoebaVDWForce2.updateForce(atoms, 1, openMMDualTopologyEnergy);
     }

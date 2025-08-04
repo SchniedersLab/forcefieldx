@@ -48,7 +48,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_create_2;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getPlatform;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState_2;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getStepCount;
@@ -88,10 +87,22 @@ public class Context {
   private PointerByReference pointer;
 
   /**
+   * The integrator used for this context.
+   */
+  protected Integrator integrator;
+
+  /**
+   * The platform used for this context.
+   */
+  protected Platform platform;
+
+  /**
    * Constructor.
    */
   public Context() {
     pointer = null;
+    integrator = null;
+    platform = null;
   }
 
   /**
@@ -103,6 +114,8 @@ public class Context {
    */
   public Context(System system, Integrator integrator, Platform platform) {
     pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
+    this.integrator = integrator;
+    this.platform = platform;
   }
 
   /**
@@ -134,9 +147,15 @@ public class Context {
    * Destroy the context.
    */
   public void destroy() {
+    if (integrator != null) {
+      integrator.destroy();
+      integrator = null;
+    }
     if (pointer != null) {
       OpenMM_Context_destroy(pointer);
       pointer = null;
+      // The platform is handled by the Context destroy method.
+      platform = null;
     }
   }
 
@@ -175,8 +194,16 @@ public class Context {
    * @return The Platform being used for computations.
    */
   public Platform getPlatform() {
-    PointerByReference platformPointer = OpenMM_Context_getPlatform(pointer);
-    return new Platform(platformPointer);
+    return platform;
+  }
+
+  /**
+   * Get the Integrator being used for this context.
+   *
+   * @return The Integrator being used for this context.
+   */
+  public Integrator getIntegrator() {
+    return integrator;
   }
 
   /**
@@ -367,5 +394,7 @@ public class Context {
     // Destroy the old context.
     destroy();
     pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
+    this.integrator = integrator;
+    this.platform = platform;
   }
 }

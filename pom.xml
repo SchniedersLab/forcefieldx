@@ -1088,7 +1088,7 @@
     <jdepend.version>2.1</jdepend.version>
     <jna.version>5.17.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
-    <jopenmm.version>8.3.1</jopenmm.version>
+    <jopenmm.version>8.3.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
     <jxr.version>3.6.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
