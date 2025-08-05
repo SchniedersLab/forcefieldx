@@ -157,7 +157,7 @@ public class OpenMMIntegrator {
   public static VerletIntegrator createVerletIntegrator(double dt) {
     VerletIntegrator verletIntegrator = new VerletIntegrator(dt);
     verletIntegrator.setConstraintTolerance(constraintTolerance);
-    logger.info("  Verlet Integrator");
+    logger.info("\n  Verlet Integrator");
     logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
     return verletIntegrator;
   }

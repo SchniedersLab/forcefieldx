@@ -527,7 +527,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     setForceGroup(forceGroup);
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder();
-      sb.append("  Electrostatics\n");
+      sb.append("\n  Electrostatics\n");
       sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
       if (polarization == Polarization.MUTUAL) {
         sb.append(format("    SCF Convergence Criteria:         %8.3e\n", poleps));
