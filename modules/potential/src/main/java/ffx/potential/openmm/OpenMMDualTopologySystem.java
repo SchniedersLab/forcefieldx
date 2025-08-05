@@ -440,6 +440,18 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     if (improperTorsionForce2 != null) {
       improperTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
     }
+    if (stretchTorsionForce != null) {
+      stretchTorsionForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (stretchTorsionForce2 != null) {
+      stretchTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+    if (angleTorsionForce != null) {
+      angleTorsionForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (angleTorsionForce2 != null) {
+      angleTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
 
     if (amoebaVDWForce != null) {
       VanDerWaals vanDerWaals = forceFieldEnergy.getVdwNode();

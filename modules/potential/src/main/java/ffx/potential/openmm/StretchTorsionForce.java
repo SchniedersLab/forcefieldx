@@ -211,4 +211,56 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
     }
     return new StretchTorsionForce(topology, openMMDualTopologyEnergy);
   }
+
+  /**
+   * Update the Dual Topology Stretch-Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    // Check if this system has stretch-torsions.
+    StretchTorsion[] stretchTorsions = forceFieldEnergy.getStretchTorsions();
+    if (stretchTorsions == null || stretchTorsions.length < 1) {
+      return;
+    }
+
+    final double unitConv = OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+    double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    int stIndex = 0;
+    for (StretchTorsion stretchTorsion : stretchTorsions) {
+      double scale = 1.0;
+      // Don't apply lambda scale to alchemical stretch-torsion
+      if (!stretchTorsion.applyLambda()) {
+        scale = scaleDT;
+      }
+      double[] constants = stretchTorsion.getConstants();
+      DoubleArray parameters = new DoubleArray(0);
+      for (int m = 0; m < 3; m++) {
+        for (int n = 0; n < 3; n++) {
+          int index = (3 * m) + n;
+          parameters.append(constants[index] * unitConv * scale);
+        }
+      }
+      parameters.append(stretchTorsion.bondType1.distance * OpenMM_NmPerAngstrom);
+      parameters.append(stretchTorsion.bondType2.distance * OpenMM_NmPerAngstrom);
+      parameters.append(stretchTorsion.bondType3.distance * OpenMM_NmPerAngstrom);
+
+      IntArray particles = new IntArray(0);
+      Atom[] atoms = stretchTorsion.getAtomArray(true);
+      for (int i = 0; i < 4; i++) {
+        int atomIndex = atoms[i].getArrayIndex();
+        atomIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, atomIndex);
+        particles.append(atomIndex);
+      }
+
+      setBondParameters(stIndex++, particles, parameters);
+      parameters.destroy();
+      particles.destroy();
+    }
+
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
+  }
 }
