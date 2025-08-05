@@ -93,7 +93,7 @@ public class OpenMMSystem extends ffx.openmm.System {
   /**
    * The OpenMMEnergy instance.
    */
-  protected OpenMMEnergy openMMEnergy;
+  private final OpenMMEnergy openMMEnergy;
   /**
    * The Force Field in use.
    */

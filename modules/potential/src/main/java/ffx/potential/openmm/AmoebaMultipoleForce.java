@@ -42,6 +42,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.amoeba.MultipoleForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ReciprocalSpace;
@@ -230,17 +231,17 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     // Determine the other topology index.
     int otherTopology = 1 - topology;
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    OpenMMEnergy otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(otherTopology);
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ForceFieldEnergy otherForceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(otherTopology);
 
-    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-    ParticleMeshEwald otherPME = otherOpenMMEnergy.getPmeNode();
+    ParticleMeshEwald pme = forceFieldEnergy.getPmeNode();
+    ParticleMeshEwald otherPME = otherForceFieldEnergy.getPmeNode();
     if (pme == null || otherPME == null) {
       destroy();
       return;
     }
 
-    double doPolarization = configureForce(openMMEnergy);
+    double doPolarization = configureForce(forceFieldEnergy);
 
     // Dual-topology scale factor.
     // double scaleDT = Math.sqrt(openMMDualTopologyEnergy.getTopologyScale(topology));
@@ -451,12 +452,12 @@ public class AmoebaMultipoleForce extends MultipoleForce {
   /**
    * Configure the AMOEBA Multipole Force based on the OpenMM Energy instance.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the multipole information.
+   * @param forceFieldEnergy The ForceFieldEnergy instance that contains the multipole information.
    * @return The polarization factor for the force, which is 1.0 if polarization is enabled, or 0.0 if not.
    */
-  private double configureForce(OpenMMEnergy openMMEnergy) {
-    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+  private double configureForce(ForceFieldEnergy forceFieldEnergy) {
+    ParticleMeshEwald pme = forceFieldEnergy.getPmeNode();
+    ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
 
     Polarization polarization = pme.getPolarizationType();
     double doPolarization = 1.0;
@@ -493,7 +494,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
       }
     }
 
-    Crystal crystal = openMMEnergy.getCrystal();
+    Crystal crystal = forceFieldEnergy.getCrystal();
     double cutoff = pme.getEwaldCutoff();
     double aewald = pme.getEwaldCoefficient();
     if (!crystal.aperiodic()) {
@@ -598,8 +599,8 @@ public class AmoebaMultipoleForce extends MultipoleForce {
    * @return An AMOEBA Multipole Force, or null if there are no multipole interactions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ParticleMeshEwald pme = forceFieldEnergy.getPmeNode();
     if (pme == null) {
       return null;
     }
@@ -727,8 +728,8 @@ public class AmoebaMultipoleForce extends MultipoleForce {
    * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the multipole parameters.
    */
   public void updateForce(Atom[] atoms, int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ParticleMeshEwald pme = forceFieldEnergy.getPmeNode();
     double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
     double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
