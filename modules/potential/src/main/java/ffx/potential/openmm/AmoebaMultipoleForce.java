@@ -52,6 +52,8 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -225,22 +227,15 @@ public class AmoebaMultipoleForce extends MultipoleForce {
    * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the multipole parameters.
    */
   public AmoebaMultipoleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-    if (pme == null) {
-      destroy();
-      return;
-    }
+    // Determine the other topology index.
+    int otherTopology = 1 - topology;
 
-    // Get the other OpenMMEnergy instance for the dual topology.
-    OpenMMEnergy otherOpenMMEnergy;
-    if (topology == 0) {
-      otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(1);
-    } else {
-      otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(0);
-    }
-    ParticleMeshEwald pmeOther = otherOpenMMEnergy.getPmeNode();
-    if (pmeOther == null) {
+    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    OpenMMEnergy otherOpenMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(otherTopology);
+
+    ParticleMeshEwald pme = openMMEnergy.getPmeNode();
+    ParticleMeshEwald otherPME = otherOpenMMEnergy.getPmeNode();
+    if (pme == null || otherPME == null) {
       destroy();
       return;
     }
@@ -365,55 +360,87 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     quadrupoles.destroy();
 
     int[][] ip11 = pme.getPolarization11();
-    int[][] ip11Other = pmeOther.getPolarization11();
+    int[][] ip11Other = otherPME.getPolarization11();
 
     IntArray covalentMap = new IntArray(0);
+    // Use a set to ensure the same masking rules for both topologies.
+    Set<Integer> covalentSet = new HashSet<>();
+
     for (int i = 0; i < nAtoms; i++) {
       Atom atom = openMMDualTopologyEnergy.getDualTopologyAtom(topology, i);
+      Atom otherAtom = openMMDualTopologyEnergy.getDualTopologyAtom(otherTopology, i);
       int index = atom.getArrayIndex();
+      int otherIndex = otherAtom.getArrayIndex();
 
       // 1-2 Mask
-      covalentMap.resize(0);
+      covalentSet.clear();
       for (Atom ak : atom.get12List()) {
-        covalentMap.append(ak.getTopologyAtomIndex());
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      for (Atom ak : otherAtom.get12List()) {
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      covalentMap.resize(0);
+      for (int ak : covalentSet) {
+        covalentMap.append(ak);
       }
       setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent12, covalentMap);
 
       // 1-3 Mask
-      covalentMap.resize(0);
+      covalentSet.clear();
       for (Atom ak : atom.get13List()) {
-        covalentMap.append(ak.getTopologyAtomIndex());
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      for (Atom ak : otherAtom.get13List()) {
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      covalentMap.resize(0);
+      for (int ak : covalentSet) {
+        covalentMap.append(ak);
       }
       setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent13, covalentMap);
 
       // 1-4 Mask
-      covalentMap.resize(0);
+      covalentSet.clear();
       for (Atom ak : atom.get14List()) {
-        covalentMap.append(ak.getTopologyAtomIndex());
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      for (Atom ak : otherAtom.get14List()) {
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      covalentMap.resize(0);
+      for (int ak : covalentSet) {
+        covalentMap.append(ak);
       }
       setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent14, covalentMap);
 
       // 1-5 Mask
-      covalentMap.resize(0);
+      covalentSet.clear();
       for (Atom ak : atom.get15List()) {
-        covalentMap.append(ak.getTopologyAtomIndex());
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      for (Atom ak : otherAtom.get15List()) {
+        covalentSet.add(ak.getTopologyAtomIndex());
+      }
+      covalentMap.resize(0);
+      for (int ak : covalentSet) {
+        covalentMap.append(ak);
       }
       setCovalentMap(i, OpenMM_AmoebaMultipoleForce_Covalent15, covalentMap);
 
       // 1-1 Polarization Groups.
-      covalentMap.resize(0);
-
-      int top = atom.getTopologyIndex();
-      int[] polMask;
-      if (top == topology) {
-        polMask = ip11[index];
-      } else {
-        // Use the other topology's polarization mask.
-        polMask = ip11Other[index];
+      covalentSet.clear();
+      for (int k : ip11[index]) {
+        int value = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, k);
+        covalentSet.add(value);
       }
-      for (int k : polMask) {
-        int value = openMMDualTopologyEnergy.mapToDualTopologyIndex(top, k);
-        covalentMap.append(value);
+      for (int k : ip11Other[otherIndex]) {
+        int value = openMMDualTopologyEnergy.mapToDualTopologyIndex(otherTopology, k);
+        covalentSet.add(value);
+      }
+      covalentMap.resize(0);
+      for (int k : covalentSet) {
+        covalentMap.append(k);
       }
       setCovalentMap(i, OpenMM_AmoebaMultipoleForce_PolarizationCovalent11, covalentMap);
       // AMOEBA does not scale between 1-2, 1-3, etc. polarization groups.
