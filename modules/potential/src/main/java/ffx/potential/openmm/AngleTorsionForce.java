@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.CustomCompoundBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
 
@@ -121,8 +122,8 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
   public AngleTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     super(4, AngleTorsion.angleTorsionForm());
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    AngleTorsion[] angleTorsions = openMMEnergy.getAngleTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    AngleTorsion[] angleTorsions = forceFieldEnergy.getAngleTorsions();
     if (angleTorsions == null || angleTorsions.length < 1) {
       // Free the memory created by the call to super.
       destroy();
@@ -145,7 +146,7 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
     for (AngleTorsion angleTorsion : angleTorsions) {
       double scale = 1.0;
       // Don't apply lambda scale to alchemical stretch-torsion
-      if (!angleTorsion.applyLambda()) { // todo - not sure if needed
+      if (!angleTorsion.applyLambda()) {
         scale = scaleDT;
       }
       double[] constants = angleTorsion.getConstants();
@@ -172,7 +173,7 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
       particles.destroy();
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
 
     setForceGroup(forceGroup);
     logger.info(format("  Angle-Torsions:                    %10d", angleTorsions.length));
@@ -201,8 +202,8 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
    * @return An OpenMM Stretch-Bend Force, or null if there are no angle-torsion.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    AngleTorsion[] angleTorsions = openMMEnergy.getAngleTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    AngleTorsion[] angleTorsions = forceFieldEnergy.getAngleTorsions();
     if (angleTorsions == null || angleTorsions.length < 1) {
       return null;
     }

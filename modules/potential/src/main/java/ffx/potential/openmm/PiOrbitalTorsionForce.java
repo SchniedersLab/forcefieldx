@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.CustomCompoundBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.parameters.PiOrbitalTorsionType;
 
@@ -111,10 +112,10 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public PiOrbitalTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(6, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getPiOrbitalTorsionEnergyString());
+    super(6, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getPiOrbitalTorsionEnergyString());
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
     if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
       return;
     }
@@ -135,7 +136,7 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
       int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
-      // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
+      // Don't apply lambda scale to alchemcial pi-orbital torsion
       if (!piOrbitalTorsion.applyLambda()) {
         k = k * scale;
       }
@@ -159,7 +160,7 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Pi-Orbital Torsions:               %10d", piOrbitalTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -187,8 +188,8 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
    * @return An OpenMM Pi-Orbital Torsion Force, or null if there are no pi-orbital torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
     if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
       return null;
     }
@@ -241,8 +242,8 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
     if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
       return;
     }
@@ -261,7 +262,7 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
       int a6 = piOrbitalTorsion.getAtom(5).getArrayIndex();
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
-      // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
+      // Don't apply lambda scale to alchemcial pi-orbital torsion
       if (!piOrbitalTorsion.applyLambda()) {
         k = k * scale;
       }

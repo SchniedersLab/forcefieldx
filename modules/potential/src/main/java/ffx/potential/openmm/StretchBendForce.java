@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.CustomCompoundBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.StretchBend;
 
 import java.util.logging.Level;
@@ -115,10 +116,10 @@ public class StretchBendForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public StretchBendForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(3, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getStretchBendEnergyString());
+    super(3, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getStretchBendEnergyString());
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
     if (stretchBends == null || stretchBends.length < 1) {
       return;
     }
@@ -144,7 +145,7 @@ public class StretchBendForce extends CustomCompoundBondForce {
       double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
       // Don't apply lambda scale to alchemical stretch bend
       if (!stretchBend.applyLambda()) {
-        k1 = k1 * scale; // todo how to do scale - scale both by lambda or square root of lambda - look at equation
+        k1 = k1 * scale;
         k2 = k2 * scale;
       }
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
@@ -165,7 +166,7 @@ public class StretchBendForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Stretch-Bends:                     %10d", stretchBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -193,8 +194,8 @@ public class StretchBendForce extends CustomCompoundBondForce {
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-bends.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
     if (stretchBends == null || stretchBends.length < 1) {
       return null;
     }
@@ -249,8 +250,8 @@ public class StretchBendForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
     if (stretchBends == null || stretchBends.length < 1) {
       return;
     }
@@ -271,7 +272,7 @@ public class StretchBendForce extends CustomCompoundBondForce {
       double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
       // Don't apply lambda scale to alchemical stretch bend
       if (!stretchBend.applyLambda()) {
-        k1 = k1 * scale; // todo - how to apply?
+        k1 = k1 * scale;
         k2 = k2 * scale;
       }
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);

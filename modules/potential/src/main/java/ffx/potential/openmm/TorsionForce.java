@@ -39,6 +39,7 @@ package ffx.potential.openmm;
 
 import ffx.openmm.Force;
 import ffx.openmm.PeriodicTorsionForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
@@ -100,10 +101,10 @@ public class TorsionForce extends PeriodicTorsionForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public TorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
-    Torsion[] torsions = openMMEnergy.getTorsions();
+    Torsion[] torsions = forceFieldEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return;
     }
@@ -173,8 +174,8 @@ public class TorsionForce extends PeriodicTorsionForce {
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    Torsion[] torsions = openMMEnergy.getTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    Torsion[] torsions = forceFieldEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return null;
     }
@@ -224,9 +225,9 @@ public class TorsionForce extends PeriodicTorsionForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
     // Check if this system has torsions.
-    Torsion[] torsions = openMMEnergy.getTorsions();
+    Torsion[] torsions = forceFieldEnergy.getTorsions();
     if (torsions == null || torsions.length < 1) {
       return;
     }
@@ -247,7 +248,7 @@ public class TorsionForce extends PeriodicTorsionForce {
       a4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a4);
       for (int j = 0; j < nTerms; j++) {
         double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
-        // Don't apply lambda scale to alchemical torsion - todo what is lambdaTorsion
+        // Don't apply lambda scale to alchemical torsion
         if (!torsion.applyLambda()) {
           k = k * scale;
         }

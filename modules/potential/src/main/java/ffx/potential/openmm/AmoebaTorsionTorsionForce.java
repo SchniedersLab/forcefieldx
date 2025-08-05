@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.amoeba.DoubleArray3D;
 import ffx.openmm.Force;
 import ffx.openmm.amoeba.TorsionTorsionForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
@@ -164,8 +165,8 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public AmoebaTorsionTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    TorsionTorsion[] torsionTorsions = openMMEnergy.getTorsionTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    TorsionTorsion[] torsionTorsions = forceFieldEnergy.getTorsionTorsions();
     if (torsionTorsions == null || torsionTorsions.length < 1) {
       destroy();
       return;
@@ -262,7 +263,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     }
     values.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Torsion-Torsions:                  %10d", torsionTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -290,8 +291,8 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
    * @return A Torsion-Torsion Force, or null if there are no torsion-torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    TorsionTorsion[] torsionTorsion = openMMEnergy.getTorsionTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    TorsionTorsion[] torsionTorsion = forceFieldEnergy.getTorsionTorsions();
     if (torsionTorsion == null || torsionTorsion.length < 1) {
       return null;
     }

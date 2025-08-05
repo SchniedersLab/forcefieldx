@@ -39,6 +39,9 @@ package ffx.potential.openmm;
 
 import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.MolecularAssembly;
+import edu.uiowa.jopenmm.OpenMM_Vec3;
+import ffx.crystal.Crystal;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -46,7 +49,7 @@ import ffx.potential.nonbonded.VanDerWaals;
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static java.lang.String.format;
 
 /**
@@ -73,9 +76,13 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
   private final OpenMMDualTopologyEnergy openMMDualTopologyEnergy;
 
   /**
-   * The OpenMMEnergy instance for the second topology.
+   * The ForceFieldEnergy instance for the first topology.
    */
-  protected OpenMMEnergy openMMEnergy2;
+  protected ForceFieldEnergy forceFieldEnergy;
+  /**
+   * The ForceFieldEnergy instance for the second topology.
+   */
+  protected ForceFieldEnergy forceFieldEnergy2;
   /**
    * OpenMM Custom Bond Force for topology 2.
    */
@@ -141,11 +148,9 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
   public OpenMMDualTopologySystem(OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     this.openMMDualTopologyEnergy = openMMDualTopologyEnergy;
 
-    openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(0);
-    openMMEnergy2 = openMMDualTopologyEnergy.getOpenMMEnergy(1);
-
-    MolecularAssembly molecularAssembly = openMMDualTopologyEnergy.getMolecularAssembly(0);
-    forceField = molecularAssembly.getForceField();
+    forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(0);
+    forceFieldEnergy2 = openMMDualTopologyEnergy.getForceFieldEnergy(1);
+    forceField = openMMDualTopologyEnergy.getMolecularAssembly(0).getForceField();
 
     // This array contains the shared and alchemical atoms for the dual topology system.
     atoms = openMMDualTopologyEnergy.getDualTopologyAtoms(0);
@@ -158,6 +163,47 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     }
 
     logger.info(format("\n OpenMM dual-topology system created with %d atoms.", atoms.length));
+  }
+
+  /**
+   * Get the Crystal instance.
+   *
+   * @return the Crystal instance.
+   */
+  @Override
+  public Crystal getCrystal() {
+    return forceFieldEnergy.getCrystal();
+  }
+
+  /**
+   * Set the default values of the vectors defining the axes of the periodic box (measured in nm).
+   *
+   * <p>Any newly created Context will have its box vectors set to these. They will affect any
+   * Force added to the System that uses periodic boundary conditions.
+   *
+   * <p>Triclinic boxes are supported, but the vectors must satisfy certain requirements. In
+   * particular, a must point in the x direction, b must point "mostly" in the y direction, and c
+   * must point "mostly" in the z direction. See the documentation for details.
+   */
+  @Override
+  protected void setDefaultPeriodicBoxVectors() {
+    Crystal crystal = forceFieldEnergy.getCrystal();
+    if (!crystal.aperiodic()) {
+      OpenMM_Vec3 a = new OpenMM_Vec3();
+      OpenMM_Vec3 b = new OpenMM_Vec3();
+      OpenMM_Vec3 c = new OpenMM_Vec3();
+      double[][] Ai = crystal.Ai;
+      a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
+      a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
+      a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
+      b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
+      b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
+      b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
+      c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
+      c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
+      c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
+      setDefaultPeriodicBoxVectors(a, b, c);
+    }
   }
 
   /**
@@ -250,8 +296,8 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     addForce(amoebaTorsionTorsionForce);
     addForce(amoebaTorsionTorsionForce2);
 
-    VanDerWaals vdW1 = openMMEnergy.getVdwNode();
-    VanDerWaals vdW2 = openMMEnergy2.getVdwNode();
+    VanDerWaals vdW1 = forceFieldEnergy.getVdwNode();
+    VanDerWaals vdW2 = forceFieldEnergy2.getVdwNode();
     if (vdW1 != null || vdW2 != null) {
       logger.info("\n Non-Bonded Terms");
 
@@ -267,8 +313,8 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
         addForce(amoebaVDWForce2);
       }
 
-      ParticleMeshEwald pme = openMMEnergy.getPmeNode();
-      ParticleMeshEwald pme2 = openMMEnergy2.getPmeNode();
+      ParticleMeshEwald pme = forceFieldEnergy.getPmeNode();
+      ParticleMeshEwald pme2 = forceFieldEnergy2.getPmeNode();
       if (pme != null) {
         amoebaMultipoleForce = (AmoebaMultipoleForce) AmoebaMultipoleForce.constructForce(0, openMMDualTopologyEnergy);
         addForce(amoebaMultipoleForce);
@@ -396,29 +442,29 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     }
 
     if (amoebaVDWForce != null) {
-      VanDerWaals vanDerWaals = openMMEnergy.getVdwNode();
+      VanDerWaals vanDerWaals = forceFieldEnergy.getVdwNode();
       if (vanDerWaals.getLambdaTerm()) {
         double lambdaVDW = vanDerWaals.getLambda();
         openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda", lambdaVDW);
       }
-      atoms = openMMEnergy.getAtomArray();
+      atoms = forceFieldEnergy.getAtomArray();
       amoebaVDWForce.updateForce(atoms, 0, openMMDualTopologyEnergy);
     }
     if (amoebaVDWForce2 != null) {
-      VanDerWaals vanDerWaals = openMMEnergy2.getVdwNode();
+      VanDerWaals vanDerWaals = forceFieldEnergy2.getVdwNode();
       if (vanDerWaals.getLambdaTerm()) {
         double lambdaVDW = vanDerWaals.getLambda();
         openMMDualTopologyEnergy.getContext().setParameter("AmoebaVdwLambda2", lambdaVDW);
       }
-      atoms = openMMEnergy2.getAtomArray();
+      atoms = forceFieldEnergy2.getAtomArray();
       amoebaVDWForce2.updateForce(atoms, 1, openMMDualTopologyEnergy);
     }
     if (amoebaMultipoleForce != null) {
-      atoms = openMMEnergy.getAtomArray();
+      atoms = forceFieldEnergy.getAtomArray();
       amoebaMultipoleForce.updateForce(atoms, 0, openMMDualTopologyEnergy);
     }
     if (amoebaMultipoleForce2 != null) {
-      atoms = openMMEnergy2.getAtomArray();
+      atoms = forceFieldEnergy2.getAtomArray();
       amoebaMultipoleForce2.updateForce(atoms, 1, openMMDualTopologyEnergy);
     }
   }

@@ -40,6 +40,7 @@ package ffx.potential.openmm;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.CustomAngleForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AngleType;
@@ -121,15 +122,15 @@ public class AngleForce extends CustomAngleForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public AngleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(openMMDualTopologyEnergy.getOpenMMEnergy(topology).getAngleEnergyString());
+    super(openMMDualTopologyEnergy.getForceFieldEnergy(topology).getAngleEnergyString());
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    Angle[] angles = openMMEnergy.getAngles();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    Angle[] angles = forceFieldEnergy.getAngles();
     addPerAngleParameter("theta0");
     addPerAngleParameter("k");
     setName("Angle");
 
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+    ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
 
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
     rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
@@ -201,9 +202,9 @@ public class AngleForce extends CustomAngleForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
 
-    Angle[] angles = openMMEnergy.getAngles();
+    Angle[] angles = forceFieldEnergy.getAngles();
     if (angles == null || angles.length < 1) {
       return null;
     }
@@ -260,8 +261,8 @@ public class AngleForce extends CustomAngleForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    Angle[] angles = openMMEnergy.getAngles();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    Angle[] angles = forceFieldEnergy.getAngles();
     if (angles == null || angles.length < 1) {
       return;
     }

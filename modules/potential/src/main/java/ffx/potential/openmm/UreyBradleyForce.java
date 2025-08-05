@@ -39,6 +39,7 @@ package ffx.potential.openmm;
 
 import ffx.openmm.Force;
 import ffx.openmm.HarmonicBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.UreyBradleyType;
 
@@ -93,8 +94,8 @@ public class UreyBradleyForce extends HarmonicBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public UreyBradleyForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    UreyBradley[] ureyBradleys = forceFieldEnergy.getUreyBradleys();
     if (ureyBradleys == null || ureyBradleys.length < 1) {
       return;
     }
@@ -120,7 +121,7 @@ public class UreyBradleyForce extends HarmonicBondForce {
       addBond(i1, i2, length, k);
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Urey-Bradleys:                     %10d", ureyBradleys.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -147,9 +148,9 @@ public class UreyBradleyForce extends HarmonicBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
 
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
+    UreyBradley[] ureyBradleys = forceFieldEnergy.getUreyBradleys();
     if (ureyBradleys == null || ureyBradleys.length < 1) {
       return null;
     }
@@ -191,8 +192,8 @@ public class UreyBradleyForce extends HarmonicBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    UreyBradley[] ureyBradleys = forceFieldEnergy.getUreyBradleys();
     if (ureyBradleys == null || ureyBradleys.length < 1) {
       return;
     }

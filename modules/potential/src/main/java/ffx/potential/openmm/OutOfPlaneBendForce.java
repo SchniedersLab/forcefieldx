@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.CustomCompoundBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.parameters.OutOfPlaneBendType;
 
@@ -105,10 +106,10 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public OutOfPlaneBendForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(4, openMMDualTopologyEnergy.getOpenMMEnergy(topology).getOutOfPlaneEnergyString());
+    super(4, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getOutOfPlaneEnergyString());
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
     if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
       return;
     }
@@ -127,7 +128,7 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
       int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
       int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
-      // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
+      // Don't apply lambda scale to alchemcial out-of-plane bend
       if (!outOfPlaneBend.applyLambda()) {
         k = k * scale;
       }
@@ -146,7 +147,7 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     }
     particles.destroy();
     parameters.destroy();
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Out-of-Plane Bends:                %10d", outOfPlaneBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -174,8 +175,8 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
    * @return An OpenMM Out-of-Plane Bend Force, or null if there are no out-of-plane bends.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
     if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
       return null;
     }
@@ -225,8 +226,8 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
     if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
       return;
     }
@@ -243,7 +244,7 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
       int i3 = outOfPlaneBend.getAtom(2).getArrayIndex();
       int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
-      // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
+      // Don't apply lambda scale to alchemcial out-of-plane bend
       if (!outOfPlaneBend.applyLambda()) {
         k = k * scale;
       }

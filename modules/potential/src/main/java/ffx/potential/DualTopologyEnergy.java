@@ -619,7 +619,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                                                  MolecularAssembly molecularAssembly2,
                                                  UnivariateSwitchingFunction switchFunction) {
     ForceField forceField = molecularAssembly1.getForceField();
-    String platformString = toEnumForm(forceField.getString("PLATFORM", "FFX"));
+    String platformString = toEnumForm(forceField.getString("PLATFORM-DT", "FFX"));
     try {
       Platform platform = Platform.valueOf(platformString);
       switch (platform) {

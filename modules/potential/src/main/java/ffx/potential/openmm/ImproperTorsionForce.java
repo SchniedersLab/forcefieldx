@@ -39,6 +39,7 @@ package ffx.potential.openmm;
 
 import ffx.openmm.Force;
 import ffx.openmm.PeriodicTorsionForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.parameters.ImproperTorsionType;
 
@@ -94,8 +95,8 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public ImproperTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ImproperTorsion[] improperTorsions = openMMEnergy.getImproperTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ImproperTorsion[] improperTorsions = forceFieldEnergy.getImproperTorsions();
     if (improperTorsions == null || improperTorsions.length < 1) {
       // Clean up the memory allocated by the OpenMMPeriodicTorsionForce constructor.
       destroy();
@@ -116,13 +117,13 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
       ImproperTorsionType type = improperTorsion.improperType;
       double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k;
       // Don't apply lambda scale to alchemical improper torsion
-      if (!improperTorsion.applyLambda()) { // todo - not sure if needed
+      if (!improperTorsion.applyLambda()) {
         forceConstant *= scale;
       }
       addTorsion(a1, a2, a3, a4, type.periodicity, type.phase * OpenMM_RadiansPerDegree, forceConstant);
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
     setForceGroup(forceGroup);
     logger.info(format("  Improper Torsions:                 %10d", improperTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -159,8 +160,8 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ImproperTorsion[] improperTorsions = openMMEnergy.getImproperTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ImproperTorsion[] improperTorsions = forceFieldEnergy.getImproperTorsions();
     if (improperTorsions == null || improperTorsions.length < 1) {
       return null;
     }
@@ -200,8 +201,8 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    ImproperTorsion[] improperTorsions = openMMEnergy.getImproperTorsions();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    ImproperTorsion[] improperTorsions = forceFieldEnergy.getImproperTorsions();
     if (improperTorsions == null || improperTorsions.length < 1) {
       return;
     }
@@ -222,7 +223,7 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
       ImproperTorsionType type = improperTorsion.improperType;
       double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k * lambdaTorsion;
       // Don't apply lambda scale to alchemical improper torsion
-      if (!improperTorsion.applyLambda()) { // todo - not sure if needed
+      if (!improperTorsion.applyLambda()) {
         forceConstant *= scale;
       }
       setTorsionParameters(i, a1, a2, a3, a4, type.periodicity, type.phase * OpenMM_RadiansPerDegree, forceConstant);

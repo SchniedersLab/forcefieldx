@@ -41,6 +41,7 @@ import ffx.crystal.Crystal;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
 import ffx.openmm.amoeba.VdwForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.NonbondedCutoff;
@@ -151,8 +152,8 @@ public class AmoebaVdwForce extends VdwForce {
    */
   public AmoebaVdwForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
 
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    VanDerWaals vdW = openMMEnergy.getVdwNode();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    VanDerWaals vdW = forceFieldEnergy.getVdwNode();
     if (vdW == null) {
       destroy();
       return;
@@ -161,7 +162,7 @@ public class AmoebaVdwForce extends VdwForce {
     double scale = sqrt(openMMDualTopologyEnergy.getTopologyScale(topology));
 
     // Configure the Amoeba vdW Force.
-    configureForce(openMMEnergy);
+    configureForce(forceFieldEnergy);
 
     // Add the particles.
     ExtendedSystem extendedSystem = vdW.getExtendedSystem();
@@ -234,10 +235,10 @@ public class AmoebaVdwForce extends VdwForce {
   /**
    * Configuration of the AMOEBA vdW force that is used for both single and dual-topology simulations.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the vdW parameters.
+   * @param forceFieldEnergy The ForceFieldEnergy instance that contains the vdW parameters.
    */
-  private void configureForce(OpenMMEnergy openMMEnergy) {
-    VanDerWaals vdW = openMMEnergy.getVdwNode();
+  private void configureForce(ForceFieldEnergy forceFieldEnergy) {
+    VanDerWaals vdW = forceFieldEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
 
     double radScale = 1.0;
@@ -245,7 +246,7 @@ public class AmoebaVdwForce extends VdwForce {
       radScale = 0.5;
     }
 
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+    ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
     Map<String, VDWType> vdwTypes = forceField.getVDWTypes();
     for (VDWType vdwType : vdwTypes.values()) {
       int atomClass = vdwType.atomClass;
@@ -290,7 +291,7 @@ public class AmoebaVdwForce extends VdwForce {
     }
 
     // Set the nonbonded method based on the crystal periodicity.
-    Crystal crystal = openMMEnergy.getCrystal();
+    Crystal crystal = forceFieldEnergy.getCrystal();
     if (crystal.aperiodic()) {
       setNonbondedMethod(OpenMM_AmoebaVdwForce_NoCutoff);
     } else {
@@ -338,9 +339,8 @@ public class AmoebaVdwForce extends VdwForce {
    * @return An AMOEBA vdW Force, or null if there are no vdW interactions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
-    VanDerWaals vdW = openMMEnergy.getVdwNode();
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    VanDerWaals vdW = forceFieldEnergy.getVdwNode();
     if (vdW == null) {
       return null;
     }
@@ -398,10 +398,10 @@ public class AmoebaVdwForce extends VdwForce {
    * @param openMMDualTopologyEnergy The OpenMM Dual-Topology Energy instance that contains the vdW parameters.
    */
   public void updateForce(Atom[] atoms, int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    OpenMMEnergy openMMEnergy = openMMDualTopologyEnergy.getOpenMMEnergy(topology);
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
     double scale = sqrt(openMMDualTopologyEnergy.getTopologyScale(topology));
 
-    VanDerWaals vdW = openMMEnergy.getVdwNode();
+    VanDerWaals vdW = forceFieldEnergy.getVdwNode();
     VanDerWaalsForm vdwForm = vdW.getVDWForm();
     double radScale = 1.0;
     if (vdwForm.radiusSize == VDWType.RADIUS_SIZE.DIAMETER) {

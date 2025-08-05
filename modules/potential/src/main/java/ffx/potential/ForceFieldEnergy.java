@@ -72,6 +72,7 @@ import ffx.potential.bonded.RelativeSolvation;
 import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestrainDistance;
+import ffx.potential.bonded.RestrainPosition;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
@@ -85,7 +86,6 @@ import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.RestrainGroups;
-import ffx.potential.bonded.RestrainPosition;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.openmm.OpenMMEnergy;
@@ -1564,6 +1564,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
   }
 
+  /**
+   * Get the MolecularAssembly associated with this ForceFieldEnergy.
+   *
+   * @return a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public MolecularAssembly getMolecularAssembly() {
+    return molecularAssembly;
+  }
+
   private int checkForSpecialPositions(ForceField forceField) {
     // Check for atoms at special positions. These should normally be set to inactive.
     boolean specialPositionsInactive = forceField.getBoolean("SPECIAL_POSITIONS_INACTIVE", true);
@@ -1849,45 +1858,55 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, int numThreads) {
     ForceField forceField = assembly.getForceField();
     String platformString = toEnumForm(forceField.getString("PLATFORM", "FFX"));
+    Platform platform;
     try {
-      Platform platform = Platform.valueOf(platformString);
-      switch (platform) {
-        case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
-          try {
-            return new OpenMMEnergy(assembly, platform, numThreads);
-          } catch (Exception ex) {
-            logger.warning(format(" Exception creating OpenMMEnergy: %s", ex));
-            ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
-            if (ffxEnergy == null) {
-              ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
-              assembly.setPotential(ffxEnergy);
-            }
-            return ffxEnergy;
-          }
-        case OMM_CPU:
-          logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
-        default:
+      platform = Platform.valueOf(platformString);
+    } catch (IllegalArgumentException e) {
+      logger.warning(format(" String %s did not match a known energy implementation", platformString));
+      platform = Platform.FFX;
+    }
+
+    // Check if the dual-topology platform flag is set.
+    String dtPlatformString = toEnumForm(forceField.getString("PLATFORM_DT", "FFX"));
+    try {
+      Platform dtPlatform = Platform.valueOf(dtPlatformString);
+      // If the dtPlatform uses OpenMM, then single topology energy will use FFX.
+      if (dtPlatform != Platform.FFX) {
+        // If the dtPlatform platform uses OpenMM, then use FFX for single topology.
+        platform = Platform.FFX;
+      }
+    } catch (IllegalArgumentException e) {
+      // If the dtPlatform is not recognized, ignore it.
+    }
+
+    switch (platform) {
+      case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
+        try {
+          return new OpenMMEnergy(assembly, platform, numThreads);
+        } catch (Exception ex) {
+          logger.warning(format(" Exception creating OpenMMEnergy: %s", ex));
           ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
           if (ffxEnergy == null) {
             ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
             assembly.setPotential(ffxEnergy);
           }
           return ffxEnergy;
-      }
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      logger.warning(
-          format(" String %s did not match a known energy implementation", platformString));
-      ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
-      if (ffxEnergy == null) {
-        ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
-        assembly.setPotential(ffxEnergy);
-      }
-      return ffxEnergy;
+        }
+      case OMM_CPU:
+        logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
+      default:
+        ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
+        if (ffxEnergy == null) {
+          ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
+          assembly.setPotential(ffxEnergy);
+        }
+        return ffxEnergy;
     }
   }
 
   /**
    * Get all atoms that make up this ForceFieldEnergy.
+   *
    * @return An array of Atoms.
    */
   public Atom[] getAtomArray() {

@@ -40,6 +40,7 @@ package ffx.potential.openmm;
 import ffx.crystal.Crystal;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.DualTopologyEnergy;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Platform;
 import ffx.potential.bonded.Atom;
@@ -74,7 +75,6 @@ public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
    * The atoms this OpenMMEnergy operates on.
    */
   private final Atom[] atoms;
-
   /**
    * MolecularAssembly for topology 1.
    */
@@ -218,11 +218,11 @@ public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
    * @param topology The topology index (0 for topology 1, 1 for topology 2).
    * @return The OpenMMEnergy for the specified topology.
    */
-  public OpenMMEnergy getOpenMMEnergy(int topology) {
+  public ForceFieldEnergy getForceFieldEnergy(int topology) {
     if (topology == 0) {
-      return (OpenMMEnergy) getForceFieldEnergy1();
+      return getForceFieldEnergy1();
     } else if (topology == 1) {
-      return (OpenMMEnergy) getForceFieldEnergy2();
+      return getForceFieldEnergy2();
     } else {
       throw new IllegalArgumentException(" Invalid topology index: " + topology);
     }
