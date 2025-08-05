@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
@@ -99,14 +100,14 @@ public class System {
   private PointerByReference pointer;
 
   /**
-   * Map to store Force instances using their PointerByReference as the key.
+   * Map to store Force instances using their Pointer as the key.
    */
-  private final Map<PointerByReference, Force> forceMap = new HashMap<>();
+  private final Map<Pointer, Force> forceMap = new HashMap<>();
 
   /**
-   * Map to store VirtualSite instances using their PointerByReference as the key.
+   * Map to store VirtualSite instances using their Pointer as the key.
    */
-  private final Map<PointerByReference, VirtualSite> virtualSiteMap = new HashMap<>();
+  private final Map<Pointer, VirtualSite> virtualSiteMap = new HashMap<>();
 
   /**
    * Constructor.
@@ -146,7 +147,7 @@ public class System {
     if (force != null) {
       int forceIndex = OpenMM_System_addForce(pointer, force.getPointer());
       force.setForceIndex(forceIndex);
-      forceMap.put(force.getPointer(), force);
+      forceMap.put(force.getPointer().getValue(), force);
       return forceIndex;
     }
     return -1;
@@ -215,7 +216,7 @@ public class System {
    */
   public Force getForce(int index) {
     PointerByReference forcePointer = OpenMM_System_getForce(pointer, index);
-    return forceMap.get(forcePointer);
+    return forceMap.get(forcePointer.getValue());
   }
 
   /**
@@ -272,7 +273,7 @@ public class System {
    */
   public VirtualSite getVirtualSite(int index) {
     PointerByReference virtualSitePointer = OpenMM_System_getVirtualSite(pointer, index);
-    return virtualSiteMap.get(virtualSitePointer);
+    return virtualSiteMap.get(virtualSitePointer.getValue());
   }
 
   /**
@@ -302,7 +303,7 @@ public class System {
    */
   public void removeForce(int index) {
     Force force = getForce(index);
-    forceMap.remove(force.getPointer());
+    forceMap.remove(force.getPointer().getValue());
     OpenMM_System_removeForce(pointer, index);
   }
 
@@ -356,7 +357,7 @@ public class System {
    */
   public void setVirtualSite(int index, VirtualSite virtualSite) {
     if (virtualSite != null) {
-      virtualSiteMap.put(virtualSite.getPointer(), virtualSite);
+      virtualSiteMap.put(virtualSite.getPointer().getValue(), virtualSite);
     }
     OpenMM_System_setVirtualSite(pointer, index, virtualSite.getPointer());
   }
