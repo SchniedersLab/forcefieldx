@@ -41,6 +41,7 @@ import ffx.openmm.DoubleArray;
 import ffx.openmm.amoeba.DoubleArray3D;
 import ffx.openmm.Force;
 import ffx.openmm.amoeba.TorsionTorsionForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
@@ -75,11 +76,11 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     LinkedHashMap<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
 
     for (TorsionTorsion torsionTorsion : torsionTorsions) {
-      int ia = torsionTorsion.getAtom(0).getXyzIndex() - 1;
-      int ib = torsionTorsion.getAtom(1).getXyzIndex() - 1;
-      int ic = torsionTorsion.getAtom(2).getXyzIndex() - 1;
-      int id = torsionTorsion.getAtom(3).getXyzIndex() - 1;
-      int ie = torsionTorsion.getAtom(4).getXyzIndex() - 1;
+      int ia = torsionTorsion.getAtom(0).getArrayIndex();
+      int ib = torsionTorsion.getAtom(1).getArrayIndex();
+      int ic = torsionTorsion.getAtom(2).getArrayIndex();
+      int id = torsionTorsion.getAtom(3).getArrayIndex();
+      int ie = torsionTorsion.getAtom(4).getArrayIndex();
 
       TorsionTorsionType torsionTorsionType = torsionTorsion.torsionTorsionType;
       String key = torsionTorsionType.getKey();
@@ -108,7 +109,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       Atom atom = torsionTorsion.getChiralAtom();
       int iChiral = -1;
       if (atom != null) {
-        iChiral = atom.getXyzIndex() - 1;
+        iChiral = atom.getArrayIndex();
       }
       addTorsionTorsion(ia, ib, ic, id, ie, iChiral, gridIndex);
     }
@@ -158,6 +159,117 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
   }
 
   /**
+   * Create a Dual Topology OpenMM TorsionTorsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public AmoebaTorsionTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    TorsionTorsion[] torsionTorsions = forceFieldEnergy.getTorsionTorsions();
+    if (torsionTorsions == null || torsionTorsions.length < 1) {
+      destroy();
+      return;
+    }
+
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    // Load the torsion-torsions.
+    int nTypes = 0;
+    LinkedHashMap<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
+
+    for (TorsionTorsion torsionTorsion : torsionTorsions) {
+      int ia = torsionTorsion.getAtom(0).getArrayIndex();
+      int ib = torsionTorsion.getAtom(1).getArrayIndex();
+      int ic = torsionTorsion.getAtom(2).getArrayIndex();
+      int id = torsionTorsion.getAtom(3).getArrayIndex();
+      int ie = torsionTorsion.getAtom(4).getArrayIndex();
+
+      TorsionTorsionType torsionTorsionType = torsionTorsion.torsionTorsionType;
+      String key = torsionTorsionType.getKey();
+
+      // Check if the TorTor parameters have already been added to the Hash.
+      int gridIndex = 0;
+      if (torTorTypes.containsKey(key)) {
+
+        // If the TorTor has been added, get its (ordered) index in the Hash.
+        int index = 0;
+        for (String entry : torTorTypes.keySet()) {
+          if (entry.equalsIgnoreCase(key)) {
+            gridIndex = index;
+            break;
+          } else {
+            index++;
+          }
+        }
+      } else {
+        // Add the new TorTor.
+        torTorTypes.put(key, torsionTorsionType);
+        gridIndex = nTypes;
+        nTypes++;
+      }
+
+      Atom atom = torsionTorsion.getChiralAtom();
+      int iChiral = -1;
+      if (atom != null) {
+        iChiral = atom.getArrayIndex();
+      }
+      ia = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ia);
+      ib = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ib);
+      ic = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ic);
+      id = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, id);
+      ie = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ie);
+      iChiral = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, iChiral);
+      addTorsionTorsion(ia, ib, ic, id, ie, iChiral, gridIndex);
+    }
+
+    // Load the Torsion-Torsion parameters.
+    DoubleArray values = new DoubleArray(6);
+    int gridIndex = 0;
+    for (String key : torTorTypes.keySet()) {
+      TorsionTorsionType torTorType = torTorTypes.get(key);
+      int nx = torTorType.nx;
+      int ny = torTorType.ny;
+      double[] tx = torTorType.tx;
+      double[] ty = torTorType.ty;
+      double[] f = torTorType.energy;
+      double[] dx = torTorType.dx;
+      double[] dy = torTorType.dy;
+      double[] dxy = torTorType.dxy;
+
+      // todo - no lambda scaling for now - how to treat derivatives
+
+      // Create the 3D grid.
+      DoubleArray3D grid3D = new DoubleArray3D(nx, ny, 6);
+      int xIndex = 0;
+      int yIndex = 0;
+      for (int j = 0; j < nx * ny; j++) {
+        int addIndex = 0;
+        values.set(addIndex++, tx[xIndex]);
+        values.set(addIndex++, ty[yIndex]);
+        values.set(addIndex++, OpenMM_KJPerKcal * f[j]);
+        values.set(addIndex++, OpenMM_KJPerKcal * dx[j]);
+        values.set(addIndex++, OpenMM_KJPerKcal * dy[j]);
+        values.set(addIndex, OpenMM_KJPerKcal * dxy[j]);
+        grid3D.set(yIndex, xIndex, values);
+        xIndex++;
+        if (xIndex == nx) {
+          xIndex = 0;
+          yIndex++;
+        }
+      }
+      setTorsionTorsionGrid(gridIndex++, grid3D.getPointer());
+      grid3D.destroy();
+    }
+    values.destroy();
+
+    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
+    setForceGroup(forceGroup);
+    logger.info(format("  Torsion-Torsions:                  %10d", torsionTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
    * Convenience method to construct an OpenMM Torsion-Torsion Force.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the torsion-torsions.
@@ -169,5 +281,21 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       return null;
     }
     return new AmoebaTorsionTorsionForce(openMMEnergy);
+  }
+
+  /**
+   * Convenience method to construct a Dual Topology OpenMM Torsion-Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return A Torsion-Torsion Force, or null if there are no torsion-torsions.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    TorsionTorsion[] torsionTorsion = forceFieldEnergy.getTorsionTorsions();
+    if (torsionTorsion == null || torsionTorsion.length < 1) {
+      return null;
+    }
+    return new AmoebaTorsionTorsionForce(topology, openMMDualTopologyEnergy);
   }
 }
