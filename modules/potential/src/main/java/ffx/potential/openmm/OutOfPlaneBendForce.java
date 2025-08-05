@@ -128,10 +128,9 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
       int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
       // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
-//      if (!outOfPlaneBend.applyLambda()) {
-//        k = k * scale;
-//      }
-      k = k * scale;
+      if (!outOfPlaneBend.applyLambda()) {
+        k = k * scale;
+      }
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
       i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);
@@ -245,10 +244,9 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
       int i4 = outOfPlaneBend.getAtom(3).getArrayIndex();
       double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
       // Don't apply lambda scale to alchemcial out-of-plane bend - todo not sure if this is required for this bonded force
-//      if (!outOfPlaneBend.applyLambda()) {
-//        k = k * scale;
-//      }
-      k = k * scale;
+      if (!outOfPlaneBend.applyLambda()) {
+        k = k * scale;
+      }
       i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
       i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
       i3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i3);

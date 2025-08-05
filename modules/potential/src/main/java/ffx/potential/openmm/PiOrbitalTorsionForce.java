@@ -136,10 +136,9 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
       // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
-//      if (!outOfPlaneBend.applyLambda()) {
-//        k = k * scale;
-//      }
-      k = k * scale;
+      if (!piOrbitalTorsion.applyLambda()) {
+        k = k * scale;
+      }
       a1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a1);
       a2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a2);
       a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
@@ -263,10 +262,9 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
       PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
       double k = OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
       // Don't apply lambda scale to alchemcial pi-orbital torsion - todo not sure if this is required for this bonded force
-//      if (!outOfPlaneBend.applyLambda()) {
-//        k = k * scale;
-//      }
-      k = k * scale;
+      if (!piOrbitalTorsion.applyLambda()) {
+        k = k * scale;
+      }
       a1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a1);
       a2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a2);
       a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
