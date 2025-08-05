@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
@@ -278,15 +279,16 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   }
 
   /**
-   * average.
+   * Average two TorsionTorsionType instances.
    *
-   * @param torsionTorsionType1 a {@link ffx.potential.parameters.TorsionTorsionType} object.
-   * @param torsionTorsionType2 a {@link ffx.potential.parameters.TorsionTorsionType} object.
-   * @param atomClasses         an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
+   * @param torsionTorsionType1 The first TorsionTorsionType instance.
+   * @param torsionTorsionType2 The second TorsionTorsionType instance.
+   * @param atomClasses         The atom classes to average over.
+   * @return A new TorsionTorsionType instance that is the average of the two input types.
    */
-  public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
-                                           TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
+  public static TorsionTorsionType average(@Nullable TorsionTorsionType torsionTorsionType1,
+                                           @Nullable TorsionTorsionType torsionTorsionType2,
+                                           @Nullable int[] atomClasses) {
     if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
       return null;
     }

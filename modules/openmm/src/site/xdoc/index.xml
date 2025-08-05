@@ -23,7 +23,7 @@
                 <dependency>
                     <groupId>edu.uiowa.jopenmm</groupId>
                     <artifactId>jopenmm-fat</artifactId>
-                    <version>7.5.0-v11</version>
+                    <version>8.3.0</version>
                 </dependency>]]>
         </source>
       </subsection>

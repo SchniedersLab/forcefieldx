@@ -37,18 +37,31 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_applyConstraints;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_applyVelocityConstraints;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_computeVirtualSites;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_create_2;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getParameter;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getParameters;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState_2;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getStepCount;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getSystem;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getTime;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_reinitialize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPeriodicBoxVectors;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPositions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setState;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setStepCount;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setTime;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
 import static ffx.openmm.Vec3Array.toVec3Array;
 
 /**
@@ -60,7 +73,7 @@ import static ffx.openmm.Vec3Array.toVec3Array;
  * <li>The velocity of each particle</li>
  * <li>The values of configurable parameters defined by Force objects in the System</li>
  * </ul>
- *
+ * <p>
  * You can retrieve a snapshot of the current state at any time by calling getState().  This
  * allows you to record the state of the simulation at various points, either for analysis
  * or for checkpointing.  getState() can also be used to retrieve the current forces on each
@@ -74,10 +87,22 @@ public class Context {
   private PointerByReference pointer;
 
   /**
+   * The integrator used for this context.
+   */
+  protected Integrator integrator;
+
+  /**
+   * The platform used for this context.
+   */
+  protected Platform platform;
+
+  /**
    * Constructor.
    */
   public Context() {
     pointer = null;
+    integrator = null;
+    platform = null;
   }
 
   /**
@@ -89,19 +114,96 @@ public class Context {
    */
   public Context(System system, Integrator integrator, Platform platform) {
     pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
+    this.integrator = integrator;
+    this.platform = platform;
   }
 
   /**
-   * Update the context.
+   * Apply constraints to the current positions.
    *
-   * @param system     The system to simulate.
-   * @param integrator The integrator to use for simulating the system.
-   * @param platform   The platform to use for performing computations.
+   * @param tol The constraint tolerance.
    */
-  public void updateContext(System system, Integrator integrator, Platform platform) {
-    // Destroy the old context.
-    destroy();
-    pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
+  public void applyConstraints(double tol) {
+    OpenMM_Context_applyConstraints(pointer, tol);
+  }
+
+  /**
+   * Apply velocity constraints to the current velocities.
+   *
+   * @param tol The constraint tolerance.
+   */
+  public void applyVelocityConstraints(double tol) {
+    OpenMM_Context_applyVelocityConstraints(pointer, tol);
+  }
+
+  /**
+   * Compute the positions of all virtual sites.
+   */
+  public void computeVirtualSites() {
+    OpenMM_Context_computeVirtualSites(pointer);
+  }
+
+  /**
+   * Destroy the context.
+   */
+  public void destroy() {
+    if (integrator != null) {
+      integrator.destroy();
+      integrator = null;
+    }
+    if (pointer != null) {
+      OpenMM_Context_destroy(pointer);
+      pointer = null;
+      // The platform is handled by the Context destroy method.
+      platform = null;
+    }
+  }
+
+  /**
+   * Get the value of a parameter.
+   *
+   * @param name The name of the parameter.
+   * @return The value of the parameter.
+   */
+  public double getParameter(String name) {
+    return OpenMM_Context_getParameter(pointer, name);
+  }
+
+  /**
+   * Get the value of a parameter.
+   *
+   * @param name The name of the parameter.
+   * @return The value of the parameter.
+   */
+  public double getParameter(Pointer name) {
+    return OpenMM_Context_getParameter(pointer, name);
+  }
+
+  /**
+   * Get a map containing the values of all parameters.
+   *
+   * @return A PointerByReference to a map containing the values of all parameters.
+   */
+  public PointerByReference getParameters() {
+    return OpenMM_Context_getParameters(pointer);
+  }
+
+  /**
+   * Get the Platform being used for computations.
+   *
+   * @return The Platform being used for computations.
+   */
+  public Platform getPlatform() {
+    return platform;
+  }
+
+  /**
+   * Get the Integrator being used for this context.
+   *
+   * @return The Integrator being used for this context.
+   */
+  public Integrator getIntegrator() {
+    return integrator;
   }
 
   /**
@@ -114,15 +216,6 @@ public class Context {
   }
 
   /**
-   * Does the context have a pointer?
-   *
-   * @return True if the context pointer is not null.
-   */
-  public boolean hasContextPointer() {
-    return pointer != null;
-  }
-
-  /**
    * Get the state of the context.
    *
    * @param types              The bit-flag of properties to include in the state.
@@ -131,6 +224,55 @@ public class Context {
    */
   public State getState(int types, int enforcePeriodicBox) {
     return new State(OpenMM_Context_getState(pointer, types, enforcePeriodicBox));
+  }
+
+  /**
+   * Get the state of the context with additional options.
+   *
+   * @param types              The bit-flag of properties to include in the state.
+   * @param enforcePeriodicBox If true, the positions will be adjusted so atoms are inside the main periodic box.
+   * @param groups             Specifies which force groups to include when computing forces and energies.
+   * @return The state of the context.
+   */
+  public State getState(int types, int enforcePeriodicBox, int groups) {
+    return new State(OpenMM_Context_getState_2(pointer, types, enforcePeriodicBox, groups));
+  }
+
+  /**
+   * Get the number of integration steps that have been taken.
+   *
+   * @return The number of integration steps that have been taken.
+   */
+  public long getStepCount() {
+    return OpenMM_Context_getStepCount(pointer);
+  }
+
+  /**
+   * Get the System being simulated in this context.
+   *
+   * @return The System being simulated in this context.
+   */
+  public System getSystem() {
+    PointerByReference systemPointer = OpenMM_Context_getSystem(pointer);
+    return new System(systemPointer);
+  }
+
+  /**
+   * Get the current simulation time.
+   *
+   * @return The current simulation time, measured in picoseconds.
+   */
+  public double getTime() {
+    return OpenMM_Context_getTime(pointer);
+  }
+
+  /**
+   * Does the context have a pointer?
+   *
+   * @return True if the context pointer is not null.
+   */
+  public boolean hasContextPointer() {
+    return pointer != null;
   }
 
   /**
@@ -162,6 +304,16 @@ public class Context {
   }
 
   /**
+   * Set a parameter value.
+   *
+   * @param name  The name of the parameter.
+   * @param value The value of the parameter.
+   */
+  public void setParameter(Pointer name, double value) {
+    OpenMM_Context_setParameter(pointer, name, value);
+  }
+
+  /**
    * Set the periodic box vectors.
    *
    * @param a The first vector.
@@ -184,6 +336,33 @@ public class Context {
   }
 
   /**
+   * Set the state of the Context.
+   *
+   * @param state The State to set.
+   */
+  public void setState(State state) {
+    OpenMM_Context_setState(pointer, state.getPointer());
+  }
+
+  /**
+   * Set the number of integration steps that have been taken.
+   *
+   * @param steps The number of integration steps that have been taken.
+   */
+  public void setStepCount(long steps) {
+    OpenMM_Context_setStepCount(pointer, steps);
+  }
+
+  /**
+   * Set the current simulation time.
+   *
+   * @param time The current simulation time, measured in picoseconds.
+   */
+  public void setTime(double time) {
+    OpenMM_Context_setTime(pointer, time);
+  }
+
+  /**
    * Set the atomic velocities.
    *
    * @param velocities The atomic velocities.
@@ -195,22 +374,27 @@ public class Context {
   }
 
   /**
-   * Apply constraints to the current positions.
+   * Set the velocities of all particles to random values chosen from a Boltzmann distribution.
    *
-   * @param tol The constraint tolerance.
+   * @param temperature The temperature of the Boltzmann distribution.
+   * @param randomSeed  The random number seed to use. If this is 0 (the default), a unique seed is chosen.
    */
-  public void applyConstraints(double tol) {
-    OpenMM_Context_applyConstraints(pointer, tol);
+  public void setVelocitiesToTemperature(double temperature, int randomSeed) {
+    OpenMM_Context_setVelocitiesToTemperature(pointer, temperature, randomSeed);
   }
 
   /**
-   * Destroy the context.
+   * Update the context.
+   *
+   * @param system     The system to simulate.
+   * @param integrator The integrator to use for simulating the system.
+   * @param platform   The platform to use for performing computations.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Context_destroy(pointer);
-      pointer = null;
-    }
+  public void updateContext(System system, Integrator integrator, Platform platform) {
+    // Destroy the old context.
+    destroy();
+    pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
+    this.integrator = integrator;
+    this.platform = platform;
   }
-
 }

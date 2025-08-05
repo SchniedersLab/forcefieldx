@@ -233,14 +233,14 @@ public class LoopClosure {
      * Get coordinates from polynomial roots.
      *
      * @param numSolutions the number of potential solutions to be tested.
-     * @param roots    an array of {@link double} objects.
-     * @param r_n1     an array of {@link double} objects.
-     * @param r_a1     an array of {@link double} objects.
-     * @param r_a3     an array of {@link double} objects.
-     * @param r_c3     an array of {@link double} objects.
-     * @param r_soln_n an array of {@link double} objects.
-     * @param r_soln_a an array of {@link double} objects.
-     * @param r_soln_c an array of {@link double} objects.
+     * @param roots    a double array.
+     * @param r_n1     a double array.
+     * @param r_a1     a double array.
+     * @param r_a3     a double array.
+     * @param r_c3     a double array.
+     * @param r_soln_n a double array.
+     * @param r_soln_a a double array.
+     * @param r_soln_c a double array.
      */
     private void getCoordsFromPolyRoots(int numSolutions, double[] roots, double[] r_n1, double[] r_a1,
                                         double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a,
@@ -516,10 +516,10 @@ public class LoopClosure {
     /**
      * Get the input angles.
      *
-     * @param r_n1   an array of {@link double} objects.
-     * @param r_a1   an array of {@link double} objects.
-     * @param r_a3   an array of {@link double} objects.
-     * @param r_c3   an array of {@link double} objects.
+     * @param r_n1   a double array.
+     * @param r_a1   a double array.
+     * @param r_a3   a double array.
+     * @param r_c3   a double array.
      */
     public boolean getInputAngles(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
         double[] tmp_val = new double[3];
@@ -631,7 +631,7 @@ public class LoopClosure {
     /**
      * Get Polynomial Coefficient.
      *
-     * @param polyCoeff an array of {@link double} objects.
+     * @param polyCoeff a double array.
      */
     public void getPolyCoeff(double[] polyCoeff) {
         double[] B0 = new double[3];
@@ -873,12 +873,12 @@ public class LoopClosure {
     /**
      * Polynomial multiply 1.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
      * @param p1 an int.
      * @param p2 an int.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
+     * @param u3 a double array.
+     * @param p3 an int array.
      */
     public void polyMul1(double[] u1, double[] u2, int p1, int p2, double[] u3, int[] p3) {
         p3[0] = p1 + p2;
@@ -897,12 +897,12 @@ public class LoopClosure {
     /**
      * Polynomial multiplication 2.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
+     * @param p1 an int array.
+     * @param p2 an int array.
+     * @param u3 a double array.
+     * @param p3 an int array.
      */
     public void polyMul2(double[][] u1, double[][] u2, int[] p1, int[] p2, double[][] u3, int[] p3) {
         for (int i = 0; i < 2; i++) {
@@ -934,16 +934,16 @@ public class LoopClosure {
     /**
      * Polynomial multiply subtraction 1.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param u4 an array of {@link double} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
+     * @param u3 a double array.
+     * @param u4 a double array.
      * @param p1 an int.
      * @param p2 an int.
      * @param p3 an int.
      * @param p4 an int.
-     * @param u5 an array of {@link double} objects.
-     * @param p5 an array of {@link int} objects.
+     * @param u5 a double array.
+     * @param p5 an int array.
      */
     public void polyMulSub1(double[] u1, double[] u2, double[] u3, double[] u4, int p1, int p2, int p3,
                             int p4, double[] u5, int[] p5) {
@@ -961,16 +961,16 @@ public class LoopClosure {
     /**
      * Polynomial multiplication subtraction 2.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param u4 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
-     * @param p3 an array of {@link int} objects.
-     * @param p4 an array of {@link int} objects.
-     * @param u5 an array of {@link double} objects.
-     * @param p5 an array of {@link int} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
+     * @param u3 a double array.
+     * @param u4 a double array.
+     * @param p1 an int array.
+     * @param p2 an int array.
+     * @param p3 an int array.
+     * @param p4 an int array.
+     * @param u5 a double array.
+     * @param p5 an int array.
      */
     public void polyMulSub2(double[][] u1, double[][] u2, double[][] u3, double[][] u4, int[] p1,
                             int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
@@ -987,12 +987,12 @@ public class LoopClosure {
     /**
      * Polynomial subtraction 1.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
+     * @param p1 an int array.
+     * @param p2 an int array.
+     * @param u3 a double array.
+     * @param p3 an int array.
      */
     public void polySub1(double[] u1, double[] u2, int[] p1, int[] p2, double[] u3, int[] p3) {
         p3[0] = max(p1[0], p2[0]);
@@ -1010,12 +1010,12 @@ public class LoopClosure {
     /**
      * Polynomial subtraction 2.
      *
-     * @param u1 an array of {@link double} objects.
-     * @param u2 an array of {@link double} objects.
-     * @param p1 an array of {@link int} objects.
-     * @param p2 an array of {@link int} objects.
-     * @param u3 an array of {@link double} objects.
-     * @param p3 an array of {@link int} objects.
+     * @param u1 a double array.
+     * @param u2 a double array.
+     * @param p1 an int array.
+     * @param p2 an int array.
+     * @param u3 a double array.
+     * @param p3 an int array.
      */
     public void polySub2(double[][] u1, double[][] u2, int[] p1, int[] p2, double[][] u3, int[] p3) {
         int p11 = p1[0];
@@ -1090,13 +1090,13 @@ public class LoopClosure {
      * Close a 3-residue loop by filling in the backbone atom coordinates and return the possible solution
      * set. This can include up to {@value MAX_SOLUTIONS} solutions.
      *
-     * @param r_n1     an array of {@link double} objects.
-     * @param r_a1     an array of {@link double} objects.
-     * @param r_a3     an array of {@link double} objects.
-     * @param r_c3     an array of {@link double} objects.
-     * @param r_soln_n an array of {@link double} objects.
-     * @param r_soln_a an array of {@link double} objects.
-     * @param r_soln_c an array of {@link double} objects.
+     * @param r_n1     a double array.
+     * @param r_a1     a double array.
+     * @param r_a3     a double array.
+     * @param r_c3     a double array.
+     * @param r_soln_n a double array.
+     * @param r_soln_a a double array.
+     * @param r_soln_c a double array.
      */
     public int solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
                              double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {

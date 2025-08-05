@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -111,15 +112,16 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
   }
 
   /**
-   * average.
+   * Average two AngleTorsionType instances.
    *
-   * @param angleTorsionType1 a {@link ffx.potential.parameters.AngleTorsionType} object.
-   * @param angleTorsionType2 a {@link ffx.potential.parameters.AngleTorsionType} object.
-   * @param atomClasses       an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
+   * @param angleTorsionType1 First AngleTorsionType.
+   * @param angleTorsionType2 Second AngleTorsionType.
+   * @param atomClasses       Atom classes for the averaged type.
+   * @return A new AngleTorsionType with averaged force constants, or null if inputs are invalid.
    */
-  public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
-                                         AngleTorsionType angleTorsionType2, int[] atomClasses) {
+  public static AngleTorsionType average(@Nullable AngleTorsionType angleTorsionType1,
+                                         @Nullable AngleTorsionType angleTorsionType2,
+                                         @Nullable int[] atomClasses) {
     if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {
       return null;
     }

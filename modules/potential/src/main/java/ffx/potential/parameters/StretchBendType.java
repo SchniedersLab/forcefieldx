@@ -101,8 +101,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
   /**
    * StretchBendType Constructor.
    *
-   * @param atomClasses    int[]
-   * @param forceConstants double[]
+   * @param atomClasses    the atom classes for this stretch-bend type.
+   * @param forceConstants the force constants for this stretch-bend type.
    */
   public StretchBendType(int[] atomClasses, double[] forceConstants) {
     super(STRBND, sortKey(copyOf(atomClasses, 3)));
@@ -120,12 +120,12 @@ public final class StretchBendType extends BaseType implements Comparator<String
   }
 
   /**
-   * average.
+   * Average two StretchBendType instances.
    *
-   * @param stretchBendType1 a {@link ffx.potential.parameters.StretchBendType} object.
-   * @param stretchBendType2 a {@link ffx.potential.parameters.StretchBendType} object.
-   * @param atomClasses      an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.StretchBendType} object.
+   * @param stretchBendType1 The first StretchBendType.
+   * @param stretchBendType2 The second StretchBendType.
+   * @param atomClasses      The atom classes for the new StretchBendType.
+   * @return A new StretchBendType with averaged force constants, or null if inputs are invalid.
    */
   public static StretchBendType average(StretchBendType stretchBendType1,
                                         StretchBendType stretchBendType2, int[] atomClasses) {

@@ -739,9 +739,10 @@
       <version>${groovy-all.version}</version>
     </dependency>
     <dependency>
-      <artifactId>jsr305</artifactId>
-      <groupId>com.google.code.findbugs</groupId>
-      <version>${findbugs.version}</version>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.graalvm.polyglot</groupId>
@@ -1054,10 +1055,10 @@
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.12.0</commons-configuration2.version>
-    <commons-io.version>2.19.0</commons-io.version>
+    <commons-io.version>2.20.0</commons-io.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <commons-text.version>1.13.1</commons-text.version>
+    <commons-text.version>1.14.0</commons-text.version>
     <!-- Control the source version -->
     <compileVersion>21</compileVersion>
     <compiler.version>3.14.0</compiler.version>
@@ -1070,11 +1071,10 @@
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
-    <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
     <graal.version>24.2.2</graal.version>
-    <groovy-all.version>5.0.0-beta-1</groovy-all.version>
+    <groovy-all.version>5.0.0-beta-2</groovy-all.version>
     <guava.version>33.4.8-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.13</jacoco.version>
@@ -1088,7 +1088,7 @@
     <jdepend.version>2.1</jdepend.version>
     <jna.version>5.17.0</jna.version>
     <jogamp-fat.version>2.5.0</jogamp-fat.version>
-    <jopenmm.version>8.3.0</jopenmm.version>
+    <jopenmm.version>8.3.2</jopenmm.version>
     <junit.version>4.13.2</junit.version>
     <jxr.version>3.6.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
@@ -1118,6 +1118,7 @@
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
+    <spotbugs.version>4.9.3</spotbugs.version>
     <surefire.version>3.5.3</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
@@ -1235,7 +1236,6 @@
           <minimumTokens>500</minimumTokens>
           <targetJdk>${targetVersion}</targetJdk>
           <typeResolution>true</typeResolution>
-          <aggregate>true</aggregate>
         </configuration>
         <reportSets>
           <reportSet>

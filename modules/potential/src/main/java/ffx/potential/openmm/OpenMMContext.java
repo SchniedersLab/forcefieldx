@@ -90,17 +90,10 @@ public class OpenMMContext extends Context {
   private static final Logger logger = Logger.getLogger(OpenMMContext.class.getName());
 
   /**
-   * OpenMM Platform.
-   */
-  private final Platform openMMPlatform;
-  /**
    * OpenMM System.
    */
   private final OpenMMSystem openMMSystem;
-  /**
-   * Instance of the OpenMM Integrator class.
-   */
-  private Integrator openMMIntegrator;
+
   /**
    * Integrator string (default = VERLET).
    */
@@ -130,16 +123,14 @@ public class OpenMMContext extends Context {
    * @param atoms        Array of atoms.
    */
   public OpenMMContext(Platform platform, OpenMMSystem openMMSystem, Atom[] atoms) {
-    this.openMMPlatform = platform;
+    super(openMMSystem, createIntegrator("VERLET", 0.001, 298.15, openMMSystem), platform);
     this.openMMSystem = openMMSystem;
+    this.atoms = atoms;
 
     ForceField forceField = openMMSystem.getForceField();
     boolean aperiodic = openMMSystem.getCrystal().aperiodic();
     boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
     enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
-
-    this.atoms = atoms;
-    update(integratorName, timeStep, temperature, true);
   }
 
   /**
@@ -166,12 +157,6 @@ public class OpenMMContext extends Context {
 
     logger.info("\n Updating OpenMM Context");
 
-    // Update the integrator.
-    if (openMMIntegrator != null) {
-      openMMIntegrator.destroy();
-    }
-    openMMIntegrator = createIntegrator(integratorName, timeStep, temperature, openMMSystem);
-
     // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
     // TODO: Test on a fixed charge system.
     // double currentLambda = openMMEnergy.getLambda();
@@ -180,7 +165,9 @@ public class OpenMMContext extends Context {
     // }
 
     // Update the context.
-    updateContext(openMMSystem, openMMIntegrator, openMMPlatform);
+    Integrator newIntegrator = createIntegrator(integratorName, timeStep, temperature, openMMSystem);
+    Platform newPlatform = new Platform(platform.getName());
+    updateContext(openMMSystem, newIntegrator, newPlatform);
 
     // Revert to the current lambda value.
     // if (openMMEnergy.getLambdaTerm()) {
@@ -256,7 +243,8 @@ public class OpenMMContext extends Context {
    * @param numSteps Number of steps to take.
    */
   public void integrate(int numSteps) {
-    openMMIntegrator.step(numSteps);
+    Integrator integrator = getIntegrator();
+    integrator.step(numSteps);
   }
 
   /**
@@ -492,9 +480,6 @@ public class OpenMMContext extends Context {
    * Free OpenMM memory for the current Context and Integrator.
    */
   public void free() {
-    if (openMMIntegrator != null) {
-      openMMIntegrator.destroy();
-    }
     destroy();
   }
 }

@@ -37,9 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
-
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.AlgorithmUtils;
@@ -48,11 +45,14 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.FFXScript;
 import groovy.lang.Binding;
+import org.apache.commons.lang3.Strings;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.String.format;
 
 /**
  * Base class for scripts in the Algorithms package, providing some key functions.
@@ -240,17 +240,18 @@ public class AlgorithmsScript extends FFXScript {
     Crystal crystal = activeAssembly.getCrystal();
     if(crystal != null && !crystal.aperiodic()){
       double density = crystal.getDensity(activeAssembly.getMass());
-      if (containsIgnoreCase(oldName, "Energy:") || containsIgnoreCase(oldName, "Density:")) {
+      if (Strings.CI.contains(oldName, "Energy:")
+          || Strings.CI.contains(oldName, "Density:")) {
         String[] tokens = oldName.trim().split(" +");
         int numTokens = tokens.length;
-        // First element should always be number of atoms in XYZ.
+        // The first element should always be the number of atoms in XYZ.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < numTokens; i++) {
-          if (containsIgnoreCase(tokens[i], "Energy:")){
-            // i++ skips current entry (value associated with "Energy")
+          if (Strings.CI.contains(tokens[i], "Energy:")){
+            // i++ skips the current entry (value associated with "Energy")
             tokens[i++] = Double.toString(energy);
-          } else if (containsIgnoreCase(tokens[i], "Density:")){
-            // i++ skips current entry (value associated with "Density")
+          } else if (Strings.CI.contains(tokens[i], "Density:")){
+            // i++ skips the current entry (value associated with "Density")
             tokens[i++] = Double.toString(density);
           } else {
             // Accrue previous name.
@@ -266,14 +267,14 @@ public class AlgorithmsScript extends FFXScript {
                 oldName, energy, density));
       }
     } else {
-      if (containsIgnoreCase(oldName, "Energy:")) {
+      if (Strings.CI.contains(oldName, "Energy:")) {
         String[] tokens = oldName.trim().split(" +");
         int numTokens = tokens.length;
-        // First element should always be number of atoms in XYZ.
+        // The first element should always be number of atoms in XYZ.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < numTokens; i++) {
-          if (containsIgnoreCase(tokens[i], "Energy:")){
-            // i++ skips current entry (value associated with "Energy")
+          if (Strings.CI.contains(tokens[i], "Energy:")){
+            // i++ skips the current entry (value associated with "Energy")
             tokens[i++] = Double.toString(energy);
           } else{
             // Accrue previous name.
@@ -283,7 +284,7 @@ public class AlgorithmsScript extends FFXScript {
         // Opted to add energy/density after to preserve formatting.
         activeAssembly.setName(format("%s Energy: %9.4f", sb, energy));
       } else {
-        // Append energy and density to structure name (line 1 of XYZ).
+        // Append energy and density to the structure name (line 1 of XYZ).
         activeAssembly.setName(format("%s Energy: %9.4f", oldName, energy));
       }
     }

@@ -112,11 +112,11 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   }
 
   /**
-   * average.
+   * Average two StretchTorsionType objects.
    *
-   * @param stretchTorsionType1 a {@link ffx.potential.parameters.StretchTorsionType} object.
-   * @param stretchTorsionType2 a {@link ffx.potential.parameters.StretchTorsionType} object.
-   * @param atomClasses         an array of {@link int} objects.
+   * @param stretchTorsionType1 the first {@link ffx.potential.parameters.StretchTorsionType} object.
+   * @param stretchTorsionType2 the second {@link ffx.potential.parameters.StretchTorsionType} object.
+   * @param atomClasses         an array of atom classes.
    * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
    */
   public static StretchTorsionType average(StretchTorsionType stretchTorsionType1,

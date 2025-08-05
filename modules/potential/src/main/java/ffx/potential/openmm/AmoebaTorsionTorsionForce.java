@@ -38,7 +38,7 @@
 package ffx.potential.openmm;
 
 import ffx.openmm.DoubleArray;
-import ffx.openmm.DoubleArray3D;
+import ffx.openmm.amoeba.DoubleArray3D;
 import ffx.openmm.Force;
 import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.bonded.Atom;
@@ -46,7 +46,6 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
 
 import java.util.LinkedHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;

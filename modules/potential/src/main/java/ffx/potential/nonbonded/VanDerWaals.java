@@ -648,7 +648,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>bondMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask12 array.
    */
   public int[][] getMask12() {
     return mask12;
@@ -657,7 +657,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>angleMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask13 array.
    */
   public int[][] getMask13() {
     return mask13;
@@ -666,7 +666,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>torsionMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask14 array.
    */
   public int[][] getMask14() {
     return mask14;
@@ -702,7 +702,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Get the reduction index.
    *
-   * @return an array of {@link int} objects.
+   * @return the reductionIndex array.
    */
   public int[] getReductionIndex() {
     return reductionIndex;
@@ -781,10 +781,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
-   * Setter for the field <code>atoms</code>.
+   * Set the atoms and molecule arrays, and rebuild the neighbor list.
    *
-   * @param atoms         an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param molecule      an array of {@link int} objects.
+   * @param atoms         an array of Atom objects representing the atoms in the system.
+   * @param molecule      an array of integers indicating the molecule index for each atom.
    * @param neuralNetwork an array of flags to indicate if the atom is treated by a neural
    *                      network.
    */

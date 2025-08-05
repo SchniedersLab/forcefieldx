@@ -73,38 +73,10 @@ public class DoubleArray {
   }
 
   /**
-   * Set a value in the array.
-   *
-   * @param index The index of the value.
-   * @param value The value.
-   */
-  public void set(int index, double value) {
-    OpenMM_DoubleArray_set(pointer, index, value);
-  }
-
-  /**
    * Destroy the array.
    */
   public void destroy() {
     OpenMM_DoubleArray_destroy(pointer);
-  }
-
-  /**
-   * Resize the array.
-   *
-   * @param size The new size.
-   */
-  public void resize(int size) {
-    OpenMM_DoubleArray_resize(pointer, size);
-  }
-
-  /**
-   * Get the size of the array.
-   *
-   * @return The size.
-   */
-  public int getSize() {
-    return OpenMM_DoubleArray_getSize(pointer);
   }
 
   /**
@@ -124,6 +96,34 @@ public class DoubleArray {
    */
   public PointerByReference getPointer() {
     return pointer;
+  }
+
+  /**
+   * Get the size of the array.
+   *
+   * @return The size.
+   */
+  public int getSize() {
+    return OpenMM_DoubleArray_getSize(pointer);
+  }
+
+  /**
+   * Resize the array.
+   *
+   * @param size The new size.
+   */
+  public void resize(int size) {
+    OpenMM_DoubleArray_resize(pointer, size);
+  }
+
+  /**
+   * Set a value in the array.
+   *
+   * @param index The index of the value.
+   * @param value The value.
+   */
+  public void set(int index, double value) {
+    OpenMM_DoubleArray_set(pointer, index, value);
   }
 
 }

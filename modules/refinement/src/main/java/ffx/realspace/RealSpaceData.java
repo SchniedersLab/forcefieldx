@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.realspace;
 
-import static ffx.numerics.math.ScalarMath.mod;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.floor;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -60,10 +55,16 @@ import ffx.xray.DataContainer;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.RefinementModel;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.numerics.math.ScalarMath.mod;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.floor;
 
 /**
  * RealSpaceData class.
@@ -74,35 +75,65 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 public class RealSpaceData implements DataContainer {
 
   private static final Logger logger = Logger.getLogger(RealSpaceData.class.getName());
-  /** Parallel Team instance. */
+  /**
+   * Parallel Team instance.
+   */
   private final ParallelTeam parallelTeam;
-  /** Calculate the real space target in parallel. */
+  /**
+   * Calculate the real space target in parallel.
+   */
   private final RealSpaceRegion realSpaceRegion;
-  /** The real space data files. */
+  /**
+   * The real space data files.
+   */
   private final RealSpaceFile[] realSpaceFile;
-  /** The number of real space data sources to consider. */
+  /**
+   * The number of real space data sources to consider.
+   */
   private final int nRealSpaceData;
-  /** The refinement model. */
+  /**
+   * The refinement model.
+   */
   private final RefinementModel refinementModel;
-  /** A flag to indicate if the lambda term is active. */
+  /**
+   * A flag to indicate if the lambda term is active.
+   */
   private final boolean lambdaTerm;
-  /** The collection of MolecularAssembly instances that model the real space data. */
+  /**
+   * The collection of MolecularAssembly instances that model the real space data.
+   */
   private final MolecularAssembly[] molecularAssemblies;
-  /** The collection of crystals that describe the PBC and symmetry of each data source. */
+  /**
+   * The collection of crystals that describe the PBC and symmetry of each data source.
+   */
   private Crystal[] crystal;
-  /** The real space refinement data for each data source. */
+  /**
+   * The real space refinement data for each data source.
+   */
   private RealSpaceRefinementData[] refinementData;
-  /** The total real space energy. */
+  /**
+   * The total real space energy.
+   */
   private double realSpaceEnergy = 0.0;
-  /** The partial derivative of the real space energy with respect to lambda. */
+  /**
+   * The partial derivative of the real space energy with respect to lambda.
+   */
   private double realSpacedUdL = 0.0;
-  /** The real space gradient. */
+  /**
+   * The real space gradient.
+   */
   private double[] realSpaceGradient;
-  /** The partial derivative of the real space gradient with respect to lambda. */
+  /**
+   * The partial derivative of the real space gradient with respect to lambda.
+   */
   private double[] realSpacedUdXdL;
-  /** The weight of the data relative to the weight of the force field. */
+  /**
+   * The weight of the data relative to the weight of the force field.
+   */
   private double xweight;
-  /** The current value of the state variable lambda. */
+  /**
+   * The current value of the state variable lambda.
+   */
   private double lambda = 1.0;
 
   /**
@@ -110,17 +141,17 @@ public class RealSpaceData implements DataContainer {
    * using the same name as the molecular molecularAssemblies.
    *
    * @param molecularAssembly {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-   *     object, used as the atomic model for comparison against the data
-   * @param properties system properties file
-   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-   * @param diffractionData {@link ffx.xray.DiffractionData diffraction data}
+   *                          object, used as the atomic model for comparison against the data
+   * @param properties        system properties file
+   * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
+   * @param diffractionData   {@link ffx.xray.DiffractionData diffraction data}
    */
   public RealSpaceData(
       MolecularAssembly molecularAssembly,
       CompositeConfiguration properties,
       ParallelTeam parallelTeam,
       DiffractionData diffractionData) {
-    this(new MolecularAssembly[] {molecularAssembly}, properties, parallelTeam, diffractionData);
+    this(new MolecularAssembly[]{molecularAssembly}, properties, parallelTeam, diffractionData);
   }
 
   /**
@@ -128,10 +159,10 @@ public class RealSpaceData implements DataContainer {
    * using the same name as the molecularAssemblies.
    *
    * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular
-   *     molecularAssemblies} object, used as the atomic model for comparison against the data
-   * @param properties system properties file
-   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-   * @param diffractionData {@link ffx.xray.DiffractionData diffraction data}
+   *                            molecularAssemblies} object, used as the atomic model for comparison against the data
+   * @param properties          system properties file
+   * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
+   * @param diffractionData     {@link ffx.xray.DiffractionData diffraction data}
    */
   public RealSpaceData(
       MolecularAssembly[] molecularAssemblies,
@@ -200,42 +231,42 @@ public class RealSpaceData implements DataContainer {
    * Construct a real space data molecularAssemblies, assumes a real space map with a weight of 1.0
    * using the same name as the molecular molecularAssemblies.
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular molecularAssemblies} object,
-   *     used as the atomic model for comparison against the data
-   * @param properties system properties file
+   * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies} object,
+   *                     used as the atomic model for comparison against the data
+   * @param properties   system properties file
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
   public RealSpaceData(
       MolecularAssembly assembly, CompositeConfiguration properties, ParallelTeam parallelTeam) {
-    this(new MolecularAssembly[] {assembly}, properties, parallelTeam, new RealSpaceFile(assembly));
+    this(new MolecularAssembly[]{assembly}, properties, parallelTeam, new RealSpaceFile(assembly));
   }
 
   /**
    * Construct a real space data molecularAssemblies.
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular molecularAssemblies} object,
-   *     used as the atomic model for comparison against the data
-   * @param properties system properties file
+   * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies} object,
+   *                     used as the atomic model for comparison against the data
+   * @param properties   system properties file
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-   * @param datafile one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
+   * @param datafile     one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
    */
   public RealSpaceData(
       MolecularAssembly assembly,
       CompositeConfiguration properties,
       ParallelTeam parallelTeam,
       RealSpaceFile... datafile) {
-    this(new MolecularAssembly[] {assembly}, properties, parallelTeam, datafile);
+    this(new MolecularAssembly[]{assembly}, properties, parallelTeam, datafile);
   }
 
   /**
    * Construct a real space data molecularAssemblies.
    *
    * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular
-   *     molecularAssemblies} object array (typically containing alternate conformer assemblies),
-   *     used as the atomic model for comparison against the data
-   * @param properties system properties file
-   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-   * @param dataFile one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
+   *                            molecularAssemblies} object array (typically containing alternate conformer assemblies),
+   *                            used as the atomic model for comparison against the data
+   * @param properties          system properties file
+   * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
+   * @param dataFile            one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
    */
   public RealSpaceData(
       MolecularAssembly[] molecularAssemblies,
@@ -314,25 +345,33 @@ public class RealSpaceData implements DataContainer {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Atom[] getActiveAtomArray() {
     return refinementModel.getActiveAtomArray();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<List<Molecule>> getAltMolecules() {
     return refinementModel.getAltMolecules();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<List<Residue>> getAltResidues() {
     return refinementModel.getAltResidues();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Atom[] getAtomArray() {
     return refinementModel.getTotalAtomArray();
@@ -374,7 +413,9 @@ public class RealSpaceData implements DataContainer {
     this.lambda = lambda;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public MolecularAssembly[] getMolecularAssemblies() {
     return molecularAssemblies;
@@ -383,8 +424,9 @@ public class RealSpaceData implements DataContainer {
   /**
    * Getter for the field <code>realSpaceGradient</code>.
    *
-   * @param gradient an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * @param gradient the gradient array.
+   * @return the real space gradient added to the input gradient array, or a new array if the
+   * gradient is null or too small.
    */
   public double[] getRealSpaceGradient(double[] gradient) {
     int nAtoms = refinementModel.getTotalAtomArray().length;
@@ -422,25 +464,33 @@ public class RealSpaceData implements DataContainer {
     this.refinementData = refinementData;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public RefinementModel getRefinementModel() {
     return refinementModel;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getWeight() {
     return xweight;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setWeight(double weight) {
     this.xweight = weight;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String printEnergyUpdate() {
     StringBuilder sb = new StringBuilder();
@@ -456,13 +506,17 @@ public class RealSpaceData implements DataContainer {
     return sb.toString();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String printOptimizationHeader() {
     return "Density score";
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String printOptimizationUpdate() {
     StringBuilder sb = new StringBuilder();
@@ -657,7 +711,9 @@ public class RealSpaceData implements DataContainer {
       lambdaGrad.alloc(nAtoms);
     }
 
-    /** Initialize gradient and lambda gradient arrays. */
+    /**
+     * Initialize gradient and lambda gradient arrays.
+     */
     private class InitializationLoop extends IntegerForLoop {
 
       @Override
@@ -801,10 +857,10 @@ public class RealSpaceData implements DataContainer {
               // transpose of toFractional
               xyz[0] = grad[0] * getCrystal()[i].A00;
               xyz[1] = grad[0] * getCrystal()[i].A10
-                      + grad[1] * getCrystal()[i].A11;
+                  + grad[1] * getCrystal()[i].A11;
               xyz[2] = grad[0] * getCrystal()[i].A20
-                      + grad[1] * getCrystal()[i].A21
-                      + grad[2] * getCrystal()[i].A22;
+                  + grad[1] * getCrystal()[i].A21
+                  + grad[2] * getCrystal()[i].A22;
               gradient.add(threadID, ia, scale * xyz[0], scale * xyz[1], scale * xyz[2]);
               lambdaGrad.add(threadID, ia, scaledUdL * xyz[0], scaledUdL * xyz[1], scaledUdL * xyz[2]);
             }

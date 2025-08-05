@@ -29,14 +29,13 @@ import org.apache.commons.io.FilenameUtils;
  * configurations in the same bin. The configurations with the highest weights are split into two
  * configurations with half the weight of the parent.
  * <p>
- * The algorithm is based on the Huber & Kim original paper and a following theory paper by Zuckerman:
+ * The algorithm is based on the Huber and Kim original paper and the following paper by Zuckerman:
  * <p>
- * Huber, G. A., & Kim, S. (1996). Weighted-ensemble Brownian dynamics simulations for protein association reactions.
+ * Huber, G. A., and Kim, S. (1996). Weighted-ensemble Brownian dynamics simulations for protein association reactions.
  * Biophysical journal, 70, 97-110.
  * <p>
  * Zuckerman, D. M. (2010). The "Weighted Ensemble" path sampling method is statistically exact for a broad class of
  * stochastic processes and binning procedures. The Journal of Chemical Physics, 132.
- *
  *
  * @author Matthew Speranza
  * @since 1.0

@@ -235,7 +235,7 @@ class Scheduler extends AlgorithmsScript {
 
     // Create an entry for each process
     int i = 0
-    for (p = 0; p < processes; p++) {
+    for (int proc = 0; proc < processes; proc++) {
       for (node in hostnames) {
         sb.append("backend node" + i + " "
             + CPUs + " "

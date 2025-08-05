@@ -142,7 +142,6 @@ public interface Potential extends OptimizationInterface {
       getUnderlyingPotentials().forEach((Potential p) -> p.writeAdditionalRestartInfo(false));
     } // Else, no-op.
   }
-  /**/
 
   /**
    * Recognized variables currently include Cartesian coordinates and OTHER.

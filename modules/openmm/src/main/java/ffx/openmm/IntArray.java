@@ -73,16 +73,6 @@ public class IntArray {
   }
 
   /**
-   * Set a value in the array.
-   *
-   * @param index The index.
-   * @param value The value.
-   */
-  public void set(int index, int value) {
-    OpenMM_IntArray_set(pointer, index, value);
-  }
-
-  /**
    * Destroy the array.
    */
   public void destroy() {
@@ -90,25 +80,6 @@ public class IntArray {
       OpenMM_IntArray_destroy(pointer);
       pointer = null;
     }
-  }
-
-  /**
-   * Resize the array.
-   *
-   * @param size The new size.
-   */
-  public void resize(int size) {
-    OpenMM_IntArray_resize(pointer, size);
-  }
-
-
-  /**
-   * Get the size of the array.
-   *
-   * @return The size.
-   */
-  public int getSize() {
-    return OpenMM_IntArray_getSize(pointer);
   }
 
   /**
@@ -128,6 +99,34 @@ public class IntArray {
    */
   public PointerByReference getPointer() {
     return pointer;
+  }
+
+  /**
+   * Get the size of the array.
+   *
+   * @return The size.
+   */
+  public int getSize() {
+    return OpenMM_IntArray_getSize(pointer);
+  }
+
+  /**
+   * Resize the array.
+   *
+   * @param size The new size.
+   */
+  public void resize(int size) {
+    OpenMM_IntArray_resize(pointer, size);
+  }
+
+  /**
+   * Set a value in the array.
+   *
+   * @param index The index.
+   * @param value The value.
+   */
+  public void set(int index, int value) {
+    OpenMM_IntArray_set(pointer, index, value);
   }
 
 }

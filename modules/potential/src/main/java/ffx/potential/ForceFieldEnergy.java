@@ -2003,10 +2003,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return energy(false, false);
   }
 
+
   /**
-   * {@inheritDoc}
+   * Compute the potential energy of the system.
    *
-   * <p>energy
+   * @param gradient If true, compute the Cartesian coordinate gradient.
+   * @param print    If true, print the energy terms.
+   * @return the energy in kcal/mol.
    */
   public double energy(boolean gradient, boolean print) {
     try {
@@ -2734,10 +2737,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * getGradient
+   * Returns the gradient array for this ForceFieldEnergy.
    *
    * @param g an array of double.
-   * @return an array of {@link double} objects.
+   * @return the gradient array.
    */
   public double[] getGradient(double[] g) {
     return fillGradient(g);
@@ -3658,9 +3661,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * The coordinate array should only contain active atoms.
    *
-   * @param coords an array of {@link double} objects.
+   * @param coords the coordinates to set.
    */
-  public void setCoordinates(double[] coords) {
+  public void setCoordinates(@Nullable double[] coords) {
     if (coords == null) {
       return;
     }

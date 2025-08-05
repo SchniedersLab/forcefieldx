@@ -37,19 +37,33 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import com.sun.jna.ptr.DoubleByReference;
+import com.sun.jna.ptr.IntByReference;
+
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
+
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_addTorsion;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_getNumTorsions;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_getTorsionParameters;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_setTorsionParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_setUsesPeriodicBoundaryConditions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_updateParametersInContext;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_usesPeriodicBoundaryConditions;
 
 /**
  * Periodic Torsion Force.
  */
 public class PeriodicTorsionForce extends Force {
 
+  /**
+   * Create a new PeriodicTorsionForce.
+   */
   public PeriodicTorsionForce() {
-    pointer = OpenMM_PeriodicTorsionForce_create();
+    super(OpenMM_PeriodicTorsionForce_create());
   }
 
   /**
@@ -62,9 +76,70 @@ public class PeriodicTorsionForce extends Force {
    * @param periodicity The periodicity of the torsion.
    * @param phase       The phase of the torsion.
    * @param k           The force constant for the torsion.
+   * @return The index of the torsion that was added.
    */
-  public void addTorsion(int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k) {
-    OpenMM_PeriodicTorsionForce_addTorsion(pointer, particle1, particle2, particle3, particle4, periodicity, phase, k);
+  public int addTorsion(int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k) {
+    return OpenMM_PeriodicTorsionForce_addTorsion(pointer, particle1, particle2, particle3, particle4, periodicity, phase, k);
+  }
+
+  /**
+   * Destroy the force.
+   */
+  @Override
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_PeriodicTorsionForce_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
+   * Get the number of torsions in the force.
+   *
+   * @return The number of torsions.
+   */
+  public int getNumTorsions() {
+    return OpenMM_PeriodicTorsionForce_getNumTorsions(pointer);
+  }
+
+  /**
+   * Get the parameters for a torsion.
+   *
+   * @param index       The index of the torsion.
+   * @param particle1   The index of the first atom (output).
+   * @param particle2   The index of the second atom (output).
+   * @param particle3   The index of the third atom (output).
+   * @param particle4   The index of the fourth atom (output).
+   * @param periodicity The periodicity of the torsion (output).
+   * @param phase       The phase of the torsion (output).
+   * @param k           The force constant for the torsion (output).
+   */
+  public void getTorsionParameters(int index, IntByReference particle1, IntByReference particle2,
+                                   IntByReference particle3, IntByReference particle4,
+                                   IntByReference periodicity, DoubleByReference phase,
+                                   DoubleByReference k) {
+    OpenMM_PeriodicTorsionForce_getTorsionParameters(pointer, index, particle1, particle2,
+        particle3, particle4, periodicity, phase, k);
+  }
+
+  /**
+   * Get the parameters for a torsion.
+   *
+   * @param index       The index of the torsion.
+   * @param particle1   The index of the first atom (output).
+   * @param particle2   The index of the second atom (output).
+   * @param particle3   The index of the third atom (output).
+   * @param particle4   The index of the fourth atom (output).
+   * @param periodicity The periodicity of the torsion (output).
+   * @param phase       The phase of the torsion (output).
+   * @param k           The force constant for the torsion (output).
+   */
+  public void getTorsionParameters(int index, IntBuffer particle1, IntBuffer particle2,
+                                   IntBuffer particle3, IntBuffer particle4,
+                                   IntBuffer periodicity, DoubleBuffer phase,
+                                   DoubleBuffer k) {
+    OpenMM_PeriodicTorsionForce_getTorsionParameters(pointer, index, particle1, particle2,
+        particle3, particle4, periodicity, phase, k);
   }
 
   /**
@@ -79,12 +154,23 @@ public class PeriodicTorsionForce extends Force {
    * @param phase       The phase of the torsion.
    * @param k           The force constant for the torsion.
    */
-  public void setTorsionParameters(int index, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k) {
-    OpenMM_PeriodicTorsionForce_setTorsionParameters(pointer, index, particle1, particle2, particle3, particle4, periodicity, phase, k);
+  public void setTorsionParameters(int index, int particle1, int particle2, int particle3,
+                                   int particle4, int periodicity, double phase, double k) {
+    OpenMM_PeriodicTorsionForce_setTorsionParameters(pointer, index, particle1, particle2,
+        particle3, particle4, periodicity, phase, k);
   }
 
   /**
-   * Update the parameters for a torsion in the OpenMM Context.
+   * Set whether this force should apply periodic boundary conditions when calculating displacements.
+   *
+   * @param periodic If true, periodic boundary conditions will be applied.
+   */
+  public void setUsesPeriodicBoundaryConditions(boolean periodic) {
+    OpenMM_PeriodicTorsionForce_setUsesPeriodicBoundaryConditions(pointer, periodic ? 1 : 0);
+  }
+
+  /**
+   * Update the parameters in the OpenMM Context.
    *
    * @param context The OpenMM Context.
    */
@@ -94,11 +180,14 @@ public class PeriodicTorsionForce extends Force {
     }
   }
 
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_PeriodicTorsionForce_destroy(pointer);
-      pointer = null;
-    }
+  /**
+   * Check if the force uses periodic boundary conditions.
+   *
+   * @return True if the force uses periodic boundary conditions.
+   */
+  @Override
+  public boolean usesPeriodicBoundaryConditions() {
+    int pbc = OpenMM_PeriodicTorsionForce_usesPeriodicBoundaryConditions(pointer);
+    return pbc == OpenMM_True;
   }
-
 }

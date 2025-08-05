@@ -37,13 +37,36 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
+
+import java.nio.IntBuffer;
+
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addEnergyParameterDerivative;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getEnergyFunction;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getEnergyParameterDerivativeName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getGlobalParameterDefaultValue;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getGlobalParameterName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getNumBonds;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getNumEnergyParameterDerivatives;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getNumGlobalParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getNumPerBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_getPerBondParameterName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setEnergyFunction;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setGlobalParameterDefaultValue;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setGlobalParameterName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setPerBondParameterName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setUsesPeriodicBoundaryConditions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParametersInContext;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_usesPeriodicBoundaryConditions;
 
 /**
  * Custom Bond Force.
@@ -51,12 +74,12 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParam
 public class CustomBondForce extends Force {
 
   /**
-   * Custom Bond Force Constructor.
+   * Create a CustomBondForce.
    *
-   * @param energy The definition of the Energy.
+   * @param energy The energy expression for the force.
    */
   public CustomBondForce(String energy) {
-    pointer = OpenMM_CustomBondForce_create(energy);
+    super(OpenMM_CustomBondForce_create(energy));
   }
 
   /**
@@ -65,28 +88,176 @@ public class CustomBondForce extends Force {
    * @param i1         The index of the first atom.
    * @param i2         The index of the second atom.
    * @param parameters The bond parameters.
+   * @return The index of the bond that was added.
    */
-  public void addBond(int i1, int i2, DoubleArray parameters) {
-    OpenMM_CustomBondForce_addBond(pointer, i1, i2, parameters.getPointer());
+  public int addBond(int i1, int i2, DoubleArray parameters) {
+    return OpenMM_CustomBondForce_addBond(pointer, i1, i2, parameters.getPointer());
   }
 
   /**
-   * Add a per-bond parameter to the CustomBondForce.
+   * Add an energy parameter derivative to the force.
    *
-   * @param name The name of the parameter.
+   * @param name The name of the parameter to compute the derivative of the energy with respect to.
    */
-  public void addPerBondParameter(String name) {
-    OpenMM_CustomBondForce_addPerBondParameter(pointer, name);
+  public void addEnergyParameterDerivative(String name) {
+    OpenMM_CustomBondForce_addEnergyParameterDerivative(pointer, name);
   }
 
   /**
    * Add a global parameter to the CustomBondForce.
    *
    * @param name  The name of the parameter.
-   * @param value The value of the parameter.
+   * @param value The default value of the parameter.
+   * @return The index of the parameter that was added.
    */
-  public void addGlobalParameter(String name, double value) {
-    OpenMM_CustomBondForce_addGlobalParameter(pointer, name, value);
+  public int addGlobalParameter(String name, double value) {
+    return OpenMM_CustomBondForce_addGlobalParameter(pointer, name, value);
+  }
+
+  /**
+   * Add a per-bond parameter to the CustomBondForce.
+   *
+   * @param name The name of the parameter.
+   * @return The index of the parameter that was added.
+   */
+  public int addPerBondParameter(String name) {
+    return OpenMM_CustomBondForce_addPerBondParameter(pointer, name);
+  }
+
+  /**
+   * Destroy the OpenMM CustomBondForce.
+   */
+  @Override
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_CustomBondForce_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
+   * Get the parameters for a specific bond.
+   *
+   * @param index      The index of the bond.
+   * @param i1         The index of the first atom (output).
+   * @param i2         The index of the second atom (output).
+   * @param parameters The parameters for the bond (output).
+   */
+  public void getBondParameters(int index, IntBuffer i1, IntBuffer i2, DoubleArray parameters) {
+    OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());
+  }
+
+  /**
+   * Get the parameters for a specific bond.
+   *
+   * @param index      The index of the bond.
+   * @param i1         The index of the first atom (output).
+   * @param i2         The index of the second atom (output).
+   * @param parameters The parameters for the bond (output).
+   */
+  public void getBondParameters(int index, IntByReference i1, IntByReference i2, DoubleArray parameters) {
+    OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());
+  }
+
+  /**
+   * Get the energy function expression.
+   *
+   * @return The energy function expression.
+   */
+  public String getEnergyFunction() {
+    Pointer p = OpenMM_CustomBondForce_getEnergyFunction(pointer);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
+  }
+
+  /**
+   * Get the name of a parameter to compute the derivative of the energy with respect to.
+   *
+   * @param index The index of the parameter derivative.
+   * @return The name of the parameter.
+   */
+  public String getEnergyParameterDerivativeName(int index) {
+    Pointer p = OpenMM_CustomBondForce_getEnergyParameterDerivativeName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
+  }
+
+  /**
+   * Get the default value of a global parameter.
+   *
+   * @param index The index of the parameter.
+   * @return The default value of the parameter.
+   */
+  public double getGlobalParameterDefaultValue(int index) {
+    return OpenMM_CustomBondForce_getGlobalParameterDefaultValue(pointer, index);
+  }
+
+  /**
+   * Get the name of a global parameter.
+   *
+   * @param index The index of the parameter.
+   * @return The name of the parameter.
+   */
+  public String getGlobalParameterName(int index) {
+    Pointer p = OpenMM_CustomBondForce_getGlobalParameterName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
+  }
+
+  /**
+   * Get the number of bonds.
+   *
+   * @return The number of bonds.
+   */
+  public int getNumBonds() {
+    return OpenMM_CustomBondForce_getNumBonds(pointer);
+  }
+
+  /**
+   * Get the number of parameters with respect to which the derivative of the energy should be computed.
+   *
+   * @return The number of parameters.
+   */
+  public int getNumEnergyParameterDerivatives() {
+    return OpenMM_CustomBondForce_getNumEnergyParameterDerivatives(pointer);
+  }
+
+  /**
+   * Get the number of global parameters.
+   *
+   * @return The number of global parameters.
+   */
+  public int getNumGlobalParameters() {
+    return OpenMM_CustomBondForce_getNumGlobalParameters(pointer);
+  }
+
+  /**
+   * Get the number of per-bond parameters.
+   *
+   * @return The number of per-bond parameters.
+   */
+  public int getNumPerBondParameters() {
+    return OpenMM_CustomBondForce_getNumPerBondParameters(pointer);
+  }
+
+  /**
+   * Get the name of a per-bond parameter.
+   *
+   * @param index The index of the parameter.
+   * @return The name of the parameter.
+   */
+  public String getPerBondParameterName(int index) {
+    Pointer p = OpenMM_CustomBondForce_getPerBondParameterName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
   }
 
   /**
@@ -102,6 +273,54 @@ public class CustomBondForce extends Force {
   }
 
   /**
+   * Set the energy function expression.
+   *
+   * @param energy The energy function expression.
+   */
+  public void setEnergyFunction(String energy) {
+    OpenMM_CustomBondForce_setEnergyFunction(pointer, energy);
+  }
+
+  /**
+   * Set the default value of a global parameter.
+   *
+   * @param index The index of the parameter.
+   * @param value The default value of the parameter.
+   */
+  public void setGlobalParameterDefaultValue(int index, double value) {
+    OpenMM_CustomBondForce_setGlobalParameterDefaultValue(pointer, index, value);
+  }
+
+  /**
+   * Set the name of a global parameter.
+   *
+   * @param index The index of the parameter.
+   * @param name  The name of the parameter.
+   */
+  public void setGlobalParameterName(int index, String name) {
+    OpenMM_CustomBondForce_setGlobalParameterName(pointer, index, name);
+  }
+
+  /**
+   * Set the name of a per-bond parameter.
+   *
+   * @param index The index of the parameter.
+   * @param name  The name of the parameter.
+   */
+  public void setPerBondParameterName(int index, String name) {
+    OpenMM_CustomBondForce_setPerBondParameterName(pointer, index, name);
+  }
+
+  /**
+   * Set whether this force uses periodic boundary conditions.
+   *
+   * @param periodic If true, periodic boundary conditions will be used.
+   */
+  public void setUsesPeriodicBoundaryConditions(boolean periodic) {
+    OpenMM_CustomBondForce_setUsesPeriodicBoundaryConditions(pointer, periodic ? 1 : 0);
+  }
+
+  /**
    * Update the parameters in the OpenMM Context.
    *
    * @param context The OpenMM Context.
@@ -113,13 +332,13 @@ public class CustomBondForce extends Force {
   }
 
   /**
-   * Destroy the OpenMM CustomBondForce.
+   * Check if the force uses periodic boundary conditions.
+   *
+   * @return True if the force uses periodic boundary conditions.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_CustomBondForce_destroy(pointer);
-      pointer = null;
-    }
+  @Override
+  public boolean usesPeriodicBoundaryConditions() {
+    int pbc = OpenMM_CustomBondForce_usesPeriodicBoundaryConditions(pointer);
+    return pbc == OpenMM_True;
   }
-
 }

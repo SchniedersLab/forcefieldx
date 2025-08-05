@@ -101,8 +101,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
   /**
    * getCoordinates.
    *
-   * @param x an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * @param x the array to populate with parameters or null to create a new array.
+   * @return an array containing the parameters.
    */
   public double[] getCoordinates(@Nullable double[] x) {
     if (x == null) {

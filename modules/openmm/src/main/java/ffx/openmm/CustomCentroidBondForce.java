@@ -37,12 +37,16 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
+
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addPerBondParameter;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addTabulatedFunction;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getBondParameters;
@@ -60,6 +64,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_get
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getNumPerBondParameters;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getPerBondParameterName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getTabulatedFunction;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_getTabulatedFunctionName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_setBondParameters;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_setEnergyFunction;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue;
@@ -167,111 +173,28 @@ public class CustomCentroidBondForce extends Force {
    *                  and per-bond parameters
    */
   public CustomCentroidBondForce(int numGroups, String energy) {
-    pointer = OpenMM_CustomCentroidBondForce_create(numGroups, energy);
+    super(OpenMM_CustomCentroidBondForce_create(numGroups, energy));
   }
 
   /**
-   * Get the number of groups used to define each bond.
-   */
-  public int getNumGroupsPerBond() {
-    return OpenMM_CustomCentroidBondForce_getNumGroupsPerBond(pointer);
-  }
-
-  /**
-   * Get the number of particle groups that have been defined.
-   */
-  public int getNumGroups() {
-    return OpenMM_CustomCentroidBondForce_getNumGroups(pointer);
-  }
-
-  /**
-   * Get the number of bonds for which force field parameters have been defined.
-   */
-  public int getNumBonds() {
-    return OpenMM_CustomCentroidBondForce_getNumBonds(pointer);
-  }
-
-  /**
-   * Get the number of per-bond parameters that the interaction depends on.
-   */
-  public int getNumPerBondParameters() {
-    return OpenMM_CustomCentroidBondForce_getNumPerBondParameters(pointer);
-  }
-
-  /**
-   * Get the number of global parameters that the interaction depends on.
-   */
-  public int getNumGlobalParameters() {
-    return OpenMM_CustomCentroidBondForce_getNumGlobalParameters(pointer);
-  }
-
-  /**
-   * Get the number of global parameters with respect to which the derivative of the energy
-   * should be computed.
-   */
-  public int getNumEnergyParameterDerivatives() {
-    return OpenMM_CustomCentroidBondForce_getNumEnergyParameterDerivatives(pointer);
-  }
-
-  /**
-   * Get the number of tabulated functions that have been defined.
-   */
-  public int getNumTabulatedFunctions() {
-    return OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions(pointer);
-  }
-
-  /**
-   * Get the number of tabulated functions that have been defined.
+   * Add a bond to the force
    *
-   * @deprecated This method exists only for backward compatibility.  Use getNumTabulatedFunctions() instead.
+   * @param groups     the indices of the groups the bond depends on
+   * @param parameters the list of per-bond parameter values for the new bond
+   * @return the index of the bond that was added
    */
-  @Deprecated
-  public int getNumFunctions() {
-    return OpenMM_CustomCentroidBondForce_getNumFunctions(pointer);
+  public int addBond(IntArray groups, DoubleArray parameters) {
+    return OpenMM_CustomCentroidBondForce_addBond(pointer, groups.getPointer(), parameters.getPointer());
   }
 
   /**
-   * Get the algebraic expression that gives the interaction energy of each bond
-   */
-  public String getEnergyFunction() {
-    return OpenMM_CustomCentroidBondForce_getEnergyFunction(pointer).getString(0);
-  }
-
-  /**
-   * Set the algebraic expression that gives the interaction energy of each bond
-   */
-  public void setEnergyFunction(String energy) {
-    OpenMM_CustomCentroidBondForce_setEnergyFunction(pointer, energy);
-  }
-
-  /**
-   * Add a new per-bond parameter that the interaction may depend on.
+   * Request that this Force compute the derivative of its energy with respect to a global parameter.
+   * The parameter must have already been added with addGlobalParameter().
    *
    * @param name the name of the parameter
-   * @return the index of the parameter that was added
    */
-  public int addPerBondParameter(String name) {
-    return OpenMM_CustomCentroidBondForce_addPerBondParameter(pointer, name);
-  }
-
-  /**
-   * Get the name of a per-bond parameter.
-   *
-   * @param index the index of the parameter for which to get the name
-   * @return the parameter name
-   */
-  public String getPerBondParameterName(int index) {
-    return OpenMM_CustomCentroidBondForce_getPerBondParameterName(pointer, index).getString(0);
-  }
-
-  /**
-   * Set the name of a per-bond parameter.
-   *
-   * @param index the index of the parameter for which to set the name
-   * @param name  the name of the parameter
-   */
-  public void setPerBondParameterName(int index, String name) {
-    OpenMM_CustomCentroidBondForce_setPerBondParameterName(pointer, index, name);
+  public void addEnergyParameterDerivative(String name) {
+    OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(pointer, name);
   }
 
   /**
@@ -288,23 +211,86 @@ public class CustomCentroidBondForce extends Force {
   }
 
   /**
-   * Get the name of a global parameter.
+   * Add a particle group.
    *
-   * @param index the index of the parameter for which to get the name
-   * @return the parameter name
+   * @param particles the indices of the particles to include in the group
+   * @param weights   the weight to use for each particle when computing the center position.
+   *                  If this is omitted, then particle masses will be used as weights.
+   * @return the index of the group that was added
    */
-  public String getGlobalParameterName(int index) {
-    return OpenMM_CustomCentroidBondForce_getGlobalParameterName(pointer, index).getString(0);
+  public int addGroup(IntArray particles, DoubleArray weights) {
+    return OpenMM_CustomCentroidBondForce_addGroup(pointer, particles.getPointer(), weights.getPointer());
   }
 
   /**
-   * Set the name of a global parameter.
+   * Add a new per-bond parameter that the interaction may depend on.
    *
-   * @param index the index of the parameter for which to set the name
-   * @param name  the name of the parameter
+   * @param name the name of the parameter
+   * @return the index of the parameter that was added
    */
-  public void setGlobalParameterName(int index, String name) {
-    OpenMM_CustomCentroidBondForce_setGlobalParameterName(pointer, index, name);
+  public int addPerBondParameter(String name) {
+    return OpenMM_CustomCentroidBondForce_addPerBondParameter(pointer, name);
+  }
+
+  /**
+   * Add a tabulated function that may appear in the energy expression.
+   *
+   * @param name     the name of the function as it appears in expressions
+   * @param function a TabulatedFunction object defining the function
+   * @return the index of the function that was added
+   */
+  public int addTabulatedFunction(String name, PointerByReference function) {
+    return OpenMM_CustomCentroidBondForce_addTabulatedFunction(pointer, name, function);
+  }
+
+  /**
+   * Destroy the OpenMM CustomCentroidBondForce.
+   */
+  @Override
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_CustomCentroidBondForce_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
+   * Get the properties of a bond.
+   *
+   * @param index      the index of the bond to get
+   * @param groups     the indices of the groups in the bond
+   * @param parameters the list of per-bond parameter values for the bond
+   */
+  public void getBondParameters(int index, IntArray groups, DoubleArray parameters) {
+    OpenMM_CustomCentroidBondForce_getBondParameters(pointer, index, groups.getPointer(), parameters.getPointer());
+  }
+
+  /**
+   * Get the algebraic expression that gives the interaction energy of each bond
+   *
+   * @return The energy function expression.
+   */
+  public String getEnergyFunction() {
+    Pointer p = OpenMM_CustomCentroidBondForce_getEnergyFunction(pointer);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
+  }
+
+  /**
+   * Get the name of a global parameter with respect to which this Force should compute the
+   * derivative of the energy.
+   *
+   * @param index the index of the parameter derivative, between 0 and getNumEnergyParameterDerivatives()
+   * @return the parameter name
+   */
+  public String getEnergyParameterDerivativeName(int index) {
+    Pointer p = OpenMM_CustomCentroidBondForce_getEnergyParameterDerivativeName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
   }
 
   /**
@@ -318,46 +304,17 @@ public class CustomCentroidBondForce extends Force {
   }
 
   /**
-   * Set the default value of a global parameter.
+   * Get the name of a global parameter.
    *
-   * @param index        the index of the parameter for which to set the default value
-   * @param defaultValue the default value of the parameter
-   */
-  public void setGlobalParameterDefaultValue(int index, double defaultValue) {
-    OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue(pointer, index, defaultValue);
-  }
-
-  /**
-   * Request that this Force compute the derivative of its energy with respect to a global parameter.
-   * The parameter must have already been added with addGlobalParameter().
-   *
-   * @param name the name of the parameter
-   */
-  public void addEnergyParameterDerivative(String name) {
-    OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(pointer, name);
-  }
-
-  /**
-   * Get the name of a global parameter with respect to which this Force should compute the
-   * derivative of the energy.
-   *
-   * @param index the index of the parameter derivative, between 0 and getNumEnergyParameterDerivatives()
+   * @param index the index of the parameter for which to get the name
    * @return the parameter name
    */
-  public String getEnergyParameterDerivativeName(int index) {
-    return OpenMM_CustomCentroidBondForce_getEnergyParameterDerivativeName(pointer, index).getString(0);
-  }
-
-  /**
-   * Add a particle group.
-   *
-   * @param particles the indices of the particles to include in the group
-   * @param weights   the weight to use for each particle when computing the center position.
-   *                  If this is omitted, then particle masses will be used as weights.
-   * @return the index of the group that was added
-   */
-  public int addGroup(IntArray particles, DoubleArray weights) {
-    return OpenMM_CustomCentroidBondForce_addGroup(pointer, particles.getPointer(), weights.getPointer());
+  public String getGlobalParameterName(int index) {
+    Pointer p = OpenMM_CustomCentroidBondForce_getGlobalParameterName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
   }
 
   /**
@@ -374,37 +331,116 @@ public class CustomCentroidBondForce extends Force {
   }
 
   /**
-   * Set the properties of a group.
+   * Get the number of bonds for which force field parameters have been defined.
    *
-   * @param index     the index of the group to set
-   * @param particles the indices of the particles in the group
-   * @param weights   the weight to use for each particle when computing the center position.
-   *                  If this is omitted, then particle masses will be used as weights.
+   * @return The number of bonds.
    */
-  public void setGroupParameters(int index, IntArray particles, DoubleArray weights) {
-    OpenMM_CustomCentroidBondForce_setGroupParameters(pointer, index, particles.getPointer(), weights.getPointer());
+  public int getNumBonds() {
+    return OpenMM_CustomCentroidBondForce_getNumBonds(pointer);
   }
 
   /**
-   * Add a bond to the force
+   * Get the number of global parameters with respect to which the derivative of the energy
+   * should be computed.
    *
-   * @param groups     the indices of the groups the bond depends on
-   * @param parameters the list of per-bond parameter values for the new bond
-   * @return the index of the bond that was added
+   * @return The number of parameters.
    */
-  public int addBond(IntArray groups, DoubleArray parameters) {
-    return OpenMM_CustomCentroidBondForce_addBond(pointer, groups.getPointer(), parameters.getPointer());
+  public int getNumEnergyParameterDerivatives() {
+    return OpenMM_CustomCentroidBondForce_getNumEnergyParameterDerivatives(pointer);
   }
 
   /**
-   * Get the properties of a bond.
+   * Get the number of tabulated functions that have been defined.
    *
-   * @param index      the index of the bond to get
-   * @param groups     the indices of the groups in the bond
-   * @param parameters the list of per-bond parameter values for the bond
+   * @return The number of tabulated functions.
+   * @deprecated This method exists only for backward compatibility.  Use getNumTabulatedFunctions() instead.
    */
-  public void getBondParameters(int index, IntArray groups, DoubleArray parameters) {
-    OpenMM_CustomCentroidBondForce_getBondParameters(pointer, index, groups.getPointer(), parameters.getPointer());
+  @Deprecated
+  public int getNumFunctions() {
+    return OpenMM_CustomCentroidBondForce_getNumFunctions(pointer);
+  }
+
+  /**
+   * Get the number of global parameters that the interaction depends on.
+   *
+   * @return The number of global parameters.
+   */
+  public int getNumGlobalParameters() {
+    return OpenMM_CustomCentroidBondForce_getNumGlobalParameters(pointer);
+  }
+
+  /**
+   * Get the number of particle groups that have been defined.
+   *
+   * @return The number of groups.
+   */
+  public int getNumGroups() {
+    return OpenMM_CustomCentroidBondForce_getNumGroups(pointer);
+  }
+
+  /**
+   * Get the number of groups used to define each bond.
+   *
+   * @return The number of groups per bond.
+   */
+  public int getNumGroupsPerBond() {
+    return OpenMM_CustomCentroidBondForce_getNumGroupsPerBond(pointer);
+  }
+
+  /**
+   * Get the number of per-bond parameters that the interaction depends on.
+   *
+   * @return The number of per-bond parameters.
+   */
+  public int getNumPerBondParameters() {
+    return OpenMM_CustomCentroidBondForce_getNumPerBondParameters(pointer);
+  }
+
+  /**
+   * Get the number of tabulated functions that have been defined.
+   *
+   * @return The number of tabulated functions.
+   */
+  public int getNumTabulatedFunctions() {
+    return OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions(pointer);
+  }
+
+  /**
+   * Get the name of a per-bond parameter.
+   *
+   * @param index the index of the parameter for which to get the name
+   * @return the parameter name
+   */
+  public String getPerBondParameterName(int index) {
+    Pointer p = OpenMM_CustomCentroidBondForce_getPerBondParameterName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
+  }
+
+  /**
+   * Get a reference to a tabulated function that may appear in the energy expression.
+   *
+   * @param index the index of the function to get
+   * @return the TabulatedFunction object defining the function
+   */
+  public PointerByReference getTabulatedFunction(int index) {
+    return OpenMM_CustomCentroidBondForce_getTabulatedFunction(pointer, index);
+  }
+
+  /**
+   * Get the name of a tabulated function that may appear in the energy expression.
+   *
+   * @param index the index of the function to get
+   * @return the name of the function as it appears in expressions
+   */
+  public String getTabulatedFunctionName(int index) {
+    Pointer p = OpenMM_CustomCentroidBondForce_getTabulatedFunctionName(pointer, index);
+    if (p == null) {
+      return null;
+    }
+    return p.getString(0);
   }
 
   /**
@@ -418,6 +454,66 @@ public class CustomCentroidBondForce extends Force {
     OpenMM_CustomCentroidBondForce_setBondParameters(pointer, index, groups.getPointer(), parameters.getPointer());
   }
 
+  /**
+   * Set the algebraic expression that gives the interaction energy of each bond
+   *
+   * @param energy The energy function expression.
+   */
+  public void setEnergyFunction(String energy) {
+    OpenMM_CustomCentroidBondForce_setEnergyFunction(pointer, energy);
+  }
+
+  /**
+   * Set the default value of a global parameter.
+   *
+   * @param index        the index of the parameter for which to set the default value
+   * @param defaultValue the default value of the parameter
+   */
+  public void setGlobalParameterDefaultValue(int index, double defaultValue) {
+    OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue(pointer, index, defaultValue);
+  }
+
+  /**
+   * Set the name of a global parameter.
+   *
+   * @param index the index of the parameter for which to set the name
+   * @param name  the name of the parameter
+   */
+  public void setGlobalParameterName(int index, String name) {
+    OpenMM_CustomCentroidBondForce_setGlobalParameterName(pointer, index, name);
+  }
+
+  /**
+   * Set the properties of a group.
+   *
+   * @param index     the index of the group to set
+   * @param particles the indices of the particles in the group
+   * @param weights   the weight to use for each particle when computing the center position.
+   *                  If this is omitted, then particle masses will be used as weights.
+   */
+  public void setGroupParameters(int index, IntArray particles, DoubleArray weights) {
+    OpenMM_CustomCentroidBondForce_setGroupParameters(pointer, index, particles.getPointer(), weights.getPointer());
+  }
+
+  /**
+   * Set the name of a per-bond parameter.
+   *
+   * @param index the index of the parameter for which to set the name
+   * @param name  the name of the parameter
+   */
+  public void setPerBondParameterName(int index, String name) {
+    OpenMM_CustomCentroidBondForce_setPerBondParameterName(pointer, index, name);
+  }
+
+  /**
+   * Set whether this force should apply periodic boundary conditions when calculating displacements.
+   * Usually this is not appropriate for bonded forces, but there are situations when it can be useful.
+   *
+   * @param periodic 1 if periodic boundary conditions should be used, 0 if not.
+   */
+  public void setUsesPeriodicBoundaryConditions(int periodic) {
+    OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(pointer, periodic);
+  }
 
   /**
    * Update the per-bond parameters and tabulated functions in a Context to match those stored in this Force object.  This method provides
@@ -440,31 +536,14 @@ public class CustomCentroidBondForce extends Force {
   }
 
   /**
-   * Set whether this force should apply periodic boundary conditions when calculating displacements.
-   * Usually this is not appropriate for bonded forces, but there are situations when it can be useful.
-   *
-   * @param periodic 1 if periodic boundary conditions should be used, 0 if not.
-   */
-  public void setUsesPeriodicBoundaryConditions(int periodic) {
-    OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(pointer, periodic);
-  }
-
-  /**
    * Returns whether this force makes use of periodic boundary
    * conditions.
    *
    * @return true if force uses PBC and false otherwise
    */
+  @Override
   public boolean usesPeriodicBoundaryConditions() {
     int pbc = OpenMM_CustomCentroidBondForce_usesPeriodicBoundaryConditions(pointer);
     return pbc == OpenMM_True;
   }
-
-  /**
-   * Destroy the OpenMM CustomCentroidBondForce.
-   */
-  public void destroy() {
-    OpenMM_CustomCentroidBondForce_destroy(pointer);
-  }
-
 }

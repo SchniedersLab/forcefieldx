@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.Float.parseFloat;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toRadians;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -56,6 +45,9 @@ import ffx.crystal.SpaceGroupInfo;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.parsers.MTZWriter.MTZType;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.lang3.Strings;
+
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -67,8 +59,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.lang3.StringUtils;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.Float.parseFloat;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 /**
  * This class parses CCP4 MTZ files.<br>
@@ -891,7 +892,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("rfreeflag")
           || label.equalsIgnoreCase("r-free-flags")
           || label.equalsIgnoreCase("test")
-          || StringUtils.equalsIgnoreCase(label, rFreeString))
+          || Strings.CI.equals(label, rFreeString))
           && column.type == 'I') {
         sb.append(format(" Reading R Free column: \"%s\"\n", column.label));
         rFree = nc;
@@ -903,7 +904,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("rfreeflag(+)")
           || label.equalsIgnoreCase("r-free-flags(+)")
           || label.equalsIgnoreCase("test(+)")
-          || StringUtils.equalsIgnoreCase(label + "(+)", rFreeString))
+          || Strings.CI.equals(label + "(+)", rFreeString))
           && column.type == 'I') {
         rFreePlus = nc;
       } else if ((label.equalsIgnoreCase("free(-)")
@@ -914,7 +915,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("rfreeflag(-)")
           || label.equalsIgnoreCase("r-free-flags(-)")
           || label.equalsIgnoreCase("test(-)")
-          || StringUtils.equalsIgnoreCase(label + "(-)", rFreeString))
+          || Strings.CI.equals(label + "(-)", rFreeString))
           && column.type == 'I') {
         rFreeMinus = nc;
       } else if ((label.equalsIgnoreCase("f")
@@ -922,7 +923,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("fo")
           || label.equalsIgnoreCase("fobs")
           || label.equalsIgnoreCase("f-obs")
-          || StringUtils.equalsIgnoreCase(label, foString))
+          || Strings.CI.equals(label, foString))
           && column.type == 'F') {
         sb.append(format(" Reading Fo column: \"%s\"\n", column.label));
         fo = nc;
@@ -931,7 +932,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("fo(+)")
           || label.equalsIgnoreCase("fobs(+)")
           || label.equalsIgnoreCase("f-obs(+)")
-          || StringUtils.equalsIgnoreCase(label + "(+)", foString))
+          || Strings.CI.equals(label + "(+)", foString))
           && column.type == 'G') {
         fPlus = nc;
       } else if ((label.equalsIgnoreCase("f(-)")
@@ -939,7 +940,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("fo(-)")
           || label.equalsIgnoreCase("fobs(-)")
           || label.equalsIgnoreCase("f-obs(-)")
-          || StringUtils.equalsIgnoreCase(label + "(-)", foString))
+          || Strings.CI.equals(label + "(-)", foString))
           && column.type == 'G') {
         fMinus = nc;
       } else if ((label.equalsIgnoreCase("sigf")
@@ -947,7 +948,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("sigfo")
           || label.equalsIgnoreCase("sigfobs")
           || label.equalsIgnoreCase("sigf-obs")
-          || StringUtils.equalsIgnoreCase(label, sigFoString))
+          || Strings.CI.equals(label, sigFoString))
           && column.type == 'Q') {
         sb.append(format(" Reading sigFo column: \"%s\"\n", column.label));
         sigFo = nc;
@@ -956,7 +957,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("sigfo(+)")
           || label.equalsIgnoreCase("sigfobs(+)")
           || label.equalsIgnoreCase("sigf-obs(+)")
-          || StringUtils.equalsIgnoreCase(label + "(+)", sigFoString))
+          || Strings.CI.equals(label + "(+)", sigFoString))
           && column.type == 'L') {
         sigFPlus = nc;
       } else if ((label.equalsIgnoreCase("sigf(-)")
@@ -964,7 +965,7 @@ public class MTZFilter implements DiffractionFileFilter {
           || label.equalsIgnoreCase("sigfo(-)")
           || label.equalsIgnoreCase("sigfobs(-)")
           || label.equalsIgnoreCase("sigf-obs(-)")
-          || StringUtils.equalsIgnoreCase(label + "(-)", sigFoString))
+          || Strings.CI.equals(label + "(-)", sigFoString))
           && column.type == 'L') {
         sigFMinus = nc;
       }

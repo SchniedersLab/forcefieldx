@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -189,13 +190,14 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
    * Average two OutOfPlaneBendType instances. The atom classes that define the new type must be
    * supplied.
    *
-   * @param outOfPlaneBendType1 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
-   * @param outOfPlaneBendType2 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
-   * @param atomClasses         an array of {@link int} objects.
+   * @param outOfPlaneBendType1 the first {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+   * @param outOfPlaneBendType2 the second {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+   * @param atomClasses         the atom classes that define the new type.
    * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
    */
-  public static OutOfPlaneBendType average(OutOfPlaneBendType outOfPlaneBendType1,
-                                           OutOfPlaneBendType outOfPlaneBendType2, int[] atomClasses) {
+  public static OutOfPlaneBendType average(@Nullable OutOfPlaneBendType outOfPlaneBendType1,
+                                           @Nullable OutOfPlaneBendType outOfPlaneBendType2,
+                                           @Nullable int[] atomClasses) {
     if (outOfPlaneBendType1 == null || outOfPlaneBendType2 == null || atomClasses == null) {
       return null;
     }

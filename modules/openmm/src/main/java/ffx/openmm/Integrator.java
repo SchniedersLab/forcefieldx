@@ -39,8 +39,12 @@ package ffx.openmm;
 
 import com.sun.jna.ptr.PointerByReference;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getConstraintTolerance;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getIntegrationForceGroups;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_getStepSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setConstraintTolerance;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setIntegrationForceGroups;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setStepSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
 
 /**
@@ -50,7 +54,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
  * Each Integrator object is bound to a particular Context which it integrates. This connection
  * is specified by passing the Integrator as an argument to the constructor of the Context.
  */
-
 public abstract class Integrator {
 
   /**
@@ -61,17 +64,31 @@ public abstract class Integrator {
   /**
    * Constructor.
    */
-  public Integrator() {
-    pointer = null;
+  public Integrator(PointerByReference pointer) {
+    this.pointer = pointer;
   }
 
   /**
-   * Set the OpenMM Integrator pointer.
-   *
-   * @param pointer The OpenMM Integrator pointer.
+   * This method will be called by subclasses when the integrator is destroyed.
    */
-  public void setPointer(PointerByReference pointer) {
-    this.pointer = pointer;
+  public abstract void destroy();
+
+  /**
+   * Get the tolerance within which constraints must be satisfied during the simulation.
+   *
+   * @return The constraint tolerance in nm.
+   */
+  public double getConstraintTolerance() {
+    return OpenMM_Integrator_getConstraintTolerance(pointer);
+  }
+
+  /**
+   * Get the set of force groups this integrator acts on.
+   *
+   * @return The bit flags indicating which force groups this integrator acts on.
+   */
+  public int getIntegrationForceGroups() {
+    return OpenMM_Integrator_getIntegrationForceGroups(pointer);
   }
 
   /**
@@ -84,12 +101,12 @@ public abstract class Integrator {
   }
 
   /**
-   * Integrate the system forward in time by the specified number of time steps.
+   * Get the size of each time step, in picoseconds.
    *
-   * @param steps The number of steps to take.
+   * @return The step size in ps.
    */
-  public void step(int steps) {
-    OpenMM_Integrator_step(pointer, steps);
+  public double getStepSize() {
+    return OpenMM_Integrator_getStepSize(pointer);
   }
 
   /**
@@ -103,13 +120,38 @@ public abstract class Integrator {
   }
 
   /**
-   * This method will be called by subclasses when the integrator is destroyed.
+   * Set the force groups this integrator acts on.
+   *
+   * @param groups The bit flags indicating which force groups this integrator acts on.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Integrator_destroy(pointer);
-      pointer = null;
-    }
+  public void setIntegrationForceGroups(int groups) {
+    OpenMM_Integrator_setIntegrationForceGroups(pointer, groups);
   }
 
+  /**
+   * Set the OpenMM Integrator pointer.
+   *
+   * @param pointer The OpenMM Integrator pointer.
+   */
+  public void setPointer(PointerByReference pointer) {
+    this.pointer = pointer;
+  }
+
+  /**
+   * Set the size of each time step, in picoseconds.
+   *
+   * @param stepSize The step size in ps.
+   */
+  public void setStepSize(double stepSize) {
+    OpenMM_Integrator_setStepSize(pointer, stepSize);
+  }
+
+  /**
+   * Integrate the system forward in time by the specified number of time steps.
+   *
+   * @param steps The number of steps to take.
+   */
+  public void step(int steps) {
+    OpenMM_Integrator_step(pointer, steps);
+  }
 }

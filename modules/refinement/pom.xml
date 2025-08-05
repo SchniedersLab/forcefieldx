@@ -78,11 +78,14 @@
         <configuration>
           <includeProjectDependencies>true</includeProjectDependencies>
           <includePluginDependencies>true</includePluginDependencies>
+          <daemonThreadJoinTimeout>100</daemonThreadJoinTimeout>
           <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
           <arguments>
+            <argument>-f</argument>
             <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
             <argument>ffx.realspace.groovy.Anneal</argument>
             <argument>ffx.realspace.groovy.Dynamics</argument>
+            <argument>ffx.realspace.groovy.GenZ</argument>
             <argument>ffx.realspace.groovy.ManyBody</argument>
             <argument>ffx.realspace.groovy.Minimize</argument>
             <argument>ffx.realspace.groovy.test.Alchemical</argument>
@@ -93,6 +96,7 @@
             <argument>ffx.xray.groovy.ComputeFc</argument>
             <argument>ffx.xray.groovy.Deuterate</argument>
             <argument>ffx.xray.groovy.Dynamics</argument>
+            <argument>ffx.xray.groovy.GenZ</argument>
             <argument>ffx.xray.groovy.ManyBody</argument>
             <argument>ffx.xray.groovy.Minimize</argument>
             <argument>ffx.xray.groovy.ModelvsData</argument>

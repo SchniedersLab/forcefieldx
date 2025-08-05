@@ -40,16 +40,28 @@ package ffx.openmm;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
-import edu.uiowa.jopenmm.OpenMMLibrary;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_findPlatform;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getDefaultPluginsDirectory;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatform;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatform_1;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPropertyDefaultValue;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPropertyNames;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPropertyValue;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getSpeed;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginLibrary;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_registerPlatform;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_setPropertyValue;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_supportsDoublePrecision;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_supportsKernels;
 
 /**
  * A Platform defines an implementation of all the kernels needed to perform some calculation.
@@ -67,6 +79,15 @@ public class Platform {
   /**
    * OpenMM Platform constructor.
    *
+   * @param pointer The OpenMM Platform pointer.
+   */
+  public Platform(PointerByReference pointer) {
+    this.pointer = pointer;
+  }
+
+  /**
+   * OpenMM Platform constructor.
+   *
    * @param platformName The name of the OpenMM Platform.
    */
   public Platform(String platformName) {
@@ -74,12 +95,41 @@ public class Platform {
   }
 
   /**
-   * Get the OpenMM Platform pointer.
-   *
-   * @return The OpenMM Platform pointer.
+   * Default constructor.
    */
-  public PointerByReference getPointer() {
-    return pointer;
+  public Platform() {
+    pointer = null;
+  }
+
+  /**
+   * Destroy the OpenMM Platform instance.
+   */
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_Platform_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
+   * Find a platform that supports a specified set of kernels.
+   *
+   * @param kernelNames The set of kernels that must be supported.
+   * @return A platform that supports the specified kernels.
+   */
+  public static Platform findPlatform(StringArray kernelNames) {
+    PointerByReference platformPointer = OpenMM_Platform_findPlatform(kernelNames.getPointer());
+    return new Platform(platformPointer);
+  }
+
+  /**
+   * Get the default directory from which to load plugins.
+   *
+   * @return The default directory from which to load plugins.
+   */
+  public static String getDefaultPluginsDirectory() {
+    Pointer directory = OpenMM_Platform_getDefaultPluginsDirectory();
+    return directory.getString(0);
   }
 
   /**
@@ -90,24 +140,6 @@ public class Platform {
   public String getName() {
     Pointer name = OpenMM_Platform_getName(pointer);
     return name.getString(0);
-  }
-
-  /**
-   * Get an estimate of how fast this Platform class is.
-   *
-   * @return The speed of the OpenMM Platform.
-   */
-  public double getSpeed() {
-    return OpenMM_Platform_getSpeed(pointer);
-  }
-
-  /**
-   * Set an OpenMM Platform property.
-   */
-  public void setPropertyDefaultValue(String propertyName, String defaultValue) {
-    Pointer name = pointerForString(propertyName);
-    Pointer value = pointerForString(defaultValue);
-    OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue(pointer, name, value);
   }
 
   /**
@@ -130,13 +162,34 @@ public class Platform {
   }
 
   /**
-   * Load plugins from a directory.
+   * Get the OpenMM Platform pointer.
    *
-   * @param directory The directory to load plugins from.
-   * @return The OpenMMStringArray of plugins loaded.
+   * @return The OpenMM Platform pointer.
    */
-  public static StringArray loadPluginsFromDirectory(String directory) {
-    return new StringArray(OpenMM_Platform_loadPluginsFromDirectory(directory));
+  public PointerByReference getPointer() {
+    return pointer;
+  }
+
+  /**
+   * Get a registered platform by index.
+   *
+   * @param index The index of the platform to get.
+   * @return The platform with the specified index.
+   */
+  public static Platform getPlatform(int index) {
+    PointerByReference platformPointer = OpenMM_Platform_getPlatform(index);
+    return new Platform(platformPointer);
+  }
+
+  /**
+   * Get a registered platform by name.
+   *
+   * @param name The name of the platform to get.
+   * @return The platform with the specified name.
+   */
+  public static Platform getPlatform_1(String name) {
+    PointerByReference platformPointer = OpenMM_Platform_getPlatform_1(name);
+    return new Platform(platformPointer);
   }
 
   /**
@@ -149,13 +202,126 @@ public class Platform {
   }
 
   /**
-   * Destroy the OpenMM Platform instance.
+   * Get the default value of a platform property.
+   *
+   * @param property The name of the property to get.
+   * @return The default value of the property.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Platform_destroy(pointer);
-      pointer = null;
+  public String getPropertyDefaultValue(String property) {
+    Pointer propertyPointer = pointerForString(property);
+    Pointer value = OpenMM_Platform_getPropertyDefaultValue(pointer, propertyPointer);
+    if (value == null) {
+      return null;
     }
+    return value.getString(0);
+  }
+
+  /**
+   * Get the names of all platform properties.
+   *
+   * @return A StringArray containing the names of all platform properties.
+   */
+  public StringArray getPropertyNames() {
+    return new StringArray(OpenMM_Platform_getPropertyNames(pointer));
+  }
+
+  /**
+   * Get the value of a context-specific platform property.
+   *
+   * @param context  The context for which to get the property value.
+   * @param property The name of the property to get.
+   * @return The value of the property.
+   */
+  public String getPropertyValue(Context context, String property) {
+    Pointer propertyPointer = pointerForString(property);
+    Pointer value = OpenMM_Platform_getPropertyValue(pointer, context.getPointer(), propertyPointer);
+    if (value == null) {
+      return null;
+    }
+    return value.getString(0);
+  }
+
+  /**
+   * Get an estimate of how fast this Platform class is.
+   *
+   * @return The speed of the OpenMM Platform.
+   */
+  public double getSpeed() {
+    return OpenMM_Platform_getSpeed(pointer);
+  }
+
+  /**
+   * Load plugins from a directory.
+   *
+   * @param directory The directory to load plugins from.
+   * @return The OpenMMStringArray of plugins loaded.
+   */
+  public static StringArray loadPluginsFromDirectory(String directory) {
+    return new StringArray(OpenMM_Platform_loadPluginsFromDirectory(directory));
+  }
+
+  /**
+   * Load a dynamic library that contains a plugin.
+   *
+   * @param file The path to the dynamic library file.
+   */
+  public static void loadPluginLibrary(String file) {
+    OpenMM_Platform_loadPluginLibrary(file);
+  }
+
+  /**
+   * Register a new platform.
+   *
+   * @param platform The platform to register.
+   */
+  public static void registerPlatform(Platform platform) {
+    OpenMM_Platform_registerPlatform(platform.getPointer());
+  }
+
+  /**
+   * Set the default value of a platform property.
+   *
+   * @param property The name of the property to set.
+   * @param value    The new default value for the property.
+   */
+  public void setPropertyDefaultValue(String property, String value) {
+    Pointer propertyPointer = pointerForString(property);
+    Pointer valuePointer = pointerForString(value);
+    OpenMM_Platform_setPropertyDefaultValue(pointer, propertyPointer, valuePointer);
+  }
+
+  /**
+   * Set the value of a context-specific platform property.
+   *
+   * @param context  The context for which to set the property value.
+   * @param property The name of the property to set.
+   * @param value    The new value for the property.
+   */
+  public void setPropertyValue(Context context, String property, String value) {
+    Pointer propertyPointer = pointerForString(property);
+    Pointer valuePointer = pointerForString(value);
+    OpenMM_Platform_setPropertyValue(pointer, context.getPointer(), propertyPointer, valuePointer);
+  }
+
+  /**
+   * Determine whether this Platform supports double precision arithmetic.
+   *
+   * @return true if the Platform supports double precision, false otherwise.
+   */
+  public boolean supportsDoublePrecision() {
+    int result = OpenMM_Platform_supportsDoublePrecision(pointer);
+    return result != 0;
+  }
+
+  /**
+   * Determine whether this Platform supports a specified set of kernels.
+   *
+   * @param kernelNames The set of kernels to test for support.
+   * @return true if the Platform supports all of the specified kernels, false otherwise.
+   */
+  public boolean supportsKernels(StringArray kernelNames) {
+    int result = OpenMM_Platform_supportsKernels(pointer, kernelNames.getPointer());
+    return result != 0;
   }
 
   /**
@@ -169,5 +335,4 @@ public class Platform {
     pointer.setString(0, string);
     return pointer;
   }
-
 }
