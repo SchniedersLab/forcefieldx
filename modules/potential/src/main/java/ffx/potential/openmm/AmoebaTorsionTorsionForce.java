@@ -43,13 +43,17 @@ import ffx.openmm.Force;
 import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
 import static java.lang.String.format;
 
 /**
@@ -72,9 +76,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     }
 
     // Load the torsion-torsions.
-    int nTypes = 0;
-    LinkedHashMap<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
-
+    Map<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
     for (TorsionTorsion torsionTorsion : torsionTorsions) {
       int ia = torsionTorsion.getAtom(0).getArrayIndex();
       int ib = torsionTorsion.getAtom(1).getArrayIndex();
@@ -102,8 +104,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       } else {
         // Add the new TorTor.
         torTorTypes.put(key, torsionTorsionType);
-        gridIndex = nTypes;
-        nTypes++;
+        gridIndex = torTorTypes.size() - 1;
       }
 
       Atom atom = torsionTorsion.getChiralAtom();
@@ -172,12 +173,10 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       return;
     }
 
-    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+    // ToDo: There is no support in OpenMM yet to updateParametersInContext for AmoebaTorsionTorsionForce.
+    // double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 
-    // Load the torsion-torsions.
-    int nTypes = 0;
-    LinkedHashMap<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
-
+    Map<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
     for (TorsionTorsion torsionTorsion : torsionTorsions) {
       int ia = torsionTorsion.getAtom(0).getArrayIndex();
       int ib = torsionTorsion.getAtom(1).getArrayIndex();
@@ -191,7 +190,6 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       // Check if the TorTor parameters have already been added to the Hash.
       int gridIndex = 0;
       if (torTorTypes.containsKey(key)) {
-
         // If the TorTor has been added, get its (ordered) index in the Hash.
         int index = 0;
         for (String entry : torTorTypes.keySet()) {
@@ -205,21 +203,20 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       } else {
         // Add the new TorTor.
         torTorTypes.put(key, torsionTorsionType);
-        gridIndex = nTypes;
-        nTypes++;
+        gridIndex = torTorTypes.size() - 1;
       }
 
       Atom atom = torsionTorsion.getChiralAtom();
       int iChiral = -1;
       if (atom != null) {
         iChiral = atom.getArrayIndex();
+        iChiral = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, iChiral);
       }
       ia = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ia);
       ib = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ib);
       ic = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ic);
       id = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, id);
       ie = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, ie);
-      iChiral = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, iChiral);
       addTorsionTorsion(ia, ib, ic, id, ie, iChiral, gridIndex);
     }
 
@@ -236,8 +233,6 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
       double[] dx = torTorType.dx;
       double[] dy = torTorType.dy;
       double[] dxy = torTorType.dxy;
-
-      // todo - no lambda scaling for now - how to treat derivatives
 
       // Create the 3D grid.
       DoubleArray3D grid3D = new DoubleArray3D(nx, ny, 6);
@@ -298,4 +293,5 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     }
     return new AmoebaTorsionTorsionForce(topology, openMMDualTopologyEnergy);
   }
+
 }

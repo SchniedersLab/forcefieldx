@@ -842,21 +842,21 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (multiplicativeSwitch.getSwitchStart() != Double.POSITIVE_INFINITY) {
       sb.append(format("   Switch Start:                         %6.3f (A)\n",
           multiplicativeSwitch.getSwitchStart()));
-      sb.append(format("   Cut-Off:                              %6.3f (A)\n",
+      sb.append(format("   Cut-Off:                              %6.3f (A)",
           multiplicativeSwitch.getSwitchEnd()));
     } else {
-      sb.append("   Cut-Off:                                NONE\n");
+      sb.append("   Cut-Off:                                NONE");
     }
 
-    sb.append(format("   Long-Range Correction:                %6B\n", doLongRangeCorrection));
+    sb.append(format("\n   Long-Range Correction:                %6B", doLongRangeCorrection));
     if (!reducedHydrogen) {
-      sb.append(format("   Reduce Hydrogen:                      %6B\n", reducedHydrogen));
+      sb.append(format("\n   Reduce Hydrogen:                      %6B", reducedHydrogen));
     }
     if (lambdaTerm) {
-      sb.append("   Alchemical Parameters\n");
+      sb.append("\n   Alchemical Parameters\n");
       sb.append(format("    Softcore Alpha:                       %5.3f\n", vdwLambdaAlpha));
       sb.append(format("    Lambda Exponent:                      %5.3f\n", vdwLambdaExponent));
-      sb.append(format("    Lambda End:                           %5.3f\n", vdwLambdaEnd));
+      sb.append(format("    Lambda End:                           %5.3f", vdwLambdaEnd));
     }
     return sb.toString();
   }

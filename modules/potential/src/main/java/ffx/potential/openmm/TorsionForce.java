@@ -57,8 +57,6 @@ public class TorsionForce extends PeriodicTorsionForce {
 
   private final boolean manyBodyTitration;
 
-  private double lambdaTorsion = 1.0;
-
   public TorsionForce(OpenMMEnergy openMMEnergy) {
     ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
@@ -144,15 +142,6 @@ public class TorsionForce extends PeriodicTorsionForce {
   }
 
   /**
-   * Set the lambda torsion scale factor.
-   *
-   * @param lambdaTorsion The lambda torsion scale factor.
-   */
-  public void setLambdaTorsion(double lambdaTorsion) {
-    this.lambdaTorsion = lambdaTorsion;
-  }
-
-  /**
    * Convenience method to construct an OpenMM Torsion Force.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the torsions.
@@ -203,7 +192,7 @@ public class TorsionForce extends PeriodicTorsionForce {
       int a3 = torsion.getAtom(2).getArrayIndex();
       int a4 = torsion.getAtom(3).getArrayIndex();
       for (int j = 0; j < nTerms; j++) {
-        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j];
         setTorsionParameters(index++, a1, a2, a3, a4, j + 1,
             torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
@@ -247,7 +236,7 @@ public class TorsionForce extends PeriodicTorsionForce {
       a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
       a4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a4);
       for (int j = 0; j < nTerms; j++) {
-        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
+        double k = torsion.getTorsionScale() * torsionType.torsionUnit * torsionType.amplitude[j];
         // Don't apply lambda scale to alchemical torsion
         if (!torsion.applyLambda()) {
           k = k * scale;

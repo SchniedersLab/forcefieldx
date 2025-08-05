@@ -57,8 +57,6 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(ImproperTorsionForce.class.getName());
 
-  private double lambdaTorsion = 1.0;
-
   /**
    * Create an OpenMM Improper Torsion Force.
    *
@@ -130,15 +128,6 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
   }
 
   /**
-   * Set the lambda torsion scale factor.
-   *
-   * @param lambdaTorsion The lambda torsion scale factor.
-   */
-  public void setLambdaTorsion(double lambdaTorsion) {
-    this.lambdaTorsion = lambdaTorsion;
-  }
-
-  /**
    * Convenience method to construct an OpenMM Improper Torsion Force.
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the improper torsions.
@@ -187,7 +176,7 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
       int a3 = improperTorsion.getAtom(2).getXyzIndex() - 1;
       int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
       ImproperTorsionType type = improperTorsion.improperType;
-      double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k * lambdaTorsion;
+      double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k;
       setTorsionParameters(i, a1, a2, a3, a4, type.periodicity, type.phase * OpenMM_RadiansPerDegree, forceConstant);
     }
 
@@ -221,7 +210,7 @@ public class ImproperTorsionForce extends PeriodicTorsionForce {
       a3 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a3);
       a4 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, a4);
       ImproperTorsionType type = improperTorsion.improperType;
-      double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k * lambdaTorsion;
+      double forceConstant = OpenMM_KJPerKcal * type.impTorUnit * improperTorsion.scaleFactor * type.k;
       // Don't apply lambda scale to alchemical improper torsion
       if (!improperTorsion.applyLambda()) {
         forceConstant *= scale;
