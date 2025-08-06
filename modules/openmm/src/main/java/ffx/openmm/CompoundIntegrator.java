@@ -55,19 +55,40 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CompoundIntegrator_setStepS
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CompoundIntegrator_step;
 
 /**
- * This class implements a compound integrator that allows you to use multiple
- * integration algorithms within a single simulation, and to switch between them
- * during the simulation. This is useful for implementing multiple time step
- * algorithms, where different forces are evaluated with different frequencies.
+ * This class allows you to use multiple integration algorithms within a single simulation,
+ * switching back and forth between them.  To use it, create whatever other Integrators
+ * you need, then add all of them to a CompoundIntegrator:
  * <p>
- * To use this class, create a CompoundIntegrator, then call addIntegrator() to
- * add child integrators to it. You can then call setCurrentIntegrator() to
- * specify which child integrator should be used for the next integration step.
+ * <pre>
+ *    CompoundIntegrator compoundIntegrator = new CompoundIntegrator();
+ *    compoundIntegrator.addIntegrator(new VerletIntegrator(0.001));
+ *    compoundIntegrator.addIntegrator(new LangevinIntegrator(300.0, 1.0, 0.001));
+ * </pre>
  * <p>
- * The compound integrator maintains its own step size, which may be different
- * from the step sizes of the child integrators. When you call step(), it will
- * invoke the current child integrator with the appropriate number of steps to
- * advance the simulation by the compound integrator's step size.
+ * Next create a Context, specifying the CompoundIntegrator as the Integrator to use for
+ * the Context:
+ * <p>
+ * <pre>
+ *     Context context = new Context(system, compoundIntegrator);
+ * </pre>
+ * <p>
+ * Finally, call setCurrentIntegrator() to set which Integrator is active.  That one will
+ * be used for all calls to step() until the next time you change it.
+ * <p>
+ * <pre>
+ *     compoundIntegrator.setCurrentIntegrator(0);
+ *     compoundIntegrator.step(1000); // Take 1000 steps of Verlet dynamics
+ *     compoundIntegrator.setCurrentIntegrator(1);
+ *     compoundIntegrator.step(1000); // Take 1000 steps of Langevin dynamics
+ * </pre>
+ * <p>
+ * When switching between integrators, it is important to make sure they are compatible with
+ * each other, and that they will interpret the positions and velocities in the same way.
+ * Remember that leapfrog style integrators assume the positions and velocities are offset
+ * from each other by half a time step.  When switching between a leapfrog and non-leapfrog
+ * integrator, you must first adjust the velocities to avoid introducing error.  This is also
+ * true when switching between two leapfrog integrators that use different step sizes,
+ * since they will interpret the velocities as corresponding to different times.
  */
 public class CompoundIntegrator extends Integrator {
 
@@ -79,10 +100,13 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Add a child integrator to this CompoundIntegrator.
+   * Add an Integrator to this CompoundIntegrator.  The Integrator object should have
+   * been created on the heap with the "new" operator.  The CompoundIntegrator takes over
+   * ownership of it, and deletes it when the CompoundIntegrator itself is deleted.
+   * All Integrators must be added before the Context is created.
    *
-   * @param integrator The integrator to add.
-   * @return The index of the integrator that was added.
+   * @param integrator the Integrator to add
+   * @return the index of the Integrator that was added
    */
   public int addIntegrator(Integrator integrator) {
     return OpenMM_CompoundIntegrator_addIntegrator(pointer, integrator.getPointer());
@@ -100,9 +124,8 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Get the tolerance within which constraints must be satisfied during the simulation.
-   *
-   * @return The constraint tolerance in nm.
+   * Get the distance tolerance within which constraints are maintained, as a fraction of the constrained distance.
+   * This method calls getConstraintTolerance() on whichever Integrator has been set as current.
    */
   @Override
   public double getConstraintTolerance() {
@@ -110,18 +133,18 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Get the index of the current child integrator.
-   *
-   * @return The index of the current child integrator.
+   * Get the index of the current Integrator.
    */
   public int getCurrentIntegrator() {
     return OpenMM_CompoundIntegrator_getCurrentIntegrator(pointer);
   }
 
   /**
-   * Get the set of force groups this integrator acts on.
-   *
-   * @return The bit flags indicating which force groups this integrator acts on.
+   * Get which force groups to use for integration.  By default, all force groups
+   * are included.  This is interpreted as a set of bit flags: the forces from group i
+   * will be included if (groups&(1<<i)) != 0.
+   * <p>
+   * This method returns the integration force groups for the current Integrator.
    */
   @Override
   public int getIntegrationForceGroups() {
@@ -129,28 +152,26 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Get a child integrator by index.
+   * Get a reference to one of the Integrators that have been added to this CompoundIntegrator.
    *
-   * @param index The index of the integrator to get.
-   * @return The integrator at the specified index.
+   * @param index the index of the Integrator to get
    */
   public PointerByReference getIntegrator(int index) {
     return OpenMM_CompoundIntegrator_getIntegrator(pointer, index);
   }
 
   /**
-   * Get the number of child integrators that have been added.
-   *
-   * @return The number of child integrators.
+   * Get the number of Integrators that have been added to this CompoundIntegrator.
    */
   public int getNumIntegrators() {
     return OpenMM_CompoundIntegrator_getNumIntegrators(pointer);
   }
 
   /**
-   * Get the size of each time step, in picoseconds.
+   * Get the size of each time step, in picoseconds.  This method calls getStepSize() on
+   * whichever Integrator has been set as current.
    *
-   * @return The step size in ps.
+   * @return the step size, measured in ps
    */
   @Override
   public double getStepSize() {
@@ -158,29 +179,30 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Set the tolerance within which constraints must be satisfied during the
-   * simulation. The default value is 1e-5 nm.
-   *
-   * @param tolerance The tolerance within which constraints must be satisfied.
+   * Set the distance tolerance within which constraints are maintained, as a fraction of the constrained distance.
+   * This method calls setConstraintTolerance() on whichever Integrator has been set as current.
    */
   @Override
-  public void setConstraintTolerance(double tolerance) {
-    OpenMM_CompoundIntegrator_setConstraintTolerance(pointer, tolerance);
+  public void setConstraintTolerance(double tol) {
+    OpenMM_CompoundIntegrator_setConstraintTolerance(pointer, tol);
   }
 
   /**
-   * Set the current child integrator.
+   * Set the current Integrator.
    *
-   * @param index The index of the child integrator to use.
+   * @param index the index of the Integrator to use
    */
   public void setCurrentIntegrator(int index) {
     OpenMM_CompoundIntegrator_setCurrentIntegrator(pointer, index);
   }
 
   /**
-   * Set the force groups this integrator acts on.
-   *
-   * @param groups The bit flags indicating which force groups this integrator acts on.
+   * Set which force groups to use for integration.  By default, all force groups
+   * are included.  This is interpreted as a set of bit flags: the forces from group i
+   * will be included if (groups&(1<<i)) != 0.
+   * <p>
+   * Calling this method sets the integration force groups for all Integrators
+   * contained in this CompoundIntegrator.
    */
   @Override
   public void setIntegrationForceGroups(int groups) {
@@ -188,19 +210,21 @@ public class CompoundIntegrator extends Integrator {
   }
 
   /**
-   * Set the size of each time step, in picoseconds.
+   * Set the size of each time step, in picoseconds.  This method calls setStepSize() on
+   * whichever Integrator has been set as current.
    *
-   * @param stepSize The step size in ps.
+   * @param size the step size, measured in ps
    */
   @Override
-  public void setStepSize(double stepSize) {
-    OpenMM_CompoundIntegrator_setStepSize(pointer, stepSize);
+  public void setStepSize(double size) {
+    OpenMM_CompoundIntegrator_setStepSize(pointer, size);
   }
 
   /**
-   * Advance a simulation through time by taking a series of time steps.
+   * Advance a simulation through time by taking a series of time steps.  This method
+   * calls step() on whichever Integrator has been set as current.
    *
-   * @param steps The number of time steps to take.
+   * @param steps the number of time steps to take
    */
   @Override
   public void step(int steps) {

@@ -45,23 +45,24 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_setFrequenc
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions;
 
 /**
- * Center of Mass Motion Remover.
+ * This class prevents the center of mass of a System from drifting.  At each time step, it calculates the
+ * center of mass momentum, then adjusts the individual particle velocities to make it zero.
  */
 public class CMMotionRemover extends Force {
 
   /**
-   * OpenMM CMMotionRemover constructor.
+   * Create a CMMotionRemover.
    *
-   * @param frequency The frequency to apply the CMMotionRemover.
+   * @param frequency the frequency (in time steps) at which center of mass motion should be removed
    */
   public CMMotionRemover(int frequency) {
     super(OpenMM_CMMotionRemover_create(frequency));
   }
 
   /**
-   * Get the frequency at which center of mass motion should be removed.
+   * Get the frequency (in time steps) at which center of mass motion should be removed.
    *
-   * @return The frequency at which center of mass motion should be removed.
+   * @return the frequency (in time steps) at which center of mass motion should be removed
    */
   public int getFrequency() {
     return OpenMM_CMMotionRemover_getFrequency(pointer);
@@ -79,18 +80,19 @@ public class CMMotionRemover extends Force {
   }
 
   /**
-   * Set the frequency at which center of mass motion should be removed.
+   * Set the frequency (in time steps) at which center of mass motion should be removed.
    *
-   * @param frequency The frequency at which center of mass motion should be removed.
+   * @param freq the frequency (in time steps) at which center of mass motion should be removed
    */
-  public void setFrequency(int frequency) {
-    OpenMM_CMMotionRemover_setFrequency(pointer, frequency);
+  public void setFrequency(int freq) {
+    OpenMM_CMMotionRemover_setFrequency(pointer, freq);
   }
 
   /**
-   * Returns whether this force makes use of periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    *
-   * @return The CMMotionRemover always returns false.
+   * @return true if force uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

@@ -48,26 +48,16 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BrownianIntegrator_setTempe
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BrownianIntegrator_step;
 
 /**
- * This class implements Brownian dynamics integration. This is similar to Langevin dynamics,
- * but the acceleration term is omitted from the Langevin equation. It is most useful for
- * simulating systems where the particles are in a high friction environment, such as
- * implicit solvent simulations.
- * <p>
- * The equation of motion is:
- * <p>
- * dv/dt = (F(t) - γv(t))/m + R(t)
- * <p>
- * where F(t) is the force, γ is the friction coefficient, m is the particle mass,
- * and R(t) is a random force with magnitude determined by the temperature.
+ * This is an Integrator which simulates a System using Brownian dynamics.
  */
 public class BrownianIntegrator extends Integrator {
 
   /**
    * Create a BrownianIntegrator.
    *
-   * @param temperature   The temperature of the heat bath (in Kelvin).
-   * @param frictionCoeff The friction coefficient which couples the system to the heat bath (in 1/ps).
-   * @param stepSize      The step size with which to integrate the system (in ps).
+   * @param temperature   the temperature of the heat bath (in Kelvin)
+   * @param frictionCoeff the friction coefficient which couples the system to the heat bath, measured in 1/ps
+   * @param stepSize      the step size with which to integrate the system (in picoseconds)
    */
   public BrownianIntegrator(double temperature, double frictionCoeff, double stepSize) {
     super(OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, stepSize));
@@ -86,18 +76,16 @@ public class BrownianIntegrator extends Integrator {
 
   /**
    * Get the friction coefficient which determines how strongly the system is coupled to
-   * the heat bath (in 1/ps).
+   * the heat bath (in inverse ps).
    *
-   * @return The friction coefficient.
+   * @return the friction coefficient, measured in 1/ps
    */
   public double getFriction() {
     return OpenMM_BrownianIntegrator_getFriction(pointer);
   }
 
   /**
-   * Get the random number seed. See setRandomNumberSeed() for details.
-   *
-   * @return The random number seed.
+   * Get the random number seed.  See setRandomNumberSeed() for details.
    */
   public int getRandomNumberSeed() {
     return OpenMM_BrownianIntegrator_getRandomNumberSeed(pointer);
@@ -106,7 +94,7 @@ public class BrownianIntegrator extends Integrator {
   /**
    * Get the temperature of the heat bath (in Kelvin).
    *
-   * @return The temperature of the heat bath.
+   * @return the temperature of the heat bath (in Kelvin).
    */
   public double getTemperature() {
     return OpenMM_BrownianIntegrator_getTemperature(pointer);
@@ -114,27 +102,25 @@ public class BrownianIntegrator extends Integrator {
 
   /**
    * Set the friction coefficient which determines how strongly the system is coupled to
-   * the heat bath (in 1/ps).
+   * the heat bath (in inverse ps).
    *
-   * @param coeff The friction coefficient.
+   * @param coeff the friction coefficient, measured in 1/ps
    */
   public void setFriction(double coeff) {
     OpenMM_BrownianIntegrator_setFriction(pointer, coeff);
   }
 
   /**
-   * Set the random number seed. The precise meaning of this parameter is undefined, and is left up
-   * to each Platform to interpret in an appropriate way. It is guaranteed that if two simulations
-   * are run with different random number seeds, the sequence of random numbers will be different.
-   * On the other hand, no guarantees are made about the behavior of simulations that use the same seed.
+   * Set the random number seed.  The precise meaning of this parameter is undefined, and is left up
+   * to each Platform to interpret in an appropriate way.  It is guaranteed that if two simulations
+   * are run with different random number seeds, the sequence of random forces will be different.  On
+   * the other hand, no guarantees are made about the behavior of simulations that use the same seed.
    * In particular, Platforms are permitted to use non-deterministic algorithms which produce different
    * results on successive runs, even if those runs were initialized identically.
    * <p>
    * If seed is set to 0 (which is the default value assigned), a unique seed is chosen when a Context
    * is created from this Force. This is done to ensure that each Context receives unique random seeds
    * without you needing to set them explicitly.
-   *
-   * @param seed The random number seed.
    */
   public void setRandomNumberSeed(int seed) {
     OpenMM_BrownianIntegrator_setRandomNumberSeed(pointer, seed);
@@ -143,7 +129,7 @@ public class BrownianIntegrator extends Integrator {
   /**
    * Set the temperature of the heat bath (in Kelvin).
    *
-   * @param temp The temperature of the heat bath.
+   * @param temp the temperature of the heat bath, measured in Kelvin.
    */
   public void setTemperature(double temp) {
     OpenMM_BrownianIntegrator_setTemperature(pointer, temp);
@@ -152,7 +138,7 @@ public class BrownianIntegrator extends Integrator {
   /**
    * Advance a simulation through time by taking a series of time steps.
    *
-   * @param steps The number of time steps to take.
+   * @param steps the number of time steps to take
    */
   public void step(int steps) {
     OpenMM_BrownianIntegrator_step(pointer, steps);

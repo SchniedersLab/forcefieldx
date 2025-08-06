@@ -137,6 +137,7 @@ public class MultipoleForce extends Force {
    * @return the Ewald alpha parameter
    * @deprecated This method exists only for backward compatibility.  Use getPMEParameters() instead.
    */
+  @Deprecated
   public double getAEwald() {
     return OpenMM_AmoebaMultipoleForce_getAEwald(pointer);
   }
@@ -392,6 +393,7 @@ public class MultipoleForce extends Force {
    * @param aewald alpha parameter
    * @deprecated This method exists only for backward compatibility.  Use setPMEParameters() instead.
    */
+  @Deprecated
   public void setAEwald(double aewald) {
     OpenMM_AmoebaMultipoleForce_setAEwald(pointer, aewald);
   }

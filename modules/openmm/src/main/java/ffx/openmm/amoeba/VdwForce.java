@@ -219,6 +219,7 @@ public class VdwForce extends Force {
    *
    * @deprecated This method exists only for backward compatibility.  Use getCutoffDistance() instead.
    */
+  @Deprecated
   public double getCutoff() {
     return OpenMM_AmoebaVdwForce_getCutoff(pointer);
   }
@@ -423,6 +424,7 @@ public class VdwForce extends Force {
    *
    * @deprecated This method exists only for backward compatibility.  Use setCutoffDistance() instead.
    */
+  @Deprecated
   public void setCutoff(double cutoff) {
     OpenMM_AmoebaVdwForce_setCutoff(pointer, cutoff);
   }
