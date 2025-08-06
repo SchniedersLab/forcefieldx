@@ -41,17 +41,18 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
-import ffx.potential.openmm.OpenMMEnergy;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.openmm.OpenMMContext;
+import ffx.potential.openmm.OpenMMPotential;
 import ffx.potential.openmm.OpenMMState;
 import ffx.potential.openmm.OpenMMSystem;
 import ffx.potential.UnmodifiableState;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
@@ -78,9 +79,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private final ThermostatEnum thermostatType;
   /**
-   * OpenMM ForceFieldEnergy.
+   * The potential energy function.
    */
-  private final OpenMMEnergy openMMEnergy;
+  private final CrystalPotential crystalPotential;
+  /**
+   * Features specific to OpenMM.
+   */
+  private final OpenMMPotential openMMPotential;
   /**
    * Integrator String.
    */
@@ -126,38 +131,30 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     // Initialization specific to MolecularDynamicsOpenMM
     running = false;
-    List<Potential> potentialStack = new ArrayList<>(potential.getUnderlyingPotentials());
-    potentialStack.add(potential);
-
-    List<OpenMMEnergy> energyList = potentialStack.stream()
-        .filter((Potential p) -> p instanceof OpenMMEnergy)
-        .map((Potential p) -> (OpenMMEnergy) p).toList();
-    if (energyList.size() != 1) {
-      logger.severe(format(
-          " Attempted to create a MolecularDynamicsOpenMM with %d ForceFieldEnergyOpenMM instances.",
-          energyList.size()));
-    }
-    openMMEnergy = energyList.get(0);
-
-    List<Barostat> barostatList = potentialStack.stream()
-        .filter((Potential p) -> p instanceof Barostat).map((Potential p) -> (Barostat) p).toList();
-    if (barostatList.isEmpty()) {
-      constantPressure = false;
-    } else if (barostatList.size() > 1) {
-      logger.severe(
-          format(" Attempting to create a MolecularDynamicsOpenMM with more than 1 barostat (%d).",
-              barostatList.size()));
-    } else {
-      barostat = barostatList.get(0);
-      barostat.setActive(false);
-    }
+    crystalPotential = (CrystalPotential) potential;
+    openMMPotential = (OpenMMPotential) potential;
 
     // Update the set of active and inactive atoms.
-    openMMEnergy.setActiveAtoms();
+    openMMPotential.setActiveAtoms();
 
     thermostatType = thermostat;
     integratorType = integrator;
     integratorToString(integratorType);
+  }
+
+  /**
+   * Set the barostat for this MolecularDynamicsOpenMM instance.
+   * @param barostat The Barostat to set, or null to disable constant pressure.
+   */
+  public void setBarostat(Barostat barostat) {
+    if (barostat != null) {
+      this.barostat = barostat;
+      this.constantPressure = true;
+      barostat.setActive(false);
+    } else {
+      this.barostat = null;
+      this.constantPressure = false;
+    }
   }
 
   /**
@@ -201,7 +198,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     initialState = new UnmodifiableState(state);
 
     // Check that our context is using correct Integrator, time step, and target temperature.
-    openMMEnergy.updateContext(integratorString, dt, targetTemperature, false);
+    openMMPotential.updateContext(integratorString, dt, targetTemperature, false);
 
     // Pre-run operations (mostly logging) that require knowledge of system energy.
     postInitEnergies();
@@ -252,7 +249,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     boolean isLangevin = IntegratorEnum.isStochastic(integratorType);
 
-    OpenMMSystem openMMSystem = openMMEnergy.getSystem();
+    OpenMMSystem openMMSystem = openMMPotential.getSystem();
     if (!isLangevin && !thermostatType.equals(ThermostatEnum.ADIABATIC)) {
       // Add Andersen thermostat, or if already present update its target temperature.
       openMMSystem.addAndersenThermostatForce(targetTemperature);
@@ -273,7 +270,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     // Set the current value of lambda.
-    openMMEnergy.setLambda(openMMEnergy.getLambda());
+    if (crystalPotential instanceof LambdaInterface lambdaInferface) {
+      lambdaInferface.setLambda(lambdaInferface.getLambda());
+    }
+
   }
 
   @Override
@@ -327,7 +327,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * @param intervalSteps Number of MD steps to take.
    */
   private void takeOpenMMSteps(int intervalSteps) {
-    OpenMMContext openMMContext = openMMEnergy.getContext();
+    OpenMMContext openMMContext = openMMPotential.getContext();
     openMMContext.integrate(intervalSteps);
   }
 
@@ -335,9 +335,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * Load coordinates, box vectors and velocities.
    */
   private void setOpenMMState() {
-    OpenMMContext openMMContext = openMMEnergy.getContext();
+    OpenMMContext openMMContext = openMMPotential.getContext();
     openMMContext.setPositions(state.x());
-    openMMContext.setPeriodicBoxVectors(openMMEnergy.getCrystal());
+    openMMContext.setPeriodicBoxVectors(crystalPotential.getCrystal());
     openMMContext.setVelocities(state.v());
   }
 
@@ -345,10 +345,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * Get OpenMM Energies.
    */
   private void getOpenMMEnergies() {
-    OpenMMState openMMState = openMMEnergy.getOpenMMState(OpenMM_State_Energy);
+    OpenMMState openMMState = openMMPotential.getOpenMMState(OpenMM_State_Energy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setPotentialEnergy(openMMState.potentialEnergy);
-    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
     openMMState.destroy();
   }
 
@@ -389,16 +389,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void getOpenMMEnergiesAndPositions() {
     int mask = OpenMM_State_Energy | OpenMM_State_Positions;
-    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
+    OpenMMState openMMState = openMMPotential.getOpenMMState(mask);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
-    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
     openMMState.getPositions(state.x());
-    Crystal crystal = openMMEnergy.getCrystal();
+
+
+    Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
       double[][] cellVectors = openMMState.getPeriodicBoxVectors();
       crystal.setCellVectors(cellVectors);
-      openMMEnergy.setCrystal(crystal);
+      crystalPotential.setCrystal(crystal);
     }
     openMMState.destroy();
   }
@@ -408,16 +410,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void getAllOpenMMVariables() {
     int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Velocities | OpenMM_State_Forces;
-    OpenMMState openMMState = openMMEnergy.getOpenMMState(mask);
+    OpenMMState openMMState = openMMPotential.getOpenMMState(mask);
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
-    state.setTemperature(openMMEnergy.getSystem().getTemperature(openMMState.kineticEnergy));
+    state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
     openMMState.getPositions(state.x());
-    Crystal crystal = openMMEnergy.getCrystal();
+    Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
       double[][] cellVectors = openMMState.getPeriodicBoxVectors();
       crystal.setCellVectors(cellVectors);
-      openMMEnergy.setCrystal(crystal);
+      crystalPotential.setCrystal(crystal);
     }
     openMMState.getVelocities(state.v());
     openMMState.getAccelerations(state.a());

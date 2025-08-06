@@ -55,18 +55,14 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;
 
-public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
+public class OpenMMDualTopologyEnergy extends DualTopologyEnergy implements OpenMMPotential {
 
   private static final Logger logger = Logger.getLogger(OpenMMDualTopologyEnergy.class.getName());
 
   /**
-   * FFX Platform.
-   */
-  private final Platform platform;
-  /**
    * OpenMM Context.
    */
-  private OpenMMContext openMMContext;
+  private final OpenMMContext openMMContext;
   /**
    * OpenMMDualTopologySystem.
    */
@@ -111,9 +107,8 @@ public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
     }
 
     // Load the OpenMM plugins
-    this.platform = requestedPlatform;
     ForceField forceField = topology1.getForceField();
-    ffx.openmm.Platform openMMPlatform = OpenMMContext.loadPlatform(platform, forceField);
+    ffx.openmm.Platform openMMPlatform = OpenMMContext.loadPlatform(requestedPlatform, forceField);
 
     // Create the OpenMM System.
     openMMDualTopologySystem = new OpenMMDualTopologySystem(this);
@@ -233,6 +228,7 @@ public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
    *
    * @param atoms Atoms in this list are considered.
    */
+  @Override
   public void updateParameters(@Nullable Atom[] atoms) {
     if (atoms == null) {
       atoms = this.atoms;
@@ -247,8 +243,58 @@ public class OpenMMDualTopologyEnergy extends DualTopologyEnergy {
    *
    * @return context
    */
+  @Override
   public OpenMMContext getContext() {
     return openMMContext;
+  }
+
+  /**
+   * Create an OpenMM Context.
+   *
+   * <p>Context.free() must be called to free OpenMM memory.
+   *
+   * @param integratorName Integrator to use.
+   * @param timeStep       Time step.
+   * @param temperature    Temperature (K).
+   * @param forceCreation  Force a new Context to be created, even if the existing one matches the
+   *                       request.
+   */
+  @Override
+  public void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation) {
+    openMMContext.update(integratorName, timeStep, temperature, forceCreation);
+  }
+
+  /**
+   * Create an immutable OpenMM State.
+   *
+   * <p>State.free() must be called to free OpenMM memory.
+   *
+   * @param mask The State mask.
+   * @return Returns the State.
+   */
+  @Override
+  public OpenMMState getOpenMMState(int mask) {
+    return openMMContext.getOpenMMState(mask);
+  }
+
+  /**
+   * Get a reference to the System instance.
+   *
+   * @return a reference to the OpenMMSystem.
+   */
+  @Override
+  public OpenMMSystem getSystem() {
+    return openMMDualTopologySystem;
+  }
+
+  /**
+   * Update active atoms.
+   */
+  @Override
+  public void setActiveAtoms() {
+    openMMDualTopologySystem.updateAtomMass();
+    // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
+    // context.reinitContext();
   }
 
 }
