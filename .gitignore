@@ -56,3 +56,5 @@ ffx_venv/
 python-resources/
 
 modules/numerics/fft.txt
+
+openmm/

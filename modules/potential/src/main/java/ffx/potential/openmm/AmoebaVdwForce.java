@@ -121,7 +121,7 @@ public class AmoebaVdwForce extends VdwForce {
         extendedSystem.getVdwPrefactor(i, vdwPrefactorAndDerivs);
         scaleFactor = vdwPrefactorAndDerivs[0];
       }
-      addParticle_1(ired[i], type, vdwType.reductionFactor, isAlchemical, scaleFactor);
+      addParticle(ired[i], type, vdwType.reductionFactor, isAlchemical, scaleFactor);
     }
 
     // Create exclusion lists.
@@ -185,14 +185,14 @@ public class AmoebaVdwForce extends VdwForce {
         int atomClass = vdwType.atomClass;
         int type = vdwClassToOpenMMType.get(atomClass);
         int isAlchemical = atom.applyLambda() ? 1 : 0;
-        addParticle_1(ir, type, vdwType.reductionFactor, isAlchemical, scale);
+        addParticle(ir, type, vdwType.reductionFactor, isAlchemical, scale);
       } else {
         // Add a fake particle for an atom not in this topology.
         int index = atom.getTopologyAtomIndex();
         int type = vdwClassToOpenMMType.get(vdWClassForNoInteraction);
         int isAlchemical = 1;
         double scaleFactor = 0.0;
-        addParticle_1(index, type, 1.0, isAlchemical, scaleFactor);
+        addParticle(index, type, 1.0, isAlchemical, scaleFactor);
       }
     }
 
@@ -285,9 +285,9 @@ public class AmoebaVdwForce extends VdwForce {
     NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
     setCutoffDistance(nonbondedCutoff.off * OpenMM_NmPerAngstrom);
     if (vdW.getDoLongRangeCorrection()) {
-      setUseDispersionCorrection(OpenMM_True);
+      setUseDispersionCorrection(true);
     } else {
-      setUseDispersionCorrection(OpenMM_False);
+      setUseDispersionCorrection(false);
     }
 
     // Set the nonbonded method based on the crystal periodicity.

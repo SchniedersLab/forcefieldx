@@ -89,67 +89,109 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_usesPe
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * Amoeba van der Waals Force.
+ * This class models van der Waals forces in the AMOEBA force field.  It can use
+ * either buffered 14-7 potential or a Lennard-Jones 12-6 potential.
+ * <p>
+ * This class can operate in two different modes.  In one mode, force field parameters
+ * are defined for each particle.  When two particles interact, a combining rule is
+ * used to calculate the interaction parameters based on the parameters for the two
+ * particles.  To use the class in this mode, call the version of addParticle() that
+ * takes sigma and epsilon values.  It should be called once for each particle in the
+ * System.
+ * <p>
+ * In the other mode, each particle has a type index, and parameters are specified for
+ * each type rather than each individual particle.  By default this mode also uses a
+ * combining rule, but you can override it by defining alternate parameters to use for
+ * specific pairs of particle types.  To use the class in this mode, call the version of
+ * addParticle() that takes a type index.  It should be called once for each particle
+ * in the System.  You also must call addParticleType() once for each type.  If you
+ * wish to override the combining for particular pairs of types, do so by calling
+ * addTypePair().
+ * <p>
+ * A unique feature of this class is that the interaction site for a particle does not need to be
+ * exactly at the particle's location.  Instead, it can be placed a fraction of the distance from that
+ * particle to another one.  This is typically done for hydrogens to place the interaction site slightly
+ * closer to the parent atom.  The fraction is known as the "reduction factor", since it reduces the distance
+ * from the parent atom to the interaction site.
+ * <p>
+ * Support is also available for softcore interactions based on setting a per particle alchemical flag and
+ * setting the AmoebaVdwForce to use an "AlchemicalMethod" -- either Decouple or Annihilate.
+ * For Decouple, two alchemical atoms interact normally. For Annihilate, all interactions involving an
+ * alchemical atom are influenced. The softcore state is specified by setting a single
+ * Context parameter "AmoebaVdwLambda" between 0.0 and 1.0.
+ * <p>
+ * The softcore functional form can be modified by setting the softcore power (default of 5) and the softcore
+ * alpha (default of 0,7). For more information on the softcore functional form see Eq. 2 from:
+ * Jiao, D.;  Golubkov, P. A.;  Darden, T. A.; Ren, P.,
+ * Calculation of protein-ligand binding free energy by using a polarizable potential.
+ * Proc. Natl. Acad. Sci. U.S.A. 2008, 105 (17), 6290-6295.
+ * https://www.pnas.org/content/105/17/6290.
  */
 public class VdwForce extends Force {
 
   /**
-   * Create an OpenMM VdwForce.
+   * Create an Amoeba VdwForce.
    */
   public VdwForce() {
     super(OpenMM_AmoebaVdwForce_create());
   }
 
   /**
-   * Add a particle to the force.
+   * Add the force field parameters for a vdw particle.  This version is used when parameters
+   * are defined for each particle.
    *
-   * @param ired            The index of the particle that this particle is reduced to.
-   * @param rad             The radius of the particle.
-   * @param eps             The epsilon of the particle.
-   * @param reductionFactor The reduction factor.
-   * @param isAlchemical    Whether the particle is alchemical.
-   * @param scaleFactor     The scale factor.
-   * @return The index of the added particle.
+   * @param parentIndex     the index of the parent particle
+   * @param sigma           vdw sigma
+   * @param epsilon         vdw epsilon
+   * @param reductionFactor the fraction of the distance along the line from the parent particle to this particle
+   *                        at which the interaction site should be placed
+   * @param isAlchemical    if true, this vdW particle is undergoing an alchemical change.
+   * @param scaleFactor     a scale factor to apply to all interactions involving this particle (used for CpHMD).
+   * @return index of added particle
    */
-  public int addParticle(int ired, double rad, double eps, double reductionFactor, int isAlchemical, double scaleFactor) {
-    return OpenMM_AmoebaVdwForce_addParticle(pointer, ired, rad, eps, reductionFactor, isAlchemical, scaleFactor);
+  public int addParticle(int parentIndex, double sigma, double epsilon, double reductionFactor, int isAlchemical, double scaleFactor) {
+    return OpenMM_AmoebaVdwForce_addParticle(pointer, parentIndex, sigma, epsilon, reductionFactor, isAlchemical, scaleFactor);
   }
 
   /**
-   * Add a particle to the force.
+   * Add the force field parameters for a vdw particle. This version is used when parameters
+   * are defined by particle type.
    *
-   * @param ired            The index of the particle that this particle is reduced to.
-   * @param type            The type of the particle.
-   * @param reductionFactor The reduction factor.
-   * @param isAlchemical    Whether the particle is alchemical.
-   * @param scaleFactor     The scale factor.
+   * @param parentIndex     the index of the parent particle
+   * @param typeIndex       the index of the particle type for this particle
+   * @param reductionFactor the fraction of the distance along the line from the parent particle to this particle
+   *                        at which the interaction site should be placed
+   * @param isAlchemical    if true, this vdW particle is undergoing an alchemical change.
+   * @param scaleFactor     a scale factor to apply to all interactions involving this particle (used for CpHMD).
+   * @return index of added particle
    */
-  public void addParticle_1(int ired, int type, double reductionFactor, int isAlchemical, double scaleFactor) {
-    OpenMM_AmoebaVdwForce_addParticle_1(pointer, ired, type, reductionFactor, isAlchemical, scaleFactor);
+  public int addParticle(int parentIndex, int typeIndex, double reductionFactor, int isAlchemical, double scaleFactor) {
+    return OpenMM_AmoebaVdwForce_addParticle_1(pointer, parentIndex, typeIndex, reductionFactor, isAlchemical, scaleFactor);
   }
 
   /**
-   * Add a particle type to the force.
+   * Add a particle type.
    *
-   * @param rad The radius of the particle type.
-   * @param eps The epsilon of the particle type.
-   * @return The index of the added particle type.
+   * @param sigma   the sigma value for particles of this type
+   * @param epsilon the epsilon value for particles of this type
+   * @return the index of the particle type that was just added.
    */
-  public int addParticleType(double rad, double eps) {
-    return OpenMM_AmoebaVdwForce_addParticleType(pointer, rad, eps);
+  public int addParticleType(double sigma, double epsilon) {
+    return OpenMM_AmoebaVdwForce_addParticleType(pointer, sigma, epsilon);
   }
 
   /**
-   * Add a type pair to the force.
+   * Add a type pair.  This overrides the standard combining rule for interactions
+   * between particles of two particular types.
    *
-   * @param type1 The first type.
-   * @param type2 The second type.
-   * @param rad   The radius.
-   * @param eps   The epsilon.
-   * @return The index of the added type pair.
+   * @param type1   the index of the first particle type
+   * @param type2   the index of the second particle type
+   * @param sigma   the sigma value for interactions between particles of these two types
+   * @param epsilon the epsilon  value for interactions between particles of these two types
+   * @return the index of the type pair that was just added.
    */
-  public int addTypePair(int type1, int type2, double rad, double eps) {
-    return OpenMM_AmoebaVdwForce_addTypePair(pointer, type1, type2, rad, eps);
+  public int addTypePair(int type1, int type2, double sigma, double epsilon) {
+    return OpenMM_AmoebaVdwForce_addTypePair(pointer, type1, type2, sigma, epsilon);
   }
 
   /**
@@ -173,18 +215,19 @@ public class VdwForce extends Force {
   }
 
   /**
-   * Get the cutoff.
+   * Get the cutoff distance.
    *
-   * @return The cutoff.
+   * @deprecated This method exists only for backward compatibility.  Use getCutoffDistance() instead.
    */
   public double getCutoff() {
     return OpenMM_AmoebaVdwForce_getCutoff(pointer);
   }
 
   /**
-   * Get the cutoff distance.
+   * Get the cutoff distance (in nm) being used for nonbonded interactions.  If the NonbondedMethod in use
+   * is NoCutoff, this value will have no effect.
    *
-   * @return The cutoff distance.
+   * @return the cutoff distance, measured in nm
    */
   public double getCutoffDistance() {
     return OpenMM_AmoebaVdwForce_getCutoffDistance(pointer);
@@ -348,14 +391,15 @@ public class VdwForce extends Force {
   }
 
   /**
-   * Get whether to use dispersion correction.
-   *
-   * @return 1 if dispersion correction is used, 0 otherwise.
+   * Get whether to add a contribution to the energy that approximately represents the effect of VdW
+   * interactions beyond the cutoff distance.  The energy depends on the volume of the periodic box, and is only
+   * applicable when periodic boundary conditions are used.  When running simulations at constant pressure, adding
+   * this contribution can improve the quality of results.
    */
-  public int getUseDispersionCorrection() {
-    return OpenMM_AmoebaVdwForce_getUseDispersionCorrection(pointer);
+  public boolean getUseDispersionCorrection() {
+    return OpenMM_AmoebaVdwForce_getUseDispersionCorrection(pointer) != 0;
   }
-  
+
   /**
    * Get whether to use particle types.
    *
@@ -375,21 +419,22 @@ public class VdwForce extends Force {
   }
 
   /**
-   * Set the cutoff.
+   * Set the cutoff distance.
    *
-   * @param cutoff The cutoff.
+   * @deprecated This method exists only for backward compatibility.  Use setCutoffDistance() instead.
    */
   public void setCutoff(double cutoff) {
     OpenMM_AmoebaVdwForce_setCutoff(pointer, cutoff);
   }
 
   /**
-   * Set the cutoff distance.
+   * Set the cutoff distance (in nm) being used for nonbonded interactions.  If the NonbondedMethod in use
+   * is NoCutoff, this value will have no effect.
    *
-   * @param cutoff The cutoff distance.
+   * @param distance the cutoff distance, measured in nm
    */
-  public void setCutoffDistance(double cutoff) {
-    OpenMM_AmoebaVdwForce_setCutoffDistance(pointer, cutoff);
+  public void setCutoffDistance(double distance) {
+    OpenMM_AmoebaVdwForce_setCutoffDistance(pointer, distance);
   }
 
   /**
@@ -506,18 +551,23 @@ public class VdwForce extends Force {
   }
 
   /**
-   * Set whether to use dispersion correction.
-   *
-   * @param value 1 to use dispersion correction, 0 otherwise.
+   * Set whether to add a contribution to the energy that approximately represents the effect of VdW
+   * interactions beyond the cutoff distance.  The energy depends on the volume of the periodic box, and is only
+   * applicable when periodic boundary conditions are used.  When running simulations at constant pressure, adding
+   * this contribution can improve the quality of results.
    */
-  public void setUseDispersionCorrection(int value) {
-    OpenMM_AmoebaVdwForce_setUseDispersionCorrection(pointer, value);
+  public void setUseDispersionCorrection(boolean useCorrection) {
+    OpenMM_AmoebaVdwForce_setUseDispersionCorrection(pointer, useCorrection ? 1 : 0);
   }
-  
+
   /**
-   * Update the parameters in the context.
-   *
-   * @param context The OpenMM context.
+   * Update the per-particle parameters in a Context to match those stored in this Force object.  This method provides
+   * an efficient method to update certain parameters in an existing Context without needing to reinitialize it.
+   * Simply call setParticleParameters() to modify this object's parameters, then call updateParametersInContext()
+   * to copy them over to the Context.
+   * <p>
+   * The only information this method updates is the values of per-particle parameters.  All other aspects of the Force
+   * (the nonbonded method, the cutoff distance, etc.) are unaffected and can only be changed by reinitializing the Context.
    */
   public void updateParametersInContext(Context context) {
     if (context.hasContextPointer()) {
@@ -526,9 +576,10 @@ public class VdwForce extends Force {
   }
 
   /**
-   * Check if the force uses periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    *
-   * @return True if the force uses periodic boundary conditions.
+   * @returns true if nonbondedMethod uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {
