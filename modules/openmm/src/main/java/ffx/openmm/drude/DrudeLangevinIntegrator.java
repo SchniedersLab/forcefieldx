@@ -50,37 +50,29 @@ import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeLangevinIntegrato
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeLangevinIntegrator_step;
 
 /**
- * DrudeLangevinIntegrator implements a Langevin integrator for systems with Drude oscillators.
+ * This Integrator simulates systems that include Drude particles.  It applies two different Langevin
+ * thermostats to different parts of the system.  The first is applied to ordinary particles (ones that
+ * are not part of a Drude particle pair), as well as to the center of mass of each Drude particle pair.
+ * A second thermostat, typically with a much lower temperature, is applied to the relative internal
+ * displacement of each pair.
  * <p>
- * This integrator extends the basic DrudeIntegrator by adding Langevin dynamics, which provides
- * stochastic temperature control through friction and random forces. The Langevin approach is
- * particularly effective for maintaining proper thermal equilibrium in Drude polarizable systems.
+ * This integrator can optionally set an upper limit on how far any Drude particle is ever allowed to
+ * get from its parent particle.  This can sometimes help to improve stability.  The limit is enforced
+ * with a hard wall constraint.  By default the limit is set to 0.02 nm.
  * <p>
- * The integrator uses separate friction coefficients for real atoms and Drude particles:
- * <ul>
- * <li>Real atoms experience friction at the system temperature</li>
- * <li>Drude particles experience separate friction at the Drude temperature</li>
- * <li>Both friction coefficients can be independently controlled</li>
- * </ul>
- * <p>
- * The Langevin dynamics help maintain proper temperature distribution while allowing
- * the Drude oscillators to respond appropriately to local electric fields. This approach
- * provides better temperature control compared to simple velocity rescaling methods.
+ * This Integrator requires the System to include a DrudeForce, which it uses to identify the Drude
+ * particles.
  */
 public class DrudeLangevinIntegrator extends DrudeIntegrator {
 
   /**
-   * Create a new DrudeLangevinIntegrator.
-   * <p>
-   * This constructor initializes a Drude Langevin integrator with the specified parameters.
-   * The integrator will use Langevin dynamics to maintain temperature control for both
-   * real atoms and Drude particles with independent friction coefficients.
+   * Create a DrudeLangevinIntegrator.
    *
-   * @param stepSize         The integration step size in picoseconds.
-   * @param temperature      The target temperature for real atoms in Kelvin.
-   * @param friction         The friction coefficient for real atoms in 1/picoseconds.
-   * @param drudeTemperature The target temperature for Drude particles in Kelvin.
-   * @param drudeFriction    The friction coefficient for Drude particles in 1/picoseconds.
+   * @param stepSize         the step size with which to integrator the system (in picoseconds)
+   * @param temperature      the temperature of the main heat bath (in Kelvin)
+   * @param friction         the friction coefficient which couples the system to the main heat bath (in inverse picoseconds)
+   * @param drudeTemperature the temperature of the heat bath applied to internal coordinates of Drude particles (in Kelvin)
+   * @param drudeFriction    the friction coefficient which couples the system to the heat bath applied to internal coordinates of Drude particles (in inverse picoseconds)
    */
   public DrudeLangevinIntegrator(double stepSize, double temperature, double friction,
                                  double drudeTemperature, double drudeFriction) {
@@ -89,26 +81,21 @@ public class DrudeLangevinIntegrator extends DrudeIntegrator {
   }
 
   /**
-   * Compute the instantaneous temperature of the Drude particles.
-   * <p>
-   * This method calculates the current kinetic temperature of the Drude particles
-   * based on their velocities. This can be used to monitor the thermal equilibration
-   * of the electronic degrees of freedom during the simulation.
-   *
-   * @return The instantaneous Drude temperature in Kelvin.
+   * Compute the instantaneous temperature of the Drude system, measured in Kelvin.
+   * This is calculated based on the kinetic energy of the internal motion of Drude pairs
+   * and should remain close to the prescribed Drude temperature.
    */
   public double computeDrudeTemperature() {
     return OpenMM_DrudeLangevinIntegrator_computeDrudeTemperature(pointer);
   }
 
   /**
-   * Compute the instantaneous temperature of the real atoms.
-   * <p>
-   * This method calculates the current kinetic temperature of the real atoms
-   * based on their velocities. This provides a measure of the thermal state
-   * of the nuclear degrees of freedom in the system.
-   *
-   * @return The instantaneous system temperature in Kelvin.
+   * Compute the instantaneous temperature of the System, measured in Kelvin.
+   * This is calculated based on the kinetic energy of the ordinary particles (ones
+   * not attached to a Drude particle), as well as the center of mass motion of the
+   * Drude particle pairs.  It does not include the internal motion of the pairs.
+   * On average, this should be approximately equal to the value returned by
+   * getTemperature().
    */
   public double computeSystemTemperature() {
     return OpenMM_DrudeLangevinIntegrator_computeSystemTemperature(pointer);
@@ -129,91 +116,67 @@ public class DrudeLangevinIntegrator extends DrudeIntegrator {
   }
 
   /**
-   * Get the friction coefficient for Drude particles.
-   * <p>
-   * This method returns the friction coefficient applied to Drude particles
-   * in the Langevin dynamics. Higher friction values lead to stronger coupling
-   * to the heat bath and faster temperature equilibration.
+   * Get the friction coefficient which determines how strongly the internal coordinates of Drude particles
+   * are coupled to the heat bath (in inverse ps).
    *
-   * @return The Drude friction coefficient in 1/picoseconds.
+   * @return the friction coefficient, measured in 1/ps
    */
   public double getDrudeFriction() {
     return OpenMM_DrudeLangevinIntegrator_getDrudeFriction(pointer);
   }
 
   /**
-   * Get the friction coefficient for real atoms.
-   * <p>
-   * This method returns the friction coefficient applied to real atoms
-   * in the Langevin dynamics. This parameter controls the strength of
-   * coupling between the system and the thermal reservoir.
+   * Get the friction coefficient which determines how strongly the system is coupled to
+   * the main heat bath (in inverse ps).
    *
-   * @return The friction coefficient in 1/picoseconds.
+   * @return the friction coefficient, measured in 1/ps
    */
   public double getFriction() {
     return OpenMM_DrudeLangevinIntegrator_getFriction(pointer);
   }
 
   /**
-   * Get the target temperature for real atoms.
-   * <p>
-   * This method returns the temperature at which the real atoms are
-   * thermostated using Langevin dynamics. This is typically the desired
-   * simulation temperature for the nuclear degrees of freedom.
+   * Get the temperature of the main heat bath (in Kelvin).
    *
-   * @return The target temperature in Kelvin.
+   * @return the temperature of the heat bath, measured in Kelvin
    */
   public double getTemperature() {
     return OpenMM_DrudeLangevinIntegrator_getTemperature(pointer);
   }
 
   /**
-   * Set the friction coefficient for Drude particles.
-   * <p>
-   * This method sets the friction coefficient applied to Drude particles
-   * in the Langevin dynamics. Typical values range from 10-100 1/ps,
-   * with higher values providing stronger temperature control.
+   * Set the friction coefficient which determines how strongly the internal coordinates of Drude particles
+   * are coupled to the heat bath (in inverse ps).
    *
-   * @param friction The Drude friction coefficient in 1/picoseconds.
+   * @param friction the friction coefficient, measured in 1/ps
    */
   public void setDrudeFriction(double friction) {
     OpenMM_DrudeLangevinIntegrator_setDrudeFriction(pointer, friction);
   }
 
   /**
-   * Set the friction coefficient for real atoms.
-   * <p>
-   * This method sets the friction coefficient applied to real atoms
-   * in the Langevin dynamics. Typical values range from 1-10 1/ps,
-   * balancing temperature control with dynamic behavior preservation.
+   * Set the friction coefficient which determines how strongly the system is coupled to
+   * the main heat bath (in inverse ps).
    *
-   * @param friction The friction coefficient in 1/picoseconds.
+   * @param friction the friction coefficient, measured in 1/ps
    */
   public void setFriction(double friction) {
     OpenMM_DrudeLangevinIntegrator_setFriction(pointer, friction);
   }
 
   /**
-   * Set the target temperature for real atoms.
-   * <p>
-   * This method sets the temperature at which the real atoms are
-   * thermostated using Langevin dynamics. This should be set to the
-   * desired simulation temperature for the system.
+   * Set the temperature of the main heat bath (in Kelvin).
    *
-   * @param temperature The target temperature in Kelvin.
+   * @param temperature the temperature of the heat bath, measured in Kelvin
    */
   public void setTemperature(double temperature) {
     OpenMM_DrudeLangevinIntegrator_setTemperature(pointer, temperature);
   }
 
   /**
-   * Integrate the system forward in time by the specified number of time steps.
-   * <p>
-   * This method advances the simulation using Langevin dynamics for both
-   * real atoms and Drude particles. Each step applies the appropriate
-   * friction and random forces to maintain the target temperatures.
+   * Advance a simulation through time by taking a series of time steps.
    *
-   * @param steps The number of steps to take.
+   * @param steps the number of time steps to take
    */
   @Override
   public void step(int steps) {

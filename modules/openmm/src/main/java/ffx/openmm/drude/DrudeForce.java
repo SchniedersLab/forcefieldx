@@ -61,75 +61,56 @@ import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeForce_usesPeriodi
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * DrudeForce implements the Drude oscillator model for electronic polarization.
+ * This class implements forces that are specific to Drude oscillators.  There are two distinct forces
+ * it applies: an anisotropic harmonic force connecting each Drude particle to its parent particle; and
+ * a screened Coulomb interaction between specific pairs of dipoles.  The latter is typically used between
+ * closely bonded particles whose Coulomb interaction would otherwise be fully excluded.
  * <p>
- * The Drude model represents electronic polarization by attaching a fictitious charged
- * particle (Drude particle) to each polarizable atom via a harmonic spring. The Drude
- * particle carries a small negative charge, while the core atom carries a compensating
- * positive charge. When an external electric field is applied, the Drude particle is
- * displaced from the core, creating an induced dipole moment.
- * <p>
- * This force implements the harmonic restraint between Drude particles and their
- * parent atoms, as well as the electrostatic interactions involving the Drude charges.
- * The total energy includes:
- * <ul>
- * <li>Harmonic restraint energy: E = 0.5 * k * r²</li>
- * <li>Electrostatic interactions between Drude particles and other charges</li>
- * <li>Screening interactions to prevent overpolarization at short distances</li>
- * </ul>
- * <p>
- * The Drude model provides a classical treatment of electronic polarization that
- * can significantly improve the accuracy of molecular simulations, particularly
- * for systems involving ions, polar molecules, or strong electric fields.
+ * To use this class, create a DrudeForce object, then call addParticle() once for each Drude particle in the
+ * System to define its parameters.  After a particle has been added, you can modify its force field parameters
+ * by calling setParticleParameters().  This will have no effect on Contexts that already exist unless you
+ * call updateParametersInContext().  Likewise, call addScreenedPair() for each pair of dipoles (each dipole
+ * consisting of a Drude particle and its parent) that should be computed.
  */
 public class DrudeForce extends Force {
 
   /**
-   * Create a new DrudeForce.
-   * <p>
-   * This constructor initializes a new Drude force object that will handle
-   * the interactions between Drude particles and their parent atoms, as well
-   * as the electrostatic interactions involving Drude charges.
+   * Create a DrudeForce.
    */
   public DrudeForce() {
     super(OpenMM_DrudeForce_create());
   }
 
   /**
-   * Add a Drude particle to the force.
-   * <p>
-   * This method adds a Drude oscillator consisting of a parent atom and its
-   * associated Drude particle. The Drude particle is connected to the parent
-   * atom by a harmonic spring with the specified force constant.
+   * Add a Drude particle to which forces should be applied.
    *
-   * @param particle1      The index of the parent atom to which the Drude particle is attached.
-   * @param particle2      The index of the Drude particle.
-   * @param particle3      The index of an additional particle (if applicable, -1 if not used).
-   * @param particle4      The index of an additional particle (if applicable, -1 if not used).
-   * @param particle5      The index of an additional particle (if applicable, -1 if not used).
-   * @param charge         The charge of the Drude particle (typically negative).
-   * @param polarizability The polarizability of the atom (in units of nm³).
-   * @param aniso12        The anisotropy parameter for the 1-2 direction.
-   * @param aniso34        The anisotropy parameter for the 3-4 direction.
-   * @return The index of the added Drude particle pair.
+   * @param particle       the index within the System of the Drude particle
+   * @param particle1      the index within the System of the particle to which the Drude particle is attached
+   * @param particle2      the index within the System of the second particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso12 will be ignored.
+   * @param particle3      the index within the System of the third particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param particle4      the index within the System of the fourth particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param charge         The charge on the Drude particle
+   * @param polarizability The isotropic polarizability
+   * @param aniso12        The scale factor for the polarizability along the direction defined by particle1 and particle2
+   * @param aniso34        The scale factor for the polarizability along the direction defined by particle3 and particle4
+   * @return the index of the particle that was added
    */
-  public int addParticle(int particle1, int particle2, int particle3, int particle4, int particle5,
+  public int addParticle(int particle, int particle1, int particle2, int particle3, int particle4,
                          double charge, double polarizability, double aniso12, double aniso34) {
-    return OpenMM_DrudeForce_addParticle(pointer, particle1, particle2, particle3, particle4, particle5,
+    return OpenMM_DrudeForce_addParticle(pointer, particle, particle1, particle2, particle3, particle4,
         charge, polarizability, aniso12, aniso34);
   }
 
   /**
-   * Add a screened pair to the force.
-   * <p>
-   * This method adds a screened pair interaction between two particles to prevent
-   * overpolarization at short distances. The screening is typically applied between
-   * atoms that are close in the molecular topology to avoid unphysical behavior.
+   * Add an interaction to the list of screened pairs.
    *
-   * @param particle1 The index of the first particle in the screened pair.
-   * @param particle2 The index of the second particle in the screened pair.
-   * @param thole     The Thole screening parameter that controls the strength of screening.
-   * @return The index of the added screened pair.
+   * @param particle1 the index within this Force of the first particle involved in the interaction
+   * @param particle2 the index within this Force of the second particle involved in the interaction
+   * @param thole     the Thole screening factor
+   * @return the index of the screenedPair that was added
    */
   public int addScreenedPair(int particle1, int particle2, double thole) {
     return OpenMM_DrudeForce_addScreenedPair(pointer, particle1, particle2, thole);
@@ -150,64 +131,51 @@ public class DrudeForce extends Force {
   }
 
   /**
-   * Get the number of Drude particle pairs in the force.
-   * <p>
-   * This method returns the total number of Drude oscillators (parent-Drude
-   * particle pairs) that have been added to this force.
-   *
-   * @return The number of Drude particle pairs.
+   * Get the number of particles for which force field parameters have been defined.
    */
   public int getNumParticles() {
     return OpenMM_DrudeForce_getNumParticles(pointer);
   }
 
   /**
-   * Get the number of screened pairs in the force.
-   * <p>
-   * This method returns the total number of screened pair interactions that
-   * have been added to this force to prevent overpolarization at short distances.
-   *
-   * @return The number of screened pairs.
+   * Get the number of special interactions that should be calculated differently from other interactions.
    */
   public int getNumScreenedPairs() {
     return OpenMM_DrudeForce_getNumScreenedPairs(pointer);
   }
 
   /**
-   * Get the parameters for a Drude particle pair.
-   * <p>
-   * This method retrieves the parameters that define a specific Drude oscillator,
-   * including the particle indices, charge, polarizability, and anisotropy parameters.
+   * Get the parameters for a Drude particle.
    *
-   * @param index          The index of the Drude particle pair to query.
-   * @param particle1      The index of the parent atom (output).
-   * @param particle2      The index of the Drude particle (output).
-   * @param particle3      The index of an additional particle (output, -1 if not used).
-   * @param particle4      The index of an additional particle (output, -1 if not used).
-   * @param particle5      The index of an additional particle (output, -1 if not used).
-   * @param charge         The charge of the Drude particle (output).
-   * @param polarizability The polarizability of the atom (output).
-   * @param aniso12        The anisotropy parameter for the 1-2 direction (output).
-   * @param aniso34        The anisotropy parameter for the 3-4 direction (output).
+   * @param index          the index of the Drude particle for which to get parameters
+   * @param particle       the index within the System of the Drude particle
+   * @param particle1      the index within the System of the particle to which the Drude particle is attached
+   * @param particle2      the index within the System of the second particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso12 will be ignored.
+   * @param particle3      the index within the System of the third particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param particle4      the index within the System of the fourth particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param charge         The charge on the Drude particle
+   * @param polarizability The isotropic polarizability
+   * @param aniso12        The scale factor for the polarizability along the direction defined by particle1 and particle2
+   * @param aniso34        The scale factor for the polarizability along the direction defined by particle3 and particle4
    */
-  public void getParticleParameters(int index, IntByReference particle1, IntByReference particle2,
-                                    IntByReference particle3, IntByReference particle4, IntByReference particle5,
+  public void getParticleParameters(int index, IntByReference particle, IntByReference particle1,
+                                    IntByReference particle2, IntByReference particle3, IntByReference particle4,
                                     DoubleByReference charge, DoubleByReference polarizability,
                                     DoubleByReference aniso12, DoubleByReference aniso34) {
-    OpenMM_DrudeForce_getParticleParameters(pointer, index, particle1, particle2, particle3,
-        particle4, particle5, charge, polarizability, aniso12, aniso34);
+    OpenMM_DrudeForce_getParticleParameters(pointer, index, particle, particle1, particle2,
+        particle3, particle4, charge, polarizability, aniso12, aniso34);
   }
 
   /**
-   * Get the parameters for a screened pair.
-   * <p>
-   * This method retrieves the parameters that define a specific screened pair
-   * interaction, including the particle indices and Thole screening parameter.
+   * Get the force field parameters for a screened pair.
    *
-   * @param index     The index of the screened pair to query.
-   * @param particle1 The index of the first particle (output).
-   * @param particle2 The index of the second particle (output).
-   * @param thole     The Thole screening parameter (output).
+   * @param index     the index of the pair for which to get parameters
+   * @param particle1 the index within this Force of the first particle involved in the interaction
+   * @param particle2 the index within this Force of the second particle involved in the interaction
+   * @param thole     the Thole screening factor
    */
   public void getScreenedPairParameters(int index, IntByReference particle1, IntByReference particle2,
                                         DoubleByReference thole) {
@@ -215,16 +183,12 @@ public class DrudeForce extends Force {
   }
 
   /**
-   * Get the parameters for a screened pair.
-   * <p>
-   * This method retrieves the parameters that define a specific screened pair
-   * interaction, including the particle indices and Thole screening parameter.
-   * This overloaded version uses IntBuffer and DoubleBuffer for output parameters.
+   * Get the force field parameters for a screened pair.
    *
-   * @param index     The index of the screened pair to query.
-   * @param particle1 The index of the first particle (output).
-   * @param particle2 The index of the second particle (output).
-   * @param thole     The Thole screening parameter (output).
+   * @param index     the index of the pair for which to get parameters
+   * @param particle1 the index within this Force of the first particle involved in the interaction
+   * @param particle2 the index within this Force of the second particle involved in the interaction
+   * @param thole     the Thole screening factor
    */
   public void getScreenedPairParameters(int index, IntBuffer particle1, IntBuffer particle2,
                                         DoubleBuffer thole) {
@@ -232,41 +196,36 @@ public class DrudeForce extends Force {
   }
 
   /**
-   * Set the parameters for a Drude particle pair.
-   * <p>
-   * This method modifies the parameters of an existing Drude oscillator.
-   * The particle indices typically should not be changed after creation,
-   * but the charge, polarizability, and anisotropy parameters can be adjusted.
+   * Set the parameters for a Drude particle.
    *
-   * @param index          The index of the Drude particle pair to modify.
-   * @param particle1      The index of the parent atom.
-   * @param particle2      The index of the Drude particle.
-   * @param particle3      The index of an additional particle (-1 if not used).
-   * @param particle4      The index of an additional particle (-1 if not used).
-   * @param particle5      The index of an additional particle (-1 if not used).
-   * @param charge         The charge of the Drude particle.
-   * @param polarizability The polarizability of the atom.
-   * @param aniso12        The anisotropy parameter for the 1-2 direction.
-   * @param aniso34        The anisotropy parameter for the 3-4 direction.
+   * @param index          the index of the Drude particle for which to set parameters
+   * @param particle       the index within the System of the Drude particle
+   * @param particle1      the index within the System of the particle to which the Drude particle is attached
+   * @param particle2      the index within the System of the second particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso12 will be ignored.
+   * @param particle3      the index within the System of the third particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param particle4      the index within the System of the fourth particle used for defining anisotropic polarizability.
+   *                       This may be set to -1, in which case aniso34 will be ignored.
+   * @param charge         The charge on the Drude particle
+   * @param polarizability The isotropic polarizability
+   * @param aniso12        The scale factor for the polarizability along the direction defined by particle1 and particle2
+   * @param aniso34        The scale factor for the polarizability along the direction defined by particle3 and particle4
    */
-  public void setParticleParameters(int index, int particle1, int particle2, int particle3,
-                                    int particle4, int particle5, double charge, double polarizability,
+  public void setParticleParameters(int index, int particle, int particle1, int particle2,
+                                    int particle3, int particle4, double charge, double polarizability,
                                     double aniso12, double aniso34) {
-    OpenMM_DrudeForce_setParticleParameters(pointer, index, particle1, particle2, particle3,
-        particle4, particle5, charge, polarizability, aniso12, aniso34);
+    OpenMM_DrudeForce_setParticleParameters(pointer, index, particle, particle1, particle2,
+        particle3, particle4, charge, polarizability, aniso12, aniso34);
   }
 
   /**
-   * Set the parameters for a screened pair.
-   * <p>
-   * This method modifies the parameters of an existing screened pair interaction.
-   * The particle indices typically should not be changed after creation,
-   * but the Thole screening parameter can be adjusted.
+   * Set the force field parameters for a screened pair.
    *
-   * @param index     The index of the screened pair to modify.
-   * @param particle1 The index of the first particle.
-   * @param particle2 The index of the second particle.
-   * @param thole     The Thole screening parameter.
+   * @param index     the index of the pair for which to get parameters
+   * @param particle1 the index within this Force of the first particle involved in the interaction
+   * @param particle2 the index within this Force of the second particle involved in the interaction
+   * @param thole     the Thole screening factor
    */
   public void setScreenedPairParameters(int index, int particle1, int particle2, double thole) {
     OpenMM_DrudeForce_setScreenedPairParameters(pointer, index, particle1, particle2, thole);
@@ -274,25 +233,24 @@ public class DrudeForce extends Force {
 
   /**
    * Set whether this force should apply periodic boundary conditions when calculating displacements.
+   * Usually this is not appropriate for bonded forces, but there are situations when it can be useful.
    * <p>
-   * This method controls whether the DrudeForce takes into account periodic boundary
-   * conditions when calculating interactions. This is typically important for systems
-   * in periodic boxes to ensure proper treatment of long-range electrostatic interactions.
-   *
-   * @param periodic If true, periodic boundary conditions will be applied.
+   * Periodic boundary conditions are only applied to screened pairs.  They are never used for the
+   * force between a Drude particle and its parent particle, regardless of this setting.
    */
   public void setUsesPeriodicBoundaryConditions(boolean periodic) {
     OpenMM_DrudeForce_setUsesPeriodicBoundaryConditions(pointer, periodic ? 1 : 0);
   }
 
   /**
-   * Update the parameters in the OpenMM Context.
+   * Update the particle and screened pair parameters in a Context to match those stored in this Force object.  This method
+   * provides an efficient method to update certain parameters in an existing Context without needing to reinitialize it.
+   * Simply call setParticleParameters() and setScreenedPairParameters() to modify this object's parameters, then call
+   * updateParametersInContext() to copy them over to the Context.
    * <p>
-   * This method updates the Drude force parameters in the specified OpenMM context.
-   * This is necessary when parameters have been modified after the context was created.
-   * The context must have been created with this force included in the system.
-   *
-   * @param context The OpenMM Context in which to update the parameters.
+   * This method has several limitations.  It can be used to modify the numeric parameters associated with a particle or
+   * screened pair (polarizability, thole, etc.), but not the identities of the particles they involve.  It also cannot
+   * be used to add new particles or screenedPairs, only to change the parameters of existing ones.
    */
   public void updateParametersInContext(Context context) {
     if (context.hasContextPointer()) {
@@ -301,13 +259,8 @@ public class DrudeForce extends Force {
   }
 
   /**
-   * Check if the force uses periodic boundary conditions.
-   * <p>
-   * This method returns whether the DrudeForce takes into account periodic
-   * boundary conditions when calculating interactions. For Drude forces,
-   * this typically depends on the underlying electrostatic treatment.
-   *
-   * @return True if the force uses periodic boundary conditions, false otherwise.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

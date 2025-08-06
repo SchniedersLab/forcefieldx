@@ -44,35 +44,19 @@ import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeSCFIntegrator_set
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeSCFIntegrator_step;
 
 /**
- * DrudeSCFIntegrator implements a self-consistent field (SCF) integrator for systems with Drude oscillators.
+ * This is a leap-frog Verlet Integrator that simulates systems with Drude particles.  It uses the
+ * self-consistent field (SCF) method: at every time step, the positions of Drude particles are
+ * adjusted to minimize the potential energy.
  * <p>
- * This integrator extends the basic DrudeIntegrator by implementing a self-consistent field approach
- * for handling Drude polarizable systems. The SCF method iteratively solves for the equilibrium
- * positions of Drude particles at each time step, ensuring that the induced dipoles are consistent
- * with the local electric field environment.
- * <p>
- * The SCF approach is particularly useful for:
- * <ul>
- * <li>Systems requiring highly accurate polarization responses</li>
- * <li>Cases where Drude particles need to be at their instantaneous equilibrium positions</li>
- * <li>Simulations where the polarization energy must be minimized at each step</li>
- * </ul>
- * <p>
- * The integrator performs iterative minimization of the Drude particle positions until
- * convergence is achieved within a specified error tolerance. This ensures that the
- * polarization is always in equilibrium with the instantaneous configuration of charges,
- * providing the most accurate representation of induced dipole interactions.
+ * This Integrator requires the System to include a DrudeForce, which it uses to identify the Drude
+ * particles.
  */
 public class DrudeSCFIntegrator extends DrudeIntegrator {
 
   /**
-   * Create a new DrudeSCFIntegrator.
-   * <p>
-   * This constructor initializes a Drude SCF integrator with the specified step size.
-   * The integrator will use self-consistent field iterations to ensure that Drude
-   * particles are at their equilibrium positions at each time step.
+   * Create a DrudeSCFIntegrator.
    *
-   * @param stepSize The integration step size in picoseconds.
+   * @param stepSize the step size with which to integrator the system (in picoseconds)
    */
   public DrudeSCFIntegrator(double stepSize) {
     super(OpenMM_DrudeSCFIntegrator_create(stepSize));
@@ -93,40 +77,29 @@ public class DrudeSCFIntegrator extends DrudeIntegrator {
   }
 
   /**
-   * Get the error tolerance for the SCF minimization.
-   * <p>
-   * This method returns the convergence criterion used in the self-consistent field
-   * iterations. The SCF procedure continues until the change in Drude particle
-   * positions between iterations falls below this tolerance value.
+   * Get the error tolerance to use when minimizing the potential energy.  This roughly corresponds
+   * to the maximum allowed force magnitude on the Drude particles after minimization.
    *
-   * @return The minimization error tolerance.
+   * @return the error tolerance to use, measured in kJ/mol/nm
    */
   public double getMinimizationErrorTolerance() {
     return OpenMM_DrudeSCFIntegrator_getMinimizationErrorTolerance(pointer);
   }
 
   /**
-   * Set the error tolerance for the SCF minimization.
-   * <p>
-   * This method sets the convergence criterion for the self-consistent field
-   * iterations. Smaller tolerance values lead to more accurate polarization
-   * but require more iterations. Typical values range from 1e-4 to 1e-6.
+   * Set the error tolerance to use when minimizing the potential energy.  This roughly corresponds
+   * to the maximum allowed force magnitude on the Drude particles after minimization.
    *
-   * @param tolerance The minimization error tolerance.
+   * @param tolerance the error tolerance to use, measured in kJ/mol/nm
    */
   public void setMinimizationErrorTolerance(double tolerance) {
     OpenMM_DrudeSCFIntegrator_setMinimizationErrorTolerance(pointer, tolerance);
   }
 
   /**
-   * Integrate the system forward in time by the specified number of time steps.
-   * <p>
-   * This method advances the simulation using the SCF approach. At each time step,
-   * the real atoms are propagated using standard dynamics, while the Drude particles
-   * are iteratively minimized to their equilibrium positions consistent with the
-   * instantaneous electric field environment.
+   * Advance a simulation through time by taking a series of time steps.
    *
-   * @param steps The number of steps to take.
+   * @param steps the number of time steps to take
    */
   @Override
   public void step(int steps) {
