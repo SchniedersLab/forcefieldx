@@ -48,25 +48,20 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete3DFunction_getFunct
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete3DFunction_setFunctionParameters;
 
 /**
- * A Discrete3DFunction uses discrete values to define a function based on a discrete set of
- * tabulated values in three dimensions. This is useful for defining functions from experimental
- * data or other tabulated sources that depend on three independent variables where no
- * interpolation is desired.
- * <p>
- * The function is defined by a 3D grid of (x, y, z, f(x,y,z)) values, and values are returned
- * exactly as tabulated without interpolation. The function can optionally be periodic in any
- * or all dimensions, meaning that values outside the tabulated range are computed by wrapping
- * around to the other end of the table.
+ * This is a TabulatedFunction that computes a discrete three dimensional function f(x,y,z).
+ * To evaluate it, x, y, and z are each rounded to the nearest integer and the table element with those
+ * indices is returned. If any index is outside the range [0, size), the result is undefined.
  */
 public class Discrete3DFunction extends TabulatedFunction {
 
   /**
-   * Create a Discrete3DFunction.
+   * Create a Discrete3DFunction f(x,y,z) based on a set of tabulated values.
    *
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param zsize  The number of table elements along the z direction.
-   * @param values The tabulated values of the function f(x,y,z).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param values the tabulated values of the function f(x,y,z), ordered so that
+   *               values[i+xsize*j+xsize*ysize*k] = f(i,j,k). This must be of length xsize*ysize*zsize.
    */
   public Discrete3DFunction(int xsize, int ysize, int zsize, PointerByReference values) {
     super(OpenMM_Discrete3DFunction_create(xsize, ysize, zsize, values));
@@ -86,10 +81,11 @@ public class Discrete3DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction (output).
-   * @param ysize  The number of table elements along the y direction (output).
-   * @param zsize  The number of table elements along the z direction (output).
-   * @param values The tabulated values of the function (output).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param values the tabulated values of the function f(x,y,z), ordered so that
+   *               values[i+xsize*j+xsize*ysize*k] = f(i,j,k). This must be of length xsize*ysize*zsize.
    */
   public void getFunctionParameters(IntByReference xsize, IntByReference ysize, IntByReference zsize, PointerByReference values) {
     OpenMM_Discrete3DFunction_getFunctionParameters(pointer, xsize, ysize, zsize, values);
@@ -98,10 +94,11 @@ public class Discrete3DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction (output).
-   * @param ysize  The number of table elements along the y direction (output).
-   * @param zsize  The number of table elements along the z direction (output).
-   * @param values The tabulated values of the function (output).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param values the tabulated values of the function f(x,y,z), ordered so that
+   *               values[i+xsize*j+xsize*ysize*k] = f(i,j,k). This must be of length xsize*ysize*zsize.
    */
   public void getFunctionParameters(IntBuffer xsize, IntBuffer ysize, IntBuffer zsize, PointerByReference values) {
     OpenMM_Discrete3DFunction_getFunctionParameters(pointer, xsize, ysize, zsize, values);
@@ -110,10 +107,11 @@ public class Discrete3DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param zsize  The number of table elements along the z direction.
-   * @param values The tabulated values of the function.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param values the tabulated values of the function f(x,y,z), ordered so that
+   *               values[i+xsize*j+xsize*ysize*k] = f(i,j,k). This must be of length xsize*ysize*zsize.
    */
   public void setFunctionParameters(int xsize, int ysize, int zsize, PointerByReference values) {
     OpenMM_Discrete3DFunction_setFunctionParameters(pointer, xsize, ysize, zsize, values);

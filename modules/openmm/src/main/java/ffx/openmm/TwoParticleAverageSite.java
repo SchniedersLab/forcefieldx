@@ -42,24 +42,20 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_dest
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_getWeight;
 
 /**
- * This is a VirtualSite that computes the particle location as a weighted average of two
- * other particles. The virtual site is positioned at:
- * <p>
- * r = weight1*r1 + weight2*r2
- * <p>
- * where r1 and r2 are the positions of the two particles, and weight1 and weight2 are the
- * corresponding weights. This is useful for representing sites like the midpoint between
- * two atoms or other linearly interpolated positions along a bond.
+ * This is a VirtualSite that computes the particle location as a weighted average
+ * of two other particle's locations. This means the virtual site is on the
+ * line passing through the two particles.
  */
 public class TwoParticleAverageSite extends VirtualSite {
 
   /**
-   * Create a TwoParticleAverageSite.
+   * Create a new TwoParticleAverageSite virtual site. Normally weight1 and weight2
+   * should add up to 1, although this is not strictly required.
    *
-   * @param particle1 The index of the first particle.
-   * @param particle2 The index of the second particle.
-   * @param weight1   The weight for the first particle.
-   * @param weight2   The weight for the second particle.
+   * @param particle1 the index of the first particle
+   * @param particle2 the index of the second particle
+   * @param weight1   the weight factor (typically between 0 and 1) for the first particle
+   * @param weight2   the weight factor (typically between 0 and 1) for the second particle
    */
   public TwoParticleAverageSite(int particle1, int particle2, double weight1, double weight2) {
     super(OpenMM_TwoParticleAverageSite_create(particle1, particle2, weight1, weight2));
@@ -77,10 +73,10 @@ public class TwoParticleAverageSite extends VirtualSite {
   }
 
   /**
-   * Get the weight for one of the particles.
+   * Get the weight factor used for a particle this virtual site depends on.
    *
-   * @param particle The index of the particle (0 or 1) for which to get the weight.
-   * @return The weight for the specified particle.
+   * @param particle the particle to get (between 0 and getNumParticles())
+   * @return the weight factor used for that particle
    */
   public double getWeight(int particle) {
     return OpenMM_TwoParticleAverageSite_getWeight(pointer, particle);

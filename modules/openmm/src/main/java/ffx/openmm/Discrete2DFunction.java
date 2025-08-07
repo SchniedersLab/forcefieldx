@@ -48,24 +48,19 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete2DFunction_getFunct
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete2DFunction_setFunctionParameters;
 
 /**
- * A Discrete2DFunction uses discrete values to define a function based on a discrete set of
- * tabulated values in two dimensions. This is useful for defining functions from experimental
- * data or other tabulated sources that depend on two independent variables where no
- * interpolation is desired.
- * <p>
- * The function is defined by a grid of (x, y, f(x,y)) values, and values are returned exactly
- * as tabulated without interpolation. The function can optionally be periodic in either or
- * both dimensions, meaning that values outside the tabulated range are computed by wrapping
- * around to the other end of the table.
+ * This is a TabulatedFunction that computes a discrete two dimensional function f(x,y).
+ * To evaluate it, x and y are each rounded to the nearest integer and the table element with those
+ * indices is returned. If either index is outside the range [0, size), the result is undefined.
  */
 public class Discrete2DFunction extends TabulatedFunction {
 
   /**
-   * Create a Discrete2DFunction.
+   * Create a Discrete2DFunction f(x,y) based on a set of tabulated values.
    *
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param values The tabulated values of the function f(x,y).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param values the tabulated values of the function f(x,y), ordered so that
+   *               values[i+xsize*j] = f(i,j). This must be of length xsize*ysize.
    */
   public Discrete2DFunction(int xsize, int ysize, PointerByReference values) {
     super(OpenMM_Discrete2DFunction_create(xsize, ysize, values));
@@ -85,9 +80,10 @@ public class Discrete2DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction (output).
-   * @param ysize  The number of table elements along the y direction (output).
-   * @param values The tabulated values of the function (output).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param values the tabulated values of the function f(x,y), ordered so that
+   *               values[i+xsize*j] = f(i,j). This must be of length xsize*ysize.
    */
   public void getFunctionParameters(IntByReference xsize, IntByReference ysize, PointerByReference values) {
     OpenMM_Discrete2DFunction_getFunctionParameters(pointer, xsize, ysize, values);
@@ -96,9 +92,10 @@ public class Discrete2DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction (output).
-   * @param ysize  The number of table elements along the y direction (output).
-   * @param values The tabulated values of the function (output).
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param values the tabulated values of the function f(x,y), ordered so that
+   *               values[i+xsize*j] = f(i,j). This must be of length xsize*ysize.
    */
   public void getFunctionParameters(IntBuffer xsize, IntBuffer ysize, PointerByReference values) {
     OpenMM_Discrete2DFunction_getFunctionParameters(pointer, xsize, ysize, values);
@@ -107,9 +104,10 @@ public class Discrete2DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param values The tabulated values of the function.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param values the tabulated values of the function f(x,y), ordered so that
+   *               values[i+xsize*j] = f(i,j). This must be of length xsize*ysize.
    */
   public void setFunctionParameters(int xsize, int ysize, PointerByReference values) {
     OpenMM_Discrete2DFunction_setFunctionParameters(pointer, xsize, ysize, values);

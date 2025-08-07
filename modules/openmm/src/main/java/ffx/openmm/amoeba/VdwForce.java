@@ -581,7 +581,7 @@ public class VdwForce extends Force {
    * Returns whether or not this force makes use of periodic boundary
    * conditions.
    *
-   * @returns true if nonbondedMethod uses PBC and false otherwise
+   * @return true if nonbondedMethod uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

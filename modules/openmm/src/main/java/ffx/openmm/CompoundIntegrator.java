@@ -58,7 +58,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CompoundIntegrator_step;
  * This class allows you to use multiple integration algorithms within a single simulation,
  * switching back and forth between them.  To use it, create whatever other Integrators
  * you need, then add all of them to a CompoundIntegrator:
- * <p>
  * <pre>
  *    CompoundIntegrator compoundIntegrator = new CompoundIntegrator();
  *    compoundIntegrator.addIntegrator(new VerletIntegrator(0.001));
@@ -67,14 +66,12 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CompoundIntegrator_step;
  * <p>
  * Next create a Context, specifying the CompoundIntegrator as the Integrator to use for
  * the Context:
- * <p>
  * <pre>
  *     Context context = new Context(system, compoundIntegrator);
  * </pre>
  * <p>
  * Finally, call setCurrentIntegrator() to set which Integrator is active.  That one will
  * be used for all calls to step() until the next time you change it.
- * <p>
  * <pre>
  *     compoundIntegrator.setCurrentIntegrator(0);
  *     compoundIntegrator.step(1000); // Take 1000 steps of Verlet dynamics
@@ -142,7 +139,7 @@ public class CompoundIntegrator extends Integrator {
   /**
    * Get which force groups to use for integration.  By default, all force groups
    * are included.  This is interpreted as a set of bit flags: the forces from group i
-   * will be included if (groups&(1<<i)) != 0.
+   * will be included if (groups&amp;(1&lt;&lt;i)) != 0.
    * <p>
    * This method returns the integration force groups for the current Integrator.
    */
@@ -199,7 +196,7 @@ public class CompoundIntegrator extends Integrator {
   /**
    * Set which force groups to use for integration.  By default, all force groups
    * are included.  This is interpreted as a set of bit flags: the forces from group i
-   * will be included if (groups&(1<<i)) != 0.
+   * will be included if (groups&amp;(1&lt;&lt;i)) != 0.
    * <p>
    * Calling this method sets the integration force groups for all Integrators
    * contained in this CompoundIntegrator.

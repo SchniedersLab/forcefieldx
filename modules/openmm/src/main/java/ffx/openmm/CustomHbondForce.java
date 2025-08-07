@@ -92,15 +92,59 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomHbondForce_updatePara
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomHbondForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements hydrogen bond interactions between donors and acceptors.
- * It allows for custom energy expressions to define the hydrogen bond potential.
- * The force is computed between hydrogen bond donors (typically a hydrogen atom
- * bonded to an electronegative atom) and acceptors (typically lone pairs on
- * electronegative atoms).
- * <p>
- * To use this class, create a CustomHbondForce object, then call addDonor() and
- * addAcceptor() to define the donors and acceptors. The energy expression can
- * include built-in variables and custom parameters.
+ * This class supports a wide variety of energy functions used to represent hydrogen bonding.  It computes
+ * interactions between "donor" particle groups and "acceptor" particle groups, where each group may include
+ * up to three particles.  Typically a donor group consists of a hydrogen atom and the atoms it is bonded to,
+ * and an acceptor group consists of a negatively charged atom and the atoms it is bonded to.
+ *
+ * <p>We refer to the particles in a donor group as d1, d2 and d3, and the particles in an acceptor group as
+ * a1, a2, and a3.  For each donor and each acceptor, CustomHbondForce evaluates a user supplied algebraic
+ * expression to determine the interaction energy.  The expression may depend on arbitrary distances, angles,
+ * and dihedral angles defined by any of the six particles involved.  The function distance(p1, p2) is the distance
+ * between the particles p1 and p2 (where "p1" and "p2" should be replaced by the names of the actual particles
+ * to calculate the distance between), angle(p1, p2, p3) is the angle formed by the three specified particles,
+ * and dihedral(p1, p2, p3, p4) is the dihedral angle formed by the four specified particles.
+ *
+ * <p>The expression also may involve tabulated functions, and may depend on arbitrary
+ * global, per-donor, and per-acceptor parameters.  It also optionally supports periodic boundary conditions
+ * and cutoffs for long range interactions.
+ *
+ * <p>To use this class, create a CustomHbondForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy between each donor and acceptor.  Then call addPerDonorParameter() to define per-donor
+ * parameters, addPerAcceptorParameter() to define per-acceptor parameters, and addGlobalParameter() to define
+ * global parameters.  The values of per-donor and per-acceptor parameters are specified as part of the system
+ * definition, while values of global parameters may be modified during a simulation by calling Context::setParameter().
+ *
+ * <p>Next, call addDonor() and addAcceptor() to define donors and acceptors and specify their parameter values.
+ * After a donor or acceptor has been added, you can modify its parameters by calling setDonorParameters() or
+ * setAcceptorParameters().  This will have no effect on Contexts that already exist unless you call updateParametersInContext().
+ *
+ * <p>CustomHbondForce also lets you specify "exclusions", particular combinations of donors and acceptors whose
+ * interactions should be omitted from force and energy calculations.  This is most often used for particles
+ * that are bonded to each other.
+ *
+ * <p>As an example, the following code creates a CustomHbondForce that implements a simple harmonic potential
+ * to keep the distance between a1 and d1, and the angle formed by a1-d1-d2, near ideal values:
+ *
+ * <pre>{@code
+ * CustomHbondForce force = new CustomHbondForce("k*(distance(a1,d1)-r0)^2*(angle(a1,d1,d2)-theta0)^2");
+ * }</pre>
+ *
+ * <p>This force depends on three parameters: k, r0, and theta0.  The following code defines these as per-donor parameters:
+ *
+ * <pre>{@code
+ * force.addPerDonorParameter("k");
+ * force.addPerDonorParameter("r0");
+ * force.addPerDonorParameter("theta0");
+ * }</pre>
+ *
+ * <p>Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and ^ (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select.  All trigonometric functions
+ * are defined in radians, and log is the natural logarithm.  step(x) = 0 if x &lt; 0, 1 otherwise.  delta(x) = 1 if x = 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
+ *
+ * <p>In addition, you can call addTabulatedFunction() to define a new function based on tabulated values.  You specify the function by
+ * creating a TabulatedFunction object.  That function can then appear in the expression.
  */
 public class CustomHbondForce extends Force {
 

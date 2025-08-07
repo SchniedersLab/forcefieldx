@@ -79,7 +79,79 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_upd
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_usesPeriodicBoundaryConditions;
 
 /**
- * Custom Compound Bond Force.
+ * This class supports a wide variety of bonded interactions.  It defines a "bond" as a single energy term
+ * that depends on the positions of a fixed set of particles.  The number of particles involved in a bond, and how
+ * the energy depends on their positions, is configurable.  It may depend on the positions of individual particles,
+ * the distances between pairs of particles, the angles formed by sets of three particles, and the dihedral
+ * angles formed by sets of four particles.
+ * <p>
+ * We refer to the particles in a bond as p1, p2, p3, etc.  For each bond, CustomCompoundBondForce evaluates a
+ * user supplied algebraic expression to determine the interaction energy.  The expression may depend on the
+ * following variables and functions:
+ * <ul>
+ * <li>x1, y1, z1, x2, y2, z2, etc.: The x, y, and z coordinates of the particle positions.  For example, x1
+ * is the x coordinate of particle p1, and y3 is the y coordinate of particle p3.</li>
+ * <li>distance(p1, p2): the distance between particles p1 and p2 (where "p1" and "p2" may be replaced by the names
+ * of whichever particles you want to calculate the distance between).</li>
+ * <li>angle(p1, p2, p3): the angle formed by the three specified particles.</li>
+ * <li>dihedral(p1, p2, p3, p4): the dihedral angle formed by the four specified particles, guaranteed to be in the range [-pi,+pi].</li>
+ * </ul>
+ * <p>
+ * The expression also may involve tabulated functions, and may depend on arbitrary
+ * global and per-bond parameters.
+ * <p>
+ * To use this class, create a CustomCompoundBondForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy of each bond.  Then call addPerBondParameter() to define per-bond
+ * parameters and addGlobalParameter() to define global parameters.  The values of per-bond parameters are specified
+ * as part of the system definition, while values of global parameters may be modified during a simulation by calling
+ * Context::setParameter().
+ * <p>
+ * Next, call addBond() to define bonds and specify their parameter values.  After a bond has been added, you can
+ * modify its parameters by calling setBondParameters().  This will have no effect on Contexts that already exist unless
+ * you call updateParametersInContext().
+ * <p>
+ * As an example, the following code creates a CustomCompoundBondForce that implements a Urey-Bradley potential.  This
+ * is an interaction between three particles that depends on the angle formed by p1-p2-p3, and on the distance between
+ * p1 and p3.
+ * <pre>
+ *   {@code
+ *    CustomCompoundBondForce* force = new CustomCompoundBondForce(3, "0.5*(kangle*(angle(p1,p2,p3)-theta0)^2+kbond*(distance(p1,p3)-r0)^2)");
+ *   }
+ * </pre>
+ * <p>
+ * This force depends on four parameters: kangle, kbond, theta0, and r0.  The following code defines these as per-bond parameters:
+ * <pre>
+ *   {@code
+ *    force->addPerBondParameter("kangle");
+ *    force->addPerBondParameter("kbond");
+ *    force->addPerBondParameter("theta0");
+ *    force->addPerBondParameter("r0");
+ *   }
+ * </pre>
+ * <p>
+ * This class also has the ability to compute derivatives of the potential energy with respect to global parameters.
+ * Call addEnergyParameterDerivative() to request that the derivative with respect to a particular parameter be
+ * computed.  You can then query its value in a Context by calling getState() on it.
+ * <p>
+ * Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and &circ; (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select.  All trigonometric functions
+ * are defined in radians, and log is the natural logarithm.  step(x) = 0 if x is less than 0, 1 otherwise.  delta(x) = 1 if x is 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
+ * <p>
+ * This class also supports the functions pointdistance(x1, y1, z1, x2, y2, z2),
+ * pointangle(x1, y1, z1, x2, y2, z2, x3, y3, z3), and pointdihedral(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4).
+ * These functions are similar to distance(), angle(), and dihedral(), but the arguments are the
+ * coordinates of points to perform the calculation based on rather than the names of particles.
+ * This enables more flexible geometric calculations.  For example, the following computes the distance
+ * from particle p1 to the midpoint between particles p2 and p3.
+ * <pre>
+ *   {@code
+ *    CustomCompoundBondForce* force = new CustomCompoundBondForce(3, "pointdistance(x1, y1, z1, (x2+x3)/2, (y2+y3)/2, (z2+z3)/2)");
+ *   }
+ * </pre>
+ * <p>
+ * In addition, you can call addTabulatedFunction() to define a new function based on tabulated values.  You specify the function by
+ * creating a TabulatedFunction object.  That function can then appear in the expression.
  */
 public class CustomCompoundBondForce extends Force {
 

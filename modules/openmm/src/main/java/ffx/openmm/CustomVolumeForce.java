@@ -53,34 +53,51 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomVolumeForce_setGlobal
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomVolumeForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements forces that depend on the volume of the periodic box.
- * The energy is computed as a user-supplied algebraic expression that may depend
- * on the volume of the periodic box and on global parameters.
- * <p>
- * To use this class, create a CustomVolumeForce object, passing an algebraic expression to the
- * constructor that defines the energy as a function of the volume. Then call addGlobalParameter()
- * to define global parameters that the energy may depend on.
- * <p>
- * The energy expression may use the variable "volume" to refer to the volume of the periodic box.
- * It may also use any global parameters that have been defined.
+ * This class computes an energy that depends only on the volume of the periodic box, or more generally
+ * on the box shape as specified by the elements of the box vectors.  Because the energy does not
+ * depend on particle positions, it does not apply any forces to particles.  It is primarily useful
+ * for constant pressure simulations, where the volume-dependent energy can influence the behavior
+ * of the barostat.  Energy terms of this sort are often used for pressure matching in coarse grained
+ * force fields.
+ *
+ * <p>To use this class, create a CustomVolumeForce object, passing an algebraic expression to the constructor
+ * that defines the energy.  The expression may depend on the following variables.
+ *
+ * <ul>
+ * <li>v: The volume of the periodic box in nm^3.</li>
+ * <li>ax: The x component of the first box vector in nm.  (The y and z components are always zero.)</li>
+ * <li>bx, by: The x and y components of the second box vector in nm.  (The z component is always zero.)</li>
+ * <li>cx, cy, cz: The x, y and z components of the third box vector in nm.</li>
+ * <li>Global parameters that you define by calling addGlobalParameter().</li>
+ * </ul>
+ *
+ * <p>The initial value of a global parameter is specified in the call to addGlobalParameter().  Their values
+ * can be modified during a simulation by calling Context::setParameter().
+ *
+ * <p>Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and ^ (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select.  All trigonometric functions
+ * are defined in radians, and log is the natural logarithm.  step(x) = 0 if x &lt; 0, 1 otherwise.  delta(x) = 1 if x = 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
  */
 public class CustomVolumeForce extends Force {
 
   /**
    * Create a CustomVolumeForce.
    *
-   * @param energy The algebraic expression that gives the energy as a function of the volume.
+   * @param energy an algebraic expression giving the energy as a function of the box shape
    */
   public CustomVolumeForce(String energy) {
     super(OpenMM_CustomVolumeForce_create(energy));
   }
 
   /**
-   * Add a new global parameter that the energy may depend on.
+   * Add a new global parameter that the interaction may depend on.  The default value provided to
+   * this method is the initial value of the parameter in newly created Contexts.  You can change
+   * the value at any time by calling setParameter() on the Context.
    *
-   * @param name         The name of the parameter.
-   * @param defaultValue The default value of the parameter.
-   * @return The index of the parameter that was added.
+   * @param name         the name of the parameter
+   * @param defaultValue the default value of the parameter
+   * @return the index of the parameter that was added
    */
   public int addGlobalParameter(String name, double defaultValue) {
     return OpenMM_CustomVolumeForce_addGlobalParameter(pointer, name, defaultValue);
@@ -109,9 +126,9 @@ public class CustomVolumeForce extends Force {
   }
 
   /**
-   * Get the algebraic expression that gives the energy as a function of the volume.
+   * Get the algebraic expression that defines the energy.
    *
-   * @return The energy expression.
+   * @return the energy expression
    */
   public String getEnergyFunction() {
     Pointer p = OpenMM_CustomVolumeForce_getEnergyFunction(pointer);
@@ -124,8 +141,8 @@ public class CustomVolumeForce extends Force {
   /**
    * Get the default value of a global parameter.
    *
-   * @param index The index of the parameter for which to get the default value.
-   * @return The parameter default value.
+   * @param index the index of the parameter for which to get the default value
+   * @return the parameter default value
    */
   public double getGlobalParameterDefaultValue(int index) {
     return OpenMM_CustomVolumeForce_getGlobalParameterDefaultValue(pointer, index);
@@ -134,8 +151,8 @@ public class CustomVolumeForce extends Force {
   /**
    * Get the name of a global parameter.
    *
-   * @param index The index of the parameter for which to get the name.
-   * @return The parameter name.
+   * @param index the index of the parameter for which to get the name
+   * @return the parameter name
    */
   public String getGlobalParameterName(int index) {
     Pointer p = OpenMM_CustomVolumeForce_getGlobalParameterName(pointer, index);
@@ -155,18 +172,18 @@ public class CustomVolumeForce extends Force {
   }
 
   /**
-   * Set the algebraic expression that gives the energy as a function of the volume.
+   * Set the algebraic expression that defines the energy.
    *
-   * @param energy The energy expression.
+   * @param energy the energy expression
    */
   public void setEnergyFunction(String energy) {
     OpenMM_CustomVolumeForce_setEnergyFunction(pointer, energy);
   }
 
   /**
-   * Set the algebraic expression that gives the energy as a function of the volume.
+   * Set the algebraic expression that defines the energy.
    *
-   * @param energy The energy expression.
+   * @param energy the energy expression
    */
   public void setEnergyFunction(Pointer energy) {
     OpenMM_CustomVolumeForce_setEnergyFunction(pointer, energy);
@@ -175,8 +192,8 @@ public class CustomVolumeForce extends Force {
   /**
    * Set the default value of a global parameter.
    *
-   * @param index        The index of the parameter for which to set the default value.
-   * @param defaultValue The default value of the parameter.
+   * @param index        the index of the parameter for which to set the default value
+   * @param defaultValue the default value of the parameter
    */
   public void setGlobalParameterDefaultValue(int index, double defaultValue) {
     OpenMM_CustomVolumeForce_setGlobalParameterDefaultValue(pointer, index, defaultValue);
@@ -185,8 +202,8 @@ public class CustomVolumeForce extends Force {
   /**
    * Set the name of a global parameter.
    *
-   * @param index The index of the parameter for which to set the name.
-   * @param name  The name of the parameter.
+   * @param index the index of the parameter for which to set the name
+   * @param name  the name of the parameter
    */
   public void setGlobalParameterName(int index, String name) {
     OpenMM_CustomVolumeForce_setGlobalParameterName(pointer, index, name);
@@ -195,17 +212,18 @@ public class CustomVolumeForce extends Force {
   /**
    * Set the name of a global parameter.
    *
-   * @param index The index of the parameter for which to set the name.
-   * @param name  The name of the parameter.
+   * @param index the index of the parameter for which to set the name
+   * @param name  the name of the parameter
    */
   public void setGlobalParameterName(int index, Pointer name) {
     OpenMM_CustomVolumeForce_setGlobalParameterName(pointer, index, name);
   }
 
   /**
-   * Check if the force uses periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary conditions.  Because this
+   * class is only applicable to periodic systems, this always returns true.
    *
-   * @return True if the force uses periodic boundary conditions.
+   * @return true if the force uses periodic boundary conditions
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

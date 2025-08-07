@@ -117,14 +117,14 @@ public class TorsionTorsionForce extends Force {
   /**
    * Get the force field parameters for a torsion-torsion term.
    *
-   * @param index the index of the torsion-torsion for which to get parameters
-   * @param particle1                 the index of the first particle connected by the torsion-torsion
-   * @param particle2                 the index of the second particle connected by the torsion-torsion
-   * @param particle3                 the index of the third particle connected by the torsion-torsion
-   * @param particle4                 the index of the fourth particle connected by the torsion-torsion
-   * @param particle5                 the index of the fifth particle connected by the torsion-torsion
-   * @param chiralCheckAtomIndex      the index of the particle connected to particle3, but not particle2 or particle4 to be used in chirality check
-   * @param gridIndex                 the grid index
+   * @param index                the index of the torsion-torsion for which to get parameters
+   * @param particle1            the index of the first particle connected by the torsion-torsion
+   * @param particle2            the index of the second particle connected by the torsion-torsion
+   * @param particle3            the index of the third particle connected by the torsion-torsion
+   * @param particle4            the index of the fourth particle connected by the torsion-torsion
+   * @param particle5            the index of the fifth particle connected by the torsion-torsion
+   * @param chiralCheckAtomIndex the index of the particle connected to particle3, but not particle2 or particle4 to be used in chirality check
+   * @param gridIndex            the grid index
    */
   public void getTorsionTorsionParameters(int index, IntByReference particle1, IntByReference particle2,
                                           IntByReference particle3, IntByReference particle4, IntByReference particle5,

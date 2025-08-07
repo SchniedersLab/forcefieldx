@@ -47,29 +47,24 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous2DFunction_getFun
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous2DFunction_setFunctionParameters;
 
 /**
- * A Continuous2DFunction uses bilinear interpolation to define a continuous function based
- * on a discrete set of tabulated values in two dimensions. This is useful for defining
- * smooth functions from experimental data or other tabulated sources that depend on two
- * independent variables.
- * <p>
- * The function is defined by a grid of (x, y, f(x,y)) values, and values between the
- * tabulated points are computed using bilinear interpolation. The function can optionally
- * be periodic in either or both dimensions, meaning that values outside the tabulated
- * range are computed by wrapping around to the other end of the table.
+ * This is a TabulatedFunction that computes a continuous two dimensional function.
  */
 public class Continuous2DFunction extends TabulatedFunction {
 
   /**
-   * Create a Continuous2DFunction.
+   * Create a Continuous2DFunction f(x,y) based on a set of tabulated values.
    *
-   * @param values   The tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin and xmax, and ysize values of y between ymin and ymax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x or y is outside its specified range. The values should be ordered so that values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize.
-   * @param xsize    The number of table elements along the x direction.
-   * @param ysize    The number of table elements along the y direction.
-   * @param xmin     The value of x corresponding to the first element of values.
-   * @param xmax     The value of x corresponding to the last element of values.
-   * @param ymin     The value of y corresponding to the first element of values.
-   * @param ymax     The value of y corresponding to the last element of values.
-   * @param periodic Whether the interpolated function is periodic.
+   * @param values   the tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin
+   *                 and xmax, and ysize values of y between ymin and ymax.  A natural cubic spline is used to interpolate between the tabulated values.
+   *                 The function is assumed to be zero when x or y is outside its specified range.  The values should be ordered so that
+   *                 values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x.  This must be of length xsize*ysize.
+   * @param xsize    the number of table elements along the x direction
+   * @param ysize    the number of table elements along the y direction
+   * @param xmin     the value of x corresponding to the first element of values
+   * @param xmax     the value of x corresponding to the last element of values
+   * @param ymin     the value of y corresponding to the first element of values
+   * @param ymax     the value of y corresponding to the last element of values
+   * @param periodic whether the interpolated function is periodic
    */
   public Continuous2DFunction(PointerByReference values, int xsize, int ysize, double xmin, double xmax, double ymin, double ymax, boolean periodic) {
     super(OpenMM_Continuous2DFunction_create(xsize, ysize, values, xmin, xmax, ymin, ymax, periodic ? 1 : 0));
@@ -89,13 +84,16 @@ public class Continuous2DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin and xmax, and ysize values of y between ymin and ymax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x or y is outside its specified range. The values should be ordered so that values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize.
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param xmin   The value of x corresponding to the first element of values.
-   * @param xmax   The value of x corresponding to the last element of values.
-   * @param ymin   The value of y corresponding to the first element of values.
-   * @param ymax   The value of y corresponding to the last element of values.
+   * @param values the tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin
+   *               and xmax, and ysize values of y between ymin and ymax.  A natural cubic spline is used to interpolate between the tabulated values.
+   *               The function is assumed to be zero when x or y is outside its specified range.  The values should be ordered so that
+   *               values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x.  This must be of length xsize*ysize.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param xmin   the value of x corresponding to the first element of values
+   * @param xmax   the value of x corresponding to the last element of values
+   * @param ymin   the value of y corresponding to the first element of values
+   * @param ymax   the value of y corresponding to the last element of values
    */
   public void getFunctionParameters(PointerByReference values, IntByReference xsize, IntByReference ysize,
                                     DoubleByReference xmin, DoubleByReference xmax,
@@ -106,13 +104,16 @@ public class Continuous2DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin and xmax, and ysize values of y between ymin and ymax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x or y is outside its specified range. The values should be ordered so that values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize.
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param xmin   The value of x corresponding to the first element of values.
-   * @param xmax   The value of x corresponding to the last element of values.
-   * @param ymin   The value of y corresponding to the first element of values.
-   * @param ymax   The value of y corresponding to the last element of values.
+   * @param values the tabulated values of the function f(x,y) at xsize uniformly spaced values of x between xmin
+   *               and xmax, and ysize values of y between ymin and ymax.  A natural cubic spline is used to interpolate between the tabulated values.
+   *               The function is assumed to be zero when x or y is outside its specified range.  The values should be ordered so that
+   *               values[i+xsize*j] = f(x_i,y_j), where x_i is the i'th uniformly spaced value of x.  This must be of length xsize*ysize.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param xmin   the value of x corresponding to the first element of values
+   * @param xmax   the value of x corresponding to the last element of values
+   * @param ymin   the value of y corresponding to the first element of values
+   * @param ymax   the value of y corresponding to the last element of values
    */
   public void setFunctionParameters(PointerByReference values, int xsize, int ysize,
                                     double xmin, double xmax, double ymin, double ymax) {

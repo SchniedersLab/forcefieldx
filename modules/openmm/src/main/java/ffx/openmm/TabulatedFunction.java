@@ -44,12 +44,21 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TabulatedFunction_getPeriod
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_TabulatedFunction_getUpdateCount;
 
 /**
- * A TabulatedFunction uses a table of values to define a mathematical function.
- * This is an abstract class. Subclasses define particular types of tabulated functions.
+ * A TabulatedFunction uses a set of tabulated values to define a mathematical function.
+ * It can be used by various custom forces.
  * <p>
- * TabulatedFunction objects are used to define functions based on tabulated values.
- * They can be used in custom force expressions to provide complex mathematical
- * relationships that cannot be easily expressed analytically.
+ * TabulatedFunction is an abstract class with concrete subclasses for more specific
+ * types of functions. There are subclasses for:
+ *
+ * <ul>
+ * <li>1, 2, and 3 dimensional functions. The dimensionality of a function means
+ * the number of input arguments it takes.</li>
+ * <li>Continuous and discrete functions. A continuous function is interpolated by
+ * fitting a natural cubic spline to the tabulated values. A discrete function is
+ * only defined for integer values of its arguments (that is, at the tabulated points),
+ * and does not try to interpolate between them. Discrete function can be evaluated
+ * more quickly than continuous ones.</li>
+ * </ul>
  */
 public abstract class TabulatedFunction {
 
@@ -86,9 +95,7 @@ public abstract class TabulatedFunction {
   }
 
   /**
-   * Get whether this function is periodic.
-   *
-   * @return True if the function is periodic, false otherwise.
+   * Get the periodicity status of the tabulated function.
    */
   public boolean getPeriodic() {
     int periodic = OpenMM_TabulatedFunction_getPeriodic(pointer);
@@ -96,9 +103,8 @@ public abstract class TabulatedFunction {
   }
 
   /**
-   * Get the update count for this tabulated function.
-   *
-   * @return The update count.
+   * Get the value of a counter that is updated every time setFunctionParameters()
+   * is called. This provides a fast way to detect when a function has changed.
    */
   public int getUpdateCount() {
     return OpenMM_TabulatedFunction_getUpdateCount(pointer);

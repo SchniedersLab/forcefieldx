@@ -105,9 +105,9 @@ public class MultipoleForce extends Force {
    * @param molecularDipole     the particle's molecular dipole (vector of size 3)
    * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
    * @param axisType            the particle's axis type
-   * @param multipoleAtomZ      index of first atom used in constructing lab<->molecular frames
-   * @param multipoleAtomX      index of second atom used in constructing lab<->molecular frames
-   * @param multipoleAtomY      index of second atom used in constructing lab<->molecular frames
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
    * @param thole               Thole parameter
    * @param dampingFactor       dampingFactor parameter
    * @param polarity            polarity parameter
@@ -250,9 +250,9 @@ public class MultipoleForce extends Force {
    * @param molecularDipole     the particle's molecular dipole (vector of size 3)
    * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
    * @param axisType            the particle's axis type
-   * @param multipoleAtomZ      index of first atom used in constructing lab<->molecular frames
-   * @param multipoleAtomX      index of second atom used in constructing lab<->molecular frames
-   * @param multipoleAtomY      index of second atom used in constructing lab<->molecular frames
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
    * @param thole               Thole parameter
    * @param dampingFactor       dampingFactor parameter
    * @param polarity            polarity parameter
@@ -450,9 +450,9 @@ public class MultipoleForce extends Force {
    * @param molecularDipole     the particle's molecular dipole (vector of size 3)
    * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
    * @param axisType            the particle's axis type
-   * @param multipoleAtomZ      index of first atom used in constructing lab<->molecular frames
-   * @param multipoleAtomX      index of second atom used in constructing lab<->molecular frames
-   * @param multipoleAtomY      index of second atom used in constructing lab<->molecular frames
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
    * @param thole               thole parameter
    * @param dampingFactor       damping factor parameter
    * @param polarity            polarity parameter

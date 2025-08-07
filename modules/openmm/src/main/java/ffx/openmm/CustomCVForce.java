@@ -68,14 +68,34 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCVForce_updateParamet
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCVForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements a force that depends on collective variables (CVs). A collective variable
- * is defined by a Force object. The CustomCVForce evaluates an arbitrary algebraic expression
- * involving the values of these collective variables. This is useful for implementing complex
- * biasing potentials, restraints, and enhanced sampling methods.
+ * This class supports energy functions that depend on collective variables. To use it,
+ * you define a set of collective variables (scalar valued functions that depend on the
+ * particle positions), and an algebraic expression for the energy as a function of the
+ * collective variables. The expression also may involve tabulated functions, and may
+ * depend on arbitrary global parameters.
  * <p>
- * The energy function is specified as an algebraic expression that can depend on collective
- * variables, global parameters, and tabulated functions. This allows for sophisticated
- * free energy calculations and enhanced sampling techniques.
+ * Each collective variable is defined by a Force object. The Force's potential energy
+ * is computed, and that becomes the value of the variable. This provides enormous
+ * flexibility in defining collective variables, especially by using custom forces.
+ * Anything that can be computed as a potential function can also be used as a collective
+ * variable.
+ * <p>
+ * To use this class, create a CustomCVForce object, passing an algebraic expression to the
+ * constructor that defines the potential energy. Then call addCollectiveVariable() to define
+ * collective variables and addGlobalParameter() to define global parameters. The values
+ * of global parameters may be modified during a simulation by calling Context::setParameter().
+ * <p>
+ * This class also has the ability to compute derivatives of the potential energy with respect to global parameters.
+ * Call addEnergyParameterDerivative() to request that the derivative with respect to a particular parameter be
+ * computed. You can then query its value in a Context by calling getState() on it.
+ * <p>
+ * Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and ^ (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select. All trigonometric functions
+ * are defined in radians, and log is the natural logarithm. step(x) = 0 if x is less than 0, 1 otherwise. delta(x) = 1 if x is 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
+ * <p>
+ * In addition, you can call addTabulatedFunction() to define a new function based on tabulated values. You specify the function by
+ * creating a TabulatedFunction object. That function can then appear in the expression.
  */
 public class CustomCVForce extends Force {
 

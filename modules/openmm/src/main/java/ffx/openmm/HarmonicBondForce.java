@@ -55,7 +55,10 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_updatePar
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_usesPeriodicBoundaryConditions;
 
 /**
- * Harmonic Bond Force.
+ * This class implements an interaction between pairs of particles that varies harmonically with the distance
+ * between them.  To use it, create a HarmonicBondForce object then call addBond() once for each bond.  After
+ * a bond has been added, you can modify its force field parameters by calling setBondParameters().  This will
+ * have no effect on Contexts that already exist unless you call updateParametersInContext().
  */
 public class HarmonicBondForce extends Force {
 
@@ -67,12 +70,12 @@ public class HarmonicBondForce extends Force {
   }
 
   /**
-   * Add a Harmonic Bond.
+   * Add a bond term to the force field.
    *
-   * @param i1     Index of the first atom.
-   * @param i2     Index of the second atom.
-   * @param length The equilibrium bond length.
-   * @param k      The force constant.
+   * @param i1     The index of the first particle connected by the bond.
+   * @param i2     The index of the second particle connected by the bond.
+   * @param length The equilibrium length of the bond, measured in nm.
+   * @param k      The harmonic force constant for the bond, measured in kJ/mol/nm&circ;2.
    * @return The index of the bond that was added.
    */
   public int addBond(int i1, int i2, double length, double k) {
@@ -91,13 +94,13 @@ public class HarmonicBondForce extends Force {
   }
 
   /**
-   * Get the parameters for a bond.
+   * Get the force field parameters for a bond term.
    *
-   * @param index  The index of the bond.
-   * @param i1     The index of the first atom (output).
-   * @param i2     The index of the second atom (output).
-   * @param length The equilibrium bond length (output).
-   * @param k      The force constant (output).
+   * @param index  The index of the bond for which to get parameters.
+   * @param i1     The index of the first particle connected by the bond (output).
+   * @param i2     The index of the second particle connected by the bond (output).
+   * @param length The equilibrium length of the bond, measured in nm (output).
+   * @param k      The harmonic force constant for the bond, measured in kJ/mol/nm&circ;2 (output).
    */
   public void getBondParameters(int index, IntByReference i1, IntByReference i2,
                                 DoubleByReference length, DoubleByReference k) {
@@ -105,13 +108,13 @@ public class HarmonicBondForce extends Force {
   }
 
   /**
-   * Get the parameters for a bond.
+   * Get the force field parameters for a bond term.
    *
-   * @param index  The index of the bond.
-   * @param i1     The index of the first atom (output).
-   * @param i2     The index of the second atom (output).
-   * @param length The equilibrium bond length (output).
-   * @param k      The force constant (output).
+   * @param index  The index of the bond for which to get parameters.
+   * @param i1     The index of the first particle connected by the bond (output).
+   * @param i2     The index of the second particle connected by the bond (output).
+   * @param length The equilibrium length of the bond, measured in nm (output).
+   * @param k      The harmonic force constant for the bond, measured in kJ/mol/nm&circ;2 (output).
    */
   public void getBondParameters(int index, IntBuffer i1, IntBuffer i2,
                                 DoubleBuffer length, DoubleBuffer k) {
@@ -128,13 +131,13 @@ public class HarmonicBondForce extends Force {
   }
 
   /**
-   * Set the bond parameters.
+   * Set the force field parameters for a bond term.
    *
-   * @param i      The bond index.
-   * @param i1     Index of the first atom.
-   * @param i2     Index of the second atom.
-   * @param length The equilibrium bond length.
-   * @param k      The force constant.
+   * @param i      The index of the bond for which to set parameters.
+   * @param i1     The index of the first particle connected by the bond.
+   * @param i2     The index of the second particle connected by the bond.
+   * @param length The equilibrium length of the bond, measured in nm.
+   * @param k      The harmonic force constant for the bond, measured in kJ/mol/nm&circ;2.
    */
   public void setBondParameters(int i, int i1, int i2, double length, double k) {
     OpenMM_HarmonicBondForce_setBondParameters(pointer, i, i1, i2, length, k);

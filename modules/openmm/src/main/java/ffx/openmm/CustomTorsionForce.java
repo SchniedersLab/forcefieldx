@@ -70,14 +70,47 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomTorsionForce_updatePa
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomTorsionForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements torsions whose interaction energy is defined by a user-supplied
- * algebraic expression. The expression may depend on the torsion angle, as well as on
- * global and per-torsion parameters.
- * <p>
- * To use this class, create a CustomTorsionForce object, passing an algebraic expression to the
- * constructor that defines the interaction energy of each torsion. Then call addPerTorsionParameter()
- * to define per-torsion parameters, addGlobalParameter() to define global parameters, and addTorsion()
- * to define torsions and specify their parameter values.
+ * This class implements interactions between sets of four particles that depend on the torsion angle between them.
+ * Unlike PeriodicTorsionForce, the functional form of the interaction is completely customizable, and may
+ * involve arbitrary algebraic expressions.  In addition to the angle formed by the particles, it may depend
+ * on arbitrary global and per-torsion parameters.
+ *
+ * <p>To use this class, create a CustomTorsionForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy between each set of particles.  The expression may depend on theta, the torsion angle
+ * formed by the particles, as well as on any parameters you choose.  Then call addPerTorsionParameter() to define per-torsion
+ * parameters, and addGlobalParameter() to define global parameters.  The values of per-torsion parameters are specified as
+ * part of the system definition, while values of global parameters may be modified during a simulation by calling Context::setParameter().
+ * Finally, call addTorsion() once for each torsion.  After an torsion has been added, you can modify its parameters by calling setTorsionParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
+ * Note that theta is guaranteed to be in the range [-pi,+pi], which may cause issues with force discontinuities if the energy function does not respect this domain.
+ *
+ * <p>As an example, the following code creates a CustomTorsionForce that implements a periodic potential:
+ *
+ * <pre>{@code
+ * CustomTorsionForce force = new CustomTorsionForce("0.5*k*(1-cos(theta-theta0))");
+ * }</pre>
+ *
+ * <p>This force depends on two parameters: the spring constant k and equilibrium angle theta0.  The following code defines these parameters:
+ *
+ * <pre>{@code
+ * force.addPerTorsionParameter("k");
+ * force.addPerTorsionParameter("theta0");
+ * }</pre>
+ *
+ * <p>If a harmonic restraint is desired, it is important to be careful of the domain for theta, using an idiom like this:
+ *
+ * <pre>{@code
+ * CustomTorsionForce force = new CustomTorsionForce("0.5*k*min(dtheta, 2*pi-dtheta)^2; dtheta = abs(theta-theta0); pi = 3.1415926535");
+ * }</pre>
+ *
+ * <p>This class also has the ability to compute derivatives of the potential energy with respect to global parameters.
+ * Call addEnergyParameterDerivative() to request that the derivative with respect to a particular parameter be
+ * computed.  You can then query its value in a Context by calling getState() on it.
+ *
+ * <p>Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and ^ (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select.  All trigonometric functions
+ * are defined in radians, and log is the natural logarithm.  step(x) = 0 if x &lt; 0, 1 otherwise.  delta(x) = 1 if x = 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
  */
 public class CustomTorsionForce extends Force {
 

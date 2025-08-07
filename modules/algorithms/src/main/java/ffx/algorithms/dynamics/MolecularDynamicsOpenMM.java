@@ -43,7 +43,6 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.openmm.OpenMMContext;
@@ -52,6 +51,7 @@ import ffx.potential.openmm.OpenMMState;
 import ffx.potential.openmm.OpenMMSystem;
 import ffx.potential.UnmodifiableState;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -113,12 +113,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   private Runnable obtainVariables = this::getAllOpenMMVariables;
 
   /**
-   * Constructs an MolecularDynamicsOpenMM object, to perform molecular dynamics using native OpenMM
+   * Constructs a MolecularDynamicsOpenMM object, to perform molecular dynamics using native OpenMM
    * routines, avoiding the cost of communicating coordinates, gradients, and energies back and forth
    * across the PCI bus.
    *
    * @param assembly   MolecularAssembly to operate on
-   * @param potential  Either a ForceFieldEnergyOpenMM, or a Barostat.
+   * @param potential  Either an OpenMMEnergy or an OpenMMDualTopologyEnergy.
    * @param listener   a {@link ffx.algorithms.AlgorithmListener} object.
    * @param thermostat May have to be slightly modified for native OpenMM routines
    * @param integrator May have to be slightly modified for native OpenMM routines
@@ -146,7 +146,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * Set the barostat for this MolecularDynamicsOpenMM instance.
    * @param barostat The Barostat to set, or null to disable constant pressure.
    */
-  public void setBarostat(Barostat barostat) {
+  public void setBarostat(@Nullable Barostat barostat) {
     if (barostat != null) {
       this.barostat = barostat;
       this.constantPressure = true;

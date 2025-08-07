@@ -43,24 +43,10 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VirtualSite_getNumParticles
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VirtualSite_getParticle;
 
 /**
- * A VirtualSite describes a method for computing a particle's position based on other particles.
- * This is an abstract class. Subclasses define particular algorithms.
- * <p>
- * Some Force objects make use of virtual sites. They are used for two purposes:
- * <ul>
- * <li>They can serve as the location of a force center, such as a point charge.</li>
- * <li>They can serve as extra particles with well defined positions that can be used in
- * calculating forces applied to other particles.</li>
- * </ul>
- * <p>
- * In either case, the position of a virtual site is calculated based on the positions of
- * other particles. The calculation is done outside the integration loop, so the virtual
- * site locations are always consistent with the current particle positions.
- * <p>
- * When a Context is created, virtual sites are automatically added as extra particles.
- * Their masses and charges are set to zero. Forces that act on virtual sites can be
- * applied by specifying the virtual site's particle index, which equals the number of
- * ordinary particles plus the virtual site's index.
+ * A VirtualSite describes the rules for computing a particle's position based on
+ * other particles. This is an abstract class. Subclasses define particular rules.
+ * To define a virtual site, create an instance of a VirtualSite subclass and then
+ * call setVirtualSite() on the System.
  */
 public abstract class VirtualSite {
 
@@ -95,8 +81,8 @@ public abstract class VirtualSite {
   /**
    * Get the index of a particle this virtual site depends on.
    *
-   * @param particle The particle whose index to get.
-   * @return The index of the particle.
+   * @param particle the particle to get (between 0 and getNumParticles())
+   * @return the index of the particle in the System
    */
   public int getParticle(int particle) {
     return OpenMM_VirtualSite_getParticle(pointer, particle);

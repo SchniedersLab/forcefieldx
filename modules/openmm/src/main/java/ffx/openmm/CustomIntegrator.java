@@ -81,7 +81,104 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_setRandomN
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_step;
 
 /**
- * Custom Integrator.
+ * This is an Integrator that can be used to implemented arbitrary, user defined
+ * integration algorithms.  It is flexible enough to support a wide range of
+ * methods including both deterministic and stochastic integrators, Metropolized
+ * integrators, and integrators that must integrate additional quantities along
+ * with the particle positions and momenta.
+ *
+ * <p>To create an integration algorithm, you first define a set of variables the
+ * integrator will compute.  Variables come in two types: global variables
+ * have a single value, while per-DOF variables have a value for every
+ * degree of freedom (x, y, or z coordinate of a particle).  You can define as
+ * many variables as you want of each type.  The value of any variable can be
+ * computed by the integration algorithm, or set directly by calling a method on
+ * the CustomIntegrator.  All variables are persistent between integration
+ * steps; once a value is set, it keeps that value until it is changed by the
+ * user or recomputed in a later integration step.
+ *
+ * <p>Next, you define the algorithm as a series of computations.  To execute a
+ * time step, the integrator performs the list of computations in order.  Each
+ * computation updates the value of one global or per-DOF value.  There are
+ * several types of computations that can be done:
+ *
+ * <ul>
+ * <li>Global: You provide a mathematical expression involving only global
+ * variables.  It is evaluated and stored into a global variable.</li>
+ * <li>Per-DOF: You provide a mathematical expression involving both global and
+ * per-DOF variables.  It is evaluated once for every degree of freedom, and
+ * the values are stored into a per-DOF variable.</li>
+ * <li>Sum: You provide a mathematical expression involving both global and
+ * per-DOF variables.  It is evaluated once for every degree of freedom.  All
+ * of those values are then added together, and the sum is stored into a global
+ * variable.</li>
+ * <li>Constrain Positions: The particle positions are updated so that all
+ * distance constraints are satisfied.</li>
+ * <li>Constrain Velocities: The particle velocities are updated so the net
+ * velocity along any constrained distance is 0.</li>
+ * </ul>
+ *
+ * <p>Like all integrators, CustomIntegrator ignores any particle whose mass is 0.
+ * It is skipped when doing per-DOF computations, and is not included when
+ * computing sums over degrees of freedom.
+ *
+ * <p>In addition to the variables you define by calling addGlobalVariable() and
+ * addPerDofVariable(), the integrator provides the following pre-defined
+ * variables:
+ *
+ * <ul>
+ * <li>dt: (global) This is the step size being used by the integrator.</li>
+ * <li>energy: (global, read-only) This is the current potential energy of the
+ * system.</li>
+ * <li>energy0, energy1, energy2, ...: (global, read-only) This is similar to
+ * energy, but includes only the contribution from forces in one force group.
+ * A single computation step may only depend on a single energy variable
+ * (energy, energy0, energy1, etc.).</li>
+ * <li>x: (per-DOF) This is the current value of the degree of freedom (the x,
+ * y, or z coordinate of a particle).</li>
+ * <li>v: (per-DOF) This is the current velocity associated with the degree of
+ * freedom (the x, y, or z component of a particle's velocity).</li>
+ * <li>f: (per-DOF, read-only) This is the current force acting on the degree of
+ * freedom (the x, y, or z component of the force on a particle).</li>
+ * <li>f0, f1, f2, ...: (per-DOF, read-only) This is similar to f, but includes
+ * only the contribution from forces in one force group.  A single computation
+ * step may only depend on a single force variable (f, f0, f1, etc.).</li>
+ * <li>m: (per-DOF, read-only) This is the mass of the particle the degree of
+ * freedom is associated with.</li>
+ * <li>uniform: (either global or per-DOF, read-only) This is a uniformly
+ * distributed random number between 0 and 1.  Every time an expression is
+ * evaluated, a different value will be used.  When used in a per-DOF
+ * expression, a different value will be used for every degree of freedom.
+ * Note, however, that if this variable appears multiple times in a single
+ * expression, the same value is used everywhere it appears in that
+ * expression.</li>
+ * <li>gaussian: (either global or per-DOF, read-only) This is a Gaussian
+ * distributed random number with mean 0 and variance 1.  Every time an expression
+ * is evaluated, a different value will be used.  When used in a per-DOF
+ * expression, a different value will be used for every degree of freedom.
+ * Note, however, that if this variable appears multiple times in a single
+ * expression, the same value is used everywhere it appears in that
+ * expression.</li>
+ * <li>A global variable is created for every adjustable parameter defined
+ * in the integrator's Context.</li>
+ * </ul>
+ *
+ * <p>The following example uses a CustomIntegrator to implement a velocity Verlet
+ * integrator:
+ *
+ * <pre>{@code
+ * CustomIntegrator integrator = new CustomIntegrator(0.001);
+ * integrator.addComputePerDof("v", "v+0.5*dt*f/m");
+ * integrator.addComputePerDof("x", "x+dt*v");
+ * integrator.addComputePerDof("v", "v+0.5*dt*f/m");
+ * }</pre>
+ *
+ * <p>The first step updates the velocities based on the current forces.
+ * The second step updates the positions based on the new velocities, and the
+ * third step updates the velocities again.  Although the first and third steps
+ * look identical, the forces used in them are different.  You do not need to
+ * tell the integrator that; it will recognize that the positions have changed
+ * and know to recompute the forces automatically.
  */
 public class CustomIntegrator extends Integrator {
 

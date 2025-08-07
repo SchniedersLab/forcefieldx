@@ -106,11 +106,12 @@ public class Context {
   }
 
   /**
-   * Constructor.
+   * Construct a new Context in which to run a simulation, explicitly specifying what Platform should be used
+   * to perform calculations.
    *
-   * @param system     The system to simulate.
-   * @param integrator The integrator to use for simulating the system.
-   * @param platform   The platform to use for performing computations.
+   * @param system     the System which will be simulated
+   * @param integrator the Integrator which will be used to simulate the System
+   * @param platform   the Platform to use for calculations
    */
   public Context(System system, Integrator integrator, Platform platform) {
     pointer = OpenMM_Context_create_2(system.getPointer(), integrator.getPointer(), platform.getPointer());
@@ -119,25 +120,29 @@ public class Context {
   }
 
   /**
-   * Apply constraints to the current positions.
+   * Update the positions of particles so that all distance constraints are satisfied.  This also recomputes
+   * the locations of all virtual sites.
    *
-   * @param tol The constraint tolerance.
+   * @param tol the distance tolerance within which constraints must be satisfied.
    */
   public void applyConstraints(double tol) {
     OpenMM_Context_applyConstraints(pointer, tol);
   }
 
   /**
-   * Apply velocity constraints to the current velocities.
+   * Update the velocities of particles so the net velocity of each constrained distance is zero.
    *
-   * @param tol The constraint tolerance.
+   * @param tol the velocity tolerance within which constraints must be satisfied.
    */
   public void applyVelocityConstraints(double tol) {
     OpenMM_Context_applyVelocityConstraints(pointer, tol);
   }
 
   /**
-   * Compute the positions of all virtual sites.
+   * Recompute the locations of all virtual sites.  There is rarely a reason to call
+   * this, since virtual sites are also updated by applyConstraints().  This is only
+   * for the rare situations when you want to enforce virtual sites but <i>not</i>
+   * constraints.
    */
   public void computeVirtualSites() {
     OpenMM_Context_computeVirtualSites(pointer);
@@ -160,47 +165,48 @@ public class Context {
   }
 
   /**
-   * Get the value of a parameter.
+   * Get the value of an adjustable parameter defined by a Force object in the System.
    *
-   * @param name The name of the parameter.
-   * @return The value of the parameter.
+   * @param name the name of the parameter to get
+   * @return the value of the parameter
    */
   public double getParameter(String name) {
     return OpenMM_Context_getParameter(pointer, name);
   }
 
   /**
-   * Get the value of a parameter.
+   * Get the value of an adjustable parameter defined by a Force object in the System.
    *
-   * @param name The name of the parameter.
-   * @return The value of the parameter.
+   * @param name the name of the parameter to get
+   * @return the value of the parameter
    */
   public double getParameter(Pointer name) {
     return OpenMM_Context_getParameter(pointer, name);
   }
 
   /**
-   * Get a map containing the values of all parameters.
+   * Get all adjustable parameters that have been defined by Force objects in the System, along
+   * with their current values.
    *
-   * @return A PointerByReference to a map containing the values of all parameters.
+   * @return a PointerByReference to a map containing the values of all parameters
    */
   public PointerByReference getParameters() {
     return OpenMM_Context_getParameters(pointer);
   }
 
   /**
-   * Get the Platform being used for computations.
+   * Get the Platform being used for calculations.
    *
-   * @return The Platform being used for computations.
+   * @return the Platform being used for calculations
    */
   public Platform getPlatform() {
     return platform;
   }
 
   /**
-   * Get the Integrator being used for this context.
+   * Get Integrator being used by this context.
    *
-   * @return The Integrator being used for this context.
+   * @return the Integrator being used by this context
    */
   public Integrator getIntegrator() {
     return integrator;
@@ -216,41 +222,48 @@ public class Context {
   }
 
   /**
-   * Get the state of the context.
+   * Get a State object recording the current state information stored in this context.
    *
-   * @param types              The bit-flag of properties to include in the state.
-   * @param enforcePeriodicBox If true, the positions will be adjusted so atoms are inside the main periodic box.
-   * @return The state of the context.
+   * @param types              the set of data types which should be stored in the State object.  This
+   *                           should be a union of DataType values, e.g. (State::Positions | State::Velocities).
+   * @param enforcePeriodicBox if false, the position of each particle will be whatever position
+   *                           is stored in the Context, regardless of periodic boundary conditions.  If true, particle
+   *                           positions will be translated so the center of every molecule lies in the same periodic box.
+   * @return a State object recording the current state information
    */
   public State getState(int types, int enforcePeriodicBox) {
     return new State(OpenMM_Context_getState(pointer, types, enforcePeriodicBox));
   }
 
   /**
-   * Get the state of the context with additional options.
+   * Get a State object recording the current state information stored in this context.
    *
-   * @param types              The bit-flag of properties to include in the state.
-   * @param enforcePeriodicBox If true, the positions will be adjusted so atoms are inside the main periodic box.
-   * @param groups             Specifies which force groups to include when computing forces and energies.
-   * @return The state of the context.
+   * @param types              the set of data types which should be stored in the State object.  This
+   *                           should be a union of DataType values, e.g. (State::Positions | State::Velocities).
+   * @param enforcePeriodicBox if false, the position of each particle will be whatever position
+   *                           is stored in the Context, regardless of periodic boundary conditions.  If true, particle
+   *                           positions will be translated so the center of every molecule lies in the same periodic box.
+   * @param groups             a set of bit flags for which force groups to include when computing forces
+   *                           and energies.  Group i will be included if (groups&amp;(1&lt;&lt;i)) != 0.  The default value includes all groups.
+   * @return a State object recording the current state information
    */
   public State getState(int types, int enforcePeriodicBox, int groups) {
     return new State(OpenMM_Context_getState_2(pointer, types, enforcePeriodicBox, groups));
   }
 
   /**
-   * Get the number of integration steps that have been taken.
+   * Get the current step count.
    *
-   * @return The number of integration steps that have been taken.
+   * @return the current step count
    */
   public long getStepCount() {
     return OpenMM_Context_getStepCount(pointer);
   }
 
   /**
-   * Get the System being simulated in this context.
+   * Get System being simulated in this context.
    *
-   * @return The System being simulated in this context.
+   * @return the System being simulated in this context
    */
   public System getSystem() {
     PointerByReference systemPointer = OpenMM_Context_getSystem(pointer);
@@ -258,9 +271,9 @@ public class Context {
   }
 
   /**
-   * Get the current simulation time.
+   * Get the current time of the simulation (in picoseconds).
    *
-   * @return The current simulation time, measured in picoseconds.
+   * @return the current time of the simulation (in picoseconds)
    */
   public double getTime() {
     return OpenMM_Context_getTime(pointer);
@@ -276,16 +289,25 @@ public class Context {
   }
 
   /**
-   * Reinitialize the context.
+   * When a Context is created, it caches information about the System being simulated
+   * and the Force objects contained in it.  This means that, if the System or Forces are then
+   * modified, the Context does not see the changes.  Call reinitialize() to force
+   * the Context to rebuild its internal representation of the System and pick up any changes
+   * that have been made.
+   * <p>
+   * This is an expensive operation, so you should try to avoid calling it too frequently.
+   * Most Force classes have an updateParametersInContext() method that provides a less expensive
+   * way of updating certain types of information.  However, this method is the only way to
+   * make some types of changes, so it is sometimes necessary to call it.
+   * <p>
+   * By default, reinitializing a Context causes all state information (positions, velocities,
+   * etc.) to be discarded.  You can optionally tell it to try to preserve state information.
+   * It does this by internally creating a checkpoint, then reinitializing the Context, then
+   * loading the checkpoint.  Be aware that if the System has changed in a way that prevents
+   * the checkpoint from being loaded (such as changing the number of particles), this will
+   * throw an exception and the state information will be lost.
    *
-   * <p>When a Context is created, it may cache information about the System being simulated and
-   * the Force objects contained in it. This means that, if the System or Forces are then modified,
-   * the Context might not see all changes. Call reinitialize() to force the Context to rebuild its
-   * internal representation of the System and pick up any changes that have been made.
-   *
-   * <p>This is an expensive operation, so you should try to avoid calling it too frequently.
-   *
-   * @param preserveState If true, the state will be restored to the same state it had before the call.
+   * @param preserveState if true, try to preserve state information; if false, discard all state information
    */
   public void reinitialize(int preserveState) {
     if (pointer != null) {
@@ -294,40 +316,48 @@ public class Context {
   }
 
   /**
-   * Set a parameter value.
+   * Set the value of an adjustable parameter defined by a Force object in the System.
    *
-   * @param name  The name of the parameter.
-   * @param value The value of the parameter.
+   * @param name  the name of the parameter to set
+   * @param value the value of the parameter
    */
   public void setParameter(String name, double value) {
     OpenMM_Context_setParameter(pointer, name, value);
   }
 
   /**
-   * Set a parameter value.
+   * Set the value of an adjustable parameter defined by a Force object in the System.
    *
-   * @param name  The name of the parameter.
-   * @param value The value of the parameter.
+   * @param name  the name of the parameter to set
+   * @param value the value of the parameter
    */
   public void setParameter(Pointer name, double value) {
     OpenMM_Context_setParameter(pointer, name, value);
   }
 
   /**
-   * Set the periodic box vectors.
+   * Set the vectors defining the axes of the periodic box (measured in nm).  They will affect
+   * any Force that uses periodic boundary conditions.
+   * <p>
+   * Triclinic boxes are supported, but the vectors must satisfy certain requirements.  In particular,
+   * a must point in the x direction, b must point "mostly" in the y direction, and c must point "mostly"
+   * in the z direction.  See the documentation for details.
    *
-   * @param a The first vector.
-   * @param b The second vector.
-   * @param c The third vector.
+   * @param a the vector defining the first edge of the periodic box
+   * @param b the vector defining the second edge of the periodic box
+   * @param c the vector defining the third edge of the periodic box
    */
   public void setPeriodicBoxVectors(OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c) {
     OpenMM_Context_setPeriodicBoxVectors(pointer, a, b, c);
   }
 
   /**
-   * Set the atomic positions.
+   * Set the positions of all particles in the System (measured in nm).  This method simply sets the positions
+   * without checking to see whether they satisfy distance constraints.  If you want constraints to be
+   * enforced, call applyConstraints() after setting the positions.
    *
-   * @param positions The atomic positions.
+   * @param positions a vector whose length equals the number of particles in the System.  The i'th element
+   *                  contains the position of the i'th particle.
    */
   public void setPositions(double[] positions) {
     Vec3Array vec3Array = toVec3Array(positions);
@@ -336,36 +366,45 @@ public class Context {
   }
 
   /**
-   * Set the state of the Context.
+   * Copy information from a State object into this Context.  This restores the Context to
+   * approximately the same state it was in when the State was created.  If the State does not include
+   * a piece of information (e.g. positions or velocities), that aspect of the Context is
+   * left unchanged.
+   * <p>
+   * Even when all possible information is included in the State, the effect of calling this method
+   * is still less complete than loadCheckpoint().  For example, it does not restore the internal
+   * states of random number generators.  On the other hand, it has the advantage of not being hardware
+   * specific.
    *
-   * @param state The State to set.
+   * @param state the State object to copy information from
    */
   public void setState(State state) {
     OpenMM_Context_setState(pointer, state.getPointer());
   }
 
   /**
-   * Set the number of integration steps that have been taken.
+   * Set the current step count.
    *
-   * @param steps The number of integration steps that have been taken.
+   * @param steps the current step count
    */
   public void setStepCount(long steps) {
     OpenMM_Context_setStepCount(pointer, steps);
   }
 
   /**
-   * Set the current simulation time.
+   * Set the current time of the simulation (in picoseconds).
    *
-   * @param time The current simulation time, measured in picoseconds.
+   * @param time the current time of the simulation (in picoseconds)
    */
   public void setTime(double time) {
     OpenMM_Context_setTime(pointer, time);
   }
 
   /**
-   * Set the atomic velocities.
+   * Set the velocities of all particles in the System (measured in nm/picosecond).
    *
-   * @param velocities The atomic velocities.
+   * @param velocities a vector whose length equals the number of particles in the System.  The i'th element
+   *                   contains the velocity of the i'th particle.
    */
   public void setVelocities(double[] velocities) {
     Vec3Array velArray = toVec3Array(velocities);
@@ -374,10 +413,11 @@ public class Context {
   }
 
   /**
-   * Set the velocities of all particles to random values chosen from a Boltzmann distribution.
+   * Set the velocities of all particles in the System to random values chosen from a Boltzmann
+   * distribution at a given temperature.
    *
-   * @param temperature The temperature of the Boltzmann distribution.
-   * @param randomSeed  The random number seed to use. If this is 0 (the default), a unique seed is chosen.
+   * @param temperature the temperature for which to select the velocities (measured in Kelvin)
+   * @param randomSeed  the random number seed to use when selecting velocities
    */
   public void setVelocitiesToTemperature(double temperature, int randomSeed) {
     OpenMM_Context_setVelocitiesToTemperature(pointer, temperature, randomSeed);
