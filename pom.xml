@@ -262,8 +262,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <!-- version>[21,24.1]</version -->
-                  <version>[21,25.1]</version>
+                  <version>[21,26.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -1003,7 +1002,7 @@
   <packaging>pom</packaging>
   <profiles>
     <profile>
-      <id>graalpy</id>
+      <id>python</id>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
@@ -1018,8 +1017,8 @@
               <execution>
                 <configuration>
                   <packages>
+                    <!-- package>torch==2.4.1</package -->
                     <package>numpy==1.26.4</package>
-                    <package>torch==2.4.1</package>
                   </packages>
                   <externalDirectory>
                     ${project.basedir}/python-resources
