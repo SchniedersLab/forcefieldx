@@ -37,7 +37,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${exec.version}</version>
         <executions>
           <execution>
             <id>generateManPages</id>
@@ -123,11 +122,9 @@
             </configuration>
           </execution>
         </executions>
-        <version>${compiler.version}</version>
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>${resources.version}</version>
         <executions>
           <execution>
             <id>copy-groovy-scripts</id>

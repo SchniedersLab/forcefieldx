@@ -67,7 +67,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${exec.version}</version>
         <executions>
           <execution>
             <id>generateManPages</id>
@@ -120,7 +119,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>${resources.version}</version>
         <inherited>false</inherited>
         <executions>
           <execution>
@@ -188,7 +186,6 @@
             </configuration>
           </execution>
         </executions>
-        <version>${compiler.version}</version>
       </plugin>
     </plugins>
   </build>
