@@ -77,7 +77,7 @@ class Frac2Cart extends PotentialScript {
    * Frac2Cart Constructor.
    */
   Frac2Cart() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

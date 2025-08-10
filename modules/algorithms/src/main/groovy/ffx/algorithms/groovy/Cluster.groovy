@@ -144,7 +144,7 @@ class Cluster extends AlgorithmsScript {
    * Cluster constructor.
    */
   Cluster() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

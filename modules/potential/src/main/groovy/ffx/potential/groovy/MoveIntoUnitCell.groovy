@@ -73,7 +73,7 @@ class MoveIntoUnitCell extends PotentialScript {
    * MoveIntoUnitCell Constructor.
    */
   MoveIntoUnitCell() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

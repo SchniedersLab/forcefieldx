@@ -92,7 +92,7 @@ class PrmToProperty extends PotentialScript {
    * PrmToProperty Constructor.
    */
   PrmToProperty() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -141,7 +141,7 @@ class VolumeArc extends PotentialScript {
    * Volume Constructor.
    */
   VolumeArc() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

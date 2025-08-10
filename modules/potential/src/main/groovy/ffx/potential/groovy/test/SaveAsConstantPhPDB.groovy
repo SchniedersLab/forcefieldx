@@ -82,7 +82,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
    * SaveAsConstantPhPDB constructor.
    */
   SaveAsConstantPhPDB() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

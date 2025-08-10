@@ -122,7 +122,7 @@ class PhGradient extends PotentialScript {
    * Gradient constructor.
    */
   PhGradient() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

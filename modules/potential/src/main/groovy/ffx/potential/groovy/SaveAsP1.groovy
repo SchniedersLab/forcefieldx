@@ -82,7 +82,7 @@ class SaveAsP1 extends PotentialScript {
    * SaveAsP1 Constructor.
    */
   SaveAsP1() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

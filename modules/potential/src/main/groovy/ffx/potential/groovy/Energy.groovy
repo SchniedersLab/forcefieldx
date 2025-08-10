@@ -176,7 +176,7 @@ class Energy extends PotentialScript {
    * Energy constructor.
    */
   Energy() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

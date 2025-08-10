@@ -97,7 +97,7 @@ class MinimizePh extends AlgorithmsScript {
    * Minimize Constructor.
    */
   MinimizePh() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

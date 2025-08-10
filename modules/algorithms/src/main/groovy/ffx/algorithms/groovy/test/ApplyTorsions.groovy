@@ -102,7 +102,7 @@ class ApplyTorsions extends AlgorithmsScript {
    * ApplyTorsions Constructor.
    */
   ApplyTorsions() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

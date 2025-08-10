@@ -84,7 +84,7 @@ public class AlgorithmsScript extends FFXScript {
   protected File baseDir;
 
   public AlgorithmsScript() {
-    this(new Binding());
+    this(new groovy.lang.Binding());
   }
 
   public AlgorithmsScript(Binding binding) {

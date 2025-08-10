@@ -77,7 +77,7 @@ class Timer extends PotentialScript {
    * Timer Constructor.
    */
   Timer() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

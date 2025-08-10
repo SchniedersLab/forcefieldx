@@ -73,7 +73,7 @@ class IdentifyRotamers extends AlgorithmsScript {
    * IdentifyRotamers Constructor.
    */
   IdentifyRotamers() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

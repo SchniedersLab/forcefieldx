@@ -49,7 +49,7 @@ class FindRestraints extends AlgorithmsScript{
      * Dynamics Constructor.
      */
     FindRestraints() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

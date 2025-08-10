@@ -66,7 +66,7 @@ class Tornado extends PotentialScript {
    * Tornado Constructor.
    */
   Tornado() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

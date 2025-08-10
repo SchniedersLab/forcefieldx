@@ -142,7 +142,7 @@ class ForEachFile extends AlgorithmsScript {
    * Minimize Constructor.
    */
   ForEachFile() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

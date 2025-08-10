@@ -132,7 +132,7 @@ class PrepareSpaceGroups extends PotentialScript {
    * PrepareSpaceGroups Constructor.
    */
   PrepareSpaceGroups() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

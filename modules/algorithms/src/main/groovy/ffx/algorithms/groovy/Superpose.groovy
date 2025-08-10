@@ -139,7 +139,7 @@ class Superpose extends AlgorithmsScript {
    * Superpose Constructor.
    */
   Superpose() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

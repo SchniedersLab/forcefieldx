@@ -103,7 +103,7 @@ class Cart2Frac extends PotentialScript {
    * Cart2Frac constructor.
    */
   Cart2Frac() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -88,7 +88,7 @@ class MultiTopTimer extends PotentialScript {
    * MultiTopTimer Constructor.
    */
   MultiTopTimer() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

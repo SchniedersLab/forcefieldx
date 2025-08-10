@@ -193,7 +193,7 @@ class PhEnergy extends PotentialScript {
      * Energy constructor.
      */
     PhEnergy() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

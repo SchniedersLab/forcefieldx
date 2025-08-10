@@ -89,7 +89,7 @@ class Histogram extends AlgorithmsScript {
    * Histogram Constructor.
    */
   Histogram() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

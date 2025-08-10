@@ -120,7 +120,7 @@ class SaveAsPDB extends PotentialScript {
    * SaveAsPDB Constructor.
    */
   SaveAsPDB() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -105,7 +105,7 @@ class GenZ extends AlgorithmsScript {
      * ManyBody Constructor.
      */
     GenZ() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

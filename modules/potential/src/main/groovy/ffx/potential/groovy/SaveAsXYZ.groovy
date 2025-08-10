@@ -139,7 +139,7 @@ class SaveAsXYZ extends PotentialScript {
    * SaveAsXYZ Constructor.
    */
   SaveAsXYZ() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

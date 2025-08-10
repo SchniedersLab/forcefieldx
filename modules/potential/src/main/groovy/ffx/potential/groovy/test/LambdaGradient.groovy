@@ -131,7 +131,7 @@ class LambdaGradient extends PotentialScript {
    * LambdaGradient Constructor
    */
   LambdaGradient() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

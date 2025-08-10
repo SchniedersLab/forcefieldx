@@ -201,7 +201,7 @@ class MostBar extends AlgorithmsScript {
    * MostBar Constructor.
    */
   MostBar() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

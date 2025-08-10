@@ -39,8 +39,15 @@ package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
 import edu.rit.pj.ParallelTeam
-import ffx.algorithms.cli.*
-import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.MultiDynamicsOptions
+import ffx.algorithms.cli.OSTOptions
+import ffx.algorithms.cli.RandomUnitCellOptions
+import ffx.algorithms.cli.ThermodynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
+import ffx.algorithms.cli.BarostatOptions
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.crystal.CrystalPotential
@@ -57,9 +64,6 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.stream.Collectors
-
-import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm
 import static java.lang.String.format
 
 /**
@@ -135,7 +139,7 @@ class Thermodynamics extends AlgorithmsScript {
    * Thermodynamics Constructor.
    */
   Thermodynamics() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

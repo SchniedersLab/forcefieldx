@@ -95,7 +95,7 @@ class Minimize extends AlgorithmsScript {
    * Minimize Constructor.
    */
   Minimize() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

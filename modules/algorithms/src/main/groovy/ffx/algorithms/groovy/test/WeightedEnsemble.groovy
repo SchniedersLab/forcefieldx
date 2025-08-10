@@ -98,7 +98,7 @@ class WeightedEnsemble extends AlgorithmsScript {
    * Constructor.
    */
   WeightedEnsemble() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

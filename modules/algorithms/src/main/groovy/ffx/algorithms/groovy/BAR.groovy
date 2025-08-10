@@ -198,7 +198,7 @@ class BAR extends AlgorithmsScript {
    * BAR Constructor.
    */
   BAR() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**
