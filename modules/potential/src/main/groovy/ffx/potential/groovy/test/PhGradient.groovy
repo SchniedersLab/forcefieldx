@@ -537,7 +537,7 @@ class PhGradient extends PotentialScript {
     double[] energyAndInteractionList = new double[26]
     // Bond Energy
     energyAndInteractionList[0] = energy.getBondEnergy()
-    energyAndInteractionList[1] = (double) energy.getNumberofBonds()
+    energyAndInteractionList[1] = (double) energy.getNumberOfBonds()
     // Angle Energy
     energyAndInteractionList[2] = energy.getAngleEnergy()
     energyAndInteractionList[3] = (double) energy.getNumberofAngles()

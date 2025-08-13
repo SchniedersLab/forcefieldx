@@ -306,7 +306,7 @@ class Energy extends PotentialScript {
     }
 
     if (printBondedTerms) {
-      forceFieldEnergy.logBondedTerms()
+      forceFieldEnergy.logBondedTermsAndRestraints()
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -381,7 +381,7 @@ class Energy extends PotentialScript {
         }
 
         if (printBondedTerms) {
-          forceFieldEnergy.logBondedTerms()
+          forceFieldEnergy.logBondedTermsAndRestraints()
         }
       }
 

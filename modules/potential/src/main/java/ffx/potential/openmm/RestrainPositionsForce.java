@@ -66,8 +66,8 @@ public class RestrainPositionsForce extends CustomExternalForce {
   public RestrainPositionsForce(OpenMMEnergy openMMEnergy) {
     super("k0*periodicdistance(x,y,z,x0,y0,z0)^2");
 
-    List<RestrainPosition> restrainPositionList = openMMEnergy.getRestrainPositions();
-    if (restrainPositionList == null || restrainPositionList.isEmpty()) {
+    RestrainPosition[] restrainPositions = openMMEnergy.getRestrainPositions();
+    if (restrainPositions == null || restrainPositions.length == 0) {
       destroy();
       return;
     }
@@ -78,7 +78,7 @@ public class RestrainPositionsForce extends CustomExternalForce {
     addPerParticleParameter("y0");
     addPerParticleParameter("z0");
 
-    int nRestraints = restrainPositionList.size();
+    int nRestraints = restrainPositions.length;
     double convert = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
     for (RestrainPosition restrainPosition : openMMEnergy.getRestrainPositions()) {
@@ -113,8 +113,8 @@ public class RestrainPositionsForce extends CustomExternalForce {
    * Add a Restrain-Position force to the OpenMM System.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    List<RestrainPosition> restrainPositionList = openMMEnergy.getRestrainPositions();
-    if (restrainPositionList == null || restrainPositionList.isEmpty()) {
+    RestrainPosition[] restrainPositions = openMMEnergy.getRestrainPositions();
+    if (restrainPositions == null || restrainPositions.length == 0) {
       return null;
     }
     return new RestrainPositionsForce(openMMEnergy);

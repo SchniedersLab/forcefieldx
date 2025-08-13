@@ -150,7 +150,7 @@
     "slf4j-api-2.0.17.jar",
     "slf4j-nop-2.0.17.jar",
     "snakeyaml-2.4.jar",
-    "spotbugs-annotations-4.9.3.jar",
+    "spotbugs-annotations-4.9.4.jar",
     "tornado-api-1.1.0.jar",
     "truffle-api-24.2.2.jar",
     "truffle-compiler-24.2.2.jar",

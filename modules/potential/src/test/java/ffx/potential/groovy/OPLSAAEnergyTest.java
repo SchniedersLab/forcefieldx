@@ -252,7 +252,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
 
     // Bond Energy
     assertEquals(info + " Bond Energy", bondEnergy, forceFieldEnergy.getBondEnergy(), tolerance);
-    assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberofBonds());
+    assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberOfBonds());
     // Angle Energy
     assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.getAngleEnergy(), tolerance);
     assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.getNumberofAngles());

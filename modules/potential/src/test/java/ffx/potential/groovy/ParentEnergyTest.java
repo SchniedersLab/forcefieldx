@@ -43,8 +43,6 @@ import ffx.potential.groovy.test.LambdaGradient;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
-import java.io.File;
-
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
@@ -156,7 +154,7 @@ public class ParentEnergyTest extends PotentialTest {
 
     // Bond Energy
     assertEquals(info + " Bond Energy", bondEnergy, forceFieldEnergy.getBondEnergy(), tolerance);
-    assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberofBonds());
+    assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberOfBonds());
     // Angle Energy
     assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.getAngleEnergy(), tolerance);
     assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.getNumberofAngles());
