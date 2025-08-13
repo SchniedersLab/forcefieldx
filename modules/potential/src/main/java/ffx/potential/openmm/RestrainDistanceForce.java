@@ -37,12 +37,13 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
-import ffx.openmm.CustomBondForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.RestrainDistance;
 import ffx.potential.parameters.BondType;
+import ffx.potential.terms.RestrainDistancePotentialEnergy;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -53,22 +54,22 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static java.lang.String.format;
 
 /**
- * Restrain Bonds Force.
+ * Restrain-Distance Force.
  */
-public class RestrainBondsForce extends CustomBondForce {
+public class RestrainDistanceForce extends CustomBondForce {
 
-  private static final Logger logger = Logger.getLogger(RestrainBondsForce.class.getName());
+  private static final Logger logger = Logger.getLogger(RestrainDistanceForce.class.getName());
 
   /**
    * Restrain Bond Force constructor.
    *
-   * @param bondFunction The bond function.
-   * @param openMMEnergy The OpenMM Energy.
+   * @param bondFunction                    The bond function.
+   * @param restrainDistancePotentialEnergy RestraintDistancePotentialEnergy instance.
    */
-  public RestrainBondsForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
+  public RestrainDistanceForce(BondType.BondFunction bondFunction,
+                               RestrainDistancePotentialEnergy restrainDistancePotentialEnergy) {
     super(bondFunction.toMathematicalForm());
-
-    List<RestrainDistance> restrainDistances = openMMEnergy.getRestrainDistances(bondFunction);
+    List<RestrainDistance> restrainDistances = restrainDistancePotentialEnergy.getRestrainDistances(bondFunction);
     if (restrainDistances == null || restrainDistances.isEmpty()) {
       destroy();
       return;
@@ -108,10 +109,9 @@ public class RestrainBondsForce extends CustomBondForce {
     }
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
+    int forceGroup = restrainDistancePotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
-    logger.log(Level.INFO, format("  Restraint bonds force \t%6d\t%d", restrainDistances.size(), forceGroup));
-
+    logger.log(Level.INFO, format("  Restrain-Distance force \t%6d\t%d", restrainDistances.size(), forceGroup));
   }
 
   /**
@@ -121,10 +121,15 @@ public class RestrainBondsForce extends CustomBondForce {
    * @param openMMEnergy The OpenMM Energy.
    */
   public static Force constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
-    List<RestrainDistance> restrainDistances = openMMEnergy.getRestrainDistances(bondFunction);
+    RestrainDistancePotentialEnergy restrainDistancePotentialEnergy =
+        openMMEnergy.getRestrainDistancePotentialEnergy();
+    if (restrainDistancePotentialEnergy == null) {
+      return null;
+    }
+    List<RestrainDistance> restrainDistances = restrainDistancePotentialEnergy.getRestrainDistances(bondFunction);
     if (restrainDistances == null || restrainDistances.isEmpty()) {
       return null;
     }
-    return new RestrainBondsForce(bondFunction, openMMEnergy);
+    return new RestrainDistanceForce(bondFunction, restrainDistancePotentialEnergy);
   }
 }

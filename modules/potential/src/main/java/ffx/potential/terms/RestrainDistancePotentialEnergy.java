@@ -39,7 +39,9 @@ package ffx.potential.terms;
 
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.RestrainDistance;
+import ffx.potential.parameters.BondType;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -229,6 +231,31 @@ public class RestrainDistancePotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfRestrainDistances() {
     return restrainDistances.size();
+  }
+
+  /**
+   * Returns a list of restraint distances filtered by the specified bond function. If the bondFunction
+   * is null, it returns all restrained bonds.
+   *
+   * @param bondFunction the type of bond function.
+   * @return a {@link java.util.List} object.
+   */
+  public List<RestrainDistance> getRestrainDistances(@Nullable BondType.BondFunction bondFunction) {
+    // If the bondFunction is null, return all restrained bonds.
+    if (bondFunction == null) {
+      return restrainDistances;
+    }
+    // Otherwise, return only the restraint bonds with the specified bond function.
+    List<RestrainDistance> list = new ArrayList<>();
+    for (RestrainDistance restrainDistance : restrainDistances) {
+      if (restrainDistance.getBondType().bondFunction == bondFunction) {
+        list.add(restrainDistance);
+      }
+    }
+    if (!list.isEmpty()) {
+      return list;
+    }
+    return null;
   }
 
   @Override

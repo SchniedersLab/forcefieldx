@@ -37,15 +37,15 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.StretchTorsion;
+import ffx.potential.terms.StretchTorsionPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -62,15 +62,11 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
   /**
    * Create an OpenMM Stretch-Torsion Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the Stretch-Torsions.
+   * @param stretchTorsionPotentialEnergy The StretchTorsionPotentialEnergy instance that contains the stretch-torsions.
    */
-  public StretchTorsionForce(OpenMMEnergy openMMEnergy) {
+  public StretchTorsionForce(StretchTorsionPotentialEnergy stretchTorsionPotentialEnergy) {
     super(4, StretchTorsion.stretchTorsionForm());
-    StretchTorsion[] stretchTorsions = openMMEnergy.getStretchTorsions();
-    if (stretchTorsions == null || stretchTorsions.length < 1) {
-      return;
-    }
-
+    StretchTorsion[] stretchTorsions = stretchTorsionPotentialEnergy.getStretchTorsionArray();
     addGlobalParameter("phi1", 0);
     addGlobalParameter("phi2", Math.PI);
     addGlobalParameter("phi3", 0);
@@ -109,7 +105,7 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
       particles.destroy();
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
+    int forceGroup = stretchTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Stretch-Torsions:                  %10d", stretchTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -118,18 +114,14 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
   /**
    * Create a Dual Topology OpenMM Stretch-Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param stretchPotentialEnergy   The StretchTorsionPotentialEnergy instance that contains the stretch-torsions.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public StretchTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+  public StretchTorsionForce(StretchTorsionPotentialEnergy stretchPotentialEnergy,
+                             int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     super(4, StretchTorsion.stretchTorsionForm());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    StretchTorsion[] stretchTorsions = forceFieldEnergy.getStretchTorsions();
-    if (stretchTorsions == null || stretchTorsions.length < 1) {
-      return;
-    }
-
+    StretchTorsion[] stretchTorsions = stretchPotentialEnergy.getStretchTorsionArray();
     addGlobalParameter("phi1", 0);
     addGlobalParameter("phi2", Math.PI);
     addGlobalParameter("phi3", 0);
@@ -176,7 +168,7 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
       particles.destroy();
     }
 
-    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
+    int forceGroup = stretchPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Stretch-Torsions:                  %10d", stretchTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -189,43 +181,45 @@ public class StretchTorsionForce extends CustomCompoundBondForce {
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-torsion.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    StretchTorsion[] stretchTorsions = openMMEnergy.getStretchTorsions();
-    if (stretchTorsions == null || stretchTorsions.length < 1) {
+    StretchTorsionPotentialEnergy stretchTorsionPotentialEnergy =
+        openMMEnergy.getStretchTorsionPotentialEnergy();
+    if (stretchTorsionPotentialEnergy == null) {
       return null;
     }
-    return new StretchTorsionForce(openMMEnergy);
+    return new StretchTorsionForce(stretchTorsionPotentialEnergy);
   }
 
   /**
    * Convenience method to construct a Dual Topology OpenMM Stretch-Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-torsion.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    StretchTorsion[] stretchTorsions = forceFieldEnergy.getStretchTorsions();
-    if (stretchTorsions == null || stretchTorsions.length < 1) {
+    StretchTorsionPotentialEnergy stretchTorsionPotentialEnergy =
+        forceFieldEnergy.getStretchTorsionPotentialEnergy();
+    if (stretchTorsionPotentialEnergy == null) {
       return null;
     }
-    return new StretchTorsionForce(topology, openMMDualTopologyEnergy);
+    return new StretchTorsionForce(stretchTorsionPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
    * Update the Dual Topology Stretch-Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    // Check if this system has stretch-torsions.
-    StretchTorsion[] stretchTorsions = forceFieldEnergy.getStretchTorsions();
-    if (stretchTorsions == null || stretchTorsions.length < 1) {
+    StretchTorsionPotentialEnergy stretchTorsionPotentialEnergy =
+        forceFieldEnergy.getStretchTorsionPotentialEnergy();
+    if (stretchTorsionPotentialEnergy == null) {
       return;
     }
-
+    StretchTorsion[] stretchTorsions = stretchTorsionPotentialEnergy.getStretchTorsionArray();
     final double unitConv = OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
     double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
 

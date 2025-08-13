@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomAngleForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
-import ffx.openmm.CustomAngleForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.terms.AnglePotentialEnergy;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -68,8 +69,8 @@ public class AngleForce extends CustomAngleForce {
    *
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    */
-  public AngleForce(OpenMMEnergy openMMEnergy) {
-    super(openMMEnergy.getAngleEnergyString());
+  public AngleForce(AnglePotentialEnergy anglePotentialEnergy, OpenMMEnergy openMMEnergy) {
+    super(anglePotentialEnergy.getAngleEnergyString());
     ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
     rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
@@ -78,7 +79,7 @@ public class AngleForce extends CustomAngleForce {
     setName("Angle");
 
     DoubleArray parameters = new DoubleArray(0);
-    Angle[] angles = openMMEnergy.getAngles();
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     for (Angle angle : angles) {
       AngleType angleType = angle.getAngleType();
       AngleType.AngleMode angleMode = angleType.angleMode;
@@ -108,7 +109,7 @@ public class AngleForce extends CustomAngleForce {
     parameters.destroy();
 
     if (nAngles > 0) {
-      int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
+      int forceGroup = anglePotentialEnergy.getForceGroup();
       setForceGroup(forceGroup);
       logger.info(format("  Angles:                            %10d", nAngles));
       logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -118,20 +119,20 @@ public class AngleForce extends CustomAngleForce {
   /**
    * Create an OpenMM Angle Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param anglePotentialEnergy     The AnglePotentialEnergy instance.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public AngleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(openMMDualTopologyEnergy.getForceFieldEnergy(topology).getAngleEnergyString());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Angle[] angles = forceFieldEnergy.getAngles();
+  public AngleForce(AnglePotentialEnergy anglePotentialEnergy,
+                    int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(anglePotentialEnergy.getAngleEnergyString());
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     addPerAngleParameter("theta0");
     addPerAngleParameter("k");
     setName("Angle");
 
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
     ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
-
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
     rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
     if (manyBodyTitration || rigidHydrogenAngles) {
@@ -170,7 +171,7 @@ public class AngleForce extends CustomAngleForce {
     parameters.destroy();
 
     if (nAngles > 0) {
-      int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
+      int forceGroup = anglePotentialEnergy.getForceGroup();
       setForceGroup(forceGroup);
       logger.info(format("  Angles:                            %10d", nAngles));
       logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -184,34 +185,35 @@ public class AngleForce extends CustomAngleForce {
    * @return An Angle Force, or null if there are no angles.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = openMMEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return null;
     }
-    AngleForce angleForce = new AngleForce(openMMEnergy);
+    AngleForce angleForce = new AngleForce(anglePotentialEnergy, openMMEnergy);
     if (angleForce.nAngles > 0) {
       return angleForce;
     }
+    angleForce.destroy();
     return null;
   }
 
   /**
    * Add a bond force to the OpenMM System
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-
-    Angle[] angles = forceFieldEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = forceFieldEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return null;
     }
-    AngleForce angleForce = new AngleForce(topology, openMMDualTopologyEnergy);
+    AngleForce angleForce = new AngleForce(anglePotentialEnergy, topology, openMMDualTopologyEnergy);
     if (angleForce.nAngles > 0) {
       return angleForce;
     }
+    angleForce.destroy();
     return null;
   }
 
@@ -221,10 +223,11 @@ public class AngleForce extends CustomAngleForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = openMMEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return;
     }
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
 
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
@@ -232,9 +235,8 @@ public class AngleForce extends CustomAngleForce {
       AngleType.AngleMode angleMode = angle.angleType.angleMode;
       if (!manyBodyTitration && angleMode == AngleType.AngleMode.IN_PLANE) {
         // Skip In-Plane angles unless this is ManyBody Titration.
-      }
-      // Update angles that do not involve rigid hydrogen atoms.
-      else if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
+      } else if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
+        // Update angles that do not involve rigid hydrogen atoms.
         int i1 = angle.getAtom(0).getArrayIndex();
         int i2 = angle.getAtom(1).getArrayIndex();
         int i3 = angle.getAtom(2).getArrayIndex();
@@ -257,12 +259,13 @@ public class AngleForce extends CustomAngleForce {
   /**
    * Update an existing angle force for the OpenMM System.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Angle[] angles = forceFieldEnergy.getAngles();
+    AnglePotentialEnergy anglePotentialEnergy = forceFieldEnergy.getAnglePotentialEnergy();
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     if (angles == null || angles.length < 1) {
       return;
     }

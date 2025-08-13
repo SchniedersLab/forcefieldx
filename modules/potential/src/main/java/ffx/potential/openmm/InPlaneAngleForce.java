@@ -37,17 +37,17 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.terms.AnglePotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -66,21 +66,18 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
   /**
    * Create an OpenMM Angle Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the angles.
+   * @param anglePotentialEnergy The AnglePotentialEnergy that contains the angles.
+   * @param openMMEnergy         The OpenMM Energy instance that contains the angles.
    */
-  public InPlaneAngleForce(OpenMMEnergy openMMEnergy) {
-    super(4, openMMEnergy.getInPlaneAngleEnergyString());
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
-    manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
-      // Clean up the Memory allocated by the OpenMMCustomCompoundBondForce constructor.
-      destroy();
-      return;
-    }
+  public InPlaneAngleForce(AnglePotentialEnergy anglePotentialEnergy, OpenMMEnergy openMMEnergy) {
+    super(4, anglePotentialEnergy.getInPlaneAngleEnergyString());
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     addPerBondParameter("theta0");
     addPerBondParameter("k");
     setName("InPlaneAngle");
+
+    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
+    manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
 
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
@@ -127,7 +124,7 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
     parameters.destroy();
 
     if (nAngles > 0) {
-      int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
+      int forceGroup = anglePotentialEnergy.getForceGroup();
       setForceGroup(forceGroup);
       logger.info(format("  In-Plane Angles:                   %10d", nAngles));
       logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -137,24 +134,21 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
   /**
    * Create a Dual Topology OpenMM Angle Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param anglePotentialEnergy     The AnglePotentialEnergy that contains the angles.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public InPlaneAngleForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(4, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getInPlaneAngleEnergyString());
+  public InPlaneAngleForce(AnglePotentialEnergy anglePotentialEnergy, int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, anglePotentialEnergy.getInPlaneAngleEnergyString());
 
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
     ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
-    Angle[] angles = forceFieldEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
-      // Clean up the Memory allocated by the OpenMMCustomCompoundBondForce constructor.
-      destroy();
-      return;
-    }
     if (manyBodyTitration) {
       logger.severe("Dual Topology does not support many body titration.");
     }
+
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     addPerBondParameter("theta0");
     addPerBondParameter("k");
     setName("InPlaneAngle");
@@ -199,7 +193,7 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
     parameters.destroy();
 
     if (nAngles > 0) {
-      int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
+      int forceGroup = anglePotentialEnergy.getForceGroup();
       setForceGroup(forceGroup);
       logger.info(format("  In-Plane Angles:                   %10d", nAngles));
       logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -213,11 +207,11 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
    * @return An OpenMM Angle Force, or null if there are no angles.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = openMMEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return null;
     }
-    InPlaneAngleForce angleForce = new InPlaneAngleForce(openMMEnergy);
+    InPlaneAngleForce angleForce = new InPlaneAngleForce(anglePotentialEnergy, openMMEnergy);
     if (angleForce.nAngles > 0) {
       return angleForce;
     }
@@ -227,17 +221,17 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
   /**
    * Convenience method to construct a Dual Topology OpenMM In-Plane Angle Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return An OpenMM Angle Force, or null if there are no angles.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Angle[] angles = forceFieldEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = forceFieldEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return null;
     }
-    InPlaneAngleForce angleForce = new InPlaneAngleForce(topology, openMMDualTopologyEnergy);
+    InPlaneAngleForce angleForce = new InPlaneAngleForce(anglePotentialEnergy, topology, openMMDualTopologyEnergy);
     if (angleForce.nAngles > 0) {
       return angleForce;
     }
@@ -250,10 +244,11 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = openMMEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return;
     }
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;
@@ -302,18 +297,17 @@ public class InPlaneAngleForce extends CustomCompoundBondForce {
   /**
    * Update an existing angle force for the Dual Topology OpenMM System.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Angle[] angles = forceFieldEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = forceFieldEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return;
     }
-
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
-
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
     int index = 0;

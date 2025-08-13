@@ -43,7 +43,7 @@ import ffx.openmm.Force;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ForceField;
+import ffx.potential.terms.BondPotentialEnergy;
 
 import java.util.logging.Logger;
 
@@ -61,11 +61,11 @@ public class BondForce extends CustomBondForce {
   /**
    * Bond Force constructor.
    *
-   * @param openMMEnergy OpenMM Energy that contains the Bond instances.
+   * @param bondPotentialEnergy BondPotentialEnergy that contains the Bond instances
    */
-  public BondForce(OpenMMEnergy openMMEnergy) {
-    super(openMMEnergy.getBondEnergyString());
-    Bond[] bonds = openMMEnergy.getBonds();
+  public BondForce(BondPotentialEnergy bondPotentialEnergy) {
+    super(bondPotentialEnergy.getBondEnergyString());
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
     addPerBondParameter("r0");
     addPerBondParameter("k");
     setName("AmoebaBond");
@@ -85,8 +85,7 @@ public class BondForce extends CustomBondForce {
     }
     parameters.destroy();
 
-    ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
-    int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
+    int forceGroup = bondPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Bonds:                             %10d", bonds.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -95,14 +94,14 @@ public class BondForce extends CustomBondForce {
   /**
    * Bond Force constructor.
    *
+   * @param bondPotentialEnergy      BondPotentialEnergy that contains the Bond instances
    * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public BondForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(openMMDualTopologyEnergy.getForceFieldEnergy(topology).getBondEnergyString());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Bond[] bonds = forceFieldEnergy.getBonds();
+  public BondForce(BondPotentialEnergy bondPotentialEnergy,
+                   int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(bondPotentialEnergy.getBondEnergyString());
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
     addPerBondParameter("r0");
     addPerBondParameter("k");
     setName("AmoebaBond");
@@ -130,8 +129,7 @@ public class BondForce extends CustomBondForce {
     }
     parameters.destroy();
 
-    ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
-    int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
+    int forceGroup = bondPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Bonds:                             %10d", bonds.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -143,11 +141,11 @@ public class BondForce extends CustomBondForce {
    * @param openMMEnergy OpenMM Energy that contains the Bond instances.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Bond[] bonds = openMMEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = openMMEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return null;
     }
-    return new BondForce(openMMEnergy);
+    return new BondForce(bondPotentialEnergy);
   }
 
   /**
@@ -158,21 +156,22 @@ public class BondForce extends CustomBondForce {
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Bond[] bonds = forceFieldEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = forceFieldEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return null;
     }
-    return new BondForce(topology, openMMDualTopologyEnergy);
+    return new BondForce(bondPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
    * Update an existing bond force for the OpenMM System.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    Bond[] bonds = openMMEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = openMMEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return;
     }
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
 
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
     DoubleArray parameters = new DoubleArray(0);
@@ -200,10 +199,11 @@ public class BondForce extends CustomBondForce {
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Bond[] bonds = forceFieldEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = forceFieldEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return;
     }
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 

@@ -43,28 +43,36 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
+import ffx.potential.terms.TorsionPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
 import static java.lang.String.format;
 
+/**
+ * Torsion Force.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class TorsionForce extends PeriodicTorsionForce {
 
   private static final Logger logger = Logger.getLogger(TorsionForce.class.getName());
 
   private final boolean manyBodyTitration;
 
-  public TorsionForce(OpenMMEnergy openMMEnergy) {
+  /**
+   * Torsion Force constructor.
+   *
+   * @param torsionPotentialEnergy The TorsionPotentialEnergy instance that contains the torsions.
+   * @param openMMEnergy           The OpenMM Energy instance that contains the torsions.
+   */
+  public TorsionForce(TorsionPotentialEnergy torsionPotentialEnergy, OpenMMEnergy openMMEnergy) {
     ForceField forceField = openMMEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
-    Torsion[] torsions = openMMEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
-      return;
-    }
-
+    Torsion[] torsions = torsionPotentialEnergy.getTorsionArray();
     for (Torsion torsion : torsions) {
       int a1 = torsion.getAtom(0).getArrayIndex();
       int a2 = torsion.getAtom(1).getArrayIndex();
@@ -86,7 +94,7 @@ public class TorsionForce extends PeriodicTorsionForce {
       }
     }
 
-    int forceGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
+    int forceGroup = torsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Torsions:                          %10d", torsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -95,22 +103,19 @@ public class TorsionForce extends PeriodicTorsionForce {
   /**
    * Torsion Force constructor for Dual Topology.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param torsionPotentialEnergy   The TorsionPotentialEnergy instance that contains the torsions.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public TorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+  public TorsionForce(TorsionPotentialEnergy torsionPotentialEnergy,
+                      int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
     ForceField forceField = forceFieldEnergy.getMolecularAssembly().getForceField();
     manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
-    Torsion[] torsions = forceFieldEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
-      return;
-    }
-
     if (manyBodyTitration) {
       logger.severe("OpenMM Dual Topology does not suppport many body titration.");
     }
-
+    Torsion[] torsions = torsionPotentialEnergy.getTorsionArray();
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 
     for (Torsion torsion : torsions) {
@@ -131,11 +136,11 @@ public class TorsionForce extends PeriodicTorsionForce {
           k = k * scale;
         }
         addTorsion(a1, a2, a3, a4, j + 1,
-                torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
     }
 
-    int forceGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
+    int forceGroup = torsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Torsions:                          %10d", torsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -148,27 +153,27 @@ public class TorsionForce extends PeriodicTorsionForce {
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Torsion[] torsions = openMMEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
+    TorsionPotentialEnergy torsionPotentialEnergy = openMMEnergy.getTorsionPotentialEnergy();
+    if (torsionPotentialEnergy == null) {
       return null;
     }
-    return new TorsionForce(openMMEnergy);
+    return new TorsionForce(torsionPotentialEnergy, openMMEnergy);
   }
 
   /**
    * Convenience method to construct a Dual-Topology OpenMM Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    Torsion[] torsions = forceFieldEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
+    TorsionPotentialEnergy torsionPotentialEnergy = forceFieldEnergy.getTorsionPotentialEnergy();
+    if (torsionPotentialEnergy == null) {
       return null;
     }
-    return new TorsionForce(topology, openMMDualTopologyEnergy);
+    return new TorsionForce(torsionPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
@@ -177,11 +182,11 @@ public class TorsionForce extends PeriodicTorsionForce {
    * @param openMMEnergy The OpenMM Energy that contains the torsions.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    // Check if this system has torsions.
-    Torsion[] torsions = openMMEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
+    TorsionPotentialEnergy torsionPotentialEnergy = openMMEnergy.getTorsionPotentialEnergy();
+    if (torsionPotentialEnergy == null) {
       return;
     }
+    Torsion[] torsions = torsionPotentialEnergy.getTorsionArray();
 
     int index = 0;
     for (Torsion torsion : torsions) {
@@ -210,16 +215,17 @@ public class TorsionForce extends PeriodicTorsionForce {
   /**
    * Update the Torsion force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    // Check if this system has torsions.
-    Torsion[] torsions = forceFieldEnergy.getTorsions();
-    if (torsions == null || torsions.length < 1) {
+    TorsionPotentialEnergy torsionPotentialEnergy = forceFieldEnergy.getTorsionPotentialEnergy();
+    if (torsionPotentialEnergy == null) {
       return;
     }
+    // Check if this system has torsions.
+    Torsion[] torsions = torsionPotentialEnergy.getTorsionArray();
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 
@@ -242,7 +248,7 @@ public class TorsionForce extends PeriodicTorsionForce {
           k = k * scale;
         }
         setTorsionParameters(index++, a1, a2, a3, a4, j + 1,
-                torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
+            torsionType.phase[j] * OpenMM_RadiansPerDegree, OpenMM_KJPerKcal * k);
       }
     }
     updateParametersInContext(openMMDualTopologyEnergy.getContext());

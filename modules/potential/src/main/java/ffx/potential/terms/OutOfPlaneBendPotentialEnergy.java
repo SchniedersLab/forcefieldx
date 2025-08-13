@@ -39,6 +39,7 @@ package ffx.potential.terms;
 
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.parameters.OutOfPlaneBendType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Out-of-Plane Bend potential energy term using {@link ffx.potential.bonded.OutOfPlaneBend} instances.
@@ -214,6 +216,39 @@ public class OutOfPlaneBendPotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfOutOfPlaneBends() {
     return outOfPlaneBends.size();
+  }
+
+
+  /**
+   * Get a string representation of the Out-of-Plane Bend energy expression.
+   * @return A formatted string representing the energy expression for Out-of-Plane Bends.
+   */
+  public String getOutOfPlaneEnergyString() {
+    OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBends.getFirst().outOfPlaneBendType;
+    String energy = format(""" 
+            k*(theta^2 + %.15g*theta^3 + %.15g*theta^4 + %.15g*theta^5 + %.15g*theta^6);
+            theta = %.15g*pointangle(x2, y2, z2, x4, y4, z4, projx, projy, projz);
+            projx = x2-nx*dot;
+            projy = y2-ny*dot;
+            projz = z2-nz*dot;
+            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
+            nx = px/norm;
+            ny = py/norm;
+            nz = pz/norm;
+            norm = sqrt(px*px + py*py + pz*pz);
+            px = (d1y*d2z-d1z*d2y);
+            py = (d1z*d2x-d1x*d2z);
+            pz = (d1x*d2y-d1y*d2x);
+            d1x = x1-x4;
+            d1y = y1-y4;
+            d1z = z1-z4;
+            d2x = x3-x4;
+            d2y = y3-y4;
+            d2z = z3-z4
+            """,
+        outOfPlaneBendType.cubic, outOfPlaneBendType.quartic,
+        outOfPlaneBendType.pentic, outOfPlaneBendType.sextic, 180.0 / PI);
+    return energy;
   }
 
   /**

@@ -38,6 +38,7 @@
 package ffx.potential.terms;
 
 import ffx.potential.bonded.BondedTerm;
+import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 
 import java.util.ArrayList;
@@ -216,6 +217,41 @@ public class TorsionTorsionPotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfTorsionTorsions() {
     return torsionTorsions.size();
+  }
+
+  /**
+   * Set the lambda value for all TorsionTorsions in this term.
+   *
+   * @param lambda The new lambda value to set.
+   */
+  public void setLambda(double lambda) {
+    for (TorsionTorsion torsionTorsion : torsionTorsions) {
+      torsionTorsion.setLambda(lambda);
+    }
+  }
+
+  /**
+   * Get the energy contribution from all Torsion-Torsions in this term.
+   * @return Total energy from all Torsion-Torsions.
+   */
+  public double getdEdL() {
+    double dEdL = 0.0;
+    for (TorsionTorsion torsionTorsion : torsionTorsions) {
+      dEdL += torsionTorsion.getdEdL();
+    }
+    return dEdL;
+  }
+
+  /**
+   * Get the energy contribution from all Torsion-Torsions in this term.
+   * @return Total energy from all Torsion-Torsions.
+   */
+  public double getd2EdL2() {
+    double d2EdLambda2 = 0.0;
+    for (TorsionTorsion torsionTorsion : torsionTorsions) {
+      d2EdLambda2 += torsionTorsion.getd2EdL2();
+    }
+    return d2EdLambda2;
   }
 
   /**

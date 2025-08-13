@@ -46,6 +46,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.terms.TorsionTorsionPotentialEnergy;
 
 import javax.annotation.Nullable;
 import java.util.logging.Logger;
@@ -301,20 +302,22 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     // addForce(amoebaTorsionTorsionForce2);
 
     // Check that the number of Torsion-Torsion forces in the two topologies is equal.
-    TorsionTorsion[] torsionTorsion = openMMDualTopologyEnergy.getForceFieldEnergy(0).getTorsionTorsions();
-    TorsionTorsion[] torsionTorsion2 = openMMDualTopologyEnergy.getForceFieldEnergy(1).getTorsionTorsions();
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(0).getTorsionTorsionPotentialEnergy();
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy2 = openMMDualTopologyEnergy.getForceFieldEnergy(0).getTorsionTorsionPotentialEnergy();
     int numTorsionTorsions = 0;
     int numTorsionTorsions2 = 0;
-    if (torsionTorsion != null) {
-      numTorsionTorsions = torsionTorsion.length;
+    if (torsionTorsionPotentialEnergy != null) {
+      numTorsionTorsions = torsionTorsionPotentialEnergy.getNumberOfTorsionTorsions();
     }
-    if (torsionTorsion2 != null) {
-      numTorsionTorsions2 = torsionTorsion2.length;
+    if (torsionTorsionPotentialEnergy2 != null) {
+      numTorsionTorsions2 = torsionTorsionPotentialEnergy2.getNumberOfTorsionTorsions();
     }
     if (numTorsionTorsions != numTorsionTorsions2) {
       logger.severe(" The number of Torsion-Torsion forces in the two topologies do not match: "
           + numTorsionTorsions + " vs. " + numTorsionTorsions2);
-    } else {
+    } else if (numTorsionTorsions != 0) {
+      TorsionTorsion[] torsionTorsion = torsionTorsionPotentialEnergy.getTorsionTorsionArray();
+      TorsionTorsion[] torsionTorsion2 = torsionTorsionPotentialEnergy2.getTorsionTorsionArray();
       // Check that the Torsion-Torsion instances match.
       for (int i = 0; i < numTorsionTorsions; i++) {
         TorsionTorsion tt1 = torsionTorsion[i];

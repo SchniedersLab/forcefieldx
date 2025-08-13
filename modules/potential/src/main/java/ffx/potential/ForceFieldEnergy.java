@@ -58,12 +58,8 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.RelativeSolvation;
-import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestrainDistance;
 import ffx.potential.bonded.RestrainPosition;
 import ffx.potential.bonded.StretchBend;
@@ -82,12 +78,10 @@ import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
 import ffx.potential.openmm.OpenMMEnergy;
-import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
-import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.terms.AnglePotentialEnergy;
 import ffx.potential.terms.AngleTorsionPotentialEnergy;
@@ -126,7 +120,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static ffx.potential.bonded.BondedTerm.removeNeuralNetworkTerms;
 import static ffx.potential.bonded.RestrainPosition.parseRestrainPositions;
 import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
@@ -139,7 +132,6 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -153,26 +145,46 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
   /**
-   * Default tolerance for numerical methods of solving constraints.
-   */
-  public static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
-  /**
    * A Logger for the ForceFieldEnergy class.
    */
   private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+
   /**
    * Convert from nanoseconds to seconds.
    */
   private static final double toSeconds = 1.0e-9;
+
+  /**
+   * RestrainMode specifies how restrain terms are applied for dual topology calculations.
+   */
+  public enum RestrainMode {
+    /**
+     * Restrain terms are applied with the energy.
+     */
+    ENERGY,
+    /**
+     * Restrain terms are applied with the alchemical restraints (Lambda Bonded Terms).
+     */
+    ALCHEMICAL
+  }
+
+  /**
+   * The ForceFieldEnergy class implements the FFX platform.
+   */
+  private final Platform platform = Platform.FFX;
+
   /**
    * The MolecularAssembly associated with this force field energy.
    */
   protected final MolecularAssembly molecularAssembly;
   /**
-   * If the absolute value of a gradient component is greater than "maxDebugGradient", verbose
-   * logging results.
+   * The array of Atoms being evaluated.
    */
-  public final double maxDebugGradient;
+  private final Atom[] atoms;
+  /**
+   * The boundary conditions used when evaluating the force field energy.
+   */
+  private Crystal crystal;
   /**
    * The Parallel Java ParallelTeam instance.
    */
@@ -190,24 +202,22 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private final VanDerWaals vanderWaals;
   /**
+   * Particle-Mesh Ewald electrostatic energy.
+   */
+  private final ParticleMeshEwald particleMeshEwald;
+  /**
    * ANI2x Neutral Network Potential.
    */
   private final ANIEnergy aniEnergy;
-  private final List<Constraint> constraints;
 
   /**
-   * RestrainMode specifies how restrain terms are applied for dual topology calculations.
+   * List of constraints to be applied to the system.
    */
-  public enum RestrainMode {
-    /**
-     * Restrain terms are applied with the energy.
-     */
-    ENERGY,
-    /**
-     * Restrain terms are applied with the alchemical restraints (Lambda Bonded Terms).
-     */
-    ALCHEMICAL
-  }
+  private final List<Constraint> constraints;
+  /**
+   * Default tolerance for numerical methods of solving constraints.
+   */
+  public static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
 
   @FFXProperty(name = "vdw-cutoff", propertyGroup = NonBondedCutoff, defaultValue = "12.0", description = """
       Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions.
@@ -250,55 +260,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private final double cutoffPlusBuffer;
   /**
-   * Particle-Mesh Ewald electrostatic energy.
-   */
-  private final ParticleMeshEwald particleMeshEwald;
-  /**
    * The Electrostatic functional form.
    */
   private final ELEC_FORM elecForm;
-  /**
-   * Original state of the neural network energy term flag.
-   */
-  private final boolean nnTermOrig;
-  /**
-   * Original state of the RestrainGroup term flag.
-   */
-  private final boolean restrainGroupTermOrig;
-  /**
-   * Original state of the van der Waals energy term flag.
-   */
-  private final boolean vanderWaalsTermOrig;
-  /**
-   * Original state of the multipole energy term flag.
-   */
-  private final boolean multipoleTermOrig;
-  /**
-   * Original state of the polarization energy term flag.
-   */
-  private final boolean polarizationTermOrig;
-  /**
-   * Original state of the GK energy term flag.
-   */
-  private final boolean generalizedKirkwoodTermOrig;
-  /**
-   * Original state of the ESV energy term flag.
-   */
-  private boolean esvTermOrig;
-  /**
-   * Flag to indicate hydrogen bonded terms should be scaled up.
-   */
-  private final boolean rigidHydrogens;
-  /**
-   * Indicates application of lambda scaling to all Torsion based energy terms.
-   */
-  private final boolean lambdaTorsions;
-  /**
-   * Relative solvation term (TODO: needs further testing).
-   */
-  private final RelativeSolvation relativeSolvation;
-  private final boolean relativeSolvationTerm;
-  private final Platform platform = Platform.FFX;
 
   /**
    * Indicates use of the Lambda state variable.
@@ -311,10 +275,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private double lambda = 1.0;
   /**
-   * Optimization scaling value to use for each degree of freedom.
-   */
-  protected double[] optimizationScaling = null;
-  /**
    * Indicates only bonded energy terms effected by Lambda should be evaluated.
    */
   public boolean lambdaBondedTerms = false;
@@ -323,18 +283,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   boolean lambdaAllBondedTerms = false;
   /**
-   * Flag to indicate proper shutdown of the ForceFieldEnergy.
+   * Indicates application of lambda scaling to all Torsion based energy terms.
    */
-  boolean destroyed = false;
+  private final boolean lambdaTorsions;
+
   /**
    * An instance of the STATE enumeration to specify calculation of slowly varying energy terms, fast
    * varying or both.
    */
   private STATE state = STATE.BOTH;
   /**
-   * The array of Atoms being evaluated.
+   * Optimization scaling value to use for each degree of freedom.
    */
-  private final Atom[] atoms;
+  protected double[] optimizationScaling = null;
 
   /**
    * Evaluate bonded energy terms in parallel.
@@ -405,7 +366,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Implements the Restrain-Torsion potential.
    */
   private final RestrainTorsionPotentialEnergy restrainTorsionPotentialEnergy;
-
   /**
    * The Restrain Groups energy term.
    */
@@ -431,11 +391,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Number of implicit solvent interactions evaluated.
    */
   private int nGKInteractions;
-
-  /**
-   * The boundary conditions used when evaluating the force field energy.
-   */
-  private Crystal crystal;
 
   /**
    * Specifies use of an intramolecular neural network.
@@ -579,22 +534,46 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private boolean comTerm;
   /**
-   * Original state of the COM energy term flag.
-   */
-  private boolean comTermOrig;
-  /**
    * Evaluate NCS energy term.
    */
   private boolean ncsTerm;
+
+  /**
+   * Original state of the neural network energy term flag.
+   */
+  private final boolean nnTermOrig;
+  /**
+   * Original state of the RestrainGroup term flag.
+   */
+  private final boolean restrainGroupTermOrig;
+  /**
+   * Original state of the van der Waals energy term flag.
+   */
+  private final boolean vanderWaalsTermOrig;
+  /**
+   * Original state of the multipole energy term flag.
+   */
+  private final boolean multipoleTermOrig;
+  /**
+   * Original state of the polarization energy term flag.
+   */
+  private final boolean polarizationTermOrig;
+  /**
+   * Original state of the GK energy term flag.
+   */
+  private final boolean generalizedKirkwoodTermOrig;
+  /**
+   * Original state of the ESV energy term flag.
+   */
+  private boolean esvTermOrig;
   /**
    * Original state of the NCS energy term flag.
    */
   private boolean ncsTermOrig;
-
   /**
-   * Scale factor for increasing the strength of bonded terms involving hydrogen atoms.
+   * Original state of the COM energy term flag.
    */
-  private double rigidScale;
+  private boolean comTermOrig;
 
   /**
    * The total neutral network energy.
@@ -605,10 +584,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private double restrainGroupEnergy;
   /**
-   * The total energy for all Bonded Energy terms.
-   */
-  private double totalBondedEnergy;
-  /**
    * The total van der Waals energy.
    */
   private double vanDerWaalsEnergy;
@@ -617,21 +592,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private double permanentMultipoleEnergy;
   /**
-   * The permanent multipole real space energy.
-   */
-  private double permanentRealSpaceEnergy;
-  /**
    * The total polarization energy.
    */
   private double polarizationEnergy;
-  /**
-   * The total electrostatic energy.
-   */
-  private double totalMultipoleEnergy;
-  /**
-   * The total non-bonded energy (van der Waals plus electrostatic).
-   */
-  private double totalNonBondedEnergy;
   /**
    * The solvation energy (GK).
    */
@@ -640,7 +603,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * The total NCS Energy.
    */
   private double ncsEnergy;
-
   /**
    * The total COM Restraint Energy.
    */
@@ -650,6 +612,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   private double totalEnergy;
 
+  /**
+   * Time to evaluate NCS term.
+   */
+  private long ncsTime;
   /**
    * Time to evaluate the neutral network.
    */
@@ -679,16 +645,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Constant pH extended system (TODO: needs further testing).
    */
   private ExtendedSystem esvSystem = null;
-
   private boolean esvTerm;
   private double esvBias;
-  /**
-   * Time to evaluate NCS term.
-   */
-  private long ncsTime;
-  private int nRelativeSolvations;
 
-  private double relativeSolvationEnergy;
+  /**
+   * Flag to indicate proper shutdown of the ForceFieldEnergy.
+   */
+  boolean destroyed = false;
+  /**
+   * If the absolute value of a gradient component is greater than "maxDebugGradient", verbose
+   * logging results.
+   */
+  public final double maxDebugGradient;
   /**
    * Enable verbose printing if large energy gradient components are observed.
    */
@@ -948,29 +916,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // Now that the crystal is set, check for special positions.
     int nSpecial = checkForSpecialPositions(forceField);
 
-    rigidHydrogens = forceField.getBoolean("RIGID_HYDROGENS", false);
-    rigidScale = forceField.getDouble("RIGID_SCALE", 10.0);
-
-    nRelativeSolvations = 0;
-    String relSolvLibrary = forceField.getString("RELATIVE_SOLVATION", "NONE").toUpperCase();
-    SolvationLibrary library = SolvationLibrary.valueOf(relSolvLibrary);
-    if (library == SolvationLibrary.AUTO) {
-      if (generalizedKirkwoodTerm && name.toUpperCase().contains("OPLS")) {
-        library = SolvationLibrary.MACCALLUM_TIP4P;
-        // Change when we have good Generalized Born numbers of our own for OPLS.
-      } else if (generalizedKirkwoodTerm) {
-        library = SolvationLibrary.GK;
-      } else {
-        library = SolvationLibrary.NONE;
-      }
-    }
-    if (library != SolvationLibrary.NONE) {
-      relativeSolvationTerm = true;
-      relativeSolvation = new RelativeSolvation(library, forceField);
-    } else {
-      relativeSolvationTerm = false;
-      relativeSolvation = null;
-    }
+    // Flag to indicate bonded terms with hydrogen should be scaled up.
+    boolean rigidHydrogens = forceField.getBoolean("RIGID_HYDROGENS", false);
+    // Scale factor for increasing the strength of bonded terms involving hydrogen atoms.
+    double rigidScale = forceField.getDouble("RIGID_SCALE", 10.0);
 
     boolean checkAllNodeCharges = forceField.getBoolean("CHECK_ALL_NODE_CHARGES", false);
 
@@ -993,7 +942,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(bondList);
       }
       if (!bondList.isEmpty()) {
-        bondPotentialEnergy = new BondPotentialEnergy("Bonds", 0, bondList);
+        int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
+        bondPotentialEnergy = new BondPotentialEnergy("Bonds", forceGroup, bondList);
         forceFieldBondedEnergyRegion.addEnergyTerm(bondPotentialEnergy);
       } else {
         bondPotentialEnergy = null;
@@ -1009,7 +959,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(angleList);
       }
       if (!angleList.isEmpty()) {
-        anglePotentialEnergy = new AnglePotentialEnergy("Angles", 0, angleList);
+        int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
+        anglePotentialEnergy = new AnglePotentialEnergy("Angles", forceGroup, angleList);
         forceFieldBondedEnergyRegion.addEnergyTerm(anglePotentialEnergy);
       } else {
         anglePotentialEnergy = null;
@@ -1025,7 +976,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(stretchBendList);
       }
       if (!stretchBendList.isEmpty()) {
-        stretchBendPotentialEnergy = new StretchBendPotentialEnergy("Stretch-Bends", 0, stretchBendList);
+        int forceGroup = forceField.getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+        stretchBendPotentialEnergy = new StretchBendPotentialEnergy("Stretch-Bends", forceGroup, stretchBendList);
         forceFieldBondedEnergyRegion.addEnergyTerm(stretchBendPotentialEnergy);
       } else {
         stretchBendPotentialEnergy = null;
@@ -1041,7 +993,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(ureyBradleyList);
       }
       if (!ureyBradleyList.isEmpty()) {
-        ureyBradleyPotentialEnergy = new UreyBradleyPotentialEnergy("Urey-Bradleys", 0, ureyBradleyList);
+        int forceGroup = forceField.getInteger("UREY_BRADLEY_FORCE_GROUP", 0);
+        ureyBradleyPotentialEnergy = new UreyBradleyPotentialEnergy("Urey-Bradleys", forceGroup, ureyBradleyList);
         forceFieldBondedEnergyRegion.addEnergyTerm(ureyBradleyPotentialEnergy);
       } else {
         ureyBradleyPotentialEnergy = null;
@@ -1053,28 +1006,28 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // Set a multiplier on the force constants of bonded terms containing hydrogen atoms.
     if (rigidHydrogens) {
       if (bondPotentialEnergy != null) {
-        for (Bond bond : getBonds()) {
+        for (Bond bond : bondPotentialEnergy.getBonds()) {
           if (bond.containsHydrogen()) {
             bond.setRigidScale(rigidScale);
           }
         }
       }
       if (anglePotentialEnergy != null) {
-        for (Angle angle : getAngles()) {
+        for (Angle angle : anglePotentialEnergy.getAngles()) {
           if (angle.containsHydrogen()) {
             angle.setRigidScale(rigidScale);
           }
         }
       }
       if (stretchBendPotentialEnergy != null) {
-        for (StretchBend stretchBend : getStretchBends()) {
+        for (StretchBend stretchBend : stretchBendPotentialEnergy.getStretchBends()) {
           if (stretchBend.containsHydrogen()) {
             stretchBend.setRigidScale(rigidScale);
           }
         }
       }
       if (ureyBradleyPotentialEnergy != null) {
-        for (UreyBradley ureyBradley : getUreyBradleys()) {
+        for (UreyBradley ureyBradley : ureyBradleyPotentialEnergy.getUreyBradleys()) {
           if (ureyBradley.containsHydrogen()) {
             ureyBradley.setRigidScale(rigidScale);
           }
@@ -1089,7 +1042,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(outOfPlaneBendList);
       }
       if (!outOfPlaneBendList.isEmpty()) {
-        outOfPlaneBendPotentialEnergy = new OutOfPlaneBendPotentialEnergy("Out-0f-Plane Bends", 0, outOfPlaneBendList);
+        int forceGroup = forceField.getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+        outOfPlaneBendPotentialEnergy = new OutOfPlaneBendPotentialEnergy("Out-0f-Plane Bends", forceGroup, outOfPlaneBendList);
         forceFieldBondedEnergyRegion.addEnergyTerm(outOfPlaneBendPotentialEnergy);
       } else {
         outOfPlaneBendPotentialEnergy = null;
@@ -1105,7 +1059,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(torsionList);
       }
       if (!torsionList.isEmpty()) {
-        torsionPotentialEnergy = new TorsionPotentialEnergy("Torsions", 0, torsionList);
+        int forceGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
+        torsionPotentialEnergy = new TorsionPotentialEnergy("Torsions", forceGroup, torsionList);
         forceFieldBondedEnergyRegion.addEnergyTerm(torsionPotentialEnergy);
       } else
         torsionPotentialEnergy = null;
@@ -1120,7 +1075,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(stretchTorsionList);
       }
       if (!stretchTorsionList.isEmpty()) {
-        stretchTorsionPotentialEnergy = new StretchTorsionPotentialEnergy("Stretch-Torsions", 0, stretchTorsionList);
+        int forceGroup = forceField.getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
+        stretchTorsionPotentialEnergy = new StretchTorsionPotentialEnergy("Stretch-Torsions", forceGroup, stretchTorsionList);
         forceFieldBondedEnergyRegion.addEnergyTerm(stretchTorsionPotentialEnergy);
       } else {
         stretchTorsionPotentialEnergy = null;
@@ -1136,7 +1092,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(angleTorsionList);
       }
       if (!angleTorsionList.isEmpty()) {
-        angleTorsionPotentialEnergy = new AngleTorsionPotentialEnergy("Angle-Torsions", 0, angleTorsionList);
+        int forceGroup = forceField.getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
+        angleTorsionPotentialEnergy = new AngleTorsionPotentialEnergy("Angle-Torsions", forceGroup, angleTorsionList);
         forceFieldBondedEnergyRegion.addEnergyTerm(angleTorsionPotentialEnergy);
       } else {
         angleTorsionPotentialEnergy = null;
@@ -1152,7 +1109,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(improperTorsionList);
       }
       if (!improperTorsionList.isEmpty()) {
-        improperTorsionPotentialEnergy = new ImproperTorsionPotentialEnergy("Improper Torsions", 0, improperTorsionList);
+        int forceGroup = forceField.getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
+        improperTorsionPotentialEnergy = new ImproperTorsionPotentialEnergy("Improper Torsions", forceGroup, improperTorsionList);
         forceFieldBondedEnergyRegion.addEnergyTerm(improperTorsionPotentialEnergy);
       } else {
         improperTorsionPotentialEnergy = null;
@@ -1168,7 +1126,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         removeNeuralNetworkTerms(piOrbitalTorsionList);
       }
       if (!piOrbitalTorsionList.isEmpty()) {
-        piOrbitalTorsionPotentialEnergy = new PiOrbitalTorsionPotentialEnergy("Pi-Orbital Torsions", 0, piOrbitalTorsionList);
+        int forceGroup = forceField.getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
+        piOrbitalTorsionPotentialEnergy = new PiOrbitalTorsionPotentialEnergy("Pi-Orbital Torsions", forceGroup, piOrbitalTorsionList);
         forceFieldBondedEnergyRegion.addEnergyTerm(piOrbitalTorsionPotentialEnergy);
       } else {
         piOrbitalTorsionPotentialEnergy = null;
@@ -1202,7 +1161,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       restrainPositionTerm = false;
     }
     if (restrainPositionTerm) {
-      restrainPositionPotentialEnergy = new RestrainPositionPotentialEnergy("Restrain Positions", 0, java.util.Arrays.asList(restrainPositions));
+      int forceGroup = forceField.getInteger("RESTRAIN_POSITION_FORCE_GROUP", 0);
+      restrainPositionPotentialEnergy = new RestrainPositionPotentialEnergy("Restrain Positions", forceGroup, java.util.Arrays.asList(restrainPositions));
       restrainEnergyRegion.addEnergyTerm(restrainPositionPotentialEnergy);
     } else {
       restrainPositionPotentialEnergy = null;
@@ -1216,7 +1176,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       restrainDistanceTerm = false;
     }
     if (restrainDistanceTerm) {
-      restrainDistancePotentialEnergy = new RestrainDistancePotentialEnergy("Restrain Distances", 0, java.util.Arrays.asList(restrainDistances));
+      int forceGroup = forceField.getInteger("RESTRAIN_DISTANCE_FORCE_GROUP", 0);
+      restrainDistancePotentialEnergy = new RestrainDistancePotentialEnergy("Restrain Distances", forceGroup, java.util.Arrays.asList(restrainDistances));
       restrainEnergyRegion.addEnergyTerm(restrainDistancePotentialEnergy);
     } else {
       restrainDistancePotentialEnergy = null;
@@ -1231,7 +1192,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (restrainTorsionTerm) {
       logger.info(" Restrain Torsion Mode: " + restrainMode);
-      restrainTorsionPotentialEnergy = new RestrainTorsionPotentialEnergy("Restrain Torsions", 0, java.util.Arrays.asList(restrainTorsions));
+      int forceGroup = forceField.getInteger("RESTRAIN_TORSION_FORCE_GROUP", 0);
+      restrainTorsionPotentialEnergy = new RestrainTorsionPotentialEnergy("Restrain Torsions", forceGroup, java.util.Arrays.asList(restrainTorsions));
       restrainEnergyRegion.addEnergyTerm(restrainTorsionPotentialEnergy);
     } else {
       restrainTorsionPotentialEnergy = null;
@@ -1587,11 +1549,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       // Second, accumulate bond/angle constraints.
       for (String tok : constraintToks) {
-        if (tok.equalsIgnoreCase("BONDS")) {
-          Bond[] bonds = getBonds();
+        if (tok.equalsIgnoreCase("BONDS") && bondPotentialEnergy != null) {
+          Bond[] bonds = bondPotentialEnergy.getBondArray();
           numericBonds = new HashSet<>(Arrays.asList(bonds));
-        } else if (tok.equalsIgnoreCase("ANGLES")) {
-          Angle[] angles = getAngles();
+        } else if (tok.equalsIgnoreCase("ANGLES") && anglePotentialEnergy != null) {
+          Angle[] angles = anglePotentialEnergy.getAngleArray();
           numericAngles = new HashSet<>(Arrays.asList(angles));
         }
       }
@@ -1603,10 +1565,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     // Remove already-constrained angles and bonds (e.g. SETTLE-constrained ones).
-    List<Angle> ccmaAngles = numericAngles.stream().filter((Angle ang) -> !ang.isConstrained())
-        .collect(Collectors.toList());
-    List<Bond> ccmaBonds = numericBonds.stream().filter((Bond bond) -> !bond.isConstrained())
-        .collect(Collectors.toList());
+    List<Angle> ccmaAngles = numericAngles.stream().filter((Angle ang) -> !ang.isConstrained()).collect(Collectors.toList());
+    List<Bond> ccmaBonds = numericBonds.stream().filter((Bond bond) -> !bond.isConstrained()).collect(Collectors.toList());
 
     CcmaConstraint ccmaConstraint = CcmaConstraint.ccmaFactory(ccmaBonds, ccmaAngles, atoms,
         getMass(), CcmaConstraint.DEFAULT_CCMA_NONZERO_CUTOFF);
@@ -1801,7 +1761,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return energy(false, false);
   }
 
-
   /**
    * Compute the potential energy of the system.
    *
@@ -1821,7 +1780,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       // Zero out the potential energy of each bonded term.
       double forceFieldBondedEnergy = 0.0;
       nnEnergy = 0.0;
-      totalBondedEnergy = 0.0;
 
       // Zero out potential energy of restraint terms
       double restrainEnergy = 0.0;
@@ -1829,20 +1787,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       ncsEnergy = 0.0;
 
       // Zero out the potential energy of each non-bonded term.
+      double totalNonBondedEnergy = 0.0;
+      double totalMultipoleEnergy = 0.0;
       vanDerWaalsEnergy = 0.0;
       permanentMultipoleEnergy = 0.0;
-      permanentRealSpaceEnergy = 0.0;
       polarizationEnergy = 0.0;
-      totalMultipoleEnergy = 0.0;
-      totalNonBondedEnergy = 0.0;
 
       // Zero out the solvation energy.
       solvationEnergy = 0.0;
-
-      // Zero out the relative solvation energy (sequence optimization)
-      relativeSolvationEnergy = 0.0;
-      nRelativeSolvations = 0;
-
       esvBias = 0.0;
 
       // Zero out the total potential energy.
@@ -1935,7 +1887,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           electrostaticTime = -System.nanoTime();
           totalMultipoleEnergy = particleMeshEwald.energy(gradient, print);
           permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-          permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
           polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
           nPermanentInteractions = particleMeshEwald.getInteractions();
           solvationEnergy = particleMeshEwald.getSolvationEnergy();
@@ -1944,30 +1895,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
       }
 
-      if (relativeSolvationTerm) {
-        List<Residue> residuesList = molecularAssembly.getResidueList();
-        for (Residue residue : residuesList) {
-          if (residue instanceof MultiResidue) {
-            Atom refAtom = residue.getSideChainAtoms().get(0);
-            if (refAtom != null && refAtom.getUse()) {
-              // Reasonably confident that it should be -=,
-              // as we are trying to penalize residues with strong solvation energy.
-              double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
-              relativeSolvationEnergy -= thisSolvation;
-              if (thisSolvation != 0) {
-                nRelativeSolvations++;
-              }
-            }
-          }
-        }
-      }
-
       totalTime = System.nanoTime() - totalTime;
 
-      totalBondedEnergy = forceFieldBondedEnergy + restrainEnergy
+      double totalBondedEnergy = forceFieldBondedEnergy + restrainEnergy
           + nnEnergy + ncsEnergy + comRestraintEnergy + restrainGroupEnergy;
 
-      totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
+      totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy;
       totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
       if (esvTerm) {
         esvBias = esvSystem.getBiasEnergy();
@@ -2133,109 +2066,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>angleEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getAngleEnergy() {
-    if (anglePotentialEnergy == null) {
-      return 0.0;
-    }
-    return anglePotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>angleTorsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getAngleTorsionEnergy() {
-    if (angleTorsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return angleTorsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>angleTorsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.AngleTorsion} objects.
-   */
-  public AngleTorsion[] getAngleTorsions() {
-    if (angleTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return angleTorsionPotentialEnergy.getAngleTorsionArray();
-  }
-
-  /**
-   * Getter for the field <code>angles</code>. Both normal and in-plane angles are returned.
-   *
-   * @return an array of {@link ffx.potential.bonded.Angle} objects.
-   */
-  public Angle[] getAngles() {
-    if (anglePotentialEnergy == null) {
-      return null;
-    }
-    return anglePotentialEnergy.getAngleArray();
-  }
-
-  public String getAngleEnergyString() {
-    if (anglePotentialEnergy == null) {
-      return null;
-    }
-    Angle[] angles = getAngles();
-    AngleType angleType = angles[0].angleType;
-    String energy;
-    if (angleType.angleFunction == AngleType.AngleFunction.SEXTIC) {
-      energy = format("""
-              k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
-              d=%.15g*theta-theta0;
-              """,
-          angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
-    } else {
-      energy = format("""
-              k*(d^2);
-              d=%.15g*theta-theta0;
-              """,
-          180.0 / PI);
-    }
-    return energy;
-  }
-
-  public String getInPlaneAngleEnergyString() {
-    if (anglePotentialEnergy == null) {
-      return null;
-    }
-    Angle[] angles = getAngles();
-    AngleType angleType = angles[0].angleType;
-    String energy = format("""
-            k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
-            d=theta-theta0;
-            theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3);
-            projx = x2-nx*dot;
-            projy = y2-ny*dot;
-            projz = z2-nz*dot;
-            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
-            nx = px/norm;
-            ny = py/norm;
-            nz = pz/norm;
-            norm = sqrt(px*px + py*py + pz*pz);
-            px = (d1y*d2z-d1z*d2y);
-            py = (d1z*d2x-d1x*d2z);
-            pz = (d1x*d2y-d1y*d2x);
-            d1x = x1-x4;
-            d1y = y1-y4;
-            d1z = z1-z4;
-            d2x = x3-x4;
-            d2y = y3-y4;
-            d2z = z3-z4;
-            """,
-        angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
-    return energy;
-  }
-
-  /**
    * Getter for the field <code>angles</code> with only <code>AngleMode</code> angles.
    *
    * @param angleMode Only angles of this mode will be returned.
@@ -2245,7 +2075,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (anglePotentialEnergy == null) {
       return null;
     }
-    Angle[] angles = getAngles();
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     int nAngles = angles.length;
     List<Angle> angleList = new ArrayList<>();
     // Sort all normal angles from in-plane angles
@@ -2262,71 +2092,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>nnEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getNeutralNetworkEnergy() {
-    return nnEnergy;
-  }
-
-  /**
-   * Getter for the field <code>bondEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getBondEnergy() {
-    if (bondPotentialEnergy == null) {
-      return 0.0;
-    }
-    return bondPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>bonds</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.Bond} objects.
-   */
-  public Bond[] getBonds() {
-    if (bondPotentialEnergy == null) {
-      return null;
-    }
-    return bondPotentialEnergy.getBondArray();
-  }
-
-  public String getBondEnergyString() {
-    if (bondPotentialEnergy == null) {
-      return null;
-    }
-    Bond[] bonds = getBonds();
-    BondType bondType = bonds[0].getBondType();
-    String energy;
-    if (bondType.bondFunction == BondType.BondFunction.QUARTIC) {
-      energy = format("""
-              k*(d^2 + %.15g*d^3 + %.15g*d^4);
-              d=r-r0;
-              """,
-          bondType.cubic / OpenMM_NmPerAngstrom,
-          bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
-    } else {
-      energy = """
-          k*(d^2);
-          d=r-r0;
-          """;
-    }
-    return energy;
-  }
-
-  /**
-   * getCavitationEnergy.
-   *
-   * @return a double.
-   */
-  public double getCavitationEnergy() {
-    return particleMeshEwald.getCavitationEnergy();
-  }
-
-  /**
    * Returns a copy of the list of constraints this ForceFieldEnergy has.
    *
    * @return Copied list of constraints.
@@ -2334,13 +2099,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   @Override
   public List<Constraint> getConstraints() {
     return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
-  }
-
-  public RestrainPosition[] getRestrainPositions() {
-    if (restrainPositionPotentialEnergy == null) {
-      return null;
-    }
-    return restrainPositionPotentialEnergy.getRestrainPositionArray();
   }
 
   /**
@@ -2391,24 +2149,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   public double getCutoffPlusBuffer() {
     return cutoffPlusBuffer;
-  }
-
-  /**
-   * getDispersionEnergy.
-   *
-   * @return a double.
-   */
-  public double getDispersionEnergy() {
-    return particleMeshEwald.getDispersionEnergy();
-  }
-
-  /**
-   * getElectrostaticEnergy.
-   *
-   * @return a double.
-   */
-  public double getElectrostaticEnergy() {
-    return totalMultipoleEnergy;
   }
 
   /**
@@ -2500,15 +2240,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * getGKEnergy.
-   *
-   * @return a double.
-   */
-  public double getGKEnergy() {
-    return particleMeshEwald.getGKEnergy();
-  }
-
-  /**
    * Returns the gradient array for this ForceFieldEnergy.
    *
    * @param g an array of double.
@@ -2516,30 +2247,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    */
   public double[] getGradient(double[] g) {
     return fillGradient(g);
-  }
-
-  /**
-   * Getter for the field <code>improperTorsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getImproperTorsionEnergy() {
-    if (improperTorsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return improperTorsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>improperTorsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.ImproperTorsion} objects.
-   */
-  public ImproperTorsion[] getImproperTorsions() {
-    if (improperTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return improperTorsionPotentialEnergy.getImproperTorsionArray();
   }
 
   /**
@@ -2573,12 +2280,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         } */
 
         if (restrainDistanceTerm && restrainDistancePotentialEnergy != null) {
-          for (RestrainDistance restrainDistance : getRestrainDistances()) {
+          for (RestrainDistance restrainDistance : restrainDistancePotentialEnergy.getRestrainDistances()) {
             restrainDistance.setLambda(lambda);
           }
         }
         if (restrainTorsionTerm && restrainTorsionPotentialEnergy != null) {
-          for (Torsion restrainTorsion : getRestrainTorsions()) {
+          for (Torsion restrainTorsion : restrainTorsionPotentialEnergy.getRestrainTorsions()) {
             restrainTorsion.setLambda(lambda);
           }
         }
@@ -2589,17 +2296,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           comRestraint.setLambda(lambda);
         }
         if (lambdaTorsions) {
-          Torsion[] torsions = getTorsions();
-          for (Torsion torsion : torsions) {
-            torsion.setLambda(lambda);
+          if (torsionPotentialEnergy != null) {
+            torsionPotentialEnergy.setLambda(lambda);
           }
-          PiOrbitalTorsion[] piOrbitalTorsions = getPiOrbitalTorsions();
-          for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
-            piOrbitalTorsion.setLambda(lambda);
+          if (piOrbitalTorsionPotentialEnergy != null) {
+            piOrbitalTorsionPotentialEnergy.setLambda(lambda);
           }
-          TorsionTorsion[] torsionTorsions = getTorsionTorsions();
-          for (TorsionTorsion torsionTorsion : torsionTorsions) {
-            torsionTorsion.setLambda(lambda);
+          if (torsionTorsionPotentialEnergy != null) {
+            torsionTorsionPotentialEnergy.setLambda(lambda);
           }
         }
       } else {
@@ -2643,191 +2347,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
     }
     return nActive * 3;
-  }
-
-  /**
-   * getNumberofAngleTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofAngleTorsions() {
-    if (angleTorsionPotentialEnergy == null) {
-      return 0;
-    }
-    return angleTorsionPotentialEnergy.getNumberOfAngleTorsions();
-  }
-
-  /**
-   * getNumberofAngles.
-   *
-   * @return a int.
-   */
-  public int getNumberofAngles() {
-    if (anglePotentialEnergy == null) {
-      return 0;
-    }
-    return anglePotentialEnergy.getNumberOfAngles();
-  }
-
-  /**
-   * getNumberOfBonds.
-   *
-   * @return a int.
-   */
-  public int getNumberOfBonds() {
-    if (bondPotentialEnergy == null) {
-      return 0;
-    }
-    return bondPotentialEnergy.getNumberOfBonds();
-  }
-
-  /**
-   * getNumberofImproperTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofImproperTorsions() {
-    if (improperTorsionPotentialEnergy == null) {
-      return 0;
-    }
-    return improperTorsionPotentialEnergy.getNumberOfImproperTorsions();
-  }
-
-  /**
-   * getNumberofOutOfPlaneBends.
-   *
-   * @return a int.
-   */
-  public int getNumberofOutOfPlaneBends() {
-    if (outOfPlaneBendPotentialEnergy == null) {
-      return 0;
-    }
-    return outOfPlaneBendPotentialEnergy.getNumberOfOutOfPlaneBends();
-  }
-
-  /**
-   * getNumberofPiOrbitalTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofPiOrbitalTorsions() {
-    if (piOrbitalTorsionPotentialEnergy == null) {
-      return 0;
-    }
-    return piOrbitalTorsionPotentialEnergy.getNumberOfTerms();
-  }
-
-  /**
-   * getNumberofStretchBends.
-   *
-   * @return a int.
-   */
-  public int getNumberofStretchBends() {
-    if (stretchBendPotentialEnergy == null) {
-      return 0;
-    }
-    return stretchBendPotentialEnergy.getNumberOfStretchBends();
-  }
-
-  /**
-   * getNumberofStretchTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofStretchTorsions() {
-    if (stretchTorsionPotentialEnergy == null) {
-      return 0;
-    }
-    return stretchTorsionPotentialEnergy.getNumberOfTerms();
-  }
-
-  /**
-   * getNumberofTorsionTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofTorsionTorsions() {
-    if (torsionTorsionPotentialEnergy == null) {
-      return 0;
-    }
-    return torsionTorsionPotentialEnergy.getNumberOfTerms();
-  }
-
-  /**
-   * getNumberofTorsions.
-   *
-   * @return a int.
-   */
-  public int getNumberofTorsions() {
-    if (torsionPotentialEnergy == null) {
-      return 0;
-    }
-    return torsionPotentialEnergy.getNumberOfTorsions();
-  }
-
-  /**
-   * getNumberofUreyBradleys.
-   *
-   * @return a int.
-   */
-  public int getNumberofUreyBradleys() {
-    if (ureyBradleyPotentialEnergy == null) {
-      return 0;
-    }
-    return ureyBradleyPotentialEnergy.getNumberOfUreyBradleys();
-  }
-
-  /**
-   * Getter for the field <code>outOfPlaneBendEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getOutOfPlaneBendEnergy() {
-    if (outOfPlaneBendPotentialEnergy == null) {
-      return 0.0;
-    }
-    return outOfPlaneBendPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>outOfPlaneBends</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.OutOfPlaneBend} objects.
-   */
-  public OutOfPlaneBend[] getOutOfPlaneBends() {
-    if (outOfPlaneBendPotentialEnergy == null) {
-      return null;
-    }
-    return outOfPlaneBendPotentialEnergy.getOutOfPlaneBendArray();
-  }
-
-  public String getOutOfPlaneEnergyString() {
-    OutOfPlaneBend[] outOfPlaneBends = getOutOfPlaneBends();
-    OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBends[0].outOfPlaneBendType;
-    String energy = format(""" 
-            k*(theta^2 + %.15g*theta^3 + %.15g*theta^4 + %.15g*theta^5 + %.15g*theta^6);
-            theta = %.15g*pointangle(x2, y2, z2, x4, y4, z4, projx, projy, projz);
-            projx = x2-nx*dot;
-            projy = y2-ny*dot;
-            projz = z2-nz*dot;
-            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
-            nx = px/norm;
-            ny = py/norm;
-            nz = pz/norm;
-            norm = sqrt(px*px + py*py + pz*pz);
-            px = (d1y*d2z-d1z*d2y);
-            py = (d1z*d2x-d1x*d2z);
-            pz = (d1x*d2y-d1y*d2x);
-            d1x = x1-x4;
-            d1y = y1-y4;
-            d1z = z1-z4;
-            d2x = x3-x4;
-            d2y = y3-y4;
-            d2z = z3-z4
-            """,
-        outOfPlaneBendType.cubic, outOfPlaneBendType.quartic,
-        outOfPlaneBendType.pentic, outOfPlaneBendType.sextic, 180.0 / PI);
-    return energy;
   }
 
   /**
@@ -2911,83 +2430,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>permanentRealSpaceEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getPermanentRealSpaceEnergy() {
-    return permanentRealSpaceEnergy;
-  }
-
-  /**
-   * getPermanentReciprocalMpoleEnergy.
-   *
-   * @return a double.
-   */
-  public double getPermanentReciprocalMpoleEnergy() {
-    return particleMeshEwald.getPermRecipEnergy();
-  }
-
-  /**
-   * getPermanentReciprocalSelfEnergy.
-   *
-   * @return a double.
-   */
-  public double getPermanentReciprocalSelfEnergy() {
-    return particleMeshEwald.getPermSelfEnergy();
-  }
-
-  /**
-   * Getter for the field <code>piOrbitalTorsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getPiOrbitalTorsionEnergy() {
-    if (piOrbitalTorsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return piOrbitalTorsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>piOrbitalTorsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.PiOrbitalTorsion} objects.
-   */
-  public PiOrbitalTorsion[] getPiOrbitalTorsions() {
-    if (piOrbitalTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return piOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionArray();
-  }
-
-  public String getPiOrbitalTorsionEnergyString() {
-    String energy = """
-        2*k*sin(phi)^2;
-        phi = pointdihedral(x3+c1x, y3+c1y, z3+c1z, x3, y3, z3, x4, y4, z4, x4+c2x, y4+c2y, z4+c2z);
-        c1x = (d14y*d24z-d14z*d24y);
-        c1y = (d14z*d24x-d14x*d24z);
-        c1z = (d14x*d24y-d14y*d24x);
-        c2x = (d53y*d63z-d53z*d63y);
-        c2y = (d53z*d63x-d53x*d63z);
-        c2z = (d53x*d63y-d53y*d63x);
-        d14x = x1-x4;
-        d14y = y1-y4;
-        d14z = z1-z4;
-        d24x = x2-x4;
-        d24y = y2-y4;
-        d24z = z2-z4;
-        d53x = x5-x3;
-        d53y = y5-y3;
-        d53z = z5-z3;
-        d63x = x6-x3;
-        d63y = y6-y3;
-        d63z = z6-z3;
-        """;
-    return energy;
-  }
-
-  /**
    * Gets the Platform associated with this force field energy. For the reference platform, always
    * returns FFX.
    *
@@ -3040,22 +2482,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>relativeSolvationEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getRelativeSolvationEnergy() {
-    return relativeSolvationEnergy;
-  }
-
-  public RestrainDistance[] getRestrainDistances() {
-    if (restrainDistancePotentialEnergy == null) {
-      return null;
-    }
-    return restrainDistancePotentialEnergy.getRestrainDistanceArray();
-  }
-
-  /**
    * {@inheritDoc}
    */
   @Override
@@ -3090,145 +2516,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * getStrenchBendEnergy.
-   *
-   * @return a double.
-   */
-  public double getStrenchBendEnergy() {
-    if (stretchBendPotentialEnergy == null) {
-      return 0.0;
-    }
-    return stretchBendPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>stretchBends</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.StretchBend} objects.
-   */
-  public StretchBend[] getStretchBends() {
-    if (stretchBendPotentialEnergy == null) {
-      return null;
-    }
-    return stretchBendPotentialEnergy.getStretchBendArray();
-  }
-
-  public String getStretchBendEnergyString() {
-    String energy = format("(k1*(distance(p1,p2)-r12) + k2*(distance(p2,p3)-r23))*(%.15g*(angle(p1,p2,p3)-theta0))", 180.0 / PI);
-    return energy;
-  }
-
-  /**
-   * Getter for the field <code>stretchTorsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getStretchTorsionEnergy() {
-    if (stretchTorsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return stretchTorsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>stretchTorsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.StretchTorsion} objects.
-   */
-  public StretchTorsion[] getStretchTorsions() {
-    if (stretchTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return stretchTorsionPotentialEnergy.getStretchTorsionArray();
-  }
-
-  /**
-   * Getter for the field <code>torsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getTorsionEnergy() {
-    if (torsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return torsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>torsionTorsionEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getTorsionTorsionEnergy() {
-    if (torsionTorsionPotentialEnergy == null) {
-      return 0.0;
-    }
-    return torsionTorsionPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>torsionTorsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.TorsionTorsion} objects.
-   */
-  public TorsionTorsion[] getTorsionTorsions() {
-    if (torsionTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return torsionTorsionPotentialEnergy.getTorsionTorsionArray();
-  }
-
-  /**
-   * Getter for the field <code>torsions</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.Torsion} objects.
-   */
-  public Torsion[] getTorsions() {
-    if (torsionPotentialEnergy == null) {
-      return null;
-    }
-    return torsionPotentialEnergy.getTorsionArray();
-  }
-
-  /**
-   * getTotalElectrostaticEnergy.
-   *
-   * @return a double.
-   */
-  public double getTotalElectrostaticEnergy() {
-    return totalMultipoleEnergy + solvationEnergy;
-  }
-
-  /**
    * {@inheritDoc}
    */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
-  }
-
-  /**
-   * Getter for the field <code>ureyBradleyEnergy</code>.
-   *
-   * @return a double.
-   */
-  public double getUreyBradleyEnergy() {
-    if (ureyBradleyPotentialEnergy == null) {
-      return 0.0;
-    }
-    return ureyBradleyPotentialEnergy.getEnergy();
-  }
-
-  /**
-   * Getter for the field <code>ureyBradleys</code>.
-   *
-   * @return an array of {@link ffx.potential.bonded.UreyBradley} objects.
-   */
-  public UreyBradley[] getUreyBradleys() {
-    if (ureyBradleyPotentialEnergy == null) {
-      return null;
-    }
-    return ureyBradleyPotentialEnergy.getUreyBradleyArray();
   }
 
   /**
@@ -3324,7 +2616,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
       */
       if (restrainDistanceTerm && restrainDistancePotentialEnergy != null) {
-        for (RestrainDistance restrainDistance : getRestrainDistances()) {
+        for (RestrainDistance restrainDistance : restrainDistancePotentialEnergy.getRestrainDistanceArray()) {
           d2EdLambda2 += restrainDistance.getd2EdL2();
         }
       }
@@ -3335,14 +2627,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         d2EdLambda2 += comRestraint.getd2EdL2();
       }
       if (lambdaTorsions) {
-        for (Torsion torsion : getTorsions()) {
-          d2EdLambda2 += torsion.getd2EdL2();
+        if (torsionPotentialEnergy != null) {
+          d2EdLambda2 += torsionPotentialEnergy.getd2EdL2();
         }
-        for (PiOrbitalTorsion piOrbitalTorsion : getPiOrbitalTorsions()) {
-          d2EdLambda2 += piOrbitalTorsion.getd2EdL2();
+        if (piOrbitalTorsionPotentialEnergy != null) {
+          d2EdLambda2 += piOrbitalTorsionPotentialEnergy.getd2EdL2();
         }
-        for (TorsionTorsion torsionTorsion : getTorsionTorsions()) {
-          d2EdLambda2 += torsionTorsion.getd2EdL2();
+        if (torsionTorsionPotentialEnergy != null) {
+          d2EdLambda2 += torsionTorsionPotentialEnergy.getd2EdL2();
         }
       }
     }
@@ -3363,7 +2655,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         dEdLambda += particleMeshEwald.getdEdL();
       }
       if (restrainDistanceTerm && restrainDistancePotentialEnergy != null) {
-        for (RestrainDistance restrainDistance : getRestrainDistances()) {
+        for (RestrainDistance restrainDistance : restrainDistancePotentialEnergy.getRestrainDistanceArray()) {
           dEdLambda += restrainDistance.getdEdL();
         }
       }
@@ -3381,14 +2673,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         dEdLambda += comRestraint.getdEdL();
       }
       if (lambdaTorsions) {
-        for (Torsion torsion : getTorsions()) {
-          dEdLambda += torsion.getdEdL();
+        if (torsionPotentialEnergy != null) {
+          dEdLambda += torsionPotentialEnergy.getdEdL();
         }
-        for (PiOrbitalTorsion piOrbitalTorsion : getPiOrbitalTorsions()) {
-          dEdLambda += piOrbitalTorsion.getdEdL();
+        if (piOrbitalTorsionPotentialEnergy != null) {
+          dEdLambda += piOrbitalTorsionPotentialEnergy.getdEdL();
         }
-        for (TorsionTorsion torsionTorsion : getTorsionTorsions()) {
-          dEdLambda += torsionTorsion.getdEdL();
+        if (torsionTorsionPotentialEnergy != null) {
+          dEdLambda += torsionTorsionPotentialEnergy.getdEdL();
         }
       }
     }
@@ -3408,7 +2700,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         particleMeshEwald.getdEdXdL(gradients);
       }
       if (restrainDistanceTerm && restrainDistancePotentialEnergy != null) {
-        for (RestrainDistance restrainDistance : getRestrainDistances()) {
+        for (RestrainDistance restrainDistance : restrainDistancePotentialEnergy.getRestrainDistanceArray()) {
           restrainDistance.getdEdXdL(gradients);
         }
       }
@@ -3626,10 +2918,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       sb.append(
           format("  %s %20.8f %12d\n", "Solvation         ", solvationEnergy, nGKInteractions));
     }
-    if (relativeSolvationTerm) {
-      sb.append(format("  %s %20.8f %12d\n", "Relative Solvation", relativeSolvationEnergy,
-          nRelativeSolvations));
-    }
     if (esvTerm) {
       sb.append(
           format("  %s %20.8f  %s\n", "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
@@ -3639,7 +2927,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       sb.append(format("  %s %20.8f %12d %12.3f\n", "Neural Network    ", nnEnergy, nAtoms,
           nnTime * toSeconds));
     }
-    sb.append(format("  %s %20.8f  %s %12.3f (sec)", 
+    sb.append(format("  %s %20.8f  %s %12.3f (sec)",
         "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
     if (nsymm > 1) {
@@ -3678,16 +2966,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   void setLambdaBondedTerms(boolean lambdaBondedTerms, boolean lambdaAllBondedTerms) {
     this.lambdaBondedTerms = lambdaBondedTerms;
     this.lambdaAllBondedTerms = lambdaAllBondedTerms;
-  }
-
-  /**
-   * Return the non-bonded components of energy (vdW, electrostatics).
-   *
-   * @param includeSolv Include solvation energy
-   * @return Nonbonded energy
-   */
-  private double getNonbondedEnergy(boolean includeSolv) {
-    return (includeSolv ? (totalNonBondedEnergy + solvationEnergy) : totalNonBondedEnergy);
   }
 
   /**
@@ -3816,47 +3094,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return unitCell;
   }
 
-  /**
-   * Getter for the field <code>restrainDistances</code>.
-   *
-   * @param bondFunction the type of bond function.
-   * @return a {@link java.util.List} object.
-   */
-  public List<RestrainDistance> getRestrainDistances(@Nullable BondType.BondFunction bondFunction) {
-    List<RestrainDistance> list = new ArrayList<>();
-    RestrainDistance[] restrainDistances = getRestrainDistances();
-    if (restrainDistances != null && restrainDistances.length > 0) {
-      // If the bondFunction is null, return all restrained bonds.
-      if (bondFunction == null) {
-        return Arrays.asList(restrainDistances);
-      }
-      // Otherwise, return only the restraint bonds with the specified bond function.
-      for (RestrainDistance restrainDistance : restrainDistances) {
-        if (restrainDistance.getBondType().bondFunction == bondFunction) {
-          list.add(restrainDistance);
-        }
-      }
-      if (!list.isEmpty()) {
-        return list;
-      }
-    }
-    return null;
-  }
-
   public RestrainMode getRestrainMode() {
     return restrainMode;
-  }
-
-  /**
-   * Getter for the field <code>restraintBonds</code>.
-   *
-   * @return a {@link java.util.List} object.
-   */
-  public Torsion[] getRestrainTorsions() {
-    if (restrainTorsionPotentialEnergy == null) {
-      return null;
-    }
-    return restrainTorsionPotentialEnergy.getRestrainTorsionArray();
   }
 
   /**
@@ -3870,10 +3109,128 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
   /**
    * Get the TorsionTorsionPotentialEnergy.
+   *
    * @return The TorsionTorsionPotentialEnergy.
    */
   public TorsionTorsionPotentialEnergy getTorsionTorsionPotentialEnergy() {
     return torsionTorsionPotentialEnergy;
+  }
+
+  /**
+   * Get the AnglePotentialEnergy.
+   *
+   * @return The AnglePotentialEnergy.
+   */
+  public AnglePotentialEnergy getAnglePotentialEnergy() {
+    return anglePotentialEnergy;
+  }
+
+  /**
+   * Get the BondPotentialEnergy.
+   *
+   * @return The BondPotentialEnergy.
+   */
+  public BondPotentialEnergy getBondPotentialEnergy() {
+    return bondPotentialEnergy;
+  }
+
+  /**
+   * Get the StretchBendPotentialEnergy.
+   *
+   * @return The StretchBendPotentialEnergy.
+   */
+  public StretchBendPotentialEnergy getStretchBendPotentialEnergy() {
+    return stretchBendPotentialEnergy;
+  }
+
+  /**
+   * Get the UreyBradleyPotentialEnergy.
+   *
+   * @return The UreyBradleyPotentialEnergy.
+   */
+  public UreyBradleyPotentialEnergy getUreyBradleyPotentialEnergy() {
+    return ureyBradleyPotentialEnergy;
+  }
+
+  /**
+   * Get the OutOfPlaneBendPotentialEnergy.
+   *
+   * @return The OutOfPlaneBendPotentialEnergy.
+   */
+  public OutOfPlaneBendPotentialEnergy getOutOfPlaneBendPotentialEnergy() {
+    return outOfPlaneBendPotentialEnergy;
+  }
+
+  /**
+   * Get the TorsionPotentialEnergy.
+   *
+   * @return The TorsionPotentialEnergy.
+   */
+  public TorsionPotentialEnergy getTorsionPotentialEnergy() {
+    return torsionPotentialEnergy;
+  }
+
+  /**
+   * Get the StretchTorsionPotentialEnergy.
+   *
+   * @return The StretchTorsionPotentialEnergy.
+   */
+  public StretchTorsionPotentialEnergy getStretchTorsionPotentialEnergy() {
+    return stretchTorsionPotentialEnergy;
+  }
+
+  /**
+   * Get the AngleTorsionPotentialEnergy.
+   *
+   * @return The AngleTorsionPotentialEnergy.
+   */
+  public AngleTorsionPotentialEnergy getAngleTorsionPotentialEnergy() {
+    return angleTorsionPotentialEnergy;
+  }
+
+  /**
+   * Get the ImproperTorsionPotentialEnergy.
+   *
+   * @return The ImproperTorsionPotentialEnergy.
+   */
+  public ImproperTorsionPotentialEnergy getImproperTorsionPotentialEnergy() {
+    return improperTorsionPotentialEnergy;
+  }
+
+  /**
+   * Get the PiOrbitalTorsionPotentialEnergy.
+   *
+   * @return The PiOrbitalTorsionPotentialEnergy.
+   */
+  public PiOrbitalTorsionPotentialEnergy getPiOrbitalTorsionPotentialEnergy() {
+    return piOrbitalTorsionPotentialEnergy;
+  }
+
+  /**
+   * Get the RestrainPositionPotentialEnergy.
+   *
+   * @return The RestrainPositionPotentialEnergy.
+   */
+  public RestrainPositionPotentialEnergy getRestrainPositionPotentialEnergy() {
+    return restrainPositionPotentialEnergy;
+  }
+
+  /**
+   * Get the RestrainDistancePotentialEnergy.
+   *
+   * @return The RestrainDistancePotentialEnergy.
+   */
+  public RestrainDistancePotentialEnergy getRestrainDistancePotentialEnergy() {
+    return restrainDistancePotentialEnergy;
+  }
+
+  /**
+   * Get the RestrainTorsionPotentialEnergy.
+   *
+   * @return The RestrainTorsionPotentialEnergy.
+   */
+  public RestrainTorsionPotentialEnergy getRestrainTorsionPotentialEnergy() {
+    return restrainTorsionPotentialEnergy;
   }
 
 }

@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
 /**
  * Pi-Orbital Torsion potential energy term using {@link ffx.potential.bonded.PiOrbitalTorsion} instances.
@@ -214,6 +213,69 @@ public class PiOrbitalTorsionPotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfPiOrbitalTorsions() {
     return piOrbitalTorsions.size();
+  }
+
+  /**
+   * Set the lambda value for all Pi-Orbital Torsions in this term.
+   *
+   * @param lambda Lambda value to set for all  Pi-Orbital Torsions.
+   */
+  public void setLambda(double lambda) {
+    for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+      piOrbitalTorsion.setLambda(lambda);
+    }
+  }
+
+  /**
+   * Get the energy contribution from all Pi-Orbital Torsions in this term.
+   *
+   * @return Total energy from all Pi-Orbital Torsions.
+   */
+  public double getdEdL() {
+    double dEdL = 0.0;
+    for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+      dEdL += piOrbitalTorsion.getdEdL();
+    }
+    return dEdL;
+  }
+
+  /**
+   * Get the energy contribution from all Torsions in this term.
+   *
+   * @return Total energy from all Pi-Orbital Torsions.
+   */
+  public double getd2EdL2() {
+    double d2EdLambda2 = 0.0;
+    for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+      d2EdLambda2 += piOrbitalTorsion.getd2EdL2();
+    }
+    return d2EdLambda2;
+  }
+
+  public static String getPiOrbitalTorsionEnergyString() {
+    String energy = """
+        2*k*sin(phi)^2;
+        phi = pointdihedral(x3+c1x, y3+c1y, z3+c1z, x3, y3, z3, x4, y4, z4, x4+c2x, y4+c2y, z4+c2z);
+        c1x = (d14y*d24z-d14z*d24y);
+        c1y = (d14z*d24x-d14x*d24z);
+        c1z = (d14x*d24y-d14y*d24x);
+        c2x = (d53y*d63z-d53z*d63y);
+        c2y = (d53z*d63x-d53x*d63z);
+        c2z = (d53x*d63y-d53y*d63x);
+        d14x = x1-x4;
+        d14y = y1-y4;
+        d14z = z1-z4;
+        d24x = x2-x4;
+        d24y = y2-y4;
+        d24z = z2-z4;
+        d53x = x5-x3;
+        d53y = y5-y3;
+        d53z = z5-z3;
+        d63x = x6-x3;
+        d63y = y6-y3;
+        d63z = z6-z3;
+        """;
+    return energy;
   }
 
   /**

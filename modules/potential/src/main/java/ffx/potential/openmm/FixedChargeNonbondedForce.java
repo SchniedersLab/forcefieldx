@@ -52,6 +52,7 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.VDWType;
+import ffx.potential.terms.BondPotentialEnergy;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -152,8 +153,9 @@ public class FixedChargeNonbondedForce extends NonbondedForce {
       coulomb14Scale = pme.getScale14();
     }
 
-    Bond[] bonds = openMMEnergy.getBonds();
-    if (bonds != null && bonds.length > 0) {
+    BondPotentialEnergy bondPotentialEnergy = openMMEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy != null) {
+      Bond[] bonds = bondPotentialEnergy.getBondArray();
       BondArray bondArray = new BondArray(0);
       for (Bond bond : bonds) {
         int i1 = bond.getAtom(0).getXyzIndex() - 1;

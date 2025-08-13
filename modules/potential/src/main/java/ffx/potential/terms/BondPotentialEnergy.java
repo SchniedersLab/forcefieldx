@@ -39,12 +39,15 @@ package ffx.potential.terms;
 
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
+import ffx.potential.parameters.BondType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static java.lang.String.format;
 
 /**
@@ -221,6 +224,25 @@ public class BondPotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfBonds() {
     return bonds.size();
+  }
+
+  public String getBondEnergyString() {
+    BondType bondType = bonds.getFirst().getBondType();
+    String energy;
+    if (bondType.bondFunction == BondType.BondFunction.QUARTIC) {
+      energy = format("""
+              k*(d^2 + %.15g*d^3 + %.15g*d^4);
+              d=r-r0;
+              """,
+          bondType.cubic / OpenMM_NmPerAngstrom,
+          bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+    } else {
+      energy = """
+          k*(d^2);
+          d=r-r0;
+          """;
+    }
+    return energy;
   }
 
   /**

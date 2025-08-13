@@ -37,14 +37,14 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.StretchBend;
+import ffx.potential.terms.StretchBendPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -62,14 +62,11 @@ public class StretchBendForce extends CustomCompoundBondForce {
   /**
    * Create an OpenMM Stretch-Bend Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the Stretch-Bends.
+   * @param stretchBendPotentialEnergy The StretchBendPotentialEnergy instance that contains the stretch-bends.
    */
-  public StretchBendForce(OpenMMEnergy openMMEnergy) {
-    super(3, openMMEnergy.getStretchBendEnergyString());
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
-      return;
-    }
+  public StretchBendForce(StretchBendPotentialEnergy stretchBendPotentialEnergy) {
+    super(3, StretchBendPotentialEnergy.getStretchBendEnergyString());
+    StretchBend[] stretchBends = stretchBendPotentialEnergy.getStretchBendArray();
     addPerBondParameter("r12");
     addPerBondParameter("r23");
     addPerBondParameter("theta0");
@@ -103,7 +100,7 @@ public class StretchBendForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+    int forceGroup = stretchBendPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Stretch-Bends:                     %10d", stretchBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -112,17 +109,14 @@ public class StretchBendForce extends CustomCompoundBondForce {
   /**
    * Create an OpenMM Stretch-Bend Force for Dual Topology.
    *
-   * @param topology The topology index for the OpenMM System.
-   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @param stretchBendPotentialEnergy The StretchBendPotentialEnergy instance that contains the stretch-bends.
+   * @param topology                   The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy   The OpenMMDualTopologyEnergy instance.
    */
-  public StretchBendForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(3, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getStretchBendEnergyString());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
-      return;
-    }
+  public StretchBendForce(StretchBendPotentialEnergy stretchBendPotentialEnergy,
+                          int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(3, StretchBendPotentialEnergy.getStretchBendEnergyString());
+    StretchBend[] stretchBends = stretchBendPotentialEnergy.getStretchBendArray();
     addPerBondParameter("r12");
     addPerBondParameter("r23");
     addPerBondParameter("theta0");
@@ -166,7 +160,7 @@ public class StretchBendForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("STRETCH_BEND_FORCE_GROUP", 0);
+    int forceGroup = stretchBendPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Stretch-Bends:                     %10d", stretchBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -179,27 +173,27 @@ public class StretchBendForce extends CustomCompoundBondForce {
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-bends.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = openMMEnergy.getStretchBendPotentialEnergy();
+    if (stretchBendPotentialEnergy == null) {
       return null;
     }
-    return new StretchBendForce(openMMEnergy);
+    return new StretchBendForce(stretchBendPotentialEnergy);
   }
 
   /**
    * Convenience method to construct a Dual-Topology OpenMM Stretch-Bend Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return An OpenMM Stretch-Bend Force, or null if there are no stretch-bends.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = forceFieldEnergy.getStretchBendPotentialEnergy();
+    if (stretchBendPotentialEnergy == null) {
       return null;
     }
-    return new StretchBendForce(topology, openMMDualTopologyEnergy);
+    return new StretchBendForce(stretchBendPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
@@ -208,10 +202,11 @@ public class StretchBendForce extends CustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the stretch-bends.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    StretchBend[] stretchBends = openMMEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = openMMEnergy.getStretchBendPotentialEnergy();
+    if (stretchBendPotentialEnergy == null) {
       return;
     }
+    StretchBend[] stretchBends = stretchBendPotentialEnergy.getStretchBendArray();
 
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
@@ -246,15 +241,16 @@ public class StretchBendForce extends CustomCompoundBondForce {
   /**
    * Update existing Stretch-Bend Force for the Dual-Topology OpenMM System.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    StretchBend[] stretchBends = forceFieldEnergy.getStretchBends();
-    if (stretchBends == null || stretchBends.length < 1) {
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = forceFieldEnergy.getStretchBendPotentialEnergy();
+    if (stretchBendPotentialEnergy == null) {
       return;
     }
+    StretchBend[] stretchBends = stretchBendPotentialEnergy.getStretchBendArray();
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 

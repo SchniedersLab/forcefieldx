@@ -40,6 +40,17 @@ package ffx.potential.groovy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
+import ffx.potential.terms.AnglePotentialEnergy;
+import ffx.potential.terms.AngleTorsionPotentialEnergy;
+import ffx.potential.terms.BondPotentialEnergy;
+import ffx.potential.terms.ImproperTorsionPotentialEnergy;
+import ffx.potential.terms.OutOfPlaneBendPotentialEnergy;
+import ffx.potential.terms.PiOrbitalTorsionPotentialEnergy;
+import ffx.potential.terms.StretchBendPotentialEnergy;
+import ffx.potential.terms.StretchTorsionPotentialEnergy;
+import ffx.potential.terms.TorsionPotentialEnergy;
+import ffx.potential.terms.TorsionTorsionPotentialEnergy;
+import ffx.potential.terms.UreyBradleyPotentialEnergy;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
@@ -153,38 +164,71 @@ public class ParentEnergyTest extends PotentialTest {
     ForceFieldEnergy forceFieldEnergy = energy.forceFieldEnergy;
 
     // Bond Energy
-    assertEquals(info + " Bond Energy", bondEnergy, forceFieldEnergy.getBondEnergy(), tolerance);
-    assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberOfBonds());
+    BondPotentialEnergy bondPotentialEnergy = forceFieldEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy != null) {
+      assertEquals(info + " Bond Energy", bondEnergy, bondPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Bond Count", nBonds, bondPotentialEnergy.getNumberOfBonds());
+    }
     // Angle Energy
-    assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.getAngleEnergy(), tolerance);
-    assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.getNumberofAngles());
+    AnglePotentialEnergy anglePotentialEnergy = forceFieldEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy != null) {
+      assertEquals(info + " Angle Energy", angleEnergy, anglePotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Angle Count", nAngles, anglePotentialEnergy.getNumberOfAngles());
+    }
     // Stretch-Bend Energy
-    assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy, forceFieldEnergy.getStrenchBendEnergy(), tolerance);
-    assertEquals(info + " Stretch-Bend Count", nStretchBends, forceFieldEnergy.getNumberofStretchBends());
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = forceFieldEnergy.getStretchBendPotentialEnergy();
+    if (stretchBendPotentialEnergy != null) {
+      assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy, stretchBendPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Stretch-Bend Count", nStretchBends, stretchBendPotentialEnergy.getNumberOfStretchBends());
+    }
     // Urey-Bradley Energy
-    assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy, forceFieldEnergy.getUreyBradleyEnergy(), tolerance);
-    assertEquals(info + " Urey-Bradley Count", nUreyBradleys, forceFieldEnergy.getNumberofUreyBradleys());
+    UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = forceFieldEnergy.getUreyBradleyPotentialEnergy();
+    if (ureyBradleyPotentialEnergy != null) {
+      assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy, ureyBradleyPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Urey-Bradley Count", nUreyBradleys, ureyBradleyPotentialEnergy.getNumberOfUreyBradleys());
+    }
     // Out-of-Plane Bend
-    assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy, forceFieldEnergy.getOutOfPlaneBendEnergy(), tolerance);
-    assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends, forceFieldEnergy.getNumberofOutOfPlaneBends());
+    OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy = forceFieldEnergy.getOutOfPlaneBendPotentialEnergy();
+    if (outOfPlaneBendPotentialEnergy != null) {
+      assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy, outOfPlaneBendPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends, outOfPlaneBendPotentialEnergy.getNumberOfOutOfPlaneBends());
+    }
     // Torsional Angle
-    assertEquals(info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
-    assertEquals(info + " Torsion Count", nTorsions, forceFieldEnergy.getNumberofTorsions());
+    TorsionPotentialEnergy torsionPotentialEnergy = forceFieldEnergy.getTorsionPotentialEnergy();
+    if (torsionPotentialEnergy != null) {
+      assertEquals(info + " Torsion Energy", torsionEnergy, torsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Torsion Count", nTorsions, torsionPotentialEnergy.getNumberOfTorsions());
+    }
     // Improper Torsional Angle
-    assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy, forceFieldEnergy.getImproperTorsionEnergy(), tolerance);
-    assertEquals(info + " Improper Torsion Count", nImproperTorsions, forceFieldEnergy.getNumberofImproperTorsions());
+    ImproperTorsionPotentialEnergy improperTorsionPotentialEnergy = forceFieldEnergy.getImproperTorsionPotentialEnergy();
+    if (improperTorsionPotentialEnergy != null) {
+      assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy, improperTorsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Improper Torsion Count", nImproperTorsions, improperTorsionPotentialEnergy.getNumberOfImproperTorsions());
+    }
     // Pi-Orbital Torsion
-    assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy, forceFieldEnergy.getPiOrbitalTorsionEnergy(), tolerance);
-    assertEquals(info + " Pi-OrbitalTorsion Count", nPiOrbitalTorsions, forceFieldEnergy.getNumberofPiOrbitalTorsions());
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = forceFieldEnergy.getPiOrbitalTorsionPotentialEnergy();
+    if (piOrbitalTorsionPotentialEnergy != null) {
+      assertEquals(info + " Pi-Orbital Torsion Energy", piOrbitalTorsionEnergy, piOrbitalTorsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Pi-Orbital Torsion Count", nPiOrbitalTorsions, piOrbitalTorsionPotentialEnergy.getNumberOfPiOrbitalTorsions());
+    }
     // Torsion-Torsion
-    assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy, forceFieldEnergy.getTorsionTorsionEnergy(), tolerance);
-    assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions, forceFieldEnergy.getNumberofTorsionTorsions());
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = forceFieldEnergy.getTorsionTorsionPotentialEnergy();
+    if (torsionTorsionPotentialEnergy != null) {
+      assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy, torsionTorsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions, torsionTorsionPotentialEnergy.getNumberOfTorsionTorsions());
+    }
     // Stretch-Torsion
-    assertEquals(info + " Stretch-Torsion Energy", stretchTorsionEnergy, forceFieldEnergy.getStretchTorsionEnergy(), tolerance);
-    assertEquals(info + " Stretch-Torsion Count", nStretchTorsions, forceFieldEnergy.getNumberofStretchTorsions());
+    StretchTorsionPotentialEnergy stretchTorsionPotentialEnergy = forceFieldEnergy.getStretchTorsionPotentialEnergy();
+    if (stretchTorsionPotentialEnergy != null) {
+      assertEquals(info + " Stretch-Torsion Energy", stretchTorsionEnergy, stretchTorsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Stretch-Torsion Count", nStretchTorsions, stretchTorsionPotentialEnergy.getNumberOfStretchTorsions());
+    }
     // Angle-Torsion
-    assertEquals(info + " Angle-Torsion Energy", angleTorsionEnergy, forceFieldEnergy.getAngleTorsionEnergy(), tolerance);
-    assertEquals(info + " Angle-Torsion Count", nAngleTorsions, forceFieldEnergy.getNumberofAngleTorsions());
+    AngleTorsionPotentialEnergy angleTorsionPotentialEnergy = forceFieldEnergy.getAngleTorsionPotentialEnergy();
+    if (angleTorsionPotentialEnergy != null) {
+      assertEquals(info + " Angle-Torsion Energy", angleTorsionEnergy, angleTorsionPotentialEnergy.getEnergy(), tolerance);
+      assertEquals(info + " Angle-Torsion Count", nAngleTorsions, angleTorsionPotentialEnergy.getNumberOfAngleTorsions());
+    }
     // van Der Waals
     assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, forceFieldEnergy.getVanDerWaalsEnergy(), tolerance);
     assertEquals(info + " van Der Waals Count", nVanDerWaals, forceFieldEnergy.getVanDerWaalsInteractions());

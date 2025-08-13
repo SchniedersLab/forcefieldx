@@ -41,8 +41,8 @@ import ffx.openmm.Force;
 import ffx.openmm.PeriodicTorsionForce;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.TorsionType;
+import ffx.potential.terms.RestrainTorsionPotentialEnergy;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,14 +60,10 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
   /**
    * Restrain Torsion Force constructor.
    *
-   * @param openMMEnergy The OpenMM Energy that contains the restraint-torsions.
+   * @param restrainTorsionPotentialEnergy The RestrainTorsionPotentialEnergy instance that contains the torsions.
    */
-  public RestrainTorsionsForce(OpenMMEnergy openMMEnergy) {
-    Torsion[] restrainTorsions = openMMEnergy.getRestrainTorsions();
-    if (restrainTorsions == null || restrainTorsions.length == 0) {
-      return;
-    }
-
+  public RestrainTorsionsForce(RestrainTorsionPotentialEnergy restrainTorsionPotentialEnergy) {
+    Torsion[] restrainTorsions = restrainTorsionPotentialEnergy.getRestrainTorsionArray();
     for (Torsion restrainTorsion : restrainTorsions) {
       int a1 = restrainTorsion.getAtom(0).getXyzIndex() - 1;
       int a2 = restrainTorsion.getAtom(1).getXyzIndex() - 1;
@@ -81,8 +77,7 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
             OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j]);
       }
     }
-
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAIN_TORSION_FORCE_GROUP", 0);
+    int forceGroup = restrainTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Restrain-Torsions \t%6d\t\t%1d", restrainTorsions.length, forceGroup));
   }
@@ -94,11 +89,12 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    * @return A Torsion Force, or null if there are no torsions.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    Torsion[] torsions = openMMEnergy.getRestrainTorsions();
-    if (torsions == null || torsions.length < 1) {
+    RestrainTorsionPotentialEnergy restrainTorsionPotentialEnergy =
+        openMMEnergy.getRestrainTorsionPotentialEnergy();
+    if (restrainTorsionPotentialEnergy == null) {
       return null;
     }
-    return new RestrainTorsionsForce(openMMEnergy);
+    return new RestrainTorsionsForce(restrainTorsionPotentialEnergy);
   }
 
   /**
@@ -108,11 +104,12 @@ public class RestrainTorsionsForce extends PeriodicTorsionForce {
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
     // Check if this system has restraintTorsions.
-    Torsion[] restrainTorsions = openMMEnergy.getRestrainTorsions();
-    if (restrainTorsions == null || restrainTorsions.length == 0) {
+    RestrainTorsionPotentialEnergy restrainTorsionPotentialEnergy =
+        openMMEnergy.getRestrainTorsionPotentialEnergy();
+    if (restrainTorsionPotentialEnergy == null) {
       return;
     }
-
+    Torsion[] restrainTorsions = restrainTorsionPotentialEnergy.getRestrainTorsionArray();
     int index = 0;
     for (Torsion restrainTorsion : restrainTorsions) {
       TorsionType torsionType = restrainTorsion.torsionType;

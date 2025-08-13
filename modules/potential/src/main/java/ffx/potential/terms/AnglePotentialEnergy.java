@@ -39,6 +39,7 @@ package ffx.potential.terms;
 
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.BondedTerm;
+import ffx.potential.parameters.AngleType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Angle potential energy term using {@link ffx.potential.bonded.Angle} instances.
@@ -56,7 +58,6 @@ import static java.lang.String.format;
 public class AnglePotentialEnergy extends EnergyTerm {
 
   private static final Logger logger = Logger.getLogger(AnglePotentialEnergy.class.getName());
-
 
   /**
    * Internal list of Angle instances.
@@ -221,6 +222,57 @@ public class AnglePotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfAngles() {
     return angles.size();
+  }
+
+  /**
+   * Get the String used for OpenMM angle energy expressions.
+   * @return String representing the angle energy expression.
+   */
+  public String getAngleEnergyString() {
+    AngleType angleType = angles.getFirst().angleType;
+    String energy;
+    if (angleType.angleFunction == AngleType.AngleFunction.SEXTIC) {
+      energy = format("""
+              k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
+              d=%.15g*theta-theta0;
+              """,
+          angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
+    } else {
+      energy = format("""
+              k*(d^2);
+              d=%.15g*theta-theta0;
+              """,
+          180.0 / PI);
+    }
+    return energy;
+  }
+
+  public String getInPlaneAngleEnergyString() {
+    AngleType angleType = angles.getFirst().angleType;
+    String energy = format("""
+            k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6);
+            d=theta-theta0;
+            theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3);
+            projx = x2-nx*dot;
+            projy = y2-ny*dot;
+            projz = z2-nz*dot;
+            dot = nx*(x2-x3) + ny*(y2-y3) + nz*(z2-z3);
+            nx = px/norm;
+            ny = py/norm;
+            nz = pz/norm;
+            norm = sqrt(px*px + py*py + pz*pz);
+            px = (d1y*d2z-d1z*d2y);
+            py = (d1z*d2x-d1x*d2z);
+            pz = (d1x*d2y-d1y*d2x);
+            d1x = x1-x4;
+            d1y = y1-y4;
+            d1z = z1-z4;
+            d2x = x3-x4;
+            d2y = y3-y4;
+            d2z = z3-z4;
+            """,
+        angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
+    return energy;
   }
 
   /**

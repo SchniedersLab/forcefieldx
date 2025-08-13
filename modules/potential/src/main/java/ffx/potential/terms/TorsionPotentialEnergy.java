@@ -220,6 +220,40 @@ public class TorsionPotentialEnergy extends EnergyTerm {
   }
 
   /**
+   * Set the lambda value for all Torsions in this term.
+   * @param lambda Lambda value to set for all Torsions.
+   */
+  public void setLambda(double lambda) {
+    for (Torsion torsion : torsions) {
+      torsion.setLambda(lambda);
+    }
+  }
+
+  /**
+   * Get the energy contribution from all Torsions in this term.
+   * @return Total energy from all Torsions.
+   */
+  public double getdEdL() {
+    double dEdL = 0.0;
+    for (Torsion torsion : getTorsions()) {
+      dEdL += torsion.getdEdL();
+    }
+    return dEdL;
+  }
+
+  /**
+   * Get the energy contribution from all Torsions in this term.
+   * @return Total energy from all Torsions.
+   */
+  public double getd2EdL2() {
+    double d2EdLambda2 = 0.0;
+    for (Torsion torsion : getTorsions()) {
+      d2EdLambda2 += torsion.getd2EdL2();
+    }
+    return d2EdLambda2;
+  }
+
+  /**
    * Log the details of Torsion interactions.
    */
   @Override

@@ -219,6 +219,14 @@ public class RestrainPositionPotentialEnergy extends EnergyTerm {
   }
 
   /**
+   * Get the mathematical form of the Restrain Position interaction.
+   * @return The mathematical form of the Restrain Position interaction.
+   */
+  public static String getRestrainPositionEnergyString() {
+    return "k0*periodicdistance(x,y,z,x0,y0,z0)^2";
+  }
+
+  /**
    * Log the details of Restrain Position interactions.
    */
   @Override

@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Stretch-Bend potential energy term using {@link ffx.potential.bonded.StretchBend} instances.
@@ -221,6 +222,14 @@ public class StretchBendPotentialEnergy extends EnergyTerm {
    */
   public int getNumberOfStretchBends() {
     return stretchBends.size();
+  }
+
+  /**
+   * Get a formatted string representing the energy expression for Stretch-Bend interactions.
+   * @return String representing the Stretch-Bend energy expression.
+   */
+  public static String getStretchBendEnergyString() {
+    return format("(k1*(distance(p1,p2)-r12) + k2*(distance(p2,p3)-r23))*(%.15g*(angle(p1,p2,p3)-theta0))", 180.0 / PI);
   }
 
   /**
