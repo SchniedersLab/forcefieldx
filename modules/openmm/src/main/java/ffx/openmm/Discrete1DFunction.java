@@ -45,21 +45,16 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete1DFunction_getFunct
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Discrete1DFunction_setFunctionParameters;
 
 /**
- * A Discrete1DFunction uses discrete values to define a function based on a discrete set of
- * tabulated values. This is useful for defining functions from experimental data or other
- * tabulated sources where no interpolation is desired.
- * <p>
- * The function is defined by a set of (x, y) pairs, and values are returned exactly as
- * tabulated without interpolation. The function can optionally be periodic, meaning that
- * values outside the tabulated range are computed by wrapping around to the other end of
- * the table.
+ * This is a TabulatedFunction that computes a discrete one dimensional function f(x).
+ * To evaluate it, x is rounded to the nearest integer and the table element with that
+ * index is returned. If the index is outside the range [0, size), the result is undefined.
  */
 public class Discrete1DFunction extends TabulatedFunction {
 
   /**
-   * Create a Discrete1DFunction.
+   * Create a Discrete1DFunction f(x) based on a set of tabulated values.
    *
-   * @param values The tabulated values of the function f(x) at discrete values of x.
+   * @param values the tabulated values of the function f(x)
    */
   public Discrete1DFunction(PointerByReference values) {
     super(OpenMM_Discrete1DFunction_create(values));
@@ -79,7 +74,7 @@ public class Discrete1DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function (output).
+   * @param values the tabulated values of the function f(x)
    */
   public void getFunctionParameters(PointerByReference values) {
     OpenMM_Discrete1DFunction_getFunctionParameters(pointer, values);
@@ -88,7 +83,7 @@ public class Discrete1DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function.
+   * @param values the tabulated values of the function f(x)
    */
   public void setFunctionParameters(PointerByReference values) {
     OpenMM_Discrete1DFunction_setFunctionParameters(pointer, values);

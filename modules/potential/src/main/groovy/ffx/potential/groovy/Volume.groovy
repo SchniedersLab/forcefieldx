@@ -139,7 +139,7 @@ class Volume extends PotentialScript {
    * Volume Constructor.
    */
   Volume() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

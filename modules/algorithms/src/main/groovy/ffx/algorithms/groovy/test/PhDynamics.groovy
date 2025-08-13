@@ -150,7 +150,7 @@ class PhDynamics extends AlgorithmsScript {
    * Dynamics Constructor.
    */
   PhDynamics() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

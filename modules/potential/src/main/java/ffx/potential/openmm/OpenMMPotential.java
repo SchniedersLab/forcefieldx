@@ -35,68 +35,61 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.openmm;
+package ffx.potential.openmm;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_getFrequency;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_setFrequency;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions;
+import ffx.potential.bonded.Atom;
+
+import javax.annotation.Nullable;
 
 /**
- * This class prevents the center of mass of a System from drifting.  At each time step, it calculates the
- * center of mass momentum, then adjusts the individual particle velocities to make it zero.
+ * An interface for classes that provide an OpenMM potential energy implementation.
  */
-public class CMMotionRemover extends Force {
+public interface OpenMMPotential {
 
   /**
-   * Create a CMMotionRemover.
+   * Returns the Context instance.
    *
-   * @param frequency the frequency (in time steps) at which center of mass motion should be removed
+   * @return context
    */
-  public CMMotionRemover(int frequency) {
-    super(OpenMM_CMMotionRemover_create(frequency));
-  }
+  OpenMMContext getContext();
 
   /**
-   * Get the frequency (in time steps) at which center of mass motion should be removed.
+   * Update the OpenMM Context.
    *
-   * @return the frequency (in time steps) at which center of mass motion should be removed
+   * @param integratorName Integrator to use.
+   * @param timeStep       Time step.
+   * @param temperature    Temperature (K).
+   * @param forceCreation  Force a new Context to be created, even if the existing one matches the
+   *                       request.
    */
-  public int getFrequency() {
-    return OpenMM_CMMotionRemover_getFrequency(pointer);
-  }
+  void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation);
 
   /**
-   * Destroy the OpenMM CMMotionRemover.
-   */
-  @Override
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_CMMotionRemover_destroy(pointer);
-      pointer = null;
-    }
-  }
-
-  /**
-   * Set the frequency (in time steps) at which center of mass motion should be removed.
+   * Create an immutable OpenMM State.
    *
-   * @param freq the frequency (in time steps) at which center of mass motion should be removed
+   * <p>State.free() must be called to free OpenMM memory.
+   *
+   * @param mask The State mask.
+   * @return Returns the State.
    */
-  public void setFrequency(int freq) {
-    OpenMM_CMMotionRemover_setFrequency(pointer, freq);
-  }
+  OpenMMState getOpenMMState(int mask);
 
   /**
-   * Returns whether or not this force makes use of periodic boundary
-   * conditions.
+   * Get a reference to the System instance.
    *
-   * @return true if force uses PBC and false otherwise
+   * @return a reference to the OpenMMSystem.
    */
-  @Override
-  public boolean usesPeriodicBoundaryConditions() {
-    int pbc = OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(pointer);
-    return pbc != OpenMM_False;
-  }
+  OpenMMSystem getSystem();
+
+  /**
+   * Update active atoms.
+   */
+  void setActiveAtoms();
+
+  /**
+   * Update parameters if the Use flags and/or Lambda value has changed.
+   *
+   * @param atoms Atoms in this list are considered.
+   */
+  void updateParameters(@Nullable Atom[] atoms);
 }

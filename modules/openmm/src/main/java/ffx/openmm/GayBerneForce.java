@@ -66,10 +66,40 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_GayBerneForce_updateParamet
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_GayBerneForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements the Gay-Berne anisotropic potential for ellipsoidal particles.
- * The Gay-Berne potential is a generalization of the Lennard-Jones potential for
- * non-spherical particles, commonly used to model liquid crystals and other
- * anisotropic systems.
+ * This class implements the Gay-Berne anisotropic potential.  This is similar to a Lennard-Jones potential,
+ * but it represents the particles as ellipsoids rather than point particles.  In addition to the standard
+ * sigma and epsilon parameters, each particle has three widths sx, sy, and sz that give the diameter of the
+ * ellipsoid along each axis.  It also has three scale factors ex, ey, and ez that scale the strength
+ * of the interaction along each axis.  You can think of this force as a Lennard-Jones interaction computed
+ * based on the distance between the nearest points on two ellipsoids.  The scale factors act as multipliers
+ * for epsilon along each axis, so the strength of the interaction along the ellipsoid's x axis is multiplied by
+ * ex, and likewise for the other axes.  If two particles each have all their widths set to sigma and all their
+ * scale factors set to 1, the interaction simplifies to a standard Lennard-Jones force between point particles.
+ * <p>
+ * The orientation of a particle's ellipsoid is determined based on the positions of two other particles.
+ * The vector to the first particle sets the direction of the x axis.  The vector to the second particle
+ * (after subtracting out any x component) sets the direction of the y axis.  If the ellipsoid is axially
+ * symmetric (sy=sz and ey=ez), you can omit the second particle and define only an x axis direction.
+ * If the ellipsoid is a sphere (all three widths and all three scale factors are equal), both particles
+ * can be omitted.
+ * <p>
+ * To determine the values of sigma and epsilon for an interaction, this class uses Lorentz-Berthelot
+ * combining rules: it takes the arithmetic mean of the sigmas and the geometric mean of the epsilons for
+ * the two interacting particles.  You also can specify "exceptions", particular pairs of particles for
+ * which different values should be used.
+ * <p>
+ * To use this class, create a GayBerneForce object, then call addParticle() once for each particle in the
+ * System to define its parameters.  The number of particles for which you define parameters must be exactly
+ * equal to the number of particles in the System, or else an exception will be thrown when you try to
+ * create a Context.  After a particle has been added, you can modify its force field parameters by calling
+ * setParticleParameters().  This will have no effect on Contexts that already exist unless you call
+ * updateParametersInContext().
+ * <p>
+ * When using a cutoff, by default interactions are sharply truncated at the cutoff distance.  Optionally
+ * you can instead use a switching function to make the interaction smoothly go to zero over a finite
+ * distance range.  To enable this, call setUseSwitchingFunction().  You must also call setSwitchingDistance()
+ * to specify the distance at which the interaction should begin to decrease.  The switching distance must be
+ * less than the cutoff distance.
  */
 public class GayBerneForce extends Force {
 

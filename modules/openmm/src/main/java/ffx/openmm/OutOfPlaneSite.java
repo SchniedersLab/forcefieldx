@@ -44,16 +44,17 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_OutOfPlaneSite_getWeight13;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_OutOfPlaneSite_getWeightCross;
 
 /**
- * This is a VirtualSite that computes the particle location based on three other particles.
- * The virtual site is placed out of the plane defined by the three particles, at a position
- * determined by the cross product of two vectors formed by the particles.
+ * This is a VirtualSite that computes the particle location based on three other
+ * particles' locations. If r<sub>1</sub> is the location of particle 1,
+ * r<sub>12</sub> is the vector from particle 1 to particle 2, and
+ * r<sub>13</sub> is the vector from particle 1 to particle 3, then the virtual
+ * site location is given by
  * <p>
- * If r1, r2, and r3 are the positions of the three particles, then the virtual site location is:
+ * r<sub>1</sub> + w<sub>12</sub>r<sub>12</sub> + w<sub>13</sub>r<sub>13</sub> + w<sub>cross</sub>(r<sub>12</sub> x r<sub>13</sub>)
  * <p>
- * r = r1 + weight12*(r2-r1) + weight13*(r3-r1) + weightCross*((r2-r1) x (r3-r1))
- * <p>
- * This is useful for representing sites like lone pairs on atoms in trigonal planar geometries,
- * where the virtual site is positioned above or below the plane of the three defining particles.
+ * The three weight factors are user-specified. This allows the virtual site location
+ * to be out of the plane of the three particles. Note that while w<sub>12</sub> and
+ * w<sub>13</sub> are unitless, w<sub>cross</sub> has units of inverse distance.
  */
 public class OutOfPlaneSite extends VirtualSite {
 

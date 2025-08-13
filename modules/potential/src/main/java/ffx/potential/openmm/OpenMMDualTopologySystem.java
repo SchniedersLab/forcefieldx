@@ -43,6 +43,7 @@ import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
 
@@ -129,6 +130,8 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
   protected AngleTorsionForce angleTorsionForce2 = null;
   /**
    * OpenMM Custom Torsion-Torsion Force for topology 2.
+   * ToDo: There is no updateParametersInContext method for the AmoebaTorsionTorsionForce.
+   * We assume that the AmoebaTorsionTorsionForce is constant along the alchemical path.
    */
   protected AmoebaTorsionTorsionForce amoebaTorsionTorsionForce2 = null;
   /**
@@ -291,10 +294,36 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     addForce(angleTorsionForce2);
 
     // Add Torsion-Torsion Force.
+    // ToDo: There is no updateParametersInContext method for the AmoebaTorsionTorsionForce.
     amoebaTorsionTorsionForce = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(0, openMMDualTopologyEnergy);
-    amoebaTorsionTorsionForce2 = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(1, openMMDualTopologyEnergy);
     addForce(amoebaTorsionTorsionForce);
-    addForce(amoebaTorsionTorsionForce2);
+    // amoebaTorsionTorsionForce2 = (AmoebaTorsionTorsionForce) AmoebaTorsionTorsionForce.constructForce(1, openMMDualTopologyEnergy);
+    // addForce(amoebaTorsionTorsionForce2);
+
+    // Check that the number of Torsion-Torsion forces in the two topologies is equal.
+    TorsionTorsion[] torsionTorsion = openMMDualTopologyEnergy.getForceFieldEnergy(0).getTorsionTorsions();
+    TorsionTorsion[] torsionTorsion2 = openMMDualTopologyEnergy.getForceFieldEnergy(1).getTorsionTorsions();
+    int numTorsionTorsions = 0;
+    int numTorsionTorsions2 = 0;
+    if (torsionTorsion != null) {
+      numTorsionTorsions = torsionTorsion.length;
+    }
+    if (torsionTorsion2 != null) {
+      numTorsionTorsions2 = torsionTorsion2.length;
+    }
+    if (numTorsionTorsions != numTorsionTorsions2) {
+      logger.severe(" The number of Torsion-Torsion forces in the two topologies do not match: "
+          + numTorsionTorsions + " vs. " + numTorsionTorsions2);
+    } else {
+      // Check that the Torsion-Torsion instances match.
+      for (int i = 0; i < numTorsionTorsions; i++) {
+        TorsionTorsion tt1 = torsionTorsion[i];
+        TorsionTorsion tt2 = torsionTorsion2[i];
+        if (!tt1.equals(tt2)) {
+          logger.severe(" The Torsion-Torsion terms in the two topologies do not match: " + tt1 + " vs. " + tt2);
+        }
+      }
+    }
 
     VanDerWaals vdW1 = forceFieldEnergy.getVdwNode();
     VanDerWaals vdW2 = forceFieldEnergy2.getVdwNode();
@@ -440,6 +469,20 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     if (improperTorsionForce2 != null) {
       improperTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
     }
+    if (stretchTorsionForce != null) {
+      stretchTorsionForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (stretchTorsionForce2 != null) {
+      stretchTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+    if (angleTorsionForce != null) {
+      angleTorsionForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (angleTorsionForce2 != null) {
+      angleTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+
+    // ToDo: there is no support in the OpenMM AmoebaTorsionTorsionForce to updateParametersInContext.
 
     if (amoebaVDWForce != null) {
       VanDerWaals vanDerWaals = forceFieldEnergy.getVdwNode();

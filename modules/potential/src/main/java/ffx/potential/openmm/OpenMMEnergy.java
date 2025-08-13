@@ -77,7 +77,7 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class OpenMMEnergy extends ForceFieldEnergy {
+public class OpenMMEnergy extends ForceFieldEnergy implements OpenMMPotential {
 
   private static final Logger logger = Logger.getLogger(OpenMMEnergy.class.getName());
 
@@ -239,6 +239,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param forceCreation  Force a new Context to be created, even if the existing one matches the
    *                       request.
    */
+  @Override
   public void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation) {
     openMMContext.update(integratorName, timeStep, temperature, forceCreation);
   }
@@ -251,6 +252,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param mask The State mask.
    * @return Returns the State.
    */
+  @Override
   public OpenMMState getOpenMMState(int mask) {
     return openMMContext.getOpenMMState(mask);
   }
@@ -262,7 +264,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   public boolean destroy() {
     boolean ffxFFEDestroy = super.destroy();
     free();
-    logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
+    logger.fine(" Destroyed the Context and OpenMMSystem.");
     return ffxFFEDestroy;
   }
 
@@ -444,6 +446,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * @return context
    */
+  @Override
   public OpenMMContext getContext() {
     return openMMContext;
   }
@@ -455,24 +458,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   public MolecularAssembly getMolecularAssembly() {
     return molecularAssembly;
-  }
-
-  /**
-   * Set the lambdaTerm flag.
-   *
-   * @param lambdaTerm The value to set.
-   */
-  public void setLambdaTerm(boolean lambdaTerm) {
-    this.lambdaTerm = lambdaTerm;
-  }
-
-  /**
-   * Get the lambdaTerm flag.
-   *
-   * @return lambdaTerm.
-   */
-  public boolean getLambdaTerm() {
-    return lambdaTerm;
   }
 
   /**
@@ -501,6 +486,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * @return Java wrapper to an OpenMM system.
    */
+  @Override
   public OpenMMSystem getSystem() {
     return openMMSystem;
   }
@@ -537,6 +523,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   /**
    * Update active atoms.
    */
+  @Override
   public void setActiveAtoms() {
     openMMSystem.updateAtomMass();
     // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
@@ -595,6 +582,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * @param atoms Atoms in this list are considered.
    */
+  @Override
   public void updateParameters(@Nullable Atom[] atoms) {
     if (atoms == null) {
       atoms = this.atoms;
@@ -605,7 +593,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   }
 
   /**
-   * Free OpenMM memory for the Context, Integrator and System.
+   * Free OpenMM memory for the Context and System.
    */
   private void free() {
     if (openMMContext != null) {

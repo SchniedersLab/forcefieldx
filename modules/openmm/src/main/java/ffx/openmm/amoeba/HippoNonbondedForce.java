@@ -79,9 +79,18 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_HippoNonbondedForce_u
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * This class implements the HIPPO (Hydrogen-like Intermolecular Polarizable POtential)
- * nonbonded force field. HIPPO is an advanced polarizable force field that includes
- * charge penetration, charge transfer, and many-body polarization effects.
+ * This class implements all nonbonded interactions in the HIPPO force field: electrostatics,
+ * induction, charge transfer, dispersion, and repulsion. Although some of these are
+ * conceptually distinct, they share parameters in common and are most efficiently computed
+ * together. For example, the same multipole definitions are used for both electrostatics
+ * and Pauli repulsion. Therefore, all of them are computed by a single Force object.
+ * <p>
+ * To use it, create a HippoNonbondedForce object, then call addParticle() once for each particle.
+ * After an entry has been added, you can modify its force field parameters by calling setParticleParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
+ * <p>
+ * You also can specify "exceptions", particular pairs of particles whose interactions should be
+ * reduced or completely omitted. Call addException() to define exceptions.
  */
 public class HippoNonbondedForce extends Force {
 
@@ -93,54 +102,55 @@ public class HippoNonbondedForce extends Force {
   }
 
   /**
-   * Add an exception to the force.
+   * Add an interaction to the list of exceptions that should be calculated differently from other interactions.
+   * If all scale factors are set to 0, this will cause the interaction to be completely omitted from
+   * force and energy calculations.
    *
-   * @param particle1  The index of the first particle.
-   * @param particle2  The index of the second particle.
-   * @param chargeProd The charge product for the exception.
-   * @param sigmaEps   The sigma epsilon parameter for the exception.
-   * @param epsilon    The epsilon parameter for the exception.
-   * @param damping    The damping parameter for the exception.
-   * @param c6         The C6 dispersion parameter for the exception.
-   * @param c8         The C8 dispersion parameter for the exception.
-   * @param replace    Whether to replace an existing exception.
-   * @return The index of the exception that was added.
+   * @param particle1               the index of the first particle involved in the interaction
+   * @param particle2               the index of the second particle involved in the interaction
+   * @param multipoleMultipoleScale the factor by which to scale the Coulomb interaction between fixed multipoles
+   * @param dipoleMultipoleScale    the factor by which to scale the Coulomb interaction between an induced dipole and a fixed multipole
+   * @param dipoleDipoleScale       the factor by which to scale the Coulomb interaction between induced dipoles
+   * @param dispersionScale         the factor by which to scale the dispersion interaction
+   * @param repulsionScale          the factor by which to scale the Pauli repulsion
+   * @param chargeTransferScale     the factor by which to scale the charge transfer interaction
+   * @param replace                 determines the behavior if there is already an exception for the same two particles. If true, the existing one is replaced. If false, an exception is thrown.
+   * @return the index of the exception that was added
    */
-  public int addException(int particle1, int particle2, double chargeProd, double sigmaEps,
-                          double epsilon, double damping, double c6, double c8, int replace) {
-    return OpenMM_HippoNonbondedForce_addException(pointer, particle1, particle2, chargeProd,
-        sigmaEps, epsilon, damping, c6, c8, replace);
+  public int addException(int particle1, int particle2, double multipoleMultipoleScale, double dipoleMultipoleScale,
+                          double dipoleDipoleScale, double dispersionScale, double repulsionScale, double chargeTransferScale, int replace) {
+    return OpenMM_HippoNonbondedForce_addException(pointer, particle1, particle2, multipoleMultipoleScale,
+        dipoleMultipoleScale, dipoleDipoleScale, dispersionScale, repulsionScale, chargeTransferScale, replace);
   }
 
   /**
-   * Add a particle to the force.
+   * Add the nonbonded force parameters for a particle. This should be called once for each particle
+   * in the System. When it is called for the i'th time, it specifies the parameters for the i'th particle.
    *
-   * @param charge             The charge of the particle.
-   * @param dipole             The dipole moment of the particle.
-   * @param quadrupole         The quadrupole moment of the particle.
-   * @param c6                 The C6 dispersion parameter.
-   * @param c8                 The C8 dispersion parameter.
-   * @param c10                The C10 dispersion parameter.
-   * @param c12                The C12 dispersion parameter.
-   * @param sigma              The sigma parameter.
-   * @param epsilon            The epsilon parameter.
-   * @param damping            The damping parameter.
-   * @param polarizability     The polarizability.
-   * @param thole              The Thole damping parameter.
-   * @param covalentMap        The covalent map.
-   * @param polarizationGroup  The polarization group.
-   * @param axisType           The axis type.
-   * @param multipoleFrameType The multipole frame type.
-   * @return The index of the particle that was added.
+   * @param charge         the particle's charge
+   * @param dipole         the particle's molecular dipole (vector of size 3)
+   * @param quadrupole     the particle's molecular quadrupole (vector of size 9)
+   * @param coreCharge     the charge of the atomic core
+   * @param alpha          controls the width of the particle's electron density
+   * @param epsilon        sets the magnitude of charge transfer
+   * @param damping        sets the length scale for charge transfer
+   * @param c6             the coefficient of the dispersion interaction
+   * @param pauliK         the coefficient of the Pauli repulsion interaction
+   * @param pauliQ         the charge used in computing the Pauli repulsion interaction
+   * @param pauliAlpha     the width of the particle's electron density for computing the Pauli repulsion interaction
+   * @param polarizability atomic polarizability
+   * @param axisType       the particle's axis type
+   * @param multipoleAtomZ index of first atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomX index of second atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomY index of third atom used in defining the local coordinate system for multipoles
+   * @return the index of the particle that was added
    */
-  public int addParticle(double charge, PointerByReference dipole, PointerByReference quadrupole,
-                         double c6, double c8, double c10, double c12, double sigma, double epsilon,
-                         double damping, double polarizability, double thole, int covalentMap,
-                         int polarizationGroup, int axisType, int multipoleFrameType) {
-    return OpenMM_HippoNonbondedForce_addParticle(pointer, charge, dipole, quadrupole, c6, c8, c10,
-        c12, sigma, epsilon, damping, polarizability, thole,
-        covalentMap, polarizationGroup, axisType,
-        multipoleFrameType);
+  public int addParticle(double charge, PointerByReference dipole, PointerByReference quadrupole, double coreCharge,
+                         double alpha, double epsilon, double damping, double c6, double pauliK, double pauliQ, double pauliAlpha,
+                         double polarizability, int axisType, int multipoleAtomZ, int multipoleAtomX, int multipoleAtomY) {
+    return OpenMM_HippoNonbondedForce_addParticle(pointer, charge, dipole, quadrupole, coreCharge,
+        alpha, epsilon, damping, c6, pauliK, pauliQ, pauliAlpha,
+        polarizability, axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY);
   }
 
   /**
@@ -225,45 +235,45 @@ public class HippoNonbondedForce extends Force {
   }
 
   /**
-   * Get the parameters for an exception.
+   * Get the scale factors for an interaction that should be calculated differently from others.
    *
-   * @param index      The index of the exception.
-   * @param particle1  The index of the first particle (output).
-   * @param particle2  The index of the second particle (output).
-   * @param chargeProd The charge product for the exception (output).
-   * @param sigmaEps   The sigma epsilon parameter for the exception (output).
-   * @param epsilon    The epsilon parameter for the exception (output).
-   * @param damping    The damping parameter for the exception (output).
-   * @param c6         The C6 dispersion parameter for the exception (output).
-   * @param c8         The C8 dispersion parameter for the exception (output).
+   * @param index                   the index of the interaction for which to get parameters
+   * @param particle1               the index of the first particle involved in the interaction
+   * @param particle2               the index of the second particle involved in the interaction
+   * @param multipoleMultipoleScale the factor by which to scale the Coulomb interaction between fixed multipoles
+   * @param dipoleMultipoleScale    the factor by which to scale the Coulomb interaction between an induced dipole and a fixed multipole
+   * @param dipoleDipoleScale       the factor by which to scale the Coulomb interaction between induced dipoles
+   * @param dispersionScale         the factor by which to scale the dispersion interaction
+   * @param repulsionScale          the factor by which to scale the Pauli repulsion
+   * @param chargeTransferScale     the factor by which to scale the charge transfer interaction
    */
   public void getExceptionParameters(int index, IntByReference particle1, IntByReference particle2,
-                                     DoubleByReference chargeProd, DoubleByReference sigmaEps,
-                                     DoubleByReference epsilon, DoubleByReference damping,
-                                     DoubleByReference c6, DoubleByReference c8) {
+                                     DoubleByReference multipoleMultipoleScale, DoubleByReference dipoleMultipoleScale,
+                                     DoubleByReference dipoleDipoleScale, DoubleByReference dispersionScale,
+                                     DoubleByReference repulsionScale, DoubleByReference chargeTransferScale) {
     OpenMM_HippoNonbondedForce_getExceptionParameters(pointer, index, particle1, particle2,
-        chargeProd, sigmaEps, epsilon, damping, c6, c8);
+        multipoleMultipoleScale, dipoleMultipoleScale, dipoleDipoleScale, dispersionScale, repulsionScale, chargeTransferScale);
   }
 
   /**
-   * Get the parameters for an exception.
+   * Get the scale factors for an interaction that should be calculated differently from others.
    *
-   * @param index      The index of the exception.
-   * @param particle1  The index of the first particle (output).
-   * @param particle2  The index of the second particle (output).
-   * @param chargeProd The charge product for the exception (output).
-   * @param sigmaEps   The sigma epsilon parameter for the exception (output).
-   * @param epsilon    The epsilon parameter for the exception (output).
-   * @param damping    The damping parameter for the exception (output).
-   * @param c6         The C6 dispersion parameter for the exception (output).
-   * @param c8         The C8 dispersion parameter for the exception (output).
+   * @param index                   the index of the interaction for which to get parameters
+   * @param particle1               the index of the first particle involved in the interaction
+   * @param particle2               the index of the second particle involved in the interaction
+   * @param multipoleMultipoleScale the factor by which to scale the Coulomb interaction between fixed multipoles
+   * @param dipoleMultipoleScale    the factor by which to scale the Coulomb interaction between an induced dipole and a fixed multipole
+   * @param dipoleDipoleScale       the factor by which to scale the Coulomb interaction between induced dipoles
+   * @param dispersionScale         the factor by which to scale the dispersion interaction
+   * @param repulsionScale          the factor by which to scale the Pauli repulsion
+   * @param chargeTransferScale     the factor by which to scale the charge transfer interaction
    */
   public void getExceptionParameters(int index, IntBuffer particle1, IntBuffer particle2,
-                                     DoubleBuffer chargeProd, DoubleBuffer sigmaEps,
-                                     DoubleBuffer epsilon, DoubleBuffer damping,
-                                     DoubleBuffer c6, DoubleBuffer c8) {
+                                     DoubleBuffer multipoleMultipoleScale, DoubleBuffer dipoleMultipoleScale,
+                                     DoubleBuffer dipoleDipoleScale, DoubleBuffer dispersionScale,
+                                     DoubleBuffer repulsionScale, DoubleBuffer chargeTransferScale) {
     OpenMM_HippoNonbondedForce_getExceptionParameters(pointer, index, particle1, particle2,
-        chargeProd, sigmaEps, epsilon, damping, c6, c8);
+        multipoleMultipoleScale, dipoleMultipoleScale, dipoleDipoleScale, dispersionScale, repulsionScale, chargeTransferScale);
   }
 
   /**
@@ -375,73 +385,69 @@ public class HippoNonbondedForce extends Force {
   }
 
   /**
-   * Get the parameters for a particle.
+   * Get the nonbonded force parameters for a particle.
    *
-   * @param index              The index of the particle.
-   * @param charge             The charge of the particle (output).
-   * @param dipole             The dipole moment of the particle (output).
-   * @param quadrupole         The quadrupole moment of the particle (output).
-   * @param c6                 The C6 dispersion parameter (output).
-   * @param c8                 The C8 dispersion parameter (output).
-   * @param c10                The C10 dispersion parameter (output).
-   * @param c12                The C12 dispersion parameter (output).
-   * @param sigma              The sigma parameter (output).
-   * @param epsilon            The epsilon parameter (output).
-   * @param damping            The damping parameter (output).
-   * @param polarizability     The polarizability (output).
-   * @param thole              The Thole damping parameter (output).
-   * @param covalentMap        The covalent map (output).
-   * @param polarizationGroup  The polarization group (output).
-   * @param axisType           The axis type (output).
-   * @param multipoleFrameType The multipole frame type (output).
+   * @param index          the index of the particle for which to get parameters
+   * @param charge         the particle's charge
+   * @param dipole         the particle's molecular dipole (vector of size 3)
+   * @param quadrupole     the particle's molecular quadrupole (vector of size 9)
+   * @param coreCharge     the charge of the atomic core
+   * @param alpha          controls the width of the particle's electron density
+   * @param epsilon        sets the magnitude of charge transfer
+   * @param damping        sets the length scale for charge transfer
+   * @param c6             the coefficient of the dispersion interaction
+   * @param pauliK         the coefficient of the Pauli repulsion interaction
+   * @param pauliQ         the charge used in computing the Pauli repulsion interaction
+   * @param pauliAlpha     the width of the particle's electron density for computing the Pauli repulsion interaction
+   * @param polarizability atomic polarizability
+   * @param axisType       the particle's axis type
+   * @param multipoleAtomZ index of first atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomX index of second atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomY index of third atom used in defining the local coordinate system for multipoles
    */
   public void getParticleParameters(int index, DoubleByReference charge, PointerByReference dipole,
-                                    PointerByReference quadrupole, DoubleByReference c6,
-                                    DoubleByReference c8, DoubleByReference c10, DoubleByReference c12,
-                                    DoubleByReference sigma, DoubleByReference epsilon,
-                                    DoubleByReference damping, DoubleByReference polarizability,
-                                    DoubleByReference thole, IntByReference covalentMap,
-                                    IntByReference polarizationGroup, IntByReference axisType,
-                                    IntByReference multipoleFrameType) {
+                                    PointerByReference quadrupole, DoubleByReference coreCharge,
+                                    DoubleByReference alpha, DoubleByReference epsilon,
+                                    DoubleByReference damping, DoubleByReference c6,
+                                    DoubleByReference pauliK, DoubleByReference pauliQ, DoubleByReference pauliAlpha,
+                                    DoubleByReference polarizability, IntByReference axisType,
+                                    IntByReference multipoleAtomZ, IntByReference multipoleAtomX, IntByReference multipoleAtomY) {
     OpenMM_HippoNonbondedForce_getParticleParameters(pointer, index, charge, dipole, quadrupole,
-        c6, c8, c10, c12, sigma, epsilon, damping,
-        polarizability, thole, covalentMap,
-        polarizationGroup, axisType, multipoleFrameType);
+        coreCharge, alpha, epsilon, damping, c6, pauliK, pauliQ, pauliAlpha,
+        polarizability, axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY);
   }
 
   /**
-   * Get the parameters for a particle.
+   * Get the nonbonded force parameters for a particle.
    *
-   * @param index              The index of the particle.
-   * @param charge             The charge of the particle (output).
-   * @param dipole             The dipole moment of the particle (output).
-   * @param quadrupole         The quadrupole moment of the particle (output).
-   * @param c6                 The C6 dispersion parameter (output).
-   * @param c8                 The C8 dispersion parameter (output).
-   * @param c10                The C10 dispersion parameter (output).
-   * @param c12                The C12 dispersion parameter (output).
-   * @param sigma              The sigma parameter (output).
-   * @param epsilon            The epsilon parameter (output).
-   * @param damping            The damping parameter (output).
-   * @param polarizability     The polarizability (output).
-   * @param thole              The Thole damping parameter (output).
-   * @param covalentMap        The covalent map (output).
-   * @param polarizationGroup  The polarization group (output).
-   * @param axisType           The axis type (output).
-   * @param multipoleFrameType The multipole frame type (output).
+   * @param index          the index of the particle for which to get parameters
+   * @param charge         the particle's charge
+   * @param dipole         the particle's molecular dipole (vector of size 3)
+   * @param quadrupole     the particle's molecular quadrupole (vector of size 9)
+   * @param coreCharge     the charge of the atomic core
+   * @param alpha          controls the width of the particle's electron density
+   * @param epsilon        sets the magnitude of charge transfer
+   * @param damping        sets the length scale for charge transfer
+   * @param c6             the coefficient of the dispersion interaction
+   * @param pauliK         the coefficient of the Pauli repulsion interaction
+   * @param pauliQ         the charge used in computing the Pauli repulsion interaction
+   * @param pauliAlpha     the width of the particle's electron density for computing the Pauli repulsion interaction
+   * @param polarizability atomic polarizability
+   * @param axisType       the particle's axis type
+   * @param multipoleAtomZ index of first atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomX index of second atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomY index of third atom used in defining the local coordinate system for multipoles
    */
   public void getParticleParameters(int index, DoubleBuffer charge, PointerByReference dipole,
-                                    PointerByReference quadrupole, DoubleBuffer c6,
-                                    DoubleBuffer c8, DoubleBuffer c10, DoubleBuffer c12,
-                                    DoubleBuffer sigma, DoubleBuffer epsilon,
-                                    DoubleBuffer damping, DoubleBuffer polarizability,
-                                    DoubleBuffer thole, IntBuffer covalentMap,
-                                    IntBuffer polarizationGroup, IntBuffer axisType,
-                                    IntBuffer multipoleFrameType) {
+                                    PointerByReference quadrupole, DoubleBuffer coreCharge,
+                                    DoubleBuffer alpha, DoubleBuffer epsilon,
+                                    DoubleBuffer damping, DoubleBuffer c6,
+                                    DoubleBuffer pauliK, DoubleBuffer pauliQ, DoubleBuffer pauliAlpha,
+                                    DoubleBuffer polarizability, IntBuffer axisType,
+                                    IntBuffer multipoleAtomZ, IntBuffer multipoleAtomX, IntBuffer multipoleAtomY) {
     OpenMM_HippoNonbondedForce_getParticleParameters(pointer, index, charge, dipole, quadrupole,
-        c6, c8, c10, c12, sigma, epsilon, damping,
-        polarizability, thole, covalentMap,
-        polarizationGroup, axisType, multipoleFrameType);
+        coreCharge, alpha, epsilon, damping, c6, pauliK, pauliQ, pauliAlpha,
+        polarizability, axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY);
   }
 
   /**
@@ -484,22 +490,23 @@ public class HippoNonbondedForce extends Force {
   }
 
   /**
-   * Set the parameters for an exception.
+   * Set the scale factors for an interaction that should be calculated differently from others.
    *
-   * @param index      The index of the exception.
-   * @param particle1  The index of the first particle.
-   * @param particle2  The index of the second particle.
-   * @param chargeProd The charge product for the exception.
-   * @param sigmaEps   The sigma epsilon parameter for the exception.
-   * @param epsilon    The epsilon parameter for the exception.
-   * @param damping    The damping parameter for the exception.
-   * @param c6         The C6 dispersion parameter for the exception.
-   * @param c8         The C8 dispersion parameter for the exception.
+   * @param index                   the index of the interaction for which to set parameters
+   * @param particle1               the index of the first particle involved in the interaction
+   * @param particle2               the index of the second particle involved in the interaction
+   * @param multipoleMultipoleScale the factor by which to scale the Coulomb interaction between fixed multipoles
+   * @param dipoleMultipoleScale    the factor by which to scale the Coulomb interaction between an induced dipole and a fixed multipole
+   * @param dipoleDipoleScale       the factor by which to scale the Coulomb interaction between induced dipoles
+   * @param dispersionScale         the factor by which to scale the dispersion interaction
+   * @param repulsionScale          the factor by which to scale the Pauli repulsion
+   * @param chargeTransferScale     the factor by which to scale the charge transfer interaction
    */
-  public void setExceptionParameters(int index, int particle1, int particle2, double chargeProd,
-                                     double sigmaEps, double epsilon, double damping, double c6, double c8) {
+  public void setExceptionParameters(int index, int particle1, int particle2, double multipoleMultipoleScale,
+                                     double dipoleMultipoleScale, double dipoleDipoleScale, double dispersionScale,
+                                     double repulsionScale, double chargeTransferScale) {
     OpenMM_HippoNonbondedForce_setExceptionParameters(pointer, index, particle1, particle2,
-        chargeProd, sigmaEps, epsilon, damping, c6, c8);
+        multipoleMultipoleScale, dipoleMultipoleScale, dipoleDipoleScale, dispersionScale, repulsionScale, chargeTransferScale);
   }
 
   /**
@@ -533,35 +540,34 @@ public class HippoNonbondedForce extends Force {
   }
 
   /**
-   * Set the parameters for a particle.
+   * Set the nonbonded force parameters for a particle.
    *
-   * @param index              The index of the particle.
-   * @param charge             The charge of the particle.
-   * @param dipole             The dipole moment of the particle.
-   * @param quadrupole         The quadrupole moment of the particle.
-   * @param c6                 The C6 dispersion parameter.
-   * @param c8                 The C8 dispersion parameter.
-   * @param c10                The C10 dispersion parameter.
-   * @param c12                The C12 dispersion parameter.
-   * @param sigma              The sigma parameter.
-   * @param epsilon            The epsilon parameter.
-   * @param damping            The damping parameter.
-   * @param polarizability     The polarizability.
-   * @param thole              The Thole damping parameter.
-   * @param covalentMap        The covalent map.
-   * @param polarizationGroup  The polarization group.
-   * @param axisType           The axis type.
-   * @param multipoleFrameType The multipole frame type.
+   * @param index          the index of the particle for which to set parameters
+   * @param charge         the particle's charge
+   * @param dipole         the particle's molecular dipole (vector of size 3)
+   * @param quadrupole     the particle's molecular quadrupole (vector of size 9)
+   * @param coreCharge     the charge of the atomic core
+   * @param alpha          controls the width of the particle's electron density
+   * @param epsilon        sets the magnitude of charge transfer
+   * @param damping        sets the length scale for charge transfer
+   * @param c6             the coefficient of the dispersion interaction
+   * @param pauliK         the coefficient of the Pauli repulsion interaction
+   * @param pauliQ         the charge used in computing the Pauli repulsion interaction
+   * @param pauliAlpha     the width of the particle's electron density for computing the Pauli repulsion interaction
+   * @param polarizability atomic polarizability
+   * @param axisType       the particle's axis type
+   * @param multipoleAtomZ index of first atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomX index of second atom used in defining the local coordinate system for multipoles
+   * @param multipoleAtomY index of third atom used in defining the local coordinate system for multipoles
    */
   public void setParticleParameters(int index, double charge, PointerByReference dipole,
-                                    PointerByReference quadrupole, double c6, double c8, double c10,
-                                    double c12, double sigma, double epsilon, double damping,
-                                    double polarizability, double thole, int covalentMap,
-                                    int polarizationGroup, int axisType, int multipoleFrameType) {
+                                    PointerByReference quadrupole, double coreCharge, double alpha, double epsilon,
+                                    double damping, double c6, double pauliK, double pauliQ, double pauliAlpha,
+                                    double polarizability, int axisType, int multipoleAtomZ,
+                                    int multipoleAtomX, int multipoleAtomY) {
     OpenMM_HippoNonbondedForce_setParticleParameters(pointer, index, charge, dipole, quadrupole,
-        c6, c8, c10, c12, sigma, epsilon, damping,
-        polarizability, thole, covalentMap,
-        polarizationGroup, axisType, multipoleFrameType);
+        coreCharge, alpha, epsilon, damping, c6, pauliK, pauliQ, pauliAlpha,
+        polarizability, axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY);
   }
 
   /**

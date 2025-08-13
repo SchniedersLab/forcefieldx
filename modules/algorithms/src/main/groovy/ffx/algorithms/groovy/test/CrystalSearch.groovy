@@ -87,7 +87,7 @@ class CrystalSearch extends AlgorithmsScript {
    * CrystalSearch Constructor.
    */
   CrystalSearch() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

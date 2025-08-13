@@ -140,7 +140,7 @@ class SaveRotamers extends AlgorithmsScript {
    * SaveRotamers Constructor.
    */
   SaveRotamers() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

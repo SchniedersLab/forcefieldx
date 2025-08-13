@@ -55,12 +55,10 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicAngleForce_updatePa
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicAngleForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements a harmonic angle force. The force is applied between three particles
- * to maintain a specific angle. The energy is computed as:
- * <p>
- * E = k * (theta - theta0)^2
- * <p>
- * where k is the force constant, theta is the current angle, and theta0 is the equilibrium angle.
+ * This class implements an interaction between groups of three particles that varies harmonically with the angle
+ * between them.  To use it, create a HarmonicAngleForce object then call addAngle() once for each angle.  After
+ * an angle has been added, you can modify its force field parameters by calling setAngleParameters().  This will
+ * have no effect on Contexts that already exist unless you call updateParametersInContext().
  */
 public class HarmonicAngleForce extends Force {
 
@@ -72,13 +70,13 @@ public class HarmonicAngleForce extends Force {
   }
 
   /**
-   * Add an angle to the force.
+   * Add an angle term to the force field.
    *
    * @param particle1 The index of the first particle forming the angle.
-   * @param particle2 The index of the second particle forming the angle (vertex).
+   * @param particle2 The index of the second particle forming the angle.
    * @param particle3 The index of the third particle forming the angle.
-   * @param angle     The equilibrium angle in radians.
-   * @param k         The force constant for the angle.
+   * @param angle     The equilibrium angle, measured in radians.
+   * @param k         The harmonic force constant for the angle, measured in kJ/mol/radian&circ;2.
    * @return The index of the angle that was added.
    */
   public int addAngle(int particle1, int particle2, int particle3, double angle, double k) {
@@ -97,14 +95,14 @@ public class HarmonicAngleForce extends Force {
   }
 
   /**
-   * Get the parameters for an angle.
+   * Get the force field parameters for an angle term.
    *
    * @param index     The index of the angle for which to get parameters.
    * @param particle1 The index of the first particle forming the angle (output).
    * @param particle2 The index of the second particle forming the angle (output).
    * @param particle3 The index of the third particle forming the angle (output).
-   * @param angle     The equilibrium angle in radians (output).
-   * @param k         The force constant for the angle (output).
+   * @param angle     The equilibrium angle, measured in radians (output).
+   * @param k         The harmonic force constant for the angle, measured in kJ/mol/radian&circ;2 (output).
    */
   public void getAngleParameters(int index, IntByReference particle1, IntByReference particle2,
                                  IntByReference particle3, DoubleByReference angle, DoubleByReference k) {
@@ -112,14 +110,14 @@ public class HarmonicAngleForce extends Force {
   }
 
   /**
-   * Get the parameters for an angle.
+   * Get the force field parameters for an angle term.
    *
    * @param index     The index of the angle for which to get parameters.
    * @param particle1 The index of the first particle forming the angle (output).
    * @param particle2 The index of the second particle forming the angle (output).
    * @param particle3 The index of the third particle forming the angle (output).
-   * @param angle     The equilibrium angle in radians (output).
-   * @param k         The force constant for the angle (output).
+   * @param angle     The equilibrium angle, measured in radians (output).
+   * @param k         The harmonic force constant for the angle, measured in kJ/mol/radian&circ;2 (output).
    */
   public void getAngleParameters(int index, IntBuffer particle1, IntBuffer particle2,
                                  IntBuffer particle3, DoubleBuffer angle, DoubleBuffer k) {
@@ -136,14 +134,14 @@ public class HarmonicAngleForce extends Force {
   }
 
   /**
-   * Set the parameters for an angle.
+   * Set the force field parameters for an angle term.
    *
    * @param index     The index of the angle for which to set parameters.
    * @param particle1 The index of the first particle forming the angle.
-   * @param particle2 The index of the second particle forming the angle (vertex).
+   * @param particle2 The index of the second particle forming the angle.
    * @param particle3 The index of the third particle forming the angle.
-   * @param angle     The equilibrium angle in radians.
-   * @param k         The force constant for the angle.
+   * @param angle     The equilibrium angle, measured in radians.
+   * @param k         The harmonic force constant for the angle, measured in kJ/mol/radian&circ;2.
    */
   public void setAngleParameters(int index, int particle1, int particle2, int particle3, double angle, double k) {
     OpenMM_HarmonicAngleForce_setAngleParameters(pointer, index, particle1, particle2, particle3, angle, k);

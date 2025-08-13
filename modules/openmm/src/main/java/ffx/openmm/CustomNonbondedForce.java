@@ -102,7 +102,68 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_update
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_usesPeriodicBoundaryConditions;
 
 /**
- * Custom Non-bonded Force.
+ * This class implements nonbonded interactions between particles.  Unlike NonbondedForce, the functional form
+ * of the interaction is completely customizable, and may involve arbitrary algebraic expressions and tabulated
+ * functions.  It may depend on the distance between particles, as well as on arbitrary global and
+ * per-particle parameters.  It also optionally supports periodic boundary conditions and cutoffs for long range interactions.
+ *
+ * <p>To use this class, create a CustomNonbondedForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy between each pair of particles.  The expression may depend on r, the distance
+ * between the particles, as well as on any parameters you choose.  Then call addPerParticleParameter() to define per-particle
+ * parameters, and addGlobalParameter() to define global parameters.  The values of per-particle parameters are specified as
+ * part of the system definition, while values of global parameters may be modified during a simulation by calling Context::setParameter().
+ *
+ * <p>Next, call addParticle() once for each particle in the System to set the values of its per-particle parameters.
+ * The number of particles for which you set parameters must be exactly equal to the number of particles in the
+ * System, or else an exception will be thrown when you try to create a Context.  After a particle has been added,
+ * you can modify its parameters by calling setParticleParameters().  This will have no effect on Contexts that already exist
+ * unless you call updateParametersInContext().
+ *
+ * <p>CustomNonbondedForce also lets you specify "exclusions", particular pairs of particles whose interactions should be
+ * omitted from force and energy calculations.  This is most often used for particles that are bonded to each other.
+ *
+ * <p>As an example, the following code creates a CustomNonbondedForce that implements a 12-6 Lennard-Jones potential:
+ *
+ * <pre>{@code
+ * CustomNonbondedForce force = new CustomNonbondedForce("4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)");
+ * }</pre>
+ *
+ * <p>This force depends on two parameters: sigma and epsilon.  The following code defines these as per-particle parameters:
+ *
+ * <pre>{@code
+ * force.addPerParticleParameter("sigma");
+ * force.addPerParticleParameter("epsilon");
+ * }</pre>
+ *
+ * <p>The expression <i>must</i> be symmetric with respect to the two particles.  It typically will only be evaluated once
+ * for each pair of particles, and no guarantee is made about which particle will be identified as "particle 1".  In the
+ * above example, the energy only depends on the products sigma1*sigma2 and epsilon1*epsilon2, both of which are unchanged
+ * if the labels 1 and 2 are reversed.  In contrast, if it depended on the difference sigma1-sigma2, the results would
+ * be undefined, because reversing the labels 1 and 2 would change the energy.
+ *
+ * <p>The energy also may depend on "computed values".  These are similar to per-particle parameters, but instead of being
+ * specified in advance, their values are computed based on global and per-particle parameters.  For example, the following
+ * code uses a global parameter (lambda) to interpolate between two different sigma values for each particle (sigmaA and sigmaB).
+ *
+ * <pre>{@code
+ * CustomNonbondedForce force = new CustomNonbondedForce("4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)");
+ * force.addComputedValue("sigma", "(1-lambda)*sigmaA + lambda*sigmaB");
+ * force.addGlobalParameter("lambda", 0);
+ * force.addPerParticleParameter("sigmaA");
+ * force.addPerParticleParameter("sigmaB");
+ * force.addPerParticleParameter("epsilon");
+ * }</pre>
+ *
+ * <p>You could, of course, embed the computation of sigma directly into the energy expression, but then it would need to be
+ * repeated for every interaction.  By separating it out as a computed value, it only needs to be computed once for each
+ * particle instead of once for each interaction, thus saving computation time.
+ *
+ * <p>CustomNonbondedForce can operate in two modes.  By default, it computes the interaction of every particle in the System
+ * with every other particle.  Alternatively, you can restrict it to only a subset of particle pairs.  To do this, specify
+ * one or more "interaction groups".  An interaction group consists of two sets of particles that should interact with
+ * each other.  Every particle in the first set interacts with every particle in the second set.  For example, you might use
+ * this feature to compute a solute-solvent interaction energy, while omitting all interactions between two solute atoms
+ * or two solvent atoms.
  */
 public class CustomNonbondedForce extends Force {
 

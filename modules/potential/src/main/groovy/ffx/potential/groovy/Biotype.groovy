@@ -104,7 +104,7 @@ class Biotype extends PotentialScript {
    * Biotype Constructor.
    */
   Biotype() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

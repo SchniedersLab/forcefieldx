@@ -80,7 +80,7 @@ class ManyBodyPhScan extends PotentialScript {
    * ManyBodyPHScan Constructor.
    */
   ManyBodyPhScan() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

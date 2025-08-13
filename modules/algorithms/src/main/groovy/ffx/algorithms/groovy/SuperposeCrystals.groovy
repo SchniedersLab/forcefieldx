@@ -320,7 +320,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * CrystalSuperpose Constructor.
    */
   SuperposeCrystals() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -84,7 +84,7 @@ class Gradient extends PotentialScript {
    * Gradient constructor.
    */
   Gradient() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

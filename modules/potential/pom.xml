@@ -6,31 +6,33 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${antrun.version}</version>
+        <groupId>org.codehaus.gmavenplus</groupId>
+        <artifactId>gmavenplus-plugin</artifactId>
+        <configuration>
+          <targetBytecode>21</targetBytecode>
+        </configuration>
         <executions>
           <execution>
-            <id>compile</id>
-            <phase>compile</phase>
-            <configuration>
-              <target>
-                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
-                  <classpath refid="maven.compile.classpath"/>
-                </taskdef>
-                <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
-                         listfiles="false" verbose="false" targetBytecode="${targetVersion}" stacktrace="true"
-                         parameters="true">
-                  <classpath refid="maven.compile.classpath"/>
-                </groovyc>
-                <!-- configscript="${basedir}/src/config/config.groovy" -->
-              </target>
-            </configuration>
             <goals>
-              <goal>run</goal>
+              <goal>addSources</goal>
+              <goal>addTestSources</goal>
+              <goal>generateStubs</goal>
+              <goal>compile</goal>
+              <goal>generateTestStubs</goal>
+              <goal>compileTests</goal>
+              <goal>removeStubs</goal>
+              <goal>removeTestStubs</goal>
             </goals>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
+            <type>pom</type>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

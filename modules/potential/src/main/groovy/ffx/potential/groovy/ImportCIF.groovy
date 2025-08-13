@@ -125,7 +125,7 @@ class ImportCIF extends PotentialScript {
    * ImportCIF Constructor.
    */
   ImportCIF() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

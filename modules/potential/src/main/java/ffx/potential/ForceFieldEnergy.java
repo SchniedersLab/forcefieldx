@@ -1573,6 +1573,24 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return molecularAssembly;
   }
 
+  /**
+   * Set the lambdaTerm flag.
+   *
+   * @param lambdaTerm The value to set.
+   */
+  public void setLambdaTerm(boolean lambdaTerm) {
+    this.lambdaTerm = lambdaTerm;
+  }
+
+  /**
+   * Get the lambdaTerm flag.
+   *
+   * @return lambdaTerm.
+   */
+  public boolean getLambdaTerm() {
+    return lambdaTerm;
+  }
+
   private int checkForSpecialPositions(ForceField forceField) {
     // Check for atoms at special positions. These should normally be set to inactive.
     boolean specialPositionsInactive = forceField.getBoolean("SPECIAL_POSITIONS_INACTIVE", true);

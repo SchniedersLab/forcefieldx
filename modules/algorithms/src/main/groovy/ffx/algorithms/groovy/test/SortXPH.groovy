@@ -129,7 +129,7 @@ class SortXPH extends AlgorithmsScript {
      * SortArc Constructor.
      */
     SortXPH() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

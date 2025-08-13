@@ -100,7 +100,7 @@ class OSTGradient extends AlgorithmsScript {
    * CrystalSearch Constructor.
    */
   OSTGradient() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

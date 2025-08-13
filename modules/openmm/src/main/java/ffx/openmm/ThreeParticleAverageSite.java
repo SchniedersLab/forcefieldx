@@ -42,26 +42,22 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_ThreeParticleAverageSite_de
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_ThreeParticleAverageSite_getWeight;
 
 /**
- * This is a VirtualSite that computes the particle location as a weighted average of three
- * other particles. The virtual site is positioned at:
- * <p>
- * r = weight1*r1 + weight2*r2 + weight3*r3
- * <p>
- * where r1, r2, and r3 are the positions of the three particles, and weight1, weight2, and
- * weight3 are the corresponding weights. This is useful for representing sites like the
- * center of mass of a group of atoms or other geometrically defined positions.
+ * This is a VirtualSite that computes the particle location as a weighted average
+ * of three other particle's locations. This means the virtual site is in the
+ * plane of the three particles.
  */
 public class ThreeParticleAverageSite extends VirtualSite {
 
   /**
-   * Create a ThreeParticleAverageSite.
+   * Create a new ThreeParticleAverageSite virtual site. Normally the weights
+   * should add up to 1, although this is not strictly required.
    *
-   * @param particle1 The index of the first particle.
-   * @param particle2 The index of the second particle.
-   * @param particle3 The index of the third particle.
-   * @param weight1   The weight for the first particle.
-   * @param weight2   The weight for the second particle.
-   * @param weight3   The weight for the third particle.
+   * @param particle1 the index of the first particle
+   * @param particle2 the index of the second particle
+   * @param particle3 the index of the third particle
+   * @param weight1   the weight factor (typically between 0 and 1) for the first particle
+   * @param weight2   the weight factor (typically between 0 and 1) for the second particle
+   * @param weight3   the weight factor (typically between 0 and 1) for the third particle
    */
   public ThreeParticleAverageSite(int particle1, int particle2, int particle3,
                                   double weight1, double weight2, double weight3) {
@@ -80,10 +76,10 @@ public class ThreeParticleAverageSite extends VirtualSite {
   }
 
   /**
-   * Get the weight for one of the particles.
+   * Get the weight factor used for a particle this virtual site depends on.
    *
-   * @param particle The index of the particle (0, 1, or 2) for which to get the weight.
-   * @return The weight for the specified particle.
+   * @param particle the particle to get (between 0 and getNumParticles())
+   * @return the weight factor used for that particle
    */
   public double getWeight(int particle) {
     return OpenMM_ThreeParticleAverageSite_getWeight(pointer, particle);

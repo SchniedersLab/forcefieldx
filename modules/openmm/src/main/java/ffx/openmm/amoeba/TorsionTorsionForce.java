@@ -55,30 +55,34 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionF
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * Torsion-Torsion Force.
+ * This class implements the Amoeba torsion-torsion interaction.
+ * <p>
+ * To use it, create an AmoebaTorsionTorsionForce object then call addTorsionTorsion() once for each torsion-torsion.  After
+ * a torsion-torsion has been added, you can modify its force field parameters by calling setTorsionTorsionParameters().
  */
 public class TorsionTorsionForce extends Force {
 
   /**
-   * Create an OpenMM TorsionTorsion Force.
+   * Create an AmoebaTorsionTorsionForce.
    */
   public TorsionTorsionForce() {
     super(OpenMM_AmoebaTorsionTorsionForce_create());
   }
 
   /**
-   * Add a torsion to the TorsionTorsionForce.
+   * Add a torsion-torsion term to the force field.
    *
-   * @param atom1           The index of the first atom.
-   * @param atom2           The index of the second atom.
-   * @param atom3           The index of the third atom.
-   * @param atom4           The index of the fourth atom.
-   * @param atom5           The index of the fifth atom.
-   * @param chiralCheckAtom The index of the chiral check atom.
-   * @param gridIndex       The index of the grid.
+   * @param particle1            the index of the first particle connected by the torsion-torsion
+   * @param particle2            the index of the second particle connected by the torsion-torsion
+   * @param particle3            the index of the third particle connected by the torsion-torsion
+   * @param particle4            the index of the fourth particle connected by the torsion-torsion
+   * @param particle5            the index of the fifth particle connected by the torsion-torsion
+   * @param chiralCheckAtomIndex the index of the particle connected to particle3, but not particle2 or particle4 to be used in chirality check
+   * @param gridIndex            the index to the grid to be used
+   * @return the index of the torsion-torsion that was added
    */
-  public void addTorsionTorsion(int atom1, int atom2, int atom3, int atom4, int atom5, int chiralCheckAtom, int gridIndex) {
-    OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(pointer, atom1, atom2, atom3, atom4, atom5, chiralCheckAtom, gridIndex);
+  public int addTorsionTorsion(int particle1, int particle2, int particle3, int particle4, int particle5, int chiralCheckAtomIndex, int gridIndex) {
+    return OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(pointer, particle1, particle2, particle3, particle4, particle5, chiralCheckAtomIndex, gridIndex);
   }
 
   /**
@@ -93,93 +97,103 @@ public class TorsionTorsionForce extends Force {
   }
 
   /**
-   * Get the number of torsion-torsion interactions in the force.
+   * Get the number of torsion-torsion terms in the potential function
    *
-   * @return The number of torsion-torsion interactions.
+   * @return the number of torsion-torsion terms
    */
   public int getNumTorsionTorsions() {
     return OpenMM_AmoebaTorsionTorsionForce_getNumTorsionTorsions(pointer);
   }
 
   /**
-   * Get the number of torsion-torsion grids in the force.
+   * Get the number of torsion-torsion grids
    *
-   * @return The number of torsion-torsion grids.
+   * @return the number of torsion-torsion grids
    */
   public int getNumTorsionTorsionGrids() {
     return OpenMM_AmoebaTorsionTorsionForce_getNumTorsionTorsionGrids(pointer);
   }
 
   /**
-   * Get the parameters for a torsion-torsion interaction.
+   * Get the force field parameters for a torsion-torsion term.
    *
-   * @param index           The index of the torsion-torsion interaction.
-   * @param atom1           The index of the first atom (output).
-   * @param atom2           The index of the second atom (output).
-   * @param atom3           The index of the third atom (output).
-   * @param atom4           The index of the fourth atom (output).
-   * @param atom5           The index of the fifth atom (output).
-   * @param chiralCheckAtom The index of the chiral check atom (output).
-   * @param gridIndex       The index of the grid (output).
+   * @param index                the index of the torsion-torsion for which to get parameters
+   * @param particle1            the index of the first particle connected by the torsion-torsion
+   * @param particle2            the index of the second particle connected by the torsion-torsion
+   * @param particle3            the index of the third particle connected by the torsion-torsion
+   * @param particle4            the index of the fourth particle connected by the torsion-torsion
+   * @param particle5            the index of the fifth particle connected by the torsion-torsion
+   * @param chiralCheckAtomIndex the index of the particle connected to particle3, but not particle2 or particle4 to be used in chirality check
+   * @param gridIndex            the grid index
    */
-  public void getTorsionTorsionParameters(int index, IntByReference atom1, IntByReference atom2,
-                                          IntByReference atom3, IntByReference atom4, IntByReference atom5,
-                                          IntByReference chiralCheckAtom, IntByReference gridIndex) {
-    OpenMM_AmoebaTorsionTorsionForce_getTorsionTorsionParameters(pointer, index, atom1, atom2, atom3,
-        atom4, atom5, chiralCheckAtom, gridIndex);
+  public void getTorsionTorsionParameters(int index, IntByReference particle1, IntByReference particle2,
+                                          IntByReference particle3, IntByReference particle4, IntByReference particle5,
+                                          IntByReference chiralCheckAtomIndex, IntByReference gridIndex) {
+    OpenMM_AmoebaTorsionTorsionForce_getTorsionTorsionParameters(pointer, index, particle1, particle2, particle3,
+        particle4, particle5, chiralCheckAtomIndex, gridIndex);
   }
 
   /**
-   * Get the grid for a torsion-torsion interaction.
+   * Get the torsion-torsion grid at the specified index
    *
-   * @param index The index of the grid.
-   * @return The grid.
+   * @param index the grid index
+   * @return grid         return grid reference
    */
   public PointerByReference getTorsionTorsionGrid(int index) {
     return OpenMM_AmoebaTorsionTorsionForce_getTorsionTorsionGrid(pointer, index);
   }
 
   /**
-   * Set the parameters for a torsion-torsion interaction.
+   * Set the force field parameters for a torsion-torsion term.
    *
-   * @param index           The index of the torsion-torsion interaction.
-   * @param atom1           The index of the first atom.
-   * @param atom2           The index of the second atom.
-   * @param atom3           The index of the third atom.
-   * @param atom4           The index of the fourth atom.
-   * @param atom5           The index of the fifth atom.
-   * @param chiralCheckAtom The index of the chiral check atom.
-   * @param gridIndex       The index of the grid.
+   * @param index                the index of the torsion-torsion for which to set parameters
+   * @param particle1            the index of the first particle connected by the torsion-torsion
+   * @param particle2            the index of the second particle connected by the torsion-torsion
+   * @param particle3            the index of the third particle connected by the torsion-torsion
+   * @param particle4            the index of the fourth particle connected by the torsion-torsion
+   * @param particle5            the index of the fifth particle connected by the torsion-torsion
+   * @param chiralCheckAtomIndex the index of the particle connected to particle3, but not particle2 or particle4 to be used in chirality check
+   * @param gridIndex            the grid index
    */
-  public void setTorsionTorsionParameters(int index, int atom1, int atom2, int atom3,
-                                          int atom4, int atom5, int chiralCheckAtom, int gridIndex) {
-    OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionParameters(pointer, index, atom1, atom2, atom3,
-        atom4, atom5, chiralCheckAtom, gridIndex);
+  public void setTorsionTorsionParameters(int index, int particle1, int particle2, int particle3,
+                                          int particle4, int particle5, int chiralCheckAtomIndex, int gridIndex) {
+    OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionParameters(pointer, index, particle1, particle2, particle3,
+        particle4, particle5, chiralCheckAtomIndex, gridIndex);
   }
 
   /**
-   * Set the grid for a torsion-torsion.
+   * Set the torsion-torsion grid at the specified index
    *
-   * @param gridIndex The index of the grid.
-   * @param grid      The grid.
+   * @param gridIndex the index of the torsion-torsion for which to get parameters
+   * @param grid      either 3 or 6 values may be specified per grid point.  If the derivatives
+   *                  are omitted, they are calculated automatically by fitting a 2D spline to
+   *                  the energies.
+   *                  grid[x][y][0] = x value
+   *                  grid[x][y][1] = y value
+   *                  grid[x][y][2] = energy
+   *                  grid[x][y][3] = dEdx value
+   *                  grid[x][y][4] = dEdy value
+   *                  grid[x][y][5] = dEd(xy) value
    */
   public void setTorsionTorsionGrid(int gridIndex, PointerByReference grid) {
     OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid(pointer, gridIndex, grid);
   }
 
   /**
-   * Set whether this force uses periodic boundary conditions.
+   * Set whether this force should apply periodic boundary conditions when calculating displacements.
+   * Usually this is not appropriate for bonded forces, but there are situations when it can be useful.
    *
-   * @param periodic If true, periodic boundary conditions will be used.
+   * @param periodic if true, periodic boundary conditions will be used
    */
   public void setUsesPeriodicBoundaryConditions(boolean periodic) {
     OpenMM_AmoebaTorsionTorsionForce_setUsesPeriodicBoundaryConditions(pointer, periodic ? 1 : 0);
   }
 
   /**
-   * Check if the force uses periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    *
-   * @return True if the force uses periodic boundary conditions.
+   * @return true if force uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

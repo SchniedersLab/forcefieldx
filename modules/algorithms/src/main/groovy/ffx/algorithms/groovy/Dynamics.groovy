@@ -105,7 +105,7 @@ class Dynamics extends AlgorithmsScript {
    * Dynamics Constructor.
    */
   Dynamics() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

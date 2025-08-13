@@ -76,7 +76,7 @@ class RepexThermo extends Thermodynamics {
    * RepexThermo Constructor.
    */
   RepexThermo() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

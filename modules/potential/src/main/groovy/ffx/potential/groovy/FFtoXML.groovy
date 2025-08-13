@@ -69,7 +69,7 @@ class FFtoXML extends PotentialScript {
      * FFtoXML Constructor.
      */
     FFtoXML() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

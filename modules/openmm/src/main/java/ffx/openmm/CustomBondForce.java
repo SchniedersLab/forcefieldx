@@ -69,56 +69,97 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParam
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_usesPeriodicBoundaryConditions;
 
 /**
- * Custom Bond Force.
+ * This class implements bonded interactions between pairs of particles. Unlike HarmonicBondForce, the functional form
+ * of the interaction is completely customizable, and may involve arbitrary algebraic expressions.
+ * It may depend on the distance between particles, as well as on arbitrary global and
+ * per-bond parameters.
+ * <p>
+ * To use this class, create a CustomBondForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy between each pair of bonded particles. The expression may depend on r, the distance
+ * between the particles, as well as on any parameters you choose. Then call addPerBondParameter() to define per-bond
+ * parameters, and addGlobalParameter() to define global parameters. The values of per-bond parameters are specified as
+ * part of the system definition, while values of global parameters may be modified during a simulation by calling Context::setParameter().
+ * Finally, call addBond() once for each bond. After a bond has been added, you can modify its parameters by calling setBondParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
+ * <p>
+ * As an example, the following code creates a CustomBondForce that implements a harmonic potential:
+ * <p>
+ * &lt;pre&gt;
+ * {@code
+ * CustomBondForce force = new CustomBondForce("0.5*k*(r-r0)^2");
+ * }
+ * &lt;/pre&gt;
+ * <p>
+ * This force depends on two parameters: the spring constant k and equilibrium distance r0. The following code defines these parameters:
+ * <p>
+ * &lt;pre&gt;
+ * {@code
+ * force.addPerBondParameter("k");
+ * force.addPerBondParameter("r0");
+ * }
+ * &lt;/pre&gt;
+ * <p>
+ * This class also has the ability to compute derivatives of the potential energy with respect to global parameters.
+ * Call addEnergyParameterDerivative() to request that the derivative with respect to a particular parameter be
+ * computed. You can then query its value in a Context by calling getState() on it.
+ * <p>
+ * Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and ^ (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select. All trigonometric functions
+ * are defined in radians, and log is the natural logarithm. step(x) = 0 if x is less than 0, 1 otherwise. delta(x) = 1 if x is 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.
  */
 public class CustomBondForce extends Force {
 
   /**
    * Create a CustomBondForce.
    *
-   * @param energy The energy expression for the force.
+   * @param energy an algebraic expression giving the interaction energy between two bonded particles as a function
+   *               of r, the distance between them
    */
   public CustomBondForce(String energy) {
     super(OpenMM_CustomBondForce_create(energy));
   }
 
   /**
-   * Add a bond to the OpenMM System.
+   * Add a bond term to the force field.
    *
-   * @param i1         The index of the first atom.
-   * @param i2         The index of the second atom.
-   * @param parameters The bond parameters.
-   * @return The index of the bond that was added.
+   * @param i1         the index of the first particle connected by the bond
+   * @param i2         the index of the second particle connected by the bond
+   * @param parameters the list of parameters for the new bond
+   * @return the index of the bond that was added
    */
   public int addBond(int i1, int i2, DoubleArray parameters) {
     return OpenMM_CustomBondForce_addBond(pointer, i1, i2, parameters.getPointer());
   }
 
   /**
-   * Add an energy parameter derivative to the force.
+   * Request that this Force compute the derivative of its energy with respect to a global parameter.
+   * The parameter must have already been added with addGlobalParameter().
    *
-   * @param name The name of the parameter to compute the derivative of the energy with respect to.
+   * @param name the name of the parameter
    */
   public void addEnergyParameterDerivative(String name) {
     OpenMM_CustomBondForce_addEnergyParameterDerivative(pointer, name);
   }
 
   /**
-   * Add a global parameter to the CustomBondForce.
+   * Add a new global parameter that the interaction may depend on. The default value provided to
+   * this method is the initial value of the parameter in newly created Contexts. You can change
+   * the value at any time by calling setParameter() on the Context.
    *
-   * @param name  The name of the parameter.
-   * @param value The default value of the parameter.
-   * @return The index of the parameter that was added.
+   * @param name  the name of the parameter
+   * @param value the default value of the parameter
+   * @return the index of the parameter that was added
    */
   public int addGlobalParameter(String name, double value) {
     return OpenMM_CustomBondForce_addGlobalParameter(pointer, name, value);
   }
 
   /**
-   * Add a per-bond parameter to the CustomBondForce.
+   * Add a new per-bond parameter that the interaction may depend on.
    *
-   * @param name The name of the parameter.
-   * @return The index of the parameter that was added.
+   * @param name the name of the parameter
+   * @return the index of the parameter that was added
    */
   public int addPerBondParameter(String name) {
     return OpenMM_CustomBondForce_addPerBondParameter(pointer, name);
@@ -136,33 +177,33 @@ public class CustomBondForce extends Force {
   }
 
   /**
-   * Get the parameters for a specific bond.
+   * Get the force field parameters for a bond term.
    *
-   * @param index      The index of the bond.
-   * @param i1         The index of the first atom (output).
-   * @param i2         The index of the second atom (output).
-   * @param parameters The parameters for the bond (output).
+   * @param index the index of the bond for which to get parameters
+   * @param[out] i1            the index of the first particle connected by the bond
+   * @param[out] i2            the index of the second particle connected by the bond
+   * @param[out] parameters    the list of parameters for the bond
    */
   public void getBondParameters(int index, IntBuffer i1, IntBuffer i2, DoubleArray parameters) {
     OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());
   }
 
   /**
-   * Get the parameters for a specific bond.
+   * Get the force field parameters for a bond term.
    *
-   * @param index      The index of the bond.
-   * @param i1         The index of the first atom (output).
-   * @param i2         The index of the second atom (output).
-   * @param parameters The parameters for the bond (output).
+   * @param index the index of the bond for which to get parameters
+   * @param[out] i1            the index of the first particle connected by the bond
+   * @param[out] i2            the index of the second particle connected by the bond
+   * @param[out] parameters    the list of parameters for the bond
    */
   public void getBondParameters(int index, IntByReference i1, IntByReference i2, DoubleArray parameters) {
     OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());
   }
 
   /**
-   * Get the energy function expression.
+   * Get the algebraic expression that gives the interaction energy for each bond
    *
-   * @return The energy function expression.
+   * @return the energy function expression
    */
   public String getEnergyFunction() {
     Pointer p = OpenMM_CustomBondForce_getEnergyFunction(pointer);
@@ -173,10 +214,11 @@ public class CustomBondForce extends Force {
   }
 
   /**
-   * Get the name of a parameter to compute the derivative of the energy with respect to.
+   * Get the name of a global parameter with respect to which this Force should compute the
+   * derivative of the energy.
    *
-   * @param index The index of the parameter derivative.
-   * @return The name of the parameter.
+   * @param index the index of the parameter derivative, between 0 and getNumEnergyParameterDerivatives()
+   * @return the parameter name
    */
   public String getEnergyParameterDerivativeName(int index) {
     Pointer p = OpenMM_CustomBondForce_getEnergyParameterDerivativeName(pointer, index);
@@ -211,9 +253,9 @@ public class CustomBondForce extends Force {
   }
 
   /**
-   * Get the number of bonds.
+   * Get the number of bonds for which force field parameters have been defined.
    *
-   * @return The number of bonds.
+   * @return the number of bonds
    */
   public int getNumBonds() {
     return OpenMM_CustomBondForce_getNumBonds(pointer);

@@ -111,7 +111,7 @@ public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
       double descreen = descreenRadius[i] * OpenMM_NmPerAngstrom * perfectRadiiScale;
       double overlap = overlapScale[i] * perfectRadiiScale;
       double neck = neckFactor[i] * perfectRadiiScale;
-      addParticle_1(multipoleType.charge, base, overlap, descreen, neck);
+      addParticle(multipoleType.charge, base, overlap, descreen, neck);
       if (!usePerfectRadii && logger.isLoggable(Level.FINE)) {
         logger.fine(format("   %s %8.6f %8.6f %5.3f", atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i]));
       }
@@ -210,7 +210,7 @@ public class AmoebaGeneralizedKirkwoodForce extends GeneralizedKirkwoodForce {
       double neckFactor = neckFactors[index] * overlapScaleUseFactor;
 
       MultipoleType multipoleType = atom.getMultipoleType();
-      setParticleParameters_1(index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize, neckFactor);
+      setParticleParameters(index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize, neckFactor);
     }
 
     // OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"

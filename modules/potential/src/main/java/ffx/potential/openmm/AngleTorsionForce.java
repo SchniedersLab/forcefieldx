@@ -209,4 +209,54 @@ public class AngleTorsionForce extends CustomCompoundBondForce {
     }
     return new AngleTorsionForce(topology, openMMDualTopologyEnergy);
   }
+
+  /**
+   * Update the Dual Topology Angle-Torsion Force.
+   *
+   * @param topology The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    // Check if this system has angle-torsions.
+    AngleTorsion[] angleTorsions = forceFieldEnergy.getAngleTorsions();
+    if (angleTorsions == null || angleTorsions.length < 1) {
+      return;
+    }
+
+    double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    int atIndex = 0;
+    for (AngleTorsion angleTorsion : angleTorsions) {
+      double scale = 1.0;
+      // Don't apply lambda scale to alchemical stretch-torsion
+      if (!angleTorsion.applyLambda()) {
+        scale = scaleDT;
+      }
+      double[] constants = angleTorsion.getConstants();
+      DoubleArray parameters = new DoubleArray(0);
+      for (int m = 0; m < 2; m++) {
+        for (int n = 0; n < 3; n++) {
+          int index = (3 * m) + n;
+          parameters.append(constants[index] * OpenMM_KJPerKcal * scale);
+        }
+      }
+      Atom[] atoms = angleTorsion.getAtomArray(true);
+      parameters.append(angleTorsion.angleType1.angle[0] * OpenMM_RadiansPerDegree);
+      parameters.append(angleTorsion.angleType2.angle[0] * OpenMM_RadiansPerDegree);
+
+      IntArray particles = new IntArray(0);
+      for (int i = 0; i < 4; i++) {
+        int atomIndex = atoms[i].getArrayIndex();
+        atomIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, atomIndex);
+        particles.append(atomIndex);
+      }
+
+      setBondParameters(atIndex++, particles, parameters);
+      parameters.destroy();
+      particles.destroy();
+    }
+
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
+  }
 }

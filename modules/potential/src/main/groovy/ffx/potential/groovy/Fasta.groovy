@@ -86,7 +86,7 @@ class Fasta extends PotentialScript {
    * Fasta Constructor.
    */
   Fasta() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

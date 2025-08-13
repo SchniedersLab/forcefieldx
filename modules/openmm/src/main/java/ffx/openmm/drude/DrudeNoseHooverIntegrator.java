@@ -49,41 +49,32 @@ import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegra
 import static edu.uiowa.jopenmm.OpenMMDrudeLibrary.OpenMM_DrudeNoseHooverIntegrator_setMaxDrudeDistance;
 
 /**
- * DrudeNoseHooverIntegrator implements a Nosé-Hoover integrator for systems with Drude oscillators.
+ * This Integrator simulates systems that include Drude particles.  It applies two different Nose-Hoover
+ * chain thermostats to the different parts of the system.  The first is applied to ordinary particles (ones
+ * that are not part of a Drude particle pair), as well as to the center of mass of each Drude particle pair.
+ * A second thermostat, typically with a much lower temperature, is applied to the relative internal
+ * displacement of each pair.
  * <p>
- * This integrator extends the basic DrudeIntegrator by implementing Nosé-Hoover dynamics, which
- * provides deterministic temperature control through extended system variables. The Nosé-Hoover
- * approach maintains canonical ensemble sampling while preserving the time-reversible nature
- * of the dynamics, making it ideal for equilibrium simulations of Drude polarizable systems.
+ * This integrator can optionally set an upper limit on how far any Drude particle is ever allowed to
+ * get from its parent particle.  This can sometimes help to improve stability.  The limit is enforced
+ * with a hard wall constraint.  By default the limit is set to 0.02 nm.
  * <p>
- * The integrator uses separate thermostat chains for real atoms and Drude particles:
- * <ul>
- * <li>Real atoms are coupled to a Nosé-Hoover chain at the system temperature</li>
- * <li>Drude particles are coupled to a separate chain at the Drude temperature</li>
- * <li>Multiple chain lengths can be specified for improved temperature control</li>
- * </ul>
- * <p>
- * The Nosé-Hoover method provides excellent temperature control without the stochastic
- * noise inherent in Langevin dynamics, making it particularly suitable for studies
- * requiring precise temperature control and long-time dynamical properties.
+ * This Integrator requires the System to include a DrudeForce, which it uses to identify the Drude
+ * particles.
  */
 public class DrudeNoseHooverIntegrator extends NoseHooverIntegrator {
 
   /**
-   * Create a new DrudeNoseHooverIntegrator.
-   * <p>
-   * This constructor initializes a Drude Nosé-Hoover integrator with the specified parameters.
-   * The integrator will use Nosé-Hoover dynamics to maintain temperature control for both
-   * real atoms and Drude particles using separate thermostat chains.
+   * Create a DrudeNoseHooverIntegrator.
    *
-   * @param stepSize         The integration step size in picoseconds.
-   * @param temperature      The target temperature for real atoms in Kelvin.
-   * @param drudeTemperature The target temperature for Drude particles in Kelvin.
-   * @param frequency        The thermostat frequency for real atoms in 1/picoseconds.
-   * @param drudeFrequency   The thermostat frequency for Drude particles in 1/picoseconds.
-   * @param chainLength      The length of the Nosé-Hoover chain for real atoms.
-   * @param drudeChainLength The length of the Nosé-Hoover chain for Drude particles.
-   * @param numMTS           The number of multiple time step levels.
+   * @param stepSize         the step size with which to integrator the system (in picoseconds)
+   * @param temperature      the target temperature for the system (in Kelvin).
+   * @param drudeTemperature the target temperature for the Drude particles, relative to their parent atom (in Kelvin).
+   * @param frequency        the frequency of the system's interaction with the heat bath (in inverse picoseconds).
+   * @param drudeFrequency   the frequency of the drude particles' interaction with the heat bath (in inverse picoseconds).
+   * @param chainLength      the number of beads in the Nose-Hoover chain.
+   * @param drudeChainLength the number of beads in the Nose-Hoover chain for Drude particles.
+   * @param numMTS           the number of step in the  multiple time step chain propagation algorithm.
    */
   public DrudeNoseHooverIntegrator(double stepSize, double temperature, double drudeTemperature,
                                    double frequency, double drudeFrequency, int chainLength,

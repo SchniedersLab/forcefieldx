@@ -46,24 +46,19 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous1DFunction_getFun
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous1DFunction_setFunctionParameters;
 
 /**
- * A Continuous1DFunction uses linear interpolation to define a continuous function based
- * on a discrete set of tabulated values. This is useful for defining smooth functions
- * from experimental data or other tabulated sources.
- * <p>
- * The function is defined by a set of (x, y) pairs, and values between the tabulated
- * points are computed using linear interpolation. The function can optionally be
- * periodic, meaning that values outside the tabulated range are computed by wrapping
- * around to the other end of the table.
+ * This is a TabulatedFunction that computes a continuous one dimensional function.
  */
 public class Continuous1DFunction extends TabulatedFunction {
 
   /**
-   * Create a Continuous1DFunction.
+   * Create a Continuous1DFunction f(x) based on a set of tabulated values.
    *
-   * @param values   The tabulated values of the function f(x) at uniformly spaced values of x between min and max. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero for x &lt; min or x &gt; max.
-   * @param min      The minimum value of the independent variable.
-   * @param max      The maximum value of the independent variable.
-   * @param periodic Whether the function is periodic.
+   * @param values   the tabulated values of the function f(x) at uniformly spaced values of x between min
+   *                 and max.  A natural cubic spline is used to interpolate between the tabulated values.
+   *                 The function is assumed to be zero for x &lt; min or x &gt; max.
+   * @param min      the value of x corresponding to the first element of values
+   * @param max      the value of x corresponding to the last element of values
+   * @param periodic whether the interpolated function is periodic
    */
   public Continuous1DFunction(PointerByReference values, double min, double max, boolean periodic) {
     super(OpenMM_Continuous1DFunction_create(values, min, max, periodic ? 1 : 0));
@@ -83,9 +78,11 @@ public class Continuous1DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function (output).
-   * @param min    The minimum value of the independent variable (output).
-   * @param max    The maximum value of the independent variable (output).
+   * @param values the tabulated values of the function f(x) at uniformly spaced values of x between min
+   *               and max.  A natural cubic spline is used to interpolate between the tabulated values.
+   *               The function is assumed to be zero for x &lt; min or x &gt; max.
+   * @param min    the value of x corresponding to the first element of values
+   * @param max    the value of x corresponding to the last element of values
    */
   public void getFunctionParameters(PointerByReference values, DoubleByReference min, DoubleByReference max) {
     OpenMM_Continuous1DFunction_getFunctionParameters(pointer, values, min, max);
@@ -94,9 +91,11 @@ public class Continuous1DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function.
-   * @param min    The minimum value of the independent variable.
-   * @param max    The maximum value of the independent variable.
+   * @param values the tabulated values of the function f(x) at uniformly spaced values of x between min
+   *               and max.  A natural cubic spline is used to interpolate between the tabulated values.
+   *               The function is assumed to be zero for x &lt; min or x &gt; max.
+   * @param min    the value of x corresponding to the first element of values
+   * @param max    the value of x corresponding to the last element of values
    */
   public void setFunctionParameters(PointerByReference values, double min, double max) {
     OpenMM_Continuous1DFunction_setFunctionParameters(pointer, values, min, max);

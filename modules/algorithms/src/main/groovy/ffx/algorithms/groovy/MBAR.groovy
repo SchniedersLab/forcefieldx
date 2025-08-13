@@ -137,7 +137,7 @@ class MBAR extends AlgorithmsScript {
      * MBAR Constructor.
      */
     MBAR() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

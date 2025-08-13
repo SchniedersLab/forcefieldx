@@ -54,13 +54,13 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 public class AndersenThermostat extends Force {
 
   /**
-   * OpenMM AndersenThermostat constructor.
+   * Create an AndersenThermostat.
    *
-   * @param temperature the default temperature of the heat bath (in Kelvin).
-   * @param frequency   the default collision frequency (in 1/ps)
+   * @param defaultTemperature        the default temperature of the heat bath (in Kelvin)
+   * @param defaultCollisionFrequency the default collision frequency (in 1/ps)
    */
-  public AndersenThermostat(double temperature, double frequency) {
-    super(OpenMM_AndersenThermostat_create(temperature, frequency));
+  public AndersenThermostat(double defaultTemperature, double defaultCollisionFrequency) {
+    super(OpenMM_AndersenThermostat_create(defaultTemperature, defaultCollisionFrequency));
   }
 
   /**
@@ -93,29 +93,27 @@ public class AndersenThermostat extends Force {
   }
 
   /**
-   * Get the random number seed. See setRandomNumberSeed() for details.
-   *
-   * @return The random number seed.
+   * Get the random number seed.  See setRandomNumberSeed() for details.
    */
   public int getRandomNumberSeed() {
     return OpenMM_AndersenThermostat_getRandomNumberSeed(pointer);
   }
 
   /**
-   * Set the default collision frequency. This will affect any new Contexts you create,
+   * Set the default collision frequency.  This will affect any new Contexts you create,
    * but not ones that already exist.
    *
-   * @param frequency the default collision frequency (in 1/ps).
+   * @param frequency the default collision frequency (in 1/ps)
    */
   public void setDefaultCollisionFrequency(double frequency) {
     OpenMM_AndersenThermostat_setDefaultCollisionFrequency(pointer, frequency);
   }
 
   /**
-   * Set the default temperature of the heat bath. This will affect any new Contexts
-   * you create, but not ones that already exist.
+   * Set the default temperature of the heat bath.  This will affect any new Contexts you create,
+   * but not ones that already exist.
    *
-   * @param temperature the default temperature of the heat bath (in Kelvin).
+   * @param temperature the default temperature of the heat bath (in Kelvin)
    */
   public void setDefaultTemperature(double temperature) {
     OpenMM_AndersenThermostat_setDefaultTemperature(pointer, temperature);
@@ -140,9 +138,10 @@ public class AndersenThermostat extends Force {
   }
 
   /**
-   * Returns whether this force makes use of periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    *
-   * @return the Andersen Thermostat always returns false.
+   * @return true if force uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

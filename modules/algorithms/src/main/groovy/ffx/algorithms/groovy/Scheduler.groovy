@@ -111,7 +111,7 @@ class Scheduler extends AlgorithmsScript {
    * Scheduler Constructor.
    */
   Scheduler() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

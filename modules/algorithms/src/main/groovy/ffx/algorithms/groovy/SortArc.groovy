@@ -125,7 +125,7 @@ class SortArc extends AlgorithmsScript {
      * SortArc Constructor.
      */
     SortArc() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

@@ -23,7 +23,7 @@
                 <dependency>
                     <groupId>edu.uiowa.jopenmm</groupId>
                     <artifactId>jopenmm-fat</artifactId>
-                    <version>8.3.0</version>
+                    <version>8.3.2</version>
                 </dependency>]]>
         </source>
       </subsection>
@@ -34,7 +34,7 @@
         </p>
         <source>OpenMMUtils.init();</source>
         <p>
-          This will extract the OpenMM binary libraries from the openmm-fat.jar file to a temporary directory
+          This will extract the OpenMM binary libraries from the jopenmm-fat-8.3.2.jar file to a temporary directory
           and configure JNA to find them.
         </p>
         <p>

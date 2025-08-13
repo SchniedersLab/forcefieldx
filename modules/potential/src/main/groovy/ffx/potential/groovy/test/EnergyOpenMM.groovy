@@ -88,7 +88,7 @@ class EnergyOpenMM extends PotentialScript {
    * EnergyOpenMM Constructor.
    */
   EnergyOpenMM() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

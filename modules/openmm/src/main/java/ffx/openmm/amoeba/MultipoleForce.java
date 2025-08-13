@@ -86,7 +86,11 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * Amoeba Polarizable Multipole Force.
+ * This class implements the Amoeba multipole interaction.
+ * <p>
+ * To use it, create an AmoebaMultipoleForce object then call addMultipole() once for each atom.  After
+ * an entry has been added, you can modify its force field parameters by calling setMultipoleParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
  */
 public class MultipoleForce extends Force {
 
@@ -95,23 +99,24 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Add a multipole.
+   * Add multipole-related info for a particle
    *
-   * @param charge         The charge.
-   * @param dipole         The dipole.
-   * @param quadrupole     The quadrupole.
-   * @param axisType       The axis type.
-   * @param zaxis          The z-axis.
-   * @param xaxis          The x-axis.
-   * @param yaxis          The y-axis.
-   * @param thole          The Thole parameter.
-   * @param pdamp          The damping factor.
-   * @param polarizability The polarizability.
+   * @param charge              the particle's charge
+   * @param molecularDipole     the particle's molecular dipole (vector of size 3)
+   * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
+   * @param axisType            the particle's axis type
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
+   * @param thole               Thole parameter
+   * @param dampingFactor       dampingFactor parameter
+   * @param polarity            polarity parameter
+   * @return the index of the particle that was added
    */
-  public void addMultipole(double charge, DoubleArray dipole, DoubleArray quadrupole, int axisType,
-                           int zaxis, int xaxis, int yaxis, double thole, double pdamp, double polarizability) {
-    OpenMM_AmoebaMultipoleForce_addMultipole(pointer, charge, dipole.getPointer(), quadrupole.getPointer(),
-        axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
+  public int addMultipole(double charge, DoubleArray molecularDipole, DoubleArray molecularQuadrupole, int axisType,
+                          int multipoleAtomZ, int multipoleAtomX, int multipoleAtomY, double thole, double dampingFactor, double polarity) {
+    return OpenMM_AmoebaMultipoleForce_addMultipole(pointer, charge, molecularDipole.getPointer(), molecularQuadrupole.getPointer(),
+        axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY, thole, dampingFactor, polarity);
   }
 
   /**
@@ -126,10 +131,13 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Get the Ewald coefficient for the multipole force.
+   * Get the Ewald alpha parameter.  If this is 0 (the default), a value is chosen automatically
+   * based on the Ewald error tolerance.
    *
-   * @return The Ewald coefficient.
+   * @return the Ewald alpha parameter
+   * @deprecated This method exists only for backward compatibility.  Use getPMEParameters() instead.
    */
+  @Deprecated
   public double getAEwald() {
     return OpenMM_AmoebaMultipoleForce_getAEwald(pointer);
   }
@@ -164,9 +172,10 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Get the cutoff distance for the multipole force.
+   * Get the cutoff distance (in nm) being used for nonbonded interactions.  If the NonbondedMethod in use
+   * is NoCutoff, this value will have no effect.
    *
-   * @return The cutoff distance.
+   * @return the cutoff distance, measured in nm
    */
   public double getCutoffDistance() {
     return OpenMM_AmoebaMultipoleForce_getCutoffDistance(pointer);
@@ -189,9 +198,12 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Get the Ewald error tolerance for the multipole force.
-   *
-   * @return The Ewald error tolerance.
+   * Get the error tolerance for Ewald summation.  This corresponds to the fractional error in the forces
+   * which is acceptable.  This value is used to select the grid dimensions and separation (alpha)
+   * parameter so that the average error level will be less than the tolerance.  There is not a
+   * rigorous guarantee that all forces on all atoms will be less than the tolerance, however.
+   * <p>
+   * This can be overridden by explicitly setting an alpha parameter and grid dimensions to use.
    */
   public double getEwaldErrorTolerance() {
     return OpenMM_AmoebaMultipoleForce_getEwaldErrorTolerance(pointer);
@@ -231,27 +243,27 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Get the multipole parameters for a specific atom.
+   * Get the multipole parameters for a particle.
    *
-   * @param index          The atom index.
-   * @param charge         The charge (output).
-   * @param dipole         The dipole (output).
-   * @param quadrupole     The quadrupole (output).
-   * @param axisType       The axis type (output).
-   * @param zaxis          The z-axis (output).
-   * @param xaxis          The x-axis (output).
-   * @param yaxis          The y-axis (output).
-   * @param thole          The Thole parameter (output).
-   * @param pdamp          The damping factor (output).
-   * @param polarizability The polarizability (output).
+   * @param index               the index of the atom for which to get parameters
+   * @param charge              the particle's charge
+   * @param molecularDipole     the particle's molecular dipole (vector of size 3)
+   * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
+   * @param axisType            the particle's axis type
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
+   * @param thole               Thole parameter
+   * @param dampingFactor       dampingFactor parameter
+   * @param polarity            polarity parameter
    */
-  public void getMultipoleParameters(int index, DoubleByReference charge, PointerByReference dipole,
-                                     PointerByReference quadrupole, IntByReference axisType,
-                                     IntByReference zaxis, IntByReference xaxis, IntByReference yaxis,
-                                     DoubleByReference thole, DoubleByReference pdamp,
-                                     DoubleByReference polarizability) {
-    OpenMM_AmoebaMultipoleForce_getMultipoleParameters(pointer, index, charge, dipole, quadrupole,
-        axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
+  public void getMultipoleParameters(int index, DoubleByReference charge, PointerByReference molecularDipole,
+                                     PointerByReference molecularQuadrupole, IntByReference axisType,
+                                     IntByReference multipoleAtomZ, IntByReference multipoleAtomX, IntByReference multipoleAtomY,
+                                     DoubleByReference thole, DoubleByReference dampingFactor,
+                                     DoubleByReference polarity) {
+    OpenMM_AmoebaMultipoleForce_getMultipoleParameters(pointer, index, charge, molecularDipole, molecularQuadrupole,
+        axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY, thole, dampingFactor, polarity);
   }
 
   /**
@@ -291,12 +303,13 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Get the PME parameters.
+   * Get the parameters to use for PME calculations.  If alpha is 0 (the default), these parameters are
+   * ignored and instead their values are chosen based on the Ewald error tolerance.
    *
-   * @param alpha The Ewald alpha parameter (output).
-   * @param nx    The PME grid size in x (output).
-   * @param ny    The PME grid size in y (output).
-   * @param nz    The PME grid size in z (output).
+   * @param alpha the separation parameter
+   * @param nx    the number of grid points along the X axis
+   * @param ny    the number of grid points along the Y axis
+   * @param nz    the number of grid points along the Z axis
    */
   public void getPMEParameters(DoubleByReference alpha, IntByReference nx, IntByReference ny, IntByReference nz) {
     OpenMM_AmoebaMultipoleForce_getPMEParameters(pointer, alpha, nx, ny, nz);
@@ -374,10 +387,13 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Set the Ewald coefficient for the multipole force.
+   * Set the Ewald alpha parameter.  If this is 0 (the default), a value is chosen automatically
+   * based on the Ewald error tolerance.
    *
-   * @param aewald The Ewald coefficient.
+   * @param aewald alpha parameter
+   * @deprecated This method exists only for backward compatibility.  Use setPMEParameters() instead.
    */
+  @Deprecated
   public void setAEwald(double aewald) {
     OpenMM_AmoebaMultipoleForce_setAEwald(pointer, aewald);
   }
@@ -394,18 +410,24 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Set the cutoff distance for the multipole force.
+   * Set the cutoff distance (in nm) being used for nonbonded interactions.  If the NonbondedMethod in use
+   * is NoCutoff, this value will have no effect.
    *
-   * @param cutoff The cutoff distance.
+   * @param cutoff the cutoff distance, measured in nm
    */
   public void setCutoffDistance(double cutoff) {
     OpenMM_AmoebaMultipoleForce_setCutoffDistance(pointer, cutoff);
   }
 
   /**
-   * Set the Ewald error tolerance for the multipole force.
+   * Set the error tolerance for Ewald summation.  This corresponds to the fractional error in the forces
+   * which is acceptable.  This value is used to select the grid dimensions and separation (alpha)
+   * parameter so that the average error level will be less than the tolerance.  There is not a
+   * rigorous guarantee that all forces on all atoms will be less than the tolerance, however.
+   * <p>
+   * This can be overridden by explicitly setting an alpha parameter and grid dimensions to use.
    *
-   * @param ewaldTolerance The Ewald error tolerance.
+   * @param ewaldTolerance the error tolerance
    */
   public void setEwaldErrorTolerance(double ewaldTolerance) {
     OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(pointer, ewaldTolerance);
@@ -421,25 +443,25 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Set the multipole parameters.
+   * Set the multipole parameters for a particle.
    *
-   * @param index          The atom index.
-   * @param charge         The charge.
-   * @param dipoles        The dipole.
-   * @param quadrupoles    The quadrupole.
-   * @param axisType       The axis type.
-   * @param zaxis          The z-axis.
-   * @param xaxis          The x-axis.
-   * @param yaxis          The y-axis.
-   * @param thole          The Thole parameter.
-   * @param pdamp          The damping factor.
-   * @param polarizability The polarizability.
+   * @param index               the index of the atom for which to set parameters
+   * @param charge              the particle's charge
+   * @param molecularDipole     the particle's molecular dipole (vector of size 3)
+   * @param molecularQuadrupole the particle's molecular quadrupole (vector of size 9)
+   * @param axisType            the particle's axis type
+   * @param multipoleAtomZ      index of first atom used in constructing lab to molecular frames
+   * @param multipoleAtomX      index of second atom used in constructing lab to molecular frames
+   * @param multipoleAtomY      index of second atom used in constructing lab to molecular frames
+   * @param thole               thole parameter
+   * @param dampingFactor       damping factor parameter
+   * @param polarity            polarity parameter
    */
-  public void setMultipoleParameters(int index, double charge, DoubleArray dipoles, DoubleArray quadrupoles,
-                                     int axisType, int zaxis, int xaxis, int yaxis,
-                                     double thole, double pdamp, double polarizability) {
+  public void setMultipoleParameters(int index, double charge, DoubleArray molecularDipole, DoubleArray molecularQuadrupole,
+                                     int axisType, int multipoleAtomZ, int multipoleAtomX, int multipoleAtomY,
+                                     double thole, double dampingFactor, double polarity) {
     OpenMM_AmoebaMultipoleForce_setMultipoleParameters(pointer, index, charge,
-        dipoles.getPointer(), quadrupoles.getPointer(), axisType, zaxis, xaxis, yaxis, thole, pdamp, polarizability);
+        molecularDipole.getPointer(), molecularQuadrupole.getPointer(), axisType, multipoleAtomZ, multipoleAtomX, multipoleAtomY, thole, dampingFactor, polarity);
   }
 
   /**
@@ -470,12 +492,13 @@ public class MultipoleForce extends Force {
   }
 
   /**
-   * Set the PME parameters.
+   * Set the parameters to use for PME calculations.  If alpha is 0 (the default), these parameters are
+   * ignored and instead their values are chosen based on the Ewald error tolerance.
    *
-   * @param alpha The Ewald alpha parameter.
-   * @param nx    The PME grid size in x.
-   * @param ny    The PME grid size in y.
-   * @param nz    The PME grid size in z.
+   * @param alpha the separation parameter
+   * @param nx    the number of grid points along the X axis
+   * @param ny    the number of grid points along the Y axis
+   * @param nz    the number of grid points along the Z axis
    */
   public void setPMEParameters(double alpha, int nx, int ny, int nz) {
     OpenMM_AmoebaMultipoleForce_setPMEParameters(pointer, alpha, nx, ny, nz);

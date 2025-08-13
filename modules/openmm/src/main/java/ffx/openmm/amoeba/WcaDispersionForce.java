@@ -68,25 +68,31 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionFo
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * Weeks-Chandler-Andersen Dispersion Force.
+ * This class implements a nonbonded interaction between pairs of particles typically used along with
+ * AmoebaGeneralizedKirkwoodForce as part of an implicit solvent model.
+ * <p>
+ * To use it, create an AmoebaWcaDispersionForce object then call addParticle() once for each particle.  After
+ * a particle has been added, you can modify its force field parameters by calling setParticleParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
  */
 public class WcaDispersionForce extends Force {
 
   /**
-   * Create a new Amoeba WCA dispersion force.
+   * Create an AmoebaWcaDispersionForce.
    */
   public WcaDispersionForce() {
     super(OpenMM_AmoebaWcaDispersionForce_create());
   }
 
   /**
-   * Add a particle to the force field term.
+   * Add a particle to the force field.
    *
-   * @param radius  The radius of the particle.
-   * @param epsilon The well depth of the particle.
+   * @param radius  radius
+   * @param epsilon epsilon
+   * @return index of added particle
    */
-  public void addParticle(double radius, double epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_addParticle(pointer, radius, epsilon);
+  public int addParticle(double radius, double epsilon) {
+    return OpenMM_AmoebaWcaDispersionForce_addParticle(pointer, radius, epsilon);
   }
 
   /**
@@ -137,23 +143,21 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Get the number of particles.
-   *
-   * @return The number of particles.
+   * Get the number of particles
    */
   public int getNumParticles() {
     return OpenMM_AmoebaWcaDispersionForce_getNumParticles(pointer);
   }
 
   /**
-   * Get the parameters for a particle.
+   * Get the force field parameters for a WCA dispersion particle.
    *
-   * @param index   The index of the particle.
-   * @param radius  The radius of the particle (output).
-   * @param epsilon The well depth of the particle (output).
+   * @param particleIndex the particle index
+   * @param radius        radius
+   * @param epsilon       epsilon
    */
-  public void getParticleParameters(int index, DoubleByReference radius, DoubleByReference epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_getParticleParameters(pointer, index, radius, epsilon);
+  public void getParticleParameters(int particleIndex, DoubleByReference radius, DoubleByReference epsilon) {
+    OpenMM_AmoebaWcaDispersionForce_getParticleParameters(pointer, particleIndex, radius, epsilon);
   }
 
   /**
@@ -229,14 +233,14 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Set the parameters for a particle.
+   * Set the force field parameters for a WCA dispersion particle.
    *
-   * @param index   The index of the particle to set.
-   * @param radius  The radius of the particle.
-   * @param epsilon The well depth of the particle.
+   * @param particleIndex the particle index
+   * @param radius        radius
+   * @param epsilon       epsilon
    */
-  public void setParticleParameters(int index, double radius, double epsilon) {
-    OpenMM_AmoebaWcaDispersionForce_setParticleParameters(pointer, index, radius, epsilon);
+  public void setParticleParameters(int particleIndex, double radius, double epsilon) {
+    OpenMM_AmoebaWcaDispersionForce_setParticleParameters(pointer, particleIndex, radius, epsilon);
   }
 
   /**
@@ -276,9 +280,13 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Update the parameters in the context.
-   *
-   * @param context The OpenMM context.
+   * Update the per-particle parameters in a Context to match those stored in this Force object.  This method provides
+   * an efficient method to update certain parameters in an existing Context without needing to reinitialize it.
+   * Simply call setParticleParameters() to modify this object's parameters, then call updateParametersInContext()
+   * to copy them over to the Context.
+   * <p>
+   * The only information this method updates is the values of per-particle parameters.  All other aspects of the Force
+   * are unaffected and can only be changed by reinitializing the Context.
    */
   public void updateParametersInContext(Context context) {
     if (context.hasContextPointer()) {
@@ -287,9 +295,10 @@ public class WcaDispersionForce extends Force {
   }
 
   /**
-   * Check if the force uses periodic boundary conditions.
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
    *
-   * @return True if the force uses periodic boundary conditions.
+   * @return true if nonbondedMethod uses PBC and false otherwise
    */
   @Override
   public boolean usesPeriodicBoundaryConditions() {

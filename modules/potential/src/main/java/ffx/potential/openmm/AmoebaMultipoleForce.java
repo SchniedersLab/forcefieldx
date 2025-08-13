@@ -500,18 +500,13 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     if (!crystal.aperiodic()) {
       setNonbondedMethod(OpenMM_AmoebaMultipoleForce_PME);
       setCutoffDistance(cutoff * OpenMM_NmPerAngstrom);
-      setAEwald(aewald / OpenMM_NmPerAngstrom);
-
       double ewaldTolerance = 1.0e-04;
       setEwaldErrorTolerance(ewaldTolerance);
-
-      IntArray gridDimensions = new IntArray(3);
       ReciprocalSpace recip = pme.getReciprocalSpace();
-      gridDimensions.set(0, recip.getXDim());
-      gridDimensions.set(1, recip.getYDim());
-      gridDimensions.set(2, recip.getZDim());
-      setPmeGridDimensions(gridDimensions);
-      gridDimensions.destroy();
+      int nx = recip.getXDim();
+      int ny = recip.getYDim();
+      int nz = recip.getZDim();
+      setPMEParameters(aewald / OpenMM_NmPerAngstrom, nx, ny, nz);
     } else {
       setNonbondedMethod(OpenMM_AmoebaMultipoleForce_NoCutoff);
     }
@@ -527,7 +522,7 @@ public class AmoebaMultipoleForce extends MultipoleForce {
     setForceGroup(forceGroup);
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder();
-      sb.append("  Electrostatics\n");
+      sb.append("\n  Electrostatics\n");
       sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
       if (polarization == Polarization.MUTUAL) {
         sb.append(format("    SCF Convergence Criteria:         %8.3e\n", poleps));

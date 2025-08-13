@@ -98,7 +98,7 @@ class FeatureMap extends PotentialScript {
      * ffx.potential.FeatureMap constructor.
      */
     FeatureMap() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

@@ -154,10 +154,13 @@ public class System {
   }
 
   /**
-   * Add a particle to the system.
+   * Add a particle to the System. If the mass is 0, Integrators will ignore
+   * the particle and not modify its position or velocity. This is most often
+   * used for virtual sites, but can also be used as a way to prevent a particle
+   * from moving.
    *
-   * @param mass The mass of the particle.
-   * @return The index of the particle that was added.
+   * @param mass the mass of the particle (in atomic mass units)
+   * @return the index of the particle that was added
    */
   public int addParticle(double mass) {
     return OpenMM_System_addParticle(pointer, mass);
@@ -247,10 +250,13 @@ public class System {
   }
 
   /**
-   * Get the mass of a particle.
+   * Get the mass (in atomic mass units) of a particle. If the mass is 0, Integrators will ignore
+   * the particle and not modify its position or velocity. This is most often
+   * used for virtual sites, but can also be used as a way to prevent a particle
+   * from moving.
    *
-   * @param index The index of the particle.
-   * @return The mass of the particle.
+   * @param index the index of the particle for which to get the mass
+   * @return the mass of the particle (in atomic mass units)
    */
   public double getParticleMass(int index) {
     return OpenMM_System_getParticleMass(pointer, index);
@@ -331,10 +337,13 @@ public class System {
   }
 
   /**
-   * Set the mass of a particle.
+   * Set the mass (in atomic mass units) of a particle. If the mass is 0, Integrators will ignore
+   * the particle and not modify its position or velocity. This is most often
+   * used for virtual sites, but can also be used as a way to prevent a particle
+   * from moving.
    *
-   * @param index The index of the particle.
-   * @param mass  The mass of the particle.
+   * @param index the index of the particle for which to set the mass
+   * @param mass  the mass of the particle
    */
   public void setParticleMass(int index, double mass) {
     OpenMM_System_setParticleMass(pointer, index, mass);

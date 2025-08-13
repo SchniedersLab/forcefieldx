@@ -114,7 +114,7 @@ class MutatePDB extends AlgorithmsScript {
    * MutatePDB Constructor.
    */
   MutatePDB() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

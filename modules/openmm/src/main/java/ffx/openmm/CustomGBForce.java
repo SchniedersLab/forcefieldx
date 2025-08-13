@@ -93,7 +93,103 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_updateParamet
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_usesPeriodicBoundaryConditions;
 
 /**
- * Custom GB Force.
+ * This class implements complex, multiple stage nonbonded interactions between particles.  It is designed primarily
+ * for implementing Generalized Born implicit solvation models, although it is not strictly limited to that purpose.
+ * The interaction is specified as a series of computations, each defined by an arbitrary algebraic expression.
+ * It also allows tabulated functions to be defined and used with the computations.  It optionally supports periodic boundary
+ * conditions and cutoffs for long range interactions.
+ * <p>
+ * The computation consists of calculating some number of per-particle <b>computed values</b>, followed by one or more
+ * <b>energy terms</b>.  A computed value is a scalar value that is computed for each particle in the system.  It may
+ * depend on an arbitrary set of global and per-particle parameters, and well as on other computed values that have
+ * been calculated before it.  Once all computed values have been calculated, the energy terms and their derivatives
+ * are evaluated to determine the system energy and particle forces.  The energy terms may depend on global parameters,
+ * per-particle parameters, and per-particle computed values.
+ * <p>
+ * When specifying a computed value or energy term, you provide an algebraic expression to evaluate and a <b>computation type</b>
+ * describing how the expression is to be evaluated.  There are two main types of computations:
+ * <ul>
+ * <li><b>Single Particle</b>: The expression is evaluated once for each particle in the System.  In the case of a computed
+ * value, this means the value for a particle depends only on other properties of that particle (its position, parameters, and other
+ * computed values).  In the case of an energy term, it means each particle makes an independent contribution to the System
+ * energy.</li>
+ * <li><b>Particle Pairs</b>: The expression is evaluated for every pair of particles in the system.  In the case of a computed
+ * value, the value for a particular particle is calculated by pairing it with every other particle in the system, evaluating
+ * the expression for each pair, and summing them.  For an energy term, each particle pair makes an independent contribution to
+ * the System energy.  (Note that energy terms are assumed to be symmetric with respect to the two interacting particles, and
+ * therefore are evaluated only once per pair.  In contrast, expressions for computed values need not be symmetric and therefore are calculated
+ * twice for each pair: once when calculating the value for the first particle, and again when calculating the value for the
+ * second particle.)</li>
+ * </ul>
+ * <p>
+ * Be aware that, although this class is extremely general in the computations it can define, particular Platforms may only support
+ * more restricted types of computations.  In particular, all currently existing Platforms require that the first computed value
+ * <i>must</i> be a particle pair computation, and all computed values after the first <i>must</i> be single particle computations.
+ * This is sufficient for most Generalized Born models, but might not permit some other types of calculations to be implemented.
+ * <p>
+ * This is a complicated class to use, and an example may help to clarify it.  The following code implements the OBC variant
+ * of the GB/SA solvation model, using the ACE approximation to estimate surface area:
+ * <pre>
+ *   {@code
+ *    CustomGBForce* custom = new CustomGBForce();
+ *    custom->addPerParticleParameter("q");
+ *    custom->addPerParticleParameter("radius");
+ *    custom->addPerParticleParameter("scale");
+ *    custom->addGlobalParameter("solventDielectric", obc->getSolventDielectric());
+ *    custom->addGlobalParameter("soluteDielectric", obc->getSoluteDielectric());
+ *    custom->addComputedValue("I", "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
+ *                                  "U=r+sr2;"
+ *                                  "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+ *                                  "L=max(or1, D);"
+ *                                  "D=abs(r-sr2);"
+ *                                  "sr2 = scale2*or2;"
+ *                                  "or1 = radius1-0.009; or2 = radius2-0.009", CustomGBForce::ParticlePairNoExclusions);
+ *    custom->addComputedValue("B", "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
+ *                                  "psi=I*or; or=radius-0.009", CustomGBForce::SingleParticle);
+ *    custom->addEnergyTerm("28.3919551*(radius+0.14)^2*(radius/B)^6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+ *                          CustomGBForce::SingleParticle);
+ *    custom->addEnergyTerm("-138.935456*(1/soluteDielectric-1/solventDielectric)*q1*q2/f;"
+ *                          "f=sqrt(r^2+B1*B2*exp(-r^2/(4*B1*B2)))", CustomGBForce::ParticlePair);
+ *   }
+ * </pre>
+ * <p>
+ * It begins by defining three per-particle parameters (charge, atomic radius, and scale factor) and two global parameters
+ * (the dielectric constants for the solute and solvent).  It then defines a computed value "I" of type ParticlePair.  The
+ * expression for evaluating it is a complicated function of the distance between each pair of particles (r), their atomic
+ * radii (radius1 and radius2), and their scale factors (scale1 and scale2).  Very roughly speaking, it is a measure of the
+ * distance between each particle and other nearby particles.
+ * <p>
+ * Next a computation is defined for the Born Radius (B).  It is computed independently for each particle, and is a function of
+ * that particle's atomic radius and the intermediate value I defined above.
+ * <p>
+ * Finally, two energy terms are defined.  The first one is computed for each particle and represents the surface area term,
+ * as well as the self interaction part of the polarization energy.  The second term is calculated for each pair of particles,
+ * and represents the screening of electrostatic interactions by the solvent.
+ * <p>
+ * After defining the force as shown above, you should then call addParticle() once for each particle in the System to set the
+ * values of its per-particle parameters (q, radius, and scale).  The number of particles for which you set parameters must be
+ * exactly equal to the number of particles in the System, or else an exception will be thrown when you try to create a Context.
+ * After a particle has been added, you can modify its parameters by calling setParticleParameters().  This will have no effect
+ * on Contexts that already exist unless you call updateParametersInContext().
+ * <p>
+ * CustomGBForce also lets you specify "exclusions", particular pairs of particles whose interactions should be
+ * omitted from calculations.  This is most often used for particles that are bonded to each other.  Even if you specify exclusions,
+ * however, you can use the computation type ParticlePairNoExclusions to indicate that exclusions should not be applied to a
+ * particular piece of the computation.
+ * <p>
+ * This class also has the ability to compute derivatives of the potential energy with respect to global parameters.
+ * Call addEnergyParameterDerivative() to request that the derivative with respect to a particular parameter be
+ * computed.  You can then query its value in a Context by calling getState() on it.
+ * <p>
+ * Expressions may involve the operators + (add), - (subtract), * (multiply), / (divide), and &circ; (power), and the following
+ * functions: sqrt, exp, log, sin, cos, sec, csc, tan, cot, asin, acos, atan, atan2, sinh, cosh, tanh, erf, erfc, min, max, abs, floor, ceil, step, delta, select.  All trigonometric functions
+ * are defined in radians, and log is the natural logarithm.  step(x) = 0 if x is less than 0, 1 otherwise.  delta(x) = 1 if x is 0, 0 otherwise.
+ * select(x,y,z) = z if x = 0, y otherwise.  In expressions for particle pair calculations, the names of per-particle parameters and computed values
+ * have the suffix "1" or "2" appended to them to indicate the values for the two interacting particles.  As seen in the above example,
+ * an expression may also involve intermediate quantities that are defined following the main expression, using ";" as a separator.
+ * <p>
+ * In addition, you can call addTabulatedFunction() to define a new function based on tabulated values.  You specify the function by
+ * creating a TabulatedFunction object.  That function can then appear in expressions.
  */
 public class CustomGBForce extends Force {
 

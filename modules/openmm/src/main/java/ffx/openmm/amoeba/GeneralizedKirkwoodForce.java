@@ -71,7 +71,18 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirk
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 
 /**
- * Amoeba Generalized Kirkwood Force.
+ * This class implements an implicit solvation force using the Amoeba Generalized Kirkwood model.
+ * <p>
+ * To use this class, create a GeneralizedKirkwoodForce object, then call addParticle() once for each
+ * particle in the System to define its parameters. The number of particles for which you define
+ * parameters must be equal to the number of particles in the System, or else an exception will be
+ * thrown when you try to create a Context. After a particle has been added, you can modify its
+ * force field parameters by calling setParticleParameters(). This will have no effect on Contexts
+ * that already exist unless you call updateParametersInContext().
+ * <p>
+ * The force supports both 3-parameter and 5-parameter particle definitions, where the extended
+ * form includes additional descreening and neck correction parameters for enhanced accuracy in
+ * specific molecular environments.
  */
 public class GeneralizedKirkwoodForce extends Force {
 
@@ -80,28 +91,48 @@ public class GeneralizedKirkwoodForce extends Force {
   }
 
   /**
-   * Add a particle to the force with 3 parameters.
+   * Add the parameters for a particle. This should be called once for each particle
+   * in the System. When it is called for the i'th time, it specifies the parameters for the i'th particle.
+   * <p>
+   * This method is provided for backwards compatibility. Compared to the alternative five parameter addParticle
+   * method, the descreenRadius parameter is set to base radius value and the neckFactor is set to zero
+   * (no neck descreening).
    *
-   * @param charge   The charge of the particle.
-   * @param radius   The radius of the particle.
-   * @param hctScale The hctScale of the particle.
-   * @return The index of the added particle.
+   * @param charge        the charge of the particle, measured in units of the proton charge
+   * @param radius        the atomic radius of the particle, measured in nm
+   * @param scalingFactor the scaling factor for the particle
+   * @return the index of the particle that was added
    */
-  public int addParticle(double charge, double radius, double hctScale) {
-    return OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(pointer, charge, radius, hctScale);
+  public int addParticle(double charge, double radius, double scalingFactor) {
+    return OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(pointer, charge, radius, scalingFactor);
   }
 
   /**
-   * Add a particle to the force.
+   * Add the parameters for a particle. This should be called once for each particle
+   * in the System. When it is called for the i'th time, it specifies the parameters for the i'th particle.
+   * <p>
+   * For generalized Born / generalized Kirkwood methods, the radius of each atom has two roles. The first
+   * is to define the base radius of the atom when computing its effective radius. This base radius is usually
+   * parameterized against solvation free energy differences. The second role is to describe how much continuum
+   * water is displaced when the atom descreens water for the calculation of the Born radii of other atoms.
+   * Separation of the two roles into the "radius" and "descreenRadius" parameters gives model developers more
+   * control over these separate roles.
+   * <p>
+   * For example, the fitting of base "radius" values will usually result in deviation from the force field's
+   * van der Waals definition of Rmin (or sigma). The descreenRadius can be defined separately using force field
+   * van der Waals Rmin values, which maintains consistency of atomic sizes during the HCT pairwise
+   * descreening integral. The "scalingFactor" is applied to the descreenRadius during the HCT pairwise
+   * descreening integral, while the neckFactor (if greater than zero) includes neck contributions to descreening.
    *
-   * @param charge   The charge of the particle.
-   * @param radius   The radius of the particle.
-   * @param hctScale The hctScale of the particle.
-   * @param descreen The descreen of the particle.
-   * @param neck     The neck of the particle.
+   * @param charge         the charge of the particle, measured in units of the proton charge
+   * @param radius         the atomic radius of the particle, measured in nm
+   * @param scalingFactor  the scaling factor for the particle (unitless)
+   * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+   * @param neckFactor     the scaling factor for interstitial neck descreening (unitless)
+   * @return the index of the particle that was added
    */
-  public void addParticle_1(double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(pointer, charge, radius, hctScale, descreen, neck);
+  public int addParticle(double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor) {
+    return OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(pointer, charge, radius, scalingFactor, descreenRadius, neckFactor);
   }
 
   /**
@@ -152,20 +183,20 @@ public class GeneralizedKirkwoodForce extends Force {
   }
 
   /**
-   * Get the particle parameters.
+   * Get the force field parameters for a particle.
    *
-   * @param index    The index of the particle.
-   * @param charge   The charge of the particle (output).
-   * @param radius   The radius of the particle (output).
-   * @param hctScale The hctScale of the particle (output).
-   * @param descreen The descreen of the particle (output).
-   * @param neck     The neck of the particle (output).
+   * @param index          the index of the particle for which to get parameters
+   * @param charge         the charge of the particle, measured in units of the proton charge (output)
+   * @param radius         the atomic radius of the particle, measured in nm (output)
+   * @param scalingFactor  the scaling factor for the particle (output)
+   * @param descreenRadius the atomic radius of the particle for descreening, measure in nm (output)
+   * @param neckFactor     the scaling factor for interstitial neck descreening (unitless) (output)
    */
   public void getParticleParameters(int index, DoubleByReference charge, DoubleByReference radius,
-                                    DoubleByReference hctScale, DoubleByReference descreen,
-                                    DoubleByReference neck) {
+                                    DoubleByReference scalingFactor, DoubleByReference descreenRadius,
+                                    DoubleByReference neckFactor) {
     OpenMM_AmoebaGeneralizedKirkwoodForce_getParticleParameters(pointer, index, charge, radius,
-        hctScale, descreen, neck);
+        scalingFactor, descreenRadius, neckFactor);
   }
 
   /**
@@ -205,14 +236,14 @@ public class GeneralizedKirkwoodForce extends Force {
   }
 
   /**
-   * Get the tanh parameters.
+   * Get Tanh function parameters b0, b1 and b2.
    *
-   * @param beta0 The tanh parameter beta0 (output).
-   * @param beta1 The tanh parameter beta1 (output).
-   * @param beta2 The tanh parameter beta2 (output).
+   * @param b0 The first tanh parameter (output).
+   * @param b1 The second tanh parameter (output).
+   * @param b2 The third tanh parameter (output).
    */
-  public void getTanhParameters(DoubleByReference beta0, DoubleByReference beta1, DoubleByReference beta2) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_getTanhParameters(pointer, beta0, beta1, beta2);
+  public void getTanhParameters(DoubleByReference b0, DoubleByReference b1, DoubleByReference b2) {
+    OpenMM_AmoebaGeneralizedKirkwoodForce_getTanhParameters(pointer, b0, b1, b2);
   }
 
   /**
@@ -252,17 +283,17 @@ public class GeneralizedKirkwoodForce extends Force {
   }
 
   /**
-   * Set the particle parameters.
+   * Set the force field parameters for a particle.
    *
-   * @param index    The index of the particle.
-   * @param charge   The charge of the particle.
-   * @param radius   The radius of the particle.
-   * @param hctScale The hctScale of the particle.
-   * @param descreen The descreen of the particle.
-   * @param neck     The neck of the particle.
+   * @param index          the index of the particle for which to set parameters
+   * @param charge         the charge of the particle, measured in units of the proton charge
+   * @param radius         the atomic radius of the particle, measured in nm
+   * @param scalingFactor  the scaling factor for the particle
+   * @param descreenRadius the atomic radius of the particle for descreening, measure in nm
+   * @param neckFactor     the scaling factor for interstitial neck descreening (unitless)
    */
-  public void setParticleParameters_1(int index, double charge, double radius, double hctScale, double descreen, double neck) {
-    OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(pointer, index, charge, radius, hctScale, descreen, neck);
+  public void setParticleParameters(int index, double charge, double radius, double scalingFactor, double descreenRadius, double neckFactor) {
+    OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(pointer, index, charge, radius, scalingFactor, descreenRadius, neckFactor);
   }
 
   /**

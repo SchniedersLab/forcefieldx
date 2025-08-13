@@ -86,7 +86,7 @@ class Anneal extends AlgorithmsScript {
    * Anneal Constructor.
    */
   Anneal() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -47,32 +47,29 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous3DFunction_getFun
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Continuous3DFunction_setFunctionParameters;
 
 /**
- * A Continuous3DFunction uses trilinear interpolation to define a continuous function based
- * on a discrete set of tabulated values in three dimensions. This is useful for defining
- * smooth functions from experimental data or other tabulated sources that depend on three
- * independent variables.
- * <p>
- * The function is defined by a 3D grid of (x, y, z, f(x,y,z)) values, and values between
- * the tabulated points are computed using trilinear interpolation. The function can optionally
- * be periodic in any or all dimensions, meaning that values outside the tabulated range are
- * computed by wrapping around to the other end of the table.
+ * This is a TabulatedFunction that computes a continuous three dimensional function.
  */
 public class Continuous3DFunction extends TabulatedFunction {
 
   /**
-   * Create a Continuous3DFunction.
+   * Create a Continuous3DFunction f(x,y,z) based on a set of tabulated values.
    *
-   * @param values   The tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x, y, or z is outside its specified range. The values should be ordered so that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize*zsize.
-   * @param xsize    The number of table elements along the x direction.
-   * @param ysize    The number of table elements along the y direction.
-   * @param zsize    The number of table elements along the z direction.
-   * @param xmin     The value of x corresponding to the first element of values.
-   * @param xmax     The value of x corresponding to the last element of values.
-   * @param ymin     The value of y corresponding to the first element of values.
-   * @param ymax     The value of y corresponding to the last element of values.
-   * @param zmin     The value of z corresponding to the first element of values.
-   * @param zmax     The value of z corresponding to the last element of values.
-   * @param periodic Whether the interpolated function is periodic.
+   * @param values   the tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin
+   *                 and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax.
+   *                 A natural cubic spline is used to interpolate between the tabulated values.  The function is
+   *                 assumed to be zero when x, y, or z is outside its specified range.  The values should be ordered so
+   *                 that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x.
+   *                 This must be of length xsize*ysize*zsize.
+   * @param xsize    the number of table elements along the x direction
+   * @param ysize    the number of table elements along the y direction
+   * @param zsize    the number of table elements along the z direction
+   * @param xmin     the value of x corresponding to the first element of values
+   * @param xmax     the value of x corresponding to the last element of values
+   * @param ymin     the value of y corresponding to the first element of values
+   * @param ymax     the value of y corresponding to the last element of values
+   * @param zmin     the value of z corresponding to the first element of values
+   * @param zmax     the value of z corresponding to the last element of values
+   * @param periodic whether the interpolated function is periodic
    */
   public Continuous3DFunction(PointerByReference values, int xsize, int ysize, int zsize, double xmin, double xmax,
                               double ymin, double ymax, double zmin, double zmax, boolean periodic) {
@@ -93,16 +90,21 @@ public class Continuous3DFunction extends TabulatedFunction {
   /**
    * Get the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x, y, or z is outside its specified range. The values should be ordered so that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize*zsize.
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param zsize  The number of table elements along the z direction.
-   * @param xmin   The value of x corresponding to the first element of values.
-   * @param xmax   The value of x corresponding to the last element of values.
-   * @param ymin   The value of y corresponding to the first element of values.
-   * @param ymax   The value of y corresponding to the last element of values.
-   * @param zmin   The value of z corresponding to the first element of values.
-   * @param zmax   The value of z corresponding to the last element of values.
+   * @param values the tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin
+   *               and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax.
+   *               A natural cubic spline is used to interpolate between the tabulated values.  The function is
+   *               assumed to be zero when x, y, or z is outside its specified range.  The values should be ordered so
+   *               that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x.
+   *               This must be of length xsize*ysize*zsize.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param xmin   the value of x corresponding to the first element of values
+   * @param xmax   the value of x corresponding to the last element of values
+   * @param ymin   the value of y corresponding to the first element of values
+   * @param ymax   the value of y corresponding to the last element of values
+   * @param zmin   the value of z corresponding to the first element of values
+   * @param zmax   the value of z corresponding to the last element of values
    */
   public void getFunctionParameters(PointerByReference values, IntByReference xsize, IntByReference ysize, IntByReference zsize,
                                     DoubleByReference xmin, DoubleByReference xmax,
@@ -114,16 +116,21 @@ public class Continuous3DFunction extends TabulatedFunction {
   /**
    * Set the parameters for the tabulated function.
    *
-   * @param values The tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax. A natural cubic spline is used to interpolate between the tabulated values. The function is assumed to be zero when x, y, or z is outside its specified range. The values should be ordered so that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x. This must be of length xsize*ysize*zsize.
-   * @param xsize  The number of table elements along the x direction.
-   * @param ysize  The number of table elements along the y direction.
-   * @param zsize  The number of table elements along the z direction.
-   * @param xmin   The value of x corresponding to the first element of values.
-   * @param xmax   The value of x corresponding to the last element of values.
-   * @param ymin   The value of y corresponding to the first element of values.
-   * @param ymax   The value of y corresponding to the last element of values.
-   * @param zmin   The value of z corresponding to the first element of values.
-   * @param zmax   The value of z corresponding to the last element of values.
+   * @param values the tabulated values of the function f(x,y,z) at xsize uniformly spaced values of x between xmin
+   *               and xmax, ysize values of y between ymin and ymax, and zsize values of z between zmin and zmax.
+   *               A natural cubic spline is used to interpolate between the tabulated values.  The function is
+   *               assumed to be zero when x, y, or z is outside its specified range.  The values should be ordered so
+   *               that values[i+xsize*j+xsize*ysize*k] = f(x_i,y_j,z_k), where x_i is the i'th uniformly spaced value of x.
+   *               This must be of length xsize*ysize*zsize.
+   * @param xsize  the number of table elements along the x direction
+   * @param ysize  the number of table elements along the y direction
+   * @param zsize  the number of table elements along the z direction
+   * @param xmin   the value of x corresponding to the first element of values
+   * @param xmax   the value of x corresponding to the last element of values
+   * @param ymin   the value of y corresponding to the first element of values
+   * @param ymax   the value of y corresponding to the last element of values
+   * @param zmin   the value of z corresponding to the first element of values
+   * @param zmax   the value of z corresponding to the last element of values
    */
   public void setFunctionParameters(PointerByReference values, int xsize, int ysize, int zsize,
                                     double xmin, double xmax, double ymin, double ymax,

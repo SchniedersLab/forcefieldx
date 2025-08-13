@@ -96,7 +96,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
    * BAR Constructor.
    */
   AnalyzeNEQ() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

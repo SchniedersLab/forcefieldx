@@ -84,20 +84,70 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomManyParticleForce_upd
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomManyParticleForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements interactions between sets of particles. Unlike other
- * custom forces, each interaction can involve a variable number of particles.
- * The number of particles per interaction is specified when the Force is created.
- * It then evaluates a user supplied algebraic expression to determine the interaction energy.
- * <p>
- * The expression may involve the coordinates of the particles, distances between particles,
- * angles formed by sets of particles, and global and per-particle parameters.
- * It may also involve tabulated functions, and may contain conditional expressions.
- * <p>
- * To use this class, create a CustomManyParticleForce object, passing an algebraic expression to the
- * constructor that defines the interaction energy between each set of particles. Then call
- * addPerParticleParameter() to define per-particle parameters, addGlobalParameter() to define
- * global parameters, addParticle() to define particles and specify their parameter values, and
- * addTabulatedFunction() to define tabulated functions.
+ * This class supports a wide variety of nonbonded N-particle interactions, where N is user specified.  The
+ * interaction energy is determined by an arbitrary, user specified algebraic expression that is evaluated for
+ * every possible set of N particles in the system.  It may depend on the positions of the individual particles,
+ * the distances between pairs of particles, the angles formed by sets of three particles, and the dihedral
+ * angles formed by sets of four particles.
+ *
+ * <p>Be aware that the cost of evaluating an N-particle interaction increases very rapidly with N.  Values larger
+ * than N=3 are rarely used.
+ *
+ * <p>We refer to a set of particles for which the energy is being evaluated  as p1, p2, p3, etc.  The energy expression
+ * may depend on the following variables and functions:
+ *
+ * <ul>
+ * <li>x1, y1, z1, x2, y2, z2, etc.: The x, y, and z coordinates of the particle positions.  For example, x1
+ * is the x coordinate of particle p1, and y3 is the y coordinate of particle p3.</li>
+ * <li>distance(p1, p2): the distance between particles p1 and p2 (where "p1" and "p2" may be replaced by the names
+ * of whichever particles you want to calculate the distance between).</li>
+ * <li>angle(p1, p2, p3): the angle formed by the three specified particles.</li>
+ * <li>dihedral(p1, p2, p3, p4): the dihedral angle formed by the four specified particles.</li>
+ * <li>arbitrary global and per-particle parameters that you define.</li>
+ * </ul>
+ *
+ * <p>To use this class, create a CustomManyParticleForce object, passing an algebraic expression to the constructor
+ * that defines the interaction energy of each set of particles.  Then call addPerParticleParameter() to define per-particle
+ * parameters, and addGlobalParameter() to define global parameters.  The values of per-particle parameters are specified as
+ * part of the system definition, while values of global parameters may be modified during a simulation by calling Context::setParameter().
+ *
+ * <p>Next, call addParticle() once for each particle in the System to set the values of its per-particle parameters.
+ * The number of particles for which you set parameters must be exactly equal to the number of particles in the
+ * System, or else an exception will be thrown when you try to create a Context.  After a particle has been added,
+ * you can modify its parameters by calling setParticleParameters().  This will have no effect on Contexts that already exist
+ * unless you call updateParametersInContext().
+ *
+ * <p>Multi-particle interactions can be very expensive to evaluate, so they are usually used with a cutoff distance.  The exact
+ * interpretation of the cutoff depends on the permutation mode, as discussed below.
+ *
+ * <p>CustomManyParticleForce also lets you specify "exclusions", particular pairs of particles whose interactions should be
+ * omitted from force and energy calculations.  This is most often used for particles that are bonded to each other.
+ * If you specify a pair of particles as an exclusion, <i>all</i> sets that include those two particles will be omitted.
+ *
+ * <p>As an example, the following code creates a CustomManyParticleForce that implements an Axilrod-Teller potential.  This
+ * is an interaction between three particles that depends on all three distances and angles formed by the particles.
+ *
+ * <pre>{@code
+ * CustomManyParticleForce force = new CustomManyParticleForce(3,
+ *     "C*(1+3*cos(theta1)*cos(theta2)*cos(theta3))/(r12*r13*r23)^3;" +
+ *     "theta1=angle(p1,p2,p3); theta2=angle(p2,p3,p1); theta3=angle(p3,p1,p2);" +
+ *     "r12=distance(p1,p2); r13=distance(p1,p3); r23=distance(p2,p3)");
+ * force.setPermutationMode(CustomManyParticleForce.SinglePermutation);
+ * }</pre>
+ *
+ * <p>This force depends on one parameter, C.  The following code defines it as a global parameter:
+ *
+ * <pre>{@code
+ * force.addGlobalParameter("C", 1.0);
+ * }</pre>
+ *
+ * <p>Notice that the expression is symmetric with respect to the particles.  It only depends on the products
+ * cos(theta1)*cos(theta2)*cos(theta3) and r12*r13*r23, both of which are unchanged if the labels p1, p2, and p3 are permuted.
+ * This is required because we specified SinglePermutation as the permutation mode.  (This is the default, so we did not
+ * really need to set it, but doing so makes the example clearer.)  In this mode, the expression is only evaluated once for
+ * each set of particles.  No guarantee is made about which particle will be identified as p1, p2, etc.  Therefore, the
+ * energy <i>must</i> be symmetric with respect to exchange of particles.  Otherwise, the results would be undefined because
+ * permuting the labels would change the energy.
  */
 public class CustomManyParticleForce extends Force {
 

@@ -55,12 +55,10 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_RBTorsionForce_updateParame
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_RBTorsionForce_usesPeriodicBoundaryConditions;
 
 /**
- * This class implements the Ryckaert-Bellemans torsion force. The RB torsion potential
- * is defined as:
- * <p>
- * E = C0 + C1*cos(phi) + C2*cos(phi)^2 + C3*cos(phi)^3 + C4*cos(phi)^4 + C5*cos(phi)^5
- * <p>
- * where phi is the dihedral angle and C0-C5 are the RB parameters.
+ * This class implements an interaction between groups of four particles that varies with the torsion angle between them
+ * according to the Ryckaert-Bellemans potential. To use it, create an RBTorsionForce object then call addTorsion() once
+ * for each torsion. After a torsion has been added, you can modify its force field parameters by calling setTorsionParameters().
+ * This will have no effect on Contexts that already exist unless you call updateParametersInContext().
  */
 public class RBTorsionForce extends Force {
 

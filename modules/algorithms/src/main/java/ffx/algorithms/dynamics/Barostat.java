@@ -490,6 +490,15 @@ public class Barostat implements CrystalPotential {
   }
 
   /**
+   * Get the CrystalPotential that this Barostat is applying to.
+   *
+   * @return The CrystalPotential.
+   */
+  public CrystalPotential getCrystalPotential() {
+    return potential;
+  }
+
+  /**
    * {@inheritDoc}
    */
   @Override

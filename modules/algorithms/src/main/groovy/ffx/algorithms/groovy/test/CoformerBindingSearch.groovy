@@ -141,7 +141,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
      * Constructor.
      */
     CoformerBindingSearch() {
-        this(new Binding())
+        this(new groovy.lang.Binding())
     }
 
     /**

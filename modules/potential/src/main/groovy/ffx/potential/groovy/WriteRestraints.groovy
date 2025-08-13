@@ -110,7 +110,7 @@ class WriteRestraints extends PotentialScript {
    * SaveRotamers Constructor.
    */
   WriteRestraints() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

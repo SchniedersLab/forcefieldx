@@ -153,7 +153,7 @@ class Solvator extends PotentialScript {
    * Solvator Constructor.
    */
   Solvator() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

@@ -97,7 +97,7 @@ class CoordShakeEnergy extends PotentialScript {
    * CoordShakeEnergy Constructor.
    */
   CoordShakeEnergy() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

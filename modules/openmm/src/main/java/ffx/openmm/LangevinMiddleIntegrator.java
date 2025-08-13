@@ -48,16 +48,25 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_se
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinMiddleIntegrator_step;
 
 /**
- * Langevin Middle Integrator.
+ * This is an Integrator which simulates a System using Langevin dynamics, with
+ * the LFMiddle discretization (J. Phys. Chem. A 2019, 123, 28, 6056-6079).
+ * This method tend to produce more accurate configurational sampling than other
+ * discretizations, such as the one used in LangevinIntegrator.
+ * <p>
+ * The algorithm is closely related to the BAOAB discretization
+ * (Proc. R. Soc. A. 472: 20160138).  Both methods produce identical trajectories,
+ * but LFMiddle returns half step (leapfrog) velocities, while BAOAB returns
+ * on-step velocities.  The former provide a much more accurate sampling of the
+ * thermal ensemble.
  */
 public class LangevinMiddleIntegrator extends Integrator {
 
   /**
-   * Constructor.
+   * Create a LangevinMiddleIntegrator.
    *
-   * @param dt    The time step.
-   * @param temp  The temperature.
-   * @param gamma The friction coefficient.
+   * @param dt    the step size with which to integrate the system (in picoseconds)
+   * @param temp  the temperature of the heat bath (in Kelvin)
+   * @param gamma the friction coefficient which couples the system to the heat bath (in inverse picoseconds)
    */
   public LangevinMiddleIntegrator(double dt, double temp, double gamma) {
     super(OpenMM_LangevinMiddleIntegrator_create(temp, gamma, dt));

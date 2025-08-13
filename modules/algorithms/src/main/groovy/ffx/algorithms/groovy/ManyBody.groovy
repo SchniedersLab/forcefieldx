@@ -89,7 +89,7 @@ class ManyBody extends AlgorithmsScript {
    * ManyBody Constructor.
    */
   ManyBody() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

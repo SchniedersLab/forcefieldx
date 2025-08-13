@@ -124,7 +124,7 @@ class MinimizeCrystals extends AlgorithmsScript {
    * CrystalMin Constructor.
    */
   MinimizeCrystals() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

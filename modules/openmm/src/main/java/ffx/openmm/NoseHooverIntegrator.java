@@ -61,13 +61,9 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NoseHooverIntegrator_setTem
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NoseHooverIntegrator_step;
 
 /**
- * This class implements the Nosé-Hoover integrator for constant temperature molecular dynamics.
- * The Nosé-Hoover method uses extended system dynamics to maintain constant temperature by
- * coupling the system to a heat bath through additional degrees of freedom (thermostats).
- * <p>
- * The integrator can handle multiple thermostats, each controlling different parts of the system
- * or different degrees of freedom. This allows for more sophisticated temperature control
- * compared to simple velocity rescaling methods.
+ * This is an Integrator which simulates a System using one or more Nose Hoover chain
+ * thermostats, using the "middle" leapfrog propagation algorithm described in
+ * J. Phys. Chem. A 2019, 123, 6056-6079.
  */
 public class NoseHooverIntegrator extends Integrator {
 

@@ -93,7 +93,6 @@ public class OpenMMContext extends Context {
    * OpenMM System.
    */
   private final OpenMMSystem openMMSystem;
-
   /**
    * Integrator string (default = VERLET).
    */

@@ -102,7 +102,7 @@ class Density extends PotentialScript {
    * Density constructor.
    */
   Density() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**

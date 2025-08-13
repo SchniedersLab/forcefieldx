@@ -71,7 +71,7 @@ class ChainBreaks extends PotentialScript {
    * ChainBreaks constructor.
    */
   ChainBreaks() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   /**
