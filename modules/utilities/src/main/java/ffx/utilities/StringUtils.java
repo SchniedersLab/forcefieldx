@@ -475,6 +475,39 @@ public class StringUtils {
     return atomList;
   }
 
+  public static List<String> parseResidueString(String keyType, String resString, int nResidues) // todo replace nAtoms with nResidues ??
+      throws IllegalArgumentException {
+    // Split on periods (.), commas (,) or semicolons(;).
+    // IntelliJ suggests replacing "\\.|,|;" with [.,;]
+    String[] residues = Arrays.stream(resString.split("\\.|,|;")).map(String::trim).toArray(String[]::new);
+
+    // Matches: letters at start (residue name), numbers in middle (residue id), letters at end (chain)
+    String regex = "([A-Za-z]+)(\\d+)([A-Za-z]+)";
+    Pattern pattern = java.util.regex.Pattern.compile(regex);
+
+    List<String> resList = new ArrayList<>();
+
+    for (String res : residues) {
+      Matcher matcher = pattern.matcher(res);
+
+      if (matcher.matches()) {
+        if (matcher.groupCount() != 3) {
+          throw new IllegalArgumentException(format(" %s residue input %s should be ResnameResidChain (e.g. DGU28A)", keyType, res));
+        }
+        String resname = matcher.group(1); // todo give upper case and ensure length 3
+        String resid = matcher.group(2); // todo ensure integer and less than number of residues
+        String chain = matcher.group(3); // todo ensure single character - return uppercase
+        resList.add(matcher.group(1)); // residue name
+        resList.add(matcher.group(2)); // residue ID (number)
+        resList.add(matcher.group(3)); // chain
+      } else {
+        throw new IllegalArgumentException(format(" %s residue input %s not valid.", keyType, res));
+      }
+    }
+
+    return resList;
+  }
+
   /**
    * pdbForID
    *

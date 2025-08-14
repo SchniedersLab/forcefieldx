@@ -38,16 +38,19 @@
 package ffx.potential.cli;
 
 import static ffx.utilities.StringUtils.parseAtomRanges;
+import static ffx.utilities.StringUtils.parseResidueString;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import ffx.potential.bonded.Residue;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -106,6 +109,67 @@ public class AtomSelectionOptions {
     }
     logger.info("\n " + description + " atoms set to: " + selection);
 
+  }
+
+  public static void actOnResidueAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
+                                @Nonnull BiConsumer<Atom, Boolean> action, String description) {
+    if (selection == null || selection.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes.
+      return;
+    }
+
+    Atom[] atoms = assembly.getAtomArray();
+
+    // No atoms selected.
+    if (selection.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        action.accept(atom, false);
+      }
+      logger.info(" No residues are " + description + ".\n");
+      return;
+    }
+
+    // All atoms selected
+    if (selection.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        action.accept(atom, true);
+      }
+      logger.info(" All residues and atoms are " + description + ".\n");
+      return;
+    }
+
+    // A range(s) of atoms are active.
+    for (Atom atom : atoms) {
+      action.accept(atom, false);
+    }
+
+    int nResidues = assembly.getResidueList().size();
+    List<String> resList = parseResidueString(description, selection, nResidues);
+    assert resList.size() % 3 == 0;
+
+    StringBuilder alchAtoms = new StringBuilder();
+    for (int i=0; i < resList.size(); i=i+3) {
+      String resname = resList.get(i);
+      int resid = Integer.parseInt(resList.get(i+1)); // todo - test for this in stringutils
+      Character chain = resList.get(i+2).charAt(0); // todo - test for this in stringutils
+
+      List<Atom> atomList = new ArrayList<>();
+
+      Residue res = assembly.getPolymer(chain, chain.toString(), false).getResidue(resname, resid, false);
+      if (res.getResidueType() == Residue.ResidueType.AA) {
+        atomList = res.getSideChainAtoms();
+      } else if (res.getResidueType() == Residue.ResidueType.NA) {
+        atomList = res.getBackboneAtoms();
+      }
+
+      for (Atom atom : atomList) {
+        alchAtoms.append(atom.getIndex()).append(",");
+        action.accept(atom, true);
+      }
+    }
+
+    logger.info("\n " + description + " residues are: " + selection);
+    logger.info("\n " + description + " atoms set to: " + alchAtoms.substring(0, alchAtoms.length()-1));
   }
 
   /**

@@ -72,7 +72,7 @@ class NucleicAcidAnalysis extends PotentialScript {
   private List<Residue> residues
 
   NucleicAcidAnalysis() {
-    this(new Binding())
+    this(new groovy.lang.Binding())
   }
 
   NucleicAcidAnalysis(Binding binding) {

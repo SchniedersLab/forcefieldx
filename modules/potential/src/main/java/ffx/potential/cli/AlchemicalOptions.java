@@ -38,6 +38,7 @@
 package ffx.potential.cli;
 
 import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
+import static ffx.potential.cli.AtomSelectionOptions.actOnResidueAtoms;
 import static java.lang.String.format;
 
 import ffx.potential.MolecularAssembly;
@@ -93,7 +94,8 @@ public class AlchemicalOptions {
    * @param assembly        Assembly to which the atoms belong.
    * @param alchemicalAtoms Alchemical atoms selection string.
    */
-  public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms) {
+  public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms, String alchemicalResidues) {
+    actOnResidueAtoms(assembly, alchemicalResidues, Atom::setApplyLambda, "Alchemical"); // todo - just do both?????
     actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "Alchemical");
   }
 
@@ -105,6 +107,13 @@ public class AlchemicalOptions {
   public String getAlchemicalAtoms() {
     return group.alchemicalAtoms;
   }
+
+  /**
+   * --acRes or --alchemicalResidues Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A].
+   *
+   * @return Return alchemical residues.
+   */
+  public String getAlchemicalResidues() { return group.alchemicalResidues; }
 
   /**
    * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].
@@ -184,9 +193,14 @@ public class AlchemicalOptions {
    */
   public boolean hasSoftcore() {
     String alchemicalAtoms = getAlchemicalAtoms();
-    return (alchemicalAtoms != null
+    boolean atoms = (alchemicalAtoms != null
         && !alchemicalAtoms.equalsIgnoreCase("NONE")
         && !alchemicalAtoms.equalsIgnoreCase(""));
+    String alchemicalResidues = getAlchemicalResidues();
+    boolean residues = (alchemicalResidues != null
+        && !alchemicalResidues.equalsIgnoreCase("NONE")
+        && !alchemicalResidues.equalsIgnoreCase(""));
+    return (atoms || residues);
   }
 
   /**
@@ -195,7 +209,7 @@ public class AlchemicalOptions {
    * @param topology a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setFirstSystemAlchemistry(MolecularAssembly topology) {
-    setAlchemicalAtoms(topology, getAlchemicalAtoms());
+    setAlchemicalAtoms(topology, getAlchemicalAtoms(), getAlchemicalResidues());
   }
 
   /**
@@ -277,6 +291,27 @@ public class AlchemicalOptions {
         defaultValue = "",
         description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
     String alchemicalAtoms = "";
+
+//    /**
+//     * --acRes or --alchemicalResidue Flag if using alchemicalAtoms flag as alchemical residue instead.
+//     * If set, alchemical atoms should be set with 3-letter code, residue number, and chain [DGU38B,ASP2A].
+//     */
+//    @Option(
+//        names = {"--acRes", "--alchemicalResidue"},
+//        paramLabel = "<selection>",
+//        defaultValue = "false",
+//        description = "Flag to specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A]")
+//    boolean alchemicalResidue = false;
+
+    /**
+     * --acRes or --alchemicalResidues Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A].
+     */
+    @Option(
+        names = {"--acRes", "--alchemicalResidues"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A]")
+    String alchemicalResidues = "";
 
     /**
      * --uc or --unchargedAtoms Specify atoms without electrostatics [ALL, NONE, Range(s):
