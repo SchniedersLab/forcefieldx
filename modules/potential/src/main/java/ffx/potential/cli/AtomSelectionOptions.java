@@ -134,42 +134,46 @@ public class AtomSelectionOptions {
       for (Atom atom : atoms) {
         action.accept(atom, true);
       }
-      logger.info(" All residues and atoms are " + description + ".\n");
+      logger.info(" All residues (and atoms) are " + description + ".\n");
       return;
     }
 
-    // A range(s) of atoms are active.
+    // A subset of atoms is active.
     for (Atom atom : atoms) {
       action.accept(atom, false);
     }
 
+    // String for logging the selected residues and atoms
+    StringBuilder seleRes = new StringBuilder();
+    StringBuilder seleAtoms = new StringBuilder();
+
     int nResidues = assembly.getResidueList().size();
     List<String> resList = parseResidueString(description, selection, nResidues);
-    assert resList.size() % 3 == 0;
+    assert resList.size() % 2 == 0;
 
-    StringBuilder alchAtoms = new StringBuilder();
-    for (int i=0; i < resList.size(); i=i+3) {
-      String resname = resList.get(i);
-      int resid = Integer.parseInt(resList.get(i+1)); // todo - test for this in stringutils
-      Character chain = resList.get(i+2).charAt(0); // todo - test for this in stringutils
+    for (int i=0; i < resList.size(); i=i+2) {
+      String chain = resList.get(i);
+      int resid = Integer.parseInt(resList.get(i+1));
 
       List<Atom> atomList = new ArrayList<>();
 
-      Residue res = assembly.getPolymer(chain, chain.toString(), false).getResidue(resname, resid, false);
+      Residue res = assembly.getChain(chain).getResidue(resid);
+      seleRes.append(res.toFormattedString(true, true)).append(",");
       if (res.getResidueType() == Residue.ResidueType.AA) {
-        atomList = res.getSideChainAtoms();
+        atomList = res.getSideChainAtoms(); // use side chain atoms if for amino acids
       } else if (res.getResidueType() == Residue.ResidueType.NA) {
-        atomList = res.getBackboneAtoms();
+        atomList = res.getBackboneAtoms(); // use 'backbone' atoms which correspond to the nucleobase for nucleic acids
       }
 
+      // Apply desired function for selected atoms in the selected residues
       for (Atom atom : atomList) {
-        alchAtoms.append(atom.getIndex()).append(",");
+        seleAtoms.append(atom.getIndex()).append(",");
         action.accept(atom, true);
       }
     }
 
-    logger.info("\n " + description + " residues are: " + selection);
-    logger.info("\n " + description + " atoms set to: " + alchAtoms.substring(0, alchAtoms.length()-1));
+    logger.info("\n " + description + " residues are: " + seleRes.substring(0, seleRes.length()-1));
+    logger.info(" " + description + " atoms set to: " + seleAtoms.substring(0, seleAtoms.length()-1));
   }
 
   /**

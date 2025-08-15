@@ -93,10 +93,12 @@ public class AlchemicalOptions {
    *
    * @param assembly        Assembly to which the atoms belong.
    * @param alchemicalAtoms Alchemical atoms selection string.
+   * @param alchemicalResidues Alchemical residues selection string.
    */
   public static void setAlchemicalAtoms(MolecularAssembly assembly, String alchemicalAtoms, String alchemicalResidues) {
-    actOnResidueAtoms(assembly, alchemicalResidues, Atom::setApplyLambda, "Alchemical"); // todo - just do both?????
     actOnAtoms(assembly, alchemicalAtoms, Atom::setApplyLambda, "Alchemical");
+    // todo - doing both won't work - sets all atoms to false for subset - could remove that ?
+    actOnResidueAtoms(assembly, alchemicalResidues, Atom::setApplyLambda, "Alchemical");
   }
 
   /**
@@ -109,9 +111,9 @@ public class AlchemicalOptions {
   }
 
   /**
-   * --acRes or --alchemicalResidues Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A].
+   * --acRes or --alchemicalResidues Specify alchemical residues by chain and residue number [A4,B21].
    *
-   * @return Return alchemical residues.
+   * @return Returns alchemical residues.
    */
   public String getAlchemicalResidues() { return group.alchemicalResidues; }
 
@@ -292,25 +294,14 @@ public class AlchemicalOptions {
         description = "Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].")
     String alchemicalAtoms = "";
 
-//    /**
-//     * --acRes or --alchemicalResidue Flag if using alchemicalAtoms flag as alchemical residue instead.
-//     * If set, alchemical atoms should be set with 3-letter code, residue number, and chain [DGU38B,ASP2A].
-//     */
-//    @Option(
-//        names = {"--acRes", "--alchemicalResidue"},
-//        paramLabel = "<selection>",
-//        defaultValue = "false",
-//        description = "Flag to specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A]")
-//    boolean alchemicalResidue = false;
-
     /**
-     * --acRes or --alchemicalResidues Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A].
+     * --acRes or --alchemicalResidues Specify alchemical residues by chain and residue number [A4,B21].
      */
     @Option(
         names = {"--acRes", "--alchemicalResidues"},
         paramLabel = "<selection>",
         defaultValue = "",
-        description = "Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A]")
+        description = "Specify alchemical residues by chain and residue number [A4,B21]")
     String alchemicalResidues = "";
 
     /**

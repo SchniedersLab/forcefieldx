@@ -475,14 +475,27 @@ public class StringUtils {
     return atomList;
   }
 
-  public static List<String> parseResidueString(String keyType, String resString, int nResidues) // todo replace nAtoms with nResidues ??
+  /**
+   * Parses a list of residue (ChainResid) for a per residue flag.
+   *
+   * <p>Parses, semi-checks validity, and then returns a list with alternating chain and numbers of selected residues.
+   *
+   * <p>Input should be a single character chain with a 1-indexed residue number.
+   *
+   * @param keyType Type of key
+   * @param resString Input string
+   * @param nResidues Number of residues in the MolecularAssembly
+   * @return A List of chain and residue numbers alternating.
+   * @throws java.lang.IllegalArgumentException if an invalid argument
+   */
+  public static List<String> parseResidueString(String keyType, String resString, int nResidues)
       throws IllegalArgumentException {
     // Split on periods (.), commas (,) or semicolons(;).
     // IntelliJ suggests replacing "\\.|,|;" with [.,;]
     String[] residues = Arrays.stream(resString.split("\\.|,|;")).map(String::trim).toArray(String[]::new);
 
-    // Matches: letters at start (residue name), numbers in middle (residue id), letters at end (chain)
-    String regex = "([A-Za-z]+)(\\d+)([A-Za-z]+)";
+    // Matches: letter at start (chain) and numbers after (residue id)
+    String regex = "([A-Za-z])(\\d+)";
     Pattern pattern = java.util.regex.Pattern.compile(regex);
 
     List<String> resList = new ArrayList<>();
@@ -491,15 +504,17 @@ public class StringUtils {
       Matcher matcher = pattern.matcher(res);
 
       if (matcher.matches()) {
-        if (matcher.groupCount() != 3) {
-          throw new IllegalArgumentException(format(" %s residue input %s should be ResnameResidChain (e.g. DGU28A)", keyType, res));
+        if (matcher.groupCount() != 2) {
+          throw new IllegalArgumentException(format(" %s residue input %s should be ChainResid (e.g. A28)", keyType, res));
         }
-        String resname = matcher.group(1); // todo give upper case and ensure length 3
-        String resid = matcher.group(2); // todo ensure integer and less than number of residues
-        String chain = matcher.group(3); // todo ensure single character - return uppercase
-        resList.add(matcher.group(1)); // residue name
+
+        int resid = parseInt(matcher.group(2));
+        if (resid <= 0 || resid > nResidues) {
+          throw new IllegalArgumentException(format(" %s residue input %s should be have a residue number between 1 and the number of residues", keyType, res));
+        }
+
+        resList.add(matcher.group(1).toUpperCase()); // chain
         resList.add(matcher.group(2)); // residue ID (number)
-        resList.add(matcher.group(3)); // chain
       } else {
         throw new IllegalArgumentException(format(" %s residue input %s not valid.", keyType, res));
       }

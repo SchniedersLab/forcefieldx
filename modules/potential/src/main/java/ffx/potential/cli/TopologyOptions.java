@@ -89,7 +89,7 @@ public class TopologyOptions {
   }
 
   /**
-   * --acRes2 or --alchemicalResidues2 Specify alchemical residues by 3-letter code, residue number, and chain [DGU38B,ASP2A].
+   * --acRes2 or --alchemicalResidues2 Specify alchemical residues by chain and residue number [e.g. A4,B21].
    *
    * @return Returns alchemical residues for the 2nd topology.
    */
@@ -414,14 +414,13 @@ public class TopologyOptions {
     String alchemicalAtoms2 = "";
 
     /**
-     * --acRes2 or --alchemicalResidues2 Specify alchemical residues by 3-letter code, residue number, and chain
-     * for the 2nd topology [DGU38B,ASP2A].
+     * --acRes2 or --alchemicalResidues2 Specify alchemical residues by chain and residue number for the 2nd topology.
      */
     @Option(
         names = {"--acRes2", "--alchemicalResidues2"},
         paramLabel = "<selection>",
         defaultValue = "",
-        description = "Specify alchemical residues by 3-letter code, residue number, and chain for the 2nd topology [DGU38B,ASP2A]")
+        description = "Specify alchemical residues by chain and residue number for the 2nd topology [A4,B21]")
     String alchemicalResidues2 = "";
 
     /**
