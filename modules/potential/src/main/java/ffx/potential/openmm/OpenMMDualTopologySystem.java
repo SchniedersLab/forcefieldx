@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import ffx.openmm.amoeba.TorsionTorsionForce;
-import ffx.potential.MolecularAssembly;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
@@ -176,6 +174,15 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
   @Override
   public Crystal getCrystal() {
     return forceFieldEnergy.getCrystal();
+  }
+
+  /**
+   * Get the OpenMMDualTopologyEnergy.
+   *
+   * @return OpenMMDualTopologyEnergy instance.
+   */
+  public OpenMMDualTopologyEnergy getOpenMMDualTopologyEnergy() {
+    return openMMDualTopologyEnergy;
   }
 
   /**

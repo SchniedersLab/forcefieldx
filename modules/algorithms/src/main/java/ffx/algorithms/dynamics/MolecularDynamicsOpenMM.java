@@ -43,16 +43,15 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.openmm.OpenMMContext;
-import ffx.potential.openmm.OpenMMPotential;
-import ffx.potential.openmm.OpenMMState;
-import ffx.potential.openmm.OpenMMSystem;
+import ffx.potential.openmm.*;
 import ffx.potential.UnmodifiableState;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
@@ -395,6 +394,22 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
     openMMState.getPositions(state.x());
 
+    MolecularAssembly[] molecularAssemblies = getAssemblyArray();
+    if (molecularAssemblies.length > 1) {
+      MolecularAssembly molecularAssembly2 = molecularAssemblies[1];
+      OpenMMDualTopologyEnergy openMMDualTopologyEnergy = openMMPotential.getSystem().getOpenMMDualTopologyEnergy(); // todo check for flag not if molec assem > 1
+      if (openMMDualTopologyEnergy != null) { // todo put above
+
+        Atom[] atoms = molecularAssembly2.getAtomArray();
+        double[] x = state.x();
+
+        for (Atom atom : atoms) {
+          int index = atom.getArrayIndex();
+          index = openMMDualTopologyEnergy.mapToDualTopologyIndex(1, index);
+          atom.moveTo(x[index*3], x[index*3+1], x[index*3+2]);
+        }
+      }
+    }
 
     Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
@@ -415,6 +430,24 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
     openMMState.getPositions(state.x());
+
+    MolecularAssembly[] molecularAssemblies = getAssemblyArray();
+    if (molecularAssemblies.length > 1) {
+      MolecularAssembly molecularAssembly2 = molecularAssemblies[1];
+      OpenMMDualTopologyEnergy openMMDualTopologyEnergy = openMMPotential.getSystem().getOpenMMDualTopologyEnergy(); // todo check for flag not if molec assem > 1
+      if (openMMDualTopologyEnergy != null) { // todo put above
+
+        Atom[] atoms = molecularAssembly2.getAtomArray();
+        double[] x = state.x();
+
+        for (Atom atom : atoms) {
+          int index = atom.getArrayIndex();
+          index = openMMDualTopologyEnergy.mapToDualTopologyIndex(1, index);
+          atom.moveTo(x[index*3], x[index*3+1], x[index*3+2]);
+        }
+      }
+    }
+
     Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
       double[][] cellVectors = openMMState.getPeriodicBoxVectors();
