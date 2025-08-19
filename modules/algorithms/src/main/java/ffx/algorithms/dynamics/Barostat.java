@@ -368,6 +368,14 @@ public class Barostat implements CrystalPotential {
    * {@inheritDoc}
    */
   @Override
+  public void setCoordinates(double[] parameters) {
+    potential.setCoordinates(parameters);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public Crystal getCrystal() {
     return potential.getCrystal();
   }

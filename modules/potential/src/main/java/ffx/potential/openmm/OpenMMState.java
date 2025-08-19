@@ -44,6 +44,9 @@ import ffx.potential.utils.EnergyException;
 
 import javax.annotation.Nullable;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AngstromsPerNm;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
@@ -59,6 +62,8 @@ import static java.lang.String.format;
  * Retrieve state information from an OpenMM Simulation.
  */
 public class OpenMMState extends State {
+
+  private static final Logger logger = Logger.getLogger(OpenMMState.class.getName());
 
   /**
    * Potential energy (kcal/mol).
@@ -76,33 +81,17 @@ public class OpenMMState extends State {
    * Mask of information to retrieve.
    */
   private final int dataTypes;
-  /**
-   * Array of atoms.
-   */
-  private final Atom[] atoms;
-  /**
-   * Degrees of freedom.
-   */
-  private final int n;
-  /**
-   * Number of atoms.
-   */
-  private final int nAtoms;
 
   /**
    * Construct an OpenMM State with the requested information.
    *
    * @param pointer Pointer to an OpenMM state.
-   * @param atoms   Array of atoms.
-   * @param dof     Degrees of freedom.
    */
-  protected OpenMMState(PointerByReference pointer, Atom[] atoms, int dof) {
+  protected OpenMMState(PointerByReference pointer) {
     super(pointer);
+
     // Set the data types mask using the super class method.
     this.dataTypes = super.getDataTypes();
-    this.atoms = atoms;
-    this.n = dof;
-    nAtoms = atoms.length;
     if (stateContains(OpenMM_State_Energy)) {
       // Set the energy fields using the super class method and convert units.
       potentialEnergy = super.getPotentialEnergy() * OpenMM_KcalPerKJ;
@@ -116,81 +105,104 @@ public class OpenMMState extends State {
   }
 
   /**
-   * The force array contains the OpenMM force information for all atoms. The returned array a
-   * contains accelerations for active atoms only.
+   * The acceleration array will contain the acceleration information for all atoms. This
+   * method will convert the OpenMM forces to accelerations using the atom masses.
    *
-   * @param a Acceleration components for only active atomic coordinates.
-   * @return The acceleration for each active atomic coordinate.
+   * @param a     Acceleration components for all atoms.
+   * @param atoms The array of atoms, which is needed to convert from force to acceleration.
+   * @return The acceleration for each atom in units of Angstroms per picosecond squared.
    */
-  public double[] getAccelerations(@Nullable double[] a) {
+  public double[] getAccelerations(@Nullable double[] a, Atom[] atoms) {
+    // Check if the state contains forces.
     if (!stateContains(OpenMM_State_Forces)) {
       return a;
     }
+    double[] forces = getForces();
+    int n = forces.length;
 
+    // Validate the atoms array exists and is not empty.
+    if (atoms == null || atoms.length == 0) {
+      throw new IllegalArgumentException("Atoms array must not be null or empty.");
+    }
+    // Validate the number of degrees of freedom.
+    if (atoms.length * 3 != n) {
+      String message = format(" The number of atoms (%d) does not match the number of degrees of freedom (%d).", atoms.length, n);
+      throw new IllegalArgumentException(message);
+    }
     if (a == null || a.length != n) {
       a = new double[n];
     }
 
-    double[] forces = getForces();
-    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
-      Atom atom = atoms[i];
-      if (atom.isActive()) {
-        double mass = atom.getMass();
-        double xx = forces[index] * OpenMM_AngstromsPerNm / mass;
-        double yy = forces[index + 1] * OpenMM_AngstromsPerNm / mass;
-        double zz = forces[index + 2] * OpenMM_AngstromsPerNm / mass;
-        a[index] = xx;
-        a[index + 1] = yy;
-        a[index + 2] = zz;
-        atom.setAcceleration(xx, yy, zz);
-      }
+    int index = 0;
+    for (Atom atom : atoms) {
+      double mass = atom.getMass();
+      double xx = forces[index] * OpenMM_AngstromsPerNm / mass;
+      double yy = forces[index + 1] * OpenMM_AngstromsPerNm / mass;
+      double zz = forces[index + 2] * OpenMM_AngstromsPerNm / mass;
+      a[index] = xx;
+      a[index + 1] = yy;
+      a[index + 2] = zz;
+      index += 3;
     }
     return a;
   }
 
   /**
-   * The force array contains the OpenMM force information for all atoms. The returned array g
-   * contains components for active atoms only.
+   * The acceleration array will contain the acceleration information for all atoms. This
+   * method will convert the OpenMM forces to accelerations using the atom masses.
    *
-   * @param g Gradient components for only active atomic coordinates.
-   * @return g The gradient includes only active atoms
+   * @param a     Acceleration components for all atoms.
+   * @param atoms The array of atoms, which is needed to convert from force to acceleration.
+   * @return The acceleration for each atom in units of Angstroms per picosecond squared.
+   */
+  public double[] getActiveAccelerations(@Nullable double[] a, Atom[] atoms) {
+    if (!stateContains(OpenMM_State_Forces)) {
+      return a;
+    }
+    return filterToActive(getAccelerations(null, atoms), a, atoms);
+  }
+
+  /**
+   * The force array contains the OpenMM force information for all atoms.
+   *
+   * @param g Gradient array to use.
+   * @return The gradient for all atoms in units of kcal/mol/Angstrom (in a new array if g is null or the wrong size).
    */
   public double[] getGradient(@Nullable double[] g) {
+    // Check if the state contains forces.
     if (!stateContains(OpenMM_State_Forces)) {
       return g;
     }
+    double[] forces = getForces();
+    int n = forces.length;
 
+    // Validate the gradient array exists and is the correct size.
     if (g == null || g.length != n) {
       g = new double[n];
     }
 
-    double[] forces = getForces();
-    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
-      Atom atom = atoms[i];
-      if (atom.isActive()) {
-        double xx = -forces[index] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        double yy = -forces[index + 1] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        double zz = -forces[index + 2] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-        if (isNaN(xx) || isInfinite(xx) || isNaN(yy) || isInfinite(yy) || isNaN(zz) || isInfinite(zz)) {
-          StringBuilder sb = new StringBuilder(
-              format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", atom, xx, yy, zz));
-          double[] vals = new double[3];
-          atom.getVelocity(vals);
-          sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-          atom.getAcceleration(vals);
-          sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-          atom.getPreviousAcceleration(vals);
-          sb.append(
-              format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-          throw new EnergyException(sb.toString());
-        }
-        g[index] = xx;
-        g[index + 1] = yy;
-        g[index + 2] = zz;
-        atom.setXYZGradient(xx, yy, zz);
+    for (int i = 0; i < n; i++) {
+      double xx = -forces[i] * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+      if (isNaN(xx) || isInfinite(xx)) {
+        throw new EnergyException(
+            format(" The gradient of degree of freedom %d is %8.3f.", i, xx));
       }
+      g[i] = xx;
     }
     return g;
+  }
+
+  /**
+   * The force array contains the OpenMM force information for active atoms.
+   *
+   * @param g Gradient array to use.
+   * @return The gradient for all atoms in units of kcal/mol/Angstrom (in a new array if g is null or the wrong size).
+   */
+  public double[] getActiveGradient(@Nullable double[] g, Atom[] atoms) {
+    if (!stateContains(OpenMM_State_Forces)) {
+      return g;
+    }
+    return filterToActive(getGradient(null), g, atoms);
   }
 
   /**
@@ -217,67 +229,86 @@ public class OpenMMState extends State {
   }
 
   /**
-   * The positions array contains the OpenMM atomic position information for all atoms. The
-   * returned array x contains coordinates only for active atoms.
+   * The position array contains the OpenMM atomic position information for all atoms. The
+   * returned array x is in units of Angstroms.
    *
-   * @param x Atomic coordinates only for active atoms.
-   * @return x The atomic coordinates for only active atoms.
+   * @param x Atomic coordinates array to use.
+   * @return The atomic coordinates (in a new array if x is null or the wrong size).
    */
   public double[] getPositions(@Nullable double[] x) {
+    // Check if the state contains positions.
     if (!stateContains(OpenMM_State_Positions)) {
       return x;
     }
 
+    double[] pos = getPositions();
+    int n = pos.length;
+
+    // Allocate x if null or the wrong size.
     if (x == null || x.length != n) {
       x = new double[n];
     }
 
-    double[] pos = getPositions();
-    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
-      Atom atom = atoms[i];
-      if (atom.isActive()) {
-        double xx = pos[index] * OpenMM_AngstromsPerNm;
-        double yy = pos[index + 1] * OpenMM_AngstromsPerNm;
-        double zz = pos[index + 2] * OpenMM_AngstromsPerNm;
-        x[index] = xx;
-        x[index + 1] = yy;
-        x[index + 2] = zz;
-        atom.moveTo(xx, yy, zz);
-      }
+    for (int i = 0; i < n; i++) {
+      x[i] = pos[i] * OpenMM_AngstromsPerNm;
     }
+
     return x;
   }
 
   /**
-   * The positions array contains the OpenMM atomic position information for all atoms. The
-   * returned array x contains coordinates for active atoms only.
+   * The position array contains the OpenMM atomic position information for active atoms.
+   * The returned array x is in units of Angstroms.
    *
-   * @param v Velocity only for active atomic coordinates.
-   * @return v The velocity for each active atomic coordinate.
+   * @param x Atomic coordinates array to use.
+   * @return The atomic coordinates (in a new array if x is null or the wrong size).
+   */
+  public double[] getActivePositions(@Nullable double[] x, Atom[] atoms) {
+    if (!stateContains(OpenMM_State_Positions)) {
+      return x;
+    }
+    return filterToActive(getPositions(null), x, atoms);
+  }
+
+  /**
+   * The velocity array contains the OpenMM atomic position information for all atoms. The
+   * returned array v is in units of Angstroms per picosecond.
+   *
+   * @param v Atomic velocity array to use.
+   * @return The atomic velocities (in a new array if v is null or the wrong size).
    */
   public double[] getVelocities(@Nullable double[] v) {
     if (!stateContains(OpenMM_State_Velocities)) {
       return v;
     }
 
+    double[] vel = getVelocities();
+    int n = vel.length;
+
+    // Validate the velocity array exists and is the correct size.
     if (v == null || v.length != n) {
       v = new double[n];
     }
 
-    double[] vel = getVelocities();
-    for (int i = 0, index = 0; i < nAtoms; i++, index += 3) {
-      Atom atom = atoms[i];
-      if (atom.isActive()) {
-        double xx = vel[index] * OpenMM_AngstromsPerNm;
-        double yy = vel[index + 1] * OpenMM_AngstromsPerNm;
-        double zz = vel[index + 2] * OpenMM_AngstromsPerNm;
-        v[index] = xx;
-        v[index + 1] = yy;
-        v[index + 2] = zz;
-        atom.setVelocity(xx, yy, zz);
-      }
+    for (int i = 0; i < n; i++) {
+      v[i] = vel[i] * OpenMM_AngstromsPerNm;
     }
+
     return v;
+  }
+
+  /**
+   * The velocity array contains the OpenMM atomic position information for active atoms.
+   * The returned array v is in units of Angstroms per picosecond.
+   *
+   * @param v Atomic velocity array to use.
+   * @return The atomic velocities (in a new array if v is null or the wrong size).
+   */
+  public double[] getActiveVelocities(@Nullable double[] v, Atom[] atoms) {
+    if (!stateContains(OpenMM_State_Velocities)) {
+      return v;
+    }
+    return filterToActive(getVelocities(null), v, atoms);
   }
 
   /**
@@ -338,5 +369,46 @@ public class OpenMMState extends State {
    */
   private boolean stateContains(int dataType) {
     return (dataTypes & dataType) == dataType;
+  }
+
+  /**
+   * Filter an array to only include elements where the corresponding Atom is active.
+   *
+   * @param source The source array to filter.
+   * @param target The target array to fill with filtered values (or null to create a new one).
+   * @param atoms  The array of Atoms, which should have a corresponding active mask.
+   */
+  private static double[] filterToActive(double[] source, @Nullable double[] target, Atom[] atoms) {
+    if (source == null || atoms == null) {
+      throw new IllegalArgumentException("The arrays must be non-null.");
+    }
+
+    // Validate that the source array length is three times the number of atoms.
+    if (source.length != atoms.length * 3) {
+      throw new IllegalArgumentException("Source array length must be three times the number of atoms.");
+    }
+
+    // Count the number of active atoms.
+    int count = (int) Arrays.stream(atoms).filter(Atom::isActive).count();
+
+    // Ensure target is large enough to hold the filtered values.
+    if (target == null || target.length < count * 3) {
+      target = new double[count * 3];
+    }
+
+    // Fill the target array with values from the source array for active atoms.
+    int sourceIndedx = 0;
+    int targetIndex = 0;
+    for (Atom atom : atoms) {
+      if (atom.isActive()) {
+        target[targetIndex] = source[sourceIndedx];
+        target[targetIndex + 1] = source[sourceIndedx + 1];
+        target[targetIndex + 2] = source[sourceIndedx + 2];
+        targetIndex += 3;
+      }
+      // Always increment the source index by 3 for each atom.
+      sourceIndedx += 3;
+    }
+    return target;
   }
 }

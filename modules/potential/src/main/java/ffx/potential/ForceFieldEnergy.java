@@ -2765,8 +2765,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       return;
     }
     int index = 0;
-    for (int i = 0; i < nAtoms; i++) {
-      Atom a = atoms[i];
+    for (Atom a : atoms) {
       if (a.isActive()) {
         double x = coords[index++];
         double y = coords[index++];
@@ -2863,13 +2862,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     int index = 0;
     double[] vel = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atoms[i].isActive()) {
+    for (Atom a : atoms) {
+      if (a.isActive()) {
         vel[0] = velocity[index++];
         vel[1] = velocity[index++];
         vel[2] = velocity[index++];
-        atoms[i].setVelocity(vel);
+      } else {
+        // If the atom is not active, set the velocity to zero.
+        vel[0] = 0.0;
+        vel[1] = 0.0;
+        vel[2] = 0.0;
       }
+      a.setVelocity(vel);
     }
   }
 

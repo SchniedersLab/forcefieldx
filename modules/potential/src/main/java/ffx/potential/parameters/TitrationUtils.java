@@ -1762,6 +1762,11 @@ public class TitrationUtils {
       }
 
       @Override
+      public void setCoordinates(double[] parameters) {
+        // No action.
+      }
+
+      @Override
       public STATE getEnergyTermState() {
         return null;
       }

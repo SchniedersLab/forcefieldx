@@ -811,11 +811,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * @param crystal The new crystal instance defining the symmetry and boundary conditions.
    */
   public void setCrystal(Crystal crystal) {
+    if (this.crystal.equals(crystal)) {
+      return;
+    }
     this.crystal = crystal;
     int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
     if (nSymm != newNSymm) {
       nSymm = newNSymm;
-
       // Allocate memory if necessary.
       if (reduced == null || reduced.length < nSymm) {
         reduced = new double[nSymm][nAtoms * 3];

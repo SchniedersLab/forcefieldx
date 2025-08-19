@@ -1071,7 +1071,7 @@
     <jarsigner.version>3.1.0</jarsigner.version>
     <javaparser.version>3.27.0</javaparser.version>
     <java3d.version>1.7.1</java3d.version>
-    <javadoc.version>3.11.2</javadoc.version>
+    <javadoc.version>3.11.3</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.1</jdepend.version>
     <jna.version>5.17.0</jna.version>

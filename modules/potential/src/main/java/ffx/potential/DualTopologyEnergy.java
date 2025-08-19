@@ -52,6 +52,7 @@ import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1044,6 +1045,44 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
     }
     return x;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void setCoordinates(@Nullable double[] x) {
+    int indexCommon = 0;
+    int indexUnique = nShared * 3;
+    double[] xyz = new double[3];
+    for (int i = 0; i < nActive1; i++) {
+      if (sharedAtoms1[i]) {
+        xyz[0] = x[indexCommon++];
+        xyz[1] = x[indexCommon++];
+        xyz[2] = x[indexCommon++];
+      } else {
+        xyz[0] = x[indexUnique++];
+        xyz[1] = x[indexUnique++];
+        xyz[2] = x[indexUnique++];
+      }
+      Atom a = activeAtoms1[i];
+      a.setXYZ(xyz);
+    }
+    // Reset the common index.
+    indexCommon = 0;
+    for (int i = 0; i < nActive2; i++) {
+      if (sharedAtoms2[i]) {
+        xyz[0] = x[indexCommon++];
+        xyz[1] = x[indexCommon++];
+        xyz[2] = x[indexCommon++];
+      } else {
+        xyz[0] = x[indexUnique++];
+        xyz[1] = x[indexUnique++];
+        xyz[2] = x[indexUnique++];
+      }
+      Atom a = activeAtoms2[i];
+      a.setXYZ(xyz);
+    }
   }
 
   /**

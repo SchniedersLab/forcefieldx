@@ -603,6 +603,14 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
   /** {@inheritDoc} */
   @Override
+  public void setCoordinates(double[] coordinates) {
+    doublesTo(coordinates, tempA, tempB);
+    dualTopA.setCoordinates(tempA);
+    dualTopB.setCoordinates(tempB);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public void setVelocity(double[] velocity) {
     doublesTo(velocity, tempA, tempB);
     dualTopA.setVelocity(tempA);

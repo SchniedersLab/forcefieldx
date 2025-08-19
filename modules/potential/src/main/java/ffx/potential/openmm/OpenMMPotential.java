@@ -83,8 +83,10 @@ public interface OpenMMPotential {
 
   /**
    * Update active atoms.
+   *
+   * @return True if there are inactive atoms.
    */
-  void setActiveAtoms();
+  boolean setActiveAtoms();
 
   /**
    * Update parameters if the Use flags and/or Lambda value has changed.

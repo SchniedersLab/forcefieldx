@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.numerics.Potential;
 import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.MolecularAssembly;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
@@ -167,6 +168,15 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     }
 
     logger.info(format("\n OpenMM dual-topology system created with %d atoms.", atoms.length));
+  }
+
+  /**
+   * Get the Potential in use.
+   *
+   * @return The Potential.
+   */
+  public Potential getPotential() {
+    return openMMDualTopologyEnergy;
   }
 
   /**

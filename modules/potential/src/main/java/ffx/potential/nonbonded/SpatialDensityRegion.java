@@ -186,7 +186,6 @@ public class SpatialDensityRegion extends ParallelRegion {
       Crystal crystal,
       Atom[] atoms,
       double[][][] coordinates) {
-    this.crystal = crystal.getUnitCell();
     this.coordinates = coordinates;
     this.nSymm = nSymm;
     this.nAtoms = atoms.length;
@@ -450,8 +449,12 @@ public class SpatialDensityRegion extends ParallelRegion {
    * @param gZ a int.
    */
   public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-    this.crystal = crystal.getUnitCell();
+    // If the crystal is unchanged, return.
+    if (this.crystal != null && this.crystal.equals(crystal.getUnitCell())) {
+      return;
+    }
 
+    this.crystal = crystal.getUnitCell();
     if (xf == null || xf.length < nAtoms) {
       xf = new double[nAtoms];
       yf = new double[nAtoms];

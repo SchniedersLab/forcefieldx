@@ -42,6 +42,7 @@ import edu.uiowa.jopenmm.OpenMMLibrary;
 import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.openmm.Context;
 import ffx.openmm.Integrator;
 import ffx.openmm.MinimizationReporter;
@@ -173,25 +174,23 @@ public class OpenMMContext extends Context {
     //   openMMEnergy.setLambda(currentLambda);
     // }
 
-    // Get initial positions and velocities for active atoms.
-    int nVar = openMMSystem.getNumberOfVariables();
+    // Get initial positions and velocities for all atoms.
+    int nVar = atoms.length * 3;
     double[] x = new double[nVar];
     double[] v = new double[nVar];
     double[] vel3 = new double[3];
     int index = 0;
     for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.getVelocity(vel3);
-        // X-axis
-        x[index] = a.getX();
-        v[index++] = vel3[0];
-        // Y-axis
-        x[index] = a.getY();
-        v[index++] = vel3[1];
-        // Z-axis
-        x[index] = a.getZ();
-        v[index++] = vel3[2];
-      }
+      a.getVelocity(vel3);
+      // X-axis
+      x[index] = a.getX();
+      v[index++] = vel3[0];
+      // Y-axis
+      x[index] = a.getY();
+      v[index++] = vel3[1];
+      // Z-axis
+      x[index] = a.getZ();
+      v[index++] = vel3[2];
     }
 
     // Load the current periodic box vectors.
@@ -210,8 +209,9 @@ public class OpenMMContext extends Context {
     // Application of constraints can change coordinates and velocities.
     // Retrieve them for consistency.
     OpenMMState openMMState = getOpenMMState(OpenMM_State_Positions | OpenMM_State_Velocities);
-    openMMState.getPositions(x);
-    openMMState.getVelocities(v);
+    Potential energy = openMMSystem.getPotential();
+    energy.setCoordinates(openMMState.getActivePositions(null, atoms));
+    energy.setVelocity(openMMState.getActiveVelocities(null, atoms));
     openMMState.destroy();
   }
 
@@ -233,7 +233,7 @@ public class OpenMMContext extends Context {
    */
   public OpenMMState getOpenMMState(int mask) {
     State state = getState(mask, enforcePBC);
-    return new OpenMMState(state.getPointer(), atoms, openMMSystem.getNumberOfVariables());
+    return new OpenMMState(state.getPointer());
   }
 
   /**
@@ -261,50 +261,45 @@ public class OpenMMContext extends Context {
   }
 
   /**
-   * The array x contains atomic coordinates only for active atoms.
+   * The array x should contain atomic coordinates for all atoms in units of Angstroms.
    *
-   * @param x Atomic coordinate array for only active atoms.
+   * @param x Atomic coordinate array for all atoms in units of Angstroms.
    */
+  @Override
   public void setPositions(double[] x) {
-    double[] allPositions = new double[3 * atoms.length];
-    double[] d = new double[3];
-    int index = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.moveTo(x[index], x[index + 1], x[index + 2]);
-      }
-      a.getXYZ(d);
-      allPositions[index] = d[0] * OpenMM_NmPerAngstrom;
-      allPositions[index + 1] = d[1] * OpenMM_NmPerAngstrom;
-      allPositions[index + 2] = d[2] * OpenMM_NmPerAngstrom;
-      index += 3;
+    long time = -System.nanoTime();
+    int n = x.length;
+    double[] xn = new double[n];
+    for (int i = 0; i < n; i++) {
+      // Convert Angstroms to nanometers.
+      xn[i] = x[i] * OpenMM_NmPerAngstrom;
     }
-    super.setPositions(allPositions);
+    super.setPositions(xn);
+    time += System.nanoTime();
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(format(" Set OpenMM positions  %9.6f (msec)", time * 1e-6));
+    }
   }
 
   /**
-   * The array v contains velocity values for active atomic coordinates.
+   * The array v contains velocity values for all atomic coordinates in units of Angstroms/psec.
    *
-   * @param v Velocity array for active atoms.
+   * @param v Velocity array for all atoms.
    */
+  @Override
   public void setVelocities(double[] v) {
-    double[] allVelocities = new double[3 * atoms.length];
-    double[] velocity = new double[3];
-    int index = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.setVelocity(v[index], v[index + 1], v[index + 2]);
-      } else {
-        // OpenMM requires velocities for even "inactive" atoms with mass of zero.
-        a.setVelocity(0.0, 0.0, 0.0);
-      }
-      a.getVelocity(velocity);
-      allVelocities[index] = velocity[0] * OpenMM_NmPerAngstrom;
-      allVelocities[index + 1] = velocity[1] * OpenMM_NmPerAngstrom;
-      allVelocities[index + 2] = velocity[2] * OpenMM_NmPerAngstrom;
-      index += 3;
+    long time = -System.nanoTime();
+    int n = v.length;
+    double[] vn = new double[n];
+    for (int i = 0; i < n; i++) {
+      // Convert Angstroms to nanometers.
+      vn[i] = v[i] * OpenMM_NmPerAngstrom;
     }
-    super.setVelocities(allVelocities);
+    super.setVelocities(vn);
+    time += System.nanoTime();
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(format(" Set OpenMM velocities %9.6f (msec)", time * 1e-6));
+    }
   }
 
   /**

@@ -113,6 +113,14 @@ public interface OptimizationInterface {
   double[] getCoordinates(double[] parameters);
 
   /**
+   * Set the current value of the parameters. If the supplied array is null or not large enough,
+   * no action is taken.
+   *
+   * @param parameters The array with parameter values.
+   */
+  void setCoordinates(double[] parameters);
+
+  /**
    * Get the number of variables being operated on.
    *
    * @return Number of variables.

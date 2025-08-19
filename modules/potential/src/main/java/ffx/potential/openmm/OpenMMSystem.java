@@ -39,6 +39,7 @@ package ffx.potential.openmm;
 
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.openmm.AndersenThermostat;
 import ffx.openmm.CMMotionRemover;
 import ffx.openmm.Force;
@@ -251,6 +252,23 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
 
     logger.info(format("\n OpenMM system created with %d atoms.", atoms.length));
+  }
+
+  /**
+   * Get the Potential in use.
+   *
+   * @return The Potential.
+   */
+  public Potential getPotential() {
+    return openMMEnergy;
+  }
+
+  /**
+   * Get the atoms in the system.
+   * @return Array of atoms in the system.
+   */
+  public Atom[] getAtoms() {
+    return atoms;
   }
 
   /**
@@ -705,16 +723,26 @@ public class OpenMMSystem extends ffx.openmm.System {
 
   /**
    * This method sets the mass of inactive atoms to zero.
+   *
+   * @return Returns true if any inactive atoms were found and set to zero mass.
    */
-  public void updateAtomMass() {
+  public boolean updateAtomMass() {
     int index = 0;
+    int inactiveCount = 0;
     for (Atom atom : atoms) {
       double mass = 0.0;
       if (atom.isActive()) {
         mass = atom.getMass();
+      } else {
+        inactiveCount++;
       }
       setParticleMass(index++, mass);
     }
+    if (inactiveCount > 0) {
+      logger.fine(format(" Inactive atoms (%d) set to zero mass.", inactiveCount));
+      return true;
+    }
+    return false;
   }
 
   public boolean hasAmoebaCavitationForce() {

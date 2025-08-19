@@ -496,6 +496,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * {@inheritDoc}
    */
   @Override
+  public void setCoordinates(double[] doubles) {
+    potential.setCoordinates(doubles);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public Crystal getCrystal() {
     return potential.getCrystal();
   }
