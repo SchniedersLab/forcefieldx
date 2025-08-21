@@ -347,6 +347,7 @@ public class OpenMMContext extends Context {
 
     OpenMMUtils.init();
 
+    // Print out the OpenMM library path.
     logger.log(Level.INFO, " Loaded from:\n {0}", OpenMMLibrary.JNA_NATIVE_LIB.toString());
 
     // Print out the OpenMM Version.

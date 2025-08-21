@@ -115,8 +115,6 @@
             <defaultAuthor>Michael J. Schnieders</defaultAuthor>
             <defaultSince>1.0</defaultSince>
             <failOnError>false</failOnError>
-            <quiet>false</quiet>
-            <debug>true</debug>
             <additionalOptions>
               <additionalOption>--add-modules jdk.incubator.vector</additionalOption>
             </additionalOptions>
