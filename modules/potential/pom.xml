@@ -222,19 +222,6 @@
       <groupId>org.apache.logging.log4j</groupId>
       <version>${log4j.version}</version>
     </dependency>
-    <!-- The slf4j is included to control its version -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-nop.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-nop</artifactId>
-      <version>${slf4j-nop.version}</version>
-      <scope>runtime</scope>
-    </dependency>
     <dependency>
       <groupId>tornado</groupId>
       <artifactId>tornado-api</artifactId>
@@ -373,11 +360,6 @@
       <artifactId>guava</artifactId>
       <groupId>com.google.guava</groupId>
       <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>quickhull3d</artifactId>
-      <groupId>com.github.quickhull3d</groupId>
-      <version>${quickhull3D.version}</version>
     </dependency>
     <dependency>
       <artifactId>hierarchical-clustering</artifactId>

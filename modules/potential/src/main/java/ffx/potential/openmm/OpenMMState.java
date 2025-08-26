@@ -43,9 +43,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.utils.EnergyException;
 
 import javax.annotation.Nullable;
-
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AngstromsPerNm;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KcalPerKJ;
@@ -62,8 +60,6 @@ import static java.lang.String.format;
  * Retrieve state information from an OpenMM Simulation.
  */
 public class OpenMMState extends State {
-
-  private static final Logger logger = Logger.getLogger(OpenMMState.class.getName());
 
   /**
    * Potential energy (kcal/mol).

@@ -1060,7 +1060,7 @@
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
     <graal.version>24.2.2</graal.version>
-    <groovy-all.version>5.0.0-rc-1</groovy-all.version>
+    <groovy-all.version>5.0.0</groovy-all.version>
     <guava.version>33.4.8-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.13</jacoco.version>
@@ -1091,13 +1091,11 @@
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <properties.version>1.2.1</properties.version>
-    <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
     <release.version>3.1.1</release.version>
     <resources.version>3.3.1</resources.version>
     <scm.version>2.1.0</scm.version>
-    <slf4j-nop.version>2.0.17</slf4j-nop.version>
     <site.version>3.21.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
