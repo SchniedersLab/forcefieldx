@@ -83,10 +83,7 @@ public class OpenMMHarmonicBondTest {
 
   @Test
   public void testHarmonicBondEnergyAtEquilibriumOpenCL() {
-    // Require OpenCL platform; skip if not available on this machine.
-    Platform platform = new Platform("OpenCL");
-    boolean hasOpenCL = platform != null && platform.getPointer() != null && platform.getPointer().getValue() != null;
-    Assume.assumeTrue("OpenCL platform not available; skipping test", hasOpenCL);
+    Platform platform = new Platform("Reference");
 
     // Build a simple 2-particle system with a single harmonic bond.
     system = new System();
@@ -127,10 +124,7 @@ public class OpenMMHarmonicBondTest {
 
   @Test
   public void testHarmonicBondEnergyDisplacedOpenCL() {
-    // Require OpenCL platform; skip if not available on this machine.
-    Platform platform = new Platform("OpenCL");
-    boolean hasOpenCL = platform != null && platform.getPointer() != null && platform.getPointer().getValue() != null;
-    Assume.assumeTrue("OpenCL platform not available; skipping test", hasOpenCL);
+    Platform platform = new Platform("Reference");
 
     // Build a simple 2-particle system with a single harmonic bond.
     system = new System();
