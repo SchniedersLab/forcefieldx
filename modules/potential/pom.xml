@@ -362,11 +362,6 @@
       <version>${guava.version}</version>
     </dependency>
     <dependency>
-      <artifactId>hierarchical-clustering</artifactId>
-      <groupId>com.apporiented</groupId>
-      <version>${clustering.version}</version>
-    </dependency>
-    <dependency>
       <artifactId>ciftools-java</artifactId>
       <groupId>org.rcsb</groupId>
       <version>${ciftools-java.version}</version>

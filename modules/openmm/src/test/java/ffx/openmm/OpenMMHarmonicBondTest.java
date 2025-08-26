@@ -39,7 +39,6 @@ package ffx.openmm;
 
 import edu.uiowa.jopenmm.OpenMMUtils;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

@@ -37,10 +37,10 @@
 //******************************************************************************
 package ffx.potential.utils;
 
-import com.apporiented.algorithm.clustering.Cluster;
-import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
+import ffx.numerics.clustering.Cluster;
+import ffx.numerics.clustering.ClusteringAlgorithm;
+import ffx.numerics.clustering.DefaultClusteringAlgorithm;
+import ffx.numerics.clustering.SingleLinkageStrategy;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
