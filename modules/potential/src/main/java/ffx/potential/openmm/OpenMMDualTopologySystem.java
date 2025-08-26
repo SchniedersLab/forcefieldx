@@ -127,6 +127,10 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
    */
   protected AngleTorsionForce angleTorsionForce2 = null;
   /**
+   * OpenMM Custom Restrain Torsion Force for topology 2.
+   */
+  protected RestrainTorsionsForce restrainTorsionsForce2 = null;
+  /**
    * OpenMM Custom Torsion-Torsion Force for topology 2.
    * ToDo: There is no updateParametersInContext method for the AmoebaTorsionTorsionForce.
    * We assume that the AmoebaTorsionTorsionForce is constant along the alchemical path.
@@ -299,6 +303,14 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     angleTorsionForce2 = (AngleTorsionForce) AngleTorsionForce.constructForce(1, openMMDualTopologyEnergy);
     addForce(angleTorsionForce);
     addForce(angleTorsionForce2);
+
+    if (openMMDualTopologyEnergy.getForceFieldEnergy(0).getRestrainMode() == ForceFieldEnergy.RestrainMode.ALCHEMICAL) {
+      // Add Restrain-Torsions Force
+      restrainTorsionsForce = (RestrainTorsionsForce) RestrainTorsionsForce.constructForce(0, openMMDualTopologyEnergy);
+      restrainTorsionsForce2 = (RestrainTorsionsForce) RestrainTorsionsForce.constructForce(1, openMMDualTopologyEnergy);
+      addForce(restrainTorsionsForce);
+      addForce(restrainTorsionsForce2);
+    }
 
     // Add Torsion-Torsion Force.
     // ToDo: There is no updateParametersInContext method for the AmoebaTorsionTorsionForce.
@@ -487,6 +499,12 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
     }
     if (angleTorsionForce2 != null) {
       angleTorsionForce2.updateForce(1, openMMDualTopologyEnergy);
+    }
+    if (restrainTorsionsForce != null) {
+      restrainTorsionsForce.updateForce(0, openMMDualTopologyEnergy);
+    }
+    if (restrainTorsionsForce2 != null) {
+      restrainTorsionsForce2.updateForce(1, openMMDualTopologyEnergy);
     }
 
     // ToDo: there is no support in the OpenMM AmoebaTorsionTorsionForce to updateParametersInContext.
