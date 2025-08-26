@@ -419,13 +419,26 @@ class BAR extends AlgorithmsScript {
     String[][] fullFilePaths
     String directoryPath
     if (nFiles > 0) {
-      File file = new File(files[0])
-      directoryPath = file.getAbsoluteFile().getParent() + File.separator
-      fullFilePaths = new String[nStates][nFiles]
-      // Loop over user supplied files.
-      for (int j = 0; j < nFiles; j++) {
-        // Loop over ensembles.
-        for (int i = 0; i < nStates; i++) {
+      // For Dual-Topology systems that only compare two states, simplify filePaths to use only the 2 files belonging
+      // to each ensemble
+      int dtIndex = 0
+      if (numTopologies == 2 && nFiles == 4) {
+        fullFilePaths = new String[nStates][2]
+        dtIndex = 2
+      } else {
+        fullFilePaths = new String[nStates][nFiles]
+      }
+
+      // Loop over ensembles
+      for (int i = 0; i < nStates; i++) {
+        // Loop over user supplied files.
+        for (int j = 0; j < nFiles; j++) {
+          // For Dual-Topology, start at index 2 for second ensemble
+          if (i == 1 && j == 0) {
+            j = dtIndex
+          }
+          File file = new File(files[j])
+          directoryPath = file.getAbsoluteFile().getParent() + File.separator
           String archiveName
           if (sortedArc) {
             archiveName = FilenameUtils.getBaseName(files[j]) + "_E" + i.toString() + ".arc"
@@ -434,10 +447,14 @@ class BAR extends AlgorithmsScript {
           }
           if (!autodetect) {
             // Path to a file in the same directory as supplied archives.
-            fullFilePaths[i][j] = directoryPath + File.separator + archiveName
+            fullFilePaths[i][j-dtIndex] = directoryPath + File.separator + archiveName // groovy allows negative indexing
           } else {
             // Paths to auto-detected subdirectories.
-            fullFilePaths[i][j] = directoryPath + i + File.separator + archiveName
+            fullFilePaths[i][j-dtIndex] = directoryPath + i + File.separator + archiveName
+          }
+          // For Dual-Topology, stop after two files for first ensemble
+          if (i == 0 && j == 1) {
+            j += dtIndex * nFiles
           }
         }
       }
@@ -459,6 +476,8 @@ class BAR extends AlgorithmsScript {
       }
 
       // Create file objects to write out TINKER style bar files.
+      File file = new File(files[0])
+      directoryPath = file.getAbsoluteFile().getParent() + File.separator
       String tinkerDirectoryPath = directoryPath + File.separator + "windows"
       File directory = new File(tinkerDirectoryPath)
       String barFilePath = tinkerDirectoryPath + File.separator
