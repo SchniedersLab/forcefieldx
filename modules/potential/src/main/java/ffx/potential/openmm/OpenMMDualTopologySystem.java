@@ -194,15 +194,6 @@ public class OpenMMDualTopologySystem extends OpenMMSystem {
   }
 
   /**
-   * Get the OpenMMDualTopologyEnergy.
-   *
-   * @return OpenMMDualTopologyEnergy instance.
-   */
-  public OpenMMDualTopologyEnergy getOpenMMDualTopologyEnergy() {
-    return openMMDualTopologyEnergy;
-  }
-
-  /**
    * Set the default values of the vectors defining the axes of the periodic box (measured in nm).
    *
    * <p>Any newly created Context will have its box vectors set to these. They will affect any

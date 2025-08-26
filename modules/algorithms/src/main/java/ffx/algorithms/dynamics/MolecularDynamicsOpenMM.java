@@ -47,12 +47,14 @@ import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.openmm.*;
+import ffx.potential.openmm.OpenMMContext;
+import ffx.potential.openmm.OpenMMPotential;
+import ffx.potential.openmm.OpenMMState;
+import ffx.potential.openmm.OpenMMSystem;
 import ffx.potential.UnmodifiableState;
 
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.List;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;

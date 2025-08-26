@@ -526,15 +526,6 @@ public class OpenMMSystem extends ffx.openmm.System {
   }
 
   /**
-   * Get the OpenMMDualTopologyEnergy.
-   *
-   * @return null because there is not an OpenMMDualTopologyEnergy instance for single topology.
-   */
-  public OpenMMDualTopologyEnergy getOpenMMDualTopologyEnergy() {
-    return null;
-  }
-
-  /**
    * Get the Crystal instance.
    *
    * @return the Crystal instance.
