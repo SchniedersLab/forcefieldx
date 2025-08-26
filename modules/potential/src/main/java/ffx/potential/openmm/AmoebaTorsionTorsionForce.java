@@ -38,22 +38,20 @@
 package ffx.potential.openmm;
 
 import ffx.openmm.DoubleArray;
-import ffx.openmm.amoeba.DoubleArray3D;
 import ffx.openmm.Force;
+import ffx.openmm.amoeba.DoubleArray3D;
 import ffx.openmm.amoeba.TorsionTorsionForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.parameters.TorsionTorsionType;
-import ffx.potential.parameters.TorsionType;
+import ffx.potential.terms.TorsionTorsionPotentialEnergy;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
 import static java.lang.String.format;
 
 /**
@@ -66,14 +64,10 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
   /**
    * Create an OpenMM TorsionTorsion Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the torsion-torsions.
+   * @param torsionTorsionPotentialEnergy The TorsionTorsionPotentialEnergy instance.
    */
-  public AmoebaTorsionTorsionForce(OpenMMEnergy openMMEnergy) {
-    TorsionTorsion[] torsionTorsions = openMMEnergy.getTorsionTorsions();
-    if (torsionTorsions == null || torsionTorsions.length < 1) {
-      destroy();
-      return;
-    }
+  public AmoebaTorsionTorsionForce(TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy) {
+    TorsionTorsion[] torsionTorsions = torsionTorsionPotentialEnergy.getTorsionTorsionArray();
 
     // Load the torsion-torsions.
     Map<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
@@ -153,7 +147,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     }
     values.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
+    int forceGroup = torsionTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Torsion-Torsions:                  %10d", torsionTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -162,16 +156,12 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
   /**
    * Create a Dual Topology OpenMM TorsionTorsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
-  public AmoebaTorsionTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    TorsionTorsion[] torsionTorsions = forceFieldEnergy.getTorsionTorsions();
-    if (torsionTorsions == null || torsionTorsions.length < 1) {
-      destroy();
-      return;
-    }
+  public AmoebaTorsionTorsionForce(TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy,
+                                   int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    TorsionTorsion[] torsionTorsions = torsionTorsionPotentialEnergy.getTorsionTorsionArray();
 
     // ToDo: There is no support in OpenMM yet to updateParametersInContext for AmoebaTorsionTorsionForce.
     // double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
@@ -258,7 +248,7 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
     }
     values.destroy();
 
-    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("TORSION_TORSION_FORCE_GROUP", 0);
+    int forceGroup = torsionTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Torsion-Torsions:                  %10d", torsionTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -267,31 +257,30 @@ public class AmoebaTorsionTorsionForce extends TorsionTorsionForce {
   /**
    * Convenience method to construct an OpenMM Torsion-Torsion Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the torsion-torsions.
+   * @param openMMEnergy The OpenMMEnergy instance.
    * @return A Torsion-Torsion Force, or null if there are no torsion-torsions.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    TorsionTorsion[] torsionTorsion = openMMEnergy.getTorsionTorsions();
-    if (torsionTorsion == null || torsionTorsion.length < 1) {
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = openMMEnergy.getTorsionTorsionPotentialEnergy();
+    if (torsionTorsionPotentialEnergy == null) {
       return null;
     }
-    return new AmoebaTorsionTorsionForce(openMMEnergy);
+    return new AmoebaTorsionTorsionForce(torsionTorsionPotentialEnergy);
   }
 
   /**
    * Convenience method to construct a Dual Topology OpenMM Torsion-Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return A Torsion-Torsion Force, or null if there are no torsion-torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    TorsionTorsion[] torsionTorsion = forceFieldEnergy.getTorsionTorsions();
-    if (torsionTorsion == null || torsionTorsion.length < 1) {
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = forceFieldEnergy.getTorsionTorsionPotentialEnergy();
+    if (torsionTorsionPotentialEnergy == null) {
       return null;
     }
-    return new AmoebaTorsionTorsionForce(topology, openMMDualTopologyEnergy);
+    return new AmoebaTorsionTorsionForce(torsionTorsionPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
-
 }

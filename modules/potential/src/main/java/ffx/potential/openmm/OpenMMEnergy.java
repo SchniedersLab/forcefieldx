@@ -66,6 +66,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static java.lang.Double.isFinite;
@@ -524,21 +525,58 @@ public class OpenMMEnergy extends ForceFieldEnergy implements OpenMMPotential {
    * Update active atoms.
    */
   @Override
-  public void setActiveAtoms() {
-    openMMSystem.updateAtomMass();
-    // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
-    // context.reinitContext();
+  public boolean setActiveAtoms() {
+    return openMMSystem.updateAtomMass();
   }
 
   /**
-   * Set FFX and OpenMM coordinates for active atoms.
+   * Coordinates for active atoms in units of Angstroms.
    *
-   * @param x Atomic coordinates.
+   * @param x Atomic coordinates active atoms.
    */
   @Override
   public void setCoordinates(double[] x) {
-    // Set both OpenMM and FFX coordinates to x.
-    openMMContext.setPositions(x);
+    // Load the coordinates for active atoms.
+    super.setCoordinates(x);
+
+    int n = atoms.length * 3;
+    double[] xall = new double[n];
+    int i = 0;
+    for (Atom atom : atoms) {
+      xall[i] = atom.getX();
+      xall[i + 1] = atom.getY();
+      xall[i + 2] = atom.getZ();
+      i += 3;
+    }
+
+    // Load OpenMM coordinates for all atoms.
+    openMMContext.setPositions(xall);
+  }
+
+  /**
+   * Velocities for active atoms in units of Angstroms.
+   *
+   * @param v Velocities for active atoms.
+   */
+  @Override
+  public void setVelocity(double[] v) {
+    // Load the velocity for active atoms.
+    super.setVelocity(v);
+
+    int n = atoms.length * 3;
+    double[] vall = new double[n];
+    double[] v3 = new double[3];
+    int i = 0;
+    for (Atom atom : atoms) {
+      atom.getVelocity(v3);
+      vall[i] = v3[0];
+      vall[i + 1] = v3[1];
+      vall[i + 2] = v3[2];
+      i += 3;
+    }
+
+    // Load OpenMM velocities for all atoms.
+    openMMContext.setVelocities(vall);
   }
 
   /**

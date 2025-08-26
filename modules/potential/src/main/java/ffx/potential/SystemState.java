@@ -39,6 +39,7 @@ package ffx.potential;
 
 import java.util.Arrays;
 
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static java.lang.System.arraycopy;
 
 /**
@@ -50,23 +51,41 @@ public class SystemState {
    * Number of dynamics variables. The length of x, v, a, aPrevious, gradient, and mass.
    */
   protected final int numberOfVariables;
-  /** Coordinates. */
+  /**
+   * Coordinates.
+   */
   protected final double[] x;
-  /** Velocities. */
+  /**
+   * Velocities.
+   */
   protected final double[] v;
-  /** Accelerations. */
+  /**
+   * Accelerations.
+   */
   protected final double[] a;
-  /** Previous accelerations. */
+  /**
+   * Previous accelerations.
+   */
   protected final double[] aPrevious;
-  /** The gradient. */
+  /**
+   * The gradient.
+   */
   protected final double[] gradient;
-  /** Mass for each degree of freedom. */
+  /**
+   * Mass for each degree of freedom.
+   */
   protected final double[] mass;
-  /** Current temperature. */
+  /**
+   * Current temperature.
+   */
   double temperature;
-  /** Current kinetic energy. */
+  /**
+   * Current kinetic energy.
+   */
   double kineticEnergy;
-  /** Current potential energy. */
+  /**
+   * Current potential energy.
+   */
   double potentialEnergy;
 
   /**
@@ -102,7 +121,7 @@ public class SystemState {
   }
 
   /**
-   * Revert the current state to the passed UnmodifiableMDState.
+   * Revert the current state to the passed UnmodifiableState.
    *
    * @param state The state to revert to.
    */
@@ -292,6 +311,25 @@ public class SystemState {
    */
   public double getTotalEnergy() {
     return kineticEnergy + potentialEnergy;
+  }
+
+  /**
+   * Compute the kinetic energy from the current velocities and masses.
+   *
+   * @return The kinetic energy.
+   */
+  public double getKineticEnergyFromVelocities() {
+    double e = 0.0;
+    for (int i = 0; i < numberOfVariables; i++) {
+      double m = mass[i];
+      if (m > 0.0) {
+        double velocity = v[i];
+        double v2 = velocity * velocity;
+        e += m * v2;
+      }
+    }
+    e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
+    return e;
   }
 
 }

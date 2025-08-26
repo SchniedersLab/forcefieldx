@@ -1348,6 +1348,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
   @Override
+  public void setCoordinates(double[] parameters) {
+    // Do nothing.
+  }
+
+  @Override
   public int getNumberOfVariables() {
     return 0;
   }

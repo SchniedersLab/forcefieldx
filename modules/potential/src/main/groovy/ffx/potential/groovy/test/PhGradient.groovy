@@ -45,7 +45,15 @@ import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
-
+import ffx.potential.terms.AnglePotentialEnergy
+import ffx.potential.terms.BondPotentialEnergy
+import ffx.potential.terms.ImproperTorsionPotentialEnergy
+import ffx.potential.terms.OutOfPlaneBendPotentialEnergy
+import ffx.potential.terms.PiOrbitalTorsionPotentialEnergy
+import ffx.potential.terms.StretchBendPotentialEnergy
+import ffx.potential.terms.TorsionPotentialEnergy
+import ffx.potential.terms.TorsionTorsionPotentialEnergy
+import ffx.potential.terms.UreyBradleyPotentialEnergy
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -536,32 +544,59 @@ class PhGradient extends PotentialScript {
     double stateEnergy = energy.energy(x, true)
     double[] energyAndInteractionList = new double[26]
     // Bond Energy
-    energyAndInteractionList[0] = energy.getBondEnergy()
-    energyAndInteractionList[1] = (double) energy.getNumberofBonds()
+    BondPotentialEnergy bondPotentialEnergy = energy.getBondPotentialEnergy()
+    if (bondPotentialEnergy != null) {
+      energyAndInteractionList[0] = bondPotentialEnergy.getEnergy()
+      energyAndInteractionList[1] = (double) bondPotentialEnergy.getNumberOfBonds()
+    }
     // Angle Energy
-    energyAndInteractionList[2] = energy.getAngleEnergy()
-    energyAndInteractionList[3] = (double) energy.getNumberofAngles()
+    AnglePotentialEnergy anglePotentialEnergy = energy.getAnglePotentialEnergy()
+    if (anglePotentialEnergy != null) {
+      energyAndInteractionList[2] = anglePotentialEnergy.getEnergy()
+      energyAndInteractionList[3] = (double) anglePotentialEnergy.getNumberOfAngles()
+    }
     // Stretch-Bend Energy
-    energyAndInteractionList[4] = energy.getStrenchBendEnergy()
-    energyAndInteractionList[5] = (double) energy.getNumberofStretchBends()
-    // Urey-Bradley Energy,
-    energyAndInteractionList[6] = energy.getUreyBradleyEnergy()
-    energyAndInteractionList[7] = (double) energy.getNumberofUreyBradleys()
+    StretchBendPotentialEnergy stretchBendPotentialEnergy = energy.getStretchBendPotentialEnergy()
+    if (stretchBendPotentialEnergy != null) {
+      energyAndInteractionList[4] = stretchBendPotentialEnergy.getEnergy()
+      energyAndInteractionList[5] = (double) stretchBendPotentialEnergy.getNumberOfStretchBends()
+    }
+    // Urey-Bradley Energy
+    UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = energy.getUreyBradleyPotentialEnergy()
+    if (ureyBradleyPotentialEnergy != null) {
+      energyAndInteractionList[6] = ureyBradleyPotentialEnergy.getEnergy()
+      energyAndInteractionList[7] = (double) ureyBradleyPotentialEnergy.getNumberOfUreyBradleys()
+    }
     // Out-of-Plane Bend
-    energyAndInteractionList[8] = energy.getOutOfPlaneBendEnergy()
-    energyAndInteractionList[9] = (double) energy.getNumberofOutOfPlaneBends()
+    OutOfPlaneBendPotentialEnergy ofPlaneBendPotentialEnergy = energy.getOutOfPlaneBendPotentialEnergy()
+    if (ofPlaneBendPotentialEnergy != null) {
+      energyAndInteractionList[8] = ofPlaneBendPotentialEnergy.getEnergy()
+      energyAndInteractionList[9] = (double) ofPlaneBendPotentialEnergy.getNumberOfOutOfPlaneBends()
+    }
     // Torsional Angle
-    energyAndInteractionList[10] = energy.getTorsionEnergy()
-    energyAndInteractionList[11] = (double) energy.getNumberofTorsions()
+    TorsionPotentialEnergy torsionPotentialEnergy = energy.getTorsionPotentialEnergy()
+    if (torsionPotentialEnergy != null) {
+      energyAndInteractionList[10] = torsionPotentialEnergy.getEnergy()
+      energyAndInteractionList[11] = (double) torsionPotentialEnergy.getNumberOfTorsions()
+    }
     // Improper Torsional Angle
-    energyAndInteractionList[12] = energy.getImproperTorsionEnergy()
-    energyAndInteractionList[13] = (double) energy.getNumberofImproperTorsions()
+    ImproperTorsionPotentialEnergy improperTorsionPotentialEnergy = energy.getImproperTorsionPotentialEnergy()
+    if (improperTorsionPotentialEnergy != null) {
+      energyAndInteractionList[12] = improperTorsionPotentialEnergy.getEnergy()
+      energyAndInteractionList[13] = (double) improperTorsionPotentialEnergy.getNumberOfImproperTorsions()
+    }
     // Pi-Orbital Torsion
-    energyAndInteractionList[14] = energy.getPiOrbitalTorsionEnergy()
-    energyAndInteractionList[15] = (double) energy.getNumberofPiOrbitalTorsions()
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = energy.getPiOrbitalTorsionPotentialEnergy()
+    if (piOrbitalTorsionPotentialEnergy != null) {
+      energyAndInteractionList[14] = piOrbitalTorsionPotentialEnergy.getEnergy()
+      energyAndInteractionList[15] = (double) piOrbitalTorsionPotentialEnergy.getNumberOfPiOrbitalTorsions()
+    }
     // Torsion-Torsion
-    energyAndInteractionList[16] = energy.getTorsionTorsionEnergy()
-    energyAndInteractionList[17] = (double) energy.getNumberofTorsionTorsions()
+    TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = energy.getTorsionTorsionPotentialEnergy()
+    if (torsionTorsionPotentialEnergy != null) {
+      energyAndInteractionList[16] = torsionTorsionPotentialEnergy.getEnergy()
+      energyAndInteractionList[17] = (double) torsionTorsionPotentialEnergy.getNumberOfTorsionTorsions()
+    }
     // van Der Waals
     energyAndInteractionList[18] = energy.getVanDerWaalsEnergy()
     energyAndInteractionList[19] = (double) energy.getVanDerWaalsInteractions()

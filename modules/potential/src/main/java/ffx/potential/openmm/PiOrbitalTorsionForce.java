@@ -37,15 +37,15 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.parameters.PiOrbitalTorsionType;
+import ffx.potential.terms.PiOrbitalTorsionPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -59,17 +59,13 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsionForce.class.getName());
 
   /**
-   * Create an Pi-Orbital Torsion Force.
+   * Create a Pi-Orbital Torsion Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the out-of-plane bends.
+   * @param piOrbitalTorsionPotentialEnergy The PiOrbitalTorsionPotentialEnergy instance.
    */
-  public PiOrbitalTorsionForce(OpenMMEnergy openMMEnergy) {
-    super(6, openMMEnergy.getPiOrbitalTorsionEnergyString());
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
-      return;
-    }
-
+  public PiOrbitalTorsionForce(PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy) {
+    super(6, PiOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionEnergyString());
+    PiOrbitalTorsion[] piOrbitalTorsions = piOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionArray();
     addPerBondParameter("k");
     setName("PiOrbitalTorsion");
 
@@ -98,7 +94,7 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
+    int forceGroup = piOrbitalTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Pi-Orbital Torsions:               %10d", piOrbitalTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -108,18 +104,14 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
   /**
    * Create an Pi-Orbital Torsion Force for Dual Topology.
    *
-   * @param topology The topology index for the OpenMM System.
-   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @param piOrbitalTorsionPotentialEnergy The PiOrbitalTorsionPotentialEnergy instance.
+   * @param topology                        The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy        The OpenMMDualTopologyEnergy instance.
    */
-  public PiOrbitalTorsionForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(6, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getPiOrbitalTorsionEnergyString());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
-      return;
-    }
-
+  public PiOrbitalTorsionForce(PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy,
+                               int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(6, PiOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionEnergyString());
+    PiOrbitalTorsion[] piOrbitalTorsions = piOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionArray();
     addPerBondParameter("k");
     setName("PiOrbitalTorsion");
 
@@ -160,7 +152,7 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
     particles.destroy();
     parameters.destroy();
 
-    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
+    int forceGroup = piOrbitalTorsionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Pi-Orbital Torsions:               %10d", piOrbitalTorsions.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -173,27 +165,27 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
    * @return An OpenMM Pi-Orbital Torsion Force, or null if there are no pi-orbital torsions.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = openMMEnergy.getPiOrbitalTorsionPotentialEnergy();
+    if (piOrbitalTorsionPotentialEnergy == null) {
       return null;
     }
-    return new PiOrbitalTorsionForce(openMMEnergy);
+    return new PiOrbitalTorsionForce(piOrbitalTorsionPotentialEnergy);
   }
 
   /**
    * Convenience method to construct a Dual-Topology OpenMM Pi-Orbital Torsion Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return An OpenMM Pi-Orbital Torsion Force, or null if there are no pi-orbital torsions.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = forceFieldEnergy.getPiOrbitalTorsionPotentialEnergy();
+    if (piOrbitalTorsionPotentialEnergy == null) {
       return null;
     }
-    return new PiOrbitalTorsionForce(topology, openMMDualTopologyEnergy);
+    return new PiOrbitalTorsionForce(piOrbitalTorsionPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
@@ -202,10 +194,11 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the pi-orbital torsions.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    PiOrbitalTorsion[] piOrbitalTorsions = openMMEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = openMMEnergy.getPiOrbitalTorsionPotentialEnergy();
+    if (piOrbitalTorsionPotentialEnergy == null) {
       return;
     }
+    PiOrbitalTorsion[] piOrbitalTorsions = piOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionArray();
 
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
@@ -238,15 +231,16 @@ public class PiOrbitalTorsionForce extends CustomCompoundBondForce {
   /**
    * Update the Pi-Orbital Torsion force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    PiOrbitalTorsion[] piOrbitalTorsions = forceFieldEnergy.getPiOrbitalTorsions();
-    if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+    PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = forceFieldEnergy.getPiOrbitalTorsionPotentialEnergy();
+    if (piOrbitalTorsionPotentialEnergy == null) {
       return;
     }
+    PiOrbitalTorsion[] piOrbitalTorsions = piOrbitalTorsionPotentialEnergy.getPiOrbitalTorsionArray();
 
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 

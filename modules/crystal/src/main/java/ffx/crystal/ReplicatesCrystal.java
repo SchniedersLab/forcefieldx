@@ -299,7 +299,16 @@ public class ReplicatesCrystal extends Crystal {
       return false;
     }
     ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
-    return (Objects.equals(unitCell, replicatesCrystal.unitCell) && a == replicatesCrystal.a && b == replicatesCrystal.b && c == replicatesCrystal.c && alpha == replicatesCrystal.alpha && beta == replicatesCrystal.beta && gamma == replicatesCrystal.gamma && spaceGroup.number == replicatesCrystal.spaceGroup.number && spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
+    return (
+        Objects.equals(unitCell, replicatesCrystal.unitCell)
+            && a == replicatesCrystal.a
+            && b == replicatesCrystal.b
+            && c == replicatesCrystal.c
+            && alpha == replicatesCrystal.alpha
+            && beta == replicatesCrystal.beta
+            && gamma == replicatesCrystal.gamma
+            && spaceGroup.number == replicatesCrystal.spaceGroup.number
+            && spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
   }
 
   /**

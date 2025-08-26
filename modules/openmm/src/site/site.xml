@@ -3,7 +3,7 @@
       xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
       name="OpenMM Java Classes">
   <body>
-    <menu name="Java OpenMM Classes">
+    <menu name="OpenMM Java Classes">
       <item name="Introduction" href="/index.html"/>
     </menu>
   </body>

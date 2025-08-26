@@ -608,7 +608,8 @@ public class XtalEnergy implements Potential {
    *
    * @param x First 3*nActive parameters are coordinates, next 6 are x parameters.
    */
-  private void setCoordinates(double[] x) {
+  @Override
+  public void setCoordinates(double[] x) {
     assert (x != null);
 
     // Before applying new lattice parameters, store factional coordinates.
@@ -715,4 +716,5 @@ public class XtalEnergy implements Potential {
       }
     }
   }
+
 }

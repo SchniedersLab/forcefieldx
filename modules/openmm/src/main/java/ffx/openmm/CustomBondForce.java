@@ -179,10 +179,10 @@ public class CustomBondForce extends Force {
   /**
    * Get the force field parameters for a bond term.
    *
-   * @param index the index of the bond for which to get parameters
-   * @param[out] i1            the index of the first particle connected by the bond
-   * @param[out] i2            the index of the second particle connected by the bond
-   * @param[out] parameters    the list of parameters for the bond
+   * @param index      the index of the bond for which to get parameters
+   * @param i1         the index of the first particle connected by the bond
+   * @param i2         the index of the second particle connected by the bond
+   * @param parameters the list of parameters for the bond
    */
   public void getBondParameters(int index, IntBuffer i1, IntBuffer i2, DoubleArray parameters) {
     OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());
@@ -191,10 +191,10 @@ public class CustomBondForce extends Force {
   /**
    * Get the force field parameters for a bond term.
    *
-   * @param index the index of the bond for which to get parameters
-   * @param[out] i1            the index of the first particle connected by the bond
-   * @param[out] i2            the index of the second particle connected by the bond
-   * @param[out] parameters    the list of parameters for the bond
+   * @param index      the index of the bond for which to get parameters
+   * @param i1         the index of the first particle connected by the bond
+   * @param i2         the index of the second particle connected by the bond
+   * @param parameters the list of parameters for the bond
    */
   public void getBondParameters(int index, IntByReference i1, IntByReference i2, DoubleArray parameters) {
     OpenMM_CustomBondForce_getBondParameters(pointer, index, i1, i2, parameters.getPointer());

@@ -39,6 +39,7 @@ package ffx.algorithms.dynamics;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.thermostats.Adiabatic;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
@@ -133,9 +134,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     crystalPotential = (CrystalPotential) potential;
     openMMPotential = (OpenMMPotential) potential;
 
-    // Update the set of active and inactive atoms.
-    openMMPotential.setActiveAtoms();
-
     thermostatType = thermostat;
     integratorType = integrator;
     integratorToString(integratorType);
@@ -196,8 +194,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     // Store the initial state.
     initialState = new UnmodifiableState(state);
 
-    // Check that our context is using correct Integrator, time step, and target temperature.
-    openMMPotential.updateContext(integratorString, dt, targetTemperature, false);
+    // Set the mass of inactive atoms to zero. If there are inactive atoms, we force creation of a new OpenMM Context.
+    boolean forceCreation = openMMPotential.setActiveAtoms();
+
+    // Check that our context is using correct Integrator, time step, and target temperature. If there are inactive
+    // atoms, a new Context will be created.
+    openMMPotential.updateContext(integratorString, dt, targetTemperature, forceCreation);
 
     // Pre-run operations (mostly logging) that require knowledge of system energy.
     postInitEnergies();
@@ -335,9 +337,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void setOpenMMState() {
     OpenMMContext openMMContext = openMMPotential.getContext();
-    openMMContext.setPositions(state.x());
+    // Load box vectors into OpenMM.
     openMMContext.setPeriodicBoxVectors(crystalPotential.getCrystal());
-    openMMContext.setVelocities(state.v());
+    // Load coordinates into atom instances and into OpenMM.
+    crystalPotential.setCoordinates(state.x());
+    // Load velocities into atom instances and into OpenMM.
+    crystalPotential.setVelocity(state.v());
   }
 
   /**
@@ -369,7 +374,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       long takeStepsTime = -System.nanoTime();
       takeOpenMMSteps(intervalSteps);
       takeStepsTime += System.nanoTime();
-      logger.fine(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
+      logger.finest(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
       totalSimTime += intervalSteps * dt;
 
       // Update the total step count.
@@ -379,7 +384,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
       updateFromOpenMM(i, running);
       secondUpdateTime += System.nanoTime();
 
-      logger.fine(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
+      logger.finest(format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
     }
   }
 
@@ -392,31 +397,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
-    openMMState.getPositions(state.x());
-
-    MolecularAssembly[] molecularAssemblies = getAssemblyArray();
-    if (molecularAssemblies.length > 1) {
-      MolecularAssembly molecularAssembly2 = molecularAssemblies[1];
-      OpenMMDualTopologyEnergy openMMDualTopologyEnergy = openMMPotential.getSystem().getOpenMMDualTopologyEnergy(); // todo check for flag not if molec assem > 1
-      if (openMMDualTopologyEnergy != null) { // todo put above
-
-        Atom[] atoms = molecularAssembly2.getAtomArray();
-        double[] x = state.x();
-
-        for (Atom atom : atoms) {
-          int index = atom.getArrayIndex();
-          index = openMMDualTopologyEnergy.mapToDualTopologyIndex(1, index);
-          atom.moveTo(x[index*3], x[index*3+1], x[index*3+2]);
-        }
-      }
-    }
-
     Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
       double[][] cellVectors = openMMState.getPeriodicBoxVectors();
       crystal.setCellVectors(cellVectors);
       crystalPotential.setCrystal(crystal);
     }
+
+    // Load positions into the MD state.
+    Atom[] atoms = openMMPotential.getSystem().getAtoms();
+    openMMState.getActivePositions(state.x(), atoms);
     openMMState.destroy();
   }
 
@@ -429,33 +419,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     state.setPotentialEnergy(openMMState.potentialEnergy);
     state.setKineticEnergy(openMMState.kineticEnergy);
     state.setTemperature(openMMPotential.getSystem().getTemperature(openMMState.kineticEnergy));
-    openMMState.getPositions(state.x());
-
-    MolecularAssembly[] molecularAssemblies = getAssemblyArray();
-    if (molecularAssemblies.length > 1) {
-      MolecularAssembly molecularAssembly2 = molecularAssemblies[1];
-      OpenMMDualTopologyEnergy openMMDualTopologyEnergy = openMMPotential.getSystem().getOpenMMDualTopologyEnergy(); // todo check for flag not if molec assem > 1
-      if (openMMDualTopologyEnergy != null) { // todo put above
-
-        Atom[] atoms = molecularAssembly2.getAtomArray();
-        double[] x = state.x();
-
-        for (Atom atom : atoms) {
-          int index = atom.getArrayIndex();
-          index = openMMDualTopologyEnergy.mapToDualTopologyIndex(1, index);
-          atom.moveTo(x[index*3], x[index*3+1], x[index*3+2]);
-        }
-      }
-    }
-
     Crystal crystal = crystalPotential.getCrystal();
     if (!crystal.aperiodic()) {
       double[][] cellVectors = openMMState.getPeriodicBoxVectors();
       crystal.setCellVectors(cellVectors);
       crystalPotential.setCrystal(crystal);
     }
-    openMMState.getVelocities(state.v());
-    openMMState.getAccelerations(state.a());
+
+    // Load positions, velocities, and accelerations into the MD state.
+    Atom[] atoms = openMMPotential.getSystem().getAtoms();
+    openMMState.getActivePositions(state.x(), atoms);
+    openMMState.getActiveVelocities(state.v(), atoms);
+    openMMState.getActiveAccelerations(state.a(), atoms);
     openMMState.destroy();
   }
 
@@ -475,11 +450,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     if (running) {
       if (i == 0) {
         logger.log(basicLogging,
-            format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp",
-                "CPU"));
+            format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
         logger.log(basicLogging,
-            format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K",
-                "sec"));
+            format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
         logger.log(basicLogging,
             format("  %8s %12.4f %12.4f %12.4f %8.2f", "", state.getKineticEnergy(),
                 state.getPotentialEnergy(), state.getTotalEnergy(), state.getTemperature()));

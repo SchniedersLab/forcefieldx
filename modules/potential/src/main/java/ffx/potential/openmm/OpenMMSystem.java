@@ -39,6 +39,7 @@ package ffx.potential.openmm;
 
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.openmm.AndersenThermostat;
 import ffx.openmm.CMMotionRemover;
 import ffx.openmm.Force;
@@ -56,6 +57,9 @@ import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.terms.AnglePotentialEnergy;
+import ffx.potential.terms.AngleTorsionPotentialEnergy;
+import ffx.potential.terms.BondPotentialEnergy;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -251,6 +255,23 @@ public class OpenMMSystem extends ffx.openmm.System {
   }
 
   /**
+   * Get the Potential in use.
+   *
+   * @return The Potential.
+   */
+  public Potential getPotential() {
+    return openMMEnergy;
+  }
+
+  /**
+   * Get the atoms in the system.
+   * @return Array of atoms in the system.
+   */
+  public Atom[] getAtoms() {
+    return atoms;
+  }
+
+  /**
    * Add forces to the system.
    */
   public void addForces() {
@@ -331,8 +352,8 @@ public class OpenMMSystem extends ffx.openmm.System {
 
       // Add Restrain Bonds force for each functional form.
       for (BondType.BondFunction function : BondType.BondFunction.values()) {
-        RestrainBondsForce restrainBondsForce = (RestrainBondsForce) RestrainBondsForce.constructForce(function, openMMEnergy);
-        addForce(restrainBondsForce);
+        RestrainDistanceForce restrainDistanceForce = (RestrainDistanceForce) RestrainDistanceForce.constructForce(function, openMMEnergy);
+        addForce(restrainDistanceForce);
       }
 
       // Add Restrain Torsions force.
@@ -711,16 +732,26 @@ public class OpenMMSystem extends ffx.openmm.System {
 
   /**
    * This method sets the mass of inactive atoms to zero.
+   *
+   * @return Returns true if any inactive atoms were found and set to zero mass.
    */
-  public void updateAtomMass() {
+  public boolean updateAtomMass() {
     int index = 0;
+    int inactiveCount = 0;
     for (Atom atom : atoms) {
       double mass = 0.0;
       if (atom.isActive()) {
         mass = atom.getMass();
+      } else {
+        inactiveCount++;
       }
       setParticleMass(index++, mass);
     }
+    if (inactiveCount > 0) {
+      logger.fine(format(" Inactive atoms (%d) set to zero mass.", inactiveCount));
+      return true;
+    }
+    return false;
   }
 
   public boolean hasAmoebaCavitationForce() {
@@ -731,11 +762,11 @@ public class OpenMMSystem extends ffx.openmm.System {
    * Add a constraint to every bond.
    */
   protected void addUpBondConstraints() {
-    Bond[] bonds = openMMEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = openMMEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return;
     }
-
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
     logger.info(" Adding constraints for all bonds.");
     for (Bond bond : bonds) {
       Atom atom1 = bond.getAtom(0);
@@ -750,11 +781,11 @@ public class OpenMMSystem extends ffx.openmm.System {
    * Add a constraint to every bond that includes a hydrogen atom.
    */
   protected void addHydrogenConstraints() {
-    Bond[] bonds = openMMEnergy.getBonds();
-    if (bonds == null || bonds.length < 1) {
+    BondPotentialEnergy bondPotentialEnergy = openMMEnergy.getBondPotentialEnergy();
+    if (bondPotentialEnergy == null) {
       return;
     }
-
+    Bond[] bonds = bondPotentialEnergy.getBondArray();
     logger.info(" Adding constraints for hydrogen bonds.");
     for (Bond bond : bonds) {
       Atom atom1 = bond.getAtom(0);
@@ -772,13 +803,12 @@ public class OpenMMSystem extends ffx.openmm.System {
    * Add a constraint to every angle that includes two hydrogen atoms.
    */
   protected void setUpHydrogenAngleConstraints() {
-    Angle[] angles = openMMEnergy.getAngles();
-    if (angles == null || angles.length < 1) {
+    AnglePotentialEnergy anglePotentialEnergy = openMMEnergy.getAnglePotentialEnergy();
+    if (anglePotentialEnergy == null) {
       return;
     }
-
+    Angle[] angles = anglePotentialEnergy.getAngleArray();
     logger.info(" Adding hydrogen angle constraints.");
-
     for (Angle angle : angles) {
       if (isHydrogenAngle(angle)) {
         Atom atom1 = angle.getAtom(0);

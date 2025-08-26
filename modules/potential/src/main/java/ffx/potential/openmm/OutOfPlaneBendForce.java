@@ -37,15 +37,15 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomCompoundBondForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
 import ffx.openmm.IntArray;
-import ffx.openmm.CustomCompoundBondForce;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.parameters.OutOfPlaneBendType;
+import ffx.potential.terms.OutOfPlaneBendPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -61,15 +61,11 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
   /**
    * Create an Out-of-Plane Bend Force.
    *
-   * @param openMMEnergy The OpenMM Energy instance that contains the out-of-plane bends.
+   * @param outOfPlaneBendPotentialEnergy The OutOfPlaneBendPotentialEnergy instance that contains the out-of-plane bends.
    */
-  public OutOfPlaneBendForce(OpenMMEnergy openMMEnergy) {
-    super(4, openMMEnergy.getOutOfPlaneEnergyString());
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
-      return;
-    }
-
+  public OutOfPlaneBendForce(OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy) {
+    super(4, outOfPlaneBendPotentialEnergy.getOutOfPlaneEnergyString());
+    OutOfPlaneBend[] outOfPlaneBends = outOfPlaneBendPotentialEnergy.getOutOfPlaneBendArray();
     addPerBondParameter("k");
     setName("OutOfPlaneBend");
 
@@ -93,7 +89,7 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     }
     particles.destroy();
     parameters.destroy();
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+    int forceGroup = outOfPlaneBendPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Out-of-Plane Bends:                %10d", outOfPlaneBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -102,18 +98,14 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
   /**
    * Create an Out-of-Plane Bend Force for Dual Topology.
    *
-   * @param topology The topology index for the OpenMM System.
-   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @param outOfPlaneBendPotentialEnergy The OutOfPlaneBendPotentialEnergy instance that contains the out-of-plane bends.
+   * @param topology                      The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy      The OpenMMDualTopologyEnergy instance.
    */
-  public OutOfPlaneBendForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
-    super(4, openMMDualTopologyEnergy.getForceFieldEnergy(topology).getOutOfPlaneEnergyString());
-
-    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
-      return;
-    }
-
+  public OutOfPlaneBendForce(OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy,
+                             int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, outOfPlaneBendPotentialEnergy.getOutOfPlaneEnergyString());
+    OutOfPlaneBend[] outOfPlaneBends = outOfPlaneBendPotentialEnergy.getOutOfPlaneBendArray();
     addPerBondParameter("k");
     setName("OutOfPlaneBend");
 
@@ -147,7 +139,7 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
     }
     particles.destroy();
     parameters.destroy();
-    int forceGroup = forceFieldEnergy.getMolecularAssembly().getForceField().getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
+    int forceGroup = outOfPlaneBendPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Out-of-Plane Bends:                %10d", outOfPlaneBends.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -160,27 +152,27 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
    * @return An OpenMM Out-of-Plane Bend Force, or null if there are no out-of-plane bends.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+    OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy = openMMEnergy.getOutOfPlaneBendPotentialEnergy();
+    if (outOfPlaneBendPotentialEnergy == null) {
       return null;
     }
-    return new OutOfPlaneBendForce(openMMEnergy);
+    return new OutOfPlaneBendForce(outOfPlaneBendPotentialEnergy);
   }
 
   /**
    * Convenience method to construct a Dual-Topology OpenMM Out-of-Plane Bend Force.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    * @return An OpenMM Out-of-Plane Bend Force, or null if there are no out-of-plane bends.
    */
   public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+    OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy = forceFieldEnergy.getOutOfPlaneBendPotentialEnergy();
+    if (outOfPlaneBendPotentialEnergy == null) {
       return null;
     }
-    return new OutOfPlaneBendForce(topology, openMMDualTopologyEnergy);
+    return new OutOfPlaneBendForce(outOfPlaneBendPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
@@ -189,10 +181,12 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the angles.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    OutOfPlaneBend[] outOfPlaneBends = openMMEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+    OutOfPlaneBendPotentialEnergy outOfPlaneBendPotentialEnergy = openMMEnergy.getOutOfPlaneBendPotentialEnergy();
+    if (outOfPlaneBendPotentialEnergy == null) {
       return;
     }
+
+    OutOfPlaneBend[] outOfPlaneBends = outOfPlaneBendPotentialEnergy.getOutOfPlaneBendArray();
 
     IntArray particles = new IntArray(0);
     DoubleArray parameters = new DoubleArray(0);
@@ -222,16 +216,16 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
   /**
    * Update an existing angle force for the Dual-Topology OpenMM System.
    *
-   * @param topology The topology index for the OpenMM System.
+   * @param topology                 The topology index for the OpenMM System.
    * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
    */
   public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
     ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
-    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergy.getOutOfPlaneBends();
-    if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+    OutOfPlaneBendPotentialEnergy forceFieldEnergyOutOfPlaneBend = forceFieldEnergy.getOutOfPlaneBendPotentialEnergy();
+    if (forceFieldEnergyOutOfPlaneBend == null) {
       return;
     }
-
+    OutOfPlaneBend[] outOfPlaneBends = forceFieldEnergyOutOfPlaneBend.getOutOfPlaneBendArray();
     double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
 
     IntArray particles = new IntArray(0);
@@ -266,4 +260,5 @@ public class OutOfPlaneBendForce extends CustomCompoundBondForce {
 
     updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
+
 }

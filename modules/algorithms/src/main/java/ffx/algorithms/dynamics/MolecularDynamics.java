@@ -85,7 +85,6 @@ import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
 import static ffx.utilities.FileUtils.relativePathTo;
 import static java.lang.String.format;
-import static java.util.Arrays.binarySearch;
 import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -1089,22 +1088,27 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Write out snapshots in selected format every saveSnapshotFrequency steps.
       if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
 
+        // Load current coordinates into atom instances.
+        potential.setCoordinates(state.x());
+
         // Log stats.
-        logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n",
-            trajectoryFrequency, step));
-        logger.info(format("  Simulation Time  %16.4f Picosecond", step * dt));
-        logger.info(format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)", totalEnergyStats.getMean(),
-            totalEnergyStats.getStandardDeviation()));
-        logger.info(format("  Potential Energy %16.4f Kcal/mole   (+/-%9.4f)",
-            potentialEnergyStats.getMean(), potentialEnergyStats.getStandardDeviation()));
-        logger.info(format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)", kineticEnergyStats.getMean(),
-            kineticEnergyStats.getStandardDeviation()));
-        logger.info(format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n", temperatureStats.getMean(),
-            temperatureStats.getStandardDeviation()));
-        totalEnergyStats.reset();
-        potentialEnergyStats.reset();
-        kineticEnergyStats.reset();
-        temperatureStats.reset();
+        if (totalEnergyStats.getCount() > 0) {
+          logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n",
+              trajectoryFrequency, step));
+          logger.info(format("  Simulation Time  %16.4f Picosecond", step * dt));
+          logger.info(format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)", totalEnergyStats.getMean(),
+              totalEnergyStats.getStandardDeviation()));
+          logger.info(format("  Potential Energy %16.4f Kcal/mole   (+/-%9.4f)",
+              potentialEnergyStats.getMean(), potentialEnergyStats.getStandardDeviation()));
+          logger.info(format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)", kineticEnergyStats.getMean(),
+              kineticEnergyStats.getStandardDeviation()));
+          logger.info(format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n", temperatureStats.getMean(),
+              temperatureStats.getStandardDeviation()));
+          totalEnergyStats.reset();
+          potentialEnergyStats.reset();
+          kineticEnergyStats.reset();
+          temperatureStats.reset();
+        }
 
         if (esvSystem != null) {
           for (Atom atom : molecularAssembly[0].getAtomList()) {
@@ -1237,6 +1241,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
           throw new IllegalStateException(message);
         } else {
           molecularAssembly[0].setCrystal(crystal);
+          potential.setCoordinates(x);
+          potential.setVelocity(v);
+          potential.setAcceleration(a);
+          potential.setPreviousAcceleration(aPrevious);
         }
       } else {
         // Initialize using current atomic coordinates.
