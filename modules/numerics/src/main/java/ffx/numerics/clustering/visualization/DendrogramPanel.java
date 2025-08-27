@@ -46,9 +46,19 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
+import java.io.Serial;
 
+/**
+ * Swing panel responsible for laying out and drawing a dendrogram for a
+ * hierarchical Cluster model, including optional scale and distance labels.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class DendrogramPanel extends JPanel {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private final static BasicStroke SOLID_STROKE =
@@ -74,26 +84,56 @@ public class DendrogramPanel extends JPanel {
   private double wModel = 0.0;
   private double hModel = 0.0;
 
+  /**
+   * Returns whether linkage distance values should be rendered on the dendrogram.
+   *
+   * @return true if distance values are shown
+   */
   public boolean isShowDistanceValues() {
     return showDistanceValues;
   }
 
+  /**
+   * Sets whether linkage distance values should be rendered on the dendrogram.
+   *
+   * @param showDistanceValues true to show distance values
+   */
   public void setShowDistances(boolean showDistanceValues) {
     this.showDistanceValues = showDistanceValues;
   }
 
+  /**
+   * Returns whether the X-axis scale should be drawn below the dendrogram.
+   *
+   * @return true if the scale is shown
+   */
   public boolean isShowScale() {
     return showScale;
   }
 
+  /**
+   * Sets whether the X-axis scale should be drawn below the dendrogram.
+   *
+   * @param showScale true to show the scale
+   */
   public void setShowScale(boolean showScale) {
     this.showScale = showScale;
   }
 
+  /**
+   * Gets the padding (pixels) between the dendrogram and the scale axis.
+   *
+   * @return padding in pixels
+   */
   public int getScalePadding() {
     return scalePadding;
   }
 
+  /**
+   * Sets the padding (pixels) between the dendrogram and the scale axis.
+   *
+   * @param scalePadding padding in pixels
+   */
   public void setScalePadding(int scalePadding) {
     this.scalePadding = scalePadding;
   }
@@ -190,14 +230,14 @@ public class DendrogramPanel extends JPanel {
     if (cluster != null) {
       comp = new ClusterComponent(cluster, cluster.isLeaf(), initCoord);
       double leafHeight = clusterHeight / cluster.countLeafs();
-      double yChild = initCoord.getY() - (clusterHeight / 2);
+      double yChild = initCoord.y() - (clusterHeight / 2);
       double distance = cluster.getDistanceValue() == null ? 0 : cluster.getDistanceValue();
       for (Cluster child : cluster.getChildren()) {
         int childLeafCount = child.countLeafs();
         double childHeight = childLeafCount * leafHeight;
         double childDistance = child.getDistanceValue() == null ? 0 : child.getDistanceValue();
         VCoord childInitCoord = new VCoord(
-            initCoord.getX() + (distance - childDistance),
+            initCoord.x() + (distance - childDistance),
             yChild + childHeight / 2.0);
         yChild += childHeight;
 

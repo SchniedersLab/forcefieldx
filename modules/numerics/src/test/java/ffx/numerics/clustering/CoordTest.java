@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Lars Behnke <lars.behnke@bruker.com>
+ * @author Lars Behnke (lars.behnke@bruker.com)
  */
 public class CoordTest extends FFXTest {
 

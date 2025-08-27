@@ -37,35 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.quickhull;
 
-/*
- * #%L
- * A Robust 3D Convex Hull Algorithm in Java
- * %%
- * Copyright (C) 2004 - 2014 John E. Lloyd
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -125,9 +96,12 @@ import java.util.logging.Logger;
  * As a convenience, there are also {@link #build(double[]) build} and
  * {@link #getVertices(double[]) getVertex} methods which pass point information
  * using an array of doubles.
- * <h3><a name=distTol>Robustness</h3> Because this algorithm uses floating
+ * <p>
+ * <b>Robustness</b>
+ * <p>
+ * Because this algorithm uses floating
  * point arithmetic, it is potentially vulnerable to errors arising from
- * numerical imprecision. We address this problem in the same way as <a
+ * numerical imprecision. We address this problem in the same way as <a>
  * href=http://www.qhull.org>qhull</a>, by merging faces whose edges are not
  * clearly convex. A face is convex if its edges are convex, and an edge is
  * convex if the centroid of each adjacent plane is clearly <i>below</i> the
@@ -147,7 +121,9 @@ import java.util.logging.Logger;
  * is deemed correct if {@link #check check} returns <code>true</code>. These
  * tests have been successful for a large number of trials and so we are
  * confident that QuickHull3D is reasonably robust.
- * <h3>Merged Faces</h3> The merging of faces means that the faces returned by
+ * <p>
+ * <b>Merged Faces</b>
+ * <p>The merging of faces means that the faces returned by
  * QuickHull3D may be convex polygons instead of triangles. If triangles are
  * desired, the application may {@link #triangulate triangulate} the faces, but
  * it should be noted that this may result in triangles which are very small or
@@ -156,13 +132,18 @@ import java.util.logging.Logger;
  * problems which the merging process removed. Hence is it possible that, after
  * triangulation, {@link #check check} will fail (the same behavior is observed
  * with triangulated output from <a href=http://www.qhull.org>qhull</a>).
- * <h3>Degenerate Input</h3>It is assumed that the input points are
+ * <p>
+ * <b>Degenerate Input</b>
+ * <p>
+ * It is assumed that the input points are
  * non-degenerate in that they are not coincident, colinear, or colplanar, and
  * thus the convex hull has a non-zero volume. If the input points are detected
  * to be degenerate within the {@link #getDistanceTolerance() distance
  * tolerance}, an IllegalArgumentException will be thrown.
  *
  * @author John E. Lloyd, Fall 2004
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class QuickHull3D {
 
@@ -347,6 +328,14 @@ public class QuickHull3D {
     build(points, points.length);
   }
 
+  /**
+   * Finds the half-edge within the current hull whose tail/head match the given vertices.
+   * Used during setHull to establish opposite half-edge links between faces.
+   *
+   * @param tail the tail vertex of the desired half-edge
+   * @param head the head vertex of the desired half-edge
+   * @return the matching HalfEdge, or null if none is found
+   */
   private HalfEdge findHalfEdge(Vertex tail, Vertex head) {
     // brute force ... OK, since setHull is not used much
     for (Face face : faces) {
@@ -358,6 +347,15 @@ public class QuickHull3D {
     return null;
   }
 
+  /**
+   * Initializes the hull from precomputed face indices and point coordinates.
+   * This is primarily used for testing or reconstructing a hull state.
+   *
+   * @param coords      flat array of x,y,z coordinates (length >= 3*nump)
+   * @param nump        number of points in coords
+   * @param faceIndices face vertex indices (each row lists vertices of a face in CCW order)
+   * @param numf        number of faces to add
+   */
   protected void setHull(double[] coords, int nump, int[][] faceIndices, int numf) {
     initBuffers(nump);
     setPoints(coords, nump);
@@ -476,6 +474,12 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * (Re)initializes internal buffers and lists for a hull build of nump points.
+   * Ensures pointBuffer capacity, clears face/claim lists, and sets counters.
+   *
+   * @param nump number of input points to prepare for
+   */
   protected void initBuffers(int nump) {
     if (pointBuffer.length < nump) {
       Vertex[] newBuffer = new Vertex[nump];
@@ -492,6 +496,12 @@ public class QuickHull3D {
     numPoints = nump;
   }
 
+  /**
+   * Populates the internal vertex buffer from a flat coordinate array.
+   *
+   * @param coords flat array of x,y,z coordinates (length >= 3*nump)
+   * @param nump   number of points to load
+   */
   protected void setPoints(double[] coords, int nump) {
     for (int i = 0; i < nump; i++) {
       Vertex vtx = pointBuffer[i];
@@ -500,6 +510,12 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * Populates the internal vertex buffer from an array of Point3d.
+   *
+   * @param pnts array of Point3d
+   * @param nump number of points to load
+   */
   protected void setPoints(Point3d[] pnts, int nump) {
     for (int i = 0; i < nump; i++) {
       Vertex vtx = pointBuffer[i];
@@ -508,6 +524,10 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * Computes per-axis min/max vertices and sets characteristic length and tolerance.
+   * Used to seed the initial simplex and numerical thresholds.
+   */
   protected void computeMaxAndMin() {
     Vector3d max = new Vector3d();
     Vector3d min = new Vector3d();
@@ -556,7 +576,10 @@ public class QuickHull3D {
   }
 
   /**
-   * Creates the initial simplex from which the hull will be built.
+   * Creates the initial tetrahedral simplex from extremal points, throwing if points are
+   * coincident/colinear/coplanar within the current tolerance.
+   *
+   * @throws IllegalArgumentException if a non-degenerate simplex cannot be formed
    */
   protected void createInitialSimplex() throws IllegalArgumentException {
     double max = 0;
@@ -867,6 +890,11 @@ public class QuickHull3D {
     } while (hedge != face.he0);
   }
 
+  /**
+   * Assigns previously unclaimed vertices to the newly created faces most distant above them.
+   *
+   * @param newFaces list of newly created faces during the current expansion
+   */
   protected void resolveUnclaimedPoints(FaceList newFaces) {
     Vertex vtxNext = unclaimed.first();
     for (Vertex vtx = vtxNext; vtx != null; vtx = vtxNext) {
@@ -899,6 +927,13 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * Removes all outside vertices from a face and either discards them as unclaimed
+   * or reassigns them to an absorbing face if they lie above it.
+   *
+   * @param face          face whose outside vertices are being removed
+   * @param absorbingFace face to receive reassigned vertices; may be null
+   */
   protected void deleteFacePoints(Face face, Face absorbingFace) {
     Vertex faceVtxs = removeAllPointsFromFace(face);
     if (faceVtxs != null) {
@@ -923,10 +958,25 @@ public class QuickHull3D {
 
   private static final int NONCONVEX = 2;
 
+  /**
+   * Computes the signed distance from the centroid of the opposite face across this edge
+   * to the plane of this edge's face. Positive indicates non-convexity.
+   *
+   * @param he the half-edge whose adjacent faces are considered
+   * @return signed distance of opposite face centroid to this face plane
+   */
   protected double oppFaceDistance(HalfEdge he) {
     return he.face.distanceToPlane(he.opposite.face.getCentroid());
   }
 
+  /**
+   * Attempts to merge a face with one of its adjacent faces if they are sufficiently
+   * coplanar or non-convex per the specified mergeType.
+   *
+   * @param face      the face under consideration
+   * @param mergeType NONCONVEX or NONCONVEX_WRT_LARGER_FACE
+   * @return true if a merge occurred; false otherwise
+   */
   private boolean doAdjacentMerge(Face face, int mergeType) {
     HalfEdge hedge = face.he0;
 
@@ -982,6 +1032,15 @@ public class QuickHull3D {
     return false;
   }
 
+  /**
+   * Recursively computes the horizon (boundary) edges visible from a given eye point,
+   * marking visited faces deleted and collecting the bordering edges.
+   *
+   * @param eyePnt  the point from which visibility is tested
+   * @param edge0   starting edge within the face (may be null to start at edge 0)
+   * @param face    the current face being visited
+   * @param horizon output collection of horizon half-edges
+   */
   protected void calculateHorizon(Point3d eyePnt, HalfEdge edge0, Face face, Vector<HalfEdge> horizon) {
     // oldFaces.add (face);
     deleteFacePoints(face, null);
@@ -1012,6 +1071,14 @@ public class QuickHull3D {
     } while (edge != edge0);
   }
 
+  /**
+   * Creates a new triangular face adjoining an existing horizon edge using the eye vertex,
+   * links it into the hull, and returns the half-edge from eyeVtx to he.tail().
+   *
+   * @param eyeVtx the vertex being added to the hull
+   * @param he     a horizon half-edge to adjoin
+   * @return the half-edge associated with the new face for chaining
+   */
   private HalfEdge addAdjoiningFace(Vertex eyeVtx, HalfEdge he) {
     Face face = Face.createTriangle(eyeVtx, he.tail(), he.head());
     faces.add(face);
@@ -1019,6 +1086,14 @@ public class QuickHull3D {
     return face.getEdge(0);
   }
 
+  /**
+   * Builds and links the ring of new faces around the horizon using the eye vertex,
+   * recording them in the provided newFaces list.
+   *
+   * @param newFaces list that will collect the created faces
+   * @param eyeVtx   the vertex being added to the hull
+   * @param horizon  ordered list of horizon half-edges
+   */
   protected void addNewFaces(FaceList newFaces, Vertex eyeVtx, Vector<HalfEdge> horizon) {
     newFaces.clear();
 
@@ -1041,6 +1116,12 @@ public class QuickHull3D {
     hedgeSideBegin.next.setOpposite(hedgeSidePrev);
   }
 
+  /**
+   * Selects the next vertex to add: the farthest point above some face that currently
+   * has outside points claimed.
+   *
+   * @return the next Vertex to add to the hull, or null if none remain
+   */
   protected Vertex nextPointToAdd() {
     if (!claimed.isEmpty()) {
       Face eyeFace = claimed.first().face;
@@ -1059,6 +1140,12 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * Incorporates the specified eye vertex into the hull: computes the horizon, creates
+   * new faces, merges non-convex adjacencies, and resolves/reassigns outside points.
+   *
+   * @param eyeVtx the vertex to add to the hull
+   */
   protected void addPointToHull(Vertex eyeVtx) {
     horizon.clear();
     unclaimed.clear();
@@ -1095,6 +1182,10 @@ public class QuickHull3D {
     resolveUnclaimedPoints(newFaces);
   }
 
+  /**
+   * Builds the full convex hull by repeatedly selecting and adding extreme points
+   * until no outside points remain; then reindexes faces and vertices.
+   */
   protected void buildHull() {
     int cnt = 0;
     Vertex eyeVtx;
@@ -1110,6 +1201,12 @@ public class QuickHull3D {
     logger.fine("hull done");
   }
 
+  /**
+   * Marks all vertices around a face's boundary with the provided integer mark value.
+   *
+   * @param face the face whose boundary vertices will be marked
+   * @param mark the mark value to assign
+   */
   private void markFaceVertices(Face face, int mark) {
     HalfEdge he0 = face.getFirstEdge();
     HalfEdge he = he0;
@@ -1119,6 +1216,10 @@ public class QuickHull3D {
     } while (he != he0);
   }
 
+  /**
+   * Removes deleted faces, marks active vertices, and assigns new contiguous indices
+   * to both faces and vertices for compact output.
+   */
   protected void reindexFacesAndVertices() {
     for (int i = 0; i < numPoints; i++) {
       pointBuffer[i].index = -1;
@@ -1145,6 +1246,15 @@ public class QuickHull3D {
     }
   }
 
+  /**
+   * Verifies that a face is locally convex by checking distances between opposite face
+   * centroids and face planes, and ensuring no redundant vertices exist.
+   *
+   * @param face the face to validate
+   * @param tol  distance tolerance for convexity checks
+   * @param ps   optional PrintStream for diagnostics (null to suppress)
+   * @return true if the face passes local convexity checks
+   */
   protected boolean checkFaceConvexity(Face face, double tol, PrintStream ps) {
     double dist;
     HalfEdge he = face.he0;
@@ -1176,6 +1286,13 @@ public class QuickHull3D {
     return true;
   }
 
+  /**
+   * Performs convexity validation across all visible faces using a specified tolerance.
+   *
+   * @param tol distance tolerance for convexity checks
+   * @param ps  optional PrintStream for diagnostics (null to suppress)
+   * @return true if all visible faces pass convexity checks
+   */
   protected boolean checkFaces(double tol, PrintStream ps) {
     // check edge convexity
     boolean convex = true;

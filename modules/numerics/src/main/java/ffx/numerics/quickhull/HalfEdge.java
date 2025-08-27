@@ -37,40 +37,13 @@
 // ******************************************************************************
 package ffx.numerics.quickhull;
 
-/*
- * #%L
- * A Robust 3D Convex Hull Algorithm in Java
- * %%
- * Copyright (C) 2004 - 2014 John E. Lloyd
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-
 /**
  * Represents the half-edges that surround each face in a counter-clockwise
  * direction.
  *
  * @author John E. Lloyd, Fall 2004
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class HalfEdge {
 
@@ -111,6 +84,10 @@ public class HalfEdge {
     face = f;
   }
 
+  /**
+   * Constructs an uninitialized HalfEdge.
+   * Fields may be set later via mutators.
+   */
   public HalfEdge() {
   }
 
@@ -217,7 +194,7 @@ public class HalfEdge {
    */
   public String getVertexString() {
     if (tail() != null) {
-      return "" + tail().index + "-" + head().index;
+      return tail().index + "-" + head().index;
     } else {
       return "?-" + head().index;
     }
@@ -248,30 +225,4 @@ public class HalfEdge {
       return -1;
     }
   }
-
-  // /**
-  // * Computes nrml . (del0 X del1), where del0 and del1
-  // * are the direction vectors along this halfEdge, and the
-  // * halfEdge he1.
-  // *
-  // * A product > 0 indicates a left turn WRT the normal
-  // */
-  // public double turnProduct (HalfEdge he1, Vector3d nrml)
-  // {
-  // Point3d pnt0 = tail().pnt;
-  // Point3d pnt1 = head().pnt;
-  // Point3d pnt2 = he1.head().pnt;
-
-  // double del0x = pnt1.x - pnt0.x;
-  // double del0y = pnt1.y - pnt0.y;
-  // double del0z = pnt1.z - pnt0.z;
-
-  // double del1x = pnt2.x - pnt1.x;
-  // double del1y = pnt2.y - pnt1.y;
-  // double del1z = pnt2.z - pnt1.z;
-
-  // return (nrml.x*(del0y*del1z - del0z*del1y) +
-  // nrml.y*(del0z*del1x - del0x*del1z) +
-  // nrml.z*(del0x*del1y - del0y*del1x));
-  // }
 }

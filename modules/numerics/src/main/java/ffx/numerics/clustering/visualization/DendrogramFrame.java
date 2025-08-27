@@ -50,8 +50,21 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
 
+/**
+ * Simple Swing JFrame that hosts a DendrogramPanel to visualize a clustering
+ * result. Provides a demo main method to render example dendrograms.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class DendrogramFrame extends JFrame {
 
+  /**
+   * Creates a frame displaying a dendrogram for the provided clustering result.
+   *
+   * @param cluster the root Cluster to visualize
+   */
   public DendrogramFrame(Cluster cluster) {
     setSize(500, 400);
     setLocation(100, 200);
@@ -74,6 +87,11 @@ public class DendrogramFrame extends JFrame {
     setVisible(true);
   }
 
+  /**
+   * Demo entry point that creates two frames with example dendrograms.
+   *
+   * @param args CLI arguments (unused)
+   */
   public static void main(String[] args) {
     LinkageStrategy strategy = new CompleteLinkageStrategy();
     Frame f1 = new DendrogramFrame(createSampleCluster(strategy));
@@ -84,6 +102,12 @@ public class DendrogramFrame extends JFrame {
     f2.setLocation(600, 200);
   }
 
+  /**
+   * Creates a small sample Cluster for demonstration purposes.
+   *
+   * @param strategy the LinkageStrategy used by the clustering algorithm
+   * @return a sample root Cluster
+   */
   private static Cluster createSampleCluster(LinkageStrategy strategy) {
     double[][] distances = new double[][]{
         {1, 9, 7, 11, 14, 4, 3, 8, 10, 9, 2, 8, 6, 13, 10}
@@ -95,6 +119,12 @@ public class DendrogramFrame extends JFrame {
     return cluster;
   }
 
+  /**
+   * Creates a second sample Cluster for demonstration purposes.
+   *
+   * @param strategy the LinkageStrategy used by the clustering algorithm
+   * @return a sample root Cluster
+   */
   private static Cluster createSampleCluster2(LinkageStrategy strategy) {
     double[][] distances = new double[][]{
         {1, 9, 7, 11, 14, 12, 4, 3, 8, 10, 12, 9, 2, 8, 9, 6, 13, 11, 10, 7, 2}

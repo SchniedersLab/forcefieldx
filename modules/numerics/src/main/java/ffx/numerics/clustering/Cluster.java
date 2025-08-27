@@ -40,6 +40,16 @@ package ffx.numerics.clustering;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a node in a hierarchical clustering tree (dendrogram).
+ * A Cluster may be a leaf (no children) or an internal node with two children.
+ * It tracks its name, parent, children, the list of leaf names contained beneath it,
+ * and an associated Distance used to store linkage distance and aggregate weight.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class Cluster {
 
   private String name;
@@ -48,78 +58,159 @@ public class Cluster {
 
   private List<Cluster> children;
 
-  private List<String> leafNames;
+  private final List<String> leafNames;
 
   private Distance distance = new Distance();
 
 
+  /**
+   * Creates a new Cluster with the provided name.
+   *
+   * @param name the cluster name
+   */
   public Cluster(String name) {
     this.name = name;
-    leafNames = new ArrayList<String>();
+    leafNames = new ArrayList<>();
   }
 
+  /**
+   * Gets the Distance metadata for this cluster (linkage distance and weight).
+   *
+   * @return the Distance object
+   */
   public Distance getDistance() {
     return distance;
   }
 
+  /**
+   * Convenience accessor for this cluster's aggregate weight.
+   *
+   * @return the weight value stored in the Distance
+   */
   public Double getWeightValue() {
     return distance.getWeight();
   }
 
+  /**
+   * Convenience accessor for this cluster's linkage distance value.
+   *
+   * @return the linkage distance, or null if unset
+   */
   public Double getDistanceValue() {
     return distance.getDistance();
   }
 
+  /**
+   * Sets the Distance metadata for this cluster.
+   *
+   * @param distance the Distance to set
+   */
   public void setDistance(Distance distance) {
     this.distance = distance;
   }
 
+  /**
+   * Returns the list of child clusters, creating it lazily if needed.
+   *
+   * @return mutable list of child clusters (possibly empty)
+   */
   public List<Cluster> getChildren() {
     if (children == null) {
-      children = new ArrayList<Cluster>();
+      children = new ArrayList<>();
     }
 
     return children;
   }
 
+  /**
+   * Adds a single leaf name contained within this cluster's subtree.
+   *
+   * @param lname the leaf name to add
+   */
   public void addLeafName(String lname) {
     leafNames.add(lname);
   }
 
+  /**
+   * Appends a list of leaf names to this cluster's leaf name list.
+   *
+   * @param lnames list of leaf names to append
+   */
   public void appendLeafNames(List<String> lnames) {
     leafNames.addAll(lnames);
   }
 
+  /**
+   * Returns the list of leaf names beneath this cluster.
+   *
+   * @return list of leaf names
+   */
   public List<String> getLeafNames() {
     return leafNames;
   }
 
+  /**
+   * Sets the list of child clusters for this node.
+   *
+   * @param children the children to set
+   */
   public void setChildren(List<Cluster> children) {
     this.children = children;
   }
 
+  /**
+   * Gets the parent cluster of this node, or null if this is the root.
+   *
+   * @return the parent cluster, or null
+   */
   public Cluster getParent() {
     return parent;
   }
 
+  /**
+   * Sets the parent cluster of this node.
+   *
+   * @param parent the parent cluster to set
+   */
   public void setParent(Cluster parent) {
     this.parent = parent;
   }
 
 
+  /**
+   * Gets the name of this cluster.
+   *
+   * @return the cluster name
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Sets the name of this cluster.
+   *
+   * @param name the name to set
+   */
   public void setName(String name) {
     this.name = name;
   }
 
+  /**
+   * Adds a child cluster to this node.
+   *
+   * @param cluster the child to add
+   */
   public void addChild(Cluster cluster) {
     getChildren().add(cluster);
 
   }
 
+  /**
+   * Tests whether this cluster has the specified child.
+   *
+   * @param cluster the child to look for
+   * @return true if present; false otherwise
+   */
   public boolean contains(Cluster cluster) {
     return getChildren().contains(cluster);
   }
@@ -142,13 +233,8 @@ public class Cluster {
     }
     Cluster other = (Cluster) obj;
     if (name == null) {
-      if (other.name != null) {
-        return false;
-      }
-    } else if (!name.equals(other.name)) {
-      return false;
-    }
-    return true;
+      return other.name == null;
+    } else return name.equals(other.name);
   }
 
   @Override
@@ -156,14 +242,31 @@ public class Cluster {
     return (name == null) ? 0 : name.hashCode();
   }
 
+  /**
+   * Returns true if this cluster is a leaf (has no children).
+   *
+   * @return true if leaf; false otherwise
+   */
   public boolean isLeaf() {
-    return getChildren().size() == 0;
+    return getChildren().isEmpty();
   }
 
+  /**
+   * Counts the number of leaf descendants beneath this cluster.
+   *
+   * @return number of leaf nodes
+   */
   public int countLeafs() {
     return countLeafs(this, 0);
   }
 
+  /**
+   * Recursive helper to count leaves under the specified node.
+   *
+   * @param node  the node to inspect
+   * @param count running count of leaves
+   * @return updated count including leaves beneath node
+   */
   public int countLeafs(Cluster node, int count) {
     if (node.isLeaf()) count++;
     for (Cluster child : node.getChildren()) {
@@ -172,6 +275,11 @@ public class Cluster {
     return count;
   }
 
+  /**
+   * Prints this cluster and its subtree to the console with indentation.
+   *
+   * @param indent number of indentation levels for this node
+   */
   public void toConsole(int indent) {
     for (int i = 0; i < indent; i++) {
       System.out.print("  ");
@@ -184,42 +292,53 @@ public class Cluster {
     }
   }
 
+  /**
+   * Serializes this cluster subtree into a simple Newick-like string.
+   * The first child is annotated with distance, the second with weight.
+   *
+   * @param indent indentation spaces to include (for readability)
+   * @return a Newick-like representation of this subtree
+   */
   public String toNewickString(int indent) {
-    String cdtString = "";
-    if (!isLeaf()) cdtString += "(";
+    StringBuilder cdtString = new StringBuilder();
+    if (!isLeaf()) cdtString.append("(");
 
-    for (int i = 0; i < indent; i++) cdtString += " ";
+    cdtString.append(" ".repeat(Math.max(0, indent)));
 
 
     if (isLeaf()) {
-      cdtString += getName();
+      cdtString.append(getName());
     }
 
     List<Cluster> children = getChildren();
 
     boolean firstChild = true;
     for (Cluster child : children) {
-      cdtString += child.toNewickString(indent);
+      cdtString.append(child.toNewickString(indent));
       String distanceString = distance.getDistance().toString().replace(",", ".");
       String weightString = distance.getWeight().toString().replace(",", ".");
-      if (firstChild) cdtString += ":" + distanceString + ",";
-      else cdtString += ":" + weightString;
+      if (firstChild) cdtString.append(":").append(distanceString).append(",");
+      else cdtString.append(":").append(weightString);
 
       firstChild = false;
     }
 
-    for (int i = 0; i < indent; i++)
-      cdtString += " ";
+    cdtString.append(" ".repeat(Math.max(0, indent)));
 
-    if (!isLeaf()) cdtString += ")";
+    if (!isLeaf()) cdtString.append(")");
 
-    return cdtString;
+    return cdtString.toString();
   }
 
+  /**
+   * Computes the cumulative distance down the leftmost branch of this cluster.
+   *
+   * @return total distance along the first-child path
+   */
   public double getTotalDistance() {
-    Double dist = getDistance() == null ? 0 : getDistance().getDistance();
-    if (getChildren().size() > 0) {
-      dist += children.get(0).getTotalDistance();
+    double dist = getDistance() == null ? 0 : getDistance().getDistance();
+    if (!getChildren().isEmpty()) {
+      dist += children.getFirst().getTotalDistance();
     }
     return dist;
 

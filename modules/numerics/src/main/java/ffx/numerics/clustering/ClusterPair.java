@@ -37,50 +37,106 @@
 // ******************************************************************************
 package ffx.numerics.clustering;
 
+/**
+ * Immutable-like holder describing a pair of clusters and the linkage distance
+ * between them; used as entries within the DistanceMap during agglomeration.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class ClusterPair implements Comparable<ClusterPair> {
 
   private Cluster lCluster;
   private Cluster rCluster;
   private Double linkageDistance;
 
+  /**
+   * Creates an empty ClusterPair.
+   */
   public ClusterPair() {
   }
 
+  /**
+   * Creates a ClusterPair linking two clusters at a given distance.
+   *
+   * @param left     the left cluster
+   * @param right    the right cluster
+   * @param distance the linkage distance between clusters
+   */
   public ClusterPair(Cluster left, Cluster right, Double distance) {
     lCluster = left;
     rCluster = right;
     linkageDistance = distance;
   }
 
+  /**
+   * Returns the opposite cluster of the provided one in this pair.
+   *
+   * @param c one cluster in this pair
+   * @return the other cluster in the pair
+   */
   public Cluster getOtherCluster(Cluster c) {
     return lCluster == c ? rCluster : lCluster;
   }
 
+  /**
+   * Gets the left cluster.
+   *
+   * @return the left cluster
+   */
   public Cluster getlCluster() {
     return lCluster;
   }
 
+  /**
+   * Sets the left cluster.
+   *
+   * @param lCluster the left cluster
+   */
   public void setlCluster(Cluster lCluster) {
     this.lCluster = lCluster;
   }
 
+  /**
+   * Gets the right cluster.
+   *
+   * @return the right cluster
+   */
   public Cluster getrCluster() {
     return rCluster;
   }
 
+  /**
+   * Sets the right cluster.
+   *
+   * @param rCluster the right cluster
+   */
   public void setrCluster(Cluster rCluster) {
     this.rCluster = rCluster;
   }
 
+  /**
+   * Gets the linkage distance.
+   *
+   * @return the linkage distance
+   */
   public Double getLinkageDistance() {
     return linkageDistance;
   }
 
+  /**
+   * Sets the linkage distance.
+   *
+   * @param distance the linkage distance to set
+   */
   public void setLinkageDistance(Double distance) {
     this.linkageDistance = distance;
   }
 
   /**
+   * Creates a new ClusterPair with left and right clusters swapped.
+   *
    * @return a new ClusterPair with the two left/right inverted
    */
   public ClusterPair reverse() {
@@ -88,6 +144,9 @@ public class ClusterPair implements Comparable<ClusterPair> {
   }
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compareTo(ClusterPair o) {
     int result;
@@ -102,10 +161,22 @@ public class ClusterPair implements Comparable<ClusterPair> {
     return result;
   }
 
+  /**
+   * Agglomerates left and right clusters under an auto-generated name.
+   *
+   * @param clusterIdx index appended to the generated cluster name
+   * @return the new parent Cluster
+   */
   public Cluster agglomerate(int clusterIdx) {
     return agglomerate("clstr#" + clusterIdx);
   }
 
+  /**
+   * Agglomerates left and right clusters into a new parent with the given name.
+   *
+   * @param name name of the new parent cluster
+   * @return the new parent Cluster
+   */
   public Cluster agglomerate(String name) {
     Cluster cluster = new Cluster(name);
     cluster.setDistance(new Distance(getLinkageDistance()));
@@ -125,6 +196,9 @@ public class ClusterPair implements Comparable<ClusterPair> {
     return cluster;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -132,7 +206,7 @@ public class ClusterPair implements Comparable<ClusterPair> {
       sb.append(lCluster.getName());
     }
     if (rCluster != null) {
-      if (sb.length() > 0) {
+      if (!sb.isEmpty()) {
         sb.append(" + ");
       }
       sb.append(rCluster.getName());

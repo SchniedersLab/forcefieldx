@@ -39,35 +39,64 @@ package ffx.numerics.clustering.visualization;
 
 /**
  * Immutable Virtual coordinate.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class VCoord {
+public record VCoord(double x, double y) {
 
-  private double x;
-  private double y;
-
-  public VCoord(double x, double y) {
-    this.x = x;
-    this.y = y;
+  /**
+   * Constructs an immutable virtual coordinate with the given X and Y values.
+   *
+   * @param x the X value in model space
+   * @param y the Y value in model space
+   */
+  public VCoord {
   }
 
-  public double getX() {
+  /**
+   * Returns the X coordinate value in model space.
+   *
+   * @return the X value
+   */
+  @Override
+  public double x() {
     return x;
   }
 
-  public double getY() {
+  /**
+   * Returns the Y coordinate value in model space.
+   *
+   * @return the Y value
+   */
+  @Override
+  public double y() {
     return y;
   }
 
+  /**
+   * Compares this coordinate to another object for equality. Two VCoord instances are
+   * considered equal if both their X and Y values are exactly equal.
+   *
+   * @param obj the object to compare against
+   * @return true if obj is a VCoord with identical X and Y; false otherwise
+   */
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof VCoord) {
-      VCoord other = (VCoord) obj;
-      return x == other.getX() && y == other.getY();
+    if (obj instanceof VCoord(double x1, double y1)) {
+      return x == x1 && y == y1;
     } else {
       return false;
     }
   }
 
+  /**
+   * Returns a string representation of this coordinate in the form "Coord(x,y)"
+   * with values formatted to three decimal places.
+   *
+   * @return a human-readable string of this coordinate
+   */
   @Override
   public String toString() {
     return String.format("Coord(%.3f,%.3f)", x, y);

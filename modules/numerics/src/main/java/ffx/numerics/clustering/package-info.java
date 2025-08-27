@@ -35,58 +35,27 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.numerics.quickhull;
 
 /**
- * Maintains a single-linked list of faces for use by QuickHull3D.
+ * The clustering package provides hierarchical agglomerative clustering utilities,
+ * including linkage strategies (single, complete, average, weighted), distance map
+ * management, and supporting data structures and algorithms.
  *
- * @author John E. Lloyd, Fall 2004
+ * <p>These classes are used to construct clustering trees from distance matrices and
+ * to produce flat or weighted clusterings as needed.</p>
+ * <p>
+ * Original copyright and license:
+ * Copyright 2013 Lars Behnke
+ * <p>
+ * Apache License, Version 2.0
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @author Lars Behnke, 2013
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class FaceList {
+@ParametersAreNonnullByDefault
+package ffx.numerics.clustering;
 
-  private Face head;
-
-  private Face tail;
-
-  /**
-   * Clears this list.
-   */
-  public void clear() {
-    head = tail = null;
-  }
-
-  /**
-   * Adds a face to the end of this list.
-   *
-   * @param vtx face to add
-   */
-  public void add(Face vtx) {
-    if (head == null) {
-      head = vtx;
-    } else {
-      tail.next = vtx;
-    }
-    vtx.next = null;
-    tail = vtx;
-  }
-
-  /**
-   * Returns the first face in this list (head), or null if empty.
-   *
-   * @return the first Face, or null if the list is empty
-   */
-  public Face first() {
-    return head;
-  }
-
-  /**
-   * Returns true if this list is empty.
-   *
-   * @return true if there are no faces in the list
-   */
-  public boolean isEmpty() {
-    return head == null;
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

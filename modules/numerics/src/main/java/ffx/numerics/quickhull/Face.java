@@ -37,35 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.quickhull;
 
-/*
- * #%L
- * A Robust 3D Convex Hull Algorithm in Java
- * %%
- * Copyright (C) 2004 - 2014 John E. Lloyd
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-
 /**
  * Basic triangular face used to form the hull.
  * <p>
@@ -74,6 +45,8 @@ package ffx.numerics.quickhull;
  * which surround the face in a counter-clockwise direction.
  *
  * @author John E. Lloyd, Fall 2004
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class Face {
 
@@ -87,7 +60,7 @@ public class Face {
 
   protected HalfEdge he0;
 
-  protected int mark = VISIBLE;
+  protected int mark;
 
   protected Face next;
 
@@ -97,9 +70,9 @@ public class Face {
 
   protected double planeOffset;
 
-  private Point3d centroid;
+  private final Point3d centroid;
 
-  private Vector3d normal;
+  private final Vector3d normal;
 
   public Face() {
     normal = new Vector3d();
@@ -107,11 +80,19 @@ public class Face {
     mark = VISIBLE;
   }
 
+  /**
+   * Creates a Face by linking the specified indices of a vertex array into a closed
+   * counter-clockwise half-edge loop and computing its normal and centroid.
+   *
+   * @param vtxArray array of vertices
+   * @param indices  indices into vtxArray specifying the face vertices in CCW order
+   * @return the newly created Face
+   */
   public static Face create(Vertex[] vtxArray, int[] indices) {
     Face face = new Face();
     HalfEdge hePrev = null;
-    for (int i = 0; i < indices.length; i++) {
-      HalfEdge he = new HalfEdge(vtxArray[indices[i]], face);
+    for (int index : indices) {
+      HalfEdge he = new HalfEdge(vtxArray[index], face);
       if (hePrev != null) {
         he.setPrev(hePrev);
         hePrev.setNext(he);
@@ -128,16 +109,28 @@ public class Face {
     return face;
   }
 
+  /**
+   * Convenience method to create a triangular Face from three vertices.
+   *
+   * @param v0 first vertex
+   * @param v1 second vertex
+   * @param v2 third vertex
+   * @return the newly created triangular Face
+   */
   public static Face createTriangle(Vertex v0, Vertex v1, Vertex v2) {
     return createTriangle(v0, v1, v2, 0);
   }
 
   /**
-   * Constructs a triangule Face from vertices v0, v1, and v2.
+   * Constructs a triangular Face from vertices v0, v1, and v2 and computes its
+   * normal and centroid. If the computed area is below minArea, the normal is
+   * adjusted for robustness against near-collinearity.
    *
-   * @param v0 first vertex
-   * @param v1 second vertex
-   * @param v2 third vertex
+   * @param v0      first vertex
+   * @param v1      second vertex
+   * @param v2      third vertex
+   * @param minArea minimum area threshold used to stabilize the normal
+   * @return the newly created triangular Face
    */
   public static Face createTriangle(Vertex v0, Vertex v1, Vertex v2, double minArea) {
     Face face = new Face();
@@ -159,6 +152,12 @@ public class Face {
     return face;
   }
 
+  /**
+   * Computes the centroid (arithmetic mean of vertices) of this face into the
+   * provided point.
+   *
+   * @param centroid output parameter to receive the centroid
+   */
   public void computeCentroid(Point3d centroid) {
     centroid.setZero();
     HalfEdge he = he0;
@@ -169,6 +168,13 @@ public class Face {
     centroid.scale(1 / (double) numVerts);
   }
 
+  /**
+   * Computes a unit-length normal vector for this face using the vertex winding
+   * and writes it into the provided vector. Also updates the face area and number
+   * of vertices encountered.
+   *
+   * @param normal output parameter to receive the unit normal
+   */
   public void computeNormal(Vector3d normal) {
     HalfEdge he1 = he0.next;
     HalfEdge he2 = he1.next;
@@ -206,6 +212,14 @@ public class Face {
     normal.scale(1 / area);
   }
 
+  /**
+   * Computes a unit-length normal for this face, and if the preliminary area is
+   * below the specified minArea, adjusts the normal to be more orthogonal to the
+   * longest edge to improve robustness.
+   *
+   * @param normal  output parameter to receive the unit normal
+   * @param minArea minimum area threshold used to stabilize the normal computation
+   */
   public void computeNormal(Vector3d normal, double minArea) {
     computeNormal(normal);
 
@@ -269,6 +283,11 @@ public class Face {
     return null;
   }
 
+  /**
+   * Returns the centroid previously computed for this face.
+   *
+   * @return the centroid point
+   */
   public Point3d getCentroid() {
     return centroid;
   }
@@ -292,6 +311,11 @@ public class Face {
     return he;
   }
 
+  /**
+   * Returns the first half-edge of this face (the start of the circular list).
+   *
+   * @return the first HalfEdge in the face
+   */
   public HalfEdge getFirstEdge() {
     return he0;
   }
@@ -305,6 +329,12 @@ public class Face {
     return normal;
   }
 
+  /**
+   * Writes the vertex indices of this face into the provided array in CCW order.
+   * The array must be large enough to hold numVertices() entries.
+   *
+   * @param idxs output array receiving the vertex indices
+   */
   public void getVertexIndices(int[] idxs) {
     HalfEdge he = he0;
     int i = 0;
@@ -314,20 +344,35 @@ public class Face {
     } while (he != he0);
   }
 
+  /**
+   * Returns a space-separated string of the vertex indices defining this face
+   * in counter-clockwise order.
+   *
+   * @return string listing the vertex indices in CCW order
+   */
   public String getVertexString() {
-    String s = null;
+    StringBuilder s = null;
     HalfEdge he = he0;
     do {
       if (s == null) {
-        s = "" + he.head().index;
+        s = new StringBuilder("" + he.head().index);
       } else {
-        s += " " + he.head().index;
+        s.append(" ").append(he.head().index);
       }
       he = he.next;
     } while (he != he0);
-    return s;
+    return s.toString();
   }
 
+  /**
+   * Merges this face with the adjacent face across the specified half-edge if possible.
+   * Updates connectivity, recomputes normals/centroids, and records any faces that
+   * become redundant in the provided discarded array.
+   *
+   * @param hedgeAdj the half-edge along which to merge with the adjacent face
+   * @param discarded an output array to collect faces that are deleted by the merge
+   * @return the number of faces recorded in discarded (0, 1, or 2)
+   */
   public int mergeAdjacentFace(HalfEdge hedgeAdj, Face[] discarded) {
     Face oppFace = hedgeAdj.oppositeFace();
     int numDiscarded = 0;
@@ -382,10 +427,23 @@ public class Face {
     return numDiscarded;
   }
 
+  /**
+   * Returns the number of vertices (half-edges) bounding this face.
+   *
+   * @return the vertex count of this face
+   */
   public int numVertices() {
     return numVerts;
   }
 
+  /**
+   * Triangulates this (convex polygonal) face into a fan of triangles sharing the first
+   * vertex. Newly created faces are added to newFaces, and appropriate opposite links are
+   * established. Normals/centroids are updated using the given minArea for stability.
+   *
+   * @param newFaces list that collects newly created triangular faces
+   * @param minArea  minimum area threshold used when computing normals
+   */
   public void triangulate(FaceList newFaces, double minArea) {
     HalfEdge hedge;
 
@@ -428,12 +486,13 @@ public class Face {
   }
 
   /**
-   * return the squared area of the triangle defined by the half edge hedge0
-   * and the point at the head of hedge1.
+   * Computes the squared area of the triangle defined by hedge0 (tail->head)
+   * and the point at the head of hedge1. Useful for robust comparisons without
+   * taking a square root.
    *
-   * @param hedge0
-   * @param hedge1
-   * @return
+   * @param hedge0 the reference half-edge whose tail and head form two triangle vertices
+   * @param hedge1 a half-edge providing the third vertex via its head
+   * @return the squared area of the resulting triangle
    */
   public double areaSquared(HalfEdge hedge0, HalfEdge hedge1) {
     Point3d p0 = hedge0.tail().pnt;
@@ -521,6 +580,12 @@ public class Face {
     return discardedFace;
   }
 
+  /**
+   * Performs sanity checks on this face's topology and geometry, verifying
+   * opposite half-edges, face markings, and vertex counts.
+   *
+   * @throws InternalErrorException if inconsistencies are detected
+   */
   void checkConsistency() {
     // do a sanity check on the face
     HalfEdge hedge = he0;

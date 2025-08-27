@@ -35,58 +35,35 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.numerics.quickhull;
 
 /**
- * Maintains a single-linked list of faces for use by QuickHull3D.
+ * The Quickhull package provides a 3D convex hull implementation and supporting
+ * data structures (faces, half-edges, vertices, points and vectors).
  *
- * @author John E. Lloyd, Fall 2004
+ * <p>Classes in this package are used to construct convex hulls from point sets
+ * and to query resulting hull vertices and faces.</p>
+ * <p>
+ * Adapted from the Quickhull3D library, available at:
+ * https://github.com/Quickhull3d/quickhull3d
+ * <p>
+ * Copyright (c) 2004-2014, John E. Lloyd
+ * All rights reserved.
+ * <p>
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * <p>
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * <p>
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * @author John E. Lloyd
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class FaceList {
+@ParametersAreNonnullByDefault
+package ffx.numerics.quickhull;
 
-  private Face head;
-
-  private Face tail;
-
-  /**
-   * Clears this list.
-   */
-  public void clear() {
-    head = tail = null;
-  }
-
-  /**
-   * Adds a face to the end of this list.
-   *
-   * @param vtx face to add
-   */
-  public void add(Face vtx) {
-    if (head == null) {
-      head = vtx;
-    } else {
-      tail.next = vtx;
-    }
-    vtx.next = null;
-    tail = vtx;
-  }
-
-  /**
-   * Returns the first face in this list (head), or null if empty.
-   *
-   * @return the first Face, or null if the list is empty
-   */
-  public Face first() {
-    return head;
-  }
-
-  /**
-   * Returns true if this list is empty.
-   *
-   * @return true if there are no faces in the list
-   */
-  public boolean isEmpty() {
-    return head == null;
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

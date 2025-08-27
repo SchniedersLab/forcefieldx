@@ -37,37 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.quickhull;
 
-/*
- * #%L
- * A Robust 3D Convex Hull Algorithm in Java
- * %%
- * Copyright (C) 2004 - 2014 John E. Lloyd
- * %%
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * #L%
- */
-
 /**
- * Maintains a double-linked list of vertices for use by QuickHull3D
+ * Maintains a double-linked list of vertices for use by QuickHull3D.
+ *
+ * @author John E. Lloyd, Fall 2004
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class VertexList {
 
@@ -84,6 +59,8 @@ class VertexList {
 
   /**
    * Adds a vertex to the end of this list.
+   *
+   * @param vtx Vertex to add
    */
   public void add(Vertex vtx) {
     if (head == null) {
@@ -98,6 +75,9 @@ class VertexList {
 
   /**
    * Adds a chain of vertices to the end of this list.
+   * The provided vertex is assumed to be the head of the chain.
+   *
+   * @param vtx head of the vertex chain to append
    */
   public void addAll(Vertex vtx) {
     if (head == null) {
@@ -113,7 +93,9 @@ class VertexList {
   }
 
   /**
-   * Deletes a vertex from this list.
+   * Deletes a single vertex from this list.
+   *
+   * @param vtx the vertex to remove
    */
   public void delete(Vertex vtx) {
     if (vtx.prev == null) {
@@ -129,7 +111,10 @@ class VertexList {
   }
 
   /**
-   * Deletes a chain of vertices from this list.
+   * Deletes a contiguous chain of vertices from this list.
+   *
+   * @param vtx1 the first vertex in the chain to remove
+   * @param vtx2 the last vertex in the chain to remove
    */
   public void delete(Vertex vtx1, Vertex vtx2) {
     if (vtx1.prev == null) {
@@ -145,7 +130,10 @@ class VertexList {
   }
 
   /**
-   * Inserts a vertex into this list before another specificed vertex.
+   * Inserts a vertex into this list before another specified vertex.
+   *
+   * @param vtx  the vertex to insert
+   * @param next the vertex before which to insert vtx
    */
   public void insertBefore(Vertex vtx, Vertex next) {
     vtx.prev = next.prev;
@@ -159,7 +147,9 @@ class VertexList {
   }
 
   /**
-   * Returns the first element in this list.
+   * Returns the first vertex in this list (head), or null if empty.
+   *
+   * @return the first Vertex, or null if the list is empty
    */
   public Vertex first() {
     return head;
@@ -167,6 +157,8 @@ class VertexList {
 
   /**
    * Returns true if this list is empty.
+   *
+   * @return true if there are no vertices in the list
    */
   public boolean isEmpty() {
     return head == null;

@@ -39,7 +39,21 @@ package ffx.numerics.clustering;
 
 import java.util.Collection;
 
+/**
+ * Strategy interface for computing the inter-cluster distance used during agglomeration.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public interface LinkageStrategy {
 
-  public Distance calculateDistance(Collection<Distance> distances);
+  /**
+   * Computes the linkage distance between two clusters from a collection of pairwise distances
+   * between their members (and possibly weights).
+   *
+   * @param distances the collection of pairwise distances contributing to this linkage
+   * @return the aggregated distance according to the strategy
+   */
+  Distance calculateDistance(Collection<Distance> distances);
 }

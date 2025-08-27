@@ -41,44 +41,69 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Performs agglomerative steps to build a clustering hierarchy from an initial set
+ * of singleton clusters and a map of pairwise distances.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class HierarchyBuilder {
 
-  private DistanceMap distances;
-  private List<Cluster> clusters;
+  private final DistanceMap distances;
+  private final List<Cluster> clusters;
   private int globalClusterIndex = 0;
 
+  /**
+   * Gets the DistanceMap used to track inter-cluster distances during agglomeration.
+   *
+   * @return the DistanceMap backing this builder
+   */
   public DistanceMap getDistances() {
     return distances;
   }
 
+  /**
+   * Returns the current working list of clusters (not necessarily a single root).
+   *
+   * @return the list of current clusters
+   */
   public List<Cluster> getClusters() {
     return clusters;
   }
 
+  /**
+   * Constructs a HierarchyBuilder with an initial set of clusters and inter-cluster distances.
+   *
+   * @param clusters  initial clusters (typically singletons)
+   * @param distances map of inter-cluster distances
+   */
   public HierarchyBuilder(List<Cluster> clusters, DistanceMap distances) {
     this.clusters = clusters;
     this.distances = distances;
   }
 
   /**
-   * Returns Flattened clusters, i.e. clusters that are at least apart by a given threshold
+   * Performs agglomeration until the minimal inter-cluster distance exceeds the threshold,
+   * and returns the remaining clusters (flat clustering at that cut).
    *
-   * @param linkageStrategy
-   * @param threshold
-   * @return flat list of clusters
+   * @param linkageStrategy linkage strategy to compute inter-cluster distances
+   * @param threshold       maximum allowed linkage distance for merging
+   * @return flat list of clusters remaining at the specified threshold
    */
   public List<Cluster> flatAgg(LinkageStrategy linkageStrategy, Double threshold) {
     while ((!isTreeComplete()) && (distances.minDist() != null) && (distances.minDist() <= threshold)) {
-      //System.out.println("Cluster Distances: " + distances.toString());
-      //System.out.println("Cluster Size: " + clusters.size());
       agglomerate(linkageStrategy);
     }
-
-    //System.out.println("Final MinDistance: " + distances.minDist());
-    //System.out.println("Tree complete: " + isTreeComplete());
     return clusters;
   }
 
+  /**
+   * Performs one agglomerative step by merging the two closest clusters and updating linkages.
+   *
+   * @param linkageStrategy strategy to compute new distances to the merged cluster
+   */
   public void agglomerate(LinkageStrategy linkageStrategy) {
     ClusterPair minDistLink = distances.removeFirst();
     if (minDistLink != null) {
@@ -95,7 +120,7 @@ public class HierarchyBuilder {
         ClusterPair newLinkage = new ClusterPair();
         newLinkage.setlCluster(iClust);
         newLinkage.setrCluster(newCluster);
-        Collection<Distance> distanceValues = new ArrayList<Distance>();
+        Collection<Distance> distanceValues = new ArrayList<>();
 
         if (link1 != null) {
           Double distVal = link1.getLinkageDistance();
@@ -123,15 +148,26 @@ public class HierarchyBuilder {
     return distances.findByCodePair(c1, c2);
   }
 
+  /**
+   * Returns true if only a single cluster remains (i.e., the hierarchy has a root).
+   *
+   * @return true if a single root cluster remains; false otherwise
+   */
   public boolean isTreeComplete() {
     return clusters.size() == 1;
   }
 
+  /**
+   * Returns the root cluster if the hierarchy is complete.
+   *
+   * @return the single remaining root cluster
+   * @throws RuntimeException if the tree is not complete
+   */
   public Cluster getRootCluster() {
     if (!isTreeComplete()) {
       throw new RuntimeException("No root available");
     }
-    return clusters.get(0);
+    return clusters.getFirst();
   }
 
 }

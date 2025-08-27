@@ -40,8 +40,25 @@ package ffx.numerics.clustering;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Clustering algorithm that consumes a condensed (pdist-style) upper-triangular
+ * distance array to produce hierarchical agglomerative clusters. Supports flat
+ * clustering by threshold; weighted inputs delegate to unweighted behavior.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class PDistClusteringAlgorithm implements ClusteringAlgorithm {
 
+  /**
+   * Performs hierarchical agglomerative clustering using a condensed pdist-like matrix.
+   *
+   * @param distances       a 1 x M array holding the upper-triangular distances in row-major pdist order
+   * @param clusterNames    names corresponding to the N items (M = N*(N-1)/2)
+   * @param linkageStrategy linkage criterion used during agglomeration
+   * @return root Cluster of the resulting hierarchy
+   */
   @Override
   public Cluster performClustering(double[][] distances,
                                    String[] clusterNames, LinkageStrategy linkageStrategy) {
@@ -71,6 +88,16 @@ public class PDistClusteringAlgorithm implements ClusteringAlgorithm {
     return builder.getRootCluster();
   }
 
+  /**
+   * Produces a flat clustering from a condensed distance matrix by agglomerating until the
+   * threshold is exceeded.
+   *
+   * @param distances       a 1 x M condensed distance array (pdist order)
+   * @param clusterNames    names of the N items
+   * @param linkageStrategy linkage criterion used during agglomeration
+   * @param threshold       maximum allowed linkage distance for merging
+   * @return list of clusters at the chosen cut
+   */
   @Override
   public List<Cluster> performFlatClustering(double[][] distances,
                                              String[] clusterNames, LinkageStrategy linkageStrategy, Double threshold) {
@@ -96,12 +123,29 @@ public class PDistClusteringAlgorithm implements ClusteringAlgorithm {
     return builder.flatAgg(linkageStrategy, threshold);
   }
 
+  /**
+   * Weighted variant for condensed inputs; currently delegates to unweighted clustering as
+   * weights are not applied with condensed input in this implementation.
+   *
+   * @param distances       a 1 x M condensed distance array (pdist order)
+   * @param clusterNames    names of the N items
+   * @param weights         weights for the N items (unused)
+   * @param linkageStrategy linkage criterion used during agglomeration
+   * @return root Cluster of the resulting hierarchy
+   */
   @Override
   public Cluster performWeightedClustering(double[][] distances, String[] clusterNames,
                                            double[] weights, LinkageStrategy linkageStrategy) {
     return performClustering(distances, clusterNames, linkageStrategy);
   }
 
+  /**
+   * Builds initial linkages from a condensed upper-triangular distance array.
+   *
+   * @param distances a 1 x M condensed distance array (pdist order)
+   * @param clusters  list of initial singleton clusters
+   * @return a DistanceMap containing inter-cluster linkages
+   */
   private DistanceMap createLinkages(double[][] distances,
                                      List<Cluster> clusters) {
     DistanceMap linkages = new DistanceMap();
@@ -120,8 +164,14 @@ public class PDistClusteringAlgorithm implements ClusteringAlgorithm {
     return linkages;
   }
 
+  /**
+   * Creates initial singleton clusters, one per input name.
+   *
+   * @param clusterNames names for singleton clusters
+   * @return list of newly created singleton clusters
+   */
   private List<Cluster> createClusters(String[] clusterNames) {
-    List<Cluster> clusters = new ArrayList<Cluster>();
+    List<Cluster> clusters = new ArrayList<>();
     for (String clusterName : clusterNames) {
       Cluster cluster = new Cluster(clusterName);
       cluster.addLeafName(clusterName);
@@ -132,6 +182,15 @@ public class PDistClusteringAlgorithm implements ClusteringAlgorithm {
 
   // Credit to this function goes to
   // http://stackoverflow.com/questions/13079563/how-does-condensed-distance-matrix-work-pdist
+
+  /**
+   * Indexing function mapping (i,j) with i>j to the position in the condensed pdist array.
+   *
+   * @param i row index (0-based)
+   * @param j column index (0-based), with i > j
+   * @param n the total number of items (matrix dimension)
+   * @return index into the condensed upper-triangular storage
+   */
   private static int accessFunction(int i, int j, int n) {
     return n * j - j * (j + 1) / 2 + i - 1 - j;
   }

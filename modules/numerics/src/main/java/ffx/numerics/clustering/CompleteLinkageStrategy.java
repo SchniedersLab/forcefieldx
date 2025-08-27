@@ -39,8 +39,22 @@ package ffx.numerics.clustering;
 
 import java.util.Collection;
 
+/**
+ * Linkage strategy that uses the maximum of pairwise distances between cluster
+ * members (complete-linkage / farthest-neighbor).
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class CompleteLinkageStrategy implements LinkageStrategy {
 
+  /**
+   * Computes the complete-linkage distance, i.e., the maximum of provided distances.
+   *
+   * @param distances collection of pairwise distances between cluster members
+   * @return a Distance whose value is the maximum of the inputs
+   */
   @Override
   public Distance calculateDistance(Collection<Distance> distances) {
     double max = Double.NaN;

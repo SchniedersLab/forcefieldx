@@ -39,9 +39,22 @@ package ffx.numerics.clustering;
 
 import java.util.Collection;
 
-// TODO Not working correctly, fix
+/**
+ * Linkage strategy that uses the arithmetic mean of pairwise distances between
+ * cluster members (UPGMA/average linkage).
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class AverageLinkageStrategy implements LinkageStrategy {
 
+  /**
+   * Computes the average of the provided distances.
+   *
+   * @param distances collection of pairwise distances between cluster members
+   * @return a Distance whose value is the arithmetic mean of the inputs
+   */
   @Override
   public Distance calculateDistance(Collection<Distance> distances) {
     double sum = 0;
@@ -50,7 +63,7 @@ public class AverageLinkageStrategy implements LinkageStrategy {
     for (Distance dist : distances) {
       sum += dist.getDistance();
     }
-    if (distances.size() > 0) {
+    if (!distances.isEmpty()) {
       result = sum / distances.size();
     } else {
       result = 0.0;

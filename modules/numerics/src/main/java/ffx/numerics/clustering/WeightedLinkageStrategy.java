@@ -39,8 +39,22 @@ package ffx.numerics.clustering;
 
 import java.util.Collection;
 
+/**
+ * Linkage strategy that computes a weighted average of pairwise distances using
+ * the associated weights of cluster members.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class WeightedLinkageStrategy implements LinkageStrategy {
 
+  /**
+   * Computes a weighted average of provided distances using their weights.
+   *
+   * @param distances collection of distances, each providing a weight
+   * @return a Distance whose value is the weight-normalized average, with total weight set
+   */
   @Override
   public Distance calculateDistance(Collection<Distance> distances) {
     double sum = 0;

@@ -37,51 +37,126 @@
 // ******************************************************************************
 package ffx.numerics.clustering;
 
+/**
+ * Simple value object storing a distance and an optional weight used during
+ * linkage computations; comparable by distance and cloneable.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class Distance implements Comparable<Distance>, Cloneable {
 
   private Double distance;
   private Double weight;
 
+  /**
+   * Creates a Distance with value 0 and weight 1.
+   */
   public Distance() {
     this(0.0);
   }
 
+  /**
+   * Creates a Distance with the given value and unit weight.
+   *
+   * @param distance the distance value
+   */
   public Distance(Double distance) {
     this(distance, 1.0);
   }
 
+  /**
+   * Creates a Distance with the given value and weight.
+   *
+   * @param distance the distance value
+   * @param weight   the weight associated with this distance
+   */
   public Distance(Double distance, Double weight) {
     this.distance = distance;
     this.weight = weight;
   }
 
+  /**
+   * Gets the distance value.
+   *
+   * @return the distance value (may be null)
+   */
   public Double getDistance() {
     return distance;
   }
 
+  /**
+   * Sets the distance value.
+   *
+   * @param distance the distance value to set
+   */
   public void setDistance(Double distance) {
     this.distance = distance;
   }
 
+  /**
+   * Gets the weight.
+   *
+   * @return the weight
+   */
   public Double getWeight() {
     return weight;
   }
 
+  /**
+   * Sets the weight.
+   *
+   * @param weight the weight to set
+   */
   public void setWeight(Double weight) {
     this.weight = weight;
   }
 
+  /**
+   * Checks whether the distance value is NaN or undefined.
+   *
+   * @return true if the distance is null or NaN; false otherwise
+   */
   public boolean isNaN() {
     return distance == null || distance.isNaN();
   }
 
+  /**
+   * Compares by distance value, with null other treated as greater (this < other).
+   *
+   * @param distance the other Distance to compare to
+   * @return negative, zero, or positive per Comparable contract
+   */
   @Override
   public int compareTo(Distance distance) {
     return distance == null ? 1 : getDistance().compareTo(distance.getDistance());
   }
 
+  /**
+   * Returns a string containing distance and weight values.
+   *
+   * @return formatted string representation
+   */
   @Override
   public String toString() {
     return String.format("distance : %.2f, weight : %.2f", distance, weight);
+  }
+
+  /**
+   * Creates a clone of this Distance.
+   *
+   * @return a clone of this Distance
+   */
+  @Override
+  public Distance clone() {
+    try {
+      Distance clone = (Distance) super.clone();
+      clone.distance = distance;
+      clone.weight = weight;
+      return clone;
+    } catch (CloneNotSupportedException e) {
+      throw new AssertionError();
+    }
   }
 }

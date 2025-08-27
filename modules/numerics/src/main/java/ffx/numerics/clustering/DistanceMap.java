@@ -48,13 +48,17 @@ import java.util.logging.Logger;
  * Container for linkages
  * with the minimal methods needed in the package
  * Created by Alexandre Masselot on 7/18/14.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class DistanceMap {
 
   public static final Logger logger = Logger.getLogger(DistanceMap.class.getName());
 
-  private Map<String, Item> pairHash;
-  private PriorityQueue<Item> data;
+  private final Map<String, Item> pairHash;
+  private final PriorityQueue<Item> data;
 
   private class Item implements Comparable<Item> {
     final ClusterPair pair;
@@ -78,23 +82,41 @@ public class DistanceMap {
   }
 
   public DistanceMap() {
-    data = new PriorityQueue<Item>();
-    pairHash = new HashMap<String, Item>();
+    data = new PriorityQueue<>();
+    pairHash = new HashMap<>();
   }
 
+  /**
+   * Returns a snapshot list of all cluster pairs currently stored.
+   *
+   * @return list of ClusterPair entries in this map
+   */
   public List<ClusterPair> list() {
-    List<ClusterPair> l = new ArrayList<ClusterPair>(data.size());
+    List<ClusterPair> l = new ArrayList<>(data.size());
     for (Item clusterPair : data) {
       l.add(clusterPair.pair);
     }
     return l;
   }
 
+  /**
+   * Finds the ClusterPair for the two provided clusters.
+   *
+   * @param c1 the first cluster
+   * @param c2 the second cluster
+   * @return the matching ClusterPair, or null if absent
+   */
   public ClusterPair findByCodePair(Cluster c1, Cluster c2) {
     String inCode = hashCodePair(c1, c2);
-    return pairHash.get(inCode).pair;
+    Item item = pairHash.get(inCode);
+    return item == null ? null : item.pair;
   }
 
+  /**
+   * Removes and returns the minimal-distance pair (according to priority queue ordering).
+   *
+   * @return the next ClusterPair, or null if none
+   */
   public ClusterPair removeFirst() {
     Item poll = data.poll();
     while (poll != null && poll.removed) {
@@ -108,6 +130,12 @@ public class DistanceMap {
     return link;
   }
 
+  /**
+   * Marks the given ClusterPair as removed (lazy removal) and drops it from the hash index.
+   *
+   * @param link the ClusterPair to remove
+   * @return true if the pair was present and marked removed; false otherwise
+   */
   public boolean remove(ClusterPair link) {
     Item remove = pairHash.remove(hashCodePair(link));
     if (remove == null) {
@@ -118,6 +146,12 @@ public class DistanceMap {
     return true;
   }
 
+  /**
+   * Adds a new ClusterPair if no equivalent pair already exists.
+   *
+   * @param link the pair to add
+   * @return true if added; false if a duplicate existed
+   */
   public boolean add(ClusterPair link) {
     Item e = new Item(link);
     Item existingItem = pairHash.get(e.hash);
@@ -133,9 +167,9 @@ public class DistanceMap {
   }
 
   /**
-   * Peak into the minimum distance
+   * Peek at the minimal linkage distance currently in the map.
    *
-   * @return
+   * @return the smallest linkage distance, or null if empty
    */
   public Double minDist() {
     Item peek = data.peek();

@@ -35,58 +35,23 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.numerics.quickhull;
 
 /**
- * Maintains a single-linked list of faces for use by QuickHull3D.
+ * Visualization components for clustering results, including Swing-based classes
+ * to render dendrograms and related views of hierarchical clusters.
+ * <p>
+ * Original copyright and license:
+ * Copyright 2013 Lars Behnke
+ * <p>
+ * Apache License, Version 2.0
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * @author John E. Lloyd, Fall 2004
+ * @author Lars Behnke, 2013
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class FaceList {
+@ParametersAreNonnullByDefault
+package ffx.numerics.clustering.visualization;
 
-  private Face head;
-
-  private Face tail;
-
-  /**
-   * Clears this list.
-   */
-  public void clear() {
-    head = tail = null;
-  }
-
-  /**
-   * Adds a face to the end of this list.
-   *
-   * @param vtx face to add
-   */
-  public void add(Face vtx) {
-    if (head == null) {
-      head = vtx;
-    } else {
-      tail.next = vtx;
-    }
-    vtx.next = null;
-    tail = vtx;
-  }
-
-  /**
-   * Returns the first face in this list (head), or null if empty.
-   *
-   * @return the first Face, or null if the list is empty
-   */
-  public Face first() {
-    return head;
-  }
-
-  /**
-   * Returns true if this list is empty.
-   *
-   * @return true if there are no faces in the list
-   */
-  public boolean isEmpty() {
-    return head == null;
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -42,11 +42,22 @@ import java.awt.Graphics2D;
 /**
  * Implemented by visual components of the dendrogram.
  *
- * @author lars
- *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public interface Paintable {
 
+  /**
+   * Paints this visual component onto the provided Graphics2D context.
+   *
+   * @param g              the Graphics2D to draw into
+   * @param xDisplayOffset x-axis pixel offset applied to model coordinates
+   * @param yDisplayOffset y-axis pixel offset applied to model coordinates
+   * @param xDisplayFactor scale factor to convert model X to pixels
+   * @param yDisplayFactor scale factor to convert model Y to pixels
+   * @param decorated      if true, draw additional decorations (e.g., distance labels)
+   */
   void paint(Graphics2D g, int xDisplayOffset, int yDisplayOffset, double xDisplayFactor, double yDisplayFactor, boolean decorated);
 
 }

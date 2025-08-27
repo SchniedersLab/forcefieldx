@@ -39,14 +39,48 @@ package ffx.numerics.clustering;
 
 import java.util.List;
 
+/**
+ * Defines algorithms that produce hierarchical clusters from distance data.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public interface ClusteringAlgorithm {
 
-  public Cluster performClustering(double[][] distances, String[] clusterNames,
-                                   LinkageStrategy linkageStrategy);
+  /**
+   * Performs hierarchical agglomerative clustering on a square distance matrix.
+   *
+   * @param distances       an N x N symmetric matrix of pairwise distances (upper triangle used)
+   * @param clusterNames    an array of N names corresponding to rows/columns of distances
+   * @param linkageStrategy the linkage criterion used to update inter-cluster distances
+   * @return the root Cluster of the resulting hierarchy (dendrogram)
+   */
+  Cluster performClustering(double[][] distances, String[] clusterNames,
+                            LinkageStrategy linkageStrategy);
 
-  public Cluster performWeightedClustering(double[][] distances, String[] clusterNames,
-                                           double[] weights, LinkageStrategy linkageStrategy);
+  /**
+   * Performs hierarchical clustering when each initial element has an associated weight.
+   *
+   * @param distances       an N x N symmetric matrix of pairwise distances
+   * @param clusterNames    an array of N names corresponding to the input elements
+   * @param weights         an array of N non-negative weights for the input elements
+   * @param linkageStrategy the linkage criterion used to update inter-cluster distances
+   * @return the root Cluster of the resulting hierarchy (dendrogram)
+   */
+  Cluster performWeightedClustering(double[][] distances, String[] clusterNames,
+                                    double[] weights, LinkageStrategy linkageStrategy);
 
-  public List<Cluster> performFlatClustering(double[][] distances,
-                                             String[] clusterNames, LinkageStrategy linkageStrategy, Double threshold);
+  /**
+   * Performs a flat clustering by agglomerating until the next linkage distance would exceed
+   * the provided threshold, and returns the list of clusters at that cut.
+   *
+   * @param distances       an N x N symmetric matrix of pairwise distances
+   * @param clusterNames    an array of N names corresponding to the input elements
+   * @param linkageStrategy the linkage criterion used to update inter-cluster distances
+   * @param threshold       the maximum allowed inter-cluster linkage distance for merging
+   * @return list of clusters obtained at the specified threshold
+   */
+  List<Cluster> performFlatClustering(double[][] distances,
+                                      String[] clusterNames, LinkageStrategy linkageStrategy, Double threshold);
 }

@@ -39,8 +39,22 @@ package ffx.numerics.clustering;
 
 import java.util.Collection;
 
+/**
+ * Linkage strategy that uses the minimum of pairwise distances between cluster
+ * members (single-linkage / nearest-neighbor).
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class SingleLinkageStrategy implements LinkageStrategy {
 
+  /**
+   * Computes the single-linkage distance, i.e., the minimum of provided distances.
+   *
+   * @param distances collection of pairwise distances between cluster members
+   * @return a Distance whose value is the minimum of the inputs
+   */
   @Override
   public Distance calculateDistance(Collection<Distance> distances) {
     double min = Double.NaN;

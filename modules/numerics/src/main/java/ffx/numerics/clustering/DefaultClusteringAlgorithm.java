@@ -42,8 +42,25 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * Clustering algorithm that operates on a full N x N distance matrix to produce
+ * hierarchical agglomerative clusters (dendrogram), with optional support for
+ * per-element weights and flat clustering by threshold.
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
 
+  /**
+   * Performs hierarchical agglomerative clustering using a full N x N distance matrix.
+   *
+   * @param distances       an N x N symmetric matrix of pairwise distances
+   * @param clusterNames    names corresponding to rows/columns of the distance matrix
+   * @param linkageStrategy linkage criterion used to compute inter-cluster distances
+   * @return root Cluster of the resulting hierarchy
+   */
   @Override
   public Cluster performClustering(double[][] distances,
                                    String[] clusterNames, LinkageStrategy linkageStrategy) {
@@ -62,6 +79,15 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     return builder.getRootCluster();
   }
 
+  /**
+   * Produces a flat clustering by agglomerating until the next merge would exceed the threshold.
+   *
+   * @param distances       an N x N symmetric matrix of pairwise distances
+   * @param clusterNames    names corresponding to the distance matrix
+   * @param linkageStrategy linkage criterion used during agglomeration
+   * @param threshold       maximum allowed linkage distance for merging
+   * @return list of clusters at the chosen cut
+   */
   @Override
   public List<Cluster> performFlatClustering(double[][] distances,
                                              String[] clusterNames, LinkageStrategy linkageStrategy, Double threshold) {
@@ -76,6 +102,14 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     return builder.flatAgg(linkageStrategy, threshold);
   }
 
+  /**
+   * Validates input arrays and strategy for consistency.
+   *
+   * @param distances       an N x N symmetric matrix of distances
+   * @param clusterNames    array of N names
+   * @param linkageStrategy strategy to compute linkage distances
+   * @throws IllegalArgumentException if inputs are inconsistent
+   */
   private void checkArguments(double[][] distances, String[] clusterNames,
                               LinkageStrategy linkageStrategy) {
     if (distances == null || distances.length == 0
@@ -88,12 +122,21 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     if (linkageStrategy == null) {
       throw new IllegalArgumentException("Undefined linkage strategy");
     }
-    int uniqueCount = new HashSet<String>(Arrays.asList(clusterNames)).size();
+    int uniqueCount = new HashSet<>(Arrays.asList(clusterNames)).size();
     if (uniqueCount != clusterNames.length) {
       throw new IllegalArgumentException("Duplicate names");
     }
   }
 
+  /**
+   * Performs hierarchical clustering when each element has an associated weight.
+   *
+   * @param distances       an N x N symmetric matrix of distances
+   * @param clusterNames    names for the N input elements
+   * @param weights         weights for the N input elements
+   * @param linkageStrategy linkage criterion to use
+   * @return root Cluster of the resulting hierarchy
+   */
   @Override
   public Cluster performWeightedClustering(double[][] distances, String[] clusterNames,
                                            double[] weights, LinkageStrategy linkageStrategy) {
@@ -117,6 +160,13 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     return builder.getRootCluster();
   }
 
+  /**
+   * Builds initial pairwise linkages from a full distance matrix and initial clusters.
+   *
+   * @param distances N x N symmetric matrix of distances
+   * @param clusters  list of initial singleton clusters
+   * @return a DistanceMap containing all inter-cluster linkages
+   */
   private DistanceMap createLinkages(double[][] distances,
                                      List<Cluster> clusters) {
     DistanceMap linkages = new DistanceMap();
@@ -134,8 +184,14 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     return linkages;
   }
 
+  /**
+   * Creates initial singleton clusters, one per input name.
+   *
+   * @param clusterNames names for singleton clusters
+   * @return list of newly created singleton clusters
+   */
   private List<Cluster> createClusters(String[] clusterNames) {
-    List<Cluster> clusters = new ArrayList<Cluster>();
+    List<Cluster> clusters = new ArrayList<>();
     for (String clusterName : clusterNames) {
       Cluster cluster = new Cluster(clusterName);
       cluster.addLeafName(clusterName);
@@ -144,8 +200,15 @@ public class DefaultClusteringAlgorithm implements ClusteringAlgorithm {
     return clusters;
   }
 
+  /**
+   * Creates initial singleton clusters with weights.
+   *
+   * @param clusterNames names for singleton clusters
+   * @param weights      weights for each corresponding singleton
+   * @return list of newly created weighted singleton clusters
+   */
   private List<Cluster> createClusters(String[] clusterNames, double[] weights) {
-    List<Cluster> clusters = new ArrayList<Cluster>();
+    List<Cluster> clusters = new ArrayList<>();
     for (int i = 0; i < weights.length; i++) {
       Cluster cluster = new Cluster(clusterNames[i]);
       cluster.setDistance(new Distance(0.0, weights[i]));

@@ -45,6 +45,17 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Visual component representing a single cluster node within a dendrogram.
+ * Responsible for rendering the node, its label, and the connector lines to
+ * its parent/children based on virtual coordinates.
+ *
+ * <p>Used by DendrogramPanel to draw hierarchical clustering results.</p>
+ *
+ * @author Lars Behnke, 2013
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class ClusterComponent implements Paintable {
 
   private Cluster cluster;
@@ -56,65 +67,142 @@ public class ClusterComponent implements Paintable {
 
   private List<ClusterComponent> children;
 
+  /**
+   * Returns the child visual components corresponding to child clusters.
+   *
+   * @return list of child ClusterComponents (lazy-initialized)
+   */
   public List<ClusterComponent> getChildren() {
     if (children == null) {
-      children = new ArrayList<ClusterComponent>();
+      children = new ArrayList<>();
     }
     return children;
   }
 
+  /**
+   * Gets the pixel padding between a leaf node and its name text.
+   *
+   * @return name padding in pixels
+   */
   public int getNamePadding() {
     return namePadding;
   }
 
+  /**
+   * Sets the pixel padding between a leaf node and its name text.
+   *
+   * @param namePadding name padding in pixels
+   */
   public void setNamePadding(int namePadding) {
     this.namePadding = namePadding;
   }
 
+  /**
+   * Gets the radius of node dots in pixels.
+   *
+   * @return dot radius in pixels
+   */
   public int getDotRadius() {
     return dotRadius;
   }
 
+  /**
+   * Sets the radius of node dots in pixels.
+   *
+   * @param dotRadius dot radius in pixels
+   */
   public void setDotRadius(int dotRadius) {
     this.dotRadius = dotRadius;
   }
 
+  /**
+   * Sets the list of child visual components.
+   *
+   * @param children list of child components
+   */
   public void setChildren(List<ClusterComponent> children) {
     this.children = children;
   }
 
+  /**
+   * Gets the virtual coordinate where this node connects to its parent.
+   *
+   * @return link point coordinate
+   */
   public VCoord getLinkPoint() {
     return linkPoint;
   }
 
+  /**
+   * Sets the virtual coordinate where this node connects to its parent.
+   *
+   * @param linkPoint link point coordinate
+   */
   public void setLinkPoint(VCoord linkPoint) {
     this.linkPoint = linkPoint;
   }
 
+  /**
+   * Gets the virtual coordinate at which this node is drawn.
+   *
+   * @return initial coordinate for this node
+   */
   public VCoord getInitPoint() {
     return initPoint;
   }
 
+  /**
+   * Sets the virtual coordinate at which this node is drawn.
+   *
+   * @param initPoint initial coordinate for this node
+   */
   public void setInitPoint(VCoord initPoint) {
     this.initPoint = initPoint;
   }
 
+  /**
+   * Gets the Cluster model represented by this component.
+   *
+   * @return the associated Cluster
+   */
   public Cluster getCluster() {
     return cluster;
   }
 
+  /**
+   * Sets the Cluster model represented by this component.
+   *
+   * @param cluster the Cluster to associate with this component
+   */
   public void setCluster(Cluster cluster) {
     this.cluster = cluster;
   }
 
+  /**
+   * Returns whether the node name should be drawn.
+   *
+   * @return true if the name should be drawn
+   */
   public boolean isPrintName() {
     return printName;
   }
 
+  /**
+   * Sets whether the node name should be drawn.
+   *
+   * @param printName true to draw the node name
+   */
   public void setPrintName(boolean printName) {
     this.printName = printName;
   }
 
+  /**
+   * Constructs a visual node component for a Cluster.
+   *
+   * @param cluster   the cluster represented by this component
+   * @param printName whether to render the cluster name
+   * @param initPoint the initial virtual coordinate of this node
+   */
   public ClusterComponent(Cluster cluster, boolean printName, VCoord initPoint) {
     this.printName = printName;
     this.cluster = cluster;
@@ -122,13 +210,17 @@ public class ClusterComponent implements Paintable {
     this.linkPoint = initPoint;
   }
 
+  /**
+   * {@inheritDoc}
+   * Draws the node dot, horizontal and vertical connectors, and optionally labels.
+   */
   @Override
   public void paint(Graphics2D g, int xDisplayOffset, int yDisplayOffset, double xDisplayFactor, double yDisplayFactor, boolean decorated) {
     int x1, y1, x2, y2;
     FontMetrics fontMetrics = g.getFontMetrics();
-    x1 = (int) (initPoint.getX() * xDisplayFactor + xDisplayOffset);
-    y1 = (int) (initPoint.getY() * yDisplayFactor + yDisplayOffset);
-    x2 = (int) (linkPoint.getX() * xDisplayFactor + xDisplayOffset);
+    x1 = (int) (initPoint.x() * xDisplayFactor + xDisplayOffset);
+    y1 = (int) (initPoint.y() * yDisplayFactor + yDisplayOffset);
+    x2 = (int) (linkPoint.x() * xDisplayFactor + xDisplayOffset);
     y2 = y1;
     g.fillOval(x1 - dotRadius, y1 - dotRadius, dotRadius * 2, dotRadius * 2);
     g.drawLine(x1, y1, x2, y2);
@@ -137,14 +229,14 @@ public class ClusterComponent implements Paintable {
       g.drawString(cluster.getName(), x1 + namePadding, y1 + (fontMetrics.getHeight() / 2) - 2);
     }
     if (decorated && cluster.getDistance() != null && !cluster.getDistance().isNaN() && cluster.getDistance().getDistance() > 0) {
-      String s = String.format("%.2f", cluster.getDistance());
+      String s = String.format("%.2f", cluster.getDistance().getDistance());
       Rectangle2D rect = fontMetrics.getStringBounds(s, g);
       g.drawString(s, x1 - (int) rect.getWidth(), y1 - 2);
     }
 
     x1 = x2;
     y1 = y2;
-    y2 = (int) (linkPoint.getY() * yDisplayFactor + yDisplayOffset);
+    y2 = (int) (linkPoint.y() * yDisplayFactor + yDisplayOffset);
     g.drawLine(x1, y1, x2, y2);
 
 
@@ -153,50 +245,77 @@ public class ClusterComponent implements Paintable {
     }
   }
 
+  /**
+   * Computes the minimal X value of this component and its children in model space.
+   *
+   * @return minimal X coordinate across subtree
+   */
   public double getRectMinX() {
 
     // TODO Better use closure / callback here
     assert initPoint != null && linkPoint != null;
-    double val = Math.min(initPoint.getX(), linkPoint.getX());
+    double val = Math.min(initPoint.x(), linkPoint.x());
     for (ClusterComponent child : getChildren()) {
       val = Math.min(val, child.getRectMinX());
     }
     return val;
   }
 
+  /**
+   * Computes the minimal Y value of this component and its children in model space.
+   *
+   * @return minimal Y coordinate across subtree
+   */
   public double getRectMinY() {
 
     // TODO Better use closure here
     assert initPoint != null && linkPoint != null;
-    double val = Math.min(initPoint.getY(), linkPoint.getY());
+    double val = Math.min(initPoint.y(), linkPoint.y());
     for (ClusterComponent child : getChildren()) {
       val = Math.min(val, child.getRectMinY());
     }
     return val;
   }
 
+  /**
+   * Computes the maximal X value of this component and its children in model space.
+   *
+   * @return maximal X coordinate across subtree
+   */
   public double getRectMaxX() {
 
     // TODO Better use closure here
     assert initPoint != null && linkPoint != null;
-    double val = Math.max(initPoint.getX(), linkPoint.getX());
+    double val = Math.max(initPoint.x(), linkPoint.x());
     for (ClusterComponent child : getChildren()) {
       val = Math.max(val, child.getRectMaxX());
     }
     return val;
   }
 
+  /**
+   * Computes the maximal Y value of this component and its children in model space.
+   *
+   * @return maximal Y coordinate across subtree
+   */
   public double getRectMaxY() {
 
     // TODO Better use closure here
     assert initPoint != null && linkPoint != null;
-    double val = Math.max(initPoint.getY(), linkPoint.getY());
+    double val = Math.max(initPoint.y(), linkPoint.y());
     for (ClusterComponent child : getChildren()) {
       val = Math.max(val, child.getRectMaxY());
     }
     return val;
   }
 
+  /**
+   * Computes the width in pixels of this node's name label.
+   *
+   * @param g               graphics context used for font metrics
+   * @param includeNonLeafs if true, include internal nodes; otherwise only leaf names
+   * @return width in pixels of the label (0 if not drawn)
+   */
   public int getNameWidth(Graphics2D g, boolean includeNonLeafs) {
     int width = 0;
     if (includeNonLeafs || cluster.isLeaf()) {
@@ -206,6 +325,13 @@ public class ClusterComponent implements Paintable {
     return width;
   }
 
+  /**
+   * Recursively computes the maximal name width across this node and its children.
+   *
+   * @param g               graphics context used for font metrics
+   * @param includeNonLeafs if true, include internal nodes; otherwise only leaf names
+   * @return maximum label width in pixels across the subtree
+   */
   public int getMaxNameWidth(Graphics2D g, boolean includeNonLeafs) {
     int width = getNameWidth(g, includeNonLeafs);
     for (ClusterComponent comp : getChildren()) {
