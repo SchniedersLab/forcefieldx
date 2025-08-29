@@ -73,7 +73,7 @@ class MoveIntoUnitCell extends PotentialScript {
    * MoveIntoUnitCell Constructor.
    */
   MoveIntoUnitCell() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -82,6 +82,14 @@ class MoveIntoUnitCell extends PotentialScript {
    */
   MoveIntoUnitCell(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MoveIntoUnitCell constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MoveIntoUnitCell(String[] args) {
+    super(args)
   }
 
   /**

@@ -97,7 +97,7 @@ class MinimizePh extends AlgorithmsScript {
    * Minimize Constructor.
    */
   MinimizePh() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -106,6 +106,14 @@ class MinimizePh extends AlgorithmsScript {
    */
   MinimizePh(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MinimizePh constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MinimizePh(String[] args) {
+    super(args)
   }
 
   /**

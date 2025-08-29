@@ -86,7 +86,7 @@ class Anneal extends AlgorithmsScript {
    * Anneal Constructor.
    */
   Anneal() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -95,6 +95,14 @@ class Anneal extends AlgorithmsScript {
    */
   Anneal(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Anneal constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Anneal(String[] args) {
+    super(args)
   }
 
   /**

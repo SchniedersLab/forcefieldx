@@ -151,7 +151,15 @@ class Alchemical extends AlgorithmsScript {
    * Alchemical constructor.
    */
   Alchemical() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Alchemical constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Alchemical(String[] args) {
+    super(args)
   }
 
   /**

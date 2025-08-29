@@ -125,7 +125,7 @@ class SortArc extends AlgorithmsScript {
      * SortArc Constructor.
      */
     SortArc() {
-        this(new groovy.lang.Binding())
+        super()
     }
 
     /**
@@ -134,6 +134,14 @@ class SortArc extends AlgorithmsScript {
      */
     SortArc(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * SortArc constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    SortArc(String[] args) {
+        super(args)
     }
 
     @Override

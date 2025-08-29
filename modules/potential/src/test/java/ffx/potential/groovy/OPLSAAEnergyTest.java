@@ -252,7 +252,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     Energy energy = new Energy(binding).run();
     potentialScript = energy;
 
-    ForceFieldEnergy forceFieldEnergy = energy.forceFieldEnergy;
+    ForceFieldEnergy forceFieldEnergy = energy.getForceFieldEnergy();
 
     // Bond Energy
     BondPotentialEnergy bondPotentialEnergy = forceFieldEnergy.getBondPotentialEnergy();

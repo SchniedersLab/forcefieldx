@@ -92,10 +92,15 @@ class Minimize extends AlgorithmsScript {
   private Potential potential
 
   /**
+   * The minimization algorithm.
+   */
+  private ffx.algorithms.optimize.Minimize minimize
+
+  /**
    * Minimize Constructor.
    */
   Minimize() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -104,6 +109,14 @@ class Minimize extends AlgorithmsScript {
    */
   Minimize(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Minimize constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Minimize(String[] args) {
+    super(args)
   }
 
   /**
@@ -185,7 +198,7 @@ class Minimize extends AlgorithmsScript {
     potential.getCoordinates(x)
     potential.energy(x, true)
 
-    ffx.algorithms.optimize.Minimize minimize = new ffx.algorithms.optimize.Minimize(topologies[0], potential, algorithmListener)
+    minimize = new ffx.algorithms.optimize.Minimize(topologies[0], potential, algorithmListener)
     minimize.minimize(minimizeOptions.getNBFGS(), minimizeOptions.getEps(), minimizeOptions.getIterations())
 
     potential.getCoordinates(x)
@@ -270,6 +283,53 @@ class Minimize extends AlgorithmsScript {
     }
 
     return this
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  String toString() {
+    StringBuilder sb = new StringBuilder()
+    if (minimize != null) {
+      sb.append(minimize.toString())
+    } else {
+      sb.append("No minimization has been performed.")
+    }
+    return sb.toString()
+  }
+
+  /**
+   * Get the list of energies recorded during minimization.
+   * @return A List of Double energies, or null if minimization was not run.
+   */
+  List<Double> getEnergyList() {
+    if (minimize != null) {
+      return minimize.getEnergyList()
+    }
+    return null
+  }
+
+  /**
+   * Get the final RMS gradient after minimization.
+   * @return The final RMS gradient or NaN if minimization was not run.
+   */
+  double getRMSGradient() {
+    if (minimize != null) {
+      return minimize.getRMSGradient()
+    }
+    return Double.NaN
+  }
+
+  /**
+   * Get the final energy after minimization.
+   * @return The final energy or NaN if minimization was not run.
+   */
+  double getEnergy() {
+    if (minimize != null) {
+      return minimize.getEnergy()
+    }
+    return Double.NaN
   }
 
   @Override

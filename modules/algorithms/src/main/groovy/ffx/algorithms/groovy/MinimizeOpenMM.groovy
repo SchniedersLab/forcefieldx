@@ -82,7 +82,7 @@ class MinimizeOpenMM extends AlgorithmsScript {
    * MinimizeOpenMM Constructor.
    */
   MinimizeOpenMM() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -91,6 +91,14 @@ class MinimizeOpenMM extends AlgorithmsScript {
    */
   MinimizeOpenMM(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MinimizeOpenMM constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MinimizeOpenMM(String[] args) {
+    super(args)
   }
 
   /**

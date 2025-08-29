@@ -89,7 +89,7 @@ class Histogram extends AlgorithmsScript {
    * Histogram Constructor.
    */
   Histogram() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -98,6 +98,14 @@ class Histogram extends AlgorithmsScript {
    */
   Histogram(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Histogram constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Histogram(String[] args) {
+    super(args)
   }
 
   /**

@@ -139,7 +139,7 @@ class Volume extends PotentialScript {
    * Volume Constructor.
    */
   Volume() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -148,6 +148,14 @@ class Volume extends PotentialScript {
    */
   Volume(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Volume constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Volume(String[] args) {
+    super(args)
   }
 
   /**

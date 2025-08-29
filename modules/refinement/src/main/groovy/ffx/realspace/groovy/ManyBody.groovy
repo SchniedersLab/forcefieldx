@@ -89,7 +89,15 @@ class ManyBody extends AlgorithmsScript {
    * ManyBody constructor.
    */
   ManyBody() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * ManyBody constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ManyBody(String[] args) {
+    super(args)
   }
 
   /**

@@ -53,7 +53,9 @@ import ffx.potential.Platform;
 import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,6 +111,10 @@ public class Minimize implements OptimizationListener, Terminatable {
    * Minimization time in nanoseconds.
    */
   protected long time;
+  /**
+   * The energy of each step in the minimization.
+   */
+  protected List<Double> energyList = new ArrayList<>();
   /**
    * The final potential energy.
    */
@@ -247,6 +253,15 @@ public class Minimize implements OptimizationListener, Terminatable {
   }
 
   /**
+   * Get the energy for each step in the minimization.
+   *
+   * @return The energy for each step in the minimization.
+   */
+  public List<Double> getEnergyList() {
+    return energyList;
+  }
+
+  /**
    * minimize
    *
    * @return a {@link ffx.numerics.Potential} object.
@@ -316,6 +331,20 @@ public class Minimize implements OptimizationListener, Terminatable {
 
   /**
    * {@inheritDoc}
+   */
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(" Minimize Results:\n");
+    sb.append(format("  Number of Variables:    %16d\n", n));
+    sb.append(format("  Number of Iterations:   %16d\n", nSteps));
+    sb.append(format("  Final Energy:           %16.6f (kcal/mol)\n", energy));
+    sb.append(format("  RMS Gradient:           %16.6f (kcal/mol/A)\n", rmsGradient));
+    return sb.toString();
+  }
+
+  /**
+   * {@inheritDoc}
    *
    * <p>Implement the OptimizationListener interface.
    *
@@ -333,6 +362,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     this.energy = energy;
 
     if (iteration == 0) {
+      energyList.clear();
       if (nBFGS > 0) {
         logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
       } else {
@@ -340,6 +370,7 @@ public class Minimize implements OptimizationListener, Terminatable {
       }
       logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
     }
+    energyList.add(energy);
     if (lineSearchResult == null) {
       logger.info(format("%6d%13.4f%11.4f", iteration, energy, rmsGradient));
     } else {

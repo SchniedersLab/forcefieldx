@@ -48,6 +48,7 @@ import groovy.lang.Binding;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -94,6 +95,17 @@ public abstract class PotentialScript extends FFXScript {
    */
   public PotentialScript(Binding binding) {
     super(binding);
+  }
+
+  /**
+   * Create a Script using the supplied command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  public PotentialScript(String[] args) {
+    this(new Binding());
+    Binding binding = getBinding();
+    binding.setVariable("args", Arrays.asList(args));
   }
 
   /**

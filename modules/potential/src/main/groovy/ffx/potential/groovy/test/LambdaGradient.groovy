@@ -131,7 +131,7 @@ class LambdaGradient extends PotentialScript {
    * LambdaGradient Constructor
    */
   LambdaGradient() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -140,6 +140,14 @@ class LambdaGradient extends PotentialScript {
    */
   LambdaGradient(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * LambdaGradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  LambdaGradient(String[] args) {
+    super(args)
   }
 
   /**

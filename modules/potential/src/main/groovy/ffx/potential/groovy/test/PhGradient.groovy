@@ -130,7 +130,7 @@ class PhGradient extends PotentialScript {
    * Gradient constructor.
    */
   PhGradient() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -139,6 +139,14 @@ class PhGradient extends PotentialScript {
    */
   PhGradient(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * PhGradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  PhGradient(String[] args) {
+    super(args)
   }
 
   /**

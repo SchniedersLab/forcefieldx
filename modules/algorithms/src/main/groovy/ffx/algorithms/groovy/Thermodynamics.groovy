@@ -139,7 +139,7 @@ class Thermodynamics extends AlgorithmsScript {
    * Thermodynamics Constructor.
    */
   Thermodynamics() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -148,6 +148,14 @@ class Thermodynamics extends AlgorithmsScript {
    */
   Thermodynamics(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Thermodynamics constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Thermodynamics(String[] args) {
+    super(args)
   }
 
   /**

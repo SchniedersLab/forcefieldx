@@ -50,6 +50,7 @@ import org.apache.commons.lang3.Strings;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -89,6 +90,17 @@ public class AlgorithmsScript extends FFXScript {
 
   public AlgorithmsScript(Binding binding) {
     super(binding);
+  }
+
+  /**
+   * Create a Script using the supplied command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  public AlgorithmsScript(String[] args) {
+    this(new Binding());
+    Binding binding = getBinding();
+    binding.setVariable("args", Arrays.asList(args));
   }
 
   /**

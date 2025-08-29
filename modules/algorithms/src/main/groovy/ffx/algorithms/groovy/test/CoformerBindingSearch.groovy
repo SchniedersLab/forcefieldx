@@ -141,7 +141,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
      * Constructor.
      */
     CoformerBindingSearch() {
-        this(new groovy.lang.Binding())
+        super()
     }
 
     /**
@@ -150,6 +150,14 @@ class CoformerBindingSearch extends AlgorithmsScript {
      */
     CoformerBindingSearch(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * Constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    CoformerBindingSearch(String[] args) {
+        super(args)
     }
 
     /**

@@ -84,7 +84,7 @@ class Gradient extends PotentialScript {
    * Gradient constructor.
    */
   Gradient() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -93,6 +93,14 @@ class Gradient extends PotentialScript {
    */
   Gradient(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Gradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Gradient(String[] args) {
+    super(args)
   }
 
   /**

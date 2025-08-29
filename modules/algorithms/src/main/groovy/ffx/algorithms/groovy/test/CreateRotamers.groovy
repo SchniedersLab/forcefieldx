@@ -97,7 +97,7 @@ class CreateRotamers extends AlgorithmsScript {
    * CreateRotamers Constructor.
    */
   CreateRotamers() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -106,6 +106,14 @@ class CreateRotamers extends AlgorithmsScript {
    */
   CreateRotamers(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * CreateRotamers constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  CreateRotamers(String[] args) {
+    super(args)
   }
 
   /**

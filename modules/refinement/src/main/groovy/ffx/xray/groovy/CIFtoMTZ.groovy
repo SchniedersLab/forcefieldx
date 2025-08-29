@@ -77,7 +77,15 @@ class CIFtoMTZ extends AlgorithmsScript {
    * CIF2MTZ constructor.
    */
   CIFtoMTZ() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * CIF2MTZ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  CIFtoMTZ(String[] args) {
+    super(args)
   }
 
   /**

@@ -86,7 +86,15 @@ class Anneal extends AlgorithmsScript {
    * Anneal constructor.
    */
   Anneal() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Anneal constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Anneal(String[] args) {
+    super(args)
   }
 
   /**

@@ -104,7 +104,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
    * Thermodynamics Constructor.
    */
   RaoBlackwellEstimator() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -113,6 +113,14 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
    */
   RaoBlackwellEstimator(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * RaoBlackwellEstimator constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  RaoBlackwellEstimator(String[] args) {
+    super(args)
   }
 
   RaoBlackwellEstimator run() {

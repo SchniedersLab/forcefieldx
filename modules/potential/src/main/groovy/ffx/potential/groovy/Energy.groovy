@@ -176,15 +176,25 @@ class Energy extends PotentialScript {
    * Energy constructor.
    */
   Energy() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
-   * Energy constructor.
+   * Energy constructor that takes a Groovy Binding.
+   *
    * @param binding The Groovy Binding to use.
    */
   Energy(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Energy constructor that sets the command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  Energy(String[] args) {
+    super(args)
   }
 
   /**
@@ -239,13 +249,13 @@ class Energy extends PotentialScript {
       logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
         topologyList.add(alchemical.openFile(potentialFunctions,
-                topology, threadsPer, arguments.get(i), i))
+            topology, threadsPer, arguments.get(i), i))
       }
       activeAssembly = topologyList.get(0);
     }
 
     MolecularAssembly[] topologies =
-            topologyList.toArray(new MolecularAssembly[topologyList.size()])
+        topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     if (topologies.length == 1) {
       atomSelectionOptions.setActiveAtoms(topologies[0])
@@ -342,7 +352,7 @@ class Energy extends PotentialScript {
           if (!crystal.aperiodic()) {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
                 crystal.getDensity(activeAssembly.getMass())))
-            if(logger.isLoggable(Level.FINE)){
+            if (logger.isLoggable(Level.FINE)) {
               logger.fine(crystal.toString());
             }
           }
@@ -551,6 +561,22 @@ class Energy extends PotentialScript {
       potentials = Collections.singletonList((Potential) forceFieldEnergy)
     }
     return potentials
+  }
+
+  /**
+   * Get the ForceFieldEnergy instance.
+   * @return The ForceFieldEnergy.
+   */
+  ForceFieldEnergy getForceFieldEnergy() {
+    return forceFieldEnergy
+  }
+
+  /**
+   * Get the energy for the final snapshot.
+   * @return The energy.
+   */
+  double getEnergy() {
+    return energy
   }
 
   private class StateContainer implements Comparable<StateContainer> {

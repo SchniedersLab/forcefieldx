@@ -88,7 +88,7 @@ class MultiTopTimer extends PotentialScript {
    * MultiTopTimer Constructor.
    */
   MultiTopTimer() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -97,6 +97,14 @@ class MultiTopTimer extends PotentialScript {
    */
   MultiTopTimer(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MultiTopTimer constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MultiTopTimer(String[] args) {
+    super(args)
   }
 
   @Override

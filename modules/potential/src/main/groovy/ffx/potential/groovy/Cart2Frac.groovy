@@ -103,7 +103,7 @@ class Cart2Frac extends PotentialScript {
    * Cart2Frac constructor.
    */
   Cart2Frac() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -112,6 +112,14 @@ class Cart2Frac extends PotentialScript {
    */
   Cart2Frac(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Cart2Frac constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Cart2Frac(String[] args) {
+    super(args)
   }
 
   /**

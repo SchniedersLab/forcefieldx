@@ -161,7 +161,7 @@ public class ParentEnergyTest extends PotentialTest {
     // Create and evaluate the script.
     Energy energy = new Energy(binding).run();
     potentialScript = energy;
-    ForceFieldEnergy forceFieldEnergy = energy.forceFieldEnergy;
+    ForceFieldEnergy forceFieldEnergy = energy.getForceFieldEnergy();
 
     // Bond Energy
     BondPotentialEnergy bondPotentialEnergy = forceFieldEnergy.getBondPotentialEnergy();
@@ -321,6 +321,6 @@ public class ParentEnergyTest extends PotentialTest {
     Energy energy = new Energy(binding).run();
     potentialScript = energy;
     double openMMTolerance = 0.5;
-    assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
+    assertEquals(info + " OpenMM Energy", totalEnergy, energy.getEnergy(), openMMTolerance);
   }
 }

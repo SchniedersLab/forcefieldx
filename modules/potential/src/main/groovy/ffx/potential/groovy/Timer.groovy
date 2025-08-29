@@ -77,7 +77,7 @@ class Timer extends PotentialScript {
    * Timer Constructor.
    */
   Timer() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -86,6 +86,14 @@ class Timer extends PotentialScript {
    */
   Timer(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Timer constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Timer(String[] args) {
+    super(args)
   }
 
   /**

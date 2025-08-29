@@ -98,7 +98,7 @@ class FeatureMap extends PotentialScript {
      * ffx.potential.FeatureMap constructor.
      */
     FeatureMap() {
-        this(new groovy.lang.Binding())
+        super()
     }
 
     /**
@@ -107,6 +107,14 @@ class FeatureMap extends PotentialScript {
      */
     FeatureMap(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * ffx.potential.FeatureMap constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    FeatureMap(String[] args) {
+        super(args)
     }
 
     /**

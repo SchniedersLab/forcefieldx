@@ -86,7 +86,7 @@ class Fasta extends PotentialScript {
    * Fasta Constructor.
    */
   Fasta() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -95,6 +95,14 @@ class Fasta extends PotentialScript {
    */
   Fasta(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Fasta constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Fasta(String[] args) {
+    super(args)
   }
 
   /**

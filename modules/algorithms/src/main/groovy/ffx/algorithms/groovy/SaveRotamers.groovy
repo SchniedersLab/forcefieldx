@@ -140,7 +140,7 @@ class SaveRotamers extends AlgorithmsScript {
    * SaveRotamers Constructor.
    */
   SaveRotamers() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -149,6 +149,14 @@ class SaveRotamers extends AlgorithmsScript {
    */
   SaveRotamers(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SaveRotamers constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveRotamers(String[] args) {
+    super(args)
   }
 
   /**

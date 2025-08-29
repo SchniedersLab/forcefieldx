@@ -98,7 +98,7 @@ class WeightedEnsemble extends AlgorithmsScript {
    * Constructor.
    */
   WeightedEnsemble() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -107,6 +107,14 @@ class WeightedEnsemble extends AlgorithmsScript {
    */
   WeightedEnsemble(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * WeightedEnsemble constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  WeightedEnsemble(String[] args) {
+    super(args)
   }
 
   /**

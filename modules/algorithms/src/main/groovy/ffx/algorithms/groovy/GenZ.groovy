@@ -105,16 +105,24 @@ class GenZ extends AlgorithmsScript {
      * ManyBody Constructor.
      */
     GenZ() {
-        this(new groovy.lang.Binding())
-    }
+    super()
+  }
 
     /**
      * ManyBody Constructor.
      * @param binding The Groovy Binding to use.
      */
     GenZ(Binding binding) {
-        super(binding)
-    }
+    super(binding)
+  }
+
+  /**
+   * GenZ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  GenZ(String[] args) {
+    super(args)
+  }
 
     /**
      * {@inheritDoc}

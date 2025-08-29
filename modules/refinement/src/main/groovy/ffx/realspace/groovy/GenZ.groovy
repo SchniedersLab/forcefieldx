@@ -64,8 +64,16 @@ class GenZ extends AlgorithmsScript  {
      * ManyBody Constructor.
      */
     GenZ() {
-        this(new Binding())
-    }
+    super()
+  }
+
+  /**
+   * GenZ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  GenZ(String[] args) {
+    super(args)
+  }
 
     /**
      * ManyBody Constructor.

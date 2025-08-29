@@ -104,7 +104,7 @@ class Biotype extends PotentialScript {
    * Biotype Constructor.
    */
   Biotype() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -113,6 +113,14 @@ class Biotype extends PotentialScript {
    */
   Biotype(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Biotype Constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Biotype(String[] args) {
+    super(args)
   }
 
   /**

@@ -96,7 +96,15 @@ class ModelvsData extends AlgorithmsScript {
    * ModelvsData constructor.
    */
   ModelvsData() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * ModelvsData constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ModelvsData(String[] args) {
+    super(args)
   }
 
   /**

@@ -102,7 +102,7 @@ class ApplyTorsions extends AlgorithmsScript {
    * ApplyTorsions Constructor.
    */
   ApplyTorsions() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -111,6 +111,14 @@ class ApplyTorsions extends AlgorithmsScript {
    */
   ApplyTorsions(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ApplyTorsions constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ApplyTorsions(String[] args) {
+    super(args)
   }
 
   /**

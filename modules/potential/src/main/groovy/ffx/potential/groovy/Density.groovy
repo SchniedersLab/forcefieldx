@@ -102,7 +102,7 @@ class Density extends PotentialScript {
    * Density constructor.
    */
   Density() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -111,6 +111,14 @@ class Density extends PotentialScript {
    */
   Density(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Density constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Density(String[] args) {
+    super(args)
   }
 
   /**

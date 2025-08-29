@@ -132,7 +132,7 @@ class PrepareSpaceGroups extends PotentialScript {
    * PrepareSpaceGroups Constructor.
    */
   PrepareSpaceGroups() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -141,6 +141,14 @@ class PrepareSpaceGroups extends PotentialScript {
    */
   PrepareSpaceGroups(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * PrepareSpaceGroups constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  PrepareSpaceGroups(String[] args) {
+    super(args)
   }
 
   /**

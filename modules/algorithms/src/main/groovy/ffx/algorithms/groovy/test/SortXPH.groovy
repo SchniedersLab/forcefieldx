@@ -129,7 +129,7 @@ class SortXPH extends AlgorithmsScript {
      * SortArc Constructor.
      */
     SortXPH() {
-        this(new groovy.lang.Binding())
+        super()
     }
 
     /**
@@ -138,6 +138,14 @@ class SortXPH extends AlgorithmsScript {
      */
     SortXPH(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * SortXPH constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    SortXPH(String[] args) {
+        super(args)
     }
 
     @Override

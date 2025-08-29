@@ -198,7 +198,7 @@ class BAR extends AlgorithmsScript {
    * BAR Constructor.
    */
   BAR() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -207,6 +207,14 @@ class BAR extends AlgorithmsScript {
    */
   BAR(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * BAR constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  BAR(String[] args) {
+    super(args)
   }
 
   /**

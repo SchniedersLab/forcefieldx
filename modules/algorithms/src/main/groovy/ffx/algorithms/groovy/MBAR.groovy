@@ -53,7 +53,8 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Mixin
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.estimator.MultistateBennettAcceptanceRatio
-import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.*
+import ffx.numerics.estimator.MultistateBennettAcceptanceRatio.SeedType
+
 import static java.lang.String.format
 import org.apache.commons.io.FilenameUtils
 
@@ -137,7 +138,7 @@ class MBAR extends AlgorithmsScript {
      * MBAR Constructor.
      */
     MBAR() {
-        this(new groovy.lang.Binding())
+        super()
     }
 
     /**
@@ -146,6 +147,14 @@ class MBAR extends AlgorithmsScript {
      */
     MBAR(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * MBAR constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    MBAR(String[] args) {
+        super(args)
     }
 
     /**
@@ -253,9 +262,9 @@ class MBAR extends AlgorithmsScript {
         // Print out results
         logger.info("\n MBAR Results:")
         double[] dGs = mbar.getFreeEnergyDifferences()
-        double[] uncertainties = mbar.getUncertainties()
-        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n", mbar.getFreeEnergyDifference(),
-                mbar.getTotalFEDifferenceUncertainty()))
+        double[] uncertainties = mbar.getFEDifferenceUncertainties()
+        logger.info(format(" Total dG = %10.4f +/- %10.4f kcal/mol\n",
+            mbar.getTotalFreeEnergyDifference(), mbar.getTotalFEDifferenceUncertainty()))
         for (int i = 0; i < dGs.length; i++) {
             logger.info(format("   dG %3d = %10.4f +/- %10.4f kcal/mol", i, dGs[i], uncertainties[i]))
         }

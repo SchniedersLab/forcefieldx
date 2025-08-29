@@ -100,7 +100,7 @@ class OSTGradient extends AlgorithmsScript {
    * CrystalSearch Constructor.
    */
   OSTGradient() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -109,6 +109,14 @@ class OSTGradient extends AlgorithmsScript {
    */
   OSTGradient(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * OSTGradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  OSTGradient(String[] args) {
+    super(args)
   }
 
   @Override

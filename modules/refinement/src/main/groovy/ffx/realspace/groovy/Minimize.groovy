@@ -83,7 +83,15 @@ class Minimize extends AlgorithmsScript {
    * Minimize constructor.
    */
   Minimize() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Minimize constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Minimize(String[] args) {
+    super(args)
   }
 
   /**

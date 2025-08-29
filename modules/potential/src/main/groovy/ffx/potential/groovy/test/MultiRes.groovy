@@ -98,7 +98,7 @@ class MultiRes extends PotentialScript {
    * MultiResidue Constructor.
    */
   MultiRes() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -107,6 +107,14 @@ class MultiRes extends PotentialScript {
    */
   MultiRes(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MultiRes constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MultiRes(String[] args) {
+    super(args)
   }
 
   /**

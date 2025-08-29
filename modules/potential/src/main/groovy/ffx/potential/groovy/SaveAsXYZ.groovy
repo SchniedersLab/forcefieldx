@@ -139,7 +139,7 @@ class SaveAsXYZ extends PotentialScript {
    * SaveAsXYZ Constructor.
    */
   SaveAsXYZ() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -148,6 +148,14 @@ class SaveAsXYZ extends PotentialScript {
    */
   SaveAsXYZ(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SaveAsXYZ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveAsXYZ(String[] args) {
+    super(args)
   }
 
   /**

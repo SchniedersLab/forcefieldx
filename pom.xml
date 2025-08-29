@@ -1067,12 +1067,12 @@
     <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.1.0</jarsigner.version>
     <javaparser.version>3.27.0</javaparser.version>
-    <java3d.version>1.7.1</java3d.version>
+    <java3d.version>1.7.2</java3d.version>
     <javadoc.version>3.11.3</javadoc.version>
     <jakarta-xml.version>4.0.2</jakarta-xml.version>
     <jdepend.version>2.1</jdepend.version>
     <jna.version>5.17.0</jna.version>
-    <jogamp-fat.version>2.5.0</jogamp-fat.version>
+    <jogamp-fat.version>2.6.0</jogamp-fat.version>
     <jopenmm.version>8.3.4</jopenmm.version>
     <junit.version>4.13.2</junit.version>
     <jxr.version>3.6.0</jxr.version>

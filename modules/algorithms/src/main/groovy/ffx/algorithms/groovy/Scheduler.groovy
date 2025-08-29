@@ -111,7 +111,7 @@ class Scheduler extends AlgorithmsScript {
    * Scheduler Constructor.
    */
   Scheduler() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -120,6 +120,14 @@ class Scheduler extends AlgorithmsScript {
    */
   Scheduler(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Scheduler constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Scheduler(String[] args) {
+    super(args)
   }
 
   /**

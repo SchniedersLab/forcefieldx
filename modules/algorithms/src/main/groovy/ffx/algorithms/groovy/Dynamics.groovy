@@ -105,7 +105,7 @@ class Dynamics extends AlgorithmsScript {
    * Dynamics Constructor.
    */
   Dynamics() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -114,6 +114,14 @@ class Dynamics extends AlgorithmsScript {
    */
   Dynamics(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Dynamics constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Dynamics(String[] args) {
+    super(args)
   }
 
   /**

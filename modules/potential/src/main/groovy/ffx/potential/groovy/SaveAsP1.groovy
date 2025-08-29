@@ -82,7 +82,7 @@ class SaveAsP1 extends PotentialScript {
    * SaveAsP1 Constructor.
    */
   SaveAsP1() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -91,6 +91,14 @@ class SaveAsP1 extends PotentialScript {
    */
   SaveAsP1(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SaveAsP1 constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveAsP1(String[] args) {
+    super(args)
   }
 
   /**

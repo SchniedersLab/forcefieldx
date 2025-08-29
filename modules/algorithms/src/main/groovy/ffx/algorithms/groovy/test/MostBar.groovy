@@ -201,7 +201,7 @@ class MostBar extends AlgorithmsScript {
    * MostBar Constructor.
    */
   MostBar() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -210,6 +210,14 @@ class MostBar extends AlgorithmsScript {
    */
   MostBar(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MostBar constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MostBar(String[] args) {
+    super(args)
   }
 
   /**

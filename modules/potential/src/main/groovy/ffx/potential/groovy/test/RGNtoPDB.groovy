@@ -83,7 +83,7 @@ class RGNtoPDB extends PotentialScript {
    * RGNtoPDB Constructor.
    */
   RGNtoPDB() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -92,6 +92,14 @@ class RGNtoPDB extends PotentialScript {
    */
   RGNtoPDB(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * RGNtoPDB constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  RGNtoPDB(String[] args) {
+    super(args)
   }
 
   /**

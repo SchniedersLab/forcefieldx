@@ -124,7 +124,7 @@ class MinimizeCrystals extends AlgorithmsScript {
    * CrystalMin Constructor.
    */
   MinimizeCrystals() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -133,6 +133,14 @@ class MinimizeCrystals extends AlgorithmsScript {
    */
   MinimizeCrystals(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MinimizeCrystals constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MinimizeCrystals(String[] args) {
+    super(args)
   }
 
   /**

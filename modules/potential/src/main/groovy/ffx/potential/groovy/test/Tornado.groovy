@@ -66,7 +66,7 @@ class Tornado extends PotentialScript {
    * Tornado Constructor.
    */
   Tornado() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -75,6 +75,14 @@ class Tornado extends PotentialScript {
    */
   Tornado(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Tornado constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Tornado(String[] args) {
+    super(args)
   }
 
   /**

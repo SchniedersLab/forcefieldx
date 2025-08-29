@@ -76,7 +76,7 @@ class RepexThermo extends Thermodynamics {
    * RepexThermo Constructor.
    */
   RepexThermo() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -85,6 +85,14 @@ class RepexThermo extends Thermodynamics {
    */
   RepexThermo(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * RepexThermo constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  RepexThermo(String[] args) {
+    super(args)
   }
 
   /**

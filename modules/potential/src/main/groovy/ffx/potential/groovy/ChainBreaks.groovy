@@ -71,7 +71,7 @@ class ChainBreaks extends PotentialScript {
    * ChainBreaks constructor.
    */
   ChainBreaks() {
-    this(new groovy.lang.Binding())
+    super()
   }
 
   /**
@@ -80,6 +80,14 @@ class ChainBreaks extends PotentialScript {
    */
   ChainBreaks(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ChainBreaks constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ChainBreaks(String[] args) {
+    super(args)
   }
 
   /**
