@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.crystal.Crystal
@@ -75,19 +74,16 @@ class Minimize extends AlgorithmsScript {
   AtomSelectionOptions atomSelectionOptions
 
   @Mixin
-  AlchemicalOptions alchemical
+  AlchemicalOptions alchemicalOptions
 
   @Mixin
-  TopologyOptions topology
+  TopologyOptions topologyOptions
 
   /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
   List<String> filenames = null
-
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  private int threadsPer = threadsAvail
   MolecularAssembly[] topologies
   private Potential potential
 
@@ -129,55 +125,33 @@ class Minimize extends AlgorithmsScript {
       return this
     }
 
-    List<String> arguments = filenames
-    // Check nArgs should either be number of arguments (min 1), else 1.
-    int nArgs = arguments ? arguments.size() : 1
-    nArgs = (nArgs < 1) ? 1 : nArgs
-
-    topologies = new MolecularAssembly[nArgs]
-
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
     // Turn on computation of lambda derivatives if softcore atoms exist.
-    boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
-
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    double lambda = alchemical.getInitialLambda()
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nArgs >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    List<MolecularAssembly> topologyList = new ArrayList<>(4)
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     // Read in files.
-    if (!arguments || arguments.isEmpty()) {
-      MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
-      if (molecularAssembly == null) {
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
+      if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
-      arguments = new ArrayList<>()
-      arguments.add(molecularAssembly.getFile().getName())
-      topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
     } else {
-      logger.info(format(" Initializing %d topologies...", nArgs))
-      for (int i = 0; i < nArgs; i++) {
-        topologyList.add(alchemical.openFile(algorithmFunctions,
-            topology, threadsPer, arguments.get(i), i))
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = alchemicalOptions.openFile(algorithmFunctions,
+            topologyOptions, threadsPerTopology, filenames.get(i), i)
       }
+      activeAssembly = topologies[0]
     }
-
-    MolecularAssembly[] topologies =
-        topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     if (topologies.length == 1) {
       atomSelectionOptions.setActiveAtoms(topologies[0])
@@ -185,12 +159,11 @@ class Minimize extends AlgorithmsScript {
 
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Minimizing energy of ")
-    potential = topology.assemblePotential(topologies, threadsAvail, sb)
-
+    potential = topologyOptions.assemblePotential(topologies, sb)
     logger.info(sb.toString())
 
     LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
-    linter?.setLambda(lambda)
+    linter?.setLambda(alchemicalOptions.getInitialLambda())
 
     SystemFilter systemFilter = algorithmFunctions.getFilter()
 

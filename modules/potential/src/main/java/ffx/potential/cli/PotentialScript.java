@@ -37,24 +37,21 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
-import static org.apache.commons.io.FilenameUtils.getFullPath;
-
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.FFXScript;
 import groovy.lang.Binding;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
 import org.apache.log4j.PropertyConfigurator;
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static org.apache.commons.io.FilenameUtils.getFullPath;
 
 /**
  * Base class for scripts in the Potentials package, providing some key functions.
@@ -85,7 +82,7 @@ public abstract class PotentialScript extends FFXScript {
    * Default constructor.
    */
   public PotentialScript() {
-    this(new Binding());
+    super();
   }
 
   /**
@@ -103,9 +100,7 @@ public abstract class PotentialScript extends FFXScript {
    * @param args The command line arguments.
    */
   public PotentialScript(String[] args) {
-    this(new Binding());
-    Binding binding = getBinding();
-    binding.setVariable("args", Arrays.asList(args));
+    super(args);
   }
 
   /**

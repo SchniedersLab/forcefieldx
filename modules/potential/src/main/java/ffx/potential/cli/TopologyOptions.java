@@ -37,9 +37,7 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.String.format;
-
+import edu.rit.pj.ParallelTeam;
 import ffx.numerics.Potential;
 import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.numerics.switching.PowerSwitch;
@@ -49,6 +47,10 @@ import ffx.potential.DualTopologyEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
+
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,8 +60,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that utilize multiple physical topologies.
@@ -70,7 +73,9 @@ import picocli.CommandLine.Option;
  */
 public class TopologyOptions {
 
-  /** The logger for this class. */
+  /**
+   * The logger for this class.
+   */
   public static final Logger logger = Logger.getLogger(TopologyOptions.class.getName());
 
   /**
@@ -98,12 +103,12 @@ public class TopologyOptions {
   }
 
   /**
-   * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
+   * --np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
    *
    * @return Returns Number of topologies to evaluate in parallel.
    */
-  public int getNPar() {
-    return group.nPar;
+  public int getTopologiesInParallel() {
+    return group.nTopologiesInParallel;
   }
 
   /**
@@ -152,12 +157,12 @@ public class TopologyOptions {
   /**
    * The number of topologies to run in parallel.
    *
-   * @param nThreads The number of threads available.
-   * @param nTopologies The number of topologies to run in parallel.
+   * @param nTopologies The number of topologies.
    * @return Number of topologies to run in parallel.
    */
-  public int getNumParallel(int nThreads, int nTopologies) {
-    int numParallel = getNPar();
+  public int getTopologiesInParallel(int nTopologies) {
+    int nThreads = ParallelTeam.getDefaultThreadCount();
+    int numParallel = getTopologiesInParallel();
     if (nThreads % numParallel != 0) {
       logger.warning(format(
           " Number of threads available %d not evenly divisible by np %d; reverting to sequential.",
@@ -173,20 +178,49 @@ public class TopologyOptions {
   }
 
   /**
+   * The number of threads per topology.
+   *
+   * @param nTopologies The number of topologies.
+   * @return Number of threads per topology.
+   */
+  public int getThreadsPerTopology(int nTopologies) {
+    int nThreads = ParallelTeam.getDefaultThreadCount();
+    int numParallel = getTopologiesInParallel(nTopologies);
+    return nThreads / numParallel;
+  }
+
+  /**
+   * Validate the number of topologies.
+   *
+   * @param topologyFilenames List of topology filenames.
+   * @return The number of topologies.
+   */
+  public int getNumberOfTopologies(@Nullable List<String> topologyFilenames) {
+    if (topologyFilenames == null || topologyFilenames.isEmpty()) {
+      logger.severe(" No filenames were provided.");
+      return 0;
+    } else if (topologyFilenames.size() != 1
+        && topologyFilenames.size() != 2
+        && topologyFilenames.size() != 4) {
+      logger.severe(" Either 1, 2, or 4 filenames must be provided.!");
+      return 0;
+    }
+    return topologyFilenames.size();
+  }
+
+  /**
    * Performs the bulk of the work of setting up a multi-topology system.
    *
    * <p>The sb StringBuilder is often something like "Timing energy and gradients for". The method
    * will append the exact type of Potential being assembled.
    *
    * @param assemblies Opened MolecularAssembly(s).
-   * @param threadsAvail Number of available threads.
-   * @param sb A StringBuilder describing what is to be done.
+   * @param sb         A StringBuilder describing what is to be done.
    * @return a {@link ffx.numerics.Potential} object.
    */
-  public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail,
-      StringBuilder sb) {
+  public Potential assemblePotential(MolecularAssembly[] assemblies, StringBuilder sb) {
     int nargs = assemblies.length;
-    int numPar = getNumParallel(threadsAvail, nargs);
+    int numPar = getTopologiesInParallel(nargs);
     UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
     List<Integer> uniqueA;
     List<Integer> uniqueB;
@@ -244,16 +278,16 @@ public class TopologyOptions {
   /**
    * Configure a Dual-, Quad- or Oct- Topology.
    *
-   * @param topologies The topologies.
-   * @param sf The Potential switching function.
-   * @param uniqueA The unique atoms of topology A.
-   * @param uniqueB The unique atoms of topology B.
+   * @param topologies  The topologies.
+   * @param sf          The Potential switching function.
+   * @param uniqueA     The unique atoms of topology A.
+   * @param uniqueB     The unique atoms of topology B.
    * @param numParallel The number of energies to evaluate in parallel.
-   * @param sb A StringBuilder for logging.
+   * @param sb          A StringBuilder for logging.
    * @return The Potential for the Topology.
    */
   public Potential getTopology(MolecularAssembly[] topologies, UnivariateSwitchingFunction sf,
-      List<Integer> uniqueA, List<Integer> uniqueB, int numParallel, StringBuilder sb) {
+                               List<Integer> uniqueA, List<Integer> uniqueB, int numParallel, StringBuilder sb) {
     Potential potential = null;
     switch (topologies.length) {
       case 1 -> {
@@ -293,12 +327,12 @@ public class TopologyOptions {
    * Collect unique atoms for a dual-topology. List MUST be sorted at the end.
    *
    * @param assembly A MolecularAssembly from the dual topology.
-   * @param label Either 'A' or 'B'.
+   * @param label    Either 'A' or 'B'.
    * @param unshared Atoms this dual topology isn't sharing.
    * @return A sorted List of Integers.
    */
   public static List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label,
-      String unshared) {
+                                             String unshared) {
     if (!unshared.isEmpty()) {
       logger.info(" Finding unique atoms for dual topology " + label);
       Set<Integer> indices = new HashSet<>();
@@ -314,7 +348,7 @@ public class TopologyOptions {
           }
           logger.info(
               format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
-          if(logger.isLoggable(Level.FINE)) {
+          if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" First atom in range: %s", atoms1[rangeStart - 1]));
             if (rangeEnd > rangeStart) {
               logger.fine(format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
@@ -394,11 +428,31 @@ public class TopologyOptions {
   }
 
   /**
+   * Relative free energies via the DualTopologyEnergy class require different
+   * default OST parameters than absolute free energies.
+   *
+   * @param numberOfTopologies The number of topologies.
+   */
+  public void setAlchemicalProperties(int numberOfTopologies) {
+    if (numberOfTopologies >= 2) {
+      // Ligand vapor electrostatics are not calculated. This cancels when the
+      // difference between protein and water environments is considered.
+      System.setProperty("ligand-vapor-elec", "false");
+      // Turn on calculation of lambda dependent terms.
+      if (hasSoftcore()) {
+        System.setProperty("lambdaterm", "true");
+      }
+    }
+  }
+
+  /**
    * Collection of Topology Options.
    */
   private static class TopologyOptionGroup {
 
-    /** --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]. */
+    /**
+     * --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N].
+     */
     @Option(names = {"--ac2", "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "",
         description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
     String alchemicalAtoms2 = "";
@@ -417,7 +471,7 @@ public class TopologyOptions {
      */
     @Option(names = {"--np", "--nParallel"}, paramLabel = "1",
         description = "Number of topologies to evaluate in parallel")
-    int nPar = 1;
+    int nTopologiesInParallel = 1;
 
     /**
      * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated

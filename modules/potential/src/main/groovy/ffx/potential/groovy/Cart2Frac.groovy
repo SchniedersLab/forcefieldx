@@ -155,7 +155,7 @@ class Cart2Frac extends PotentialScript {
       Crystal crystal = molecularAssembly.getCrystal().getUnitCell()
 
       Atom[] atoms = molecularAssembly.getAtomArray()
-      int nAtoms = atoms.length;
+      int nAtoms = atoms.length
       fracCoordinates[i] = new double[nAtoms][3]
       cartCoordinates[i] = new double[nAtoms][3]
 

@@ -42,20 +42,15 @@ import edu.rit.pj.ParallelTeam
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.extended.ExtendedSystem
-import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
-import ffx.potential.parsers.XYZFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import static java.lang.String.format
 
 /**
  * The SortXPH command unwinds .ARC files from CpHMD runs.
@@ -203,7 +198,7 @@ class SortXPH extends AlgorithmsScript {
         molecularAssembly.getPotentialEnergy().attachExtendedSystem(extendedSystem)
 
 
-        int numParallel = topology.getNumParallel(threadsAvail, 1)
+        int numParallel = topology.getTopologiesInParallel(threadsAvail, 1)
         threadsPer = (int) (threadsAvail / numParallel)
 
         for (int i = 0; i < nWindows; i++) {

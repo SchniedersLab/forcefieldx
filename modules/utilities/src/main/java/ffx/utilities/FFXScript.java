@@ -51,6 +51,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -113,6 +114,24 @@ public abstract class FFXScript extends Script {
       defaultValue = "false",
       description = "Print command help and exit.")
   public boolean help;
+
+  /**
+   * Default constructor for an FFX Script.
+   */
+  public FFXScript() {
+    this(new Binding());
+  }
+
+  /**
+   * Create an FFX Script using the supplied command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  public FFXScript(String[] args) {
+    this(new Binding());
+    Binding binding = getBinding();
+    binding.setVariable("args", Arrays.asList(args));
+  }
 
   /**
    * Default constructor for an FFX Script.

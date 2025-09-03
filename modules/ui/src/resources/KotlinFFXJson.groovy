@@ -1,4 +1,6 @@
-// Generate the Kotlin ffx.json file for the Jupyter notebook.
+// Generate the Kotlin ffx.json library file for the Jupyter notebook.
+// The documentation for library Json files is here:
+// https://github.com/Kotlin/kotlin-jupyter/blob/master/docs/libraries.md
 
 // Constant header of the Kotlin ffx.json file.
 header = """{

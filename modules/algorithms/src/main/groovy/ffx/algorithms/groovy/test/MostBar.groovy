@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import edu.rit.pj.ParallelTeam
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.thermodynamics.HistogramData
@@ -77,10 +77,10 @@ import static org.apache.commons.math3.util.FastMath.*
 class MostBar extends AlgorithmsScript {
 
   @Mixin
-  private AlchemicalOptions alchemical
+  private AlchemicalOptions alchemicalOptions
 
   @Mixin
-  private TopologyOptions topology
+  private TopologyOptions topologyOptions
 
   @Mixin
   private BarostatOptions barostat
@@ -155,14 +155,10 @@ class MostBar extends AlgorithmsScript {
       description = 'Trajectory files for the first end of the window, followed by trajectories for the other end')
   List<String> filenames = null
 
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  private int threadsPer = threadsAvail
   private MolecularAssembly[] topologies
   private SystemFilter[] openers
-
   private CrystalPotential potential
   private LambdaInterface linter
-
   private Configuration additionalProperties
 
   private List<List<Double>> energiesL
@@ -189,9 +185,6 @@ class MostBar extends AlgorithmsScript {
   private static final long MIN_BOOTSTRAP_TRIALS = 200L
   private static final long MAX_BOOTSTRAP_TRIALS = 50000L
   private static final long AUTO_BOOTSTRAP_NUMERATOR = 10000000L
-  // Analytic energy adjustment used to debug the script (e.g. take a known dG and add 3.0 kcal/mol to it).
-  // NOT TO BE USED IN PRODUCTION.
-  private static final double DEBUG_OFFSET = 0.0
 
   void setProperties(CompositeConfiguration addedProperties) {
     additionalProperties = addedProperties
@@ -230,48 +223,41 @@ class MostBar extends AlgorithmsScript {
       return this
     }
 
-    if (filenames == null || filenames.isEmpty()) {
-      return this
-    }
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
+    openers = new SystemFilter[numTopologies]
 
-    int nFiles = filenames.size()
-
-    topologies = new MolecularAssembly[nFiles]
-    openers = new SystemFilter[nFiles]
-
-    int numParallel = topology.getNumParallel(threadsAvail, nFiles)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-    /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
-    The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (nFiles == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+    // Turn on computation of lambda derivatives if softcore atoms exist.
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     standardLogging = verbose ? Level.INFO : Level.FINE
 
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
+    logger.info(format(" Initializing %d topologies", numTopologies))
+
+    // Read in files.
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
+      if (activeAssembly == null) {
+        logger.info(helpString())
+        return this
+      }
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
+    } else {
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = alchemicalOptions.openFile(algorithmFunctions,
+            topologyOptions, threadsPerTopology, filenames.get(i), i)
+        openers[i] = algorithmFunctions.getFilter()
+      }
     }
 
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nFiles >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    logger.info(format(" Initializing %d topologies", nFiles))
-    for (int i = 0; i < nFiles; i++) {
-      MolecularAssembly ma =
-          alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
-      topologies[i] = ma
-      openers[i] = algorithmFunctions.getFilter()
-    }
-
-    StringBuilder sb = new StringBuilder(
-        "\n Using BAR to analyze an M-OST free energy change for systems ")
-    potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
+    StringBuilder sb = new StringBuilder("\n Using BAR to analyze an M-OST free energy change for systems ")
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, sb)
     potential = barostat.checkNPT(topologies[0], potential)
     linter = (LambdaInterface) potential
     logger.info(sb.toString())
@@ -369,21 +355,20 @@ class MostBar extends AlgorithmsScript {
     SequentialEstimator forwards = bar.getInitialForwardsGuess()
     SequentialEstimator backwards = bar.getInitialBackwardsGuess()
 
-    logger.
-        info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.", bar.getFreeEnergyDifference(),
-            bar.getTotalFEDifferenceUncertainty()))
+    logger.info(format(" Free energy via BAR:           %15.9f +/- %.9f kcal/mol.",
+        bar.getTotalFreeEnergyDifference(), bar.getTotalFEDifferenceUncertainty()))
     logger.info(format(" Free energy via forwards FEP:  %15.9f +/- %.9f kcal/mol.",
-        forwards.getFreeEnergyDifference(), forwards.getTotalFEDifferenceUncertainty()))
+        forwards.getTotalFreeEnergyDifference(), forwards.getTotalFEDifferenceUncertainty()))
     logger.info(format(" Free energy via backwards FEP: %15.9f +/- %.9f kcal/mol.",
-        backwards.getFreeEnergyDifference(), backwards.getTotalFEDifferenceUncertainty()))
+        backwards.getTotalFreeEnergyDifference(), backwards.getTotalFEDifferenceUncertainty()))
     logger.info(" Note - non-bootstrap FEP uncertainties are currently unreliable.")
 
     double[] barFE = bar.getFreeEnergyDifferences()
-    double[] barVar = bar.getUncertainties()
+    double[] barVar = bar.getFEDifferenceUncertainties()
     double[] forwardsFE = forwards.getFreeEnergyDifferences()
-    double[] forwardsVar = forwards.getUncertainties()
+    double[] forwardsVar = forwards.getFEDifferenceUncertainties()
     double[] backwardsFE = backwards.getFreeEnergyDifferences()
-    double[] backwardsVar = backwards.getUncertainties()
+    double[] backwardsVar = backwards.getFEDifferenceUncertainties()
 
     sb = new StringBuilder(
         "\n Free Energy Profile Per Window\n Min_Lambda Counts Max_Lambda Counts         BAR_dG      BAR_Var          FEP_dG      FEP_Var     FEP_Back_dG FEP_Back_Var\n")

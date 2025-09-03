@@ -38,15 +38,14 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
-import edu.rit.pj.ParallelTeam
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.LambdaParticleOptions
 import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.cli.RandomUnitCellOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
-import ffx.algorithms.cli.LambdaParticleOptions
-import ffx.algorithms.cli.BarostatOptions
-import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
@@ -120,8 +119,6 @@ class Thermodynamics extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  public int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  public int threadsPer = threadsAvail
   public MolecularAssembly[] topologies
   public CrystalPotential potential
   public OrthogonalSpaceTempering orthogonalSpaceTempering = null
@@ -169,35 +166,14 @@ class Thermodynamics extends AlgorithmsScript {
       return this
     }
 
-    List<String> arguments = filenames
-    // Check nArgs should either be number of arguments (min 1), else 1.
-    int nArgs = arguments ? arguments.size() : 1
-    nArgs = (nArgs < 1) ? 1 : nArgs
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
-    topologies = new MolecularAssembly[nArgs]
-
-    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-    /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
-    The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (
-        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
-
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nArgs >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    List<MolecularAssembly> topologyList = new ArrayList<>(nArgs)
+    // Turn on computation of lambda derivatives if softcore atoms exist.
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     Comm world = Comm.world()
     int size = world.size()
@@ -205,8 +181,8 @@ class Thermodynamics extends AlgorithmsScript {
 
     // Segment of code for MultiDynamics and OST.
     List<File> structureFiles = new ArrayList<>()
-    for (String argument : arguments) {
-      File file = new File(FilenameUtils.normalize(argument))
+    for (String filename : filenames) {
+      File file = new File(FilenameUtils.normalize(filename))
       structureFiles.add(file)
     }
 
@@ -218,7 +194,7 @@ class Thermodynamics extends AlgorithmsScript {
     String withRankName = filePathNoExtension
 
     if (size > 1) {
-      List<File> rankedFiles = new ArrayList<>(nArgs)
+      List<File> rankedFiles = new ArrayList<>(numTopologies)
       String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
       rankDirName = format("%s%d", rankDirName, rank + multiDynamicsOptions.getFirstDir())
       File rankDirectory = new File(rankDirName)
@@ -242,24 +218,22 @@ class Thermodynamics extends AlgorithmsScript {
     }
 
     // Read in files.
-    if (!arguments || arguments.isEmpty()) {
-      MolecularAssembly molecularAssembly = algorithmFunctions.getActiveAssembly()
-      if (molecularAssembly == null) {
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
+      if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
-      arguments = new ArrayList<>()
-      arguments.add(molecularAssembly.getFile().getName())
-      topologyList.add(alchemicalOptions.processFile(topologyOptions, molecularAssembly, 0))
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
     } else {
-      logger.info(format(" Initializing %d topologies...", nArgs))
-      for (int i = 0; i < nArgs; i++) {
-        topologyList.add(multiDynamicsOptions.openFile(algorithmFunctions, topologyOptions,
-            threadsPer, arguments.get(i), i, alchemicalOptions, structureFiles.get(i), rank))
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = multiDynamicsOptions.openFile(algorithmFunctions, topologyOptions,
+            threadsPerTopology, filenames.get(i), i, alchemicalOptions, structureFiles.get(i), rank)
       }
     }
-
-    MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     StringBuilder sb = new StringBuilder("\n Running ")
 
@@ -276,18 +250,17 @@ class Thermodynamics extends AlgorithmsScript {
     }
     sb.append(" for ")
 
-    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, threadsAvail, sb)
-    LambdaInterface linter = (LambdaInterface) potential
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, sb)
     logger.info(sb.toString())
 
+    LambdaInterface lambdaInterface = (LambdaInterface) potential
     boolean lamExists = lambdaRestart.exists()
-
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
-    linter.setLambda(initLambda)
+    lambdaInterface.setLambda(initLambda)
     potential.energy(x, true)
 
-    if (nArgs == 1) {
+    if (numTopologies == 1) {
       randomSymopOptions.randomize(topologies[0])
     }
 
