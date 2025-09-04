@@ -2,6 +2,8 @@ package ffx.potential.constraint;
 
 import ffx.numerics.Constraint;
 
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+
 public class ShakeChargeConstraint implements Constraint {
     final int nConstraints;
     final double tol;
@@ -23,11 +25,9 @@ public class ShakeChargeConstraint implements Constraint {
      * Journal of chemical theory and computation 12.3 (2016): 1040-1051.
      * https://pubs.acs.org/doi/epdf/10.1021/acs.jctc.5b01160
      * @param x
-     * @param afric
      * @param masses
-     * @param dt
      */
-    public void applyChargeConstraintToStep(final double[] x, final double[] afric, final double[] masses, final double dt){
+    public void applyChargeConstraintToStep(final double[] x, final double[] masses){
         boolean done = false;
         int iter = 0;
         while(!done){
@@ -41,13 +41,13 @@ public class ShakeChargeConstraint implements Constraint {
                 totalInverseMass += (1.0 / masses[i]);
             }
             double delta = totalLambda - c;
-
             if (Math.abs(delta) > tol) {
                 done = false;
-                double term = delta / (dt * dt * totalInverseMass);
+                double term = delta / totalInverseMass;
                 for (int i = 0; i < nConstraints; i++) {
                     double g = -term * Math.sin(2 * x[i]);
-                    x[i] = x[i] + g * afric[i];
+                    // Scale constraint force by 0.01 was determined to improve convergence of constraint through testing
+                    x[i] = x[i] - (g * -KCAL_TO_GRAM_ANG2_PER_PS2 / masses[i]) * 0.01;
                 }
             }
             if(iter >= maxIters){
