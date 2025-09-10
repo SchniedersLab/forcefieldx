@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import com.google.common.collect.MinMaxPriorityQueue
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.AssemblyState
@@ -299,10 +298,11 @@ class Energy extends PotentialScript {
       assemblyState = new AssemblyState(activeAssembly)
       int index = 1
 
-      // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
-      MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = null
+      // Use a bounded PriorityQueue that retains the numSnaps lowest-energy states.
+      PriorityQueue<StateContainer> lowestEnergyQueue = null
       if (fl > 0) {
-        lowestEnergyQueue = MinMaxPriorityQueue.maximumSize(numSnaps).create()
+        // Max-heap by energy: highest energy at head for easy eviction.
+        lowestEnergyQueue = new PriorityQueue<>(numSnaps, Collections.reverseOrder())
         lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
       }
 
@@ -342,7 +342,16 @@ class Energy extends PotentialScript {
         }
 
         if (fl > 0) {
-          lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
+          StateContainer sc = new StateContainer(new AssemblyState(activeAssembly), energy)
+          if (lowestEnergyQueue.size() < numSnaps) {
+            lowestEnergyQueue.add(sc)
+          } else {
+            StateContainer worst = lowestEnergyQueue.peek()
+            if (worst != null && energy < worst.getEnergy()) {
+              lowestEnergyQueue.poll()
+              lowestEnergyQueue.add(sc)
+            }
+          }
         }
 
         if (moments) {
@@ -464,28 +473,18 @@ class Energy extends PotentialScript {
 
         String name = getName(filenames[0])
 
-        for (int i = 0; i < numSnaps - 1; i++) {
-          StateContainer savedState = lowestEnergyQueue.removeLast()
+        logger.info(" Saving the " + numSnaps + " lowest energy snapshots to " + dirString + name)
+        SystemFilter saveFilter = potentialFunctions.getFilter()
+        File saveFile = potentialFunctions.versionFile(new File(dirString + name))
+        int toSave = Math.min(numSnaps, lowestEnergyQueue.size())
+        for (int i = 0; i < toSave; i++) {
+          StateContainer savedState = lowestEnergyQueue.poll()
           AssemblyState finalAssembly = savedState.getState()
           finalAssembly.revertState()
-          double finalEnergy = savedState.getEnergy()
-          logger.info(format(" The potential energy found is %16.8f (kcal/mol)", finalEnergy))
-          File saveFile = potentialFunctions.versionFile(new File(dirString + name))
-          MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
-          potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
+          String remark = format("Potential Energy: %16.8f (kcal/mol)", savedState.getEnergy())
+          logger.info(format(" Snapshot %d %s", i + 1, remark))
+          saveFilter.writeFile(saveFile, true, remark)
         }
-
-        StateContainer savedState = lowestEnergyQueue.removeLast()
-        AssemblyState lowestAssembly = savedState.getState()
-        lowestEnergy = savedState.getEnergy()
-
-        assemblyState.revertState()
-        logger.info(format(" The lowest potential energy found is %16.8f (kcal/mol)", lowestEnergy))
-
-        // Prints our final energy (which will be the lowest energy
-        File saveFile = potentialFunctions.versionFile(new File(dirString + name))
-        MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
-        potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
       }
     }
 
