@@ -2056,7 +2056,7 @@ public final class PDBFilter extends SystemFilter {
             for (Atom atom : residueAtoms) {
               if (mutate) {
                 for (Mutation mtn : mutations) {
-                  if (resID == mtn.resID) {
+                  if (resID == mtn.resID && currentChainID == mtn.chainChar) {
                     mtn.addTors(atom, serial);
                     ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(true);
                     if (alchAtoms != null) {
