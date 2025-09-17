@@ -140,6 +140,29 @@ class ReorderAtoms extends PotentialScript {
   private double bondTolerance = 0.2;
 
   /**
+   * ReorderAtoms Constructor.
+   */
+  ReorderAtoms() {
+    super()
+  }
+
+  /**
+   * ReorderAtoms Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  ReorderAtoms(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * ReorderAtoms constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ReorderAtoms(String[] args) {
+    super(args)
+  }
+
+  /**
    * Execute the script.
    */
   @Override

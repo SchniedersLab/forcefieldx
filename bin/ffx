@@ -137,13 +137,14 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs other than 21 up to 24.
+# Detect JDK version; disallow JDKs other than 21 up to 25.
 if [ $hasAwkSed ]; then
     JVERS="$(java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g')"
     JVFIRST="$(echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }')"
 
-    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 24 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 24." 1>&2
+    if [ "$JVFIRST" -lt 21 ] || [ "$JVFIRST" -gt 25 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 25." 1>&2
+        exit 1
     fi
 
     EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
@@ -168,7 +169,7 @@ if [ $hasAwkSed ]; then
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 through 24 and (optionally) CUDA toolkit 11.1 or later."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 through 25 and (optionally) CUDA toolkit 11.1 or later."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
@@ -190,8 +191,6 @@ then
   [ -n "$REPO" ] && REPO=$(cygpath --path --unix "$REPO")
   CLASSPATH=$(echo $CLASSPATH | sed 's/ /:/g')
 fi
-
-EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
 # This is for trying to use the GraalVM native image generation
 # EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=${BASEDIR}/bin/META-INF/native-image"
@@ -226,6 +225,9 @@ if [ -n "$TORNADO_SDK" ] ; then
 #   JAVA_FLAGS="-Dtornado.threadInfo=True -Dtornado.debug=True -Dtornado.print.kernel=True -Dtornado.print.bytecodes=True -server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
    JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
 fi
+
+# These flags can be added to the start-up command to debug jogl.
+# -Dnewt.debug=all -Dnativewindow.debug=all -Djogl.debug=all
 
 if $darwin; then
   exec "$JAVACMD" $JAVA_OPTS $EXTRA_JVM_ARGUMENTS \

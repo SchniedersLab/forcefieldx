@@ -96,7 +96,7 @@ class AnalyzeNEQ extends AlgorithmsScript {
    * BAR Constructor.
    */
   AnalyzeNEQ() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -105,6 +105,14 @@ class AnalyzeNEQ extends AlgorithmsScript {
    */
   AnalyzeNEQ(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * AnalyzeNEQ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  AnalyzeNEQ(String[] args) {
+    super(args)
   }
 
   /**

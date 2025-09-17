@@ -125,7 +125,7 @@ class ImportCIF extends PotentialScript {
    * ImportCIF Constructor.
    */
   ImportCIF() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -134,6 +134,14 @@ class ImportCIF extends PotentialScript {
    */
   ImportCIF(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ImportCIF constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ImportCIF(String[] args) {
+    super(args)
   }
 
   /**

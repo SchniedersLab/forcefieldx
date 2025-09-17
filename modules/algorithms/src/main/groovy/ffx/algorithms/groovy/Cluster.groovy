@@ -144,7 +144,7 @@ class Cluster extends AlgorithmsScript {
    * Cluster constructor.
    */
   Cluster() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -153,6 +153,14 @@ class Cluster extends AlgorithmsScript {
    */
   Cluster(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Cluster constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Cluster(String[] args) {
+    super(args)
   }
 
   /**

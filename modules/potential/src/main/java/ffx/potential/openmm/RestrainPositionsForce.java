@@ -37,13 +37,13 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomExternalForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
-import ffx.openmm.CustomExternalForce;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.RestrainPosition;
+import ffx.potential.terms.RestrainPositionPotentialEnergy;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,27 +61,21 @@ public class RestrainPositionsForce extends CustomExternalForce {
   /**
    * Restrain Positions Force constructor.
    *
-   * @param openMMEnergy The OpenMM Energy.
+   * @param restrainPositionPotentialEnergy RestrainPositionPotentialEnergy instance.
    */
-  public RestrainPositionsForce(OpenMMEnergy openMMEnergy) {
-    super("k0*periodicdistance(x,y,z,x0,y0,z0)^2");
-
-    List<RestrainPosition> restrainPositionList = openMMEnergy.getRestrainPositions();
-    if (restrainPositionList == null || restrainPositionList.isEmpty()) {
-      destroy();
-      return;
-    }
-
+  public RestrainPositionsForce(RestrainPositionPotentialEnergy restrainPositionPotentialEnergy) {
+    super(RestrainPositionPotentialEnergy.getRestrainPositionEnergyString());
+    RestrainPosition[] restrainPositions = restrainPositionPotentialEnergy.getRestrainPositionArray();
     // Define per particle parameters.
     addPerParticleParameter("k0");
     addPerParticleParameter("x0");
     addPerParticleParameter("y0");
     addPerParticleParameter("z0");
 
-    int nRestraints = restrainPositionList.size();
+    int nRestraints = restrainPositions.length;
     double convert = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
-    for (RestrainPosition restrainPosition : openMMEnergy.getRestrainPositions()) {
+    for (RestrainPosition restrainPosition : restrainPositions) {
       double forceConstant = restrainPosition.getForceConstant() * convert;
       Atom[] restrainPositionAtoms = restrainPosition.getAtoms();
       int numAtoms = restrainPosition.getNumAtoms();
@@ -104,7 +98,7 @@ public class RestrainPositionsForce extends CustomExternalForce {
       parameters.destroy();
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("RESTRAIN_POSITION_FORCE_GROUP", 0);
+    int forceGroup = restrainPositionPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.log(Level.INFO, format("  Restrain Positions\t%6d\t\t%d", nRestraints, forceGroup));
   }
@@ -113,11 +107,12 @@ public class RestrainPositionsForce extends CustomExternalForce {
    * Add a Restrain-Position force to the OpenMM System.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    List<RestrainPosition> restrainPositionList = openMMEnergy.getRestrainPositions();
-    if (restrainPositionList == null || restrainPositionList.isEmpty()) {
+    RestrainPositionPotentialEnergy restrainPositionPotentialEnergy =
+        openMMEnergy.getRestrainPositionPotentialEnergy();
+    if (restrainPositionPotentialEnergy == null) {
       return null;
     }
-    return new RestrainPositionsForce(openMMEnergy);
+    return new RestrainPositionsForce(restrainPositionPotentialEnergy);
   }
 
 }

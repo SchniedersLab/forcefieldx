@@ -78,7 +78,15 @@ class Timer extends AlgorithmsScript {
    * Timer constructor.
    */
   Timer() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Timer constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Timer(String[] args) {
+    super(args)
   }
 
   /**

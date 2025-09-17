@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
 import ffx.potential.openmm.OpenMMEnergy
 import ffx.potential.MolecularAssembly
@@ -65,10 +64,10 @@ import static java.lang.String.format
 class MultiTopTimer extends PotentialScript {
 
   @Mixin
-  private AlchemicalOptions alchemical
+  private AlchemicalOptions alchemicalOptions
 
   @Mixin
-  private TopologyOptions topology
+  private TopologyOptions topologyOptions
 
   @Mixin
   private TimerOptions timerOptions
@@ -78,9 +77,6 @@ class MultiTopTimer extends PotentialScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
-
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  private int threadsPer = threadsAvail
   MolecularAssembly[] topologies
   private Potential potential
 
@@ -88,7 +84,7 @@ class MultiTopTimer extends PotentialScript {
    * MultiTopTimer Constructor.
    */
   MultiTopTimer() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -99,6 +95,14 @@ class MultiTopTimer extends PotentialScript {
     super(binding)
   }
 
+  /**
+   * MultiTopTimer constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MultiTopTimer(String[] args) {
+    super(args)
+  }
+
   @Override
   MultiTopTimer run() {
 
@@ -106,55 +110,33 @@ class MultiTopTimer extends PotentialScript {
       return this
     }
 
-    List<String> arguments = filenames
-    // Check nArgs should either be number of arguments (min 1), else 1.
-    int nArgs = arguments ? arguments.size() : 1
-    nArgs = (nArgs < 1) ? 1 : nArgs
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
-    topologies = new MolecularAssembly[nArgs]
-
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    // Turn on computation of lambda derivatives if softcore atoms exist.
-    boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
-
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    double lambda = alchemical.getInitialLambda()
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nArgs >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    List<MolecularAssembly> topologyList = new ArrayList<>(4)
+    // Turn on computation of lambda dependent properties.
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
+    double lambda = alchemicalOptions.getInitialLambda()
 
     // Read in files.
-    if (!arguments || arguments.isEmpty()) {
-      MolecularAssembly molecularAssembly = potentialFunctions.getActiveAssembly()
-      if (molecularAssembly == null) {
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
+      if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
-      arguments = new ArrayList<>()
-      arguments.add(molecularAssembly.getFile().getName())
-      topologyList.add(alchemical.processFile(topology, molecularAssembly, 0))
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
     } else {
-      logger.info(format(" Initializing %d topologies...", nArgs))
-      for (int i = 0; i < nArgs; i++) {
-        topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer,
-            arguments.get(i), i))
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = alchemicalOptions.openFile(potentialFunctions, topologyOptions,
+            threadsPerTopology, filenames.get(i), i)
       }
     }
-
-    MolecularAssembly[] topologies =
-        topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Testing energies ")
@@ -163,15 +145,10 @@ class MultiTopTimer extends PotentialScript {
       sb.append("and gradients ")
     }
     sb.append("for ")
-    potential = topology.assemblePotential(topologies, threadsAvail, sb)
-
+    potential = topologyOptions.assemblePotential(topologies, sb)
     logger.info(sb.toString())
-
-    LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential :
-        null
+    LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
     linter?.setLambda(lambda)
-
-    // End boilerplate opening code.
 
     long minTime = Long.MAX_VALUE
     int iterations = timerOptions.getIterations()
@@ -190,8 +167,8 @@ class MultiTopTimer extends PotentialScript {
       long time = -System.nanoTime()
       if (gradient) {
         if (potential instanceof OpenMMEnergy) {
-          ((OpenMMEnergy) potential).setLambda(lambda);
-          ((OpenMMEnergy) potential).updateParameters();
+          ((OpenMMEnergy) potential).setLambda(lambda)
+          ((OpenMMEnergy) potential).updateParameters()
         }
         potential.energyAndGradient(x, g, print)
       } else {

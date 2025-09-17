@@ -58,6 +58,7 @@ public class GKCavitationForce extends Force {
    * Constructor.
    */
   public GKCavitationForce() {
+    super(null);
     System.out.println(" The GKCavitationForce is not currently supported.");
     System.exit(-1);
     // pointer = OpenMM_AmoebaGKCavitationForce_create();

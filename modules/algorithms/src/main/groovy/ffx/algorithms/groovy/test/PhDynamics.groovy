@@ -150,7 +150,7 @@ class PhDynamics extends AlgorithmsScript {
    * Dynamics Constructor.
    */
   PhDynamics() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -159,6 +159,14 @@ class PhDynamics extends AlgorithmsScript {
    */
   PhDynamics(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * PhDynamics constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  PhDynamics(String[] args) {
+    super(args)
   }
 
   /**

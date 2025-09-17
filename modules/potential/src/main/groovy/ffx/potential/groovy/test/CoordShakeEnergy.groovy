@@ -97,7 +97,7 @@ class CoordShakeEnergy extends PotentialScript {
    * CoordShakeEnergy Constructor.
    */
   CoordShakeEnergy() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -106,6 +106,14 @@ class CoordShakeEnergy extends PotentialScript {
    */
   CoordShakeEnergy(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * CoordShakeEnergy constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  CoordShakeEnergy(String[] args) {
+    super(args)
   }
 
   /**

@@ -110,7 +110,7 @@ class WriteRestraints extends PotentialScript {
    * SaveRotamers Constructor.
    */
   WriteRestraints() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -119,6 +119,14 @@ class WriteRestraints extends PotentialScript {
    */
   WriteRestraints(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * WriteRestraints constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  WriteRestraints(String[] args) {
+    super(args)
   }
 
   /**

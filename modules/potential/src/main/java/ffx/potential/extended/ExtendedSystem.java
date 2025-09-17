@@ -1482,7 +1482,7 @@ public class ExtendedSystem implements Potential {
     /**
      * Companion to getExtendedAtoms() for vdw::setAtoms and pme::setAtoms.
      *
-     * @return an array of {@link int} objects.
+     * @return the molecule ID for each extended atom.
      */
     public int[] getExtendedMolecule() {
         return extendedMolecules;
@@ -1865,12 +1865,17 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public void setAcceleration(double[] acceleration) {
-
     }
+
     @Override
     public double[] getCoordinates(double[] parameters) {
         return getThetaPosition();
     }
+
+  @Override
+  public void setCoordinates(double[] parameters) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
 
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {

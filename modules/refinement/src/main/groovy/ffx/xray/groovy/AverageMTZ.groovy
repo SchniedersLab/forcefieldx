@@ -71,7 +71,15 @@ class AverageMTZ extends AlgorithmsScript {
    * AverageMTZ constructor.
    */
   AverageMTZ() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * AverageMTZ constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  AverageMTZ(String[] args) {
+    super(args)
   }
 
   /**

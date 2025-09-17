@@ -87,7 +87,7 @@ class CrystalSearch extends AlgorithmsScript {
    * CrystalSearch Constructor.
    */
   CrystalSearch() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -96,6 +96,14 @@ class CrystalSearch extends AlgorithmsScript {
    */
   CrystalSearch(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * CrystalSearch constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  CrystalSearch(String[] args) {
+    super(args)
   }
 
   // Function to provide random doubles

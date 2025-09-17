@@ -37,15 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
-import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parameters.SoluteType.setSoluteRadii;
-import static ffx.utilities.Constants.dWater;
-import static ffx.utilities.PropertyGroup.ImplicitSolvent;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.max;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray;
@@ -53,7 +44,6 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.nonbonded.implicit.BornGradRegion;
 import ffx.potential.nonbonded.implicit.BornRadiiRegion;
 import ffx.potential.nonbonded.implicit.BornTanhRescaling;
@@ -66,6 +56,7 @@ import ffx.potential.nonbonded.implicit.InducedGKFieldRegion;
 import ffx.potential.nonbonded.implicit.InitializationRegion;
 import ffx.potential.nonbonded.implicit.PermanentGKFieldRegion;
 import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteType;
@@ -77,6 +68,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
+import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parameters.SoluteType.setSoluteRadii;
+import static ffx.utilities.Constants.dWater;
+import static ffx.utilities.PropertyGroup.ImplicitSolvent;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.max;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable atomic multipole force
@@ -913,14 +913,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     if (nonPolarModel.equals(NonPolarModel.GAUSS_DISP)) {
       logger.info(format("    GaussVol Radii Offset:               %2.4f",
-              forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
+          forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
       logger.info(format("    GaussVol Radii Scale:                %2.4f",
-              forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.15)));
+          forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.15)));
     }
 
     if (dispersionRegion != null) {
       logger.info(format("   Dispersion Integral Offset:         %8.4f (A)",
-              dispersionRegion.getDispersionOffset()));
+          dispersionRegion.getDispersionOffset()));
     }
 
     if (surfaceAreaRegion != null) {
@@ -1054,18 +1054,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * getBaseRadii.
+   * Returns the base radii used for the GK calculation.
    *
-   * @return an array of {@link double} objects.
+   * <p>These are the radii used to compute the Born radii, and are not the same as the Born radii.
+   *
+   * @return Base radii for GK calculations.
    */
   public double[] getBaseRadii() {
     return baseRadius;
   }
 
   /**
-   * getDescreenRadii.
+   * Returns the descreening radii used for the GK calculation.
    *
-   * @return an array of {@link double} objects.
+   * <p>These are the radii used to during pairwise descreening.
+   *
+   * @return Descreening radii for GK calculations.
    */
   public double[] getDescreenRadii() {
     return descreenRadius;
@@ -1242,23 +1246,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>overlapScale</code>.
+   * Returns the overlap scale factors used for the GK calculation.
    *
-   * @return an array of {@link double} objects.
+   * @return Overlap scale factors for GK calculations.
    */
   public double[] getOverlapScale() {
     return overlapScale;
   }
 
   /**
-   * Getter for the field <code>neckScale</code>.
+   * Returns the neck scale factors used for the GK calculation.
    *
-   * @return an array of {@link double} objects.
+   * @return Neck scale factors for GK calculations.
    */
   public double[] getNeckScale() {
     return neckScale;
   }
 
+  /**
+   * Returns the tanh correction factor.
+   *
+   * <p>When true, the tanh correction is applied to the Born radii.
+   *
+   * @return True if tanh correction is applied.
+   */
   public boolean getTanhCorrection() {
     return tanhCorrection;
   }
@@ -1407,9 +1418,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * setNeighborList.
+   * Setter for the field <code>neighborLists</code>.
    *
-   * @param neighbors an array of {@link int} objects.
+   * @param neighbors The neighbor list for the GK calculation.
    */
   public void setNeighborList(int[][][] neighbors) {
     this.neighborLists = neighbors;
@@ -1418,7 +1429,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Setter for the field <code>use</code>.
    *
-   * @param use an array of {@link boolean} objects.
+   * @param use the use array indicating which atoms are used in the GK calculation.
    */
   public void setUse(boolean[] use) {
     this.use = use;

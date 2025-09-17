@@ -73,7 +73,7 @@ class IdentifyRotamers extends AlgorithmsScript {
    * IdentifyRotamers Constructor.
    */
   IdentifyRotamers() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -82,6 +82,14 @@ class IdentifyRotamers extends AlgorithmsScript {
    */
   IdentifyRotamers(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * IdentifyRotamers constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  IdentifyRotamers(String[] args) {
+    super(args)
   }
 
   /**

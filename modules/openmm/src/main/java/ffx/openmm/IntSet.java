@@ -59,12 +59,13 @@ public class IntSet {
   }
 
   /**
-   * Insert a value into the set.
-   *
-   * @param value Value to insert.
+   * Destroy the set.
    */
-  public void insert(int value) {
-    OpenMM_IntSet_insert(pointer, value);
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_IntSet_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
@@ -86,13 +87,12 @@ public class IntSet {
   }
 
   /**
-   * Destroy the set.
+   * Insert a value into the set.
+   *
+   * @param value Value to insert.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_IntSet_destroy(pointer);
-      pointer = null;
-    }
+  public void insert(int value) {
+    OpenMM_IntSet_insert(pointer, value);
   }
 
 }

@@ -42,6 +42,7 @@ import edu.uiowa.jopenmm.OpenMMLibrary;
 import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.openmm.Context;
 import ffx.openmm.Integrator;
 import ffx.openmm.MinimizationReporter;
@@ -90,17 +91,9 @@ public class OpenMMContext extends Context {
   private static final Logger logger = Logger.getLogger(OpenMMContext.class.getName());
 
   /**
-   * OpenMM Platform.
-   */
-  private final Platform openMMPlatform;
-  /**
    * OpenMM System.
    */
   private final OpenMMSystem openMMSystem;
-  /**
-   * Instance of the OpenMM Integrator class.
-   */
-  private Integrator openMMIntegrator;
   /**
    * Integrator string (default = VERLET).
    */
@@ -123,23 +116,21 @@ public class OpenMMContext extends Context {
   private final Atom[] atoms;
 
   /**
-   * Create an OpenMM Context.
+   * Create an OpenMM Context for a single topology OpenMM system.
    *
    * @param platform     OpenMM Platform.
    * @param openMMSystem OpenMM System.
    * @param atoms        Array of atoms.
    */
   public OpenMMContext(Platform platform, OpenMMSystem openMMSystem, Atom[] atoms) {
-    this.openMMPlatform = platform;
+    super(openMMSystem, createIntegrator("VERLET", 0.001, 298.15, openMMSystem), platform);
     this.openMMSystem = openMMSystem;
+    this.atoms = atoms;
 
     ForceField forceField = openMMSystem.getForceField();
     boolean aperiodic = openMMSystem.getCrystal().aperiodic();
     boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
     enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
-
-    this.atoms = atoms;
-    update(integratorName, timeStep, temperature, true);
   }
 
   /**
@@ -166,12 +157,6 @@ public class OpenMMContext extends Context {
 
     logger.info("\n Updating OpenMM Context");
 
-    // Update the integrator.
-    if (openMMIntegrator != null) {
-      openMMIntegrator.destroy();
-    }
-    openMMIntegrator = createIntegrator(integratorName, timeStep, temperature, openMMSystem);
-
     // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
     // TODO: Test on a fixed charge system.
     // double currentLambda = openMMEnergy.getLambda();
@@ -180,32 +165,32 @@ public class OpenMMContext extends Context {
     // }
 
     // Update the context.
-    updateContext(openMMSystem, openMMIntegrator, openMMPlatform);
+    Integrator newIntegrator = createIntegrator(integratorName, timeStep, temperature, openMMSystem);
+    Platform newPlatform = new Platform(platform.getName());
+    updateContext(openMMSystem, newIntegrator, newPlatform);
 
     // Revert to the current lambda value.
     // if (openMMEnergy.getLambdaTerm()) {
     //   openMMEnergy.setLambda(currentLambda);
     // }
 
-    // Get initial positions and velocities for active atoms.
-    int nVar = openMMSystem.getNumberOfVariables();
+    // Get initial positions and velocities for all atoms.
+    int nVar = atoms.length * 3;
     double[] x = new double[nVar];
     double[] v = new double[nVar];
     double[] vel3 = new double[3];
     int index = 0;
     for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.getVelocity(vel3);
-        // X-axis
-        x[index] = a.getX();
-        v[index++] = vel3[0];
-        // Y-axis
-        x[index] = a.getY();
-        v[index++] = vel3[1];
-        // Z-axis
-        x[index] = a.getZ();
-        v[index++] = vel3[2];
-      }
+      a.getVelocity(vel3);
+      // X-axis
+      x[index] = a.getX();
+      v[index++] = vel3[0];
+      // Y-axis
+      x[index] = a.getY();
+      v[index++] = vel3[1];
+      // Z-axis
+      x[index] = a.getZ();
+      v[index++] = vel3[2];
     }
 
     // Load the current periodic box vectors.
@@ -224,8 +209,9 @@ public class OpenMMContext extends Context {
     // Application of constraints can change coordinates and velocities.
     // Retrieve them for consistency.
     OpenMMState openMMState = getOpenMMState(OpenMM_State_Positions | OpenMM_State_Velocities);
-    openMMState.getPositions(x);
-    openMMState.getVelocities(v);
+    Potential energy = openMMSystem.getPotential();
+    energy.setCoordinates(openMMState.getActivePositions(null, atoms));
+    energy.setVelocity(openMMState.getActiveVelocities(null, atoms));
     openMMState.destroy();
   }
 
@@ -247,7 +233,7 @@ public class OpenMMContext extends Context {
    */
   public OpenMMState getOpenMMState(int mask) {
     State state = getState(mask, enforcePBC);
-    return new OpenMMState(state.getPointer(), atoms, openMMSystem.getNumberOfVariables());
+    return new OpenMMState(state.getPointer());
   }
 
   /**
@@ -256,7 +242,8 @@ public class OpenMMContext extends Context {
    * @param numSteps Number of steps to take.
    */
   public void integrate(int numSteps) {
-    openMMIntegrator.step(numSteps);
+    Integrator integrator = getIntegrator();
+    integrator.step(numSteps);
   }
 
   /**
@@ -274,50 +261,45 @@ public class OpenMMContext extends Context {
   }
 
   /**
-   * The array x contains atomic coordinates only for active atoms.
+   * The array x should contain atomic coordinates for all atoms in units of Angstroms.
    *
-   * @param x Atomic coordinate array for only active atoms.
+   * @param x Atomic coordinate array for all atoms in units of Angstroms.
    */
+  @Override
   public void setPositions(double[] x) {
-    double[] allPositions = new double[3 * atoms.length];
-    double[] d = new double[3];
-    int index = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.moveTo(x[index], x[index + 1], x[index + 2]);
-      }
-      a.getXYZ(d);
-      allPositions[index] = d[0] * OpenMM_NmPerAngstrom;
-      allPositions[index + 1] = d[1] * OpenMM_NmPerAngstrom;
-      allPositions[index + 2] = d[2] * OpenMM_NmPerAngstrom;
-      index += 3;
+    long time = -System.nanoTime();
+    int n = x.length;
+    double[] xn = new double[n];
+    for (int i = 0; i < n; i++) {
+      // Convert Angstroms to nanometers.
+      xn[i] = x[i] * OpenMM_NmPerAngstrom;
     }
-    super.setPositions(allPositions);
+    super.setPositions(xn);
+    time += System.nanoTime();
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(format(" Set OpenMM positions  %9.6f (msec)", time * 1e-6));
+    }
   }
 
   /**
-   * The array v contains velocity values for active atomic coordinates.
+   * The array v contains velocity values for all atomic coordinates in units of Angstroms/psec.
    *
-   * @param v Velocity array for active atoms.
+   * @param v Velocity array for all atoms.
    */
+  @Override
   public void setVelocities(double[] v) {
-    double[] allVelocities = new double[3 * atoms.length];
-    double[] velocity = new double[3];
-    int index = 0;
-    for (Atom a : atoms) {
-      if (a.isActive()) {
-        a.setVelocity(v[index], v[index + 1], v[index + 2]);
-      } else {
-        // OpenMM requires velocities for even "inactive" atoms with mass of zero.
-        a.setVelocity(0.0, 0.0, 0.0);
-      }
-      a.getVelocity(velocity);
-      allVelocities[index] = velocity[0] * OpenMM_NmPerAngstrom;
-      allVelocities[index + 1] = velocity[1] * OpenMM_NmPerAngstrom;
-      allVelocities[index + 2] = velocity[2] * OpenMM_NmPerAngstrom;
-      index += 3;
+    long time = -System.nanoTime();
+    int n = v.length;
+    double[] vn = new double[n];
+    for (int i = 0; i < n; i++) {
+      // Convert Angstroms to nanometers.
+      vn[i] = v[i] * OpenMM_NmPerAngstrom;
     }
-    super.setVelocities(allVelocities);
+    super.setVelocities(vn);
+    time += System.nanoTime();
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(format(" Set OpenMM velocities %9.6f (msec)", time * 1e-6));
+    }
   }
 
   /**
@@ -365,6 +347,7 @@ public class OpenMMContext extends Context {
 
     OpenMMUtils.init();
 
+    // Print out the OpenMM library path.
     logger.log(Level.INFO, " Loaded from:\n {0}", OpenMMLibrary.JNA_NATIVE_LIB.toString());
 
     // Print out the OpenMM Version.
@@ -492,9 +475,6 @@ public class OpenMMContext extends Context {
    * Free OpenMM memory for the current Context and Integrator.
    */
   public void free() {
-    if (openMMIntegrator != null) {
-      openMMIntegrator.destroy();
-    }
     destroy();
   }
 }

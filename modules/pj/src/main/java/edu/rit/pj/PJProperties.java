@@ -241,7 +241,7 @@ public class PJProperties {
      * program will use platform threads.
      * <p>
      * The default is false, meaning that the program will use platform threads.
-     * <p>
+     *
      * @return true if the program should use virtual threads, false otherwise.
      */
     public static boolean getPjVt() {

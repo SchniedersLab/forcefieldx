@@ -45,11 +45,11 @@ package ffx.openmm;
 public class LangevinIntegrator extends LangevinMiddleIntegrator {
 
   /**
-   * Constructor.
+   * Create a LangevinIntegrator.
    *
-   * @param dt    The time step.
-   * @param temp  The temperature.
-   * @param gamma The friction coefficient.
+   * @param dt    the step size with which to integrate the system (in picoseconds)
+   * @param temp  the temperature of the heat bath (in Kelvin)
+   * @param gamma the friction coefficient which couples the system to the heat bath (in inverse picoseconds)
    */
   public LangevinIntegrator(double dt, double temp, double gamma) {
     super(dt, temp, gamma);

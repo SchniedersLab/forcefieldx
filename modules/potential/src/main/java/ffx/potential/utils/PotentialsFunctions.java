@@ -37,15 +37,16 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.utilities.TinkerUtils.version;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
+
 import java.io.File;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.TinkerUtils.version;
 
 /**
  * PotentialsFunctions describes core functionality for many Force Field X algorithms and scripts,
@@ -58,7 +59,7 @@ import java.util.logging.Logger;
  * it also updates the FFX graphical user interface and tree structure.
  *
  * <p>The PotentialsUtils implementation lacks the extra functionality of the UIUtils
- * implementation, and simply accomplishes the required task. This is used by our tests, and is also
+ * implementation and simply achieves the required task. This is used by our tests, and is also
  * potentially useful for third parties who would like to use FFX without its GUI.
  *
  * @author Jacob M. Litman
@@ -67,7 +68,9 @@ import java.util.logging.Logger;
  */
 public interface PotentialsFunctions {
 
-  /** Constant <code>logger</code> */
+  /**
+   * Constant <code>logger</code>
+   */
   Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
   /**
@@ -118,8 +121,8 @@ public interface PotentialsFunctions {
   }
 
   /**
-   * If available, returns CLI arguments; default implementation does not have access to CLI
-   * arguments, and throws UnsupportedOperationException.
+   * If available, returns CLI arguments; the default implementation does not have access to CLI
+   * arguments and throws UnsupportedOperationException.
    *
    * @return CLI arguments
    * @throws java.lang.UnsupportedOperationException If unimplemented
@@ -162,7 +165,7 @@ public interface PotentialsFunctions {
    * underlying Potential to use a certain number of threads. Default implementation simply ignores
    * nThreads.
    *
-   * @param files an array of {@link java.lang.String} objects.
+   * @param files    an array of {@link java.lang.String} objects.
    * @param nThreads Use non-default num threads
    * @return Array of MolecularAssembly.
    */
@@ -190,7 +193,7 @@ public interface PotentialsFunctions {
    * Opens a file and returns all created MolecularAssembly objects, setting any underlying Potential
    * to use a certain number of threads. Default implementation simply ignores nThreads.
    *
-   * @param file Filename to open
+   * @param file     Filename to open
    * @param nThreads Use non-default num threads
    * @return Array of MolecularAssembly.
    */
@@ -211,7 +214,7 @@ public interface PotentialsFunctions {
    * Saves the current state of a MolecularAssembly to an XYZ file.
    *
    * @param assembly MolecularAssembly to save
-   * @param file Destination .xyz
+   * @param file     Destination .xyz
    */
   void save(MolecularAssembly assembly, File file);
 
@@ -219,15 +222,15 @@ public interface PotentialsFunctions {
    * Saves the current state of a MolecularAssembly to an XYZ file as a P1 crystal.
    *
    * @param assembly MolecularAssembly to save
-   * @param file Destination .xyz
+   * @param file     Destination .xyz
    */
   void saveAsXYZinP1(MolecularAssembly assembly, File file);
 
   /**
    * Saves the current state of a MolecularAssembly to an XYZ file as a replicates crystal.
    *
-   * @param assembly MolecularAssembly to save
-   * @param file Destination .xyz
+   * @param assembly         MolecularAssembly to save
+   * @param file             Destination .xyz
    * @param replicatesVector Dimensions for replicates crystal.
    */
   void saveAsXYZasReplicates(MolecularAssembly assembly, File file, int[] replicatesVector);
@@ -236,7 +239,7 @@ public interface PotentialsFunctions {
    * Saves the current state of a MolecularAssembly to a PDB file.
    *
    * @param assembly MolecularAssembly to save
-   * @param file Destination .pdb
+   * @param file     Destination .pdb
    */
   void saveAsPDB(MolecularAssembly assembly, File file);
 
@@ -244,7 +247,7 @@ public interface PotentialsFunctions {
    * Saves the current state of an array of MolecularAssembly instances to a PDB file.
    *
    * @param assemblies MolecularAssembly array to save
-   * @param file Destination .pdb
+   * @param file       Destination .pdb
    */
   void saveAsPDB(MolecularAssembly[] assemblies, File file);
 
@@ -254,7 +257,7 @@ public interface PotentialsFunctions {
    * Saves the current state of a MolecularAssembly to an XYZ file.
    *
    * @param assembly MolecularAssembly to save
-   * @param file Destination .xyz
+   * @param file     Destination .xyz
    */
   void saveAsXYZ(MolecularAssembly assembly, File file);
 
@@ -262,7 +265,7 @@ public interface PotentialsFunctions {
    * Saves the symmetry mates of a MolecularAssembly to PDB files.
    *
    * @param assembly To save
-   * @param file Destination file
+   * @param file     Destination file
    */
   void saveAsPDBinP1(MolecularAssembly assembly, File file);
 

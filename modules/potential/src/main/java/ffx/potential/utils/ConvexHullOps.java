@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import ffx.numerics.quickhull.QuickHull3D;
+import ffx.potential.bonded.Atom;
+import ffx.utilities.Constants;
+
+import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+
 import static ffx.numerics.math.DoubleMath.dist2;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import com.github.quickhull3d.QuickHull3D;
-import ffx.potential.bonded.Atom;
-import ffx.utilities.Constants;
-import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.stream.IntStream;
 
 /**
  * This ConvexHullOps class uses the QuickHull3D package by John E. Lloyd to construct and operate on
@@ -96,7 +97,7 @@ public class ConvexHullOps {
    * UNTESTED: Identifies atoms forming the convex hull.
    *
    * @param quickHull3D A QuickHull3D.
-   * @param allAtoms Atoms used in building the QuickHull3D.
+   * @param allAtoms    Atoms used in building the QuickHull3D.
    * @return Atoms forming the convex hull.
    */
   public static Atom[] identifyHullAtoms(QuickHull3D quickHull3D, Atom[] allAtoms) {

@@ -1242,14 +1242,15 @@ public class ReciprocalSpace {
   /**
    * Convert a dipole in the global frame into a factional dipole.
    *
-   * @param gd an array of {@link double} objects.
-   * @param fd an array of {@link double} objects.
+   * @param globalDipole     dipole in the global frame.
+   * @param fractionalDipole fractional dipole.
    */
-  public void toFractionalDipole(double[] gd, double[] fd) {
+  public void toFractionalDipole(double[] globalDipole, double[] fractionalDipole) {
     for (int j = 0; j < 3; j++) {
-      fd[j] = 0.0;
+      fractionalDipole[j] = 0.0;
       for (int k = 0; k < 3; k++) {
-        fd[j] = fma(transformMultipoleMatrix[j + 1][k + 1], gd[k], fd[j]);
+        fractionalDipole[j] = fma(transformMultipoleMatrix[j + 1][k + 1],
+            globalDipole[k], fractionalDipole[j]);
       }
     }
   }

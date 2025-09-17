@@ -144,6 +144,14 @@ public class SplineEnergy implements OptimizationInterface {
    * {@inheritDoc}
    */
   @Override
+  public void setCoordinates(double[] parameters) {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public int getNumberOfVariables() {
     throw new UnsupportedOperationException("Not supported yet.");
   }

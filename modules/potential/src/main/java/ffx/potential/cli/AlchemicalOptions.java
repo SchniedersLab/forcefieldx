@@ -255,6 +255,15 @@ public class AlchemicalOptions {
   }
 
   /**
+   * Set system properties for alchemical simulations.
+   */
+  public void setAlchemicalProperties() {
+    if (hasSoftcore()) {
+      System.setProperty("lambdaterm", "true");
+    }
+  }
+
+  /**
    * Collection of Alchemical Options.
    */
   private static class AlchemicalOptionGroup {

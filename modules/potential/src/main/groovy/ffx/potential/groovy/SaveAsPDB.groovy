@@ -120,7 +120,7 @@ class SaveAsPDB extends PotentialScript {
    * SaveAsPDB Constructor.
    */
   SaveAsPDB() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -129,6 +129,14 @@ class SaveAsPDB extends PotentialScript {
    */
   SaveAsPDB(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SaveAsPDB constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveAsPDB(String[] args) {
+    super(args)
   }
 
   /**

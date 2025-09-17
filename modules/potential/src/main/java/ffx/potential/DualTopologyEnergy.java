@@ -47,10 +47,12 @@ import ffx.numerics.Potential;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.openmm.OpenMMDualTopologyEnergy;
 import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,6 +62,7 @@ import java.util.logging.Logger;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.crystal.SymOp.invertSymOp;
+import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.utils.Superpose.rmsd;
 import static ffx.utilities.StringUtils.parseAtomRanges;
 import static ffx.utilities.StringUtils.writeAtomRanges;
@@ -187,9 +190,31 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
    */
   private final boolean[] sharedAtoms1;
   /**
-   * Flag is true if the atom is shared (not alchemical) for Topology 1.
+   * Flag is true if the atom is shared (not alchemical) for Topology 2.
    */
   private final boolean[] sharedAtoms2;
+  /**
+   * Index for each atom in topology 1 into the overall dual-topology atom array.
+   * This includes all atoms, including (in)active, shared atoms and alchemical atoms.
+   */
+  private final int[] system1AtomIndex;
+  /**
+   * Index for each atom in topology 2 into the overall dual-topology atom array.
+   * This includes all atoms, including (in)active, shared atoms and alchemical atoms.
+   */
+  private final int[] system2AtomIndex;
+  /**
+   * An array of shared and alchemical atoms for the dual topology system.
+   * <p>
+   * The shared atoms from Topology 1.
+   */
+  private final Atom[] dualTopologyAtoms;
+  /**
+   * An array of shared and alchemical atoms for the dual topology system.
+   * <p>
+   * The shared atoms from Topology 2.
+   */
+  private final Atom[] dualTopologyAtoms2;
   /**
    * Will default to a power-1 PowerSwitch function.
    */
@@ -337,7 +362,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     lambdaInterface1 = forceFieldEnergy1;
     lambdaInterface2 = forceFieldEnergy2;
 
-    /* Apom array for topology 1. */
+    /* Atom array for topology 1. */
     Atom[] atoms1 = topology1.getAtomArray();
     /* Atom array for topology 2. */
     Atom[] atoms2 = topology2.getAtomArray();
@@ -370,6 +395,15 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
       }
     }
+
+    if (shared1 != shared2) {
+      logger.severe(" Shared active atoms are not equal between topologies:\n"
+          + " Topology 1 has " + shared1 + " shared atoms.\n"
+          + " Topology 2 has " + shared2 + " shared atoms.\n"
+          + " Please check the input files or force field parameters.");
+    }
+
+    assert (shared1 == shared2);
     nActive1 = activeCount1;
     nActive2 = activeCount2;
     activeAtoms1 = new Atom[nActive1];
@@ -378,6 +412,76 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     sharedAtoms2 = new boolean[nActive2];
     Arrays.fill(sharedAtoms1, true);
     Arrays.fill(sharedAtoms2, true);
+
+    // Create a dual topology list that includes all atoms from both topologies (even inactive atoms).
+    int nAlchemical1 = 0;
+    int nShared1 = 0;
+    int nAlchemical2 = 0;
+    int nShared2 = 0;
+    for (Atom a : atoms1) {
+      if (a.applyLambda()) {
+        nAlchemical1++;
+      } else {
+        nShared1++;
+      }
+    }
+    for (Atom a : atoms2) {
+      if (a.applyLambda()) {
+        nAlchemical2++;
+      } else {
+        nShared2++;
+      }
+    }
+    if (nShared1 != nShared2) {
+      logger.severe(" Shared atoms are not equal between topologies:\n"
+          + " Topology 1 has " + nShared1 + " shared atoms.\n"
+          + " Topology 2 has " + nShared2 + " shared atoms.\n"
+          + " Please check the input files or force field parameters.");
+    }
+    dualTopologyAtoms = new Atom[nShared1 + nAlchemical1 + nAlchemical2];
+    dualTopologyAtoms2 = new Atom[nShared1 + nAlchemical1 + nAlchemical2];
+    int indexShared = 0;
+    int indexAlchemical = nShared1;
+    int index1 = 0;
+    system1AtomIndex = new int[atoms1.length];
+    for (Atom a : atoms1) {
+      a.setTopologyIndex(0);
+      if (a.applyLambda()) {
+        system1AtomIndex[index1] = indexAlchemical;
+        a.setTopologyAtomIndex(indexAlchemical);
+        dualTopologyAtoms[indexAlchemical] = a;
+        dualTopologyAtoms2[indexAlchemical] = a;
+        indexAlchemical++;
+      } else {
+        system1AtomIndex[index1] = indexShared;
+        a.setTopologyAtomIndex(indexShared);
+        dualTopologyAtoms[indexShared] = a;
+        indexShared++;
+      }
+      index1++;
+    }
+    // Reset the shared index.
+    indexShared = 0;
+    int index2 = 0;
+    system2AtomIndex = new int[atoms2.length];
+    for (Atom a : atoms2) {
+      a.setTopologyIndex(1);
+      if (a.applyLambda()) {
+        system2AtomIndex[index2] = indexAlchemical;
+        a.setTopologyAtomIndex(indexAlchemical);
+        dualTopologyAtoms[indexAlchemical] = a;
+        dualTopologyAtoms2[indexAlchemical] = a;
+        indexAlchemical++;
+      } else {
+        system2AtomIndex[index2] = indexShared;
+        a.setTopologyAtomIndex(indexShared);
+        dualTopologyAtoms2[indexShared] = a;
+        indexShared++;
+      }
+      index2++;
+    }
+
+    // Fill the active atom arrays and shared atom flags.
     int index = 0;
     for (Atom a1 : atoms1) {
       if (a1.isActive()) {
@@ -401,7 +505,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
     }
 
-    assert (shared1 == shared2);
     nShared = shared1;
     /* Topology 1 number of softcore atoms. */
     int nSoftCore1 = nActive1 - nShared;
@@ -501,6 +604,154 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         assert (a1.getZ() == a2.getZ());
         reconcileAtoms(a1, a2, Level.INFO);
       }
+    }
+  }
+
+  /**
+   * Static factory method to create a DualTopologyEnergy, possibly via FFX or OpenMM implementations.
+   *
+   * @param molecularAssembly1 MolecularAssembly for topology 1.
+   * @param molecularAssembly2 MolecularAssembly for topology 2.
+   * @param switchFunction     The UnivariateSwitchingFunction to use for the dual topology energy.
+   * @return A DualTopologyEnergy on some Platform
+   */
+  @SuppressWarnings("fallthrough")
+  public static DualTopologyEnergy energyFactory(MolecularAssembly molecularAssembly1,
+                                                 MolecularAssembly molecularAssembly2,
+                                                 UnivariateSwitchingFunction switchFunction) {
+    ForceField forceField = molecularAssembly1.getForceField();
+    String platformString = toEnumForm(forceField.getString("PLATFORM-DT", "FFX"));
+    try {
+      Platform platform = Platform.valueOf(platformString);
+      switch (platform) {
+        case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
+          try {
+            return new OpenMMDualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction, platform);
+          } catch (Exception ex) {
+            logger.warning(format(" Exception creating OpenMMDualTopologyEnergy: %s", ex));
+            return new DualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction);
+          }
+        case OMM_CPU:
+          logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
+        default:
+          return new DualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction);
+      }
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      logger.warning(
+          format(" String %s did not match a known energy implementation", platformString));
+      return new DualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction);
+    }
+  }
+
+
+  /**
+   * Get the number of dual topology atoms.
+   *
+   * @return The number of dual topology atoms.
+   */
+  public int getNumberOfAtoms() {
+    return dualTopologyAtoms.length;
+  }
+
+  /**
+   * Get the dual topology atoms for the specified topology.
+   *
+   * @param topology The topology index (0 for topology 1, 1 for topology 2).
+   * @return An array of Atoms for dual-topology with shared atoms from the specified topology.
+   */
+  public Atom[] getDualTopologyAtoms(int topology) {
+    if (topology == 0) {
+      return dualTopologyAtoms;
+    } else if (topology == 1) {
+      return dualTopologyAtoms2;
+    } else {
+      throw new IllegalArgumentException(" Invalid topology index: " + topology);
+    }
+  }
+
+  /**
+   * Get the atom from the dual-topology atom array corresponding to the specified topology and index.
+   *
+   * @param topology The topology index (0 for topology 1, 1 for topology 2).
+   * @param index    The index of the atom in the dual topology atom array.
+   * @return The Atom from the dual-topology atom array corresponding to the specified topology and index.
+   */
+  public Atom getDualTopologyAtom(int topology, int index) {
+    if (topology == 0) {
+      return dualTopologyAtoms[index];
+    } else if (topology == 1) {
+      return dualTopologyAtoms2[index];
+    } else {
+      throw new IllegalArgumentException(" Invalid topology index: " + topology);
+    }
+  }
+
+  /**
+   * Map an atomic index from a single topology to the overall dual-topology atom array.
+   *
+   * @param topology The topology index (0 for topology 1, 1 for topology 2).
+   * @param index    The index of the atom in the specified topology.
+   * @return The index of the atom in the overall dual-topology atom array.
+   */
+  public int mapToDualTopologyIndex(int topology, int index) {
+    if (topology == 0) {
+      return system1AtomIndex[index];
+    } else if (topology == 1) {
+      return system2AtomIndex[index];
+    } else {
+      throw new IllegalArgumentException(" Invalid topology index: " + topology);
+    }
+  }
+
+  /**
+   * Get the ForceFieldEnergy for topology 1.
+   *
+   * @return The ForceFieldEnergy for topology 1.
+   */
+  public ForceFieldEnergy getForceFieldEnergy1() {
+    return forceFieldEnergy1;
+  }
+
+  /**
+   * Get the ForceFieldEnergy for topology 2.
+   *
+   * @return The ForceFieldEnergy for topology 2.
+   */
+  public ForceFieldEnergy getForceFieldEnergy2() {
+    return forceFieldEnergy2;
+  }
+
+  /**
+   * Get the atom index for topology 1 into the overall dual-topology atom array.
+   *
+   * @return An array of indices for topology 1 atoms into the dual-topology atom array.
+   */
+  public int[] getDualTopologyIndex1() {
+    return system1AtomIndex;
+  }
+
+  /**
+   * Get the atom index for topology 2 into the overall dual-topology atom array.
+   *
+   * @return An array of indices for topology 2 atoms into the dual-topology atom array.
+   */
+  public int[] getDualTopologyIndex2() {
+    return system2AtomIndex;
+  }
+
+  /**
+   * The scale factor for the specified topology.
+   *
+   * @param topology The topology index (0 for topology 1, 1 for topology 2).
+   * @return The scale factor for the topology.
+   */
+  public double getTopologyScale(int topology) {
+    if (topology == 0) {
+      return f1L;
+    } else if (topology == 1) {
+      return f2L;
+    } else {
+      throw new IllegalArgumentException(" Invalid topology index: " + topology);
     }
   }
 
@@ -794,6 +1045,44 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
     }
     return x;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void setCoordinates(@Nullable double[] x) {
+    int indexCommon = 0;
+    int indexUnique = nShared * 3;
+    double[] xyz = new double[3];
+    for (int i = 0; i < nActive1; i++) {
+      if (sharedAtoms1[i]) {
+        xyz[0] = x[indexCommon++];
+        xyz[1] = x[indexCommon++];
+        xyz[2] = x[indexCommon++];
+      } else {
+        xyz[0] = x[indexUnique++];
+        xyz[1] = x[indexUnique++];
+        xyz[2] = x[indexUnique++];
+      }
+      Atom a = activeAtoms1[i];
+      a.setXYZ(xyz);
+    }
+    // Reset the common index.
+    indexCommon = 0;
+    for (int i = 0; i < nActive2; i++) {
+      if (sharedAtoms2[i]) {
+        xyz[0] = x[indexCommon++];
+        xyz[1] = x[indexCommon++];
+        xyz[2] = x[indexCommon++];
+      } else {
+        xyz[0] = x[indexUnique++];
+        xyz[1] = x[indexUnique++];
+        xyz[2] = x[indexUnique++];
+      }
+      Atom a = activeAtoms2[i];
+      a.setXYZ(xyz);
+    }
   }
 
   /**
@@ -1466,7 +1755,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
    * These restraints have the potential to interact with symmetry operators applied in dual-topology simulations.
    *
    * @param nActive     Number of active atoms (shared and alchemical) in simulation for this system.
-   * @param sharedAtoms Mask to determined which atoms are shared vs alchemical.
+   * @param sharedAtoms Mask to determine which atoms are shared vs alchemical.
    * @param activeAtoms Active atoms for this simulation.
    */
   private void validateAlchemicalAtoms(int nActive, boolean[] sharedAtoms, Atom[] activeAtoms) {

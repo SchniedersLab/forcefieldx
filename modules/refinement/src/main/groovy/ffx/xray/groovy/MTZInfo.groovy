@@ -63,7 +63,15 @@ class MTZInfo extends AlgorithmsScript {
    * MTZInfo constructor.
    */
   MTZInfo() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * MTZInfo constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MTZInfo(String[] args) {
+    super(args)
   }
 
   /**

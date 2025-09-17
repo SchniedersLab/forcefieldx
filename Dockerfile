@@ -5,7 +5,7 @@ RUN apt-get install -y wget unzip curl zip
 RUN apt-get install -y libfreetype6 fontconfig fonts-dejavu
 RUN apt-get install -y python3-pip
 
-# Download GraalVM JDK 22 for x64 or Arm64
+# Download JDK 22 for x64 or Arm64
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
@@ -62,16 +62,17 @@ RUN set -eux; \
   cd /home/ffx; \
   ./mvnw; 
 
-# Download Java Jupyter Kernel
+# Download Java Jupyter Kernel 2.2.0
 RUN set -eux; \
-  wget https://github.com/padreati/rapaio-jupyter-kernel/releases/download/2.1.0/rapaio-jupyter-kernel-2.1.0.jar; 
+  wget https://github.com/padreati/rapaio-jupyter-kernel/releases/download/2.2.0/rapaio-jupyter-kernel-2.2.0.jar;
 
 # Install the rapaio-jupyter-kernel as $NB_USER
 RUN chown -R $NB_UID $HOME
 USER $NB_USER
 RUN set -eux; \
-  java -jar rapaio-jupyter-kernel-2.1.0.jar -i -auto; \
+  java -jar rapaio-jupyter-kernel-2.2.0.jar -i -auto; \
   ls /home/ffx/.local/share/jupyter/kernels;
+RUN cp $HOME/ipynb-java/kernel.json $HOME/.local/share/jupyter/kernels/rapaio-jupyter-kernel/kernel.json;
 
 # Set up the FFX Kotlin library
 # The allows the fillowing "magic" in Kotlin notebooks.
@@ -80,6 +81,8 @@ RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
 RUN cp $HOME/ipynb-kotlin/ffx.json $HOME/.jupyter_kotlin/libraries/.
 RUN cp -R $HOME/lib $HOME/.jupyter_kotlin/.
+# Enable the vector library in the Kotlin kernel
+ENV KOTLIN_JUPYTER_JAVA_OPTS "--add-modules jdk.incubator.vector"
 
 # Launch the notebook server
 WORKDIR $HOME

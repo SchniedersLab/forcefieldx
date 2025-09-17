@@ -37,6 +37,15 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
 import static ffx.utilities.PropertyGroup.EnergyUnitConversion;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
@@ -45,14 +54,6 @@ import static java.lang.Integer.parseInt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The ImproperTorsionType class defines an improper torsion.
@@ -138,13 +139,14 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    * Average two ImproperTorsionType instances. The atom classes that define the new type must be
    * supplied.
    *
-   * @param improperTorsionType1 a {@link ffx.potential.parameters.ImproperTorsionType} object.
-   * @param improperTorsionType2 a {@link ffx.potential.parameters.ImproperTorsionType} object.
-   * @param atomClasses          an array of {@link int} objects.
+   * @param improperTorsionType1 the first {@link ffx.potential.parameters.ImproperTorsionType} object.
+   * @param improperTorsionType2 the second {@link ffx.potential.parameters.ImproperTorsionType} object.
+   * @param atomClasses          the atom classes that define the new type.
    * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
    */
-  public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
-                                            ImproperTorsionType improperTorsionType2, int[] atomClasses) {
+  public static ImproperTorsionType average(@Nullable ImproperTorsionType improperTorsionType1,
+                                            @Nullable ImproperTorsionType improperTorsionType2,
+                                            @Nullable int[] atomClasses) {
 
     if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
       return null;

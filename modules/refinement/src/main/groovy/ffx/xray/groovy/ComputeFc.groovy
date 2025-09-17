@@ -70,7 +70,15 @@ class ComputeFc extends AlgorithmsScript {
    * ComputeFc constructor.
    */
   ComputeFc() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * ComputeFc constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ComputeFc(String[] args) {
+    super(args)
   }
 
   /**

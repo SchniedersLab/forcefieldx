@@ -279,6 +279,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   private int xyzIndex = -1;
   /**
+   * The index of this atom into the dual-topology atom array.
+   * This runs from 1 to the number of dual-topology atoms. The order is:
+   * 1) Atoms that are shared between topology 1 and topology 2.
+   * 2) Alchemical atoms that are unique to topology 1.
+   * 3) Alchemical atoms that are unique to topology 2.
+   * This index is -1 if the atom is not part of a dual topology.
+   */
+  private int topologyAtomIndex = -1;
+  /**
+   * This is the topology index of this atom in a dual topology system.
+   * The topology index is 0 for topology 1, and 1 for topology 2.
+   * This is -1 if the atom is not part of a dual topology.
+   */
+  private int topologyIndex = -1;
+
+  /**
    * PDB "resname" record.
    *
    * @since 1.0
@@ -509,16 +525,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * Constructor for Atom.
    *
    * @param xyzIndex   The atom's contiguous, unique index between 1..nAtoms.
-   * @param name       a {@link java.lang.String} object.
-   * @param altLoc     a {@link java.lang.Character} object.
-   * @param xyz        an array of {@link double} objects.
-   * @param resName    a {@link java.lang.String} object.
+   * @param name       The Atom's name.
+   * @param altLoc     The alternate location identifier (null or ' ' for no alternate location).
+   * @param xyz        The Cartesian coordinates.
+   * @param resName    The residue name.
    * @param resSeq     The residue sequence number.
-   * @param chainID    a {@link java.lang.Character} object.
-   * @param occupancy  The crystallographic occupancy.
-   * @param tempFactor The crystallographic B-factor.
-   * @param segID      a {@link java.lang.String} object.
-   * @param built      a boolean.
+   * @param chainID    Possible redundant chain ID.
+   * @param occupancy  Crystallographic occupancy.
+   * @param tempFactor Crystallographic B-factor.
+   * @param segID      Unique segment ID.
+   * @param built      True if this atom was built during the parsing of a file.
    */
   public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName, int resSeq,
               Character chainID, double occupancy, double tempFactor, String segID, boolean built) {
@@ -887,13 +903,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>anisou</code>.
    *
-   * @param anisou an array of {@link double} objects.
-   * @return an array of double.
+   * @param anisou the anisou array to fill.
+   * @return The passed in anisou array filled with the tensor values, or a new array
+   * if anisou is null or too small.
    */
-  public double[] getAnisou(double[] anisou) {
+  public double[] getAnisou(@Nullable double[] anisou) {
     if (this.anisou == null) {
       return null;
-    } else if (anisou == null) {
+    } else if (anisou == null || anisou.length < 6) {
       anisou = copyOf(this.anisou, 6);
     } else {
       arraycopy(this.anisou, 0, anisou, 0, 6);
@@ -904,13 +921,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>anisouAcceleration</code>.
    *
-   * @param anisouAcceleration an array of {@link double} objects.
-   * @return an array of double.
+   * @param anisouAcceleration the anisou acceleration array to fill.
+   * @return The passed in anisou acceleration array filled with the tensor values, or a new array
+   * if anisouAcceleration is null or too small.
    */
-  public double[] getAnisouAcceleration(double[] anisouAcceleration) {
+  public double[] getAnisouAcceleration(@Nullable double[] anisouAcceleration) {
     if (this.anisouAcceleration == null) {
       return null;
-    } else if (anisouAcceleration == null) {
+    } else if (anisouAcceleration == null || anisouAcceleration.length < 6) {
       anisouAcceleration = copyOf(this.anisouAcceleration, 6);
     } else {
       arraycopy(this.anisouAcceleration, 0, anisouAcceleration, 0, 6);
@@ -921,13 +939,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>anisouGradient</code>.
    *
-   * @param anisouGradient an array of {@link double} objects.
-   * @return an array of double.
+   * @param anisouGradient the anisou gradient array to fill.
+   * @return The passed in anisou gradient array filled with the tensor values, or a new array
+   * if anisouGradient is null or too small.
    */
-  public double[] getAnisouGradient(double[] anisouGradient) {
+  public double[] getAnisouGradient(@Nullable double[] anisouGradient) {
     if (this.anisouGradient == null) {
       return null;
-    } else if (anisouGradient == null) {
+    } else if (anisouGradient == null || anisouGradient.length < 6) {
       anisouGradient = copyOf(this.anisouGradient, 6);
     } else {
       arraycopy(this.anisouGradient, 0, anisouGradient, 0, 6);
@@ -938,13 +957,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>anisouPreviousAcceleration</code>.
    *
-   * @param anisouPreviousAcceleration an array of {@link double} objects.
-   * @return an array of double.
+   * @param anisouPreviousAcceleration the anisou previous acceleration array to fill.
+   * @return The passed in anisou previous acceleration array filled with the tensor values, or a new array
+   * if anisouPreviousAcceleration is null or too small.
    */
-  public double[] getAnisouPreviousAcceleration(double[] anisouPreviousAcceleration) {
+  public double[] getAnisouPreviousAcceleration(@Nullable double[] anisouPreviousAcceleration) {
     if (this.anisouPreviousAcceleration == null) {
       return null;
-    } else if (anisouPreviousAcceleration == null) {
+    } else if (anisouPreviousAcceleration == null || anisouPreviousAcceleration.length < 6) {
       anisouPreviousAcceleration = copyOf(this.anisouPreviousAcceleration, 6);
     } else {
       arraycopy(this.anisouPreviousAcceleration, 0, anisouPreviousAcceleration, 0, 6);
@@ -955,18 +975,55 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>anisouVelocity</code>.
    *
-   * @param anisouVelocity an array of {@link double} objects.
-   * @return an array of double.
+   * @param anisouVelocity the anisou velocity array to fill.
+   * @return the passed in anisou velocity array filled with the tensor values, or a new array
+   * if anisouVelocity is null or too small.
    */
-  public double[] getAnisouVelocity(double[] anisouVelocity) {
+  public double[] getAnisouVelocity(@Nullable double[] anisouVelocity) {
     if (this.anisouVelocity == null) {
       return null;
-    } else if (anisouVelocity == null) {
+    } else if (anisouVelocity == null || anisouVelocity.length < 6) {
       anisouVelocity = copyOf(this.anisouVelocity, 6);
     } else {
       arraycopy(this.anisouVelocity, 0, anisouVelocity, 0, 6);
     }
     return anisouVelocity;
+  }
+
+  /**
+   * Dual-topology atom index.
+   *
+   * @return The index of this atom in the dual-topology atom array.
+   */
+  public final int getTopologyAtomIndex() {
+    return topologyAtomIndex;
+  }
+
+  /**
+   * Dual-topology atom index.
+   *
+   * @param topologyAtomIndex The index of this atom in the dual-topology atom array.
+   */
+  public final void setTopologyAtomIndex(int topologyAtomIndex) {
+    this.topologyAtomIndex = topologyAtomIndex;
+  }
+
+  /**
+   * Get the topology index of this atom.
+   *
+   * @return The topology index of this atom in the dual-topology atom array.
+   */
+  public final int getTopologyIndex() {
+    return topologyIndex;
+  }
+
+  /**
+   * Set the topology index of this atom.
+   *
+   * @param topologyIndex The topology index of this atom in a dual topology system.
+   */
+  public final void setTopologyIndex(int topologyIndex) {
+    this.topologyIndex = topologyIndex;
   }
 
   /**
@@ -1019,7 +1076,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>axisAtomIndices</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the axis atom indices.
    */
   public int[] getAxisAtomIndices() {
     return ArrayUtils.clone(axisAtomIndices);
@@ -2587,9 +2644,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * rotate.
+   * Applies a rotation matrix to the atom's coordinates.
    *
-   * @param d an array of {@link double} objects.
+   * @param d The rotation matrix to apply.
    */
   public void rotate(double[][] d) {
     int rowsInA = xyz.length;
@@ -2599,7 +2656,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     for (int i = 0; i < rowsInA; i++) {
       for (int j = 0; j < columnsInB; j++) {
         for (int k = 0; k < columnsInA; k++) {
-          c[i][j] = c[i][j] + xyz[k] * d[k][j];
+          c[i][j] += xyz[k] * d[k][j];
         }
       }
     }

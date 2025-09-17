@@ -77,8 +77,8 @@ public abstract class SliceLoop extends IntegerForLoop {
   /**
    * checkList.
    *
-   * @param zAtListBuild an array of {@link int} objects.
-   * @param buff a int.
+   * @param zAtListBuild the list of zAtListBuild.
+   * @param buff the buffer size.
    * @return a boolean.
    */
   public boolean checkList(int[][] zAtListBuild, int buff) {
@@ -111,7 +111,7 @@ public abstract class SliceLoop extends IntegerForLoop {
   /**
    * saveZValues.
    *
-   * @param zAtListBuild an array of {@link int} objects.
+   * @param zAtListBuild the zAtListBuild array.
    */
   public void saveZValues(int[][] zAtListBuild) {}
 

@@ -139,6 +139,12 @@ public class ANIEnergy implements Potential, LambdaInterface {
   }
 
   @Override
+  public void setCoordinates(double[] parameters) {
+    ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+    forceFieldEnergy.setCoordinates(parameters);
+  }
+
+  @Override
   public STATE getEnergyTermState() {
     return state;
   }

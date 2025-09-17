@@ -507,8 +507,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     totalMBAREstimate = stream(mbarFEDifferenceEstimates).sum();
   }
 
-
-  //////// Misc. Methods ////////////
+  /* /////// Misc. Methods //////////// */
 
   /**
    * Checks if the MBAR free energy estimates have converged by comparing the difference
@@ -563,7 +562,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   }
 
 
-  //////// Methods for calculating MBAR variables, vectors, and matrices. ////////
+  /* /////// Methods for calculating MBAR variables, vectors, and matrices. /////// */
 
   /**
    * MBAR objective function. This is used for L-BFGS optimization.
@@ -1110,7 +1109,7 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
     return diffMatrix;
   }
 
-  //////// Methods for solving MBAR with self-consistent iteration, L-BFGS optimization, and Newton-Raphson. ////////
+  /* /////// Methods for solving MBAR with self-consistent iteration, L-BFGS optimization, and Newton-Raphson. ////// */
 
   /**
    * Self-consistent iteration to update free energies. Eq. 11 from Shirts and Chodera (2008).
@@ -1346,6 +1345,11 @@ public class MultistateBennettAcceptanceRatio extends SequentialEstimator implem
   @Override
   public double[] getCoordinates(double[] parameters) {
     return new double[0];
+  }
+
+  @Override
+  public void setCoordinates(double[] parameters) {
+    // Do nothing.
   }
 
   @Override

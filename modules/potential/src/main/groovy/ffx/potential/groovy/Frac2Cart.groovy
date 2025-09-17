@@ -77,7 +77,7 @@ class Frac2Cart extends PotentialScript {
    * Frac2Cart Constructor.
    */
   Frac2Cart() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -86,6 +86,14 @@ class Frac2Cart extends PotentialScript {
    */
   Frac2Cart(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Frac2Cart constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Frac2Cart(String[] args) {
+    super(args)
   }
 
   /**

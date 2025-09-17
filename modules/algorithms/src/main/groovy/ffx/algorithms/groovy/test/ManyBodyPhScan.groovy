@@ -80,7 +80,7 @@ class ManyBodyPhScan extends PotentialScript {
    * ManyBodyPHScan Constructor.
    */
   ManyBodyPhScan() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -89,6 +89,14 @@ class ManyBodyPhScan extends PotentialScript {
    */
   ManyBodyPhScan(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ManyBodyPhScan constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ManyBodyPhScan(String[] args) {
+    super(args)
   }
 
   @Override

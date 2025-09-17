@@ -62,6 +62,7 @@ import ffx.potential.UnmodifiableState;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.openmm.OpenMMDualTopologyEnergy;
 import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.DYNFilter;
@@ -462,28 +463,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
   public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
                                                   Potential potentialEnergy, AlgorithmListener listener, ThermostatEnum requestedThermostat,
                                                   IntegratorEnum requestedIntegrator, MDEngine engine) {
-
+    Barostat barostat = null;
+    if (potentialEnergy instanceof Barostat) {
+      barostat = (Barostat) potentialEnergy;
+      potentialEnergy = barostat.getCrystalPotential();
+    }
     switch (engine) {
       case OPENMM, OMM -> {
-        // TODO: Replace this with calls to the leaves of a proper tree structure.
-        // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree
-        // implementing Collection.
-        // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
-        boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream()
-            .anyMatch((Potential p) -> p instanceof OpenMMEnergy);
-        ommLeaves = ommLeaves || potentialEnergy instanceof OpenMMEnergy;
-        if (ommLeaves) {
-          return new MolecularDynamicsOpenMM(assembly, potentialEnergy, listener,
-              requestedThermostat, requestedIntegrator);
+        if (potentialEnergy instanceof OpenMMEnergy ||
+            potentialEnergy instanceof OpenMMDualTopologyEnergy) {
+          MolecularDynamicsOpenMM molecularDynamicsOpenMM =
+              new MolecularDynamicsOpenMM(assembly, potentialEnergy, listener, requestedThermostat,
+                  requestedIntegrator);
+          if (barostat != null) {
+            molecularDynamicsOpenMM.setBarostat(barostat);
+          }
+          return molecularDynamicsOpenMM;
         } else {
-          throw new IllegalArgumentException(format(
-              " Requested OpenMM engine %s, but at least one leaf of the potential %s is not an OpenMM force field!",
+          logger.info(format(" Requested OpenMM molecular dynamics engine %s, but the potential does not use OpenMM: %s",
               engine, potentialEnergy));
+          return new MolecularDynamics(assembly, potentialEnergy, listener, requestedThermostat, requestedIntegrator);
         }
       }
       default -> {
-        return new MolecularDynamics(assembly, potentialEnergy, listener, requestedThermostat,
-            requestedIntegrator);
+        return new MolecularDynamics(assembly, potentialEnergy, listener, requestedThermostat, requestedIntegrator);
       }
     }
   }
@@ -1085,22 +1088,27 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Write out snapshots in selected format every saveSnapshotFrequency steps.
       if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
 
+        // Load current coordinates into atom instances.
+        potential.setCoordinates(state.x());
+
         // Log stats.
-        logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n",
-            trajectoryFrequency, step));
-        logger.info(format("  Simulation Time  %16.4f Picosecond", step * dt));
-        logger.info(format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)", totalEnergyStats.getMean(),
-            totalEnergyStats.getStandardDeviation()));
-        logger.info(format("  Potential Energy %16.4f Kcal/mole   (+/-%9.4f)",
-            potentialEnergyStats.getMean(), potentialEnergyStats.getStandardDeviation()));
-        logger.info(format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)", kineticEnergyStats.getMean(),
-            kineticEnergyStats.getStandardDeviation()));
-        logger.info(format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n", temperatureStats.getMean(),
-            temperatureStats.getStandardDeviation()));
-        totalEnergyStats.reset();
-        potentialEnergyStats.reset();
-        kineticEnergyStats.reset();
-        temperatureStats.reset();
+        if (totalEnergyStats.getCount() > 0) {
+          logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n",
+              trajectoryFrequency, step));
+          logger.info(format("  Simulation Time  %16.4f Picosecond", step * dt));
+          logger.info(format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)", totalEnergyStats.getMean(),
+              totalEnergyStats.getStandardDeviation()));
+          logger.info(format("  Potential Energy %16.4f Kcal/mole   (+/-%9.4f)",
+              potentialEnergyStats.getMean(), potentialEnergyStats.getStandardDeviation()));
+          logger.info(format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)", kineticEnergyStats.getMean(),
+              kineticEnergyStats.getStandardDeviation()));
+          logger.info(format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n", temperatureStats.getMean(),
+              temperatureStats.getStandardDeviation()));
+          totalEnergyStats.reset();
+          potentialEnergyStats.reset();
+          kineticEnergyStats.reset();
+          temperatureStats.reset();
+        }
 
         if (esvSystem != null) {
           for (Atom atom : molecularAssembly[0].getAtomList()) {
@@ -1233,6 +1241,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
           throw new IllegalStateException(message);
         } else {
           molecularAssembly[0].setCrystal(crystal);
+          potential.setCoordinates(x);
+          potential.setVelocity(v);
+          potential.setAcceleration(a);
+          potential.setPreviousAcceleration(aPrevious);
         }
       } else {
         // Initialize using current atomic coordinates.

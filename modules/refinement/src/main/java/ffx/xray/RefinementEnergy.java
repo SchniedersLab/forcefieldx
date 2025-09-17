@@ -543,6 +543,12 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
   /** {@inheritDoc} */
   @Override
+  public void setCoordinates(double[] parameters) {
+    dataEnergy.setCoordinates(parameters);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public Crystal getCrystal() {
     return dataEnergy.getCrystal();
   }

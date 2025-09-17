@@ -49,7 +49,7 @@ class FindRestraints extends AlgorithmsScript{
      * Dynamics Constructor.
      */
     FindRestraints() {
-        this(new Binding())
+        super()
     }
 
     /**
@@ -58,6 +58,14 @@ class FindRestraints extends AlgorithmsScript{
      */
     FindRestraints(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * Constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    FindRestraints(String[] args) {
+        super(args)
     }
 
     FindRestraints run() {

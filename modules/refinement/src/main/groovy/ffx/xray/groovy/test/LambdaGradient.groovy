@@ -88,7 +88,15 @@ class LambdaGradient extends AlgorithmsScript {
    * LambdaGradient constructor.
    */
   LambdaGradient() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * LambdaGradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  LambdaGradient(String[] args) {
+    super(args)
   }
 
   /**

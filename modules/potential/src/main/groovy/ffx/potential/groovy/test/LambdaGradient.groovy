@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import edu.rit.pj.ParallelTeam
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.nonbonded.ParticleMeshEwald
@@ -115,8 +114,6 @@ class LambdaGradient extends PotentialScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate files in PDB or XYZ format.')
   List<String> filenames = null
 
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  private int threadsPer = threadsAvail
   MolecularAssembly[] topologies
   private Potential potential
 
@@ -131,7 +128,7 @@ class LambdaGradient extends PotentialScript {
    * LambdaGradient Constructor
    */
   LambdaGradient() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -140,6 +137,14 @@ class LambdaGradient extends PotentialScript {
    */
   LambdaGradient(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * LambdaGradient constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  LambdaGradient(String[] args) {
+    super(args)
   }
 
   /**
@@ -152,54 +157,36 @@ class LambdaGradient extends PotentialScript {
       return this
     }
 
-    List<String> arguments = filenames
-    // Check nArgs should either be number of arguments (min 1), else 1.
-    int nArgs = arguments ? arguments.size() : 1
-    nArgs = (nArgs < 1) ? 1 : nArgs
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
-    topologies = new MolecularAssembly[nArgs]
-
-    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    // Turn on computation of lambda derivatives if softcore atoms exist or this is a single topology.
-    boolean lambdaTerm = (nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nArgs >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments are considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    List<MolecularAssembly> topologyList = new ArrayList<>(4)
+    // Turn on computation of lambda dependent properties.
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     // Read in files.
-    if (!arguments || arguments.isEmpty()) {
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
       if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
-      arguments = new ArrayList<>()
-      arguments.add(activeAssembly.getFile().getName())
-      topologyList.add(alchemicalOptions.processFile(topologyOptions, activeAssembly, 0))
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
     } else {
-      logger.info(format(" Initializing %d topologies...", nArgs))
-      for (int i = 0; i < nArgs; i++) {
-        topologyList.add(alchemicalOptions.openFile(potentialFunctions, topologyOptions, threadsPer,
-            arguments.get(i), i))
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = alchemicalOptions.openFile(potentialFunctions, topologyOptions,
+            threadsPerTopology, filenames.get(i), i)
       }
     }
 
-    MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
-
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
-    potential = topologyOptions.assemblePotential(topologies, threadsAvail, sb)
+    potential = topologyOptions.assemblePotential(topologies, sb)
     logger.info(sb.toString())
 
     // Detect the alchemical mode.
@@ -223,7 +210,6 @@ class LambdaGradient extends PotentialScript {
     if (potential instanceof OpenMMEnergy || mode == AlchemicalParameters.AlchemicalMode.SCALE) {
       skipSecondDerivatives = true
     }
-
 
     LambdaInterface lambdaInterface = (LambdaInterface) potential
 
@@ -252,8 +238,6 @@ class LambdaGradient extends PotentialScript {
       logger.info(format(" L=%4.2f E=%12.6f", lambda, e0))
     }
 
-
-
     // Scan intermediate lambda values.
     if (lambdaScan) {
       for (int i = 1; i <= 9; i++) {
@@ -261,7 +245,7 @@ class LambdaGradient extends PotentialScript {
         lambdaInterface.setLambda(lambda)
         double e = potential.energyAndGradient(x, gradient)
         if (!skipLambdaDerivatives) {
-          dEdL = lambdaInterface.getdEdL()
+          double dEdL = lambdaInterface.getdEdL()
           logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
         } else {
           logger.info(format(" L=%4.2f E=%12.6f", lambda, e))
@@ -275,7 +259,7 @@ class LambdaGradient extends PotentialScript {
     lambdaInterface.setLambda(lambda)
     e1 = potential.energyAndGradient(x, gradient)
     if (!skipLambdaDerivatives) {
-      dEdL = lambdaInterface.getdEdL()
+      double dEdL = lambdaInterface.getdEdL()
       logger.info(format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
     } else {
       logger.info(format(" L=%4.2f E=%12.6f", lambda, e1))
@@ -318,7 +302,7 @@ class LambdaGradient extends PotentialScript {
         double e = potential.energyAndGradient(x, gradient)
 
         // Analytic dEdL, d2E/dL2 and dE/dL/dX
-        dEdL = lambdaInterface.getdEdL()
+        double dEdL = lambdaInterface.getdEdL()
 
         double d2EdL2 = lambdaInterface.getd2EdL2()
         for (int i = 0; i < n; i++) {

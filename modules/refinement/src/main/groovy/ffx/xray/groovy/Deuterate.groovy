@@ -68,7 +68,15 @@ class Deuterate extends AlgorithmsScript {
    * Deuterate constructor.
    */
   Deuterate() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Deuterate constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Deuterate(String[] args) {
+    super(args)
   }
 
   /**

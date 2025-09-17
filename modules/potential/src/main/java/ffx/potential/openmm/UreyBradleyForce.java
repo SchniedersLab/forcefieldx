@@ -39,10 +39,11 @@ package ffx.potential.openmm;
 
 import ffx.openmm.Force;
 import ffx.openmm.HarmonicBondForce;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.terms.UreyBradleyPotentialEnergy;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
@@ -59,19 +60,15 @@ public class UreyBradleyForce extends HarmonicBondForce {
   /**
    * Urey-Bradly Force constructor.
    *
-   * @param openMMEnergy The OpenMMEnergy instance that contains the Urey-Bradley terms.
+   * @param ureyBradleyPotentialEnergy The UreyBradleyPotentialEnergy instance.
    */
-  public UreyBradleyForce(OpenMMEnergy openMMEnergy) {
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
-    if (ureyBradleys == null || ureyBradleys.length < 1) {
-      return;
-    }
-
+  public UreyBradleyForce(UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy) {
+    UreyBradley[] ureyBradleys = ureyBradleyPotentialEnergy.getUreyBradleyArray();
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
     for (UreyBradley ureyBradley : ureyBradleys) {
-      int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
-      int i2 = ureyBradley.getAtom(2).getXyzIndex() - 1;
+      int i1 = ureyBradley.getAtom(0).getArrayIndex();
+      int i2 = ureyBradley.getAtom(2).getArrayIndex();
       UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
       double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
       // The implementation of UreyBradley in FFX & Tinker: k x^2
@@ -80,7 +77,42 @@ public class UreyBradleyForce extends HarmonicBondForce {
       addBond(i1, i2, length, k);
     }
 
-    int forceGroup = openMMEnergy.getMolecularAssembly().getForceField().getInteger("UREY_BRADLEY_FORCE", 0);
+    int forceGroup = ureyBradleyPotentialEnergy.getForceGroup();
+    setForceGroup(forceGroup);
+    logger.info(format("  Urey-Bradleys:                     %10d", ureyBradleys.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
+   * Urey-Bradly Force constructor.
+   *
+   * @param topology                 The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public UreyBradleyForce(UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy,
+                          int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    UreyBradley[] ureyBradleys = ureyBradleyPotentialEnergy.getUreyBradleyArray();
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+    double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+    for (UreyBradley ureyBradley : ureyBradleys) {
+      int i1 = ureyBradley.getAtom(0).getArrayIndex();
+      int i2 = ureyBradley.getAtom(2).getArrayIndex();
+      UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
+      double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
+      // The implementation of UreyBradley in FFX & Tinker: k x^2
+      // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
+      double k = 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
+      // Don't apply lambda scale to alchemical Urey-Bradley
+      if (!ureyBradley.applyLambda()) {
+        k = k * scale;
+      }
+      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+      i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+      addBond(i1, i2, length, k);
+    }
+
+    int forceGroup = ureyBradleyPotentialEnergy.getForceGroup();
     setForceGroup(forceGroup);
     logger.info(format("  Urey-Bradleys:                     %10d", ureyBradleys.length));
     logger.fine(format("   Force Group:                      %10d", forceGroup));
@@ -93,11 +125,26 @@ public class UreyBradleyForce extends HarmonicBondForce {
    * @return An OpenMM Urey-Bradley Force, or null if there are no Urey-Bradley.
    */
   public static Force constructForce(OpenMMEnergy openMMEnergy) {
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
-    if (ureyBradleys == null || ureyBradleys.length < 1) {
+    UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = openMMEnergy.getUreyBradleyPotentialEnergy();
+    if (ureyBradleyPotentialEnergy == null) {
       return null;
     }
-    return new UreyBradleyForce(openMMEnergy);
+    return new UreyBradleyForce(ureyBradleyPotentialEnergy);
+  }
+
+  /**
+   * Convenience method to construct an OpenMM Urey-Bradley Force.
+   *
+   * @param topology                 The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = forceFieldEnergy.getUreyBradleyPotentialEnergy();
+    if (ureyBradleyPotentialEnergy == null) {
+      return null;
+    }
+    return new UreyBradleyForce(ureyBradleyPotentialEnergy, topology, openMMDualTopologyEnergy);
   }
 
   /**
@@ -106,17 +153,17 @@ public class UreyBradleyForce extends HarmonicBondForce {
    * @param openMMEnergy The OpenMM Energy instance that contains the Urey-Bradley terms.
    */
   public void updateForce(OpenMMEnergy openMMEnergy) {
-    UreyBradley[] ureyBradleys = openMMEnergy.getUreyBradleys();
-    if (ureyBradleys == null || ureyBradleys.length < 1) {
+    UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = openMMEnergy.getUreyBradleyPotentialEnergy();
+    if (ureyBradleyPotentialEnergy == null) {
       return;
     }
-
+    UreyBradley[] ureyBradleys = ureyBradleyPotentialEnergy.getUreyBradleyArray();
     double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
     int index = 0;
     for (UreyBradley ureyBradley : ureyBradleys) {
-      int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
-      int i2 = ureyBradley.getAtom(2).getXyzIndex() - 1;
+      int i1 = ureyBradley.getAtom(0).getArrayIndex();
+      int i2 = ureyBradley.getAtom(2).getArrayIndex();
       UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
       double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
       // The implementation of UreyBradley in FFX & Tinker: k x^2
@@ -126,6 +173,44 @@ public class UreyBradleyForce extends HarmonicBondForce {
     }
 
     updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update the Urey-Bradley parameters in the OpenMM Context.
+   *
+   * @param topology                 The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    UreyBradleyPotentialEnergy forceFieldEnergyUreyBradley =
+        forceFieldEnergy.getUreyBradleyPotentialEnergy();
+    if (forceFieldEnergyUreyBradley == null) {
+      return;
+    }
+    UreyBradley[] ureyBradleys = forceFieldEnergyUreyBradley.getUreyBradleyArray();
+    double scale = openMMDualTopologyEnergy.getTopologyScale(topology);
+    double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+    int index = 0;
+    for (UreyBradley ureyBradley : ureyBradleys) {
+      int i1 = ureyBradley.getAtom(0).getArrayIndex();
+      int i2 = ureyBradley.getAtom(2).getArrayIndex();
+      UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
+      double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
+      // The implementation of UreyBradley in FFX & Tinker: k x^2
+      // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
+      double k = 2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
+      // Don't apply lambda scale to alchemical Urey-Bradley
+      if (!ureyBradley.applyLambda()) {
+        k = k * scale;
+      }
+      i1 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i1);
+      i2 = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, i2);
+      setBondParameters(index++, i1, i2, length, k);
+    }
+
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
   }
 
 }

@@ -77,15 +77,6 @@ public class Vec3Array {
   }
 
   /**
-   * Get the pointer to the vec3 array pointer.
-   *
-   * @return The pointer to the vec3 array.
-   */
-  public PointerByReference getPointer() {
-    return pointer;
-  }
-
-  /**
    * Append a Vec3 to the Vec3Array.
    *
    * @param vec3 The Vec3 to append.
@@ -95,12 +86,49 @@ public class Vec3Array {
   }
 
   /**
+   * Destroy the Vec3Array.
+   */
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_Vec3Array_destroy(pointer);
+      pointer = null;
+    }
+  }
+
+  /**
    * Get a Vec3 from the Vec3Array.
    *
    * @return The Vec3 at index i.
    */
   public OpenMM_Vec3 get(int i) {
     return OpenMM_Vec3Array_get(pointer, i);
+  }
+
+  /**
+   * Convert the Vec3Array to a double array.
+   *
+   * @return The double array.
+   */
+  public double[] getArray() {
+    int size = getSize();
+    double[] array = new double[size * 3];
+    for (int i = 0; i < size; i++) {
+      OpenMM_Vec3 vec3 = get(i);
+      int index = i * 3;
+      array[index] = vec3.x;
+      array[index + 1] = vec3.y;
+      array[index + 2] = vec3.z;
+    }
+    return array;
+  }
+
+  /**
+   * Get the pointer to the vec3 array pointer.
+   *
+   * @return The pointer to the vec3 array.
+   */
+  public PointerByReference getPointer() {
+    return pointer;
   }
 
   /**
@@ -132,16 +160,6 @@ public class Vec3Array {
   }
 
   /**
-   * Destroy the Vec3Array.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_Vec3Array_destroy(pointer);
-      pointer = null;
-    }
-  }
-
-  /**
    * Convert a double array to a Vec3Array.
    *
    * @param array The double array.
@@ -157,24 +175,6 @@ public class Vec3Array {
       vec3Array.append(vec3);
     }
     return vec3Array;
-  }
-
-  /**
-   * Convert the Vec3Array to a double array.
-   *
-   * @return The double array.
-   */
-  public double[] getArray() {
-    int size = getSize();
-    double[] array = new double[size * 3];
-    for (int i = 0; i < size; i++) {
-      OpenMM_Vec3 vec3 = get(i);
-      int index = i * 3;
-      array[index] = vec3.x;
-      array[index + 1] = vec3.y;
-      array[index + 2] = vec3.z;
-    }
-    return array;
   }
 
 }

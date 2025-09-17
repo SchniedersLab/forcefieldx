@@ -88,7 +88,7 @@ class EnergyOpenMM extends PotentialScript {
    * EnergyOpenMM Constructor.
    */
   EnergyOpenMM() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -97,6 +97,14 @@ class EnergyOpenMM extends PotentialScript {
    */
   EnergyOpenMM(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * EnergyOpenMM constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  EnergyOpenMM(String[] args) {
+    super(args)
   }
 
   @Override

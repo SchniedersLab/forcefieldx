@@ -51,14 +51,21 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
-import static java.util.Arrays.*;
+import static java.util.Arrays.copyOf;
+import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -92,28 +99,40 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class NeighborList extends ParallelRegion {
 
-  /** The logger. */
+  /**
+   * The logger.
+   */
   private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
 
   private final DomainDecomposition domainDecomposition;
-  /** The masking rules to apply when building the neighbor list. */
-  private final MaskingInterface maskingRules;
-  /** The cutoff beyond which the pairwise energy is zero. */
+  /**
+   * The cutoff beyond which the pairwise energy is zero.
+   */
   private final double cutoff;
   /**
    * A buffer, which is added to the cutoff distance, such that the Verlet lists do not need to be
    * calculated for all coordinate changes.
    */
   private final double buffer;
-  /** The maximum squared displacement allowed before list rebuild. */
+  /**
+   * The maximum squared displacement allowed before list rebuild.
+   */
   private final double motion2;
-  /** The sum of the cutoff + buffer. */
+  /**
+   * The sum of the cutoff + buffer.
+   */
   private final double cutoffPlusBuffer;
-  /** Total^2 for distance comparisons without taking a sqrt. */
+  /**
+   * Total^2 for distance comparisons without taking a sqrt.
+   */
   private final double cutoffPlusBuffer2;
-  /** The ParallelTeam coordinates use of threads and their schedules. */
+  /**
+   * The ParallelTeam coordinates use of threads and their schedules.
+   */
   private final ParallelTeam parallelTeam;
-  /** Number of threads used by the parallelTeam. */
+  /**
+   * Number of threads used by the parallelTeam.
+   */
   private final int threadCount;
   /**
    * If this flag is set, then the Verlet lists will be rebuilt even in the absence of motion.
@@ -140,9 +159,11 @@ public class NeighborList extends ParallelRegion {
    * Assign atoms to cells in parallel. This loop is executed once per list rebuild.
    */
   private final AssignAtomsToCellsLoop[] assignAtomsToCellsLoops;
-  /** A Verlet list loop for each thread. */
-  private final NeighborListLoop[] verletListLoop;
-  private final MxNListLoop[] mxNListLoop;
+  /**
+   * A Verlet list loop for each thread.
+   */
+  private final VerletListLoop[] verletListLoop;
+  private final GroupVerletListLoop[] groupVerletListLoop;
   /**
    * Time to check for motion.
    */
@@ -159,55 +180,103 @@ public class NeighborList extends ParallelRegion {
    * Time to build the Verlet lists.
    */
   private long verletListTime;
-  /** Time to build groups and associated lists */
+  /**
+   * Time to build groups and associated lists
+   */
   private long groupingTime;
-  /** Total number of interactions. */
+  /**
+   * Total number of interactions.
+   */
   private final SharedInteger sharedCount;
-  /** Optimal pairwise ranges. */
+  /**
+   * Optimal pairwise ranges.
+   */
   private final Range[] ranges;
   /**
    * The crystal object defines the unit cell dimensions and space group. If replicates of the unit
    * cell are being used, this should be the overall replicates crystal and not the small unit cell.
    */
   private Crystal crystal;
-  /** The number of asymmetric units in the unit cell. */
+  /**
+   * The number of asymmetric units in the unit cell.
+   */
   private int nSymm;
-  /** The number of atoms in the asymmetric unit. */
+  /**
+   * The number of atoms in the asymmetric unit.
+   */
   private int nAtoms;
-  /** Reduced coordinates for each symmetry copy. [nSymm][3*nAtoms] */
+  /**
+   * Reduced coordinates for each symmetry copy. [nSymm][3*nAtoms]
+   */
   private double[][] coordinates;
-  /** The Cartesian coordinates of the asymmetric unit when the list was last rebuilt. */
+  /**
+   * The Cartesian coordinates of the asymmetric unit when the list was last rebuilt.
+   */
   private double[] previous;
-  /** The Verlet lists. [nSymm][nAtoms][nNeighbors] */
+  /**
+   * The Verlet lists. [nSymm][nAtoms][nNeighbors]
+   */
   private int[][][] lists;
-  /** Lists of groups. Can't know # groups beforehand. [nSymm][group][atom] */
-  private int[][][] groups;
-  private int nGroups;
-  /** Lists of interactions between groups of atoms. nGroups is not known until after groups are built. */
-  private int[][][] groupLists;
-  /** Size of each group of atoms */
+  /**
+   * Size of each group of atoms
+   */
   private int M = -1;
-  /** Number of group interactions */
-  private int N = -1;
-  /** Number of interactions per atom. */
+  /**
+   * Groups with M atoms. [group][M]
+   */
+  private int[][] mGroups;
+  /**
+   * Number of groups.
+   */
+  private int numGroups;
+  /**
+   * mGroup lookup for each atom.
+   */
+  private int[] mGroupID;
+  /**
+   * Group-Group interaction lists. [SymOp][num of mGroups][num of mGroup neighbors]
+   */
+  private int[][][] groupLists;
+  /**
+   * Number of interactions per atom.
+   */
   private int[] listCount;
-  /** Pairwise ranges for load balancing. */
+  /**
+   * Pairwise ranges for load balancing.
+   */
   private PairwiseSchedule pairwiseSchedule;
-  /** Number of interactions between atoms in the asymmetric unit. */
+  /**
+   * Number of interactions between atoms in the asymmetric unit.
+   */
   private int asymmetricUnitCount;
-  /** Number of interactions between atoms in the asymmetric unit and atoms in symmetry mates. */
+  /**
+   * Number of interactions between atoms in the asymmetric unit and atoms in symmetry mates.
+   */
   private int symmetryMateCount;
-  /** Number of atoms in the asymmetric unit with interactions lists greater than 0. */
-  private int atomsWithIteractions;
-  /** Atoms being used list. */
+  /**
+   * Number of interactions between groups of atoms in the asymmetric unit.
+   */
+  private int groupAsymmetricUnitCount;
+  /**
+   * Number of interactions between groups of atoms in the asymmetric unit
+   * and groups of atoms in symmetry mates.
+   */
+  private int groupSymmetryMateCount;
+  /**
+   * Atoms being used list.
+   */
   private boolean[] use;
-  /** List of atoms. */
+  /**
+   * List of atoms.
+   */
   private Atom[] atoms;
   /**
    * Time building the neighbor list.
    */
   private long time;
-  /** Include intermolecular interactions. */
+  /**
+   * Include intermolecular interactions.
+   */
   private boolean intermolecular = true;
   /**
    * If true, interactions between two inactive atoms are included in the Neighborlist. Set to true
@@ -215,23 +284,23 @@ public class NeighborList extends ParallelRegion {
    * to false for more efficient "pure Java" optimizations.
    */
   private final boolean includeInactivePairs = true;
-  /** Disable updates to the NeighborList; use with caution. */
+  /**
+   * Disable updates to the NeighborList; use with caution.
+   */
   private boolean disableUpdates = false;
 
   /**
    * Constructor for the NeighborList class.
    *
-   * @param maskingRules This parameter may be null.
-   * @param crystal Definition of the unit cell and space group.
-   * @param atoms The atoms to generate Verlet lists for.
-   * @param cutoff The cutoff distance.
-   * @param buffer The buffer distance.
+   * @param crystal      Definition of the unit cell and space group.
+   * @param atoms        The atoms to generate Verlet lists for.
+   * @param cutoff       The cutoff distance.
+   * @param buffer       The buffer distance.
    * @param parallelTeam Specifies the parallel environment.
    * @since 1.0
    */
-  public NeighborList(MaskingInterface maskingRules, Crystal crystal, Atom[] atoms, double cutoff,
-      double buffer, ParallelTeam parallelTeam) {
-    this.maskingRules = maskingRules;
+  public NeighborList(Crystal crystal, Atom[] atoms, double cutoff,
+                      double buffer, ParallelTeam parallelTeam) {
     this.crystal = crystal;
     this.cutoff = cutoff;
     this.buffer = buffer;
@@ -252,14 +321,14 @@ public class NeighborList extends ParallelRegion {
     sharedMotion = new SharedBoolean();
     motionLoops = new MotionLoop[threadCount];
     listInitBarrierAction = new ListInitBarrierAction();
-    verletListLoop = new NeighborListLoop[threadCount];
     assignAtomsToCellsLoops = new AssignAtomsToCellsLoop[threadCount];
-    mxNListLoop = new MxNListLoop[threadCount];
+    verletListLoop = new VerletListLoop[threadCount];
+    groupVerletListLoop = new GroupVerletListLoop[threadCount];
     for (int i = 0; i < threadCount; i++) {
       motionLoops[i] = new MotionLoop();
-      verletListLoop[i] = new NeighborListLoop();
+      verletListLoop[i] = new VerletListLoop();
       assignAtomsToCellsLoops[i] = new AssignAtomsToCellsLoop();
-      mxNListLoop[i] = new MxNListLoop();
+      groupVerletListLoop[i] = new GroupVerletListLoop();
     }
 
     // Initialize the neighbor list builder subcells.
@@ -271,16 +340,16 @@ public class NeighborList extends ParallelRegion {
   /**
    * This method can be called as necessary to build/rebuild the neighbor lists.
    *
-   * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
-   * @param lists The neighbor lists [nSymm][nAtoms][nPairs].
+   * @param coordinates  The coordinates of each atom [nSymm][nAtoms*3].
+   * @param lists        The neighbor lists [nSymm][nAtoms][nPairs].
    * @param forceRebuild If true, the list is rebuilt even if no atom has moved half the buffer
-   *     size.
-   * @param use an array of boolean.
-   * @param print a boolean.
+   *                     size.
+   * @param use          an array of boolean.
+   * @param print        a boolean.
    * @since 1.0
    */
   public void buildList(final double[][] coordinates, final int[][][] lists, boolean[] use,
-      boolean forceRebuild, boolean print) {
+                        boolean forceRebuild, boolean print) {
     if (disableUpdates) {
       return;
     }
@@ -298,24 +367,16 @@ public class NeighborList extends ParallelRegion {
     }
   }
 
-  public void buildMxNList(int M, int N, final double[][] coordinates, final int[][][] lists, boolean[] use, boolean forceRebuild, boolean print){
-    if (disableUpdates) {
-      return;
-    }
-    this.coordinates = coordinates;
-    this.lists = lists;
+  /**
+   * Set the group size for group-based Verlet lists.
+   * <p>
+   * If M is less than or equal to 1, then the NeighborList will not
+   * build group-based Verlet lists.
+   *
+   * @param M The size of the groups to build.
+   */
+  public void setGroupSize(int M) {
     this.M = M;
-    this.N = N;
-    this.use = use;
-    this.forceRebuild = forceRebuild;
-    this.print = print;
-
-    try {
-      parallelTeam.execute(this);
-    } catch (Exception e) {
-      String message = "Fatal exception building neighbor list.\n";
-      logger.log(Level.SEVERE, message, e);
-    }
   }
 
   /**
@@ -343,10 +404,11 @@ public class NeighborList extends ParallelRegion {
       return;
     }
 
-    // Collect interactions.
-    atomsWithIteractions = 0;
+    // Number of atoms in the asymmetric unit with interactions lists greater than 0.
+    int atomsWithIteractions = 0;
     asymmetricUnitCount = 0;
     symmetryMateCount = 0;
+    // Collect interactions.
     int[][] list = lists[0];
     for (int i = 0; i < nAtoms; i++) {
       asymmetricUnitCount += list[i].length;
@@ -361,7 +423,24 @@ public class NeighborList extends ParallelRegion {
       }
     }
 
-    // Print the interactions counts.
+    groupAsymmetricUnitCount = 0;
+    groupSymmetryMateCount = 0;
+    if (M > 1) {
+      // Asymmetric unit group interactions.
+      list = groupLists[0];
+      for (int i = 0; i < numGroups; i++) {
+        groupAsymmetricUnitCount += list[i].length;
+      }
+      // Symmetry mate group interactions.
+      for (int iSymm = 1; iSymm < nSymm; iSymm++) {
+        list = groupLists[iSymm];
+        for (int i = 0; i < numGroups; i++) {
+          groupSymmetryMateCount += list[i].length;
+        }
+      }
+    }
+
+    // Print the interaction counts.
     if (print) {
       print();
     }
@@ -379,8 +458,8 @@ public class NeighborList extends ParallelRegion {
       sb.append(format("   Assign Atoms to Cells:  %6.4f sec\n", assignAtomsToCellsTime * 1e-9));
       sb.append(format("   Create Vertlet Lists:   %6.4f sec\n", verletListTime * 1e-9));
       sb.append(format("   Parallel Schedule:      %6.4f sec\n", scheduleTime * 1e-9));
-      if ( M >= 1 || N >= 1) {
-        sb.append(format("   M x N List Total:       %6.4f sec\n", groupingTime * 1e-9));
+      if (M >= 1) {
+        sb.append(format("   Group List Total:       %6.4f sec\n", groupingTime * 1e-9));
       }
       sb.append(format("   Neighbor List Total:    %6.4f sec\n", time * 1e-9));
       logger.fine(sb.toString());
@@ -468,16 +547,19 @@ public class NeighborList extends ParallelRegion {
         if (threadIndex == 0) {
           verletListTime += System.nanoTime();
         }
-        // Build MxN Loop if desired
-        if ( M >= 1 || N >= 1) {
-          if(threadIndex == 0){
+        // Build Group Lists if desired
+        if (M > 1) {
+          if (threadIndex == 0) {
             groupingTime = -System.nanoTime();
+            // Build groups of size M.
+            mGroups = buildGroups();
+            numGroups = mGroups.length;
+            mGroupID = assignGroupID(mGroups);
+            groupLists = new int[nSymm][numGroups][];
           }
-          // Fast build of groups
-          if (threadIndex == 0) { groups(); }
           barrier();
-          execute(0, nGroups - 1, mxNListLoop[threadIndex]);
-          if(threadIndex == 0){
+          execute(0, mGroups.length - 1, groupVerletListLoop[threadIndex]);
+          if (threadIndex == 0) {
             groupingTime += System.nanoTime();
           }
         }
@@ -491,69 +573,85 @@ public class NeighborList extends ParallelRegion {
 
   /**
    * Build groups of size M by walking up Z columns. Must be called
-   * after all the other neighbor-list code.
-   * <p></p>
-   * Builds groups, then builds group neighbor-lists from existing
-   * M=1 neighbor-lists.
+   * after the domain decomposition is updated.
+   *
+   * @return The groups of size M.
    */
-  private void groups() {
+  private int[][] buildGroups() {
     // Use cells to build groups
     int nA = domainDecomposition.nA;
     int nB = domainDecomposition.nB;
     int nC = domainDecomposition.nC;
-    // Allocate more than needed i.e. nAtoms always >= nGroups
-    groups = new int[nSymm][nAtoms][M];
-    int[] symmGroups = new int[nSymm];
-    for(int i = 0; i < nA; i++){
-      for(int j = 0; j < nB; j++){
-        int[] group = new int[M];
-        // Slow in-order add, but typically fast due to small # zCol atoms
-        List<PriorityQueue<AtomIndex>> atomQueue = new ArrayList<>(nSymm);
-        for(int k = 0; k < nSymm; k++){
-          atomQueue.add(new PriorityQueue<>());
-        }
-        for(int k = 0; k < nC; k++){
+
+    // Collect groups of size M from the asymmetric unit.
+    List<int[]> groupsList = new ArrayList<>();
+    int[] group = new int[M];
+    for (int i = 0; i < nA; i++) {
+      for (int j = 0; j < nB; j++) {
+        PriorityQueue<AtomIndex> queue = new PriorityQueue<>();
+        for (int k = 0; k < nC; k++) {
           // Walk up z-columns adding to groups of size M
           Cell cell = domainDecomposition.getCell(i, j, k);
-          assert(cell != null); // after domain decomposition
-          for(int l = 0; l < cell.list.size(); l++){
-            int iSymm = cell.list.get(l).iSymm;
-            // Sort by z height
-            PriorityQueue<AtomIndex> queue = atomQueue.get(iSymm);
-            queue.add(cell.list.get(l));
+          for (AtomIndex atomIndex : cell.list) {
+            // Only consider atoms in the asymmetric unit.
+            if (atomIndex.iSymm != 0) {
+              continue;
+            }
+            queue.add(atomIndex);
             // Flush queue into groups
-            while(queue.size() >= M){
-              for(int m = 0; m < M; m++){
+            while (queue.size() >= M) {
+              for (int m = 0; m < M; m++) {
                 AtomIndex atom = queue.poll();
-                assert(atom != null); // with while-loop cond.
                 group[m] = atom.i;
               }
-              groups[iSymm][symmGroups[iSymm]++] = group;
+              groupsList.add(group);
               group = new int[M];
             }
           }
         }
-        for(int k = 0; k < nSymm; k++) {
-          PriorityQueue<AtomIndex> queue = atomQueue.get(k);
-          if (queue.isEmpty()) {
-            continue;
-          }
-          // Fill in last group with -1 filler
+        if (!queue.isEmpty()) {
+          // Fill in the final group for this column with flags (-1) to indicate empty slots.
+          fill(group, -1);
           for (int l = 0; l < M; l++) {
             if (!queue.isEmpty()) {
               AtomIndex atom = queue.poll();
-              assert (atom != null);
               group[l] = atom.i;
-            } else {
-              group[l] = -1;
             }
           }
-          groups[k][symmGroups[k]++] = group;
+          groupsList.add(group);
+          group = new int[M];
         }
       }
     }
-    nGroups = symmGroups[0]; // symmGroups is uniform array
-    groupLists = new int[nSymm][nGroups][]; // Last will be union of N atoms' list * N
+
+    int numGroups = groupsList.size();
+    int[][] groups = new int[groupsList.size()][];
+    for (int i = 0; i < numGroups; i++) {
+      groups[i] = groupsList.get(i);
+      // logger.info(format(" Group %d: %s", i, Arrays.toString(groups[i])));
+    }
+    return groups;
+  }
+
+  /**
+   * Assign group IDs to each atom in the groups.
+   *
+   * @param groups The groups of atoms.
+   * @return An array of group IDs for each atom.
+   */
+  private int[] assignGroupID(int[][] groups) {
+    int nGroups = groups.length;
+    int[] groupID = new int[nAtoms];
+    for (int i = 0; i < nGroups; i++) {
+      int[] group = groups[i];
+      for (int atomIndex : group) {
+        // Groups may contain -1 for empty slots, so check for valid index.
+        if (atomIndex >= 0) {
+          groupID[atomIndex] = i;
+        }
+      }
+    }
+    return groupID;
   }
 
   /**
@@ -649,10 +747,21 @@ public class NeighborList extends ParallelRegion {
     sb.append(format("   Total:                                 %5.2f (A)\n", cutoffPlusBuffer));
     sb.append(format("   Neighbors in the asymmetric unit:%11d\n", asymmetricUnitCount));
     if (nSymm > 1) {
-      int num = (asymmetricUnitCount + symmetryMateCount) * nSymm;
       sb.append(format("   Neighbors in symmetry mates:    %12d\n", symmetryMateCount));
+      int num = (asymmetricUnitCount + symmetryMateCount) * nSymm;
       sb.append(format("   Neighbors in the unit cell:     %12d\n", num));
     }
+
+    if (M > 1) {
+      sb.append(format("   Number of groups:                  %9d\n", numGroups));
+      sb.append(format("   Group pairs in the asymmetric unit:%9d\n", groupAsymmetricUnitCount));
+      if (nSymm > 1) {
+        sb.append(format("   Group pairs in symmetry mates:  %12d\n", groupSymmetryMateCount));
+        int num = (groupAsymmetricUnitCount + groupSymmetryMateCount) * nSymm;
+        sb.append(format("   Group pairs in the unit cell:   %12d\n", num));
+      }
+    }
+
     logger.info(sb.toString());
   }
 
@@ -733,7 +842,7 @@ public class NeighborList extends ParallelRegion {
     private final double[] frac = new double[3];
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) {
 
       // Save the current coordinates.
       double[] current = coordinates[0];
@@ -772,7 +881,7 @@ public class NeighborList extends ParallelRegion {
                     atoms[i], molecule, iSymm, sqrt(dr2)));
               } else if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format("   Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
-                        atoms[i], molecule, iSymm, sqrt(dr2)));
+                    atoms[i], molecule, iSymm, sqrt(dr2)));
               }
               // Exclude molecule-molecule interactions between the asymmetric unit and the iSymm symmetry mate.
               domainDecomposition.addSpecialPositionExclusion(molecule, iSymm);
@@ -793,7 +902,7 @@ public class NeighborList extends ParallelRegion {
    * @author Michael J. Schnieders
    * @since 1.0
    */
-  private class NeighborListLoop extends IntegerForLoop {
+  private class VerletListLoop extends IntegerForLoop {
 
     private final IntegerSchedule schedule;
     private int n;
@@ -805,10 +914,8 @@ public class NeighborList extends ParallelRegion {
     private int[] pairs;
     private Cell cellForCurrentAtom;
     private int[] pairCellAtoms;
-    private double[] mask;
-    private boolean[] vdw14;
 
-    NeighborListLoop() {
+    VerletListLoop() {
       int len = 1000;
       pairs = new int[len];
       schedule = IntegerSchedule.dynamic(10);
@@ -852,9 +959,9 @@ public class NeighborList extends ParallelRegion {
             int c1 = c + 1;
 
             /*
-             If the number of divisions is 1 in any direction then
+             If the number of divisions is 1 in any direction, then
              set the loop limits to the current cell value.
-             Otherwise search from a - nEdge to a + nEdge.
+             Otherwise, search from a - nEdge to a + nEdge.
             */
             int aStart = nA == 1 ? a : a - nEdge;
             int aStop = nA == 1 ? a : a + nEdge;
@@ -914,12 +1021,6 @@ public class NeighborList extends ParallelRegion {
     public void start() {
       xyz = coordinates[0];
       count = 0;
-      if (mask == null || mask.length < nAtoms) {
-        mask = new double[nAtoms];
-        fill(mask, 1.0);
-        vdw14 = new boolean[nAtoms];
-        fill(vdw14, false);
-      }
     }
 
     private void atomCellPairs(final Cell cell) {
@@ -931,12 +1032,6 @@ public class NeighborList extends ParallelRegion {
       int num = cell.getSymOpAtoms(iSymm, pairCellAtoms);
       if (num == 0) {
         return;
-      }
-
-      // Check if this pair search is over atoms in the asymmetric unit.
-      if (iSymm == 0 && maskingRules != null) {
-        // Interactions between atoms in the asymmetric unit may be masked.
-        maskingRules.applyMask(atomIndex, vdw14, mask);
       }
 
       final int moleculeIndex = atoms[atomIndex].getMoleculeNumber();
@@ -989,7 +1084,7 @@ public class NeighborList extends ParallelRegion {
           }
         }
 
-        if (mask[aj] > 0 && (iSymm == 0 || aj >= atomIndex)) {
+        if (iSymm == 0 || aj >= atomIndex) {
           int aj3 = aj * 3;
           final double xj = pair[aj3 + XX];
           final double yj = pair[aj3 + YY];
@@ -1017,51 +1112,112 @@ public class NeighborList extends ParallelRegion {
           }
         }
       }
-
-      // Interactions between atoms in the asymmetric unit may be masked.
-      if (iSymm == 0 && maskingRules != null) {
-        maskingRules.removeMask(atomIndex, vdw14, mask);
-      }
     }
 
   }
 
-  private class MxNListLoop extends IntegerForLoop {
+  /**
+   * Condense the atom-based Verlet list into a group-based Verlet list.
+   */
+  private class GroupVerletListLoop extends IntegerForLoop {
+
+    private final IntegerSchedule schedule = IntegerSchedule.dynamic(10);
 
     @Override
-    public void run(final int lb, final int ub) throws Exception {
-      // Build lists
-      for(int i = 0; i < nSymm; i++){
-        for(int j = lb; j < ub; j++){
-          // Fill out union
-          int[] pairs = new int[1000*N];
-          int n = 0;
-          boolean[] exists = new boolean[nAtoms];
-          for(int k = 0; k < M; k++){
-            int atomID = groups[i][j][k];
-            if (atomID == -1) {
+    public IntegerSchedule schedule() {
+      return schedule;
+    }
+
+    @Override
+    public void run(final int lb, final int ub) {
+      // Build the Verlet Group Lists
+      List<Integer> neighborGroups = new ArrayList<>();
+      for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+        // Loop over M groups.
+        for (int groupIndex = lb; groupIndex <= ub; groupIndex++) {
+          // Loop over atoms from the M group.
+          for (int a = 0; a < M; a++) {
+            int atomIndex = mGroups[groupIndex][a];
+            // Some groups may have -1 for empty slots.
+            if (atomIndex == -1) {
               continue;
             }
-            int[] neighborList = lists[i][atomID];
-            for(int l = 0; l < neighborList.length; l++){
-              boolean newInteraction = !exists[neighborList[l]];
-              if(newInteraction){
-                try{
-                  Arrays.fill(pairs, n, n+N, neighborList[l]);
-                  n+=N;
-                } catch (Exception e){
-                  pairs = copyOf(pairs, n + 100*N);
-                  Arrays.fill(pairs, n, n+N, neighborList[l]);
-                  n+=N;
+            // Loop over neighbors of the atom.
+            int[] neighborList = lists[iSymm][atomIndex];
+            for (int value : neighborList) {
+              // The M-Group ID of the neighbor atom.
+              int neighborGroupIndex = mGroupID[value];
+              if (!neighborGroups.contains(neighborGroupIndex)) {
+                if (groupIndex <= neighborGroupIndex) {
+                  // If the neighbor group index is greater than or equal to the current group index,
+                  // then include it in the neighbor list.
+                  neighborGroups.add(neighborGroupIndex);
+                } else if (neighborGroupIndex >= lb) {
+                  // This thread has already processed the lower index group.
+                  // Check if the group with the lower index already includes the current group in its list.
+                  int[] list = groupLists[iSymm][neighborGroupIndex];
+                  boolean included = false;
+                  for (int neighbor : list) {
+                    // Check if the group with a lower ID already includes the higher ID in its list.
+                    if (neighbor == groupIndex) {
+                      included = true;
+                      break;
+                    }
+                  }
+                  if (!included) {
+                    // If the group with a lower ID does not include the higher ID, so add it.
+                    neighborGroups.add(neighborGroupIndex);
+                  }
+                } else if (!isIncludedInLowerIDList(iSymm, neighborGroupIndex, groupIndex)) {
+                  // Otherwise, check if the group with the lower index will include the current group in its list.
+                  neighborGroups.add(neighborGroupIndex);
                 }
-                exists[neighborList[l]] = true;
               }
             }
           }
-          groupLists[i][j] = copyOf(pairs, n);
+
+          // Set the list of neighboring groups.
+          // logger.info(" SymOp " + iSymm + " Group " + groupIndex + " has " + neighborGroups.size() + " neighbors.");
+          groupLists[iSymm][groupIndex] = neighborGroups.stream().mapToInt(Integer::intValue).toArray();
+          // Clear the list for the next M group.
+          neighborGroups.clear();
         }
       }
     }
+  }
+
+  /**
+   * Check if the group will smaller index includes 2nd group in its group neighbor list.
+   *
+   * @param symOp             The symmetry operator index.
+   * @param smallerGroupIndex The group with the smaller index.
+   * @param secondGroup       The second group with the larger index.
+   * @return True if the higher ID group should include the lower ID group in its list.
+   */
+  private boolean isIncludedInLowerIDList(int symOp, int smallerGroupIndex, int secondGroup) {
+    if (smallerGroupIndex >= secondGroup) {
+      // The lower ID group is not less than the higher ID group.
+      return false;
+    }
+    // Loop over atoms from the lower ID Group.
+    for (int a = 0; a < M; a++) {
+      int atomID = mGroups[smallerGroupIndex][a];
+      // Some groups may have -1 for empty slots.
+      if (atomID == -1) {
+        continue;
+      }
+      // Loop over neighbors of the atom.
+      int[] neighborList = lists[symOp][atomID];
+      for (int value : neighborList) {
+        // Get the M-Group ID of the neighbor atom.
+        int neighborGroupID = mGroupID[value];
+        if (neighborGroupID == secondGroup) {
+          // The lower ID group will include the higher ID group in its neighbor list.
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -1092,9 +1248,13 @@ public class NeighborList extends ParallelRegion {
      * cutoff + buffer distance. nSearch = 2 * nEdge + 1
      */
     private final int nSearch;
-    /** The number of divisions along the A-axis. */
+    /**
+     * The number of divisions along the A-axis.
+     */
     private int nA;
-    /** The number of divisions along the B-axis. */
+    /**
+     * The number of divisions along the B-axis.
+     */
     private int nB;
     /**
      * The number of divisions along the C-Axis.
@@ -1104,11 +1264,17 @@ public class NeighborList extends ParallelRegion {
      * The number of atoms.
      */
     private int nAtoms;
-    /** The cell indices of each atom along the A-axis. */
+    /**
+     * The cell indices of each atom along the A-axis.
+     */
     private int[] cellA;
-    /** The cell indices of each atom along the B-axis. */
+    /**
+     * The cell indices of each atom along the B-axis.
+     */
     private int[] cellB;
-    /** The cell indices of each atom along the C-axis. */
+    /**
+     * The cell indices of each atom along the C-axis.
+     */
     private int[] cellC;
     /**
      * The fractional sub-volumes of the unit cell.
@@ -1123,8 +1289,8 @@ public class NeighborList extends ParallelRegion {
     /**
      * DomainDecomposition Constructor.
      *
-     * @param nAtoms Number of atoms.
-     * @param crystal The crystal.
+     * @param nAtoms           Number of atoms.
+     * @param crystal          The crystal.
      * @param cutoffPlusBuffer The cutoff plus buffer distance.
      */
     public DomainDecomposition(int nAtoms, Crystal crystal, double cutoffPlusBuffer) {
@@ -1213,7 +1379,7 @@ public class NeighborList extends ParallelRegion {
     /**
      * Add a special position exclusion.
      *
-     * @param molecule The molecule.
+     * @param molecule   The molecule.
      * @param symOpIndex The symmetry operation index.
      */
     public void addSpecialPositionExclusion(int molecule, int symOpIndex) {
@@ -1236,7 +1402,7 @@ public class NeighborList extends ParallelRegion {
     /**
      * Check if a special position exclusion exists.
      *
-     * @param molecule The molecule.
+     * @param molecule   The molecule.
      * @param symOpIndex The symmetry operation index.
      * @return True if the special position exclusion exists.
      */
@@ -1324,9 +1490,9 @@ public class NeighborList extends ParallelRegion {
     /**
      * Add an atom to a sub-cell.
      *
-     * @param i The index of the atom.
+     * @param i     The index of the atom.
      * @param iSymm The index of the symmetry operator.
-     * @param frac The fractional coordinates of the atom.
+     * @param frac  The fractional coordinates of the atom.
      */
     public void addAtomToCell(int i, int iSymm, double[] frac) {
       double xu = frac[0];
@@ -1442,14 +1608,14 @@ public class NeighborList extends ParallelRegion {
     /**
      * Add an atom to the cell.
      *
-     * @param atomIndex The atom index.
+     * @param atomIndex  The atom index.
      * @param symOpIndex The symmetry operator index.
      */
     public void add(int atomIndex, int symOpIndex, double z) {
       list.add(new AtomIndex(symOpIndex, atomIndex, z));
     }
 
-    public void groupAdd(int groupIndex){
+    public void groupAdd(int groupIndex) {
       groupList.add(groupIndex);
     }
 
@@ -1464,7 +1630,7 @@ public class NeighborList extends ParallelRegion {
       return list.size();
     }
 
-    public int getGroupCount(){
+    public int getGroupCount() {
       return groupList.size();
     }
 
@@ -1472,7 +1638,7 @@ public class NeighborList extends ParallelRegion {
      * Return the number of atoms in the cell for a given symmetry operator.
      *
      * @param symOpIndex The symmetry operator index.
-     * @param index The list of indexes for the given symmetry operator.
+     * @param index      The list of indexes for the given symmetry operator.
      * @return The number of atoms in the cell for the symmetry operator.
      */
     public int getSymOpAtoms(int symOpIndex, int[] index) {
@@ -1500,12 +1666,13 @@ public class NeighborList extends ParallelRegion {
 
   /**
    * Debugging method.
-   * @param args
+   *
+   * @param args Command line arguments.
    */
-  public static void main(String[] args){
+  public static void main(String[] args) {
     PotentialsUtils potentialsUtils = new PotentialsUtils();
     File xyzFile = new File("./examples/waterbox.xyz");
-    if(!xyzFile.exists()){
+    if (!xyzFile.exists()) {
       System.out.println("File does not exist");
     }
     MolecularAssembly molecularAssembly = potentialsUtils.open(xyzFile);

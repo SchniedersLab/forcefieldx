@@ -86,7 +86,15 @@ class Dynamics extends AlgorithmsScript {
    * Dynamics constructor.
    */
   Dynamics() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * Dynamics constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Dynamics(String[] args) {
+    super(args)
   }
 
   /**

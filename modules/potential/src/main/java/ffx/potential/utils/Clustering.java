@@ -37,19 +37,10 @@
 //******************************************************************************
 package ffx.potential.utils;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.random;
-
-import com.apporiented.algorithm.clustering.Cluster;
-import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import ffx.numerics.clustering.Cluster;
+import ffx.numerics.clustering.ClusteringAlgorithm;
+import ffx.numerics.clustering.DefaultClusteringAlgorithm;
+import ffx.numerics.clustering.SingleLinkageStrategy;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
@@ -58,11 +49,26 @@ import org.apache.commons.math3.ml.clustering.evaluation.SumOfClusterVariances;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.random;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 /**
- * Cluster contains methods utilized in the <code>Cluster.groovy</code> file.
+ * Cluster contains methods used in the <code>Cluster.groovy</code> file.
  *
+ * @author Kinoshita Yuya
+ * @author Nishimura Koki
+ * @author Karashima Masatoshi
+ * Implemented by:
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class Clustering {
 
@@ -76,14 +82,14 @@ public class Clustering {
   /**
    * Perform a k-means clustering for a specified number of clusters.
    *
-   * @param distMatrix Coordinate input serves as the data points.
+   * @param distMatrix  Coordinate input serves as the data points.
    * @param maxClusters Number of clusters to use (k).
-   * @param numTrials Number of trials for the Multi K-Means++ algorithm.
-   * @param seed The seed to use for clustering (-1 uses the current system time).
+   * @param numTrials   Number of trials for the Multi K-Means++ algorithm.
+   * @param seed        The seed to use for clustering (-1 uses the current system time).
    * @return The clusters.
    */
   public static List<CentroidCluster<Conformation>> kMeansClustering(List<double[]> distMatrix,
-      int maxClusters, int numTrials, long seed) {
+                                                                     int maxClusters, int numTrials, long seed) {
     // Square distance matrix size (dim x dim).
     int dim = distMatrix.size();
     List<Conformation> conformationList = new ArrayList<>();
@@ -118,7 +124,7 @@ public class Clustering {
    * saved.
    *
    * @param distanceMatrix A List of double[] entries that holds the distance matrix.
-   * @param threshold the distance used to separate clusters.
+   * @param threshold      the distance used to separate clusters.
    * @return Return a list of CentroidClusters.
    */
   public static List<CentroidCluster<Conformation>> hierarchicalClustering(
@@ -148,18 +154,12 @@ public class Clustering {
    * researchers at Takeda (see method authors).
    *
    * @param distMatrix Coordinate input serves as the data points.
-   * @param trials Number of iterations to perform clustering.
-   * @param tolerance RMSD cutoff to divide same values from different.
+   * @param trials     Number of iterations to perform clustering.
+   * @param tolerance  RMSD cutoff to divide same values from different.
    * @return The clusters.
-   * Created by:
-   * @author Yuya, Kinoshita
-   * @author Koki, Nishimura
-   * @author Masatoshi, Karashima
-   * Implemented by:
-   * @author Aaron J. Nessler
    */
   public static List<CentroidCluster<Conformation>> iterativeClustering(List<double[]> distMatrix,
-      int trials, double tolerance) {
+                                                                        int trials, double tolerance) {
     // Square distance matrix size (dim x dim).
     int dim = distMatrix.size();
     ArrayList<CentroidCluster<Conformation>> bestClusters = new ArrayList<>();
@@ -215,12 +215,12 @@ public class Clustering {
   /**
    * Analyze a list of CentroidClusters.
    *
-   * @param clusters The List of CentroidClusters to analyze.
+   * @param clusters   The List of CentroidClusters to analyze.
    * @param repStructs Store a representative conformation for each cluster.
-   * @param verbose If true, use verbose printing.
+   * @param verbose    If true, use verbose printing.
    */
   public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters,
-      List<Integer> repStructs, boolean verbose) {
+                                     List<Integer> repStructs, boolean verbose) {
     // Number of clusters.
     int nClusters = clusters.size();
     double meanClusterRMSD = 0.0;
@@ -344,7 +344,7 @@ public class Clustering {
    * Convert clusters defined by a List of Strings to Apache Math style CentroidClusters.
    *
    * @param distMatrixArray Distance matrix.
-   * @param clusterList Input List of Clusters.
+   * @param clusterList     Input List of Clusters.
    * @return Return a List of CentroidClusters.
    */
   private static List<CentroidCluster<Conformation>> clustersToCentroidClusters(
@@ -383,7 +383,7 @@ public class Clustering {
    * Collect the names of each leaf in Cluster.
    *
    * @param cluster The cluster to operate on.
-   * @param names A List of leaf names.
+   * @param names   A List of leaf names.
    */
   private static void collectNames(Cluster cluster, List<String> names) {
     if (cluster.isLeaf()) {
@@ -399,7 +399,7 @@ public class Clustering {
   /**
    * Computes the centroid for a set of points.
    *
-   * @param points the set of points
+   * @param points    the set of points
    * @param dimension the point dimension
    * @return the computed centroid for the set of points
    */

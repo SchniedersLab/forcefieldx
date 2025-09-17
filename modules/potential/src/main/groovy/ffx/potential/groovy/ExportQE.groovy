@@ -136,7 +136,7 @@ class ExportQE extends PotentialScript {
    * XYZtoQE Constructor.
    */
   ExportQE() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -145,6 +145,14 @@ class ExportQE extends PotentialScript {
    */
   ExportQE(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ExportQE constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ExportQE(String[] args) {
+    super(args)
   }
 
   /**

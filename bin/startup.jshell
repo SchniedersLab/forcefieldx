@@ -2,12 +2,11 @@
 // This file can be used to initialize JShell after the CLASSPATH is set.
 //
 // export CLASSPATH=$(echo "$FFX_HOME/lib"/*.jar | tr ' ' ':')
-// jshell bin/startup.jshell
+// jshell --enable-preview --add-modules jdk.incubator.vector bin/startup.jshell
 //
-// It can also be used to initialize a Jupyter notebook using the IJava kernel (which builds on jshell).
-// For example, see our a Binder Dockerfile located here: ffx/binder/Dockerfile
-// The IJava kernel is hosted here: https://github.com/SpencerPark/IJava
-//
+// It can also be used to initialize a Jupyter notebook using the rapaio-jupyter-kernel
+// For example, see the Dockerfile located here: ffx/Dockerfile
+// The Java kernel is hosted here: https://github.com/padreati/rapaio-jupyter-kernel
 
 // Imports
 import ffx.Main;

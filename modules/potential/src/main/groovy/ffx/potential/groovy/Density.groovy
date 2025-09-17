@@ -61,7 +61,7 @@ import static java.lang.String.format
 class Density extends PotentialScript {
 
   @Mixin
-  private WriteoutOptions writeout
+  private WriteoutOptions writeoutOptions
 
   /**
    * -s or --start First frame to evaluate (1-indexed).
@@ -102,7 +102,7 @@ class Density extends PotentialScript {
    * Density constructor.
    */
   Density() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -111,6 +111,14 @@ class Density extends PotentialScript {
    */
   Density(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Density constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Density(String[] args) {
+    super(args)
   }
 
   /**
@@ -139,7 +147,7 @@ class Density extends PotentialScript {
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()
 
     if (crystal.aperiodic()) {
-      logger.info(format(" System %s appears aperiodic: total mass %16.7g g/mol", filename, totMass))
+      logger.info(format(" System %s is aperiodic: total mass %16.7g g/mol", filename, totMass))
     } else {
       double volume = crystal.volume / crystal.numSymOps
       double density = crystal.getDensity(totMass)
@@ -148,14 +156,10 @@ class Density extends PotentialScript {
       int lastFrame = (finish < 1) ? nFrames : finish
 
       densities[0] = density
-      logger.info(
-          format(" Evaluating density for system %s with mass %16.7g (g/mol).", filename, totMass))
-      logger.info(
-          format(" Density at frame %9d is %16.7g (g/mL) from a volume of %16.7g (A^3)", 1, density,
-              volume))
+      logger.info(format(" Evaluating density for system %s with mass %16.7g (g/mol).", filename, totMass))
+      logger.info(format(" Density at frame %9d is %16.7g (g/mL) from a volume of %16.7g (A^3)", 1, density, volume))
 
       int ctr = 1
-      // TODO: Optimize by skipping frames by stride.
       while (openFilter.readNext(false, false)) {
         volume = crystal.volume / crystal.numSymOps
         density = crystal.getDensity(totMass)
@@ -173,7 +177,7 @@ class Density extends PotentialScript {
       if (doPrint) {
         crystal.setDensity(densStats.mean, totMass)
         String outFileName = FilenameUtils.removeExtension(filename)
-        writeout.saveFile(outFileName, potentialFunctions, activeAssembly)
+        writeoutOptions.saveFile(outFileName, potentialFunctions, activeAssembly)
       }
     }
 

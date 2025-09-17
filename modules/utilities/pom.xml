@@ -19,10 +19,9 @@
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>${antrun.version}</version>
         <executions>
           <execution>
-            <id>compile</id>
+            <id>groovyc-compile</id>
             <phase>compile</phase>
             <configuration>
               <target>

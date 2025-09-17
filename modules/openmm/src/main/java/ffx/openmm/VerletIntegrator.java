@@ -37,19 +37,14 @@
 // ******************************************************************************
 package ffx.openmm;
 
-import java.util.logging.Logger;
-
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_step;
-import static java.lang.String.format;
 
 /**
  * Verlet Integrator.
  */
 public class VerletIntegrator extends Integrator {
-
-  private static final Logger logger = Logger.getLogger(VerletIntegrator.class.getName());
 
   /**
    * Constructor.
@@ -57,17 +52,7 @@ public class VerletIntegrator extends Integrator {
    * @param dt The time step.
    */
   public VerletIntegrator(double dt) {
-    pointer = OpenMM_VerletIntegrator_create(dt);
-  }
-
-  /**
-   * Step the integrator.
-   *
-   * @param steps The number of steps to take.
-   */
-  @Override
-  public void step(int steps) {
-    OpenMM_VerletIntegrator_step(pointer, steps);
+    super(OpenMM_VerletIntegrator_create(dt));
   }
 
   /**
@@ -81,4 +66,13 @@ public class VerletIntegrator extends Integrator {
     }
   }
 
+  /**
+   * Step the integrator.
+   *
+   * @param steps The number of steps to take.
+   */
+  @Override
+  public void step(int steps) {
+    OpenMM_VerletIntegrator_step(pointer, steps);
+  }
 }

@@ -320,7 +320,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * CrystalSuperpose Constructor.
    */
   SuperposeCrystals() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -329,6 +329,14 @@ class SuperposeCrystals extends AlgorithmsScript {
    */
   SuperposeCrystals(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SuperposeCrystals constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SuperposeCrystals(String[] args) {
+    super(args)
   }
 
   /**

@@ -193,7 +193,7 @@ class PhEnergy extends PotentialScript {
      * Energy constructor.
      */
     PhEnergy() {
-        this(new Binding())
+        super()
     }
 
     /**
@@ -202,6 +202,14 @@ class PhEnergy extends PotentialScript {
      */
     PhEnergy(Binding binding) {
         super(binding)
+    }
+
+    /**
+     * PhEnergy constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    PhEnergy(String[] args) {
+        super(args)
     }
 
     /**

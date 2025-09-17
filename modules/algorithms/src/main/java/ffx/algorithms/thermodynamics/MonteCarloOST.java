@@ -69,10 +69,10 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * Metropolis Monte Carlo steps.
  *
  * <p>The algorithm generates coordinate (X) MC moves using molecular dynamics at a fixed lambda
- * value (i.e. using OpenMM), followed by MC lambda moves.
+ * value (i.e., using OpenMM), followed by MC lambda moves.
  *
  * <p>1.) At a fixed Lambda, run a defined length MD trajectory to "move" coordinates and dU/dL on
- * an approximate potential U* (i.e. no OST Bias).
+ * an approximate potential U* (i.e., no OST Bias).
  *
  * <p>2.) Accept / Reject the MD move with probability exp[-Beta(dU - dU*)] where dU is the change
  * in AMOEBA + Bias energy and dU* is the change in AMOEBA + Kinetic energy from the MD.
@@ -156,8 +156,7 @@ public class MonteCarloOST extends BoltzmannMC {
    * @param potentialEnergy          a {@link ffx.numerics.Potential} object.
    * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
    * @param molecularAssembly        a {@link ffx.potential.MolecularAssembly} object.
-   * @param properties               a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *                                 object.
+   * @param properties               a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
    * @param listener                 a {@link ffx.algorithms.AlgorithmListener} object.
    * @param dynamics                 CLI object containing key information.
    * @param verbose                  Whether to be verbose.
@@ -243,7 +242,7 @@ public class MonteCarloOST extends BoltzmannMC {
 
   /**
    * The goal is to sample lambda and coordinates (X) simultaneously to converge the ensemble average
-   * dU/dL for every state (lambda) along the thermodynamic path. Note that the order of 1 & 2 below
+   * dU/dL for every state (lambda) along the thermodynamic path. Note that the order of 1 and 2 below
    * can be swapped (i.e. run MD and then change lambda). Here the order is random for each trial.
    * <p>
    * 1.) Randomly change the value of Lambda.

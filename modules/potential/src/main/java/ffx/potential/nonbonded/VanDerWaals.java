@@ -392,8 +392,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     double buff = 2.0;
     nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
     multiplicativeSwitch = new MultiplicativeSwitch(vdwTaper, vdwCutoff);
-    neighborList = new NeighborList(null, this.crystal,
-        atoms, neighborListCutoff, buff, parallelTeam);
+    neighborList = new NeighborList(crystal, atoms, neighborListCutoff, buff, parallelTeam);
     pairwiseSchedule = neighborList.getPairwiseSchedule();
     neighborLists = new int[nSymm][][];
 
@@ -651,7 +650,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>bondMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask12 array.
    */
   public int[][] getMask12() {
     return mask12;
@@ -660,7 +659,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>angleMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask13 array.
    */
   public int[][] getMask13() {
     return mask13;
@@ -669,7 +668,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Getter for the field <code>torsionMask</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the mask14 array.
    */
   public int[][] getMask14() {
     return mask14;
@@ -705,7 +704,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   /**
    * Get the reduction index.
    *
-   * @return an array of {@link int} objects.
+   * @return the reductionIndex array.
    */
   public int[] getReductionIndex() {
     return reductionIndex;
@@ -784,10 +783,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
-   * Setter for the field <code>atoms</code>.
+   * Set the atoms and molecule arrays, and rebuild the neighbor list.
    *
-   * @param atoms         an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param molecule      an array of {@link int} objects.
+   * @param atoms         an array of Atom objects representing the atoms in the system.
+   * @param molecule      an array of integers indicating the molecule index for each atom.
    * @param neuralNetwork an array of flags to indicate if the atom is treated by a neural
    *                      network.
    */
@@ -814,11 +813,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * @param crystal The new crystal instance defining the symmetry and boundary conditions.
    */
   public void setCrystal(Crystal crystal) {
+    if (this.crystal.equals(crystal)) {
+      return;
+    }
     this.crystal = crystal;
     int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
     if (nSymm != newNSymm) {
       nSymm = newNSymm;
-
       // Allocate memory if necessary.
       if (reduced == null || reduced.length < nSymm) {
         reduced = new double[nSymm][nAtoms * 3];
@@ -845,21 +846,21 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (multiplicativeSwitch.getSwitchStart() != Double.POSITIVE_INFINITY) {
       sb.append(format("   Switch Start:                         %6.3f (A)\n",
           multiplicativeSwitch.getSwitchStart()));
-      sb.append(format("   Cut-Off:                              %6.3f (A)\n",
+      sb.append(format("   Cut-Off:                              %6.3f (A)",
           multiplicativeSwitch.getSwitchEnd()));
     } else {
-      sb.append("   Cut-Off:                                NONE\n");
+      sb.append("   Cut-Off:                                NONE");
     }
 
-    sb.append(format("   Long-Range Correction:                %6B\n", doLongRangeCorrection));
+    sb.append(format("\n   Long-Range Correction:                %6B", doLongRangeCorrection));
     if (!reducedHydrogen) {
-      sb.append(format("   Reduce Hydrogen:                      %6B\n", reducedHydrogen));
+      sb.append(format("\n   Reduce Hydrogen:                      %6B", reducedHydrogen));
     }
     if (lambdaTerm) {
-      sb.append("   Alchemical Parameters\n");
+      sb.append("\n   Alchemical Parameters\n");
       sb.append(format("    Softcore Alpha:                       %5.3f\n", vdwLambdaAlpha));
       sb.append(format("    Lambda Exponent:                      %5.3f\n", vdwLambdaExponent));
-      sb.append(format("    Lambda End:                           %5.3f\n", vdwLambdaEnd));
+      sb.append(format("    Lambda End:                           %5.3f", vdwLambdaEnd));
     }
     return sb.toString();
   }
@@ -2188,7 +2189,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private class NeighborListBarrier extends BarrierAction {
 
       @Override
-      public void run() throws Exception {
+      public void run() {
         neighborListTotalTime = -System.nanoTime();
         neighborList.buildList(reduced, neighborLists, null, forceNeighborListRebuild, false);
         neighborListTotalTime += System.nanoTime();

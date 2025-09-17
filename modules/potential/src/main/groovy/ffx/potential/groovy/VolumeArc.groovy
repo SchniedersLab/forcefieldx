@@ -141,7 +141,7 @@ class VolumeArc extends PotentialScript {
    * Volume Constructor.
    */
   VolumeArc() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -150,6 +150,14 @@ class VolumeArc extends PotentialScript {
    */
   VolumeArc(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * VolumeArc constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  VolumeArc(String[] args) {
+    super(args)
   }
 
   /**

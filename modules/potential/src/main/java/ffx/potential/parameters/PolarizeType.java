@@ -162,12 +162,14 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * assignPolarizationGroups.
+   * Assign polarization groups to atoms based on their connectivity. This method will
+   * assign 1-1, 1-2, and 1-3 polarization groups to the provided atoms.
+   * The first dimension of the 2D arrays should already be allocated to the number of atoms.
    *
    * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param ip11  an array of {@link int} objects.
-   * @param ip12  an array of {@link int} objects.
-   * @param ip13  an array of {@link int} objects.
+   * @param ip11  the 1-1 polarization groups as 2D int array.
+   * @param ip12  the 1-2 polarization groups as 2D int array.
+   * @param ip13  the 1-3 polarization groups as 2D int array.
    */
   public static void assignPolarizationGroups(Atom[] atoms, int[][] ip11, int[][] ip12,
                                               int[][] ip13) {

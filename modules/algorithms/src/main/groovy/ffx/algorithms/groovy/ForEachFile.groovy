@@ -142,7 +142,7 @@ class ForEachFile extends AlgorithmsScript {
    * Minimize Constructor.
    */
   ForEachFile() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -151,6 +151,14 @@ class ForEachFile extends AlgorithmsScript {
    */
   ForEachFile(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * ForEachFile constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  ForEachFile(String[] args) {
+    super(args)
   }
 
   /**

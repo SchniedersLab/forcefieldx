@@ -157,25 +157,23 @@ public class MinimizeOpenMM extends Minimize {
       int mask = OpenMM_State_Energy | OpenMM_State_Positions | OpenMM_State_Forces;
       OpenMMState openMMState = openMMContext.getOpenMMState(mask);
       energy = openMMState.potentialEnergy;
-      openMMState.getPositions(x);
-      openMMState.getGradient(grad);
+      openMMState.getActivePositions(x, atoms);
+      openMMState.getActiveGradient(grad, atoms);
       openMMState.destroy();
 
       // Compute the RMS gradient.
-      int index = 0;
       double grad2 = 0;
-      for (Atom atom : atoms) {
-        if (atom.isActive()) {
-          double fx = grad[index++];
-          double fy = grad[index++];
-          double fz = grad[index++];
-          grad2 += fx * fx + fy * fy + fz * fz;
+      for (int i = 0; i < n; i++) {
+        double gi = grad[i];
+        if (isNaN(gi) || isInfinite(gi)) {
+          String message = format(" The gradient of variable %d is %8.3f.", i, gi);
+          logger.warning(message);
         }
+        grad2 += gi * gi;
       }
       rmsGradient = sqrt(grad2 / n);
 
       double[] ffxGrad = new double[n];
-      openMMEnergy.getCoordinates(x);
       double ffxEnergy = openMMEnergy.energyAndGradientFFX(x, ffxGrad);
       double grmsFFX = 0.0;
       for (int i = 0; i < n; i++) {

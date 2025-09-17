@@ -82,7 +82,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
    * SaveAsConstantPhPDB constructor.
    */
   SaveAsConstantPhPDB() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -91,6 +91,14 @@ class SaveAsConstantPhPDB extends PotentialScript {
    */
   SaveAsConstantPhPDB(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * SaveAsConstantPhPDB constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveAsConstantPhPDB(String[] args) {
+    super(args)
   }
 
   /**

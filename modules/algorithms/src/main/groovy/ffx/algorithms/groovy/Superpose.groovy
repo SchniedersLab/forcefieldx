@@ -139,7 +139,7 @@ class Superpose extends AlgorithmsScript {
    * Superpose Constructor.
    */
   Superpose() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -148,6 +148,14 @@ class Superpose extends AlgorithmsScript {
    */
   Superpose(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Superpose constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Superpose(String[] args) {
+    super(args)
   }
 
   /**

@@ -261,9 +261,6 @@ public class RotamerOptimization implements Terminatable {
      */
     private int evaluatedPermutationsPrint = 0;
     /**
-     * List of residues to optimize; they may not be contiguous or all members of the same chain.
-     */
-    /**
      * Total boltzmann calculated during the partition function
      */
     private double totalBoltzmann = 0;
@@ -1264,7 +1261,7 @@ public class RotamerOptimization implements Terminatable {
    * @param residues          an array of {@link ffx.potential.bonded.Residue} objects.
    * @param i                 a int.
    * @param lowEnergy         a double.
-   * @param optimum           an array of {@link int} objects.
+   * @param optimum           the minimum energy rotamer indices for each residue.
    * @return the current energy.
    */
   public double rotamerOptimization(MolecularAssembly molecularAssembly, Residue[] residues, int i,

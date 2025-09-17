@@ -42,6 +42,8 @@ import ffx.algorithms.cli.RepexOSTOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.groovy.Thermodynamics
+import ffx.algorithms.thermodynamics.HistogramData
+import ffx.algorithms.thermodynamics.LambdaData
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.algorithms.thermodynamics.RepExOST
@@ -76,7 +78,7 @@ class RepexThermo extends Thermodynamics {
    * RepexThermo Constructor.
    */
   RepexThermo() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -85,6 +87,14 @@ class RepexThermo extends Thermodynamics {
    */
   RepexThermo(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * RepexThermo constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  RepexThermo(String[] args) {
+    super(args)
   }
 
   /**
@@ -118,8 +128,10 @@ class RepexThermo extends Thermodynamics {
 
     topologies = new MolecularAssembly[nArgs]
 
-    int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topology.getNumberOfTopologies(filenames)
+    int threadsPer = topology.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
     // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
     /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
@@ -209,7 +221,7 @@ class RepexThermo extends Thermodynamics {
     }
     sb.append(" with histogram replica exchange for ")
 
-    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, threadsAvail, sb)
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, sb)
 
     LambdaInterface linter = (LambdaInterface) potential
     logger.info(sb.toString())
@@ -235,8 +247,7 @@ class RepexThermo extends Thermodynamics {
       File firstHisto = new File("${filepath}0${File.separator}${fileBase}.his")
       // @formatter:on
 
-      orthogonalSpaceTempering =
-          ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
+      orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
               additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
               algorithmListener,
               false)
@@ -244,14 +255,11 @@ class RepexThermo extends Thermodynamics {
           dynamicsOptions, barostatOptions)
 
       if (isMC) {
-        mcOST = ostOptions.
-            setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
-                verbose,
-                algorithmListener)
+        mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
+                verbose, null, algorithmListener)
         md = mcOST.getMD()
       } else {
-        md = ostOptions.
-            assembleMolecularDynamics(topologies, finalPotential, dynamicsOptions, algorithmListener)
+        md = ostOptions.assembleMolecularDynamics(topologies, finalPotential, dynamicsOptions, algorithmListener)
       }
       if (!lamExists) {
         if (finalPotential instanceof LambdaInterface) {
@@ -269,11 +277,12 @@ class RepexThermo extends Thermodynamics {
 
       for (int i = 1; i < size; i++) {
         // @formatter:off
-        File rankIHisto = new File("${filepath}${i}${File.separator}${fileBase}.his")
+        File histogramFile = new File("${filepath}${i}${File.separator}${fileBase}.his")
+        File lambdaFile = new File("${filepath}${i}${File.separator}${fileBase}.lam")
         // @formatter:on
-        orthogonalSpaceTempering.addHistogram(ostOptions.generateHistogramSettings(rankIHisto,
-            lambdaRestart.toString(), allProperties, i, dynamicsOptions, lambdaParticleOptions, true,
-            false))
+        HistogramData histogramData = HistogramData.readHistogram(histogramFile)
+        LambdaData lambdaData = LambdaData.readLambdaData(lambdaFile)
+        orthogonalSpaceTempering.addHistogram(histogramData, lambdaData)
       }
 
       if (isMC) {
@@ -315,8 +324,11 @@ class RepexThermo extends Thermodynamics {
   @Override
   List<Potential> getPotentials() {
     if (repExOST == null) {
-      return
-      potential == null ? Collections.emptyList() : Collections.singletonList((Potential) potential)
+      if (potential == null) {
+        return Collections.emptyList()
+      } else {
+        return Collections.singletonList(potential)
+      }
     }
     return Collections.singletonList((Potential) repExOST.getOST())
   }

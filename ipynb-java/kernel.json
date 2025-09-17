@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "java",
+    "--enable-preview",
+    "--add-modules",
+    "jdk.incubator.vector",
+    "-jar",
+    "/home/ffx/.local/share/jupyter/kernels/rapaio-jupyter-kernel/rapaio-jupyter-kernel-2.2.0.jar",
+    "{connection_file}"
+  ],
+  "display_name": "Java (rjk 2.2.0)",
+  "language": "java",
+  "interrupt_mode": "message",
+  "env": {
+    "RJK_CLASSPATH": "",
+    "RJK_COMPILER_OPTIONS": "",
+    "RJK_INIT_SCRIPT": "",
+    "RJK_TIMEOUT_MILLIS": "-1"
+  }
+}

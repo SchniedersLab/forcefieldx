@@ -69,7 +69,7 @@ class FFtoXML extends PotentialScript {
      * FFtoXML Constructor.
      */
     FFtoXML() {
-        this(new Binding())
+      super()
     }
 
     /**
@@ -77,7 +77,15 @@ class FFtoXML extends PotentialScript {
      * @param binding Groovy Binding to use.
      */
     FFtoXML(Binding binding) {
-        super(binding)
+      super(binding)
+    }
+
+    /**
+     * FFtoXML constructor that sets the command line arguments.
+     * @param args Command line arguments.
+     */
+    FFtoXML(String[] args) {
+      super(args)
     }
 
     /**

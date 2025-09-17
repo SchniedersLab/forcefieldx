@@ -37,13 +37,12 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import edu.rit.pj.ParallelTeam
+
 import ffx.algorithms.ParallelStateEnergy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.numerics.estimator.BennettAcceptanceRatio
 import ffx.numerics.estimator.FreeEnergyDifferenceReporter
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AlchemicalOptions
@@ -79,10 +78,10 @@ import static java.lang.String.format
 class BAR extends AlgorithmsScript {
 
   @Mixin
-  private AlchemicalOptions alchemical
+  private AlchemicalOptions alchemicalOptions
 
   @Mixin
-  private TopologyOptions topology
+  private TopologyOptions topologyOptions
 
   /**
    * --eb or --evaluateBARFiles Read in Tinker BAR files and evaluate the free energy difference.
@@ -141,22 +140,13 @@ class BAR extends AlgorithmsScript {
   List<String> filenames = null
 
   /**
-   * Number of threads available to utilize.
-   */
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  /**
-   * Threads per walker
-   */
-  private int threadsPer = threadsAvail
-
-  /**
    * Additional properties
    */
   private Configuration additionalProperties
   /**
    * Molecular assemblies to compute energies.
    */
-  MolecularAssembly[] molecularAssemblies
+  MolecularAssembly[] topologies
   /**
    * Number of Topologies
    */
@@ -165,7 +155,6 @@ class BAR extends AlgorithmsScript {
    * Potential object for the crystal
    */
   CrystalPotential potential
-
   /**
    * Number of input files.
    */
@@ -174,7 +163,6 @@ class BAR extends AlgorithmsScript {
    * Input files for BAR.
    */
   private String[] files
-
   /**
    * Lambda values for each state.
    */
@@ -198,7 +186,7 @@ class BAR extends AlgorithmsScript {
    * BAR Constructor.
    */
   BAR() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -207,6 +195,14 @@ class BAR extends AlgorithmsScript {
    */
   BAR(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * BAR constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  BAR(String[] args) {
+    super(args)
   }
 
   /**
@@ -251,7 +247,7 @@ class BAR extends AlgorithmsScript {
         barFilters[0] = new BARFilter(new File(files[0]), startingSnapshot, endingSnapshot)
         // Define the lambda values.
         lambdaValues = new double[2]
-        lambdaValues[0] = alchemical.getInitialLambda()
+        lambdaValues[0] = alchemicalOptions.getInitialLambda()
         lambdaValues[1] = lambda2
       } else if (nStates > 2 && nFiles == 1) {
         // If the number of states is greater than 2, evaluate multiple BAR files from a directory.
@@ -290,7 +286,7 @@ class BAR extends AlgorithmsScript {
         // Define the lambda values.
         lambdaValues = new double[nStates]
         for (int l = 0; l < nStates; l++) {
-          lambdaValues[l] = alchemical.getInitialLambda(nStates, l, true)
+          lambdaValues[l] = alchemicalOptions.getInitialLambda(nStates, l, true)
         }
         barFilters = new BARFilter[numFiles]
         for (int i = 0; i < numFiles; i++) {
@@ -351,12 +347,12 @@ class BAR extends AlgorithmsScript {
       autodetect = true
       lambdaValues = new double[nStates]
       for (int i = 0; i < nStates; i++) {
-        lambdaValues[i] = alchemical.getInitialLambda(nStates, i, true)
+        lambdaValues[i] = alchemicalOptions.getInitialLambda(nStates, i, true)
       }
     } else {
       // Otherwise we assume two ensembles at then given lambda values.
       lambdaValues = new double[2]
-      lambdaValues[0] = alchemical.getInitialLambda(2,0, true)
+      lambdaValues[0] = alchemicalOptions.getInitialLambda(2,0, true)
       lambdaValues[1] = lambda2
       nStates = 2
     }
@@ -372,31 +368,12 @@ class BAR extends AlgorithmsScript {
     boolean isPBC
 
     // Allocate space for each topology
-    molecularAssemblies = new MolecularAssembly[numTopologies]
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
     SystemFilter[] openers = new SystemFilter[numTopologies]
 
-    int numParallel = topology.getNumParallel(threadsAvail, numTopologies)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    /*
-    Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-    Checking numTopologies == 1 should only be done for scripts that imply
-    some sort of lambda scaling.
-    The Minimize script, for example, may be running on a single, unscaled physical topology.
-    */
-    boolean lambdaTerm = (numTopologies == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
-
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default free energy parameters than absolute free energies.
-    if (numTopologies == 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     if (numTopologies == 2) {
       logger.info(format(" Initializing two topologies for each window."))
@@ -405,27 +382,41 @@ class BAR extends AlgorithmsScript {
     }
 
     for (int i = 0; i < numTopologies; i++) {
-      MolecularAssembly ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[i], i)
-      molecularAssemblies[i] = ma
+      MolecularAssembly ma = alchemicalOptions.openFile(algorithmFunctions, topologyOptions,
+          threadsPerTopology, filenames[i], i)
+      topologies[i] = ma
       openers[i] = algorithmFunctions.getFilter()
     }
 
     StringBuilder sb = new StringBuilder(format(
         "\n Using BAR to analyze a free energy change for %s\n ", filenames))
-    potential = (CrystalPotential) topology.assemblePotential(molecularAssemblies, threadsAvail, sb)
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, sb)
     Crystal unitCell = potential.getCrystal().getUnitCell()
     isPBC = includeVolume && !unitCell.aperiodic()
 
     String[][] fullFilePaths
     String directoryPath
     if (nFiles > 0) {
-      File file = new File(files[0])
-      directoryPath = file.getAbsoluteFile().getParent() + File.separator
-      fullFilePaths = new String[nStates][nFiles]
-      // Loop over user supplied files.
-      for (int j = 0; j < nFiles; j++) {
-        // Loop over ensembles.
-        for (int i = 0; i < nStates; i++) {
+      // For Dual-Topology systems that only compare two states, simplify filePaths to use only the 2 files belonging
+      // to each ensemble
+      int dtIndex = 0
+      if (numTopologies == 2 && nFiles == 4) {
+        fullFilePaths = new String[nStates][2]
+        dtIndex = 2
+      } else {
+        fullFilePaths = new String[nStates][nFiles]
+      }
+
+      // Loop over ensembles
+      for (int i = 0; i < nStates; i++) {
+        // Loop over user supplied files.
+        for (int j = 0; j < nFiles; j++) {
+          // For Dual-Topology, start at index 2 for second ensemble
+          if (i == 1 && j == 0) {
+            j = dtIndex
+          }
+          File file = new File(files[j])
+          directoryPath = file.getAbsoluteFile().getParent() + File.separator
           String archiveName
           if (sortedArc) {
             archiveName = FilenameUtils.getBaseName(files[j]) + "_E" + i.toString() + ".arc"
@@ -434,17 +425,21 @@ class BAR extends AlgorithmsScript {
           }
           if (!autodetect) {
             // Path to a file in the same directory as supplied archives.
-            fullFilePaths[i][j] = directoryPath + File.separator + archiveName
+            fullFilePaths[i][j-dtIndex] = directoryPath + File.separator + archiveName // groovy allows negative indexing
           } else {
             // Paths to auto-detected subdirectories.
-            fullFilePaths[i][j] = directoryPath + i + File.separator + archiveName
+            fullFilePaths[i][j-dtIndex] = directoryPath + i + File.separator + archiveName
+          }
+          // For Dual-Topology, stop after two files for first ensemble
+          if (i == 0 && j == 1) {
+            j += dtIndex * nFiles
           }
         }
       }
 
       // Initialize the ParallelEnergy class.
       ParallelStateEnergy pe = new ParallelStateEnergy(nStates, lambdaValues,
-          molecularAssemblies, potential, fullFilePaths, openers)
+          topologies, potential, fullFilePaths, openers)
 
       // Evaluate energies from snapshots.
       double[][] energiesLow = new double[nStates][]
@@ -459,6 +454,8 @@ class BAR extends AlgorithmsScript {
       }
 
       // Create file objects to write out TINKER style bar files.
+      File file = new File(files[0])
+      directoryPath = file.getAbsoluteFile().getParent() + File.separator
       String tinkerDirectoryPath = directoryPath + File.separator + "windows"
       File directory = new File(tinkerDirectoryPath)
       String barFilePath = tinkerDirectoryPath + File.separator
@@ -467,13 +464,8 @@ class BAR extends AlgorithmsScript {
       for (int state = 0; state < nStates - 1; state++) {
         File xyzFile = new File(filenames.get(0))
         BARFilter barFilter
-        if (state == 0) {
-          barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
-              energiesAt[state + 1], volume[state], volume[state + 1], temperature, temperature)
-        } else {
-          barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
-              energiesAt[state + 1], volume[state], volume[state + 1], temperature, temperature)
-        }
+        barFilter = new BARFilter(xyzFile, energiesAt[state], energiesHigh[state], energiesLow[state + 1],
+            energiesAt[state + 1], volume[state], volume[state + 1], temperature, temperature)
         String barFileName = barFilePath + "window_" + state.toString() + ".bar"
         // Write out the TINKER style bar file. An existing file will be overwritten.
         barFilter.writeFile(barFileName, isPBC, false)

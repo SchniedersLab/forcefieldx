@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_computeCurrentPressure;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_getDefaultPressure;
@@ -50,64 +51,71 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setRando
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions;
 
 /**
- * Monte Carlo Barostat.
+ * This class uses a Monte Carlo algorithm to adjust the size of the periodic box, simulating the
+ * effect of constant pressure.
+ * <p>
+ * This class assumes the simulation is also being run at constant temperature, and requires you
+ * to specify the system temperature (since it affects the acceptance probability for Monte Carlo
+ * moves).  It does not actually perform temperature regulation, however.  You must use another
+ * mechanism along with it to maintain the temperature, such as LangevinIntegrator or AndersenThermostat.
  */
 public class MonteCarloBarostat extends Force {
 
   /**
-   * OpenMM MonteCarloBarostat constructor.
+   * Create a MonteCarloBarostat.
    *
-   * @param pressure    The pressure.
-   * @param temperature The temperature.
-   * @param frequency   The frequency to apply the barostat.
+   * @param pressure    the default pressure acting on the system (in bar)
+   * @param temperature the default temperature at which the system is being maintained (in Kelvin)
+   * @param frequency   the frequency at which Monte Carlo pressure changes should be attempted (in time steps)
    */
   public MonteCarloBarostat(double pressure, double temperature, int frequency) {
-    pointer = OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency);
+    super(OpenMM_MonteCarloBarostat_create(pressure, temperature, frequency));
   }
 
   /**
-   * Set the random number seed.
+   * Compute the instantaneous pressure of a system to which this barostat is applied.
+   * <p>
+   * The pressure is computed from the molecular virial, using a finite difference to
+   * calculate the derivative of potential energy with respect to volume.  For most systems
+   * in equilibrium, the time average of the instantaneous pressure should equal the
+   * pressure applied by the barostat.  Fluctuations around the average value can be
+   * extremely large, however, and it may take a very long simulation to accurately
+   * compute the average.
    *
-   * @param seed The random number seed.
+   * @param context the Context for which to compute the current pressure
+   * @return the instantaneous pressure
    */
-  public void setRandomNumberSeed(int seed) {
-    OpenMM_MonteCarloBarostat_setRandomNumberSeed(pointer, seed);
+  public double computeCurrentPressure(Context context) {
+    return OpenMM_MonteCarloBarostat_computeCurrentPressure(pointer, context.getPointer());
   }
 
   /**
-   * Set the frequency.
-   *
-   * @param frequency The frequency.
+   * Destroy the force.
    */
-  public void setFrequency(int frequency) {
-    OpenMM_MonteCarloBarostat_setFrequency(pointer, frequency);
+  @Override
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_MonteCarloBarostat_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
-   * Set the default temperature.
+   * Get the default pressure acting on the system (in bar).
    *
-   * @param temperature The temperature.
-   */
-  public void setDefaultTemperature(double temperature) {
-    OpenMM_MonteCarloBarostat_setDefaultTemperature(pointer, temperature);
-  }
-
-  /**
-   * Set the default pressure.
-   *
-   * @param pressure The pressure.
-   */
-  public void setDefaultPressure(double pressure) {
-    OpenMM_MonteCarloBarostat_setDefaultPressure(pointer, pressure);
-  }
-
-  /**
-   * Get the default pressure.
-   *
-   * @return The pressure.
+   * @return the default pressure acting on the system, measured in bar.
    */
   public double getDefaultPressure() {
     return OpenMM_MonteCarloBarostat_getDefaultPressure(pointer);
+  }
+
+  /**
+   * Get the default temperature at which the system is being maintained, measured in Kelvin.
+   *
+   * @return the default temperature at which the system is being maintained, measured in Kelvin.
+   */
+  public double getDefaultTemperature() {
+    return OpenMM_MonteCarloBarostat_getDefaultTemperature(pointer);
   }
 
   /**
@@ -120,21 +128,50 @@ public class MonteCarloBarostat extends Force {
   }
 
   /**
-   * Get the default temperature.
-   *
-   * @return The temperature.
-   */
-  public double getDefaultTemperature() {
-    return OpenMM_MonteCarloBarostat_getDefaultTemperature(pointer);
-  }
-
-  /**
    * Get the random number seed.
    *
    * @return The random number seed.
    */
   public int getRandomNumberSeed() {
     return OpenMM_MonteCarloBarostat_getRandomNumberSeed(pointer);
+  }
+
+  /**
+   * Set the default pressure acting on the system.  This will affect any new Contexts you create,
+   * but not ones that already exist.
+   *
+   * @param pressure the default pressure acting on the system, measured in bar.
+   */
+  public void setDefaultPressure(double pressure) {
+    OpenMM_MonteCarloBarostat_setDefaultPressure(pointer, pressure);
+  }
+
+  /**
+   * Set the default temperature at which the system is being maintained.  This will affect any new Contexts you create,
+   * but not ones that already exist.
+   *
+   * @param temperature the system temperature, measured in Kelvin.
+   */
+  public void setDefaultTemperature(double temperature) {
+    OpenMM_MonteCarloBarostat_setDefaultTemperature(pointer, temperature);
+  }
+
+  /**
+   * Set the frequency.
+   *
+   * @param frequency The frequency.
+   */
+  public void setFrequency(int frequency) {
+    OpenMM_MonteCarloBarostat_setFrequency(pointer, frequency);
+  }
+
+  /**
+   * Set the random number seed.
+   *
+   * @param seed The random number seed.
+   */
+  public void setRandomNumberSeed(int seed) {
+    OpenMM_MonteCarloBarostat_setRandomNumberSeed(pointer, seed);
   }
 
   /**
@@ -145,16 +182,6 @@ public class MonteCarloBarostat extends Force {
   public boolean usesPeriodicBoundaryConditions() {
     int periodic = OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions(pointer);
     return periodic == 1;
-  }
-
-  /**
-   * Destroy the force.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_MonteCarloBarostat_destroy(pointer);
-      pointer = null;
-    }
   }
 
 }

@@ -77,32 +77,13 @@ public class BondArray {
   }
 
   /**
-   * Set the bond at index to i1 and i2.
-   *
-   * @param index The index of the bond to set.
-   * @param i1    The first atom index.
-   * @param i2    The second atom index.
+   * Destroy the bond array.
    */
-  public void set(int index, int i1, int i2) {
-    OpenMM_BondArray_set(pointer, index, i1, i2);
-  }
-
-  /**
-   * Get the size of the bond array.
-   *
-   * @return The size of the bond array.
-   */
-  public int getSize() {
-    return OpenMM_BondArray_getSize(pointer);
-  }
-
-  /**
-   * Resize the bond array.
-   *
-   * @param size The new size of the bond array.
-   */
-  public void resize(int size) {
-    OpenMM_BondArray_resize(pointer, size);
+  public void destroy() {
+    if (pointer != null) {
+      OpenMM_BondArray_destroy(pointer);
+      pointer = null;
+    }
   }
 
   /**
@@ -137,13 +118,31 @@ public class BondArray {
   }
 
   /**
-   * Destroy the bond array.
+   * Get the size of the bond array.
+   *
+   * @return The size of the bond array.
    */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_BondArray_destroy(pointer);
-      pointer = null;
-    }
+  public int getSize() {
+    return OpenMM_BondArray_getSize(pointer);
   }
 
+  /**
+   * Resize the bond array.
+   *
+   * @param size The new size of the bond array.
+   */
+  public void resize(int size) {
+    OpenMM_BondArray_resize(pointer, size);
+  }
+
+  /**
+   * Set the bond at index to i1 and i2.
+   *
+   * @param index The index of the bond to set.
+   * @param i1    The first atom index.
+   * @param i2    The second atom index.
+   */
+  public void set(int index, int i1, int i2) {
+    OpenMM_BondArray_set(pointer, index, i1, i2);
+  }
 }

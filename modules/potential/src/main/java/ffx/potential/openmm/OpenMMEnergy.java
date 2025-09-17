@@ -66,6 +66,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static java.lang.Double.isFinite;
@@ -77,8 +78,7 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@SuppressWarnings("deprecation")
-public class OpenMMEnergy extends ForceFieldEnergy {
+public class OpenMMEnergy extends ForceFieldEnergy implements OpenMMPotential {
 
   private static final Logger logger = Logger.getLogger(OpenMMEnergy.class.getName());
 
@@ -95,7 +95,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   private OpenMMSystem openMMSystem;
   /**
-   * The atoms this ForceFieldEnergyOpenMM operates on.
+   * The atoms this OpenMMEnergy operates on.
    */
   private final Atom[] atoms;
   /**
@@ -117,7 +117,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     Crystal crystal = getCrystal();
     int symOps = crystal.spaceGroup.getNumberOfSymOps();
     if (symOps > 1) {
-      logger.info("");
       logger.severe(" OpenMM does not support symmetry operators.");
     }
 
@@ -241,6 +240,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param forceCreation  Force a new Context to be created, even if the existing one matches the
    *                       request.
    */
+  @Override
   public void updateContext(String integratorName, double timeStep, double temperature, boolean forceCreation) {
     openMMContext.update(integratorName, timeStep, temperature, forceCreation);
   }
@@ -253,6 +253,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    * @param mask The State mask.
    * @return Returns the State.
    */
+  @Override
   public OpenMMState getOpenMMState(int mask) {
     return openMMContext.getOpenMMState(mask);
   }
@@ -264,7 +265,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   public boolean destroy() {
     boolean ffxFFEDestroy = super.destroy();
     free();
-    logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
+    logger.fine(" Destroyed the Context and OpenMMSystem.");
     return ffxFFEDestroy;
   }
 
@@ -314,6 +315,27 @@ public class OpenMMEnergy extends ForceFieldEnergy {
     scaleCoordinates(x);
 
     return e;
+  }
+
+  /**
+   * Compute the energy using the pure Java code path.
+   *
+   * @param x Atomic coordinates.
+   * @return The energy (kcal/mol)
+   */
+  public double energyFFX(double[] x) {
+    return super.energy(x, false);
+  }
+
+  /**
+   * Compute the energy using the pure Java code path.
+   *
+   * @param x       Input atomic coordinates
+   * @param verbose Use verbose logging.
+   * @return The energy (kcal/mol)
+   */
+  public double energyFFX(double[] x, boolean verbose) {
+    return super.energy(x, verbose);
   }
 
   /**
@@ -421,31 +443,11 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   }
 
   /**
-   * Compute the energy using the pure Java code path.
-   *
-   * @param x Atomic coordinates.
-   * @return The energy (kcal/mol)
-   */
-  public double energyFFX(double[] x) {
-    return super.energy(x, false);
-  }
-
-  /**
-   * Compute the energy using the pure Java code path.
-   *
-   * @param x       Input atomic coordinates
-   * @param verbose Use verbose logging.
-   * @return The energy (kcal/mol)
-   */
-  public double energyFFX(double[] x, boolean verbose) {
-    return super.energy(x, verbose);
-  }
-
-  /**
    * Returns the Context instance.
    *
    * @return context
    */
+  @Override
   public OpenMMContext getContext() {
     return openMMContext;
   }
@@ -457,24 +459,6 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    */
   public MolecularAssembly getMolecularAssembly() {
     return molecularAssembly;
-  }
-
-  /**
-   * Set the lambdaTerm flag.
-   *
-   * @param lambdaTerm The value to set.
-   */
-  public void setLambdaTerm(boolean lambdaTerm) {
-    this.lambdaTerm = lambdaTerm;
-  }
-
-  /**
-   * Get the lambdaTerm flag.
-   *
-   * @return lambdaTerm.
-   */
-  public boolean getLambdaTerm() {
-    return lambdaTerm;
   }
 
   /**
@@ -503,6 +487,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * @return Java wrapper to an OpenMM system.
    */
+  @Override
   public OpenMMSystem getSystem() {
     return openMMSystem;
   }
@@ -539,21 +524,59 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   /**
    * Update active atoms.
    */
-  public void setActiveAtoms() {
-    openMMSystem.updateAtomMass();
-    // Tests show reinitialization of the OpenMM Context is not necessary to pick up mass changes.
-    // context.reinitContext();
+  @Override
+  public boolean setActiveAtoms() {
+    return openMMSystem.updateAtomMass();
   }
 
   /**
-   * Set FFX and OpenMM coordinates for active atoms.
+   * Coordinates for active atoms in units of Angstroms.
    *
-   * @param x Atomic coordinates.
+   * @param x Atomic coordinates active atoms.
    */
   @Override
   public void setCoordinates(double[] x) {
-    // Set both OpenMM and FFX coordinates to x.
-    openMMContext.setPositions(x);
+    // Load the coordinates for active atoms.
+    super.setCoordinates(x);
+
+    int n = atoms.length * 3;
+    double[] xall = new double[n];
+    int i = 0;
+    for (Atom atom : atoms) {
+      xall[i] = atom.getX();
+      xall[i + 1] = atom.getY();
+      xall[i + 2] = atom.getZ();
+      i += 3;
+    }
+
+    // Load OpenMM coordinates for all atoms.
+    openMMContext.setPositions(xall);
+  }
+
+  /**
+   * Velocities for active atoms in units of Angstroms.
+   *
+   * @param v Velocities for active atoms.
+   */
+  @Override
+  public void setVelocity(double[] v) {
+    // Load the velocity for active atoms.
+    super.setVelocity(v);
+
+    int n = atoms.length * 3;
+    double[] vall = new double[n];
+    double[] v3 = new double[3];
+    int i = 0;
+    for (Atom atom : atoms) {
+      atom.getVelocity(v3);
+      vall[i] = v3[0];
+      vall[i + 1] = v3[1];
+      vall[i + 2] = v3[2];
+      i += 3;
+    }
+
+    // Load OpenMM velocities for all atoms.
+    openMMContext.setVelocities(vall);
   }
 
   /**
@@ -597,6 +620,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
    *
    * @param atoms Atoms in this list are considered.
    */
+  @Override
   public void updateParameters(@Nullable Atom[] atoms) {
     if (atoms == null) {
       atoms = this.atoms;
@@ -607,7 +631,7 @@ public class OpenMMEnergy extends ForceFieldEnergy {
   }
 
   /**
-   * Free OpenMM memory for the Context, Integrator and System.
+   * Free OpenMM memory for the Context and System.
    */
   private void free() {
     if (openMMContext != null) {

@@ -114,7 +114,7 @@ class MutatePDB extends AlgorithmsScript {
    * MutatePDB Constructor.
    */
   MutatePDB() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -123,6 +123,14 @@ class MutatePDB extends AlgorithmsScript {
    */
   MutatePDB(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * MutatePDB constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  MutatePDB(String[] args) {
+    super(args)
   }
 
   /**

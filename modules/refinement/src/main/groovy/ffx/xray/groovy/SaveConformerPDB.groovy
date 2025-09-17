@@ -69,7 +69,15 @@ class SaveConformerPDB extends AlgorithmsScript {
    * SaveConformerPDB constructor.
    */
   SaveConformerPDB() {
-    this(new Binding())
+    super()
+  }
+
+  /**
+   * SaveConformerPDB constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  SaveConformerPDB(String[] args) {
+    super(args)
   }
 
   /**

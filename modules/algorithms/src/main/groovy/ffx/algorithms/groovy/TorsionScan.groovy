@@ -136,7 +136,7 @@ class TorsionScan extends AlgorithmsScript {
    * CrystalSuperpose Constructor.
    */
   TorsionScan() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -145,6 +145,14 @@ class TorsionScan extends AlgorithmsScript {
    */
   TorsionScan(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * TorsionScan constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  TorsionScan(String[] args) {
+    super(args)
   }
 
   /**

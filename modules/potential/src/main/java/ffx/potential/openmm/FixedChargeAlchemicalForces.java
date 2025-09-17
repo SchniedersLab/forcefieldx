@@ -68,7 +68,7 @@ import static java.lang.String.format;
  * 1. Handle interactions between non-alchemical atoms with our default OpenMM NonBondedForce.
  * Note that alchemical atoms must have eps=0 to turn them off in this force.
  * <p>
- * 2. Handle interactions between alchemical atoms and mixed non-alchemical <-> alchemical
+ * 2. Handle interactions between alchemical atoms and mixed non-alchemical with alchemical
  * interactions with an OpenMM CustomNonBondedForce.
  */
 public class FixedChargeAlchemicalForces {

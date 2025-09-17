@@ -46,8 +46,8 @@ import static org.junit.Assert.assertEquals;
 public class MBARHarmonicOscillatorsTest extends FFXTest {
 
   /**
-   * Test the MBAR estimator numerics with harmonic oscillators. This test uses SCI & NR, so it
-   * isn't exactly deterministic. The error is set to 1.0E-1, so the first decimal is fine for this.
+   * Test the MBAR estimator numerics with harmonic oscillators. This test uses SCI and NR, so its
+   * deterministic. The error is set to 1.0E-1, so the first decimal is fine for this.
    * Pymbar does the same thing.
    */
   @Test

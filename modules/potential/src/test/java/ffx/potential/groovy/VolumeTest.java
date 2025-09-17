@@ -66,7 +66,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(98.14422780202705, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA with a 1.4 A exclude radius. */
   @Test
   public void testConnollyMolecularCrambin() {
     // Configure input arguments for the Volume script.
@@ -115,7 +115,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(132.598010667639, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with a 1.4 A exclude radius and hydrogen atoms. */
+  /** Test Connolly SEV and SASA with a 1.4 A exclude radius and hydrogen atoms. */
   @Test
   public void testConnollyMolecularHydrogenCrambin() {
     // Configure input arguments for the Volume script.
@@ -145,7 +145,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(171.91980284282084, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA without hydrogen and a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA without hydrogen and a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVButane() {
     // Configure input arguments for the Volume script.
@@ -160,7 +160,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(227.49657650050898, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA with a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVCrambin() {
     // Configure input arguments for the Volume script.
@@ -175,7 +175,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(3015.7687533888334, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA without hydrogen and a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA without hydrogen and a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVEthylbenzene() {
     // Configure input arguments for the Volume script.
@@ -190,7 +190,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(287.56961427851286, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA with hydrogen and a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVHydrogenButane() {
     // Configure input arguments for the Volume script.
@@ -205,7 +205,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(280.836964340470, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with a 1.4 A exclude radius and hydrogen atoms. */
+  /** Test Connolly SEV and SASA with a 1.4 A exclude radius and hydrogen atoms. */
   @Test
   public void testConnollySEVHydrogenCrambin() {
     // Configure input arguments for the Volume script.
@@ -220,7 +220,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(3142.106787870207, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA with hydrogen and a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVHydrogenEthylbenzene() {
     // Configure input arguments for the Volume script.
@@ -235,7 +235,7 @@ public class VolumeTest extends PotentialTest {
     assertEquals(340.264998320387, volume.totalSurfaceArea, tolerance);
   }
 
-  /** Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius. */
+  /** Test Connolly SEV and SASA with hydrogen and a 1.4 A exclude radius. */
   @Test
   public void testConnollySEVHydrogenEthylbenzeneDerivatives() {
     // Configure input arguments for the Gradient script.

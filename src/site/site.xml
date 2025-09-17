@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project xmlns="http://maven.apache.org/DECORATION/1.8.1"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.1 http://maven.apache.org/xsd/decoration-1.8.1.xsd">
+<site xmlns="http://maven.apache.org/SITE/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
+      name="Force Field X">
   <version position="right"/>
   <publishDate position="right" format="MMM dd yyyy"/>
+
   <skin>
     <groupId>org.apache.maven.skins</groupId>
     <artifactId>maven-fluido-skin</artifactId>
     <version>2.1.0</version>
   </skin>
+
   <poweredBy>
-    <logo target="_blank" href="https://ffx.biochem.uiowa.edu" img="/images/icon90.png"/>
+    <logo name="Force Field X" href="https://ffx.biochem.uiowa.edu" target="_blank">
+      <image src="/images/icon90.png"/>
+    </logo>
   </poweredBy>
-  <bannerLeft>
-    <src>/images/FFX-Logo-Banner.png</src>
-    <href>https://ffx.biochem.uiowa.edu</href>
+
+  <bannerLeft name="" href="https://ffx.biochem.uiowa.edu" target="_blank">
+    <image src="/images/FFX-Logo-Banner.png" />
   </bannerLeft>
-  <bannerRight>
-    <src>/images/UofI2.png</src>
-    <href>https://www.uiowa.edu</href>
-    <width>192px</width>
-    <height>108px</height>
+
+  <bannerRight name="" href="https://www.uiowa.edu" target="_blank">
+    <image src="/images/UofI2.png" width="192px" height="108px" />
   </bannerRight>
+
   <custom>
     <fluidoSkin>
       <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
@@ -231,4 +234,4 @@
     </menu>
     <menu name="Project Documentation" ref="reports"/>
   </body>
-</project>
+</site>

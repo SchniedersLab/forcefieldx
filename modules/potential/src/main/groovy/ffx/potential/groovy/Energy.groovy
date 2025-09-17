@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import com.google.common.collect.MinMaxPriorityQueue
-import edu.rit.pj.ParallelTeam
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.AssemblyState
@@ -81,10 +80,10 @@ class Energy extends PotentialScript {
   AtomSelectionOptions atomSelectionOptions
 
   @Mixin
-  AlchemicalOptions alchemical
+  AlchemicalOptions alchemicalOptions
 
   @Mixin
-  TopologyOptions topology
+  TopologyOptions topologyOptions
 
   /**
    * -m or --moments print out electrostatic moments.
@@ -167,8 +166,7 @@ class Energy extends PotentialScript {
   public double energy = 0.0
   public ForceFieldEnergy forceFieldEnergy = null
   private AssemblyState assemblyState = null
-  private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  private int threadsPer = threadsAvail
+
   private Potential potential
   MolecularAssembly[] topologies
 
@@ -176,15 +174,25 @@ class Energy extends PotentialScript {
    * Energy constructor.
    */
   Energy() {
-    this(new Binding())
+    super()
   }
 
   /**
-   * Energy constructor.
+   * Energy constructor that takes a Groovy Binding.
+   *
    * @param binding The Groovy Binding to use.
    */
   Energy(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Energy constructor that sets the command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  Energy(String[] args) {
+    super(args)
   }
 
   /**
@@ -196,56 +204,33 @@ class Energy extends PotentialScript {
       return this
     }
 
-    List<String> arguments = filenames
-    // Check nArgs should either be number of arguments (min 1), else 1.
-    int nArgs = arguments ? arguments.size() : 1
-    nArgs = (nArgs < 1) ? 1 : nArgs
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames)
+    int threadsPerTopology = topologyOptions.getThreadsPerTopology(numTopologies)
+    topologies = new MolecularAssembly[numTopologies]
 
-    topologies = new MolecularAssembly[nArgs]
-
-    int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-    threadsPer = (int) (threadsAvail / numParallel)
-
-    // Turn on computation of lambda derivatives if softcore atoms exist.
-    boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
-
-    if (lambdaTerm) {
-      System.setProperty("lambdaterm", "true")
-    }
-
-    double lambda = alchemical.getInitialLambda()
-
-    // Relative free energies via the DualTopologyEnergy class require different
-    // default OST parameters than absolute free energies.
-    if (nArgs >= 2) {
-      // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
-      System.setProperty("ligand-vapor-elec", "false")
-    }
-
-    List<MolecularAssembly> topologyList = new ArrayList<>(4)
+    // Turn on computation of lambda dependent properties.
+    alchemicalOptions.setAlchemicalProperties()
+    topologyOptions.setAlchemicalProperties(numTopologies)
 
     // Read in files.
-    if (!arguments || arguments.isEmpty()) {
-      activeAssembly = getActiveAssembly(filenames[0])
+    if (!filenames || filenames.isEmpty()) {
+      activeAssembly = getActiveAssembly(null)
       if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
-      arguments = new ArrayList<>()
-      arguments.add(activeAssembly.getFile().getName())
-      topologyList.add(alchemical.processFile(topology, activeAssembly, 0))
+      filenames = new ArrayList<>()
+      filenames.add(activeAssembly.getFile().getName())
+      topologies[0] = alchemicalOptions.processFile(topologyOptions, activeAssembly, 0)
     } else {
-      logger.info(format(" Initializing %d topologies...", nArgs))
-      for (int i = 0; i < nArgs; i++) {
-        topologyList.add(alchemical.openFile(potentialFunctions,
-                topology, threadsPer, arguments.get(i), i))
+      logger.info(format(" Initializing %d topologies...", numTopologies))
+      for (int i = 0; i < numTopologies; i++) {
+        topologies[i] = alchemicalOptions.openFile(potentialFunctions,
+            topologyOptions, threadsPerTopology, filenames.get(i), i)
       }
-      activeAssembly = topologyList.get(0);
+      activeAssembly = topologies[0]
     }
-
-    MolecularAssembly[] topologies =
-            topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
     if (topologies.length == 1) {
       atomSelectionOptions.setActiveAtoms(topologies[0])
@@ -253,20 +238,17 @@ class Energy extends PotentialScript {
 
     // Configure the potential to test.
     StringBuilder sb = new StringBuilder("\n Calculating energy of ")
-    potential = topology.assemblePotential(topologies, threadsAvail, sb)
+    potential = topologyOptions.assemblePotential(topologies, sb)
 
     logger.info(sb.toString())
 
     LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
-    linter?.setLambda(lambda)
+    linter?.setLambda(alchemicalOptions.getInitialLambda())
 
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Running Energy on " + filename)
-
-    // Apply atom selections
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
     int nVars = potential.getNumberOfVariables()
@@ -306,7 +288,7 @@ class Energy extends PotentialScript {
     }
 
     if (printBondedTerms) {
-      forceFieldEnergy.logBondedTerms()
+      forceFieldEnergy.logBondedTermsAndRestraints()
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -342,8 +324,8 @@ class Energy extends PotentialScript {
           if (!crystal.aperiodic()) {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
                 crystal.getDensity(activeAssembly.getMass())))
-            if(logger.isLoggable(Level.FINE)){
-              logger.fine(crystal.toString());
+            if (logger.isLoggable(Level.FINE)) {
+              logger.fine(crystal.toString())
             }
           }
           energy = forceFieldEnergy.energy(x, true)
@@ -381,7 +363,7 @@ class Energy extends PotentialScript {
         }
 
         if (printBondedTerms) {
-          forceFieldEnergy.logBondedTerms()
+          forceFieldEnergy.logBondedTermsAndRestraints()
         }
       }
 
@@ -480,7 +462,7 @@ class Energy extends PotentialScript {
           numSnaps = index
         }
 
-        String name = getName(filenames)
+        String name = getName(filenames[0])
 
         for (int i = 0; i < numSnaps - 1; i++) {
           StateContainer savedState = lowestEnergyQueue.removeLast()
@@ -553,6 +535,22 @@ class Energy extends PotentialScript {
     return potentials
   }
 
+  /**
+   * Get the ForceFieldEnergy instance.
+   * @return The ForceFieldEnergy.
+   */
+  ForceFieldEnergy getForceFieldEnergy() {
+    return forceFieldEnergy
+  }
+
+  /**
+   * Get the energy for the final snapshot.
+   * @return The energy.
+   */
+  double getEnergy() {
+    return energy
+  }
+
   private class StateContainer implements Comparable<StateContainer> {
 
     private final AssemblyState state
@@ -581,10 +579,8 @@ class Energy extends PotentialScript {
    * This entry point is being used to test GraalVM ahead-of-time compilation.
    * @param args Command line arguments.
    */
-  public static void main(String... args) {
-    Binding binding = new Binding(args)
-    Energy energyScript = new Energy(binding)
-    energyScript.run()
+  static void main(String... args) {
+    Energy(args).run()
     System.exit(0)
   }
 }

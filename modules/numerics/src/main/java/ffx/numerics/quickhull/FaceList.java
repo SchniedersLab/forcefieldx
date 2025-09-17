@@ -35,61 +35,58 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.openmm;
-
-import com.sun.jna.ptr.PointerByReference;
-
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_create;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_destroy;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_3D_DoubleArray_set;
+package ffx.numerics.quickhull;
 
 /**
- * DoubleArray3D.
+ * Maintains a single-linked list of faces for use by QuickHull3D.
+ *
+ * @author John E. Lloyd, Fall 2004
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class DoubleArray3D {
+public class FaceList {
 
-  private PointerByReference pointer;
+  private Face head;
+
+  private Face tail;
 
   /**
-   * Constructor.
-   *
-   * @param d1 The size of the first dimension.
-   * @param d2 The size of the second dimension.
-   * @param d3 The size of the third dimension.
+   * Clears this list.
    */
-  public DoubleArray3D(int d1, int d2, int d3) {
-    pointer = OpenMM_3D_DoubleArray_create(d1, d2, d3);
+  public void clear() {
+    head = tail = null;
   }
 
   /**
-   * Set the value of the array at the given index.
+   * Adds a face to the end of this list.
    *
-   * @param d1    The first dimension index.
-   * @param d2    The second dimension index.
-   * @param value The value to set.
+   * @param vtx face to add
    */
-  public void set(int d1, int d2, DoubleArray value) {
-    OpenMM_3D_DoubleArray_set(pointer, d1, d2, value.getPointer());
-  }
-
-  /**
-   * Destroy the array.
-   */
-  public void destroy() {
-    if (pointer != null) {
-      OpenMM_3D_DoubleArray_destroy(pointer);
-      pointer = null;
+  public void add(Face vtx) {
+    if (head == null) {
+      head = vtx;
+    } else {
+      tail.next = vtx;
     }
+    vtx.next = null;
+    tail = vtx;
   }
-
 
   /**
-   * Get the pointer to the array.
+   * Returns the first face in this list (head), or null if empty.
    *
-   * @return The pointer.
+   * @return the first Face, or null if the list is empty
    */
-  public PointerByReference getPointer() {
-    return pointer;
+  public Face first() {
+    return head;
   }
 
+  /**
+   * Returns true if this list is empty.
+   *
+   * @return true if there are no faces in the list
+   */
+  public boolean isEmpty() {
+    return head == null;
+  }
 }

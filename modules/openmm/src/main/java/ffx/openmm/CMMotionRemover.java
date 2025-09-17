@@ -37,26 +37,41 @@
 // ******************************************************************************
 package ffx.openmm;
 
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_getFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_setFrequency;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions;
 
 /**
- * Center of Mass Motion Remover.
+ * This class prevents the center of mass of a System from drifting.  At each time step, it calculates the
+ * center of mass momentum, then adjusts the individual particle velocities to make it zero.
  */
 public class CMMotionRemover extends Force {
 
   /**
-   * OpenMM CMMotionRemover constructor.
+   * Create a CMMotionRemover.
    *
-   * @param frequency The frequency to apply the CMMotionRemover.
+   * @param frequency the frequency (in time steps) at which center of mass motion should be removed
    */
   public CMMotionRemover(int frequency) {
-    pointer = OpenMM_CMMotionRemover_create(frequency);
+    super(OpenMM_CMMotionRemover_create(frequency));
+  }
+
+  /**
+   * Get the frequency (in time steps) at which center of mass motion should be removed.
+   *
+   * @return the frequency (in time steps) at which center of mass motion should be removed
+   */
+  public int getFrequency() {
+    return OpenMM_CMMotionRemover_getFrequency(pointer);
   }
 
   /**
    * Destroy the OpenMM CMMotionRemover.
    */
+  @Override
   public void destroy() {
     if (pointer != null) {
       OpenMM_CMMotionRemover_destroy(pointer);
@@ -64,4 +79,24 @@ public class CMMotionRemover extends Force {
     }
   }
 
+  /**
+   * Set the frequency (in time steps) at which center of mass motion should be removed.
+   *
+   * @param freq the frequency (in time steps) at which center of mass motion should be removed
+   */
+  public void setFrequency(int freq) {
+    OpenMM_CMMotionRemover_setFrequency(pointer, freq);
+  }
+
+  /**
+   * Returns whether or not this force makes use of periodic boundary
+   * conditions.
+   *
+   * @return true if force uses PBC and false otherwise
+   */
+  @Override
+  public boolean usesPeriodicBoundaryConditions() {
+    int pbc = OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(pointer);
+    return pbc != OpenMM_False;
+  }
 }

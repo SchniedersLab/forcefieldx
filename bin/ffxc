@@ -191,8 +191,6 @@ then
   CLASSPATH=$(echo $CLASSPATH | sed 's/ /:/g')
 fi
 
-EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
-
 # This is for trying to use the GraalVM native image generation
 # EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=${BASEDIR}/bin/META-INF/native-image"
 

@@ -160,7 +160,7 @@ class Solvator extends PotentialScript {
    * Solvator Constructor.
    */
   Solvator() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -169,6 +169,14 @@ class Solvator extends PotentialScript {
    */
   Solvator(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * Solvator constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  Solvator(String[] args) {
+    super(args)
   }
 
   /**

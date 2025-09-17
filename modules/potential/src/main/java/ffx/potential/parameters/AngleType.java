@@ -41,6 +41,7 @@ import ffx.utilities.FFXProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -242,13 +243,16 @@ public final class AngleType extends BaseType implements Comparator<String> {
 
   /**
    * Average two AngleType instances. The atom classes that define the new type must be supplied.
+   * If the angle modes or angle functions differ, null is returned.
    *
    * @param angleType1  a {@link ffx.potential.parameters.AngleType} object.
    * @param angleType2  a {@link ffx.potential.parameters.AngleType} object.
-   * @param atomClasses an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.AngleType} object.
+   * @param atomClasses the atom classes for the new type.
+   * @return a {@link ffx.potential.parameters.AngleType} object or null if averaging is not possible.
    */
-  public static AngleType average(AngleType angleType1, AngleType angleType2, int[] atomClasses) {
+  public static AngleType average(@Nullable AngleType angleType1,
+                                  @Nullable AngleType angleType2,
+                                  @Nullable int[] atomClasses) {
     if (angleType1 == null || angleType2 == null || atomClasses == null) {
       return null;
     }

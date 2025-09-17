@@ -92,7 +92,7 @@ class PrmToProperty extends PotentialScript {
    * PrmToProperty Constructor.
    */
   PrmToProperty() {
-    this(new Binding())
+    super()
   }
 
   /**
@@ -101,6 +101,14 @@ class PrmToProperty extends PotentialScript {
    */
   PrmToProperty(Binding binding) {
     super(binding)
+  }
+
+  /**
+   * PrmToProperty constructor that sets the command line arguments.
+   * @param args Command line arguments.
+   */
+  PrmToProperty(String[] args) {
+    super(args)
   }
 
   /**

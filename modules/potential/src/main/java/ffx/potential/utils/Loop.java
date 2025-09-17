@@ -94,12 +94,12 @@ public class Loop {
   }
 
   /**
-   * generateLoops.
+   * The generateLoops method generates loop closure solutions for a specified range of residues.
    *
-   * @param firstResidue a int.
-   * @param endResidue a int.
-   * @param coordinates an array of {@link double} objects.
-   * @return a {@link java.util.List} object.
+   * @param firstResidue the first residue number.
+   * @param endResidue the last residue number.
+   * @param coordinates the backbone coordinates to use for the loop closure.
+   * @return a list of loop closure solutions.
    */
   public List<double[]> generateLoops(int firstResidue, int endResidue, double[] coordinates) {
     setAltCoordinates(coordinates);
@@ -107,11 +107,11 @@ public class Loop {
   }
 
   /**
-   * generateLoops.
+   * The generateLoops method generates loop closure solutions for a specified range of residues.
    *
-   * @param firstResidue a int.
-   * @param endResidue a int.
-   * @return a {@link java.util.List} object.
+   * @param firstResidue the first residue number.
+   * @param endResidue the last residue number.
+   * @return a list of loop closure solutions.
    */
   public List<double[]> generateLoops(int firstResidue, int endResidue) {
     List<Atom> backBoneAtoms = molecularAssembly.getBackBoneAtoms();
@@ -179,27 +179,27 @@ public class Loop {
   }
 
   /**
-   * getRA.
+   * Get the rA coordinates.
    *
-   * @return an array of {@link double} objects.
+   * @return the rA coordinates as a 2D array.
    */
   public double[][] getRA() {
     return rA;
   }
 
   /**
-   * getRC.
+   * Get the rC coordinates.
    *
-   * @return an array of {@link double} objects.
+   * @return the rC coordinates as a 2D array.
    */
   public double[][] getRC() {
     return rC;
   }
 
   /**
-   * getRN.
+   * Get the rN coordinates.
    *
-   * @return an array of {@link double} objects.
+   * @return the rN coordinates as a 2D array.
    */
   public double[][] getRN() {
     return rN;
