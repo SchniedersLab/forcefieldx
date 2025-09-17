@@ -94,6 +94,15 @@ public class TopologyOptions {
   }
 
   /**
+   * --acRes2 or --alchemicalResidues2 Specify alchemical residues by chain and residue number [e.g. A4,B21].
+   *
+   * @return Returns alchemical residues for the 2nd topology.
+   */
+  public String getAlchemicalResidues2() {
+    return group.alchemicalResidues2;
+  }
+
+  /**
    * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s): 1-3,6-N].
    *
    * @return Returns atoms without electrostatics for the 2nd topology.
@@ -414,7 +423,8 @@ public class TopologyOptions {
    */
   public void setSecondSystemAlchemistry(MolecularAssembly topology) {
     String alchemicalAtoms2 = getAlchemicalAtoms2();
-    AlchemicalOptions.setAlchemicalAtoms(topology, alchemicalAtoms2);
+    String alchemicalResidues2 = getAlchemicalResidues2();
+    AlchemicalOptions.setAlchemicalAtoms(topology, alchemicalAtoms2, alchemicalResidues2);
   }
 
   /**
@@ -456,6 +466,16 @@ public class TopologyOptions {
     @Option(names = {"--ac2", "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "",
         description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
     String alchemicalAtoms2 = "";
+
+    /**
+     * --acRes2 or --alchemicalResidues2 Specify alchemical residues by chain and residue number for the 2nd topology.
+     */
+    @Option(
+        names = {"--acRes2", "--alchemicalResidues2"},
+        paramLabel = "<selection>",
+        defaultValue = "",
+        description = "Specify alchemical residues by chain and residue number for the 2nd topology [A4,B21]")
+    String alchemicalResidues2 = "";
 
     /**
      * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s):
