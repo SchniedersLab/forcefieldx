@@ -51,12 +51,14 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.*;
@@ -71,14 +73,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.OptionalDouble;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -2061,7 +2056,8 @@ public final class PDBFilter extends SystemFilter {
             for (Atom atom : residueAtoms) {
               if (mutate) {
                 for (Mutation mtn : mutations) {
-                  if (resID == mtn.resID) {
+                  if (resID == mtn.resID && currentChainID == mtn.chainChar) {
+                    mtn.addTors(atom, serial);
                     ArrayList<String> alchAtoms = mtn.getAlchemicalAtoms(true);
                     if (alchAtoms != null) {
                       if (residue.getBackboneAtoms().contains(atom) && alchAtoms.contains(atom.getName())) {
@@ -2603,6 +2599,12 @@ public final class PDBFilter extends SystemFilter {
     final char chainChar;
     /** Residue name before mutation. */
     String origResName;
+    /** The 4 x,y,z glycosyl torsion atom coordinates. */
+    double[][] glyco = new double[4][3];
+    /** The 4 atom indices of glycosyl torsion atoms. */
+    int[] glycoAtomIndex = new int[4];
+    /** Index correction. */
+    int indCorr;
 
     public Mutation(int resID, char chainChar, String newResName) {
       newResName = newResName.toUpperCase();
@@ -2617,6 +2619,9 @@ public final class PDBFilter extends SystemFilter {
       this.resID = resID;
       this.chainChar = chainChar;
       this.resName = newResName;
+
+      String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      indCorr = alphabet.indexOf(chainChar);
     }
 
     /**
@@ -2755,6 +2760,34 @@ public final class PDBFilter extends SystemFilter {
      */
     public boolean isWtPyrimidine() {
       return origResName.equals("DT") || origResName.equals("DC") || origResName.equals("DTY") || origResName.equals("DCY");
+    }
+
+    public void addTors(Atom atom, int index) {
+      String name = atom.getName();
+      if (name.equals("O4'")) {
+        atom.getXYZ(glyco[0]);
+        glycoAtomIndex[0] = index - indCorr;
+      } else if (name.equals("C1'")) {
+        atom.getXYZ(glyco[1]);
+        glycoAtomIndex[1] = index - indCorr;
+      } else if (name.equals("N9") || (name.equals("N1") && isMtnPyrimidine())) {
+        atom.getXYZ(glyco[2]);
+        glycoAtomIndex[2] = index - indCorr;
+      } else if ((name.equals("C4") && isMtnPurine()) || (name.equals("C2") && isMtnPyrimidine())) {
+        atom.getXYZ(glyco[3]);
+        glycoAtomIndex[3] = index - indCorr;
+      }
+    }
+
+    public void calculateTorsion() {
+      double tors = toDegrees(DoubleMath.dihedralAngle(glyco[0], glyco[1], glyco[2], glyco[3]));
+      double delta;
+      if (tors > 0) {
+        delta = tors - 180.0;
+      } else {
+        delta = tors + 180.0;
+      }
+      logger.info(format("restrain-torsion %d %d %d %d  5.000  %f 1", glycoAtomIndex[0], glycoAtomIndex[1], glycoAtomIndex[2], glycoAtomIndex[3], delta));
     }
   }
 }
