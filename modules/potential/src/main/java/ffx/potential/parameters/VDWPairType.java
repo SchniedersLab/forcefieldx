@@ -209,9 +209,9 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
     node.setAttribute("class1", format("%d", atomClasses[0]));
     node.setAttribute("class2", format("%d", atomClasses[1]));
     // Convert Angstroms to nm.
-    node.setAttribute("sigma", format("%f", radius * ANG_TO_NM));
+    node.setAttribute("sigma", format("%.17f", radius * ANG_TO_NM));
     // Convert Kcal/mol to KJ/mol
-    node.setAttribute("epsilon", format("%f", wellDepth * KCAL_TO_KJ));
+    node.setAttribute("epsilon", format("%.17f", wellDepth * KCAL_TO_KJ));
     return node;
   }
 

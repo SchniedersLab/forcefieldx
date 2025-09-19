@@ -348,9 +348,9 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     // Convert from kcal/mol/A^2 to KJ/mol/nm^2
-    node.setAttribute("k", format("%f", forceConstant * KCAL_TO_KJ / (ANG_TO_NM * ANG_TO_NM)));
+    node.setAttribute("k", format("%.17f", forceConstant * KCAL_TO_KJ / (ANG_TO_NM * ANG_TO_NM)));
     // Convert from Angstroms to nm
-    node.setAttribute("d", format("%f", distance * ANG_TO_NM));
+    node.setAttribute("d", format("%.17f", distance * ANG_TO_NM));
     return node;
   }
 }

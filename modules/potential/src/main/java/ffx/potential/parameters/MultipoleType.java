@@ -1478,23 +1478,23 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         node.setAttribute("ky", format("%d", -frameAtomTypes[3]));
       }
     }
-    node.setAttribute("c0", format("%f", multipole[t000]));
-    // FFX had dipoles in units of electrons / Angstrom.
-    // OpenMM expects dipole units to be electrons / nm.
-    node.setAttribute("d1", format("%f", multipole[t100] * ANG_TO_NM));
-    node.setAttribute("d2", format("%f", multipole[t010] * ANG_TO_NM));
-    node.setAttribute("d3", format("%f", multipole[t001] * ANG_TO_NM));
-    // FFX had quadrupoles in units of electrons / Angstrom^2.
-    // OpenMM expects quadrupoles units to be electrons / nm^2.
+    node.setAttribute("c0", format("%.10f", multipole[t000]));
+    // FFX had dipoles in units of electrons * Angstrom.
+    // OpenMM expects dipole units to be electrons * nm.
+    node.setAttribute("d1", format("%.17f", multipole[t100] * ANG_TO_NM));
+    node.setAttribute("d2", format("%.17f", multipole[t010] * ANG_TO_NM));
+    node.setAttribute("d3", format("%.17f", multipole[t001] * ANG_TO_NM));
+    // FFX had quadrupoles in units of electrons * Angstrom^2.
+    // OpenMM expects quadrupoles units to be electrons * nm^2.
     // FFX and Tinker follow the notation in the "Theory of Intermolecular Forces"
     // by Anthony Stone and apply the factor of 1/3 within their respective energy routines.
     // See Chapter 3 (e.g., Eq 3.1.3).
-    node.setAttribute("q11", format("%f", multipole[t200] * ANG_TO_NM * ANG_TO_NM / 3.0));
-    node.setAttribute("q21", format("%f", multipole[t110] * ANG_TO_NM * ANG_TO_NM / 3.0));
-    node.setAttribute("q22", format("%f", multipole[t020] * ANG_TO_NM * ANG_TO_NM / 3.0));
-    node.setAttribute("q31", format("%f", multipole[t101] * ANG_TO_NM * ANG_TO_NM / 3.0));
-    node.setAttribute("q32", format("%f", multipole[t011] * ANG_TO_NM * ANG_TO_NM / 3.0));
-    node.setAttribute("q33", format("%f", multipole[t002] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q11", format("%.17f", multipole[t200] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q21", format("%.17f", multipole[t110] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q22", format("%.17f", multipole[t020] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q31", format("%.17f", multipole[t101] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q32", format("%.17f", multipole[t011] * ANG_TO_NM * ANG_TO_NM / 3.0));
+    node.setAttribute("q33", format("%.17f", multipole[t002] * ANG_TO_NM * ANG_TO_NM / 3.0));
     return node;
   }
 

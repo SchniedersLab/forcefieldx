@@ -336,15 +336,15 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
     node.setAttribute("class2", format("%d", atomClasses[1]));
     node.setAttribute("class3", format("%d", atomClasses[2]));
     node.setAttribute("class4", format("%d", atomClasses[3]));
-    node.setAttribute("v11", format("%f", forceConstants[0] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v12", format("%f", forceConstants[1] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v13", format("%f", forceConstants[2] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v21", format("%f", forceConstants[3] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v22", format("%f", forceConstants[4] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v23", format("%f", forceConstants[5] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v31", format("%f", forceConstants[6] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v32", format("%f", forceConstants[7] * KCAL_TO_KJ / ANG_TO_NM));
-    node.setAttribute("v33", format("%f", forceConstants[8] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v11", format("%.17f", forceConstants[0] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v12", format("%.17f", forceConstants[1] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v13", format("%.17f", forceConstants[2] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v21", format("%.17f", forceConstants[3] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v22", format("%.17f", forceConstants[4] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v23", format("%.17f", forceConstants[5] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v31", format("%.17f", forceConstants[6] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v32", format("%.17f", forceConstants[7] * KCAL_TO_KJ / ANG_TO_NM));
+    node.setAttribute("v33", format("%.17f", forceConstants[8] * KCAL_TO_KJ / ANG_TO_NM));
     return node;
   }
 }

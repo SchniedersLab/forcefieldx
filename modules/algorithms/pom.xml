@@ -80,6 +80,7 @@
             <argument>ffx.algorithms.groovy.MinimizeCrystals</argument>
             <argument>ffx.algorithms.groovy.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.groovy.MutatePDB</argument>
+            <argument>ffx.algorithms.groovy.PhDynamics</argument>
             <argument>ffx.algorithms.groovy.SaveRotamers</argument>
             <argument>ffx.algorithms.groovy.Scheduler</argument>
             <argument>ffx.algorithms.groovy.SortArc</argument>
@@ -96,7 +97,6 @@
             <argument>ffx.algorithms.groovy.test.MinimizePh</argument>
             <argument>ffx.algorithms.groovy.test.MostBar</argument>
             <argument>ffx.algorithms.groovy.test.OSTGradient</argument>
-            <argument>ffx.algorithms.groovy.test.PhDynamics</argument>
             <argument>ffx.algorithms.groovy.test.RaoBlackwellEstimator</argument>
             <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
             <argument>ffx.algorithms.groovy.test.SortXPH</argument>

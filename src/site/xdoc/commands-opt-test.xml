@@ -84,7 +84,7 @@
           </tr>
           <tr>
             <td>
-              <a href="commands/test.PhDynamics.html">test.PhDynamics</a>
+              <a href="commands/PhDynamics.html">PhDynamics</a>
             </td>
             <td>The PhDynamics command implements constant pH molecular dynamics.
             </td>
