@@ -54,28 +54,29 @@
           <arguments>
             <argument>-f</argument>
             <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
-            <argument>ffx.potential.groovy.Biotype</argument>
-            <argument>ffx.potential.groovy.Cart2Frac</argument>
-            <argument>ffx.potential.groovy.ChainBreaks</argument>
-            <argument>ffx.potential.groovy.Density</argument>
-            <argument>ffx.potential.groovy.Energy</argument>
-            <argument>ffx.potential.groovy.ExportQE</argument>
-            <argument>ffx.potential.groovy.Fasta</argument>
-            <argument>ffx.potential.groovy.FeatureMap</argument>
-            <argument>ffx.potential.groovy.FFtoXML</argument>
-            <argument>ffx.potential.groovy.Frac2Cart</argument>
-            <argument>ffx.potential.groovy.ImportCIF</argument>
-            <argument>ffx.potential.groovy.MoveIntoUnitCell</argument>
+            <argument>ffx.potential.commands.Biotype</argument>
+            <argument>ffx.potential.commands.Cart2Frac</argument>
+            <argument>ffx.potential.commands.ChainBreaks</argument>
+            <argument>ffx.potential.commands.Density</argument>
+            <argument>ffx.potential.commands.Energy</argument>
+            <argument>ffx.potential.commands.ExportQE</argument>
+            <argument>ffx.potential.commands.Fasta</argument>
+            <argument>ffx.potential.commands.FeatureMap</argument>
+            <argument>ffx.potential.commands.FFtoXML</argument>
+            <argument>ffx.potential.commands.Frac2Cart</argument>
+            <argument>ffx.potential.commands.ImportCIF</argument>
+            <argument>ffx.potential.commands.MoveIntoUnitCell</argument>
+            <argument>ffx.potential.commands.NucleicAcidAnalysis</argument>
+            <argument>ffx.potential.commands.PrepareSpaceGroups</argument>
+            <argument>ffx.potential.commands.SaveAsP1</argument>
+            <argument>ffx.potential.commands.SaveAsPDB</argument>
+            <argument>ffx.potential.commands.SaveAsXYZ</argument>
+            <argument>ffx.potential.commands.Solvator</argument>
+            <argument>ffx.potential.commands.Timer</argument>
+            <argument>ffx.potential.commands.Volume</argument>
+            <argument>ffx.potential.commands.VolumeArc</argument>
+            <argument>ffx.potential.commands.WriteRestraints</argument>
             <argument>ffx.potential.groovy.PhEnergy</argument>
-            <argument>ffx.potential.groovy.PrepareSpaceGroups</argument>
-            <argument>ffx.potential.groovy.SaveAsP1</argument>
-            <argument>ffx.potential.groovy.SaveAsPDB</argument>
-            <argument>ffx.potential.groovy.SaveAsXYZ</argument>
-            <argument>ffx.potential.groovy.Solvator</argument>
-            <argument>ffx.potential.groovy.Timer</argument>
-            <argument>ffx.potential.groovy.Volume</argument>
-            <argument>ffx.potential.groovy.VolumeArc</argument>
-            <argument>ffx.potential.groovy.WriteRestraints</argument>
             <argument>ffx.potential.groovy.test.CoordShakeEnergy</argument>
             <argument>ffx.potential.groovy.test.EnergyOpenMM</argument>
             <argument>ffx.potential.groovy.test.Gradient</argument>

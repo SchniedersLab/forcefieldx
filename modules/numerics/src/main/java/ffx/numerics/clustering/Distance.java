@@ -123,7 +123,7 @@ public class Distance implements Comparable<Distance>, Cloneable {
   }
 
   /**
-   * Compares by distance value, with null other treated as greater (this < other).
+   * Compares by distance value, with null other treated as greater (this &lt; other).
    *
    * @param distance the other Distance to compare to
    * @return negative, zero, or positive per Comparable contract

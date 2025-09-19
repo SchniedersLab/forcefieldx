@@ -298,7 +298,7 @@
         <dependencies>
           <dependency>
             <groupId>org.asciidoctor</groupId>
-            <artifactId>asciidoctor-maven-plugin</artifactId>
+            <artifactId>asciidoctor-parser-doxia-module</artifactId>
             <version>${asciidoc.version}</version>
           </dependency>
         </dependencies>
@@ -1058,9 +1058,9 @@
     <ffx.version>1.0.0</ffx.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
-    <graal.version>24.2.2</graal.version>
-    <groovy-all.version>5.0.0</groovy-all.version>
-    <guava.version>33.4.8-jre</guava.version>
+    <graal.version>25.0.0</graal.version>
+    <groovy-all.version>5.0.1</groovy-all.version>
+    <guava.version>33.5.0-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.13</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
@@ -1069,7 +1069,7 @@
     <javaparser.version>3.27.0</javaparser.version>
     <java3d.version>1.7.2</java3d.version>
     <javadoc.version>3.11.3</javadoc.version>
-    <jakarta-xml.version>4.0.2</jakarta-xml.version>
+    <jakarta-xml.version>4.0.4</jakarta-xml.version>
     <jdepend.version>2.1</jdepend.version>
     <jna.version>5.17.0</jna.version>
     <jogamp-fat.version>2.6.0</jogamp-fat.version>
@@ -1101,8 +1101,8 @@
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
-    <spotbugs.version>4.9.4</spotbugs.version>
-    <surefire.version>3.5.3</surefire.version>
+    <spotbugs.version>4.9.6</spotbugs.version>
+    <surefire.version>3.5.4</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>
@@ -1112,7 +1112,7 @@
     <versions.version>2.19.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
-    <wrapper.version>3.3.3</wrapper.version>
+    <wrapper.version>3.3.4</wrapper.version>
   </properties>
   <reporting>
     <plugins>
