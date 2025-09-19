@@ -2739,7 +2739,7 @@ public class ParticleMeshEwald implements LambdaInterface {
    * @param forceEnergy Force calculation of the electrostatic energy (rotate multipoles, perform
    *                    SCF).
    */
-  public void computeMoments(Atom[] activeAtoms, boolean forceEnergy) {
+  public double[] computeMoments(Atom[] activeAtoms, boolean forceEnergy) {
     // Zero out total charge, dipole and quadrupole components.
     var netchg = 0.0;
     var netdpl = 0.0;
@@ -2883,6 +2883,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     // Eigenvalues are returned in descending order, but logged below in ascending order.
     var netqdp = e.getRealEigenvalues();
 
+    // Log the results (unchanged from original)
     logger.info("\n Electric Moments\n");
     logger.info(format("  Total Electric Charge:    %13.5f Electrons\n", netchg));
     logger.info(format("  Dipole Moment Magnitude:  %13.5f Debye\n", netdpl));
@@ -2891,8 +2892,13 @@ public class ParticleMeshEwald implements LambdaInterface {
     logger.info(format("       (Buckinghams)        %13.5f %13.5f %13.5f", yxqdp, yyqdp, yzqdp));
     logger.info(format("                            %13.5f %13.5f %13.5f\n", zxqdp, zyqdp, zzqdp));
     logger.info(
-        format(
-            "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+            format(
+                    "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+
+    // Return the moments as a double array: [charge, dipole_magnitude, dipole_x, dipole_y, dipole_z, ...]
+    return new double[] {
+            netchg, netdpl, xdpl, ydpl, zdpl, xxqdp, xyqdp, xzqdp, yxqdp, yyqdp, yzqdp, zxqdp, zyqdp, zzqdp
+    };
   }
 
   /**

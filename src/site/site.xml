@@ -145,7 +145,7 @@
             <item name="MinimizePh" href="/commands/test.MinimizePh.html"/>
             <!-- item name="MostBar" href="/commands/test.CoordShakeEnergy.html"/ -->
             <item name="OSTGradient" href="/commands/test.OSTGradient.html"/>
-            <item name="PhDynamics" href="/commands/test.PhDynamics.html"/>
+            <item name="PhDynamics" href="/commands/PhDynamics.html"/>
             <item name="RaoBlackwellEstimator" href="/commands/test.RaoBlackwellEstimator.html"/>
             <!-- item name="RepexThermo" href="/commands/test.RepexThermo.html"/ -->
             <item name="SortXPH" href="/commands/test.SortXPH.html"/>

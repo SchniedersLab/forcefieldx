@@ -50,6 +50,7 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;

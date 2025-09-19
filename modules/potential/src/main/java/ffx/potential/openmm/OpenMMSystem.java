@@ -853,5 +853,4 @@ public class OpenMMSystem extends ffx.openmm.System {
     }
     return false;
   }
-
 }
