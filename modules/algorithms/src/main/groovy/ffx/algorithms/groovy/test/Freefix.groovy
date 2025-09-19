@@ -32,8 +32,8 @@ class Freefix extends AlgorithmsScript {
     /**
      * The final argument(s) should be one or more filenames.
      */
-/*    @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
-    private String filename = null*/
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
+    private String filename = null
 
     private static final double AVOGADRO = 6.02214076e23;
     private static final double STD_CONVERSION = 1.0e27 / AVOGADRO;
@@ -42,7 +42,7 @@ class Freefix extends AlgorithmsScript {
      * Freefix constructor.
      */
     Freefix() {
-        this(new Binding())
+        super()
     }
 
     /**
