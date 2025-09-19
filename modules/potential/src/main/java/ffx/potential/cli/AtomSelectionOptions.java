@@ -38,16 +38,19 @@
 package ffx.potential.cli;
 
 import static ffx.utilities.StringUtils.parseAtomRanges;
+import static ffx.utilities.StringUtils.parseResidueString;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import ffx.potential.bonded.Residue;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -106,6 +109,71 @@ public class AtomSelectionOptions {
     }
     logger.info("\n " + description + " atoms set to: " + selection);
 
+  }
+
+  public static void actOnResidueAtoms(@Nonnull MolecularAssembly assembly, @Nullable String selection,
+                                @Nonnull BiConsumer<Atom, Boolean> action, String description) {
+    if (selection == null || selection.equalsIgnoreCase("")) {
+      // Empty or null string -- no changes.
+      return;
+    }
+
+    Atom[] atoms = assembly.getAtomArray();
+
+    // No atoms selected.
+    if (selection.equalsIgnoreCase("NONE")) {
+      for (Atom atom : atoms) {
+        action.accept(atom, false);
+      }
+      logger.info(" No residues are " + description + ".\n");
+      return;
+    }
+
+    // All atoms selected
+    if (selection.equalsIgnoreCase("ALL")) {
+      for (Atom atom : atoms) {
+        action.accept(atom, true);
+      }
+      logger.info(" All residues (and atoms) are " + description + ".\n");
+      return;
+    }
+
+    // A subset of atoms is active.
+    for (Atom atom : atoms) {
+      action.accept(atom, false);
+    }
+
+    // String for logging the selected residues and atoms
+    StringBuilder seleRes = new StringBuilder();
+    StringBuilder seleAtoms = new StringBuilder();
+
+    int nResidues = assembly.getResidueList().size();
+    List<String> resList = parseResidueString(description, selection, nResidues);
+    assert resList.size() % 2 == 0;
+
+    for (int i=0; i < resList.size(); i=i+2) {
+      String chain = resList.get(i);
+      int resid = Integer.parseInt(resList.get(i+1));
+
+      List<Atom> atomList = new ArrayList<>();
+
+      Residue res = assembly.getChain(chain).getResidue(resid);
+      seleRes.append(res.toFormattedString(true, true)).append(",");
+      if (res.getResidueType() == Residue.ResidueType.AA) {
+        atomList = res.getSideChainAtoms(); // use side chain atoms if for amino acids
+      } else if (res.getResidueType() == Residue.ResidueType.NA) {
+        atomList = res.getBackboneAtoms(); // use 'backbone' atoms which correspond to the nucleobase for nucleic acids
+      }
+
+      // Apply desired function for selected atoms in the selected residues
+      for (Atom atom : atomList) {
+        seleAtoms.append(atom.getIndex()).append(",");
+        action.accept(atom, true);
+      }
+    }
+
+    logger.info("\n " + description + " residues are: " + seleRes.substring(0, seleRes.length()-1));
+    logger.info(" " + description + " atoms set to: " + seleAtoms.substring(0, seleAtoms.length()-1));
   }
 
   /**

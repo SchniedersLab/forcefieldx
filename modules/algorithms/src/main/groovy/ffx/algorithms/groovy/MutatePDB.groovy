@@ -176,7 +176,7 @@ class MutatePDB extends AlgorithmsScript {
       chainArr = chains[0].getChainID()
     }
 
-    if (resIDint.size() != resNameArr.length || resIDint.size() != chainArr.length) {
+    if (resIDint.size() != resNameArr.length){ // || resIDint.size() != chainArr.length) {
       logger.warning("The number of chains, residue names, and residue ids must be the same!")
       return this
     }
@@ -203,12 +203,13 @@ class MutatePDB extends AlgorithmsScript {
     List<PDBFilter.Mutation> mutations = new ArrayList<>()
     for (int i=0; i <= resIDint.size()-1; i++) {
       // need to add one to get the correct resID because parseAtomRanges removes one
-      logger.info("\n Mutating residue number " + resIDint[i]+1 + " of chain " + chainArr[i] + " to " + resNameArr[i])
       if (allChains) {
         for (Polymer currentChain : chains) {
+          logger.info("\n Mutating residue number " + resIDint[i]+1 + " of chain " + currentChain.chainID + " to " + resNameArr[i])
           mutations.add(new PDBFilter.Mutation(resIDint[i]+1, currentChain.chainID, resNameArr[i]))
         }
       } else {
+        logger.info("\n Mutating residue number " + resIDint[i]+1 + " of chain " + chainArr[i] + " to " + resNameArr[i])
         mutations.add(new PDBFilter.Mutation(resIDint[i]+1, chainArr[i], resNameArr[i]))
       }
     }
@@ -247,6 +248,10 @@ class MutatePDB extends AlgorithmsScript {
       }
     }
     pdbFilter.writeFile(structureFile, false)
+
+    for (PDBFilter.Mutation mut : mutations) {
+      mut.calculateTorsion()
+    }
 
     forceFieldEnergy = molecularAssembly.getPotentialEnergy()
 
