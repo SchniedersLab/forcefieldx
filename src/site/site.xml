@@ -107,14 +107,11 @@
           <item name="Timer" href="/commands/Timer.html"/>
           <item name="Volume" href="/commands/Volume.html"/>
           <item name="Testing" href="/commands-energy-test.html" collapse="true">
-            <item name="CoordShakeEnergy" href="/commands/test.CoordShakeEnergy.html"/>
-            <item name="EnergyOpenMM" href="/commands/test.EnergyOpenMM.html"/>
             <item name="Gradient" href="/commands/test.Gradient.html"/>
             <item name="LambdaGradient" href="/commands/test.LambdaGradient.html"/>
-            <item name="MultiRes" href="/commands/test.MultiRes.html"/>
-            <item name="MultiTopTimer" href="/commands/test.MultiTopTimer.html"/>
+            <item name="PhGradient" href="/commands/test.PhGradient.html"/>
             <item name="PrmToProperty" href="/commands/test.PrmToProperty.html"/>
-            <item name="RGNtoPDB" href="/commands/test.RGNtoPDB.html"/>
+            <item name="ReorderAtoms" href="/commands/test.ReorderAtoms.html"/>
             <item name="SaveAsConstantPhPDB" href="/commands/test.SaveAsConstantPhPDB.html"/>
           </item>
         </item>

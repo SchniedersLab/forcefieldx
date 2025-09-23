@@ -20,22 +20,6 @@
         <tbody>
           <tr>
             <td>
-              <a href="commands/test.CoordShakeEnergy.html">test.CoordShakeEnergy</a>
-            </td>
-            <td>The CoordShakeEnergy command evaluates the energy of a system before and after moving
-              coordinates by a fixed offset. This is useful to test coordinate restraints.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a href="commands/test.EnergyOpenMM.html">test.EnergyOpenMM</a>
-            </td>
-            <td>The EnergyOpenMM command computes the energy and gradient using both FFX and
-              OpenMM.
-            </td>
-          </tr>
-          <tr>
-            <td>
               <a href="commands/test.Gradient.html">test.Gradient</a>
             </td>
             <td>The Gradient command tests the analytic energy gradient against one computed using
@@ -52,9 +36,11 @@
           </tr>
           <tr>
             <td>
-              <a href="commands/test.MultiRes.html">test.MultiRes</a>
+              <a href="commands/test.PhGradient.html">test.PhGradient</a>
             </td>
-            <td>The MultRes command evaluates the energy of a MultiResidue system.</td>
+            <td>The PhGradient command tests the analytic energy gradient against one computed using
+              finite-differences of the potential energy for a constant pH simulation.
+            </td>
           </tr>
           <tr>
             <td>
@@ -64,9 +50,9 @@
           </tr>
           <tr>
             <td>
-              <a href="commands/test.RGNtoPDB.html">test.RGNtoPDB</a>
+              <a href="commands/test.ReorderAtoms.html">test.ReorderAtoms</a>
             </td>
-            <td>The RGNtoPDB command converts RGN output (a *.tertiary file) to PDB format.</td>
+            <td>Reorder the atoms of an XYZ file.</td>
           </tr>
           <tr>
             <td>

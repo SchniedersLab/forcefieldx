@@ -13,19 +13,6 @@
     <artifactId>ffx-pj</artifactId>
     <packaging>jar</packaging>
     <name>Parallel Java</name>
-    <description>Parallel Java supports both shared memory and message passing parallelization.</description>
+    <description>Parallel Java supports both shared memory and message-passing parallelization.</description>
     <version>1.0.1</version>
-    <build>
-      <plugins>
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <inherited>true</inherited>
-          <configuration>
-            <author>true</author>
-            <defaultAuthor>Alan Kaminsky</defaultAuthor>
-            <defaultSince>1.0</defaultSince>
-          </configuration>
-        </plugin>
-      </plugins>
-    </build>
 </project>
