@@ -35,12 +35,12 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.potential.commands;
 
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.utils.PotentialTest;
-import ffx.potential.groovy.test.PhGradient;
+import ffx.potential.commands.test.PhGradient;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;

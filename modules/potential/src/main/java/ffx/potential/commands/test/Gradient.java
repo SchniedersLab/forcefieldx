@@ -35,25 +35,28 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy.test
+package ffx.potential.commands.test;
 
-import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.GradientOptions
-import ffx.potential.cli.PotentialScript
-import ffx.potential.utils.GradientUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.potential.cli.AtomSelectionOptions;
+import ffx.potential.cli.GradientOptions;
+import ffx.potential.cli.PotentialScript;
+import ffx.potential.utils.GradientUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import java.util.stream.IntStream
+import java.util.stream.IntStream;
+import java.util.Collections;
+import java.util.List;
+import groovy.lang.Binding;
 
-import static ffx.utilities.StringUtils.parseAtomRanges
-import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.sqrt
+import static ffx.utilities.StringUtils.parseAtomRanges;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The Gradient script evaluates the consistency of the energy and gradient.
@@ -63,87 +66,87 @@ import static org.apache.commons.math3.util.FastMath.sqrt
  * ffxc test.Gradient [options] &lt;filename&gt;
  */
 @Command(description = " Test the potential energy gradient.", name = "test.Gradient")
-class Gradient extends PotentialScript {
+public class Gradient extends PotentialScript {
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  AtomSelectionOptions atomSelectionOptions;
 
   @Mixin
-  GradientOptions gradientOptions
+  GradientOptions gradientOptions;
 
   /**
    * The final argument is a single filename in PDB or XYZ format.
    */
   @Parameters(arity = "1", paramLabel = "file", description = "A PDB or XYZ coordinate file.")
-  String filename = null
+  String filename = null;
 
-  private ForceFieldEnergy energy
-  public int nFailures = 0
+  private ForceFieldEnergy energy;
+  public int nFailures = 0;
 
   /**
    * Gradient constructor.
    */
-  Gradient() {
-    super()
+  public Gradient() {
+    super();
   }
 
   /**
    * Gradient constructor.
    * @param binding The Groovy Binding to use.
    */
-  Gradient(Binding binding) {
-    super(binding)
+  public Gradient(Binding binding) {
+    super(binding);
   }
 
   /**
    * Gradient constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Gradient(String[] args) {
-    super(args)
+  public Gradient(String[] args) {
+    super(args);
   }
 
   /**
    * Execute the script.
    */
   @Override
-  Gradient run() {
+  public Gradient run() {
 
     // Init the context and bind variables.
     if (!init()) {
-      return this
+      return this;
     }
 
     // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
+    activeAssembly = getActiveAssembly(filename);
     if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     }
 
     // Set the filename.
-    filename = activeAssembly.getFile().getAbsolutePath()
+    filename = activeAssembly.getFile().getAbsolutePath();
 
-    logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
+    logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n");
 
     // Apply atom selections
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    atomSelectionOptions.setActiveAtoms(activeAssembly);
 
-    energy = activeAssembly.getPotentialEnergy()
-    GradientUtils gradientUtils = new GradientUtils(energy)
-    nFailures = gradientUtils.testGradient(gradientOptions)
-    return this
+    energy = activeAssembly.getPotentialEnergy();
+    GradientUtils gradientUtils = new GradientUtils(energy);
+    nFailures = gradientUtils.testGradient(gradientOptions);
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    List<Potential> potentials
+  public List<Potential> getPotentials() {
+    List<Potential> potentials;
     if (energy == null) {
-      potentials = Collections.emptyList()
+      potentials = Collections.emptyList();
     } else {
-      potentials = Collections.singletonList((Potential) energy)
+      potentials = Collections.singletonList(energy);
     }
-    return potentials
+    return potentials;
   }
 
 }

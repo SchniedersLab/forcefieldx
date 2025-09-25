@@ -6,35 +6,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.gmavenplus</groupId>
-        <artifactId>gmavenplus-plugin</artifactId>
-        <configuration>
-          <targetBytecode>21</targetBytecode>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>addSources</goal>
-              <goal>addTestSources</goal>
-              <goal>generateStubs</goal>
-              <goal>compile</goal>
-              <goal>generateTestStubs</goal>
-              <goal>compileTests</goal>
-              <goal>removeStubs</goal>
-              <goal>removeTestStubs</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>${groovy-all.version}</version>
-            <type>pom</type>
-          </dependency>
-        </dependencies>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
@@ -77,12 +48,12 @@
             <argument>ffx.potential.commands.Volume</argument>
             <argument>ffx.potential.commands.VolumeArc</argument>
             <argument>ffx.potential.commands.WriteRestraints</argument>
-            <argument>ffx.potential.groovy.test.Gradient</argument>
-            <argument>ffx.potential.groovy.test.LambdaGradient</argument>
-            <argument>ffx.potential.groovy.test.PhGradient</argument>
-            <argument>ffx.potential.groovy.test.PrmToProperty</argument>
-            <argument>ffx.potential.groovy.test.ReorderAtoms</argument>
-            <argument>ffx.potential.groovy.test.SaveAsConstantPhPDB</argument>
+            <argument>ffx.potential.commands.test.Gradient</argument>
+            <argument>ffx.potential.commands.test.LambdaGradient</argument>
+            <argument>ffx.potential.commands.test.PhGradient</argument>
+            <argument>ffx.potential.commands.test.PrmToProperty</argument>
+            <argument>ffx.potential.commands.test.ReorderAtoms</argument>
+            <argument>ffx.potential.commands.test.SaveAsConstantPhPDB</argument>
           </arguments>
         </configuration>
         <dependencies>
@@ -114,49 +85,6 @@
                   <version>${project.version}</version>
                 </path>
               </annotationProcessorPaths>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-groovy-scripts</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/../../groovy</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
-                  <includes>
-                    <include>*</include>
-                  </includes>
-                </resource>
-              </resources>
-              <overwrite>true</overwrite>
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-groovy-scripts-website</id>
-            <phase>site</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/site/resources/script</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
-                  <includes>
-                    <include>*</include>
-                  </includes>
-                </resource>
-              </resources>
-              <overwrite>true</overwrite>
             </configuration>
           </execution>
         </executions>

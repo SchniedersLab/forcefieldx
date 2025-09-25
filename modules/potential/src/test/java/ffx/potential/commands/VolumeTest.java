@@ -41,7 +41,7 @@ import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
-import ffx.potential.groovy.test.Gradient;
+import ffx.potential.commands.test.Gradient;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
