@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import com.sun.jna.ptr.PointerByReference;
 import ffx.openmm.CustomIntegrator;
 
 import java.util.logging.Logger;
@@ -86,12 +85,9 @@ public class CustomMTSLangevinIntegrator extends CustomIntegrator {
       subSteps = new int[]{1, 2, 8};
     }
 
-    PointerByReference pointer = getPointer();
     addGlobalVariable("a", exp(-frictionCoeff * dt / n));
-    addGlobalVariable("b",
-        sqrt(1.0 - exp(-2.0 * frictionCoeff * dt / n)));
-    addGlobalVariable("kT",
-        R * temperature * KCAL_TO_KJ);
+    addGlobalVariable("b", sqrt(1.0 - exp(-2.0 * frictionCoeff * dt / n)));
+    addGlobalVariable("kT", R * temperature * KCAL_TO_KJ);
     addPerDofVariable("x1", 0.0);
     StringBuilder sb = new StringBuilder(" Update Context State\n");
     addUpdateContextState();
@@ -133,17 +129,16 @@ public class CustomMTSLangevinIntegrator extends CustomIntegrator {
     for (int i = 0; i < stepsPerParentStep; i++) {
       String step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
       sb.append(" v = ").append(step).append("\n");
-      PointerByReference pointer = getPointer();
       addComputePerDof("v", step);
       // String step;
       if (forceGroups.length == 1) {
-        step = "x+(dt/" + 2 * steps + ")*v";
+        step = "x+(dt/" + (2 * steps) + ")*v";
         sb.append(" x = ").append(step).append("\n");
         addComputePerDof("x", step);
         step = "a*v + b*sqrt(kT/m)*gaussian";
         sb.append(" v = ").append(step).append("\n");
         addComputePerDof("v", step);
-        step = "x+(dt/" + 2 * steps + ")*v";
+        step = "x+(dt/" + (2 * steps) + ")*v";
         sb.append(" x = ").append(step).append("\n");
         addComputePerDof("x", step);
         step = "x";

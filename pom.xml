@@ -1002,8 +1002,8 @@
               <execution>
                 <configuration>
                   <packages>
-                    <package>torch==2.7.0</package>
-                    <!-- package>numpy==1.26.4</package -->
+                    <!-- package>torch==2.7.0</package -->
+                    <package>numpy==2.2.4</package>
                   </packages>
                   <externalDirectory>
                     ${project.basedir}/python-resources
@@ -1032,7 +1032,7 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.6.0</checkstyle.version>
-    <ciftools-java.version>7.0.1</ciftools-java.version>
+    <ciftools-java.version>7.0.2</ciftools-java.version>
     <clean.version>3.5.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
@@ -1049,7 +1049,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.4</deploy.version>
     <enforcer.version>3.6.1</enforcer.version>
-    <exec.version>3.5.1</exec.version>
+    <exec.version>3.6.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->

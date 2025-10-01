@@ -460,11 +460,14 @@ public class OpenMMSystem extends ffx.openmm.System {
       removeForce(cmMotionRemover);
       cmMotionRemover = null;
     }
-    int frequency = 100;
+    int frequency = forceField.getInteger("REMOVE-COM-FREQUENCY", 100);
     cmMotionRemover = new CMMotionRemover(frequency);
+    int forceGroup = forceField.getInteger("COMM_FORCE_GROUP", 1);
+    cmMotionRemover.setForceGroup(forceGroup);
     addForce(cmMotionRemover);
     logger.info("\n Added a Center of Mass Motion Remover");
     logger.info(format("  Frequency:            %6d", frequency));
+    logger.info(format("  Force Group:          %6d", forceGroup));
   }
 
   /**

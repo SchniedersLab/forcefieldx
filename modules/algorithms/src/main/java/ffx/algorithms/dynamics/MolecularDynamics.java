@@ -1487,7 +1487,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     // Integrate Newton's equations of motion for the requested number of steps,
     // unless early termination is requested.
     long time = System.nanoTime();
-    int removeCOMMotionFrequency = molecularAssembly[0].getForceField().getInteger("removecomfrequency", 100);
+    int removeCOMMotionFrequency = molecularAssembly[0].getForceField().getInteger("REMOVE-COM-FREQUENCY", 100);
     if (thermostat.getRemoveCenterOfMassMotion()) {
       logger.info(format(" COM will be removed every %3d step(s).", removeCOMMotionFrequency));
     }
