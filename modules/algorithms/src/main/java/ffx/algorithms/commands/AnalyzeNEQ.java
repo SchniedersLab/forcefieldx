@@ -72,7 +72,7 @@ import static org.apache.commons.io.FilenameUtils.normalize;
  * <br>
  * Usage:
  * <br>
- * ffxc BAR [options] &lt;structures1&gt &lt;structures2&gt;
+ * ffxc BAR [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 @Command(description = "Performs analysis of Non-equilibrium work simulations.", name = "AnalyzeNEQ")
 public class AnalyzeNEQ extends AlgorithmsScript {

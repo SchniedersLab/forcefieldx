@@ -78,7 +78,7 @@ import static java.lang.String.format;
  * <br>
  * Usage:
  * <br>
- * ffxc BAR [options] &lt;structures1&gt &lt;structures2&gt;
+ * ffxc BAR [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 @Command(description = " Evaluates a free energy change with the Bennett Acceptance Ratio algorithm using pregenerated snapshots.", name = "BAR")
 public class BAR extends AlgorithmsScript {
