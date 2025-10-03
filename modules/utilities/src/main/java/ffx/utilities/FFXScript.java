@@ -246,9 +246,9 @@ public abstract class FFXScript extends Script {
           className = className.replace("/", ".");
           className = className.replace(".class", "");
           // Present the classes using "short-cut" names.
-          className = className.replace("ffx.potential.groovy.", "");
           className = className.replace("ffx.potential.commands.", "");
           className = className.replace("ffx.algorithms.groovy.", "");
+          className = className.replace("ffx.algorithms.commands.", "");
           className = className.replace("ffx.realspace.groovy", "realspace");
           className = className.replace("ffx.xray.groovy", "xray");
           if (className.toUpperCase().contains("TEST")) {

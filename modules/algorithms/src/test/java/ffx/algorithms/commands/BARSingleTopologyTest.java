@@ -35,29 +35,28 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.numerics.estimator.FreeEnergyDifferenceReporter;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BARFilesTest extends AlgorithmsTest {
-
+public class BARSingleTopologyTest extends AlgorithmsTest {
 
   /**
-   * Tests BAR script with tinker bar files input.
+   * Tests BAR script with nw input.
    */
-  // @Test
-  public void testBARFiles() {
+  //@Test
+  public void testBAR() {
 
     if (!ffxOpenMM) {
       return;
     }
 
     // Set-up the input arguments for the script.
-    String filepath = getResourcePath("testBar/singleTopology/dimethylphosphate.100.xyz");
-    String[] args = {"-t", "298", "--nw", "8", "--ac", "1-13", "--utb", filepath};
+    String filepath = getResourcePath("testBar/singleTopology/dimethylphosphate.10.xyz");
+    String[] args = {"-t", "298", "--nw", "8", "--ac", "1-13", filepath};
     binding.setVariable("args", args);
     // Evaluate the script.
     BAR bar = new BAR(binding).run();
@@ -65,33 +64,33 @@ public class BARFilesTest extends AlgorithmsTest {
 
     FreeEnergyDifferenceReporter reporter = bar.getReporter();
 
-    double expectedFepFor = -115.4001;
+    double expectedFepFor = -54.3012;
     double actualFepFor = reporter.getForwardTotalFEDifference();
-    Assert.assertEquals(expectedFepFor, actualFepFor, 0.5);
+    Assert.assertEquals(expectedFepFor, actualFepFor, 0.2);
 
-    double expectedFepBack = -118.6607;
+    double expectedFepBack = -52.9186;
     double actualFepBack = reporter.getBackwardTotalFEDifference();
-    Assert.assertEquals(expectedFepBack, actualFepBack, 0.5);
+    Assert.assertEquals(expectedFepBack, actualFepBack, 0.2);
 
-    double expectedhFor = -157.1466;
+    double expectedhFor = -32.0327;
     double actualhFor = reporter.getForwardTotalEnthalpyChange();
-    Assert.assertEquals(expectedhFor, actualhFor, 50);
+    Assert.assertEquals(expectedhFor, actualhFor, 7);
 
-    double expectedhBack = 123.5150;
+    double expectedhBack = 52.9186;
     double actualhBack = reporter.getBackwardTotalEnthalpyChange();
-    Assert.assertEquals(expectedhBack, actualhBack, 90);
+    Assert.assertEquals(expectedhBack, actualhBack, 0.1);
 
-    double expectedhBAR = -29.0062;
+    double expectedhBAR = 14.6302;
     double actualhBAR = reporter.getBarBSTotalEnthalpyChange();
-    Assert.assertEquals(expectedhBAR, actualhBAR, 4);
+    Assert.assertEquals(expectedhBAR, actualhBAR, 1);
 
-    double expectedBARIteration = -117.1754;
+    double expectedBARIteration = -53.3234;
     double actualBARIteration = reporter.getBarIterTotalFEDiff();
-    Assert.assertEquals(expectedBARIteration, actualBARIteration, 0.5);
+    Assert.assertEquals(expectedBARIteration, actualBARIteration, 0.1);
 
-    double expectedBARBootstrap = -117.1464;
+    double expectedBARBootstrap = -53.3224;
     double actualBARBootstrap = reporter.getBarBSTotalFEDiff();
-    Assert.assertEquals(expectedBARBootstrap, actualBARBootstrap, 0.3);
+    Assert.assertEquals(expectedBARBootstrap, actualBARBootstrap, 0.2);
   }
 
   @Test

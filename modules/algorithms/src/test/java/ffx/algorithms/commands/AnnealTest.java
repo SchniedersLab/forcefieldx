@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,7 +50,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan Bernabe */
 @RunWith(Parameterized.class)
-public class SimulatedAnnealingTest extends AlgorithmsTest {
+public class AnnealTest extends AlgorithmsTest {
 
   private static final double tolerance = 0.01;
   private String info;
@@ -60,8 +60,8 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
   private double endTotalEnergy;
   private double endTemperature;
 
-  public SimulatedAnnealingTest(String info, String filename, double endKineticEnergy,
-      double endPotentialEnergy, double endTotalEnergy, double endTemperature) {
+  public AnnealTest(String info, String filename, double endKineticEnergy,
+                    double endPotentialEnergy, double endTotalEnergy, double endTemperature) {
     this.info = info;
     this.filename = filename;
     this.endKineticEnergy = endKineticEnergy;

@@ -35,19 +35,26 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy
+package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.AnnealOptions
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-import ffx.numerics.Potential
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.WriteoutOptions
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AnnealOptions;
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
+import ffx.numerics.Potential;
+import ffx.potential.cli.AtomSelectionOptions;
+import ffx.potential.cli.WriteoutOptions;
+import groovy.lang.Binding;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+import static java.lang.String.format;
 
 /**
  * The Anneal script.
@@ -57,139 +64,141 @@ import picocli.CommandLine.Parameters
  * ffxc Anneal [options] &lt;filename&gt;
  */
 @Command(description = " Run simulated annealing on a system.", name = "Anneal")
-class Anneal extends AlgorithmsScript {
+public class Anneal extends AlgorithmsScript {
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  private AtomSelectionOptions atomSelectionOptions;
 
   @Mixin
-  DynamicsOptions dynamics
+  private DynamicsOptions dynamics;
 
   @Mixin
-  AnnealOptions anneal
+  private AnnealOptions anneal;
 
   @Mixin
-  WriteoutOptions writeOut
+  private WriteoutOptions writeOut;
 
   /**
    * An XYZ or PDB input file.
    */
   @Parameters(arity = "1", paramLabel = "file",
       description = "XYZ or PDB input file.")
-  private String filename
+  private String filename;
 
-  private SimulatedAnnealing simulatedAnnealing = null
+  private SimulatedAnnealing simulatedAnnealing = null;
 
-  private Potential potential
+  private Potential potential;
 
   /**
    * Anneal Constructor.
    */
-  Anneal() {
-    super()
+  public Anneal() {
+    super();
   }
 
   /**
    * Anneal Constructor.
    * @param binding The Groovy Binding to use.
    */
-  Anneal(Binding binding) {
-    super(binding)
+  public Anneal(Binding binding) {
+    super(binding);
   }
 
   /**
    * Anneal constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Anneal(String[] args) {
-    super(args)
+  public Anneal(String[] args) {
+    super(args);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  Anneal run() {
+  public Anneal run() {
 
     // Init the context and bind variables.
     if (!init()) {
-      return this
+      return this;
     }
 
     // Init DynamicsOptions (e.g. the thermostat and barostat flags).
-    dynamics.init()
+    dynamics.init();
 
     // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
+    activeAssembly = getActiveAssembly(filename);
     if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     }
 
     // Set the filename.
-    filename = activeAssembly.getFile().getAbsolutePath()
+    filename = activeAssembly.getFile().getAbsolutePath();
 
     // Set active atoms.
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    atomSelectionOptions.setActiveAtoms(activeAssembly);
 
-    logger.info("\n Running simulated annealing on " + filename + "\n")
+    logger.info("\n Running simulated annealing on " + filename + "\n");
 
     // Define the path to the restart File.
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
     if (!dyn.exists()) {
-      dyn = null
+      dyn = null;
     }
 
-    potential = activeAssembly.getPotentialEnergy()
+    potential = activeAssembly.getPotentialEnergy();
 
     simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
-        activeAssembly.getPotentialEnergy(), algorithmListener, dyn)
+        activeAssembly.getPotentialEnergy(), algorithmListener, dyn);
 
-    simulatedAnnealing.setPrintInterval(dynamics.report)
-    simulatedAnnealing.setSaveFrequency(dynamics.write)
-    simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
-    simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps)
+    simulatedAnnealing.setPrintInterval(dynamics.getReport());
+    simulatedAnnealing.setSaveFrequency(dynamics.getWrite());
+    simulatedAnnealing.setRestartFrequency(dynamics.getCheckpoint());
+    simulatedAnnealing.setTrajectorySteps(dynamics.getTrajSteps());
 
-    simulatedAnnealing.anneal()
+    simulatedAnnealing.anneal();
 
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(filename))
+      baseDir = new File(FilenameUtils.getFullPath(filename));
     }
 
-    String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String dirName = baseDir.toString() + File.separator;
+    String fileName = FilenameUtils.getName(filename);
+    fileName = FilenameUtils.removeExtension(fileName);
 
-    writeOut.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
+    writeOut.saveFile(format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
-    return this
+    return this;
   }
 
-  SimulatedAnnealing getAnnealing() {
-    return simulatedAnnealing
+  /**
+   * Get the SimulatedAnnealing object.
+   * @return The SimulatedAnnealing instance.
+   */
+  public SimulatedAnnealing getAnnealing() {
+    return simulatedAnnealing;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  List<Potential> getPotentials() {
-    List<Potential> potentials
+  public List<Potential> getPotentials() {
+    List<Potential> potentials;
     if (potential == null) {
-      potentials = Collections.emptyList()
+      potentials = Collections.emptyList();
     } else {
-      potentials = Collections.singletonList(potential)
+      potentials = Collections.singletonList(potential);
     }
-    return potentials
+    return potentials;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  boolean destroyPotentials() {
-    return getPotentials().stream().allMatch({
-      it.destroy()
-    })
+  public boolean destroyPotentials() {
+    return getPotentials().stream().allMatch(Potential::destroy);
   }
 }

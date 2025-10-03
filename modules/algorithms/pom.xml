@@ -66,9 +66,9 @@
           <arguments>
             <argument>-f</argument>
             <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
-            <argument>ffx.algorithms.groovy.AnalyzeNEQ</argument>
-            <argument>ffx.algorithms.groovy.Anneal</argument>
-            <argument>ffx.algorithms.groovy.BAR</argument>
+            <argument>ffx.algorithms.commands.AnalyzeNEQ</argument>
+            <argument>ffx.algorithms.commands.Anneal</argument>
+            <argument>ffx.algorithms.commands.BAR</argument>
             <argument>ffx.algorithms.groovy.Cluster</argument>
             <argument>ffx.algorithms.groovy.Dynamics</argument>
             <argument>ffx.algorithms.groovy.ForEachFile</argument>
