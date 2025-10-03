@@ -78,7 +78,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <br>
  * Usage:
  * <br>
- * ffxc test.PhGradient [options] <filename>
+ * ffxc test.PhGradient [options] &lt;filename&gt;
  */
 @Command(description = " Test the potential energy gradient for CpHMD.", name = "test.PhGradient")
 public class PhGradient extends PotentialScript {

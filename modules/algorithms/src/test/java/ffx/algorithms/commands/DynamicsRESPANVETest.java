@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
 import static org.junit.Assert.assertEquals;
 
@@ -43,7 +43,6 @@ import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,27 +50,18 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
+public class DynamicsRESPANVETest extends AlgorithmsTest {
 
-  private final String info;
-  private final String filename;
-  private final double endKineticEnergy;
-  private final double endPotentialEnergy;
-  private final double endTotalEnergy;
-  private final double tolerance = 5.0;
+  private String info;
+  private String filename;
+  private double startingTotalEnergy;
+  // Tight tolerance on energy conservation.
+  private double tolerance = 0.01;
 
-  public DynamicsOpenMMStochasticTest(
-      String info,
-      String filename,
-      double endKineticEnergy,
-      double endPotentialEnergy,
-      double endTotalEnergy) {
-
+  public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
     this.info = info;
     this.filename = filename;
-    this.endKineticEnergy = endKineticEnergy;
-    this.endPotentialEnergy = endPotentialEnergy;
-    this.endTotalEnergy = endTotalEnergy;
+    this.startingTotalEnergy = startingTotalEnergy;
   }
 
   @Parameters
@@ -79,32 +69,23 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
     return Arrays.asList(
         new Object[][] {
             {
-                "System OpenMM Stochastic (Starting Potential Energy =  -35661.8205)",
-                "waterbox_eq.xyz",
-                10604.3144,
-               -35701.8075,
-               -25097.4932,
+                "Acetamide RESPA NVE", // info
+                "acetamide_NVE.xyz", // filename
+                -25.2085 // startingTotalEnergy
             }
         });
   }
 
-  @Before
-  public void before() {
-    System.setProperty("platform", "omm");
-  }
-
   @Test
-  public void testDynamicsOpenMMStochastic() {
-    if (!ffxOpenMM) {
-      return;
-    }
+  public void testRESPANVE() {
 
     // Set-up the input arguments for the script.
     String[] args = {
-        "-n", "10",
-        "-z", "1",
+        "-n", "20",
+        "--dt", "0.5",
         "-t", "298.15",
-        "-i", "Stochastic",
+        "-i", "RESPA",
+        "-b", "Adiabatic",
         "-r", "0.001",
         getResourcePath(filename)
     };
@@ -114,14 +95,14 @@ public class DynamicsOpenMMStochasticTest extends AlgorithmsTest {
     Dynamics dynamics = new Dynamics(binding).run();
     algorithmsScript = dynamics;
 
-    MolecularDynamics molDynOpenMM = dynamics.getMolecularDynamics();
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-    // Assert that the end energies are within the threshold for the dynamics trajectory.
-    assertEquals(info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",
-        endKineticEnergy, molDynOpenMM.getKineticEnergy(), tolerance);
-    assertEquals(info + "End potential energy for OpenMM Langevin(Stochastic) integrator",
-        endPotentialEnergy, molDynOpenMM.getPotentialEnergy(), tolerance);
-    assertEquals(info + "End total energy for OpenMM Langevin(Stochastic) integrator",
-        endTotalEnergy, molDynOpenMM.getTotalEnergy(), tolerance);
+    // Assert that the final total energy is within the tolerance for the molecular dynamics
+    // trajectory
+    assertEquals(
+        info + "End total energy for RESPA integrator NVE",
+        startingTotalEnergy,
+        molDyn.getTotalEnergy(),
+        tolerance);
   }
 }

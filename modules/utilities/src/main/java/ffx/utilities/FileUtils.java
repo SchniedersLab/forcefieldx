@@ -37,16 +37,24 @@
 // ******************************************************************************
 package ffx.utilities;
 
-import static java.io.File.createTempFile;
-import static java.nio.file.Paths.get;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.io.File.createTempFile;
+import static java.lang.String.format;
+import static java.nio.file.Paths.get;
 
 /**
  * FileUtils class.
@@ -55,6 +63,8 @@ import java.nio.file.Path;
  * @since 1.0
  */
 public class FileUtils {
+
+  private static final Logger logger = Logger.getLogger(FileUtils.class.getName());
 
   /**
    * Private constructor to prevent instantiation.
@@ -66,9 +76,9 @@ public class FileUtils {
   /**
    * Returns the file name of a temporary copy of <code>input</code> content.
    *
-   * @param input The input stream contents are copied to a temporary file.
+   * @param input  The input stream contents are copied to a temporary file.
    * @param prefix Temporary file prefix.
-   * @param name Temporary file name.
+   * @param name   Temporary file name.
    * @param suffix Temporary file suffix.
    * @return The temporary file.
    * @throws java.io.IOException An IOException is thrown if a temporary file could not be created.
@@ -88,7 +98,7 @@ public class FileUtils {
     tmpFile.deleteOnExit();
 
     try (input;
-        OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
+         OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
       byte[] buffer = new byte[8192];
       int size;
       while ((size = input.read(buffer)) != -1) {
@@ -110,5 +120,30 @@ public class FileUtils {
     Path pwdPath = get(pwd.getAbsolutePath());
     Path otherPath = get(file.getAbsolutePath());
     return pwdPath.relativize(otherPath);
+  }
+
+  /**
+   * Traverse a directory to find files matching the given regex pattern.
+   *
+   * @param directory   The directory to traverse.
+   * @param maxDepth    Maximum depth to traverse.
+   * @param filePattern Regular expression pattern to match file names.
+   * @return List of matching files.
+   */
+  public static List<File> traverseFiles(File directory, int maxDepth, String filePattern) {
+    List<File> matchingFiles = new ArrayList<>();
+    Pattern pattern = Pattern.compile(filePattern);
+
+    try (Stream<Path> paths = Files.walk(directory.toPath(), maxDepth)) {
+      matchingFiles = paths
+          .filter(Files::isRegularFile)
+          .filter(path -> pattern.matcher(path.getFileName().toString()).matches())
+          .map(Path::toFile)
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      logger.warning(format("Error traversing directory %s: %s", directory.getAbsolutePath(), e.getMessage()));
+    }
+
+    return matchingFiles;
   }
 }

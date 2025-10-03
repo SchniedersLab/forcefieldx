@@ -35,20 +35,31 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy
+package ffx.algorithms.commands;
 
-import edu.rit.pj.*
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.potential.Utilities
-import ffx.utilities.FFXScript
-import picocli.CommandLine.Command
-import picocli.CommandLine.Option
-import picocli.CommandLine.Unmatched
+import edu.rit.pj.Comm;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.WorkerIntegerForLoop;
+import edu.rit.pj.WorkerRegion;
+import edu.rit.pj.WorkerTeam;
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.potential.Utilities;
+import ffx.utilities.FFXScript;
+import ffx.utilities.FileUtils;
+import groovy.lang.Binding;
+import groovy.lang.Script;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Unmatched;
 
-import static groovy.io.FileType.FILES
-import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.normalize
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static java.lang.String.format;
+import static org.apache.commons.io.FilenameUtils.normalize;
 
 /**
  * Run an FFX command on a series of files. Parallel Java across nodes is supported.
@@ -69,181 +80,179 @@ import static org.apache.commons.io.FilenameUtils.normalize
  * ffxc ForEachFile [ForEachFile options] Command [Command options] &lt;FILE&gt; [&lt;FILE2&gt;]
  */
 @Command(description = " Run an FFX command on a series of files.", name = "ForEachFile")
-class ForEachFile extends AlgorithmsScript {
+public class ForEachFile extends AlgorithmsScript {
 
   /**
    * --recurse Maximum recursion level (0 only includes the current directory).
    */
-  @Option(names = ['--recurse'], defaultValue = "0", paramLabel = "0",
-      description = 'Maximum recursion level (0 only includes the current directory).')
-  int recurse
+  @Option(names = {"--recurse"}, defaultValue = "0", paramLabel = "0",
+      description = "Maximum recursion level (0 only includes the current directory).")
+  private int recurse;
 
   /**
    * --regex --fileSelectionRegex Evaluate files that match a Regular expression (.* includes all files).
    */
-  @Option(names = ['--regex', "--fileSelectionRegex"], paramLabel = ".*", defaultValue = ".*",
-      description = 'Locate files that match a regular expression (\'.*\' matches all files).')
-  String regex
+  @Option(names = {"--regex", "--fileSelectionRegex"}, paramLabel = ".*", defaultValue = ".*",
+      description = "Locate files that match a regular expression ('.*' matches all files).")
+  private String regex;
 
   /**
    * --regex2 --fileSelectionRegex2 Evaluate files that match a Regular expression (.* includes all files).
    * The second regular expression can be used to place a second file on each command line (e.g., for dual-topology simulations).
    */
-  @Option(names = ['--regex2', "--fileSelectionRegex2"], paramLabel = "", defaultValue = "",
-      description = 'Locate files that match a 2nd regular expression (\'.*\' matches all files).')
-  String regex2
+  @Option(names = {"--regex2", "--fileSelectionRegex2"}, paramLabel = "", defaultValue = "",
+      description = "Locate files that match a 2nd regular expression ('.*' matches all files).")
+  private String regex2;
 
   /**
    * --schedule Load balancing will use a [Dynamic, Fixed, or Guided] schedule.
    */
-  @Option(names = ['--schedule'], defaultValue = "dynamic", paramLabel = "dynamic",
-      description = 'Load balancing will use a [Dynamic, Fixed, or Guided] schedule.')
-  String schedule
+  @Option(names = {"--schedule"}, defaultValue = "dynamic", paramLabel = "dynamic",
+      description = "Load balancing will use a [Dynamic, Fixed, or Guided] schedule.")
+  private String schedule;
 
   /**
    * -v --verbose Decide whether to print additional logging.
    */
-  @Option(names = ['-v', '--verbose'], defaultValue = "false", paramLabel = "false",
-      description = 'Print additional logging for errors.')
-  boolean verbose
+  @Option(names = {"-v", "--verbose"}, defaultValue = "false", paramLabel = "false",
+      description = "Print additional logging for errors.")
+  private boolean verbose;
 
   /**
    * The final argument(s) should be one or more filenames.
    */
   @Unmatched
-  List<String> unmatched = null
+  private List<String> unmatched = null;
 
   /**
    * FFX Script to run in each process.
    */
-  Class<? extends FFXScript> script
+  private Class<? extends FFXScript> script;
 
   /**
    * List of files.
    */
-  List<File> files
+  private List<File> files;
 
   /**
    * Place two files on each command line.
    */
-  boolean twoFilesPerCommand = false
+  private boolean twoFilesPerCommand = false;
 
   /**
    * List of second files to place on the command line.
    */
-  List<File> files2
+  private List<File> files2;
 
   /**
    * Parallel Java Schedule.
    */
-  IntegerSchedule integerSchedule
+  private IntegerSchedule integerSchedule;
 
   /**
-   * Minimize Constructor.
+   * ForEachFile Constructor.
    */
-  ForEachFile() {
-    super()
+  public ForEachFile() {
+    super();
   }
 
   /**
-   * Minimize Constructor.
+   * ForEachFile Constructor.
    * @param binding The Groovy Binding to use.
    */
-  ForEachFile(Binding binding) {
-    super(binding)
+  public ForEachFile(Binding binding) {
+    super(binding);
   }
 
   /**
    * ForEachFile constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  ForEachFile(String[] args) {
-    super(args)
+  public ForEachFile(String[] args) {
+    super(args);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  ForEachFile run() {
+  public ForEachFile run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
     // Set a flag to avoid double use of MPI in downstream commands.
-    System.setProperty("pj.use.mpi", "false")
+    System.setProperty("pj.use.mpi", "false");
 
-    script = getScript(unmatched.get(0))
+    script = getScript(unmatched.get(0));
     if (script != null) {
-      logger.info(format(" The %s will be run on each file.", script))
+      logger.info(format(" The %s will be run on each file.", script));
     } else {
-      logger.info(format(" %s was not recognized.", unmatched.get(0)))
-      return this
+      logger.info(format(" %s was not recognized.", unmatched.get(0)));
+      return this;
     }
 
-    Comm world = Comm.world()
-    int numProc = world.size()
-    int rank = world.rank()
+    Comm world = Comm.world();
+    int numProc = world.size();
+    int rank = world.rank();
 
     if (numProc > 1) {
-      logger.info(format(" Number of processes:  %d", numProc))
-      logger.info(format(" Rank of this process: %d", rank))
+      logger.info(format(" Number of processes:  %d", numProc));
+      logger.info(format(" Rank of this process: %d", rank));
     }
 
     // Remove the ForEachFile command.
-    unmatched.remove(0)
+    unmatched.remove(0);
 
     // Collect the files.
-    File cwd = new File(".")
-    files = []
-    cwd.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$regex/) {
-      files.add(it)
-    }
+    File cwd = new File(".");
+    files = FileUtils.traverseFiles(cwd, recurse, regex);
 
     if (!regex2.isEmpty()) {
-      twoFilesPerCommand = true
-      files2 = []
-      cwd.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$regex2/) {
-        files2.add(it)
-      }
+      twoFilesPerCommand = true;
+      files2 = FileUtils.traverseFiles(cwd, recurse, regex2);
     }
 
     // Sort the files.
-    Collections.sort(files)
+    Collections.sort(files);
     if (twoFilesPerCommand) {
       if (files.size() != files2.size()) {
-        logger.info(" The number of files matched by the two regular expressions do not agree.")
-        logger.info(" The number of files matched by the first regular expression: " + files.size())
+        logger.info(" The number of files matched by the two regular expressions do not agree.");
+        logger.info(" The number of files matched by the first regular expression: " + files.size());
         for (File file : files) {
-          logger.info("  File: " + file.getAbsolutePath())
+          logger.info("  File: " + file.getAbsolutePath());
         }
-        logger.info(" The number of files matched by the second regular expression: " + files2.size())
+        logger.info(" The number of files matched by the second regular expression: " + files2.size());
         for (File file : files2) {
-          logger.info("  File: " + file.getAbsolutePath())
+          logger.info("  File: " + file.getAbsolutePath());
         }
-        return this
+        return this;
       }
-      Collections.sort(files2)
+      Collections.sort(files2);
     }
 
     // Create the Parallel Java execution Schedule.
     try {
-      integerSchedule = IntegerSchedule.parse(schedule.toLowerCase())
-      logger.info(" Parallel Schedule: " + schedule)
+      integerSchedule = IntegerSchedule.parse(schedule.toLowerCase());
+      logger.info(" Parallel Schedule: " + schedule);
     } catch (Exception e) {
-      integerSchedule = IntegerSchedule.dynamic()
-      logger.info(" Parallel Schedule: Dynamic")
+      integerSchedule = IntegerSchedule.dynamic();
+      logger.info(" Parallel Schedule: Dynamic");
     }
 
-    // Create a HybridTeam and then execute the ForEachFileRegion
-    WorkerTeam workerTeam = new WorkerTeam(world)
-    workerTeam.execute(new ForEachFileRegion())
+    // Create a WorkerTeam and then execute the ForEachFileRegion
+    WorkerTeam workerTeam = new WorkerTeam(world);
+    try {
+      workerTeam.execute(new ForEachFileRegion());
+    } catch (Exception e) {
+      logger.severe("Error executing ForEachFileRegion: " + e.getMessage());
+    }
 
     // Clear the pj.use.mpi flag.
-    System.clearProperty("pj.use.mpi")
+    System.clearProperty("pj.use.mpi");
 
-    return this
+    return this;
   }
 
   /**
@@ -252,9 +261,9 @@ class ForEachFile extends AlgorithmsScript {
   private class ForEachFileRegion extends WorkerRegion {
 
     @Override
-    void run() throws Exception {
-      int numFiles = files.size()
-      execute(0, numFiles - 1, new ForEachFileLoop())
+    public void run() throws Exception {
+      int numFiles = files.size();
+      execute(0, numFiles - 1, new ForEachFileLoop());
     }
 
   }
@@ -264,78 +273,77 @@ class ForEachFile extends AlgorithmsScript {
    */
   private class ForEachFileLoop extends WorkerIntegerForLoop {
 
-
     @Override
-    IntegerSchedule schedule() {
-      return integerSchedule
+    public IntegerSchedule schedule() {
+      return integerSchedule;
     }
 
     @Override
-    void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) throws Exception {
       for (int i = lb; i <= ub; i++) {
-        File file = files.get(i)
+        File file = files.get(i);
         if (!file.exists()) {
-          logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()))
-          continue
+          logger.info(format(" Ignoring file that does not exist: %s", file.getAbsolutePath()));
+          continue;
         }
-        File dualTopologyFile = null
+        File dualTopologyFile = null;
         if (twoFilesPerCommand) {
-          dualTopologyFile = files2.get(i)
+          dualTopologyFile = files2.get(i);
           if (!dualTopologyFile.exists()) {
-            logger.info(format(" Ignoring dual topology file that does not exist: %s", dualTopologyFile.getAbsolutePath()))
-            continue
+            logger.info(format(" Ignoring dual topology file that does not exist: %s", dualTopologyFile.getAbsolutePath()));
+            continue;
           }
         }
 
-        String path = normalize(file.getAbsolutePath())
-        logger.info(format(" Current File: %s", path))
+        String path = normalize(file.getAbsolutePath());
+        logger.info(format(" Current File: %s", path));
 
-        String dualTopologyPath = null
+        String dualTopologyPath = null;
         if (twoFilesPerCommand) {
-          dualTopologyPath = normalize(dualTopologyFile.getAbsolutePath())
-          logger.info(format(" Current Dual Topology File: %s", dualTopologyPath))
+          dualTopologyPath = normalize(dualTopologyFile.getAbsolutePath());
+          logger.info(format(" Current Dual Topology File: %s", dualTopologyPath));
         }
 
-        List<String> commandArgs = new ArrayList<>()
+        List<String> commandArgs = new ArrayList<>();
         // Pass along the unmatched parameters
-        boolean foundFile = false
-        boolean found2File = false
+        boolean foundFile = false;
+        boolean found2File = false;
         for (String arg : unmatched) {
           if (arg.equalsIgnoreCase("FILE")) {
             // Replace FILE with the current file path.
-            commandArgs.add(path)
-            foundFile = true
+            commandArgs.add(path);
+            foundFile = true;
           } else if (twoFilesPerCommand && arg.equalsIgnoreCase("FILE2")) {
-            commandArgs.add(dualTopologyPath)
-            found2File = true
+            commandArgs.add(dualTopologyPath);
+            found2File = true;
           } else {
-            commandArgs.add(arg)
+            commandArgs.add(arg);
           }
         }
 
         if (!foundFile) {
           // Add the current file as the final argument.
-          commandArgs.add(path)
+          commandArgs.add(path);
         }
         if (twoFilesPerCommand && !found2File) {
           // Add the dual topology file as the final argument to a dual topology simulation.
-          commandArgs.add(dualTopologyPath)
+          commandArgs.add(dualTopologyPath);
         }
 
         // Create a Binding for command line arguments.
-        Binding binding = new Binding()
-        binding.setVariable("args", commandArgs)
+        Binding binding = new Binding();
+        binding.setVariable("args", commandArgs);
 
         // Create a new instance of the script and run it.
-        Script groovyScript = script.getDeclaredConstructor().newInstance()
-        groovyScript.setBinding(binding)
+        Script groovyScript = script.getDeclaredConstructor().newInstance();
+        groovyScript.setBinding(binding);
 
         try {
-          groovyScript.run()
+          groovyScript.run();
         } catch (Exception e) {
-          logger.info(format(" Exception for file: %s", path))
+          logger.info(format(" Exception for file: %s", path));
           if (twoFilesPerCommand) {
-            logger.info(format(" Dual topology file: %s", dualTopologyPath))
+            logger.info(format(" Dual topology file: %s", dualTopologyPath));
           }
           if (verbose) {
             logger.info(e.toString());
@@ -347,8 +355,8 @@ class ForEachFile extends AlgorithmsScript {
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return Collections.emptyList()
+  public List<Potential> getPotentials() {
+    return Collections.emptyList();
   }
 
 }

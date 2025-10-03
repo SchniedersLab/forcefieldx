@@ -70,7 +70,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * <br>
  * Usage:
  * <br>
- * ffxc test.LambdaGradient [options] &lt;filename [file2...]&gt;
+ * ffxc test.LambdaGradient [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Test potential energy derivatives with respect to Lambda.", name = "test.LambdaGradient")
 public class LambdaGradient extends PotentialScript {

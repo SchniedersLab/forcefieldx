@@ -55,7 +55,7 @@ import java.util.Map;
 
 /**
  * The PrmToProperty script converts a TINKER *.prm file to Java properties.
- * Usage: ffxc test.PrmToProperty <filename>
+ * Usage: ffxc test.PrmToProperty &lt;filename&gt;
  */
 @Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.",
         name = "test.PrmToProperty")

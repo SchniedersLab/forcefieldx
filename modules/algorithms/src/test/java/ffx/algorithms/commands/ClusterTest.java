@@ -35,74 +35,41 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
-import static org.junit.Assert.assertEquals;
-
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.misc.AlgorithmsTest;
-import java.util.Arrays;
-import java.util.Collection;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
-/** @author Hernan V Bernabe */
-@RunWith(Parameterized.class)
-public class DynamicsRESPANVETest extends AlgorithmsTest {
+/**
+ * Tests the Cluster command to assess clustering based on distances.
+ *
+ * @author Aaron J. Nessler
+ */
+public class ClusterTest extends AlgorithmsTest {
 
-  private String info;
-  private String filename;
-  private double startingTotalEnergy;
-  // Tight tolerance on energy conservation.
-  private double tolerance = 0.01;
+  /** Tests the Cluster script. */
+  @Test
+  public void testBaseCluster() {
+    // Set-up the input arguments for the Cluster script.
+    String filepath = getResourcePath("dist.txt");
+    String[] args = {"-a", "0", "-k", "10", filepath};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-  public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
-    this.info = info;
-    this.filename = filename;
-    this.startingTotalEnergy = startingTotalEnergy;
-  }
-
-  @Parameters
-  public static Collection<Object[]> data() {
-    return Arrays.asList(
-        new Object[][] {
-            {
-                "Acetamide RESPA NVE", // info
-                "acetamide_NVE.xyz", // filename
-                -25.2085 // startingTotalEnergy
-            }
-        });
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    algorithmsScript = cluster;
+    // TODO validate output.
   }
 
   @Test
-  public void testRESPANVE() {
-
-    // Set-up the input arguments for the script.
-    String[] args = {
-        "-n", "20",
-        "--dt", "0.5",
-        "-t", "298.15",
-        "-i", "RESPA",
-        "-b", "Adiabatic",
-        "-r", "0.001",
-        getResourcePath(filename)
-    };
+  public void testClusterHelp() {
+    // Set-up the input arguments for the Cluster script.
+    String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Construct and evaluate the script.
-    Dynamics dynamics = new Dynamics(binding).run();
-    algorithmsScript = dynamics;
-
-    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
-
-    // Assert that the final total energy is within the tolerance for the molecular dynamics
-    // trajectory
-    assertEquals(
-        info + "End total energy for RESPA integrator NVE",
-        startingTotalEnergy,
-        molDyn.getTotalEnergy(),
-        tolerance);
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    algorithmsScript = cluster;
   }
 }

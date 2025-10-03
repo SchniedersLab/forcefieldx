@@ -61,7 +61,7 @@ import static java.lang.String.format;
  * <br>
  * Usage:
  * <br>
- * ffxc test.SaveAsConstantPhPDB [options] <filename>
+ * ffxc test.SaveAsConstantPhPDB [options] &lt;filename&gt;
  */
 @Command(description = " Save a PDB file that includes all titrating tautomer hydrogen atoms.",
         name = "test.SaveAsConstantPhPDB")

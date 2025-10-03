@@ -69,9 +69,9 @@
             <argument>ffx.algorithms.commands.AnalyzeNEQ</argument>
             <argument>ffx.algorithms.commands.Anneal</argument>
             <argument>ffx.algorithms.commands.BAR</argument>
-            <argument>ffx.algorithms.groovy.Cluster</argument>
-            <argument>ffx.algorithms.groovy.Dynamics</argument>
-            <argument>ffx.algorithms.groovy.ForEachFile</argument>
+            <argument>ffx.algorithms.commands.Cluster</argument>
+            <argument>ffx.algorithms.commands.Dynamics</argument>
+            <argument>ffx.algorithms.commands.ForEachFile</argument>
             <argument>ffx.algorithms.groovy.GenZ</argument>
             <argument>ffx.algorithms.groovy.Histogram</argument>
             <argument>ffx.algorithms.groovy.ManyBody</argument>

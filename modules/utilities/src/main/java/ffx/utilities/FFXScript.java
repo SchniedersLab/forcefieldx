@@ -162,17 +162,17 @@ public abstract class FFXScript extends Script {
       script = loader.loadClass(pathName);
     } catch (ClassNotFoundException e) {
       // Next, try to load a script from the potential Groovy package.
-      pathName = "ffx.potential.groovy." + name;
+      pathName = "ffx.potential.commands." + name;
       try {
         script = loader.loadClass(pathName);
       } catch (ClassNotFoundException e2) {
         // Next, try to load a script from the potential Java commands package.
-        pathName = "ffx.potential.commands." + name;
+        pathName = "ffx.algorithms.groovy." + name;
         try {
           script = loader.loadClass(pathName);
         } catch (ClassNotFoundException e2b) {
           // Next, try to load a script from the algorithm Groovy package.
-          pathName = "ffx.algorithms.groovy." + name;
+          pathName = "ffx.algorithms.commands." + name;
           try {
             script = loader.loadClass(pathName);
           } catch (ClassNotFoundException e3) {

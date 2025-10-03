@@ -52,16 +52,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static ffx.utilities.FileUtils.traverseFiles;
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.io.FilenameUtils.normalize;
@@ -114,6 +111,7 @@ public class AnalyzeNEQ extends AlgorithmsScript {
 
   /**
    * AnalyzeNEQ Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public AnalyzeNEQ(Binding binding) {
@@ -122,6 +120,7 @@ public class AnalyzeNEQ extends AlgorithmsScript {
 
   /**
    * AnalyzeNEQ constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public AnalyzeNEQ(String[] args) {
@@ -198,31 +197,8 @@ public class AnalyzeNEQ extends AlgorithmsScript {
   }
 
   /**
-   * Traverse a directory to find files matching the given regex pattern.
-   * @param directory The directory to traverse.
-   * @param maxDepth Maximum depth to traverse.
-   * @param filePattern Regular expression pattern to match file names.
-   * @return List of matching files.
-   */
-  private List<File> traverseFiles(File directory, int maxDepth, String filePattern) {
-    List<File> matchingFiles = new ArrayList<>();
-    Pattern pattern = Pattern.compile(filePattern);
-
-    try (Stream<Path> paths = Files.walk(directory.toPath(), maxDepth)) {
-      matchingFiles = paths
-          .filter(Files::isRegularFile)
-          .filter(path -> pattern.matcher(path.getFileName().toString()).find())
-          .map(Path::toFile)
-          .collect(Collectors.toList());
-    } catch (IOException e) {
-      logger.warning(format("Error traversing directory %s: %s", directory.getAbsolutePath(), e.getMessage()));
-    }
-
-    return matchingFiles;
-  }
-
-  /**
    * Search the files for the regular expression and separate matching lines to get work values.
+   *
    * @param files - list of found files
    * @return works - double array with work values from files
    */

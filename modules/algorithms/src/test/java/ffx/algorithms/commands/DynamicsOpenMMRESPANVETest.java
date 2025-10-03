@@ -35,42 +35,82 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
+import static org.junit.Assert.assertEquals;
+
+import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.algorithms.misc.AlgorithmsTest;
+import java.util.Arrays;
+import java.util.Collection;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-/**
- * Tests the Cluster command to assess clustering based on distances.
- * TODO: add more tests with more parameters
- *
- * @author Aaron J. Nessler
- */
-public class ClusteringTest extends AlgorithmsTest {
+/** @author Hernan V Bernabe */
+@RunWith(Parameterized.class)
+public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
 
-  /** Tests the Cluster script. */
-  @Test
-  public void testBaseCluster() {
-    // Set-up the input arguments for the Cluster script.
-    String filepath = getResourcePath("dist.txt");
-    String[] args = {"-a", "0", "-k", "10", filepath};
-    binding.setVariable("args", args);
-    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+  private String info;
+  private String filename;
+  private double startingTotalEnergy;
+  private double totalEnergyTolerance = 5.0;
 
-    // Construct and evaluate the Cluster script.
-    Cluster cluster = new Cluster(binding).run();
-    algorithmsScript = cluster;
-    // TODO validate output.
+  public DynamicsOpenMMRESPANVETest(String info, String filename, double startingTotalEnergy) {
+    this.info = info;
+    this.filename = filename;
+    this.startingTotalEnergy = startingTotalEnergy;
+  }
+
+  @Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+            {
+                "System OpenMM RESPA NVE", // info
+                "waterbox_eq.xyz", // filename
+                -24936.9565 // startingTotalEnergy
+            }
+        });
+  }
+
+  @Before
+  public void before() {
+    System.setProperty("platform", "omm");
   }
 
   @Test
-  public void testClusterHelp() {
-    // Set-up the input arguments for the Cluster script.
-    String[] args = {"-h"};
+  public void testDynamicsOpenMMRESPANVE() {
+    if (!ffxOpenMM) {
+      return;
+    }
+
+    // Set-up the input arguments for the script.
+    String[] args = {
+        "-n", "10",
+        "-z", "1",
+        "-t", "298.15",
+        "-i", "RESPA",
+        "-b", "Adiabatic",
+        "-r", "0.001",
+        "--mdE", "OpenMM",
+        getResourcePath(filename)
+    };
     binding.setVariable("args", args);
 
-    // Construct and evaluate the Cluster script.
-    Cluster cluster = new Cluster(binding).run();
-    algorithmsScript = cluster;
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
+
+    MolecularDynamicsOpenMM molDyn = (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
+
+    // Assert that the end total energy is within the threshold for the dynamics trajectory.
+    assertEquals(
+        info + "End total energy for OpenMM RESPA integrator under the NVE ensemble",
+        startingTotalEnergy,
+        molDyn.getTotalEnergy(),
+        totalEnergyTolerance);
   }
 }

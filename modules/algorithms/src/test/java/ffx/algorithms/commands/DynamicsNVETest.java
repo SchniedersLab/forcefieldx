@@ -35,15 +35,14 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.misc.AlgorithmsTest;
 import java.util.Arrays;
 import java.util.Collection;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,17 +50,29 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Hernan V Bernabe */
 @RunWith(Parameterized.class)
-public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
+public class DynamicsNVETest extends AlgorithmsTest {
 
   private String info;
   private String filename;
   private double startingTotalEnergy;
-  private double totalEnergyTolerance = 5.0;
+  private double endKineticEnergy;
+  private double endPotentialEnergy;
+  private double endTotalEnergy;
+  private double tolerance = 0.1;
 
-  public DynamicsOpenMMRESPANVETest(String info, String filename, double startingTotalEnergy) {
+  public DynamicsNVETest(
+      String info,
+      String filename,
+      double startingTotalEnergy,
+      double endKineticEnergy,
+      double endPotentialEnergy,
+      double endTotalEnergy) {
     this.info = info;
     this.filename = filename;
     this.startingTotalEnergy = startingTotalEnergy;
+    this.endKineticEnergy = endKineticEnergy;
+    this.endPotentialEnergy = endPotentialEnergy;
+    this.endTotalEnergy = endTotalEnergy;
   }
 
   @Parameters
@@ -69,33 +80,37 @@ public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
     return Arrays.asList(
         new Object[][] {
             {
-                "System OpenMM RESPA NVE", // info
-                "waterbox_eq.xyz", // filename
-                -24936.9565 // startingTotalEnergy
+                "Acetamide Peptide NVE", // info
+                "acetamide_NVE.xyz", // filename
+                -25.1958, // startingTotalEnergy
+                4.5625, // endKineticEnergy
+                -29.8043, // endPotentialEnergy
+                -25.2418 // endTotalEnergy
             }
         });
   }
 
-  @Before
-  public void before() {
-    System.setProperty("platform", "omm");
+  @Test
+  public void testDynamicsHelp() {
+    // Set-up the input arguments for the script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the script.
+    Dynamics dynamics = new Dynamics(binding).run();
+    algorithmsScript = dynamics;
   }
 
   @Test
-  public void testDynamicsOpenMMRESPANVE() {
-    if (!ffxOpenMM) {
-      return;
-    }
+  public void testDynamicsNVE() {
 
     // Set-up the input arguments for the script.
     String[] args = {
         "-n", "10",
-        "-z", "1",
         "-t", "298.15",
-        "-i", "RESPA",
+        "-i", "VelocityVerlet",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "--mdE", "OpenMM",
         getResourcePath(filename)
     };
     binding.setVariable("args", args);
@@ -104,13 +119,15 @@ public class DynamicsOpenMMRESPANVETest extends AlgorithmsTest {
     Dynamics dynamics = new Dynamics(binding).run();
     algorithmsScript = dynamics;
 
-    MolecularDynamicsOpenMM molDyn = (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
+    MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-    // Assert that the end total energy is within the threshold for the dynamics trajectory.
+    // Assert that energy is conserved at the end of the dynamics trajectory.
     assertEquals(
-        info + "End total energy for OpenMM RESPA integrator under the NVE ensemble",
-        startingTotalEnergy,
-        molDyn.getTotalEnergy(),
-        totalEnergyTolerance);
+        info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+    assertEquals(
+        info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(),
+        tolerance);
+    assertEquals(
+        info + " Final total energy", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
   }
 }
