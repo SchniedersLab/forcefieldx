@@ -195,7 +195,8 @@ class GenZ extends AlgorithmsScript {
                 mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0), '--ch', mutatingChain)
             }
 
-            MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
+            ffx.algorithms.commands.MutatePDB mutatePDB
+                = new ffx.algorithms.commands.MutatePDB(mutatorBinding)
             mutatePDB.run()
             mutatedFileName = mutatorBinding.getProperty('versionFileName')
         }

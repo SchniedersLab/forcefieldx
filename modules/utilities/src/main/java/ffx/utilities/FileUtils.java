@@ -40,6 +40,7 @@ package ffx.utilities;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -145,5 +146,19 @@ public class FileUtils {
     }
 
     return matchingFiles;
+  }
+
+  /**
+   * Append content to a file.
+   *
+   * @param file    The file to append content to.
+   * @param content The content to append.
+   */
+  public static void append(File file, String content) {
+    try (FileWriter fw = new FileWriter(file, true)) {
+      fw.write(content);
+    } catch (IOException e) {
+      logger.warning(format(" Error appending %s to file %s\n " + e.getMessage(), content, file.getAbsolutePath()));
+    }
   }
 }

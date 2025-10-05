@@ -35,12 +35,12 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
-
-import static org.junit.Assert.assertEquals;
+package ffx.algorithms.commands;
 
 import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests CrystalMin and CrystalMin.groovy scripts for -e -I -f and -c flags.
@@ -50,7 +50,9 @@ import org.junit.Test;
  */
 public class MinimizeCrystalsTest extends AlgorithmsTest {
 
-  /** Tests convergence criteria flag of the CrystalMin class. */
+  /**
+   * Tests convergence criteria flag of the CrystalMin class.
+   */
   @Test
   public void testCrystalMinConvergenceCriteria() {
     // Set-up the input arguments for the script.
@@ -68,7 +70,9 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 
-  /** Tests the fractional flag of the CrystalMin class. */
+  /**
+   * Tests the fractional flag of the CrystalMin class.
+   */
   @Test
   public void testCrystalMinCoords() {
     // Set-up the input arguments for the script.
@@ -87,7 +91,9 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
   }
 
-  /** Tests the fractional flag of the CrystalMin class. */
+  /**
+   * Tests the fractional flag of the CrystalMin class.
+   */
   @Test
   public void testCrystalMinFractional() {
     // Set-up the input arguments for the script.
@@ -117,7 +123,9 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     algorithmsScript = xtalMin;
   }
 
-  /** Tests the iterations flag of the CrystalMin class. */
+  /**
+   * Tests the iterations flag of the CrystalMin class.
+   */
   @Test
   public void testCrystalMinIterations() {
     // Set-up the input arguments for the script.
