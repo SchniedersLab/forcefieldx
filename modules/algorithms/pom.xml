@@ -81,13 +81,13 @@
             <argument>ffx.algorithms.commands.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.commands.MutatePDB</argument>
             <argument>ffx.algorithms.groovy.PhDynamics</argument>
-            <argument>ffx.algorithms.groovy.SaveRotamers</argument>
+            <argument>ffx.algorithms.commands.SaveRotamers</argument>
             <argument>ffx.algorithms.groovy.Scheduler</argument>
-            <argument>ffx.algorithms.groovy.SortArc</argument>
-            <argument>ffx.algorithms.groovy.Superpose</argument>
-            <argument>ffx.algorithms.groovy.SuperposeCrystals</argument>
+            <argument>ffx.algorithms.commands.SortArc</argument>
+            <argument>ffx.algorithms.commands.Superpose</argument>
+            <argument>ffx.algorithms.commands.SuperposeCrystals</argument>
             <argument>ffx.algorithms.groovy.Thermodynamics</argument>
-            <argument>ffx.algorithms.groovy.TorsionScan</argument>
+            <argument>ffx.algorithms.commands.TorsionScan</argument>
             <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
             <argument>ffx.algorithms.groovy.test.CoformerBindingSearch</argument>
             <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
