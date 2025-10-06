@@ -71,7 +71,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv;
 
 /**
  * The Cluster script clusters structures utilizing RMSD.
- *
+ * <p>
  * The Iterative Hierarchical Clustering method was contributed by Yuya Kinoshita, Koki Nishimura and
  * Masatoshi Karashima from Takeda Pharmaceuticals.
  *
@@ -158,6 +158,7 @@ public class Cluster extends AlgorithmsScript {
 
   /**
    * Cluster constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public Cluster(Binding binding) {
@@ -166,6 +167,7 @@ public class Cluster extends AlgorithmsScript {
 
   /**
    * Cluster constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Cluster(String[] args) {
@@ -174,6 +176,7 @@ public class Cluster extends AlgorithmsScript {
 
   /**
    * Return the Clusters.
+   *
    * @return Returns the generated clusters.
    */
   public List<CentroidCluster<Conformation>> getClusterList() {
@@ -267,6 +270,7 @@ public class Cluster extends AlgorithmsScript {
 
   /**
    * Write out structures corresponding to the representative of each cluster.
+   *
    * @param repStructs Array list for index of representative structures.
    */
   private void writeStructures(List<Integer> repStructs) {

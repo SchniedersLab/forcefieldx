@@ -109,6 +109,7 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Minimize Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public Minimize(Binding binding) {
@@ -117,6 +118,7 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Minimize constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Minimize(String[] args) {
@@ -285,6 +287,7 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Get the list of energies recorded during minimization.
+   *
    * @return A List of Double energies, or null if minimization was not run.
    */
   public List<Double> getEnergyList() {
@@ -296,6 +299,7 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Get the final RMS gradient after minimization.
+   *
    * @return The final RMS gradient or NaN if minimization was not run.
    */
   public double getRMSGradient() {
@@ -307,6 +311,7 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Get the final energy after minimization.
+   *
    * @return The final energy or NaN if minimization was not run.
    */
   public double getEnergy() {

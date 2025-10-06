@@ -98,6 +98,7 @@ public class Anneal extends AlgorithmsScript {
 
   /**
    * Anneal Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public Anneal(Binding binding) {
@@ -106,6 +107,7 @@ public class Anneal extends AlgorithmsScript {
 
   /**
    * Anneal constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Anneal(String[] args) {
@@ -174,6 +176,7 @@ public class Anneal extends AlgorithmsScript {
 
   /**
    * Get the SimulatedAnnealing object.
+   *
    * @return The SimulatedAnnealing instance.
    */
   public SimulatedAnnealing getAnnealing() {

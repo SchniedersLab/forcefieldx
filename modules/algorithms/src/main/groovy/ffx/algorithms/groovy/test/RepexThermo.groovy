@@ -41,7 +41,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.RepexOSTOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.algorithms.groovy.Thermodynamics
+import ffx.algorithms.commands.Thermodynamics
 import ffx.algorithms.thermodynamics.HistogramData
 import ffx.algorithms.thermodynamics.LambdaData
 import ffx.algorithms.thermodynamics.MonteCarloOST

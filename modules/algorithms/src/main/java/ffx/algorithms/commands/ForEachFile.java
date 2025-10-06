@@ -63,13 +63,13 @@ import static org.apache.commons.io.FilenameUtils.normalize;
 
 /**
  * Run an FFX command on a series of files. Parallel Java across nodes is supported.
- *
+ * <p>
  * Recursion through the directory structure is supported to a supplied level using the
  * --recurse flag (0 only includes the current directory).
- *
+ * <p>
  * Files can be selected using a regular expression -- the default matches all
  * files (".*").
- *
+ * <p>
  * To control placement of the variable file on the command line, the "FILE" string can be used. If
  * present, it is replaced with the current file. If absent, the current file is last argument
  * to the FFX command.
@@ -158,6 +158,7 @@ public class ForEachFile extends AlgorithmsScript {
 
   /**
    * ForEachFile Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public ForEachFile(Binding binding) {
@@ -166,6 +167,7 @@ public class ForEachFile extends AlgorithmsScript {
 
   /**
    * ForEachFile constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public ForEachFile(String[] args) {

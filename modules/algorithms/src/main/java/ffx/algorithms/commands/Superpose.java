@@ -150,6 +150,7 @@ public class Superpose extends AlgorithmsScript {
 
   /**
    * Superpose Constructor.
+   *
    * @param binding Groovy Binding to use.
    */
   public Superpose(Binding binding) {
@@ -158,6 +159,7 @@ public class Superpose extends AlgorithmsScript {
 
   /**
    * Superpose constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Superpose(String[] args) {
@@ -310,14 +312,15 @@ public class Superpose extends AlgorithmsScript {
    * This method determines the starting and ending indices for secondary elements of the requested type based
    * on the user-supplied secondary structure restraint predictions. The Dill Group requires that secondary
    * elements have at least three consecutive residues to be considered a secondary element.
-   * @param ss A string of the secondary structure prediction.
-   * @param elementType Character indicating type of secondary element being searched (helix, coil, sheet).
+   *
+   * @param ss             A string of the secondary structure prediction.
+   * @param elementType    Character indicating type of secondary element being searched (helix, coil, sheet).
    * @param minNumResidues Integer minimum of consecutive secondary structure predictions
-   * to create a secondary element.
+   *                       to create a secondary element.
    * @return ArrayList<ArrayList<Integer> > Contains starting and ending residues for each secondary element.
    */
   static List<List<Integer>> extractSecondaryElement(String ss, String elementType,
-      int minNumResidues) {
+                                                     int minNumResidues) {
     // Will hold starting and ending indices for all found secondary elements of the requested type.
     List<List<Integer>> allElements = new ArrayList<>();
     // Track of the most recent index to have a character matching the requested elementType.

@@ -126,6 +126,7 @@ public class MutatePDB extends AlgorithmsScript {
 
   /**
    * MutatePDB Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public MutatePDB(Binding binding) {
@@ -134,6 +135,7 @@ public class MutatePDB extends AlgorithmsScript {
 
   /**
    * MutatePDB constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public MutatePDB(String[] args) {

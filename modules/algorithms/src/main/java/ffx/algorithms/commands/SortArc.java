@@ -66,7 +66,7 @@ import static java.lang.String.format;
  * <br>
  * Usage:
  * <br>
- * ffxc SortArc [options] &lt;structures1&gt &lt;structures2&gt;
+ * ffxc SortArc [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 
 @Command(description = " Unwind .ARC files for nWindows", name = "SortArc")
@@ -115,6 +115,7 @@ public class SortArc extends AlgorithmsScript {
 
   /**
    * Sets an optional Configuration with additional properties.
+   *
    * @param additionalProps
    */
   public void setProperties(CompositeConfiguration additionalProps) {
@@ -130,6 +131,7 @@ public class SortArc extends AlgorithmsScript {
 
   /**
    * SortArc Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public SortArc(Binding binding) {
@@ -138,6 +140,7 @@ public class SortArc extends AlgorithmsScript {
 
   /**
    * SortArc constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public SortArc(String[] args) {

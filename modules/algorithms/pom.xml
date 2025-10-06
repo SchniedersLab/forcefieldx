@@ -72,7 +72,7 @@
             <argument>ffx.algorithms.commands.Cluster</argument>
             <argument>ffx.algorithms.commands.Dynamics</argument>
             <argument>ffx.algorithms.commands.ForEachFile</argument>
-            <argument>ffx.algorithms.groovy.GenZ</argument>
+            <argument>ffx.algorithms.commands.GenZ</argument>
             <argument>ffx.algorithms.commands.Histogram</argument>
             <argument>ffx.algorithms.commands.ManyBody</argument>
             <argument>ffx.algorithms.commands.MBAR</argument>
@@ -82,11 +82,11 @@
             <argument>ffx.algorithms.commands.MutatePDB</argument>
             <argument>ffx.algorithms.groovy.PhDynamics</argument>
             <argument>ffx.algorithms.commands.SaveRotamers</argument>
-            <argument>ffx.algorithms.groovy.Scheduler</argument>
+            <argument>ffx.algorithms.commands.Scheduler</argument>
             <argument>ffx.algorithms.commands.SortArc</argument>
             <argument>ffx.algorithms.commands.Superpose</argument>
             <argument>ffx.algorithms.commands.SuperposeCrystals</argument>
-            <argument>ffx.algorithms.groovy.Thermodynamics</argument>
+            <argument>ffx.algorithms.commands.Thermodynamics</argument>
             <argument>ffx.algorithms.commands.TorsionScan</argument>
             <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
             <argument>ffx.algorithms.groovy.test.CoformerBindingSearch</argument>

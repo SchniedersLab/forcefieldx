@@ -148,6 +148,7 @@ public class MBAR extends AlgorithmsScript {
 
   /**
    * MBAR Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public MBAR(Binding binding) {
@@ -156,6 +157,7 @@ public class MBAR extends AlgorithmsScript {
 
   /**
    * MBAR constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public MBAR(String[] args) {

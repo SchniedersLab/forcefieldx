@@ -194,6 +194,7 @@ public class BAR extends AlgorithmsScript {
 
   /**
    * BAR Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public BAR(Binding binding) {
@@ -202,6 +203,7 @@ public class BAR extends AlgorithmsScript {
 
   /**
    * BAR constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public BAR(String[] args) {
@@ -210,6 +212,7 @@ public class BAR extends AlgorithmsScript {
 
   /**
    * Sets an optional Configuration with additional properties.
+   *
    * @param additionalProps Additional properties configuration.
    */
   public void setProperties(Configuration additionalProps) {
@@ -489,15 +492,15 @@ public class BAR extends AlgorithmsScript {
   /**
    * Read energy and volume values from BAR files. The first dimension of the energy arrays
    * corresponds to the state index. The second dimension corresponds to the snapshot index.
-   *
+   * <p>
    * The first dimension of each array should be allocated to the number of states prior
    * to calling this method.
    *
-   * @param barFilters The BAR filters to use.
-   * @param energyLow The energy of each snapshot in state L evaluated at L-dL.
-   * @param energyAt The energy of each snapshot in L evaluated at L.
-   * @param energyHigh The energy from state L evaluated at L+dL.
-   * @param volume The volume of each snapshot from state L.
+   * @param barFilters   The BAR filters to use.
+   * @param energyLow    The energy of each snapshot in state L evaluated at L-dL.
+   * @param energyAt     The energy of each snapshot in L evaluated at L.
+   * @param energyHigh   The energy from state L evaluated at L+dL.
+   * @param volume       The volume of each snapshot from state L.
    * @param temperatures The temperatures for each state.
    */
   void readBARFiles(BARFilter[] barFilters,
@@ -549,6 +552,7 @@ public class BAR extends AlgorithmsScript {
 
   /**
    * Obtain the Free Energy Difference reporter for this class.
+   *
    * @return The Free Energy Difference reporter.
    */
   public FreeEnergyDifferenceReporter getReporter() {

@@ -430,7 +430,7 @@ public class OpenMMSystem extends ffx.openmm.System {
    * @param targetTemp Target temperature in Kelvins.
    */
   public void addAndersenThermostatForce(double targetTemp) {
-    double collisionFreq = forceField.getDouble("COLLISION_FREQ", 0.1);
+    double collisionFreq = forceField.getDouble("COLLISION_FREQ", 1.0);
     addAndersenThermostatForce(targetTemp, collisionFreq);
   }
 

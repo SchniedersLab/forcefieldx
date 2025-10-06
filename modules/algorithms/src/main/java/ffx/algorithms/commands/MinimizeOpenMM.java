@@ -42,9 +42,8 @@ import ffx.algorithms.cli.MinimizeOptions;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.Platform;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.cli.AtomSelectionOptions;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -96,6 +95,7 @@ public class MinimizeOpenMM extends AlgorithmsScript {
 
   /**
    * MinimizeOpenMM Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public MinimizeOpenMM(Binding binding) {
@@ -104,6 +104,7 @@ public class MinimizeOpenMM extends AlgorithmsScript {
 
   /**
    * MinimizeOpenMM constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public MinimizeOpenMM(String[] args) {

@@ -115,6 +115,7 @@ public class Dynamics extends AlgorithmsScript {
 
   /**
    * Dynamics Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public Dynamics(Binding binding) {
@@ -123,6 +124,7 @@ public class Dynamics extends AlgorithmsScript {
 
   /**
    * Dynamics constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Dynamics(String[] args) {

@@ -1,4 +1,4 @@
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
 import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Assert;

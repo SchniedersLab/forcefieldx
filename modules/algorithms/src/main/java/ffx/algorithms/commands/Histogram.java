@@ -101,6 +101,7 @@ public class Histogram extends AlgorithmsScript {
 
   /**
    * Histogram Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public Histogram(Binding binding) {
@@ -109,6 +110,7 @@ public class Histogram extends AlgorithmsScript {
 
   /**
    * Histogram constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Histogram(String[] args) {

@@ -1049,7 +1049,7 @@
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.4</deploy.version>
     <enforcer.version>3.6.2</enforcer.version>
-    <exec.version>3.6.0</exec.version>
+    <exec.version>3.6.1</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1064,7 +1064,7 @@
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.4.2</jar.version>
     <jarsigner.version>3.1.0</jarsigner.version>
-    <javaparser.version>3.27.0</javaparser.version>
+    <javaparser.version>3.27.1</javaparser.version>
     <java3d.version>1.7.2</java3d.version>
     <javadoc.version>3.12.0</javadoc.version>
     <jakarta-xml.version>4.0.4</jakarta-xml.version>

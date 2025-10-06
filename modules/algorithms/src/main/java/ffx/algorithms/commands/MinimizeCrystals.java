@@ -102,17 +102,23 @@ public class MinimizeCrystals extends AlgorithmsScript {
       description = "Compute partial derivatives of the energy with respect to unit cell parameters.")
   private boolean tensor;
 
-  /** --et or --energyTolerance End minimization if new energy deviates less than this tolerance. */
+  /**
+   * --et or --energyTolerance End minimization if new energy deviates less than this tolerance.
+   */
   @Option(names = {"--et", "--energyTolerance"}, paramLabel = "1.0e-10", defaultValue = "1.0e-10",
       description = "End minimization if new energy deviates less than this tolerance.")
   private double tolerance;
 
-  /** --mi or --minimumIterations End minimization if fewer iterations were taken for both coordinate and lattice minimization. */
+  /**
+   * --mi or --minimumIterations End minimization if fewer iterations were taken for both coordinate and lattice minimization.
+   */
   @Option(names = {"--mi", "--minimumIterations"}, paramLabel = "-1", defaultValue = "-1",
       description = "End minimization if it starts to cycle between small coordinate and lattice parameter fluctuations.")
   private int minIterations;
 
-  /** --cy or --cycles End minimization if it has cycled between lattice parameters and coordinates more than this value. */
+  /**
+   * --cy or --cycles End minimization if it has cycled between lattice parameters and coordinates more than this value.
+   */
   @Option(names = {"--cy", "--cycles"}, paramLabel = "-1", defaultValue = "-1",
       description = "End minimization if it has cycled between lattice parameters and coordinates more than this value.")
   private int cycles;
@@ -135,6 +141,7 @@ public class MinimizeCrystals extends AlgorithmsScript {
 
   /**
    * CrystalMin Constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
   public MinimizeCrystals(Binding binding) {
@@ -143,6 +150,7 @@ public class MinimizeCrystals extends AlgorithmsScript {
 
   /**
    * MinimizeCrystals constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public MinimizeCrystals(String[] args) {
