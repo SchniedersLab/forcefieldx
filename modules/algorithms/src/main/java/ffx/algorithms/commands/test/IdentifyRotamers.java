@@ -35,19 +35,22 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test
+package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.ManyBodyOptions
-import ffx.algorithms.optimize.RotamerOptimization
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.ManyBodyOptions;
+import ffx.algorithms.optimize.RotamerOptimization;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.RotamerLibrary;
+import groovy.lang.Binding;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+import java.util.List;
+
+import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
 
 /**
  * The IdentifyRotamers script attempts to identify which rotamer each Residue in the system is in.
@@ -57,78 +60,78 @@ import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
  * ffxc test.IdentifyRotamers [options] &lt;filename&gt;
  */
 @Command(description = " Identify the rotamers a system is in.", name = "test.IdentifyRotamers")
-class IdentifyRotamers extends AlgorithmsScript {
+public class IdentifyRotamers extends AlgorithmsScript {
 
   @Mixin
-  ManyBodyOptions mbOpts
+  private ManyBodyOptions mbOpts;
 
   /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+      description = "The atomic coordinate file in PDB or XYZ format.")
+  private List<String> filenames;
 
   /**
    * IdentifyRotamers Constructor.
    */
-  IdentifyRotamers() {
-    super()
+  public IdentifyRotamers() {
+    super();
   }
 
   /**
    * IdentifyRotamers Constructor.
    * @param binding The Groovy Binding to use.
    */
-  IdentifyRotamers(Binding binding) {
-    super(binding)
+  public IdentifyRotamers(Binding binding) {
+    super(binding);
   }
 
   /**
    * IdentifyRotamers constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  IdentifyRotamers(String[] args) {
-    super(args)
+  public IdentifyRotamers(String[] args) {
+    super(args);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  IdentifyRotamers run() {
+  public IdentifyRotamers run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    mbOpts.setOriginalCoordinates(false)
+    mbOpts.setOriginalCoordinates(false);
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
+    if (filenames != null && !filenames.isEmpty()) {
+      MolecularAssembly[] assemblies = new MolecularAssembly[]{algorithmFunctions.open(filenames.get(0))};
+      activeAssembly = assemblies[0];
       if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-        renameAtomsToPDBStandard(activeAssembly)
+        renameAtomsToPDBStandard(activeAssembly);
       }
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     }
 
-    activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+    activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
     RotamerOptimization rotopt = new RotamerOptimization(
-        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
-    mbOpts.initRotamerOptimization(rotopt, activeAssembly)
+        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
+    mbOpts.initRotamerOptimization(rotopt, activeAssembly);
 
-    List<Residue> residues = rotopt.getResidues()
-    RotamerLibrary rLib = mbOpts.getRotamerLibrary()
+    List<Residue> residues = rotopt.getResidues();
+    RotamerLibrary rLib = mbOpts.getRotamerLibrary(false);
 
     for (Residue residue : residues) {
-      RotamerLibrary.RotamerGuess guess = rLib.guessRotamer(residue)
-      logger.info(guess.toString())
+      RotamerLibrary.RotamerGuess guess = rLib.guessRotamer(residue);
+      logger.info(guess.toString());
     }
 
-    return this
+    return this;
   }
 }

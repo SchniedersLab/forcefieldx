@@ -80,7 +80,6 @@
             <argument>ffx.algorithms.commands.MinimizeCrystals</argument>
             <argument>ffx.algorithms.commands.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.commands.MutatePDB</argument>
-            <argument>ffx.algorithms.groovy.PhDynamics</argument>
             <argument>ffx.algorithms.commands.SaveRotamers</argument>
             <argument>ffx.algorithms.commands.Scheduler</argument>
             <argument>ffx.algorithms.commands.SortArc</argument>
@@ -88,15 +87,18 @@
             <argument>ffx.algorithms.commands.SuperposeCrystals</argument>
             <argument>ffx.algorithms.commands.Thermodynamics</argument>
             <argument>ffx.algorithms.commands.TorsionScan</argument>
-            <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
-            <argument>ffx.algorithms.groovy.test.CoformerBindingSearch</argument>
-            <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
-            <argument>ffx.algorithms.groovy.test.CrystalSearch</argument>
-            <argument>ffx.algorithms.groovy.test.IdentifyRotamers</argument>
-            <argument>ffx.algorithms.groovy.test.ManyBodyPhScan</argument>
-            <argument>ffx.algorithms.groovy.test.MinimizePh</argument>
+            <argument>ffx.algorithms.commands.test.ApplyTorsions</argument>
+            <argument>ffx.algorithms.commands.test.CoformerBindingSearch</argument>
+            <argument>ffx.algorithms.commands.test.CreateRotamers</argument>
+            <argument>ffx.algorithms.commands.test.CrystalSearch</argument>
+            <argument>ffx.algorithms.commands.test.FindRestraints</argument>
+            <argument>ffx.algorithms.commands.test.Freefix</argument>
+            <argument>ffx.algorithms.commands.test.IdentifyRotamers</argument>
+            <argument>ffx.algorithms.commands.test.ManyBodyPhScan</argument>
+            <argument>ffx.algorithms.commands.test.MinimizePh</argument>
             <argument>ffx.algorithms.groovy.test.MostBar</argument>
             <argument>ffx.algorithms.groovy.test.OSTGradient</argument>
+            <argument>ffx.algorithms.commands.test.PhDynamics</argument>
             <argument>ffx.algorithms.groovy.test.RaoBlackwellEstimator</argument>
             <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
             <argument>ffx.algorithms.groovy.test.SortXPH</argument>

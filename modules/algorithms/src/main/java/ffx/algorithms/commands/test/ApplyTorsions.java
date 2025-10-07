@@ -35,18 +35,22 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy.test
+package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.misc.GenerateRotamers
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Option
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.misc.GenerateRotamers;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.RotamerLibrary;
+import groovy.lang.Binding;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * The ApplyTorsions script is used to apply a custom set of torsions to a side chain.
@@ -59,121 +63,126 @@ import picocli.CommandLine.Parameters
  * @author Michael Schnieders
  */
 @Command(description = " Apply a set of torsions to a system.", name = "test.ApplyTorsions")
-class ApplyTorsions extends AlgorithmsScript {
+public class ApplyTorsions extends AlgorithmsScript {
 
   /**
    * -c or --chain selects the chain name to use.
    */
-  @Option(names = ["-c", "--chain"], paramLabel = ' ',
-      description = 'Single character chain name (default is \" \").')
-  String chain = " "
+  @Option(names = {"-c", "--chain"}, paramLabel = " ",
+      description = "Single character chain name (default is \" \").")
+  private String chain = " ";
   /**
    * -r or --resID selects the residue to apply torsions to.
    */
-  @Option(names = ["-r", "--resID"], paramLabel = '1',
-      description = 'Residue number.')
-  int resID = 1
+  @Option(names = {"-r", "--resID"}, paramLabel = "1",
+      description = "Residue number.")
+  private int resID = 1;
   /**
    * -t or --torsionSets is a variable-length, colon-delimited set of comma-separated torsion sets; e.g. colons separate rotamers, commas individual values. Should not be left as final argument, as then it attempts to include the filename.
    */
-  @Option(names = ["-t", "--torsionSets"], paramLabel = '0,0:180,0', arity = "1..*", split = ':',
-      description = 'Torsion sets to apply (torsions comma-separated, sets colon-separated).')
-  String[] torSets = null
+  @Option(names = {"-t", "--torsionSets"}, paramLabel = "0,0:180,0", arity = "1..*", split = ":",
+      description = "Torsion sets to apply (torsions comma-separated, sets colon-separated).")
+  private String[] torSets = null;
   /**
    * -n or --nChi is the number of torsions available to this side chain; unspecified torsions are filled with 0.
    */
-  @Option(names = ["-n", "--nChi"], paramLabel = '1',
-      description = 'Number of torsions (unspecified torsions are filled with 0).')
-  int nChi = 1
+  @Option(names = {"-n", "--nChi"}, paramLabel = "1",
+      description = "Number of torsions (unspecified torsions are filled with 0).")
+  private int nChi = 1;
   /**
    * -v or --videoFile is the name of the file to print torsion snapshots to; defaults to filename_rots.pdb
    */
-  @Option(names = ["-v", "--videoFile"],
-      description = 'File to print torsion snapshots to.')
-  String vidFileName = null
+  @Option(names = {"-v", "--videoFile"},
+      description = "File to print torsion snapshots to.")
+  private String vidFileName = null;
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1", paramLabel = "files",
       description = "XYZ or PDB input files.")
-  private List<String> filenames
+  private List<String> filenames = null;
 
   /**
    * ApplyTorsions Constructor.
    */
-  ApplyTorsions() {
-    super()
+  public ApplyTorsions() {
+    super();
   }
 
   /**
    * ApplyTorsions Constructor.
    * @param binding The Groovy Binding to use.
    */
-  ApplyTorsions(Binding binding) {
-    super(binding)
+  public ApplyTorsions(Binding binding) {
+    super(binding);
   }
 
   /**
    * ApplyTorsions constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  ApplyTorsions(String[] args) {
-    super(args)
+  public ApplyTorsions(String[] args) {
+    super(args);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  ApplyTorsions run() {
+  public ApplyTorsions run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
+    String modelFilename;
+    if (filenames != null && !filenames.isEmpty()) {
+      MolecularAssembly[] assemblies = new MolecularAssembly[]{algorithmFunctions.open(filenames.get(0))};
+      activeAssembly = assemblies[0];
+      modelFilename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      modelFilename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    String newName = FilenameUtils.getBaseName(modelFilename)
+    String newName = FilenameUtils.getBaseName(modelFilename);
 
-    String videoFile
+    String videoFile;
     if (vidFileName != null) {
-      videoFile = vidFileName
+      videoFile = vidFileName;
     } else {
-      videoFile = newName + "_rots.pdb"
+      videoFile = newName + "_rots.pdb";
     }
 
-    File outFile = new File(newName + ".rotout.tmp")
-    outFile.deleteOnExit()
+    File outFile = new File(newName + ".rotout.tmp");
+    outFile.deleteOnExit();
 
-    logger.info("\n Saving torsions for residue number " + resID + " of chain " + chain + ".")
+    logger.info("\n Saving torsions for residue number " + resID + " of chain " + chain + ".");
 
-    RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains())
-    Polymer polymer = activeAssembly.getChain(chain)
+    RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains());
+    Polymer polymer = activeAssembly.getChain(chain);
     if (polymer == null) {
-      logger.info(" Polymer + " + chain + " does not exist.")
-      return this
+      logger.info(" Polymer " + chain + " does not exist.");
+      return this;
     }
-    Residue residue = polymer.getResidue(resID)
+    Residue residue = polymer.getResidue(resID);
     if (residue == null) {
-      logger.info(" Residue + " + resID + " does not exist.")
-      return this
+      logger.info(" Residue " + resID + " does not exist.");
+      return this;
     }
 
     GenerateRotamers generateRotamers = new GenerateRotamers(activeAssembly,
-        activeAssembly.getPotentialEnergy(), residue, outFile, nChi, algorithmListener)
-    generateRotamers.setVideo(videoFile)
-    generateRotamers.applyAndSaveTorsions(torSets)
+        activeAssembly.getPotentialEnergy(), residue, outFile, nChi, algorithmListener);
+    generateRotamers.setVideo(videoFile);
 
-    return this
+    if (torSets != null) {
+      generateRotamers.applyAndSaveTorsions(torSets);
+    } else {
+      logger.info(" No torsion sets specified. Use -t option to apply torsions.");
+    }
+
+    return this;
   }
 }

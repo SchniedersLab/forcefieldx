@@ -569,6 +569,15 @@ public class PhReplicaExchange implements Terminatable {
   }
 
   /**
+   * Get the pH scale array.
+   *
+   * @return the pH scale array
+   */
+  public double[] getPhScale() {
+    return pHScale;
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>This should be implemented as a blocking interrupt; when the method returns the <code>
