@@ -83,47 +83,47 @@ import static java.lang.String.format;
 public class Thermodynamics extends AlgorithmsScript {
 
   @Mixin
-  private DynamicsOptions dynamicsOptions;
+  public DynamicsOptions dynamicsOptions;
 
   @Mixin
-  private BarostatOptions barostatOptions;
+  public BarostatOptions barostatOptions;
 
   @Mixin
-  private RandomUnitCellOptions randomSymopOptions;
+  public RandomUnitCellOptions randomSymopOptions;
 
   @Mixin
-  private AlchemicalOptions alchemicalOptions;
+  public AlchemicalOptions alchemicalOptions;
 
   @Mixin
-  private TopologyOptions topologyOptions;
+  public TopologyOptions topologyOptions;
 
   @Mixin
-  private WriteoutOptions writeoutOptions;
+  public WriteoutOptions writeoutOptions;
 
   @Mixin
-  private ThermodynamicsOptions thermodynamicsOptions;
+  public ThermodynamicsOptions thermodynamicsOptions;
 
   @Mixin
-  private OSTOptions ostOptions;
+  public OSTOptions ostOptions;
 
   @Mixin
-  private LambdaParticleOptions lambdaParticleOptions;
+  public LambdaParticleOptions lambdaParticleOptions;
 
   @Mixin
-  private MultiDynamicsOptions multiDynamicsOptions;
+  public MultiDynamicsOptions multiDynamicsOptions;
 
   /**
    * -v or --verbose  Log additional information (primarily for MC-OST).
    */
   @Option(names = {"-v", "--verbose"},
       description = "Log additional information (primarily for MC-OST).")
-  private boolean verbose = false;
+  public boolean verbose = false;
 
   /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "The atomic coordinate file in PDB or XYZ format.")
-  private List<String> filenames = null;
+  public List<String> filenames = null;
 
   public MolecularAssembly[] topologies;
   public CrystalPotential potential;

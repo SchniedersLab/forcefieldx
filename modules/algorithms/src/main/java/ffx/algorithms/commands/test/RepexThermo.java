@@ -1,0 +1,341 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
+package ffx.algorithms.commands.test;
+
+import edu.rit.pj.Comm;
+import ffx.algorithms.cli.RepexOSTOptions;
+import ffx.algorithms.cli.ThermodynamicsOptions;
+import ffx.algorithms.commands.Thermodynamics;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.thermodynamics.HistogramData;
+import ffx.algorithms.thermodynamics.LambdaData;
+import ffx.algorithms.thermodynamics.MonteCarloOST;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
+import ffx.algorithms.thermodynamics.RepExOST;
+import ffx.crystal.CrystalPotential;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.LambdaInterface;
+import groovy.lang.Binding;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * The RepexThermo command uses the Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.
+ * <br>
+ * Usage:
+ * <br>
+ * ffxc test.RepexThermo [options] &lt;filename&gt [file2...];
+ */
+@Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.", name = "test.RepexThermo")
+public class RepexThermo extends Thermodynamics {
+
+  @Mixin
+  private RepexOSTOptions repex;
+
+  private RepExOST repExOST;
+  private CrystalPotential finalPotential;
+
+  /**
+   * RepexThermo Constructor.
+   */
+  public RepexThermo() {
+    super();
+  }
+
+  /**
+   * RepexThermo Constructor.
+   *
+   * @param binding The Groovy Binding to use.
+   */
+  public RepexThermo(Binding binding) {
+    super(binding);
+  }
+
+  /**
+   * RepexThermo constructor that sets the command line arguments.
+   *
+   * @param args Command line arguments.
+   */
+  public RepexThermo(String[] args) {
+    super(args);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public RepexThermo run() {
+
+    // Begin boilerplate "make a topology" code.
+    if (!init()) {
+      return this;
+    }
+
+    boolean fromActive;
+    List<String> arguments;
+    if (filenames != null && !filenames.isEmpty()) {
+      arguments = filenames;
+      fromActive = false;
+    } else {
+      logger.warning(" Untested: use of active assembly instead of provided filenames!");
+      MolecularAssembly mola = algorithmFunctions.getActiveAssembly();
+      if (mola == null) {
+        logger.info(helpString());
+        return this;
+      }
+      arguments = Collections.singletonList(mola.getFile().getName());
+      fromActive = true;
+    }
+
+    int nArgs = arguments.size();
+
+    topologies = new MolecularAssembly[nArgs];
+
+    // Determine the number of topologies to be read and allocate the array.
+    int numTopologies = topologyOptions.getNumberOfTopologies(filenames);
+    int threadsPer = topologyOptions.getThreadsPerTopology(numTopologies);
+    topologies = new MolecularAssembly[numTopologies];
+
+    // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+    /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
+    The Minimize script, for example, may be running on a single, unscaled physical topology. */
+    boolean lambdaTerm = (
+        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore());
+
+    if (lambdaTerm) {
+      System.setProperty("lambdaterm", "true");
+    }
+
+    // Relative free energies via the DualTopologyEnergy class require different
+    // default OST parameters than absolute free energies.
+    if (nArgs >= 2) {
+      // Ligand vapor electrostatics are not calculated. This cancels when the
+      // difference between protein and water environments is considered.
+      System.setProperty("ligand-vapor-elec", "false");
+    }
+
+    List<MolecularAssembly> topologyList = new ArrayList<>(nArgs);
+
+    Comm world = Comm.world();
+    int size = world.size();
+    if (size < 2) {
+      logger.severe(" RepexThermo requires multiple processes, found only one!");
+    }
+    int rank = (size > 1) ? world.rank() : 0;
+
+    double initLambda = alchemicalOptions.getInitialLambda(size, rank);
+
+    // Segment of code for MultiDynamics and OST.
+    List<File> structureFiles = arguments.stream()
+        .map(fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath()))
+        .collect(Collectors.toList());
+
+    File firstStructure = structureFiles.get(0);
+    String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst("\\.[^.]+$", "");
+
+    // SEGMENT DIFFERS FROM THERMODYNAMICS.
+
+    String filepath = FilenameUtils.getFullPath(filePathNoExtension);
+    String fileBase = FilenameUtils.getBaseName(FilenameUtils.getName(filePathNoExtension));
+    String rankDirName = String.format("%s%d", filepath, rank);
+    File rankDirectory = new File(rankDirName);
+    if (!rankDirectory.exists()) {
+      rankDirectory.mkdir();
+    }
+    rankDirName = rankDirName + File.separator;
+    String withRankName = rankDirName + fileBase;
+    File lambdaRestart = new File(withRankName + ".lam");
+
+    boolean lamExists = lambdaRestart.exists();
+
+    // Read in files.
+    logger.info(String.format(" Initializing %d topologies...", nArgs));
+    if (fromActive) {
+      topologyList.add(alchemicalOptions.processFile(topologyOptions, activeAssembly, 0));
+    } else {
+      for (int i = 0; i < nArgs; i++) {
+        topologyList.add(multiDynamicsOptions.openFile(algorithmFunctions, topologyOptions,
+            threadsPer, arguments.get(i), i, alchemicalOptions, structureFiles.get(i), rank));
+      }
+    }
+
+    MolecularAssembly[] topologies =
+        topologyList.toArray(new MolecularAssembly[0]);
+
+    StringBuilder sb = new StringBuilder("\n Running ");
+    switch (thermodynamicsOptions.getAlgorithm()) {
+      case OST:
+        sb.append("Orthogonal Space Tempering");
+        break;
+      default:
+        throw new IllegalArgumentException(
+            " RepexThermo currently does not support fixed-lambda alchemy!");
+    }
+    sb.append(" with histogram replica exchange for ");
+
+    potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, sb);
+
+    LambdaInterface linter = (LambdaInterface) potential;
+    logger.info(sb.toString());
+
+    double[] x = new double[potential.getNumberOfVariables()];
+    potential.getCoordinates(x);
+    linter.setLambda(initLambda);
+    potential.energy(x, true);
+
+    if (nArgs == 1) {
+      randomSymopOptions.randomize(topologies[0]);
+    }
+
+    multiDynamicsOptions.distribute(topologies, potential, algorithmFunctions, rank, size);
+
+    boolean isMC = ostOptions.isMonteCarlo();
+    boolean twoStep = ostOptions.isTwoStep();
+    MonteCarloOST mcOST = null;
+    MolecularDynamics md;
+
+    if (thermodynamicsOptions.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
+      File firstHisto = new File(filepath + "0" + File.separator + fileBase + ".his");
+
+      orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, firstHisto, topologies[0],
+          additionalProperties, dynamicsOptions, thermodynamicsOptions, lambdaParticleOptions,
+          algorithmListener,
+          false);
+      finalPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
+          dynamicsOptions, barostatOptions);
+
+      if (isMC) {
+        mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
+            verbose, null, algorithmListener);
+        md = mcOST.getMD();
+      } else {
+        md = ostOptions.assembleMolecularDynamics(topologies, finalPotential, dynamicsOptions, algorithmListener);
+      }
+      if (!lamExists) {
+        if (finalPotential instanceof LambdaInterface) {
+          ((LambdaInterface) finalPotential).setLambda(initLambda);
+        } else {
+          orthogonalSpaceTempering.setLambda(initLambda);
+        }
+      }
+
+      CompositeConfiguration allProperties = new CompositeConfiguration(
+          topologies[0].getProperties());
+      if (additionalProperties != null) {
+        allProperties.addConfiguration(additionalProperties);
+      }
+
+      for (int i = 1; i < size; i++) {
+        File histogramFile = new File(filepath + i + File.separator + fileBase + ".his");
+        File lambdaFile = new File(filepath + i + File.separator + fileBase + ".lam");
+        HistogramData histogramData = HistogramData.readHistogram(histogramFile);
+        LambdaData lambdaData = LambdaData.readLambdaData(lambdaFile);
+        orthogonalSpaceTempering.addHistogram(histogramData, lambdaData);
+      }
+
+      if (isMC) {
+        try {
+          repExOST = RepExOST.repexMC(orthogonalSpaceTempering, mcOST, dynamicsOptions, ostOptions,
+              topologies[0].getProperties(), writeoutOptions.getFileType(), twoStep,
+              repex.getRepexFrequency());
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        try {
+          repExOST = RepExOST.repexMD(orthogonalSpaceTempering, md, dynamicsOptions, ostOptions,
+              topologies[0].getProperties(), writeoutOptions.getFileType(), repex.getRepexFrequency());
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      long eSteps = thermodynamicsOptions.getEquilSteps();
+      if (eSteps > 0) {
+        try {
+          repExOST.mainLoop(eSteps, true);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      try {
+        repExOST.mainLoop(dynamicsOptions.getNumSteps(), false);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      logger.severe(" RepexThermo currently does not support fixed-lambda alchemy!");
+    }
+
+    logger.info(" " + thermodynamicsOptions.getAlgorithm() + " with Histogram Replica Exchange Done.");
+
+    return this;
+  }
+
+  @Override
+  public OrthogonalSpaceTempering getOST() {
+    return repExOST == null ? null : repExOST.getOST();
+  }
+
+  @Override
+  public CrystalPotential getPotential() {
+    return (repExOST == null) ? potential : repExOST.getOST();
+  }
+
+  @Override
+  public List<Potential> getPotentials() {
+    if (repExOST == null) {
+      if (potential == null) {
+        return Collections.emptyList();
+      } else {
+        return Collections.singletonList(potential);
+      }
+    }
+    return Collections.singletonList((Potential) repExOST.getOST());
+  }
+}

@@ -35,9 +35,9 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.commands;
 
-import ffx.algorithms.groovy.test.OSTGradient;
+import ffx.algorithms.commands.test.OSTGradient;
 import ffx.algorithms.misc.AlgorithmsTest;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.Test;
@@ -52,7 +52,9 @@ import static java.lang.Math.random;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.junit.Assert.assertEquals;
 
-/** @author Michael J. Schnieders */
+/**
+ * @author Michael J. Schnieders
+ */
 @RunWith(Parameterized.class)
 public class OSTGradientTest extends AlgorithmsTest {
 
@@ -70,7 +72,7 @@ public class OSTGradientTest extends AlgorithmsTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
+        new Object[][]{
             {
                 "C23 OST Test", // info
                 "compound23.xyz", // filename
