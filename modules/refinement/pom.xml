@@ -84,13 +84,13 @@
           <arguments>
             <argument>-f</argument>
             <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
-            <argument>ffx.realspace.groovy.Anneal</argument>
-            <argument>ffx.realspace.groovy.Dynamics</argument>
-            <argument>ffx.realspace.groovy.GenZ</argument>
-            <argument>ffx.realspace.groovy.ManyBody</argument>
-            <argument>ffx.realspace.groovy.Minimize</argument>
-            <argument>ffx.realspace.groovy.test.Alchemical</argument>
-            <argument>ffx.realspace.groovy.test.LambdaGradient</argument>
+            <argument>ffx.realspace.commands.Anneal</argument>
+            <argument>ffx.realspace.commands.Dynamics</argument>
+            <argument>ffx.realspace.commands.GenZ</argument>
+            <argument>ffx.realspace.commands.ManyBody</argument>
+            <argument>ffx.realspace.commands.Minimize</argument>
+            <argument>ffx.realspace.commands.test.Alchemical</argument>
+            <argument>ffx.realspace.commands.test.LambdaGradient</argument>
             <argument>ffx.xray.groovy.Anneal</argument>
             <argument>ffx.xray.groovy.AverageMTZ</argument>
             <argument>ffx.xray.groovy.CIFtoMTZ</argument>

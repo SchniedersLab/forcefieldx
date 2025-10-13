@@ -35,23 +35,28 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.realspace.groovy
+package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.WriteoutOptions
-import ffx.realspace.cli.RealSpaceOptions
-import ffx.xray.RefinementEnergy
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
+import ffx.potential.cli.WriteoutOptions;
+import ffx.realspace.cli.RealSpaceOptions;
+import ffx.xray.RefinementEnergy;
+import groovy.lang.Binding;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import static ffx.utilities.TinkerUtils.version
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+import static ffx.utilities.TinkerUtils.version;
 
 /**
  * The Real Space Dynamics script.
@@ -61,108 +66,109 @@ import static ffx.utilities.TinkerUtils.version
  * ffxc realspace.Dynamics [options] &lt;filename&gt;
  */
 @Command(description = " Molecular dynamics on a Real Space target.", name = "realspace.Dynamics")
-class Dynamics extends AlgorithmsScript {
+public class Dynamics extends AlgorithmsScript {
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  private AtomSelectionOptions atomSelectionOptions;
 
   @Mixin
-  DynamicsOptions dynamicsOptions
+  private DynamicsOptions dynamicsOptions;
 
   @Mixin
-  RealSpaceOptions realSpaceOptions
+  private RealSpaceOptions realSpaceOptions;
 
   @Mixin
-  WriteoutOptions writeoutOptions
+  private WriteoutOptions writeoutOptions;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-  private List<String> filenames
-  private RefinementEnergy refinementEnergy
+  private List<String> filenames;
+
+  private RefinementEnergy refinementEnergy;
 
   /**
    * Dynamics constructor.
    */
-  Dynamics() {
-    super()
+  public Dynamics() {
+    super();
   }
 
   /**
    * Dynamics constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Dynamics(String[] args) {
-    super(args)
+  public Dynamics(String[] args) {
+    super(args);
   }
 
   /**
    * Dynamics constructor.
    * @param binding The Groovy Binding to use.
    */
-  Dynamics(Binding binding) {
-    super(binding)
+  public Dynamics(Binding binding) {
+    super(binding);
   }
 
   @Override
-  Dynamics run() {
+  public Dynamics run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    dynamicsOptions.init()
+    dynamicsOptions.init();
 
-    String filename
-    if (filenames != null && filenames.size() > 0) {
-      activeAssembly = algorithmFunctions.open(filenames.get(0))
-      filename = filenames.get(0)
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0));
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      filename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
-    MolecularAssembly[] molecularAssemblies = [activeAssembly] as MolecularAssembly[]
+    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[]{activeAssembly};
 
-    logger.info("\n Running Real Space Dynamics on " + filename)
+    logger.info("\n Running Real Space Dynamics on " + filename);
 
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    atomSelectionOptions.setActiveAtoms(activeAssembly);
 
     // Create the refinement target.
-    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies);
 
     // Beginning force field energy.
-    algorithmFunctions.energy(activeAssembly)
+    algorithmFunctions.energy(activeAssembly);
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
     if (!dyn.exists()) {
-      dyn = null
+      dyn = null;
     }
 
-    MolecularDynamics molDyn = dynamicsOptions.
-        getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
-    refinementEnergy.setThermostat(molDyn.getThermostat())
+    MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener);
+    refinementEnergy.setThermostat(molDyn.getThermostat());
 
     // Reset velocities (ignored if a restart file is given)
-    boolean initVelocities = true
-    molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-            dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
+    boolean initVelocities = true;
+    molDyn.dynamic(dynamicsOptions.getSteps(), dynamicsOptions.getDt(), dynamicsOptions.getReport(),
+        dynamicsOptions.getWrite(), dynamicsOptions.getTemperature(), initVelocities, dyn);
 
     // Final target function.
-    algorithmFunctions.energy(activeAssembly)
+    algorithmFunctions.energy(activeAssembly);
 
-    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"))
-    algorithmFunctions.saveAsPDB(molecularAssemblies, file)
+    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"));
+    algorithmFunctions.saveAsPDB(molecularAssemblies, file);
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return refinementEnergy == null ? Collections.emptyList() :
-            Collections.singletonList((Potential) refinementEnergy)
+  public List<Potential> getPotentials() {
+    return refinementEnergy == null ? 
+        Collections.emptyList() : 
+        Collections.singletonList((Potential) refinementEnergy);
   }
 }

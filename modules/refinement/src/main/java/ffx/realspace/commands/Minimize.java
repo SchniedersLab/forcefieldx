@@ -35,22 +35,26 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.realspace.groovy
+package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.MinimizeOptions
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.realspace.RealSpaceData
-import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
-import ffx.xray.RefinementMinimize
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.MinimizeOptions;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.cli.RealSpaceOptions;
+import ffx.realspace.parsers.RealSpaceFile;
+import ffx.xray.RefinementMinimize;
+import groovy.lang.Binding;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import static ffx.utilities.TinkerUtils.version
+import java.io.File;
+import java.util.List;
+
+import static ffx.utilities.TinkerUtils.version;
 
 /**
  * The Real Space Minimize script.
@@ -60,121 +64,120 @@ import static ffx.utilities.TinkerUtils.version
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Minimization on a Real Space target.", name = "realspace.Minimize")
-class Minimize extends AlgorithmsScript {
+public class Minimize extends AlgorithmsScript {
 
   @Mixin
-  MinimizeOptions minimizeOptions
+  private MinimizeOptions minimizeOptions;
 
   @Mixin
-  RealSpaceOptions realSpaceOptions
+  private RealSpaceOptions realSpaceOptions;
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  private AtomSelectionOptions atomSelectionOptions;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-  private List<String> filenames
-  private MolecularAssembly[] molecularAssemblies
-  private RealSpaceData realspaceData
+  private List<String> filenames;
+  private MolecularAssembly[] molecularAssemblies;
+  private RealSpaceData realspaceData;
 
   /**
    * Minimize constructor.
    */
-  Minimize() {
-    super()
+  public Minimize() {
+    super();
   }
 
   /**
    * Minimize constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Minimize(String[] args) {
-    super(args)
+  public Minimize(String[] args) {
+    super(args);
   }
 
   /**
    * Minimize constructor.
    * @param binding The Groovy Binding to use.
    */
-  Minimize(Binding binding) {
-    super(binding)
+  public Minimize(Binding binding) {
+    super(binding);
   }
 
   @Override
-  Minimize run() {
+  public Minimize run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    String filename
-    if (filenames != null && filenames.size() > 0) {
-      activeAssembly = algorithmFunctions.open(filenames.get(0))
-      filename = filenames.get(0)
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0));
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      filename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
-    molecularAssemblies = [activeAssembly] as MolecularAssembly[]
+    molecularAssemblies = new MolecularAssembly[]{activeAssembly};
 
-    logger.info("\n Running Real Space Minimization on " + filename)
+    logger.info("\n Running Real Space Minimization on " + filename);
 
     // Set atom (in)active selections.
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    atomSelectionOptions.setActiveAtoms(activeAssembly);
 
     RealSpaceFile[] mapFiles =
-        realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0])
+        realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0]);
     realspaceData = new RealSpaceData(molecularAssemblies, activeAssembly.getProperties(),
-        activeAssembly.getParallelTeam(), mapFiles)
+        activeAssembly.getParallelTeam(), mapFiles);
 
     // Beginning force field energy.
-    algorithmFunctions.energy(activeAssembly)
+    algorithmFunctions.energy(activeAssembly);
 
     RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
-        realSpaceOptions.refinementMode)
+        realSpaceOptions.refinementMode);
 
-    int nBFGS = minimizeOptions.getNBFGS()
-    double eps = minimizeOptions.getEps()
-    int maxiter = minimizeOptions.getIterations()
+    int nBFGS = minimizeOptions.getNBFGS();
+    double eps = minimizeOptions.getEps();
+    int maxiter = minimizeOptions.getIterations();
     if (eps < 0.0) {
-      eps = 1.0
+      eps = 1.0;
     }
 
     if (maxiter < Integer.MAX_VALUE) {
       logger.info(String.
           format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps,
-              maxiter))
+              maxiter));
     } else {
-      logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
+      logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
     }
 
-    refinementMinimize.minimize(nBFGS, eps, maxiter)
+    refinementMinimize.minimize(nBFGS, eps, maxiter);
 
     // Final target function.
-    algorithmFunctions.energy(activeAssembly)
+    algorithmFunctions.energy(activeAssembly);
 
-    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"))
-    algorithmFunctions.saveAsPDB(molecularAssemblies, file)
+    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"));
+    algorithmFunctions.saveAsPDB(molecularAssemblies, file);
 
-    return this
+    return this;
   }
 
   @Override
-  boolean destroyPotentials() {
-    boolean destroyedSuccess = true
+  public boolean destroyPotentials() {
+    boolean destroyedSuccess = true;
     if (molecularAssemblies != null) {
       if (realspaceData != null) {
-        destroyedSuccess = realspaceData.destroy()
+        destroyedSuccess = realspaceData.destroy();
       }
       for (int i = 1; i < molecularAssemblies.length; i++) {
-        destroyedSuccess = destroyedSuccess && molecularAssemblies[i].getPotentialEnergy().destroy()
+        destroyedSuccess = destroyedSuccess && molecularAssemblies[i].getPotentialEnergy().destroy();
       }
     }
-    return destroyedSuccess
+    return destroyedSuccess;
   }
 }
-

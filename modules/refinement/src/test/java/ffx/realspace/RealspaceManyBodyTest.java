@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.realspace;
 
-import static org.junit.Assert.assertEquals;
-
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.numerics.Potential;
-import ffx.realspace.groovy.ManyBody;
-import java.util.List;
+import ffx.realspace.commands.ManyBody;
 import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests Real-space many-body optimization.

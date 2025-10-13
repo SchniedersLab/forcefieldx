@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
  * <br>
  * Usage:
  * <br>
- * ffxc test.RepexThermo [options] &lt;filename&gt [file2...];
+ * ffxc test.RepexThermo [options] &lt;filename&gt; [file2...];
  */
 @Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.", name = "test.RepexThermo")
 public class RepexThermo extends Thermodynamics {

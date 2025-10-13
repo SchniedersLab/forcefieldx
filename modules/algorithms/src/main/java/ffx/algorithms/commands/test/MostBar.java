@@ -78,7 +78,7 @@ import static org.apache.commons.math3.util.FastMath.round;
  * <br>
  * Usage:
  * <br>
- * ffxc test.MostBar [options] &lt;structures1&gt
+ * ffxc test.MostBar [options] &lt;structures1&gt;
  */
 @Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "test.MostBar")
 public class MostBar extends AlgorithmsScript {

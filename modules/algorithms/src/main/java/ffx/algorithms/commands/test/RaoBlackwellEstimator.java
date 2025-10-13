@@ -63,7 +63,7 @@ import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
  * <br>
  * Usage: Umod calculation for model compounds
  * <br>
- * ffxc test.RaoBlackwellEstimator [options] &lt;filename&gt [file2...];
+ * ffxc test.RaoBlackwellEstimator [options] &lt;filename&gt; [file2...];
  */
 @Command(description = " Use the Rao-Blackwell estimator to get a free energy difference for residues in a CpHMD system.", name = "test.RaoBlackwellEstimator")
 public class RaoBlackwellEstimator extends AlgorithmsScript {

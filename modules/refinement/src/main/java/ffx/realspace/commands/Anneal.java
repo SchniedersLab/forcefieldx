@@ -35,22 +35,27 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.realspace.groovy
+package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.AnnealOptions
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.WriteoutOptions
-import ffx.realspace.cli.RealSpaceOptions
-import ffx.xray.RefinementEnergy
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AnnealOptions;
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
+import ffx.potential.cli.WriteoutOptions;
+import ffx.realspace.cli.RealSpaceOptions;
+import ffx.xray.RefinementEnergy;
+import groovy.lang.Binding;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The Real Space Annealing script.
@@ -60,122 +65,119 @@ import picocli.CommandLine.Parameters
  * ffxc realspace.Anneal [options] &lt;filename&gt;
  */
 @Command(description = " Simulated annealing on a Real Space target.", name = "realspace.Anneal")
-class Anneal extends AlgorithmsScript {
+public class Anneal extends AlgorithmsScript {
 
   @Mixin
-  AnnealOptions annealOptions
+  private AnnealOptions annealOptions;
 
   @Mixin
-  AtomSelectionOptions atomSelectionOptions
+  private AtomSelectionOptions atomSelectionOptions;
 
   @Mixin
-  DynamicsOptions dynamicsOptions
+  private DynamicsOptions dynamicsOptions;
 
   @Mixin
-  RealSpaceOptions realSpaceOptions
+  private RealSpaceOptions realSpaceOptions;
 
   @Mixin
-  WriteoutOptions writeoutOptions
+  private WriteoutOptions writeoutOptions;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-  private List<String> filenames
+  private List<String> filenames;
 
-  private RefinementEnergy refinementEnergy
+  private RefinementEnergy refinementEnergy;
 
   /**
    * Anneal constructor.
    */
-  Anneal() {
-    super()
+  public Anneal() {
+    super();
   }
 
   /**
    * Anneal constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Anneal(String[] args) {
-    super(args)
+  public Anneal(String[] args) {
+    super(args);
   }
 
   /**
    * Anneal constructor.
    * @param binding The Groovy Binding to use.
    */
-  Anneal(Binding binding) {
-    super(binding)
+  public Anneal(Binding binding) {
+    super(binding);
   }
 
   @Override
-  Anneal run() {
+  public Anneal run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    dynamicsOptions.init()
+    dynamicsOptions.init();
 
-    String filename
-    if (filenames != null && filenames.size() > 0) {
-      activeAssembly = algorithmFunctions.open(filenames.get(0))
-      filename = filenames.get(0)
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
+      activeAssembly = algorithmFunctions.open(filenames.get(0));
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      filename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
-    MolecularAssembly[] molecularAssemblies = [activeAssembly] as MolecularAssembly[]
+    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[]{activeAssembly};
 
     logger.info(
-        "\n Running simulated annealing on on real-space target including " + filename + "\n")
+        "\n Running simulated annealing on on real-space target including " + filename + "\n");
 
     // Set atom (in)active selections.
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    atomSelectionOptions.setActiveAtoms(activeAssembly);
 
     // Create the refinement target.
-    Potential potential = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+    Potential potential = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies);
 
     // Beginning force field energy.
-    algorithmFunctions.energy(activeAssembly)
+    algorithmFunctions.energy(activeAssembly);
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
     if (!dyn.exists()) {
-      dyn = null
+      dyn = null;
     }
 
     SimulatedAnnealing simulatedAnnealing =
         annealOptions.createAnnealer(dynamicsOptions, activeAssembly,
-            potential, activeAssembly.getProperties(),
-            algorithmListener, dyn)
+            potential, algorithmListener, dyn);
 
-    simulatedAnnealing.setPrintInterval(dynamicsOptions.report)
-    simulatedAnnealing.setSaveFrequency(dynamicsOptions.write)
-    simulatedAnnealing.setRestartFrequency(dynamicsOptions.checkpoint)
-    simulatedAnnealing.setTrajectorySteps(dynamicsOptions.trajSteps)
+    simulatedAnnealing.setPrintInterval(dynamicsOptions.getReport());
+    simulatedAnnealing.setSaveFrequency(dynamicsOptions.getWrite());
+    simulatedAnnealing.setRestartFrequency(dynamicsOptions.getCheckpoint());
+    simulatedAnnealing.setTrajectorySteps(dynamicsOptions.getTrajSteps());
 
-    simulatedAnnealing.anneal()
+    simulatedAnnealing.anneal();
 
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(filename))
+      baseDir = new File(FilenameUtils.getFullPath(filename));
     }
 
-    String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String dirName = baseDir.toString() + File.separator;
+    String fileName = FilenameUtils.getName(filename);
+    fileName = FilenameUtils.removeExtension(fileName);
 
-    writeoutOptions.
-        saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
+    writeoutOptions.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return
-    refinementEnergy == null ? Collections.emptyList() : Collections.singletonList((Potential) refinementEnergy)
+  public List<Potential> getPotentials() {
+    return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList((Potential) refinementEnergy);
   }
 }
