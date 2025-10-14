@@ -166,13 +166,13 @@ public abstract class FFXScript extends Script {
         script = loader.loadClass(pathName);
       } catch (ClassNotFoundException e2) {
         // Next, try to load a script from the algorithms commands package.
-        pathName = "ffx.algorithms.groovy." + name;
+        pathName = "ffx.algorithms.commands." + name;
         try {
           script = loader.loadClass(pathName);
         } catch (ClassNotFoundException e2b) {
           if (name.startsWith("xray.")) {
             // Finally, try to load a script from the refinement package.
-            pathName = "ffx.xray.groovy." + name.replaceAll("xray.", "");
+            pathName = "ffx.xray.commands." + name.replaceAll("xray.", "");
           } else if (name.startsWith("realspace.")) {
             pathName = "ffx.realspace.commands." + name.replaceAll("realspace.", "");
           } else {
@@ -242,7 +242,7 @@ public abstract class FFXScript extends Script {
           className = className.replace("ffx.potential.commands.", "");
           className = className.replace("ffx.algorithms.commands.", "");
           className = className.replace("ffx.realspace.commands", "realspace");
-          className = className.replace("ffx.xray.groovy", "xray");
+          className = className.replace("ffx.xray.commands", "xray");
           if (className.toUpperCase().contains("TEST")) {
             testScripts.add(className);
           } else {
