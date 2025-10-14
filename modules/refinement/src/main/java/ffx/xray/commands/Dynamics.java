@@ -35,25 +35,27 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.WriteoutOptions
-import ffx.xray.DiffractionData
-import ffx.xray.RefinementEnergy
-import ffx.xray.cli.XrayOptions
-import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.WriteoutOptions;
+import ffx.xray.DiffractionData;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.cli.XrayOptions;
+import groovy.lang.Binding;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.removeExtension
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The X-ray Dynamics script.
@@ -63,112 +65,112 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * ffxc xray.Dynamics [options] &lt;filename&gt;
  */
 @Command(description = " Run Dynamics on an X-ray target.", name = "xray.Dynamics")
-class Dynamics extends AlgorithmsScript {
+public class Dynamics extends AlgorithmsScript {
 
   @Mixin
-  XrayOptions xrayOptions
+  private XrayOptions xrayOptions;
 
   @Mixin
-  DynamicsOptions dynamicsOptions
+  private DynamicsOptions dynamicsOptions;
 
   @Mixin
-  WriteoutOptions writeoutOptions
+  private WriteoutOptions writeoutOptions;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-  private List<String> filenames
-  private RefinementEnergy refinementEnergy
+  private List<String> filenames;
+  private RefinementEnergy refinementEnergy;
 
   /**
    * Dynamics constructor.
    */
-  Dynamics() {
-    super()
+  public Dynamics() {
+    super();
   }
 
   /**
    * Dynamics constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Dynamics(String[] args) {
-    super(args)
+  public Dynamics(String[] args) {
+    super(args);
   }
 
   /**
    * Dynamics constructor.
    * @param binding The Groovy Binding to use.
    */
-  Dynamics(Binding binding) {
-    super(binding)
+  public Dynamics(Binding binding) {
+    super(binding);
   }
 
   @Override
-  Dynamics run() {
+  public Dynamics run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    dynamicsOptions.init()
-    xrayOptions.init()
+    dynamicsOptions.init();
+    xrayOptions.init();
 
-    String filename
-    MolecularAssembly[] molecularAssemblies
-    if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      filename = filenames.get(0)
+    String filename;
+    MolecularAssembly[] molecularAssemblies;
+    if (filenames != null && !filenames.isEmpty()) {
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      activeAssembly = molecularAssemblies[0];
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      molecularAssemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = new MolecularAssembly[]{activeAssembly};
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    logger.info("\n Running xray.Dynamics on " + filename)
+    logger.info("\n Running xray.Dynamics on " + filename);
 
     // Load parsed X-ray properties.
-    CompositeConfiguration properties = molecularAssemblies[0].getProperties()
-    xrayOptions.setProperties(parseResult, properties)
+    CompositeConfiguration properties = molecularAssemblies[0].getProperties();
+    xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
-    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
-    algorithmFunctions.energy(molecularAssemblies)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData);
+    algorithmFunctions.energy(molecularAssemblies);
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
     if (!dyn.exists()) {
-      dyn = null
+      dyn = null;
     }
 
     MolecularDynamics molecularDynamics =
-        dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
-    refinementEnergy.setThermostat(molecularDynamics.getThermostat())
-    boolean initVelocities = true
-    molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-        dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
+        dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener);
+    refinementEnergy.setThermostat(molecularDynamics.getThermostat());
+    boolean initVelocities = true;
+    molecularDynamics.dynamic(dynamicsOptions.getSteps(), dynamicsOptions.getDt(), dynamicsOptions.getReport(),
+        dynamicsOptions.getWrite(), dynamicsOptions.getTemperature(), initVelocities, dyn);
 
     // Print the final refinement statistics.
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
 
     // Print the final energy of each conformer.
-    algorithmFunctions.energy(molecularAssemblies)
+    algorithmFunctions.energy(molecularAssemblies);
 
-    logger.info(" ")
-    diffractionData.writeModel(removeExtension(filename) + ".pdb")
-    diffractionData.writeData(removeExtension(filename) + ".mtz")
+    logger.info(" ");
+    diffractionData.writeModel(FilenameUtils.removeExtension(filename) + ".pdb");
+    diffractionData.writeData(FilenameUtils.removeExtension(filename) + ".mtz");
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
+  public List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList((Potential) refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy);
   }
 }

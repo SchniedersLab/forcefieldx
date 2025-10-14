@@ -36,35 +36,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.gmavenplus</groupId>
-        <artifactId>gmavenplus-plugin</artifactId>
-        <configuration>
-          <targetBytecode>21</targetBytecode>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>addSources</goal>
-              <goal>addTestSources</goal>
-              <goal>generateStubs</goal>
-              <goal>compile</goal>
-              <goal>generateTestStubs</goal>
-              <goal>compileTests</goal>
-              <goal>removeStubs</goal>
-              <goal>removeTestStubs</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>${groovy-all.version}</version>
-            <type>pom</type>
-          </dependency>
-        </dependencies>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
@@ -91,21 +62,21 @@
             <argument>ffx.realspace.commands.Minimize</argument>
             <argument>ffx.realspace.commands.test.Alchemical</argument>
             <argument>ffx.realspace.commands.test.LambdaGradient</argument>
-            <argument>ffx.xray.groovy.Anneal</argument>
-            <argument>ffx.xray.groovy.AverageMTZ</argument>
-            <argument>ffx.xray.groovy.CIFtoMTZ</argument>
-            <argument>ffx.xray.groovy.ComputeFc</argument>
-            <argument>ffx.xray.groovy.Deuterate</argument>
-            <argument>ffx.xray.groovy.Dynamics</argument>
-            <argument>ffx.xray.groovy.GenZ</argument>
-            <argument>ffx.xray.groovy.ManyBody</argument>
-            <argument>ffx.xray.groovy.Minimize</argument>
-            <argument>ffx.xray.groovy.ModelvsData</argument>
-            <argument>ffx.xray.groovy.MTZInfo</argument>
-            <argument>ffx.xray.groovy.SaveConformerPDB</argument>
-            <argument>ffx.xray.groovy.Timer</argument>
-            <argument>ffx.xray.groovy.test.Alchemical</argument>
-            <argument>ffx.xray.groovy.test.LambdaGradient</argument>
+            <argument>ffx.xray.commands.Anneal</argument>
+            <argument>ffx.xray.commands.AverageMTZ</argument>
+            <argument>ffx.xray.commands.CIFtoMTZ</argument>
+            <argument>ffx.xray.commands.ComputeFc</argument>
+            <argument>ffx.xray.commands.Deuterate</argument>
+            <argument>ffx.xray.commands.Dynamics</argument>
+            <argument>ffx.xray.commands.GenZ</argument>
+            <argument>ffx.xray.commands.ManyBody</argument>
+            <argument>ffx.xray.commands.Minimize</argument>
+            <argument>ffx.xray.commands.ModelvsData</argument>
+            <argument>ffx.xray.commands.MTZInfo</argument>
+            <argument>ffx.xray.commands.SaveConformerPDB</argument>
+            <argument>ffx.xray.commands.Timer</argument>
+            <argument>ffx.xray.commands.test.Alchemical</argument>
+            <argument>ffx.xray.commands.test.LambdaGradient</argument>
           </arguments>
         </configuration>
         <dependencies>
@@ -116,54 +87,6 @@
             <type>jar</type>
           </dependency>
         </dependencies>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <inherited>false</inherited>
-        <executions>
-          <execution>
-            <id>copy-groovy-scripts</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <resources>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
-                  <targetPath>xray</targetPath>
-                </resource>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
-                  <targetPath>realspace</targetPath>
-                </resource>
-              </resources>
-              <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/../../groovy</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-groovy-scripts-website</id>
-            <phase>site</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <resources>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
-                  <targetPath>xray</targetPath>
-                </resource>
-                <resource>
-                  <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
-                  <targetPath>realspace</targetPath>
-                </resource>
-              </resources>
-              <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

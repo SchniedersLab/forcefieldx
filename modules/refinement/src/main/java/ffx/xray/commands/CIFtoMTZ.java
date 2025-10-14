@@ -35,24 +35,29 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.crystal.Crystal
-import ffx.crystal.ReflectionList
-import ffx.crystal.Resolution
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.xray.DiffractionRefinementData
-import ffx.xray.parsers.CIFFilter
-import ffx.xray.parsers.MTZWriter
-import ffx.xray.parsers.MTZWriter.MTZType
-import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.crystal.Crystal;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.xray.DiffractionRefinementData;
+import ffx.xray.parsers.CIFFilter;
+import ffx.xray.parsers.MTZWriter;
+import ffx.xray.parsers.MTZWriter.MTZType;
+import groovy.lang.Binding;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
-import java.util.stream.Collectors
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * The CIF2MTZ script saves a CIF file to MTZ format.
@@ -62,98 +67,99 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * ffxc xray.CIF2MTZ &lt;filename&gt;
  */
 @Command(description = " Convert a CIF file to MTZ format.", name = "xray.CIFtoMTZ")
-class CIFtoMTZ extends AlgorithmsScript {
+public class CIFtoMTZ extends AlgorithmsScript {
 
   /**
    * A CIF filename.
    */
   @Parameters(arity = "2", paramLabel = "file", description = "A PDB file and a CIF diffraction file.")
-  private ArrayList<String> filenames = null
+  private List<String> filenames = null;
 
-  private MolecularAssembly[] molecularAssemblies
-  private DiffractionRefinementData refinementData
+  private MolecularAssembly[] molecularAssemblies;
+  private DiffractionRefinementData refinementData;
 
   /**
    * CIF2MTZ constructor.
    */
-  CIFtoMTZ() {
-    super()
+  public CIFtoMTZ() {
+    super();
   }
 
   /**
    * CIF2MTZ constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  CIFtoMTZ(String[] args) {
-    super(args)
+  public CIFtoMTZ(String[] args) {
+    super(args);
   }
 
   /**
    * CIF2MTZ constructor.
    * @param binding The Groovy Binding to use.
    */
-  CIFtoMTZ(Binding binding) {
-    super(binding)
+  public CIFtoMTZ(Binding binding) {
+    super(binding);
   }
 
   /**
    * Execute the script.
    */
   @Override
-  CIFtoMTZ run() {
+  public CIFtoMTZ run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    String pdb = filenames.get(0)
-    String cif = filenames.get(1)
+    String pdb = filenames.get(0);
+    String cif = filenames.get(1);
 
-    logger.info("\n Running CIF2MTZ on " + cif)
+    logger.info("\n Running CIF2MTZ on " + cif);
 
     // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-    molecularAssemblies = algorithmFunctions.openAll(pdb)
+    molecularAssemblies = algorithmFunctions.openAll(pdb);
 
-    CIFFilter cifFilter = new CIFFilter()
+    CIFFilter cifFilter = new CIFFilter();
     ReflectionList reflectionlist =
-        cifFilter.getReflectionList(new File(cif), molecularAssemblies[0].getProperties())
+        cifFilter.getReflectionList(new File(cif), molecularAssemblies[0].getProperties());
 
     if (reflectionlist == null) {
-      println(" Using crystal information from the PDB file to generate MTZ file.")
+      System.out.println(" Using crystal information from the PDB file to generate MTZ file.");
 
-      Crystal crystal = molecularAssemblies[0].getCrystal().getUnitCell()
-      double res = cifFilter.getResolution(new File(cif), crystal)
+      Crystal crystal = molecularAssemblies[0].getCrystal().getUnitCell();
+      double res = cifFilter.getResolution(new File(cif), crystal);
       if (res < 0.0) {
-        println(" Resolution could not be determined from the PDB and CIF files.")
-        return this
+        System.out.println(" Resolution could not be determined from the PDB and CIF files.");
+        return this;
       }
 
-      Resolution resolution = new Resolution(res)
+      Resolution resolution = new Resolution(res);
       reflectionlist = new ReflectionList(crystal, resolution,
-          molecularAssemblies[0].getProperties())
+          molecularAssemblies[0].getProperties());
     }
 
     refinementData = new DiffractionRefinementData(molecularAssemblies[0].getProperties(),
-        reflectionlist)
+        reflectionlist);
     cifFilter.readFile(new File(cif), reflectionlist, refinementData,
-        molecularAssemblies[0].getProperties())
+        molecularAssemblies[0].getProperties());
 
     MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementData,
-        removeExtension(cif) + ".mtz", MTZType.DATAONLY)
-    mtzwriter.write()
+        removeExtension(cif) + ".mtz", MTZType.DATAONLY);
+    mtzwriter.write();
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
+  public List<Potential> getPotentials() {
     if (molecularAssemblies == null) {
-      return new ArrayList<Potential>()
+      return new ArrayList<>();
     } else {
-      return Arrays.stream(molecularAssemblies).filter {a -> a != null
-      }.map {a -> a.getPotentialEnergy()
-      }.filter {e -> e != null
-      }.collect(Collectors.toList())
+      return Arrays.stream(molecularAssemblies)
+          .filter(a -> a != null)
+          .map(a -> a.getPotentialEnergy())
+          .filter(e -> e != null)
+          .collect(Collectors.toList());
     }
   }
 }

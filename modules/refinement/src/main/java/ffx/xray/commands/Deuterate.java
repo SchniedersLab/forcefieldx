@@ -35,18 +35,23 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.MSNode
-import ffx.potential.bonded.Molecule
-import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import groovy.lang.Binding;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
-import static org.apache.commons.io.FilenameUtils.removeExtension
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * Deuterate changes exchangeable hydrogen atoms to deuterium atoms for a PDB file.
@@ -56,92 +61,92 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * ffxc xray.Deuterate &lt;pdbfile1&gt;
  */
 @Command(description = " Deuterate exchangable hydrogen of the PDB model.", name = "xray.Deuterate")
-class Deuterate extends AlgorithmsScript {
+public class Deuterate extends AlgorithmsScript {
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-  private List<String> filenames
+  private List<String> filenames;
 
   /**
    * Deuterate constructor.
    */
-  Deuterate() {
-    super()
+  public Deuterate() {
+    super();
   }
 
   /**
    * Deuterate constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  Deuterate(String[] args) {
-    super(args)
+  public Deuterate(String[] args) {
+    super(args);
   }
 
   /**
    * Deuterate constructor.
    * @param binding The Groovy Binding to use.
    */
-  Deuterate(Binding binding) {
-    super(binding)
+  public Deuterate(Binding binding) {
+    super(binding);
   }
 
   /**
    * Execute the script.
    */
   @Override
-  Deuterate run() {
+  public Deuterate run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    MolecularAssembly[] molecularAssemblies
-    String filename
-    if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      filename = filenames.get(0)
+    MolecularAssembly[] molecularAssemblies;
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      activeAssembly = molecularAssemblies[0];
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      molecularAssemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = new MolecularAssembly[]{activeAssembly};
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    logger.info("\n Running xray.Deuterate on " + filename)
+    logger.info("\n Running xray.Deuterate on " + filename);
 
     for (int i = 0; i < molecularAssemblies.length; i++) {
-      Atom[] atoms = molecularAssemblies[i].getAtomArray()
+      Atom[] atoms = molecularAssemblies[i].getAtomArray();
       for (Atom a : atoms) {
         if (a.getAtomicNumber() == 1) {
-          Atom b = a.getBonds().get(0).get1_2(a)
+          Atom b = a.getBonds().get(0).get1_2(a);
 
           // Criteria for converting H to D
           if (b.getAtomicNumber() == 7
               || b.getAtomicNumber() == 8) {
-            String name = a.getName().replaceFirst("H", "D")
-            a.setName(name)
+            String name = a.getName().replaceFirst("H", "D");
+            a.setName(name);
           }
         }
       }
 
-      List<MSNode> water = molecularAssemblies[i].getWater()
+      List<MSNode> water = molecularAssemblies[i].getWater();
       for (MSNode node : water) {
-        Molecule wat = (Molecule) node
-        wat.setName("DOD")
+        Molecule wat = (Molecule) node;
+        wat.setName("DOD");
       }
     }
 
-    algorithmFunctions.saveAsPDB(molecularAssemblies, new File(removeExtension(filename) + "_deuterate.pdb"))
+    algorithmFunctions.saveAsPDB(molecularAssemblies, new File(removeExtension(filename) + "_deuterate.pdb"));
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return Collections.emptyList()
+  public List<Potential> getPotentials() {
+    return Collections.emptyList();
   }
 }

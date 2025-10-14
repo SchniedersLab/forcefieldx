@@ -35,21 +35,25 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.TimerOptions
-import ffx.xray.DiffractionData
-import ffx.xray.RefinementEnergy
-import ffx.xray.cli.XrayOptions
-import org.apache.commons.configuration2.CompositeConfiguration
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.TimerOptions;
+import ffx.xray.DiffractionData;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.cli.XrayOptions;
+import groovy.lang.Binding;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import static java.lang.String.format
+import java.util.Collections;
+import java.util.List;
+
+import static java.lang.String.format;
 
 /**
  * The X-ray Timer script.
@@ -59,123 +63,132 @@ import static java.lang.String.format
  * ffxc xray.Timer [options] &lt;filename&gt;
  */
 @Command(description = " Time calculation of the X-ray target.", name = "xray.Timer")
-class Timer extends AlgorithmsScript {
+public class Timer extends AlgorithmsScript {
 
   @Mixin
-  TimerOptions timerOptions
+  private TimerOptions timerOptions;
 
   @Mixin
-  XrayOptions xrayOptions
+  private XrayOptions xrayOptions;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-  private List<String> filenames
-  private RefinementEnergy refinementEnergy
+  private List<String> filenames;
+  
+  private RefinementEnergy refinementEnergy;
 
   /**
    * Timer constructor.
    */
-  Timer() {
-    super()
+  public Timer() {
+    super();
   }
 
   /**
    * Timer constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
-  Timer(String[] args) {
-    super(args)
+  public Timer(String[] args) {
+    super(args);
   }
 
   /**
    * Timer constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
-  Timer(Binding binding) {
-    super(binding)
+  public Timer(Binding binding) {
+    super(binding);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  Timer run() {
+  public Timer run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    xrayOptions.init()
+    xrayOptions.init();
 
     // Set the number of threads (needs to be done before opening the files).
-    if (timerOptions.threads > 0) {
-      System.setProperty("pj.nt", Integer.toString(timerOptions.threads))
+    if (timerOptions.getThreads() > 0) {
+      System.setProperty("pj.nt", Integer.toString(timerOptions.getThreads()));
     }
 
-    String filename
-    MolecularAssembly[] molecularAssemblies
+    String filename;
+    MolecularAssembly[] molecularAssemblies;
     if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      filename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      activeAssembly = molecularAssemblies[0];
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      molecularAssemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = new MolecularAssembly[]{activeAssembly};
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    logger.info("\n Running xray.Timer on " + filename)
+    logger.info("\n Running xray.Timer on " + filename);
 
     // Combine script flags (in parseResult) with properties.
-    CompositeConfiguration properties = activeAssembly.getProperties()
-    xrayOptions.setProperties(parseResult, properties)
+    CompositeConfiguration properties = activeAssembly.getProperties();
+    xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
-    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData);
 
     // Print the initial energy of each conformer.
-    algorithmFunctions.energy(molecularAssemblies)
+    algorithmFunctions.energy(molecularAssemblies);
 
-    int n = refinementEnergy.getNumberOfVariables()
-    double[] x = new double[n]
-    double[] g = new double[n]
-    refinementEnergy.getCoordinates(x)
-    Potential energy = refinementEnergy.getDataEnergy()
+    int n = refinementEnergy.getNumberOfVariables();
+    double[] x = new double[n];
+    double[] g = new double[n];
+    refinementEnergy.getCoordinates(x);
+    Potential energy = refinementEnergy.getDataEnergy();
 
-    int nEvals = timerOptions.iterations
-    long minTime = Long.MAX_VALUE
-    double sumTime2 = 0.0
-    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
+    int nEvals = timerOptions.getIterations();
+    long minTime = Long.MAX_VALUE;
+    double sumTime2 = 0.0;
+    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1); // Halfway point
     for (int i = 0; i < nEvals; i++) {
-      long time = -System.nanoTime()
-      double e
-      if (timerOptions.noGradient) {
-        e = energy.energy(x)
+      long time = -System.nanoTime();
+      double e;
+      if (timerOptions.getNoGradient()) {
+        e = energy.energy(x);
       } else {
-        e = energy.energyAndGradient(x, g)
+        e = energy.energyAndGradient(x, g);
       }
-      time += System.nanoTime()
-      logger.info(format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
-      minTime = time < minTime ? time : minTime
+      time += System.nanoTime();
+      logger.info(format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9));
+      minTime = time < minTime ? time : minTime;
       if (i >= (int) (nEvals / 2)) {
-        double time2 = time * 1.0E-9
-        sumTime2 += (time2 * time2)
+        double time2 = time * 1.0E-9;
+        sumTime2 += (time2 * time2);
       }
     }
 
-    ++halfnEvals
-    double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
-    logger.info(format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
-    logger.info(format(" RMS time (latter half): %6.3f (sec)", rmsTime))
+    ++halfnEvals;
+    double rmsTime = Math.sqrt(sumTime2 / halfnEvals);
+    logger.info(format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9));
+    logger.info(format(" RMS time (latter half): %6.3f (sec)", rmsTime));
 
-    return this
+    return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  List<Potential> getPotentials() {
+  public List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList((Potential) refinementEnergy)
+        Collections.singletonList(refinementEnergy);
   }
 }

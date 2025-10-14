@@ -35,14 +35,19 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.xray.parsers.MTZFilter
-import picocli.CommandLine.Command
-import picocli.CommandLine.Option
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.xray.parsers.MTZFilter;
+import groovy.lang.Binding;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Use AverageMTZ to provide two MTZ files and an iteration for a cumulative moving average.
@@ -52,83 +57,83 @@ import picocli.CommandLine.Parameters
  * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
  */
 @Command(description = " Average two MTZ files.", name = "xray.AverageMTZ")
-class AverageMTZ extends AlgorithmsScript {
+public class AverageMTZ extends AlgorithmsScript {
 
   /**
    * -i or --iteration the current moving average iteration
    */
-  @Option(names = ['-i', '--iterations'], paramLabel = '1',
-      description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
-  int iteration = 1
+  @Option(names = {"-i", "--iterations"}, paramLabel = "1",
+      description = "The current moving average iteration (use 1 for a \"normal\" average of two files).")
+  private int iteration = 1;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
-  private List<String> filenames
+  private List<String> filenames;
 
   /**
    * AverageMTZ constructor.
    */
-  AverageMTZ() {
-    super()
+  public AverageMTZ() {
+    super();
   }
 
   /**
    * AverageMTZ constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  AverageMTZ(String[] args) {
-    super(args)
+  public AverageMTZ(String[] args) {
+    super(args);
   }
 
   /**
    * AverageMTZ constructor.
    * @param binding The Groovy Binding to use.
    */
-  AverageMTZ(Binding binding) {
-    super(binding)
+  public AverageMTZ(Binding binding) {
+    super(binding);
   }
 
   @Override
-  AverageMTZ run() {
+  public AverageMTZ run() {
 
     if (!init()) {
-      return
+      return this;
     }
 
-    String mtzfile1
-    String mtzfile2
+    String mtzfile1;
+    String mtzfile2;
 
     if (filenames != null && filenames.size() > 1) {
       // Read in command line.
-      mtzfile1 = filenames.get(0)
-      mtzfile2 = filenames.get(1)
+      mtzfile1 = filenames.get(0);
+      mtzfile2 = filenames.get(1);
     } else {
-      helpString()
-      return this
+      logger.info(helpString());
+      return this;
     }
 
-    File file1 = new File(mtzfile1)
+    File file1 = new File(mtzfile1);
     if (!file1.exists()) {
-      println("File: " + mtzfile1 + " not found!")
-      return this
+      logger.info("File: " + mtzfile1 + " not found!");
+      return this;
     }
 
-    File file2 = new File(mtzfile2)
+    File file2 = new File(mtzfile2);
     if (!file2.exists()) {
-      println("File: " + mtzfile2 + " not found!")
-      return this
+      logger.info("File: " + mtzfile2 + " not found!");
+      return this;
     }
 
-    MTZFilter mtzfilter = new MTZFilter()
-    mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null)
+    MTZFilter mtzfilter = new MTZFilter();
+    mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null);
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return new ArrayList<>()
+  public List<Potential> getPotentials() {
+    return Collections.emptyList();
   }
 }

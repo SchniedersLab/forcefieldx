@@ -35,13 +35,18 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.xray.parsers.MTZFilter
-import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.xray.parsers.MTZFilter;
+import groovy.lang.Binding;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The MTZInfo script prints out MTZ reflection file header info.
@@ -51,64 +56,64 @@ import picocli.CommandLine.Parameters
  * ffxc xray.MTZInfo &lt;filename&gt;
  */
 @Command(description = " Write out information on an MTZ file.", name = "xray.MTZInfo")
-class MTZInfo extends AlgorithmsScript {
+public class MTZInfo extends AlgorithmsScript {
 
   /**
    * An MTZ filename.
    */
   @Parameters(arity = "1", paramLabel = "MTZ", description = "An MTZ diffraction file.")
-  private String filename = null
+  private String filename = null;
 
   /**
    * MTZInfo constructor.
    */
-  MTZInfo() {
-    super()
+  public MTZInfo() {
+    super();
   }
 
   /**
    * MTZInfo constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  MTZInfo(String[] args) {
-    super(args)
+  public MTZInfo(String[] args) {
+    super(args);
   }
 
   /**
    * MTZInfo constructor.
    * @param binding The Groovy Binding to use.
    */
-  MTZInfo(Binding binding) {
-    super(binding)
+  public MTZInfo(Binding binding) {
+    super(binding);
   }
 
   /**
    * Execute the script.
    */
   @Override
-  MTZInfo run() {
+  public MTZInfo run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    logger.info("\n Running MTZInfo on " + filename)
+    logger.info("\n Running MTZInfo on " + filename);
 
-    File file = new File(filename)
+    File file = new File(filename);
     if (!file.exists()) {
-      println(" File " + filename + " was not found.")
-      return this
+      System.out.println(" File " + filename + " was not found.");
+      return this;
     }
 
-    MTZFilter mtzFilter = new MTZFilter()
-    mtzFilter.getReflectionList(file)
-    mtzFilter.printHeader()
+    MTZFilter mtzFilter = new MTZFilter();
+    mtzFilter.getReflectionList(file);
+    mtzFilter.printHeader();
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
-    return Collections.emptyList()
+  public List<Potential> getPotentials() {
+    return Collections.emptyList();
   }
 }

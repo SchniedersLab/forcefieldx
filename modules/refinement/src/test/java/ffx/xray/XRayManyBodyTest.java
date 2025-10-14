@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static org.junit.Assert.assertEquals;
-
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.numerics.Potential;
-import ffx.xray.groovy.ManyBody;
-import java.util.List;
+import ffx.xray.commands.ManyBody;
 import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests X-Ray many body optimization and the X-Ray many body groovy script under varying

@@ -35,23 +35,27 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.xray.DiffractionData
-import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.MTZWriter
-import ffx.xray.parsers.MTZWriter.MTZType
-import org.apache.commons.configuration2.CompositeConfiguration
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.xray.DiffractionData;
+import ffx.xray.cli.XrayOptions;
+import ffx.xray.parsers.MTZWriter;
+import ffx.xray.parsers.MTZWriter.MTZType;
+import groovy.lang.Binding;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Parameters;
 
-import java.util.stream.Collectors
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.apache.commons.io.FilenameUtils.getBaseName
+import static org.apache.commons.io.FilenameUtils.getBaseName;
 
 /**
  * The X-ray ComputeFc script.
@@ -61,100 +65,101 @@ import static org.apache.commons.io.FilenameUtils.getBaseName
  * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Write out computed structure factors.", name = "xray.ComputeFc")
-class ComputeFc extends AlgorithmsScript {
+public class ComputeFc extends AlgorithmsScript {
 
   @Mixin
-  XrayOptions xrayOptions
+  private XrayOptions xrayOptions;
+
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+  private List<String> filenames;
+
+  private MolecularAssembly[] molecularAssemblies;
+  private DiffractionData diffractionData;
 
   /**
    * ComputeFc constructor.
    */
-  ComputeFc() {
-    super()
+  public ComputeFc() {
+    super();
   }
 
   /**
    * ComputeFc constructor that sets the command line arguments.
    * @param args Command line arguments.
    */
-  ComputeFc(String[] args) {
-    super(args)
+  public ComputeFc(String[] args) {
+    super(args);
   }
 
   /**
    * ComputeFc constructor.
    * @param binding The Groovy Binding to use.
    */
-  ComputeFc(Binding binding) {
-    super(binding)
+  public ComputeFc(Binding binding) {
+    super(binding);
   }
 
-  /**
-   * One or more filenames.
-   */
-  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-  private List<String> filenames
-
-  private MolecularAssembly[] molecularAssemblies
-  private DiffractionData diffractionData
-
   @Override
-  ComputeFc run() {
+  public ComputeFc run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    xrayOptions.init()
+    xrayOptions.init();
 
-    String filename
-    if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      filename = filenames.get(0)
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      activeAssembly = molecularAssemblies[0];
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      molecularAssemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = new MolecularAssembly[]{activeAssembly};
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
     // Load parsed X-ray properties.
-    CompositeConfiguration properties = activeAssembly.getProperties()
-    xrayOptions.setProperties(parseResult, properties)
+    CompositeConfiguration properties = activeAssembly.getProperties();
+    xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
 
-    logger.info("\n Running xray.ComputeFc on " + filename)
+    logger.info("\n Running xray.ComputeFc on " + filename);
 
     // Compute structure factors
-    diffractionData.computeAtomicDensity()
-    diffractionData.reflectionList
+    diffractionData.computeAtomicDensity();
+    diffractionData.getReflectionList();
 
     // Output Fcs
-    MTZWriter mtzWriter = new MTZWriter(diffractionData.reflectionList[0],
-        diffractionData.refinementData[0], getBaseName(filename) + "_fc.mtz", MTZType.FCONLY)
+    MTZWriter mtzWriter = new MTZWriter(diffractionData.getReflectionList()[0],
+        diffractionData.getRefinementData()[0], getBaseName(filename) + "_fc.mtz", MTZType.FCONLY);
 
-    mtzWriter.write()
-    return this
+    mtzWriter.write();
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
+  public List<Potential> getPotentials() {
     if (molecularAssemblies == null) {
-      return new ArrayList<Potential>()
+      return new ArrayList<>();
     } else {
-      return Arrays.stream(molecularAssemblies).filter {a -> a != null
-      }.map {a -> a.getPotentialEnergy()
-      }.filter {e -> e != null
-      }.collect(Collectors.toList())
+      return Arrays.stream(molecularAssemblies)
+          .filter(a -> a != null)
+          .map(a -> a.getPotentialEnergy())
+          .filter(e -> e != null)
+          .collect(Collectors.toList());
     }
   }
 
   @Override
-  boolean destroyPotentials() {
-    return diffractionData == null ? true : diffractionData.destroy()
+  public boolean destroyPotentials() {
+    return diffractionData == null ? true : diffractionData.destroy();
   }
 }

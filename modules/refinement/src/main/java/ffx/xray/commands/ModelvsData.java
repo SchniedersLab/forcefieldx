@@ -35,24 +35,28 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.xray.DiffractionData
-import ffx.xray.cli.XrayOptions
-import org.apache.commons.configuration2.CompositeConfiguration
-import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
-import picocli.CommandLine.Parameters
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.xray.DiffractionData;
+import ffx.xray.cli.XrayOptions;
+import groovy.lang.Binding;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-import java.util.stream.Collectors
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.removeExtension
+import static java.lang.String.format;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * The X-ray ModelvsData script.
@@ -62,135 +66,142 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Compare the PDB model to the diffraction data.", name = "xray.ModelvsData")
-class ModelvsData extends AlgorithmsScript {
+public class ModelvsData extends AlgorithmsScript {
 
   @Mixin
-  XrayOptions xrayOptions
+  private XrayOptions xrayOptions;
 
   /**
-   * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
+   * -p or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
    */
-  @Option(names = ['-p', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
-  boolean maps = false
+  @Option(names = {"-p", "--maps"}, paramLabel = "false",
+      description = "Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.")
+  private boolean maps = false;
+
   /**
    * -t or --timings Perform FFT timings.
    */
-  @Option(names = ['-t', '--timings'], paramLabel = 'false', description = 'Perform FFT timings.')
-  boolean timings = false
+  @Option(names = {"-t", "--timings"}, paramLabel = "false",
+      description = "Perform FFT timings.")
+  private boolean timings = false;
+
   /**
    * -w or --mtz Write out MTZ containing structure factor coefficients.
    */
-  @Option(names = ['-w', '--mtz'], paramLabel = 'false',
-      description = 'write out MTZ containing structure factor coefficients.')
-  boolean mtz = false
+  @Option(names = {"-w", "--mtz"}, paramLabel = "false",
+      description = "write out MTZ containing structure factor coefficients.")
+  private boolean mtz = false;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
-  private List<String> filenames
-  private DiffractionData diffractionData
-  private MolecularAssembly[] molecularAssemblies
+  private List<String> filenames;
+  private DiffractionData diffractionData;
+  private MolecularAssembly[] molecularAssemblies;
 
   /**
    * ModelvsData constructor.
    */
-  ModelvsData() {
-    super()
+  public ModelvsData() {
+    super();
   }
 
   /**
    * ModelvsData constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
-  ModelvsData(String[] args) {
-    super(args)
+  public ModelvsData(String[] args) {
+    super(args);
   }
 
   /**
    * ModelvsData constructor.
+   *
    * @param binding The Groovy Binding to use.
    */
-  ModelvsData(Binding binding) {
-    super(binding)
+  public ModelvsData(Binding binding) {
+    super(binding);
   }
 
   @Override
-  ModelvsData run() {
+  public ModelvsData run() {
 
     if (!init()) {
-      return this
+      return this;
     }
 
-    xrayOptions.init()
+    xrayOptions.init();
 
-    String filename
-    if (filenames != null && filenames.size() > 0) {
+    String filename;
+    if (filenames != null && !filenames.isEmpty()) {
       // Each alternate conformer is returned in a separate MolecularAssembly.
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      filename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      activeAssembly = molecularAssemblies[0];
+      filename = filenames.get(0);
     } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      logger.info(helpString());
+      return this;
     } else {
-      molecularAssemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = new MolecularAssembly[]{activeAssembly};
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    logger.info(format("\n Running xray.ModelvsData on %s", filename))
+    logger.info(format("\n Running xray.ModelvsData on %s", filename));
 
     // Combine script flags (in parseResult) with properties.
-    CompositeConfiguration properties = activeAssembly.getProperties()
-    xrayOptions.setProperties(parseResult, properties)
+    CompositeConfiguration properties = activeAssembly.getProperties();
+    xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
 
-    boolean useHydrogen = properties.getBoolean("use-hydrogen", true)
+    boolean useHydrogen = properties.getBoolean("use-hydrogen", true);
     if (!useHydrogen) {
-      Atom[] atoms = activeAssembly.getAtomArray()
+      Atom[] atoms = activeAssembly.getAtomArray();
       for (Atom atom : atoms) {
         if (atom.isHydrogen()) {
-          atom.setOccupancy(0.0)
-          // atom.setUse(false)
+          atom.setOccupancy(0.0);
+          // atom.setUse(false);
         }
       }
     }
 
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
-    algorithmFunctions.energy(molecularAssemblies)
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
+    algorithmFunctions.energy(molecularAssemblies);
 
     if (mtz) {
-      diffractionData.writeData(removeExtension(filename) + "_ffx.mtz")
+      diffractionData.writeData(removeExtension(filename) + "_ffx.mtz");
     }
 
     if (maps) {
-      diffractionData.writeMaps(removeExtension(filename) + "_ffx")
+      diffractionData.writeMaps(removeExtension(filename) + "_ffx");
     }
 
     if (timings) {
-      diffractionData.timings()
+      diffractionData.timings();
     }
 
-    return this
+    return this;
   }
 
   @Override
-  List<Potential> getPotentials() {
+  public List<Potential> getPotentials() {
     if (molecularAssemblies == null) {
-      return new ArrayList<Potential>()
+      return new ArrayList<>();
     } else {
-      return Arrays.stream(molecularAssemblies).filter { a -> a != null
-      }.map { a -> a.getPotentialEnergy()
-      }.filter { e -> e != null
-      }.collect(Collectors.toList())
+      return Arrays.stream(molecularAssemblies)
+          .filter(a -> a != null)
+          .map(MolecularAssembly::getPotentialEnergy)
+          .filter(e -> e != null)
+          .collect(Collectors.toList());
     }
   }
 
   @Override
-  boolean destroyPotentials() {
-    return diffractionData == null ? true : diffractionData.destroy()
+  public boolean destroyPotentials() {
+    return diffractionData == null ? true : diffractionData.destroy();
   }
 }
