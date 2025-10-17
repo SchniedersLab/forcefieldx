@@ -37,19 +37,19 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
+import ffx.numerics.Constraint;
+import ffx.numerics.Potential;
+import ffx.potential.SystemState;
+import ffx.potential.constraint.ShakeChargeConstraint;
+
+import java.util.Random;
+
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.numerics.Constraint;
-import ffx.potential.SystemState;
-import ffx.numerics.Potential;
-import ffx.potential.constraint.ShakeChargeConstraint;
-
-import java.util.Random;
 
 /**
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.

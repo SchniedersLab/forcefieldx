@@ -37,13 +37,12 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.Utilities;
 import ffx.potential.parsers.BARFilter;
-import ffx.utilities.FFXScript;
-import groovy.lang.Binding;
-import groovy.lang.Script;
+import ffx.utilities.FFXCommand;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -72,7 +71,7 @@ import static org.apache.commons.io.FilenameUtils.normalize;
  * ffxc BAR [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 @Command(description = "Performs analysis of Non-equilibrium work simulations.", name = "AnalyzeNEQ")
-public class AnalyzeNEQ extends AlgorithmsScript {
+public class AnalyzeNEQ extends AlgorithmsCommand {
 
   /**
    * --reFile --fileSelectionRegex Locate files that match a Regular expression (.* includes all files).
@@ -112,9 +111,9 @@ public class AnalyzeNEQ extends AlgorithmsScript {
   /**
    * AnalyzeNEQ Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public AnalyzeNEQ(Binding binding) {
+  public AnalyzeNEQ(FFXBinding binding) {
     super(binding);
   }
 
@@ -176,17 +175,17 @@ public class AnalyzeNEQ extends AlgorithmsScript {
     // Parameters
     // commandArgs.add("test.pdb"); // todo fix - need coord file
 
-    Binding binding = new Binding();
+    FFXBinding binding = new FFXBinding();
     binding.setVariable("args", commandArgs);
 
-    Class<? extends FFXScript> script;
-    script = getScript("BAR");
+    Class<? extends FFXCommand> script;
+    script = getCommand("BAR");
 
     // Create a new instance of the script and run it.
     try {
-      Script groovyScript = script.getDeclaredConstructor().newInstance();
-      groovyScript.setBinding(binding);
-      groovyScript.run();
+      FFXCommand command = script.getDeclaredConstructor().newInstance();
+      command.setBinding(binding);
+      command.run();
     } catch (Exception e) {
       logger.info(" Exception running BAR.");
       logger.info(e.toString());

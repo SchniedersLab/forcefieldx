@@ -38,16 +38,16 @@
 package ffx.algorithms.misc;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FFXTest;
-import groovy.lang.Binding;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.io.File;
 import java.net.URL;
 import java.util.logging.Level;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
 
 /**
  * Base class for Algorithm tests.
@@ -56,8 +56,8 @@ import org.junit.BeforeClass;
  */
 public class AlgorithmsTest extends FFXTest {
 
-  public AlgorithmsScript algorithmsScript;
-  public Binding binding;
+  public AlgorithmsCommand algorithmsScript;
+  public FFXBinding binding;
 
   /** Initialize the PJ communication layer. */
   @BeforeClass
@@ -80,7 +80,7 @@ public class AlgorithmsTest extends FFXTest {
   @Before
   public void beforeTest() {
     super.beforeTest();
-    binding = new Binding();
+    binding = new FFXBinding();
   }
 
   @Override

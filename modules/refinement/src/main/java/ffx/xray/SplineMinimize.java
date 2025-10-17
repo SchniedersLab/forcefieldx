@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.lang.System.arraycopy;
-
 import ffx.algorithms.Terminatable;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.optimization.LBFGS;
@@ -49,6 +47,8 @@ import ffx.xray.SplineEnergy.Type;
 import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.System.arraycopy;
 
 /**
  * SplineMinimize class.

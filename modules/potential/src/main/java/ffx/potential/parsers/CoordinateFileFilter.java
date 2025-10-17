@@ -37,8 +37,8 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import java.io.File;
 import javax.swing.filechooser.FileFilter;
+import java.io.File;
 
 /**
  * The CoordinateFileFilter class globally determines if a file is a valid coordinate file (PDB, XYZ,

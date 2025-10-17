@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.xray;
 
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.util.Range;
+
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.min;
-
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.util.Range;
 
 /**
  * SliceSchedule class.

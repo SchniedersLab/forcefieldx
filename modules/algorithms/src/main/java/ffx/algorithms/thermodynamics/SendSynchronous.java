@@ -1,14 +1,15 @@
 package ffx.algorithms.thermodynamics;
 
-import static edu.rit.mp.DoubleBuf.buffer;
-import static java.lang.String.format;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static edu.rit.mp.DoubleBuf.buffer;
+import static java.lang.String.format;
 
 /**
  * Synchronous (blocking) communication of OST counts.

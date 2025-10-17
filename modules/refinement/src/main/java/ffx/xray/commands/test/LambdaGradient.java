@@ -37,18 +37,18 @@
 //******************************************************************************
 package ffx.xray.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.GradientOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -70,7 +70,7 @@ import static java.lang.String.format;
  * ffxc xray.test.LambdaGradient [options] &lt;filename&gt;
  */
 @Command(description = " Test Lambda Derivatives on an X-ray target.", name = "xray.test.LambdaGradient")
-public class LambdaGradient extends AlgorithmsScript {
+public class LambdaGradient extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -108,9 +108,9 @@ public class LambdaGradient extends AlgorithmsScript {
   /**
    * LambdaGradient constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public LambdaGradient(Binding binding) {
+  public LambdaGradient(FFXBinding binding) {
     super(binding);
   }
 

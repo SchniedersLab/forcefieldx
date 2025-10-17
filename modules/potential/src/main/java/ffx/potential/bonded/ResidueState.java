@@ -37,13 +37,13 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * The ResidueState class encodes the current chemical and coordinate state of a Residue,

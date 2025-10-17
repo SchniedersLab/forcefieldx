@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.MatrixMath.mat3Mat3;
-import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.MatrixMath.transpose3;
-import static ffx.numerics.math.MatrixMath.vec3Mat3;
-import static java.lang.Double.isNaN;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.exp;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -61,6 +50,17 @@ import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3SymVec6;
+import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.vec3Mat3;
+import static java.lang.Double.isNaN;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure factors against data

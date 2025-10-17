@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static ffx.potential.parameters.AngleType.AngleFunction;
-import static ffx.potential.parameters.BondType.BondFunction;
-import static java.lang.String.format;
-
 import ffx.potential.parameters.AngleTorsionType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
@@ -65,6 +61,13 @@ import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -76,12 +79,10 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
-import org.apache.commons.configuration2.builder.fluent.Parameters;
-import org.apache.commons.configuration2.ex.ConfigurationException;
+
+import static ffx.potential.parameters.AngleType.AngleFunction;
+import static ffx.potential.parameters.BondType.BondFunction;
+import static java.lang.String.format;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics data from

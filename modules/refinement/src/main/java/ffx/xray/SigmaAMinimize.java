@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
@@ -57,6 +51,12 @@ import ffx.numerics.optimization.OptimizationListener;
 import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * SigmaAMinimize class.

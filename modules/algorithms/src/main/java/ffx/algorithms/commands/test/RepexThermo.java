@@ -51,7 +51,7 @@ import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -90,9 +90,9 @@ public class RepexThermo extends Thermodynamics {
   /**
    * RepexThermo Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public RepexThermo(Binding binding) {
+  public RepexThermo(FFXBinding binding) {
     super(binding);
   }
 

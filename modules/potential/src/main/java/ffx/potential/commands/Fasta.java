@@ -37,8 +37,8 @@
 //******************************************************************************
 package ffx.potential.commands;
 
-import ffx.potential.cli.PotentialScript;
-import groovy.lang.Binding;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import org.biojava.nbio.core.sequence.ProteinSequence;
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper;
 import org.biojava.nbio.core.sequence.io.FastaWriterHelper;
@@ -49,7 +49,6 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getName;
@@ -61,7 +60,7 @@ import static org.apache.commons.io.FilenameUtils.getName;
  *   ffxc Fasta [options] &lt;filename.fasta&gt;
  */
 @Command(name = "Fasta", description = " Fasta outputs a sub-sequence from a FASTA file.")
-public class Fasta extends PotentialScript {
+public class Fasta extends PotentialCommand {
 
   /** Define the first Fasta residue to keep (index of the first residue is 1). */
   @Option(names = {"-f", "--firstResidue"}, paramLabel = "1", defaultValue = "1",
@@ -84,7 +83,7 @@ public class Fasta extends PotentialScript {
     super();
   }
 
-  public Fasta(Binding binding) {
+  public Fasta(FFXBinding binding) {
     super(binding);
   }
 

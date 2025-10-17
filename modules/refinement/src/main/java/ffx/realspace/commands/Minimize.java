@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.parsers.RealSpaceFile;
+import ffx.utilities.FFXBinding;
 import ffx.xray.RefinementMinimize;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -64,7 +64,7 @@ import static ffx.utilities.TinkerUtils.version;
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Minimization on a Real Space target.", name = "realspace.Minimize")
-public class Minimize extends AlgorithmsScript {
+public class Minimize extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -100,9 +100,9 @@ public class Minimize extends AlgorithmsScript {
 
   /**
    * Minimize constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Minimize(Binding binding) {
+  public Minimize(FFXBinding binding) {
     super(binding);
   }
 

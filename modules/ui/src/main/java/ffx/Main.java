@@ -44,8 +44,7 @@ import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.ModelingShell;
 import ffx.ui.OSXAdapter;
-import ffx.utilities.FFXScript;
-import groovy.lang.Script;
+import ffx.utilities.FFXCommand;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -300,7 +299,7 @@ public final class Main extends JFrame {
    * @param args an array of {@link java.lang.String} objects.
    * @return A Groovy Script instance.
    */
-  public static Script ffxScript(String[] args) {
+  public static FFXCommand ffxScript(String[] args) {
     List<String> argList = new ArrayList<>();
     File commandLineFile = initMain(args, argList);
     try {
@@ -324,10 +323,10 @@ public final class Main extends JFrame {
   private static void commandLineInterfaceHelp(boolean listTestScripts) {
     logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
     if (listTestScripts) {
-      FFXScript.listGroovyScripts(false, true);
+      FFXCommand.listCommands(false, true);
       logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
     } else {
-      FFXScript.listGroovyScripts(true, false);
+      FFXCommand.listCommands(true, false);
       logger.info("\n To list experimental & test scripts: ffxc --test");
       logger.info(" For help on a specific command use:  ffxc <command> -h\n");
     }
@@ -449,7 +448,7 @@ public final class Main extends JFrame {
    * @param commandLineFile The command line file.
    * @param argList         The command line argument list.
    */
-  private static Script startCommandLineInterface(File commandLineFile, List<String> argList) {
+  private static FFXCommand startCommandLineInterface(File commandLineFile, List<String> argList) {
     if (configuration == null) {
       logger.info(" Starting up the command line interface.\n");
     }
@@ -629,16 +628,16 @@ public final class Main extends JFrame {
     }
   }
 
-  public static Script runScript(ModelingShell shell, File commandLineFile, List<String> argList) {
+  public static FFXCommand runScript(ModelingShell shell, File commandLineFile, List<String> argList) {
     // Attempt to run a supplied script.
     if (commandLineFile.exists()) {
       return shell.runFFXScript(commandLineFile, argList);
     } else {
       // See if the commandLineFile is an embedded script.
       String name = commandLineFile.getName();
-      Class<? extends Script> ffxScript = FFXScript.getScript(name);
-      if (ffxScript != null) {
-        return shell.runFFXScript(ffxScript, argList);
+      Class<? extends FFXCommand> command = FFXCommand.getCommand(name);
+      if (command != null) {
+        return shell.runFFXScript(command, argList);
       }
     }
     return null;

@@ -37,18 +37,18 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;
 
 import java.io.Serial;
 import java.util.logging.Logger;
+
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The StretchBend class represents a Stretch-Bend formed between three linearly bonded atoms.

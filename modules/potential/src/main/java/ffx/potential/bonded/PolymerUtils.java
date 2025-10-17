@@ -37,6 +37,24 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.PDBFilter.PDBFileStandard;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.add;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.numerics.math.DoubleMath.length;
@@ -56,23 +74,6 @@ import static ffx.potential.bonded.NucleicAcidUtils.nucleicAcidList;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.random;
-
-import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.PDBFilter.PDBFileStandard;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Utilities for creating polymers.
@@ -250,6 +251,7 @@ public class PolymerUtils {
             case ZN, ZN2 -> atom.setAtomType(findAtomType(2016, forceField));
             case CL -> atom.setAtomType(findAtomType(2013, forceField));
             case BR -> atom.setAtomType(findAtomType(2012, forceField));
+            case I -> atom.setAtomType(findAtomType(2015, forceField));
             default ->
                 logger.severe(format(" Check residue %s of chain %s.", ion, ion.getChainID()));
           }

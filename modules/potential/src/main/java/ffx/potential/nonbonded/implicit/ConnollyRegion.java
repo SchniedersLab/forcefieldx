@@ -37,6 +37,16 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedDouble;
+import ffx.potential.bonded.Atom;
+import ffx.potential.utils.EnergyException;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.numerics.math.DoubleMath.dist2;
@@ -56,16 +66,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.SharedDouble;
-import ffx.potential.bonded.Atom;
-import ffx.potential.utils.EnergyException;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * ConnollyRegion uses the algorithms from the AMS/VAM programs of Michael Connolly to compute the

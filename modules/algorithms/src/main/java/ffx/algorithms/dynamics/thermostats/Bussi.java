@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import ffx.potential.SystemState;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath using the Bussi, Donadio, and

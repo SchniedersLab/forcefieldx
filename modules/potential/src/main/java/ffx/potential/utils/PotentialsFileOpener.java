@@ -37,16 +37,26 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static java.lang.String.format;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.*;
+import ffx.potential.parsers.ARCFileFilter;
+import ffx.potential.parsers.FileOpener;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.INTFileFilter;
+import ffx.potential.parsers.INTFilter;
+import ffx.potential.parsers.PDBFileFilter;
+import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFileFilter;
+import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -55,8 +65,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
+
+import static java.lang.String.format;
 
 /**
  * The PotentialsFileOpener class specifies a Runnable object which is constructed with a File and,

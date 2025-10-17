@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.LambdaParticleOptions;
 import ffx.algorithms.cli.MultiDynamicsOptions;
@@ -46,7 +46,7 @@ import ffx.algorithms.cli.ThermodynamicsOptions;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -66,7 +66,7 @@ import java.util.List;
  * ffxc Histogram [options] &lt;filename&gt;
  */
 @Command(description = " Evaluate the Orthogonal Space Histogram.", name = "Histogram")
-public class Histogram extends AlgorithmsScript {
+public class Histogram extends AlgorithmsCommand {
 
   /**
    * -s or --save Save the histogram, PMF and 2D bias to files.
@@ -102,9 +102,9 @@ public class Histogram extends AlgorithmsScript {
   /**
    * Histogram Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Histogram(Binding binding) {
+  public Histogram(FFXBinding binding) {
     super(binding);
   }
 

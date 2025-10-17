@@ -37,20 +37,19 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
-
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.Atom;
-
-import java.util.Arrays;
-import java.util.logging.Logger;
-
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
+
+import java.util.Arrays;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Structure Metrics contains functionality to calculate characteristics of coordinate systems.

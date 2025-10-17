@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -45,7 +45,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.parsers.SystemFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -66,7 +66,7 @@ import java.util.List;
  * ffxc Superpose [options] &lt;filename&gt;
  */
 @Command(description = " Superpose frames one or two trajectory files to calculate RMSD.", name = "Superpose")
-public class Superpose extends AlgorithmsScript {
+public class Superpose extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -151,9 +151,9 @@ public class Superpose extends AlgorithmsScript {
   /**
    * Superpose Constructor.
    *
-   * @param binding Groovy Binding to use.
+   * @param binding Groovy to use.
    */
-  public Superpose(Binding binding) {
+  public Superpose(FFXBinding binding) {
     super(binding);
   }
 

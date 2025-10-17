@@ -42,7 +42,6 @@ import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
-import org.apache.commons.math3.util.FastMath;
 
 import java.io.Serial;
 import java.util.ArrayList;

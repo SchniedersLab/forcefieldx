@@ -37,16 +37,19 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.bonded.AminoAcidUtils.AA1toAA3;
-import static ffx.potential.bonded.NucleicAcidUtils.NA1toNA3;
-import static java.lang.System.arraycopy;
-
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid1;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid1;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.J3DGraphics2D;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Point2d;
+import org.jogamp.vecmath.Point3d;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -56,13 +59,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.jogamp.java3d.Canvas3D;
-import org.jogamp.java3d.J3DGraphics2D;
-import org.jogamp.java3d.Material;
-import org.jogamp.java3d.Node;
-import org.jogamp.vecmath.Color3f;
-import org.jogamp.vecmath.Point2d;
-import org.jogamp.vecmath.Point3d;
+
+import static ffx.potential.bonded.AminoAcidUtils.AA1toAA3;
+import static ffx.potential.bonded.NucleicAcidUtils.NA1toNA3;
+import static java.lang.System.arraycopy;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.

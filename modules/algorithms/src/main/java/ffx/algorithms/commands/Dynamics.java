@@ -38,7 +38,7 @@
 package ffx.algorithms.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.BarostatOptions;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.RepExOptions;
@@ -49,7 +49,7 @@ import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.WriteoutOptions;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -67,7 +67,7 @@ import java.util.List;
  * ffxc Dynamics [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Run dynamics on a system.", name = "Dynamics")
-public class Dynamics extends AlgorithmsScript {
+public class Dynamics extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -116,9 +116,9 @@ public class Dynamics extends AlgorithmsScript {
   /**
    * Dynamics Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Dynamics(Binding binding) {
+  public Dynamics(FFXBinding binding) {
     super(binding);
   }
 

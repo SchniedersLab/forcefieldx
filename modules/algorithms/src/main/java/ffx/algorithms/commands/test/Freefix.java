@@ -37,8 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
-import groovy.lang.Binding;
+import ffx.algorithms.cli.AlgorithmsCommand;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.math3.special.Erf;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -61,7 +61,7 @@ import static java.lang.String.format;
  * ffxc test.Freefix [options] &lt;filename&gt;
  */
 @Command(description = " Calculate restraint free energy corrections.", name = "test.Freefix")
-public class Freefix extends AlgorithmsScript {
+public class Freefix extends AlgorithmsCommand {
 
   /**
    * --ri Constant Inner Radius value.
@@ -117,9 +117,9 @@ public class Freefix extends AlgorithmsScript {
 
   /**
    * Freefix Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Freefix(Binding binding) {
+  public Freefix(FFXBinding binding) {
     super(binding);
   }
 

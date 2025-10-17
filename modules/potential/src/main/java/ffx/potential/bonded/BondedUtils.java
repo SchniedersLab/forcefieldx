@@ -37,21 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.normalize;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.bonded.Bond.logNoBondType;
-import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toRadians;
-
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -71,6 +56,21 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.normalize;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.bonded.Bond.logNoBondType;
+import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 /**
  * Utilities for placing atoms.

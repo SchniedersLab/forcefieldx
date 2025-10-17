@@ -37,10 +37,10 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
+import ffx.utilities.FFXBinding;
 import ffx.xray.parsers.MTZFilter;
-import groovy.lang.Binding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -57,7 +57,7 @@ import java.util.List;
  * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
  */
 @Command(description = " Average two MTZ files.", name = "xray.AverageMTZ")
-public class AverageMTZ extends AlgorithmsScript {
+public class AverageMTZ extends AlgorithmsCommand {
 
   /**
    * -i or --iteration the current moving average iteration
@@ -89,9 +89,9 @@ public class AverageMTZ extends AlgorithmsScript {
 
   /**
    * AverageMTZ constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public AverageMTZ(Binding binding) {
+  public AverageMTZ(FFXBinding binding) {
     super(binding);
   }
 

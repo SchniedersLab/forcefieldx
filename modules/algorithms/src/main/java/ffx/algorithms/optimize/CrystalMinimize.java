@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
@@ -51,7 +47,12 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.XtalEnergy;
 import ffx.utilities.Constants;
+
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Minimize the energy of a system to an RMS gradient per atom convergence criteria.

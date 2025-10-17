@@ -6,8 +6,8 @@
 % https://www.mathworks.com/help/matlab/using-java-libraries-in-matlab.html
 
 import java.util.ArrayList
-import groovy.lang.Binding
-import ffx.potential.groovy.Energy
+import ffx.utilities.FFXBinding
+import ffx.potential.commands.Energy
 
 % Set the FFX_HOME variable to the root FFX directoy.
 
@@ -18,15 +18,15 @@ A = ArrayList;
 A.add("-m");
 A.add(FFX_HOME + "/examples/peptide.xyz");
 
-% Create a Groovy Script Binding
-binding = Binding;
-binding.setVariable("args",A);
+% Create a Binding
+binding = FFXBinding;
+binding.setVariable("args", A);
 
-% Run the Energy Groovy Script
-script = Energy;
-script.setBinding(binding);
-script.run();
+% Run the Energy command
+command = Energy;
+command.setBinding(binding);
+command.run();
 
 % Get back the ForceFieldEnergy instance
-forceFieldEnergy = script.forceFieldEnergy;
+forceFieldEnergy = command.forceFieldEnergy;
 forceFieldEnergy.toString()

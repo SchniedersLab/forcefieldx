@@ -37,12 +37,12 @@
 //******************************************************************************
 package ffx.potential.commands;
 
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.OpenMMXmlFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.Keyword;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
@@ -57,7 +57,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc FFtoXML &lt;filename&gt;
  */
 @Command(name = "FFtoXML", description = " Write a force field as an XML file.")
-public class FFtoXML extends PotentialScript {
+public class FFtoXML extends PotentialCommand {
 
   /** The final argument is a PRM/KEY file. */
   @Parameters(arity = "1", paramLabel = "file",
@@ -65,7 +65,7 @@ public class FFtoXML extends PotentialScript {
   private String filename = null;
 
   public FFtoXML() { super(); }
-  public FFtoXML(Binding binding) { super(binding); }
+  public FFtoXML(FFXBinding binding) { super(binding); }
   public FFtoXML(String[] args) { super(args); }
 
   @Override

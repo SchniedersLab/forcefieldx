@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.AnnealOptions;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
 import ffx.numerics.Potential;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.WriteoutOptions;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -64,7 +64,7 @@ import static java.lang.String.format;
  * ffxc Anneal [options] &lt;filename&gt;
  */
 @Command(description = " Run simulated annealing on a system.", name = "Anneal")
-public class Anneal extends AlgorithmsScript {
+public class Anneal extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -99,9 +99,9 @@ public class Anneal extends AlgorithmsScript {
   /**
    * Anneal Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Anneal(Binding binding) {
+  public Anneal(FFXBinding binding) {
     super(binding);
   }
 

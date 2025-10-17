@@ -37,18 +37,18 @@
 //******************************************************************************
 package ffx.potential.commands.test;
 
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parameters.ChargeType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.parsers.ForceFieldFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.Keyword;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import groovy.lang.Binding;
 
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,7 @@ import java.util.Map;
  */
 @Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.",
         name = "test.PrmToProperty")
-public class PrmToProperty extends PotentialScript {
+public class PrmToProperty extends PotentialCommand {
 
     /**
      * -t or --tinker Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).
@@ -98,9 +98,9 @@ public class PrmToProperty extends PotentialScript {
 
     /**
      * PrmToProperty Constructor.
-     * @param binding Groovy Binding to use.
+     * @param binding Binding to use.
      */
-    public PrmToProperty(Binding binding) {
+    public PrmToProperty(FFXBinding binding) {
         super(binding);
     }
 

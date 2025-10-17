@@ -39,10 +39,9 @@ package ffx.potential.cli;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
+import picocli.CommandLine.Option;
 
 import java.io.File;
-
-import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that periodically write out structures.

@@ -38,7 +38,7 @@
 package ffx.algorithms.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.optimize.TorsionSearch;
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
@@ -46,7 +46,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -75,7 +75,7 @@ import static java.lang.String.format;
  */
 @Command(description = " The TorsionSearch command enumerates conformations of a molecule using torsional scans around rotatable bonds.",
     name = "TorsionSearch")
-public class TorsionScan extends AlgorithmsScript {
+public class TorsionScan extends AlgorithmsCommand {
 
   @Option(names = {"--th", "--theta"}, paramLabel = "60.0", defaultValue = "60.0",
       description = "Step size for bond rotations (in Degrees).")
@@ -117,7 +117,7 @@ public class TorsionScan extends AlgorithmsScript {
     super();
   }
 
-  public TorsionScan(Binding binding) {
+  public TorsionScan(FFXBinding binding) {
     super(binding);
   }
 

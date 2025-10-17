@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.numerics.math.DoubleMath.add;
-import static ffx.numerics.math.DoubleMath.length2;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.Double.compare;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.cbrt;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -63,6 +52,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.add;
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
+import static java.lang.Double.compare;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cbrt;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * GaussVol implements a description molecular volume and surface area described by overlapping

@@ -43,7 +43,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.GradientOptions;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.terms.AnglePotentialEnergy;
 import ffx.potential.terms.BondPotentialEnergy;
@@ -54,11 +54,11 @@ import ffx.potential.terms.StretchBendPotentialEnergy;
 import ffx.potential.terms.TorsionPotentialEnergy;
 import ffx.potential.terms.TorsionTorsionPotentialEnergy;
 import ffx.potential.terms.UreyBradleyPotentialEnergy;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import groovy.lang.Binding;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,7 +81,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * ffxc test.PhGradient [options] &lt;filename&gt;
  */
 @Command(description = " Test the potential energy gradient for CpHMD.", name = "test.PhGradient")
-public class PhGradient extends PotentialScript {
+public class PhGradient extends PotentialCommand {
 
   @Mixin
   GradientOptions gradientOptions;
@@ -127,10 +127,10 @@ public class PhGradient extends PotentialScript {
   }
 
   /**
-   * Constructor with Groovy Binding.
+   * Constructor with Binding.
    * @param binding Binding
    */
-  public PhGradient(Binding binding) {
+  public PhGradient(FFXBinding binding) {
     super(binding);
   }
 

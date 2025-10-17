@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.optimize.ConformationScan;
 import ffx.algorithms.optimize.Minimize;
 import ffx.algorithms.optimize.TorsionSearch;
@@ -47,7 +47,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.utils.PotentialsUtils;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
  */
 @Command(description = " Calculates interaction energies of different molecular orientations and saves low energy orientations.",
         name = "test.CoformerBindingSearch")
-public class CoformerBindingSearch extends AlgorithmsScript {
+public class CoformerBindingSearch extends AlgorithmsCommand {
 
   private static final Logger logger = Logger.getLogger(CoformerBindingSearch.class.getName());
 
@@ -159,9 +159,9 @@ public class CoformerBindingSearch extends AlgorithmsScript {
 
   /**
    * Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public CoformerBindingSearch(Binding binding) {
+  public CoformerBindingSearch(FFXBinding binding) {
     super(binding);
   }
 

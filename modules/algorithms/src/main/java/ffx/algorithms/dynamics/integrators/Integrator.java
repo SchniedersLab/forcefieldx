@@ -37,15 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.SystemState;
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom through time.

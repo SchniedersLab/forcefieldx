@@ -1099,7 +1099,7 @@
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.3.1</source.version>
-    <spotbugs.version>4.9.6</spotbugs.version>
+    <spotbugs.version>4.9.7</spotbugs.version>
     <surefire.version>3.5.4</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>21</targetVersion>

@@ -264,7 +264,7 @@ public class AminoAcidUtils {
     if (!nonStandard) {
       try {
         checkForMissingHeavyAtoms(aminoAcid, residue);
-      } catch (BondedUtils.MissingHeavyAtomException e) {
+      } catch (MissingHeavyAtomException e) {
         logger.log(Level.INFO, " {0} could not be parsed.", residue.toString());
         throw e;
       }
@@ -292,7 +292,6 @@ public class AminoAcidUtils {
         if (neutralNTerminus) {
           // Biotype is 762
           N.setAtomType(findAtomType(762, forceField));
-
         }
       }
     }
@@ -323,8 +322,7 @@ public class AminoAcidUtils {
           double psi = 135.0;
           if (nextResidue != null && N != null) {
             Atom nextN = (Atom) nextResidue.getAtomNode("N");
-            psi = toDegrees(
-                dihedralAngle(N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
+            psi = toDegrees(dihedralAngle(N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
           }
           O = buildHeavy(residue, "O", C, 1.25, CA, 117.0, N, psi - 180.0, 0,
               AA_O[position.ordinal()][aminoAcidNumber], forceField, bondList);
@@ -411,15 +409,12 @@ public class AminoAcidUtils {
             buildHydrogenAtom(residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType, forceField,
                 bondList);
           }
-          case NME -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType, forceField,
-              bondList);
-          default -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField,
-              bondList);
+          case NME -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType, forceField, bondList);
+          default -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField, bondList);
         }
       }
       // Mid-chain nitrogen hydrogen.
-      default -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField,
-          bondList);
+      default -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField, bondList);
     }
 
     // C-alpha hydrogen atoms.
@@ -531,7 +526,7 @@ public class AminoAcidUtils {
       atomType = atom.getAtomType();
       if (atomType == null) {
         /*
-         * Sometimes, with deuterons, a proton has been constructed in
+         * Sometimes with a deuterons, a proton has been constructed in
          * its place, so we have a "dummy" deuteron still hanging
          * around.
          */

@@ -69,7 +69,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 
 /**

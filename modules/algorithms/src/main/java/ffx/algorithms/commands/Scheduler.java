@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.PortUtils;
-import groovy.lang.Binding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -61,7 +61,7 @@ import static java.lang.String.format;
  * @author Michael Schnieders
  */
 @Command(description = " The Scheduler runs parallel jobs over nodes.", name = "Scheduler")
-public class Scheduler extends AlgorithmsScript {
+public class Scheduler extends AlgorithmsCommand {
 
   /**
    * -v or --verbose Turn on verbose logging during backend Parallel Java startup.
@@ -123,9 +123,9 @@ public class Scheduler extends AlgorithmsScript {
   /**
    * Scheduler Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Scheduler(Binding binding) {
+  public Scheduler(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.min;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -49,8 +44,14 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedBooleanArray;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * The BulkSolventList class builds a list of atoms in symmetry mates that are within a cutoff

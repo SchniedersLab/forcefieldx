@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import static java.lang.Math.abs;
-
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Math.abs;
 
 /**
  * The Rattle classes implements the RATTLE distance constraint method.

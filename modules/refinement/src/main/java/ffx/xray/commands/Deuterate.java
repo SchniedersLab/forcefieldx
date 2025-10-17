@@ -37,13 +37,13 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.Deuterate &lt;pdbfile1&gt;
  */
 @Command(description = " Deuterate exchangable hydrogen of the PDB model.", name = "xray.Deuterate")
-public class Deuterate extends AlgorithmsScript {
+public class Deuterate extends AlgorithmsCommand {
 
   /**
    * One or more filenames.
@@ -86,9 +86,9 @@ public class Deuterate extends AlgorithmsScript {
 
   /**
    * Deuterate constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Deuterate(Binding binding) {
+  public Deuterate(FFXBinding binding) {
     super(binding);
   }
 

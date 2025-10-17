@@ -37,9 +37,8 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Integer.parseInt;
-
 import ffx.utilities.Keyword;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -47,6 +46,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * The KeyFilter class parses Force Field X Keyword (*.KEY) and Property (*.PROPERTIES) files.

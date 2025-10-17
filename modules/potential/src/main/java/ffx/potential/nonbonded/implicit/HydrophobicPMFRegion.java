@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.tanh;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
@@ -50,9 +44,16 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.tanh;
 
 /**
  * Initial implementation of a Hydrophobic PMF.

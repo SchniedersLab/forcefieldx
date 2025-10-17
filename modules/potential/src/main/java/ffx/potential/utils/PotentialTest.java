@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FFXTest;
-import groovy.lang.Binding;
 
 import java.io.File;
 import java.net.URL;
@@ -47,19 +47,19 @@ import java.net.URL;
 /**
  * PotentialTest extends BaseFFXTest to include support for:
  * <br>
- * 1) Creating a Groovy Binding before each test.
+ * 1) Creating a Binding before each test.
  * <br>
  * 2) Destroying created potentials after each test.
  */
 public class PotentialTest extends FFXTest {
 
-  public PotentialScript potentialScript;
-  public Binding binding;
+  public PotentialCommand potentialScript;
+  public FFXBinding binding;
 
   @Override
   public void beforeTest() {
     super.beforeTest();
-    binding = new Binding();
+    binding = new FFXBinding();
   }
 
   @Override

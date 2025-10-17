@@ -43,11 +43,11 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Residue;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -66,7 +66,7 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
  *   ffxc NucleicAcidAnalysis [options] &lt;filename&gt;
  */
 @Command(description = "Calculates nucleic acid torsions as well as information regarding the sugar pucker.", name = "NucleicAcidAnalysis")
-public class NucleicAcidAnalysis extends PotentialScript {
+public class NucleicAcidAnalysis extends PotentialCommand {
 
   @Option(names = {"--at", "--allTorsions"}, paramLabel = "false", defaultValue = "false",
       description = "Print all torsions and information.")
@@ -82,7 +82,7 @@ public class NucleicAcidAnalysis extends PotentialScript {
     super();
   }
 
-  public NucleicAcidAnalysis(Binding binding) {
+  public NucleicAcidAnalysis(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
@@ -50,8 +50,8 @@ import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FileUtils;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -72,7 +72,7 @@ import static java.lang.String.format;
  * ffxc Minimize [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Run L-BFGS minimization on a system.", name = "Minimize")
-public class Minimize extends AlgorithmsScript {
+public class Minimize extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -110,9 +110,9 @@ public class Minimize extends AlgorithmsScript {
   /**
    * Minimize Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Minimize(Binding binding) {
+  public Minimize(FFXBinding binding) {
     super(binding);
   }
 

@@ -49,7 +49,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
@@ -58,7 +57,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.FFXProperty;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.Arrays;
 import java.util.List;

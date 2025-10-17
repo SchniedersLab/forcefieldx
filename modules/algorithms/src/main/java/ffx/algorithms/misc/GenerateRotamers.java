@@ -37,19 +37,18 @@
 // ******************************************************************************
 package ffx.algorithms.misc;
 
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
+import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parsers.PDBFilter;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -59,6 +58,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.String.format;
 
 /**
  * The GenerateRotamers class helps generate a rotamer library (particularly for nonstandard amino

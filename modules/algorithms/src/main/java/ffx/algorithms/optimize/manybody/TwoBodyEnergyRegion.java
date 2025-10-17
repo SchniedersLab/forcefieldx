@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.String.format;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import edu.rit.pj.IntegerSchedule;
@@ -48,6 +46,7 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.utils.EnergyException;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
@@ -55,6 +54,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /** Compute 2-Body energy values in parallel across nodes. */
 public class TwoBodyEnergyRegion extends WorkerRegion {

@@ -37,20 +37,27 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.Integer.parseInt;
-
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.RotamerOptimization.Algorithm;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.*;
-
-import java.io.File;
-import java.util.*;
-import java.util.logging.Logger;
-
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+import java.util.logging.Logger;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * Represents command line options for scripts that use a many-body expansion for global

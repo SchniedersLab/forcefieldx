@@ -37,11 +37,11 @@
 //******************************************************************************
 package ffx.potential.commands;
 
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.SaveOptions;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.PotentialsUtils;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -60,7 +60,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc SaveAsP1 [options] &lt;filename&gt;
  */
 @Command(name = "SaveAsP1", description = " Expand the system to P1 and then save it.")
-public class SaveAsP1 extends PotentialScript {
+public class SaveAsP1 extends PotentialCommand {
 
   @Mixin
   private SaveOptions saveOptions = new SaveOptions();
@@ -76,7 +76,7 @@ public class SaveAsP1 extends PotentialScript {
   private String filename = null;
 
   public SaveAsP1() { super(); }
-  public SaveAsP1(Binding binding) { super(binding); }
+  public SaveAsP1(FFXBinding binding) { super(binding); }
   public SaveAsP1(String[] args) { super(args); }
 
   @Override

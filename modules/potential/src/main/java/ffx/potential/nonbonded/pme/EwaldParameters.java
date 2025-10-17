@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
+import ffx.utilities.FFXProperty;
+import ffx.utilities.PropertyGroup;
+
 import static ffx.numerics.special.Erf.erfc;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.utilities.FFXProperty;
-import ffx.utilities.PropertyGroup;
 
 /**
  * Mutable Particle Mesh Ewald constants.

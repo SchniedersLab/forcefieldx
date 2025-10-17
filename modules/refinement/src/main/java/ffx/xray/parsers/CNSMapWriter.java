@@ -39,14 +39,14 @@ package ffx.xray.parsers;
 
 import ffx.crystal.Crystal;
 
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The CNSMapWriter class writes an output map that covers the unit cell (not the asymmetric unit).

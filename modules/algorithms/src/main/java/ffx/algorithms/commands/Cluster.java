@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
@@ -48,7 +48,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.Clustering.Conformation;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import picocli.CommandLine.Command;
@@ -84,7 +84,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv;
  * ffxc Cluster [options] &lt;filename&gt;
  */
 @Command(description = " Cluster structures using an RMSD matrix.", name = "Cluster")
-public class Cluster extends AlgorithmsScript {
+public class Cluster extends AlgorithmsCommand {
 
   /**
    * -a or --algorithm Clustering algorithm to use.
@@ -159,9 +159,9 @@ public class Cluster extends AlgorithmsScript {
   /**
    * Cluster constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Cluster(Binding binding) {
+  public Cluster(FFXBinding binding) {
     super(binding);
   }
 

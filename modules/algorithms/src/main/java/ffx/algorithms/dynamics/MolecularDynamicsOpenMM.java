@@ -39,19 +39,18 @@ package ffx.algorithms.dynamics;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
-import ffx.algorithms.dynamics.thermostats.Adiabatic;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.UnmodifiableState;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.openmm.OpenMMContext;
 import ffx.potential.openmm.OpenMMPotential;
 import ffx.potential.openmm.OpenMMState;
 import ffx.potential.openmm.OpenMMSystem;
-import ffx.potential.UnmodifiableState;
 
 import javax.annotation.Nullable;
 import java.io.File;

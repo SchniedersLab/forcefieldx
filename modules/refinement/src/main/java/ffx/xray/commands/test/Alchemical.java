@@ -38,7 +38,7 @@
 package ffx.xray.commands.test;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.LambdaParticleOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
@@ -54,11 +54,11 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.realspace.cli.RealSpaceOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -79,7 +79,7 @@ import java.util.logging.Logger;
  * ffxc xray.Alchemical [options] &lt;filename&gt;
  */
 @Command(description = " Simulated annealing on an X-ray target.", name = "xray.test.Alchemical")
-public class Alchemical extends AlgorithmsScript {
+public class Alchemical extends AlgorithmsCommand {
 
   @Mixin
   private DynamicsOptions dynamicsOptions;
@@ -168,9 +168,9 @@ public class Alchemical extends AlgorithmsScript {
 
   /**
    * Alchemical constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Alchemical(Binding binding) {
+  public Alchemical(FFXBinding binding) {
     super(binding);
   }
 

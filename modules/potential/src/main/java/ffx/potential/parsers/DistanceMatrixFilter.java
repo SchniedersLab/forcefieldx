@@ -37,11 +37,8 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-
 import ffx.numerics.math.RunningStatistics;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -52,6 +49,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 /**
  * The DistanceMatrixFilter class parses a Distance Matrix (*.DST) files.

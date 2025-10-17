@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -70,7 +70,7 @@ import static java.lang.String.format;
  */
 
 @Command(description = " Unwind .ARC files for nWindows", name = "SortArc")
-public class SortArc extends AlgorithmsScript {
+public class SortArc extends AlgorithmsCommand {
 
   @Mixin
   private AlchemicalOptions alchemicalOptions;
@@ -132,9 +132,9 @@ public class SortArc extends AlgorithmsScript {
   /**
    * SortArc Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public SortArc(Binding binding) {
+  public SortArc(FFXBinding binding) {
     super(binding);
   }
 

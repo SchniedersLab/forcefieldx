@@ -39,6 +39,9 @@ package ffx.potential.bonded;
 
 import ffx.numerics.Constraint;
 import ffx.potential.bonded.Atom.Resolution;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -46,10 +49,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.Material;
-import org.jogamp.vecmath.Color3f;
 
 /**
  * The BondedTerm class is extended by all Valence Geometry classes (bond, angle, dihedral, torsion,

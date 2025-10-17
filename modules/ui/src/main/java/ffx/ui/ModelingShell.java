@@ -40,7 +40,7 @@ package ffx.ui;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
@@ -51,13 +51,32 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.Console;
+import ffx.utilities.FFXCommand;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.GroovyFileFilter;
-import groovy.lang.Binding;
-import groovy.lang.Script;
+import org.codehaus.groovy.runtime.MethodClosure;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.Language;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.proxy.ProxyArray;
 
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextPane;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -76,27 +95,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTextPane;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
-
-import org.codehaus.groovy.runtime.MethodClosure;
-
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Engine;
-import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.Value;
-import org.graalvm.polyglot.Language;
-import org.graalvm.polyglot.proxy.ProxyArray;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the Groovy scripting
@@ -151,7 +149,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     super();
     this.mainPanel = mainPanel;
     headless = java.awt.GraphicsEnvironment.isHeadless();
-    initContext(getShell().getContext());
+    FFXBinding binding = new FFXBinding();
+    initContext(binding);
   }
 
   /**
@@ -250,13 +249,15 @@ public class ModelingShell extends Console implements AlgorithmListener {
   @Override
   public void clearContext() {
     super.clearContext();
-    initContext(getShell().getContext());
+    FFXBinding binding = new FFXBinding();
+    initContext(binding);
   }
 
   @Override
   public void clearContext(EventObject evt) {
     super.clearContext(evt);
-    initContext(getShell().getContext());
+    FFXBinding binding = new FFXBinding();
+    initContext(binding);
   }
 
   /**
@@ -440,7 +441,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
   /**
    * Initialize access to Force Field X variables and methods from with the Shell.
    */
-  private void initContext(Binding binding) {
+  private void initContext(FFXBinding binding) {
     binding.setVariable("dat", mainPanel.getHierarchy());
     binding.setVariable("cmd", mainPanel);
     binding.setVariable("vis", mainPanel.getGraphics3D());
@@ -586,32 +587,33 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * @param argList List of String inputs to the script.
    * @return Returns a reference to the executed script.
    */
-  public Script runFFXScript(File file, List<String> argList) {
+  public FFXCommand runFFXScript(File file, List<String> argList) {
     GroovyFileFilter groovyFileFilter = new GroovyFileFilter();
     // Check that the file is a Groovy script.
     if (!groovyFileFilter.accept(file)) {
       // If not, assume its a Python script.
-      return runNonGroovyScript(file, argList);
+      runNonGroovyScript(file, argList);
+      return null;
     }
 
     logger.info(" Executing external Groovy script: " + file.getAbsolutePath() + "\n");
     try {
       before();
-      Script script = null;
+      FFXCommand script = null;
       try {
         // Run the file using the current Shell and its Binding.
         Object o = getShell().run(file, argList);
 
-        if (o instanceof Script) {
-          script = (Script) o;
+        if (o instanceof FFXCommand) {
+          script = (FFXCommand) o;
         }
 
         // Do not destroy the system when using the GUI.
         if (headless) {
-          if (o instanceof PotentialScript) {
-            ((PotentialScript) o).destroyPotentials();
-          } else if (o instanceof AlgorithmsScript) {
-            ((AlgorithmsScript) o).destroyPotentials();
+          if (o instanceof PotentialCommand) {
+            ((PotentialCommand) o).destroyPotentials();
+          } else if (o instanceof AlgorithmsCommand) {
+            ((AlgorithmsCommand) o).destroyPotentials();
           }
         }
       } catch (Exception ex) {
@@ -636,7 +638,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * @param argList List of String inputs to the script.
    * @return Returns a reference to the executed script.
    */
-  public Script runNonGroovyScript(File file, List<String> argList) {
+  public void runNonGroovyScript(File file, List<String> argList) {
     logger.info(" Attempting to execute Polyglot script:\n  " + file.getAbsolutePath() + "\n");
 
     if (logger.isLoggable(Level.FINE)) {
@@ -653,7 +655,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
     try {
       before();
-      Script script = null;
       String language = Source.findLanguage(file);
       logger.info(" Detected script language: " + language);
       Source source = Source.newBuilder(language, file).build();
@@ -672,17 +673,16 @@ public class ModelingShell extends Console implements AlgorithmListener {
         logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
       }
       after();
-      return script;
     } catch (Exception e) {
       // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in some versions of Groovy.
       String message = "Error evaluating script.";
       logger.log(Level.WARNING, message, e);
     }
-    return null;
   }
 
   /**
    * Create a Polyglot Context for the specified language.
+   *
    * @param language a String specifying the language.
    * @return a Polyglot Context.
    */
@@ -709,34 +709,34 @@ public class ModelingShell extends Console implements AlgorithmListener {
   }
 
   /**
-   * runFFXScript - Execute a compiled FFX script.
+   * runFFXScript - Execute a compiled FFX command.
    *
-   * @param script  a compiled FFX script.
-   * @param argList List of String inputs to the script.
-   * @return Returns a reference to the executed script.
+   * @param className a compiled FFX command.
+   * @param argList   List of String inputs to the command.
+   * @return Returns a reference to the executed command.
    */
-  public Script runFFXScript(Class<? extends Script> script, List<String> argList) {
-    logger.info(" Executing internal script: " + script.getCanonicalName() + "\n");
+  public FFXCommand runFFXScript(Class<? extends FFXCommand> className, List<String> argList) {
+    logger.info(" Executing internal command: " + className.getCanonicalName() + "\n");
     try {
       before();
-      Script groovyScript = null;
+      FFXCommand command = null;
       try {
         // Create a Binding for command line arguments and FFX User Interface variables.
-        Binding binding = new Binding();
+        FFXBinding binding = new FFXBinding();
         binding.setVariable("args", argList);
         initContext(binding);
 
         // Create a new instance of the script and run it.
-        groovyScript = script.getDeclaredConstructor().newInstance();
-        groovyScript.setBinding(binding);
-        groovyScript.run();
+        command = className.getDeclaredConstructor().newInstance();
+        command.setBinding(binding);
+        command.run();
 
         // Do not destroy the system when using the GUI.
         if (headless) {
-          if (groovyScript instanceof PotentialScript) {
-            ((PotentialScript) groovyScript).destroyPotentials();
-          } else if (groovyScript instanceof AlgorithmsScript) {
-            ((AlgorithmsScript) groovyScript).destroyPotentials();
+          if (command instanceof PotentialCommand) {
+            ((PotentialCommand) command).destroyPotentials();
+          } else if (command instanceof AlgorithmsCommand) {
+            ((AlgorithmsCommand) command).destroyPotentials();
           }
         }
       } catch (Exception ex) {
@@ -744,7 +744,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
       }
       after();
 
-      return groovyScript;
+      return command;
     } catch (Exception e) {
       // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in
       // some versions of Groovy.

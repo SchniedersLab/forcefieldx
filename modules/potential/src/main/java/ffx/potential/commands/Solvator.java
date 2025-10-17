@@ -45,12 +45,11 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Polymer;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.utils.ConvexHullOps;
-import ffx.potential.utils.StructureMetrics;
 import ffx.utilities.Constants;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -84,7 +83,7 @@ import static org.apache.commons.math3.util.FastMath.round;
  * ffxc Solvator [options] &lt;filename&gt;
  */
 @Command(description = " Creates a box of solvent around a solute.", name = "Solvator")
-public class Solvator extends PotentialScript {
+public class Solvator extends PotentialCommand {
 
   @Option(names = {"--sFi", "--solventFile"}, paramLabel = "water",
       description = "A file containing the solvent box to be used. There is currently no default.")
@@ -137,7 +136,7 @@ public class Solvator extends PotentialScript {
     super();
   }
 
-  public Solvator(Binding binding) {
+  public Solvator(FFXBinding binding) {
     super(binding);
   }
 

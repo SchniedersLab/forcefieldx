@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.cli.XrayOptions;
 import ffx.xray.parsers.MTZWriter;
 import ffx.xray.parsers.MTZWriter.MTZType;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -65,7 +65,7 @@ import static org.apache.commons.io.FilenameUtils.getBaseName;
  * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Write out computed structure factors.", name = "xray.ComputeFc")
-public class ComputeFc extends AlgorithmsScript {
+public class ComputeFc extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -96,9 +96,9 @@ public class ComputeFc extends AlgorithmsScript {
 
   /**
    * ComputeFc constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ComputeFc(Binding binding) {
+  public ComputeFc(FFXBinding binding) {
     super(binding);
   }
 

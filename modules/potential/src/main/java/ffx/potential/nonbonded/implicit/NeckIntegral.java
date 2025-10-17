@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import java.util.logging.Logger;
+
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.floor;
-
-import java.util.logging.Logger;
 
 /**
  * This class is used to compute interstitial space integrals of the form 1/r^6.

@@ -37,13 +37,13 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
+import ffx.numerics.Constraint;
+import ffx.numerics.Potential;
+import ffx.potential.SystemState;
+
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
-
-import ffx.potential.SystemState;
-import ffx.numerics.Constraint;
-import ffx.numerics.Potential;
 
 /**
  * Integrate Newton's equations of motion using a Velocity Verlet multistep recursion formula.

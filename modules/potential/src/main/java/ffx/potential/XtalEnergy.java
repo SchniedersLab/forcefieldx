@@ -44,9 +44,7 @@ import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.bonded.Atom;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 

@@ -37,6 +37,21 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedDouble;
+import ffx.crystal.Crystal;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.multipole.MultipoleUtilities;
+import ffx.potential.bonded.Atom;
+import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.nonbonded.ReciprocalSpace;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -58,22 +73,7 @@ import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
 import static java.lang.Math.PI;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.SharedDouble;
-import ffx.crystal.Crystal;
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.multipole.MultipoleUtilities;
-import ffx.potential.bonded.Atom;
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ReciprocalSpace;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Parallel evaluation of the PME reciprocal space energy and gradient.

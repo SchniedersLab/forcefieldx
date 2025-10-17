@@ -37,15 +37,16 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
+import org.apache.commons.io.FilenameUtils;
 
+import javax.swing.filechooser.FileFilter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import javax.swing.filechooser.FileFilter;
-import org.apache.commons.io.FilenameUtils;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 
 /**
  * The XYZFileFilter class is used to choose a TINKER Cartesian Coordinate (*.XYZ) file.

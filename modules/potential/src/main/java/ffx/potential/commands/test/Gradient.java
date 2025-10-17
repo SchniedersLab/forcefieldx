@@ -39,24 +39,17 @@ package ffx.potential.commands.test;
 
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.GradientOptions;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.utils.GradientUtils;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
 
-import java.util.stream.IntStream;
 import java.util.Collections;
 import java.util.List;
-import groovy.lang.Binding;
-
-import static ffx.utilities.StringUtils.parseAtomRanges;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The Gradient script evaluates the consistency of the energy and gradient.
@@ -66,7 +59,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * ffxc test.Gradient [options] &lt;filename&gt;
  */
 @Command(description = " Test the potential energy gradient.", name = "test.Gradient")
-public class Gradient extends PotentialScript {
+public class Gradient extends PotentialCommand {
 
   @Mixin
   AtomSelectionOptions atomSelectionOptions;
@@ -92,9 +85,9 @@ public class Gradient extends PotentialScript {
 
   /**
    * Gradient constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Gradient(Binding binding) {
+  public Gradient(FFXBinding binding) {
     super(binding);
   }
 

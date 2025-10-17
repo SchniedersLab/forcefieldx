@@ -37,9 +37,10 @@
 // ******************************************************************************
 package ffx.utilities;
 
-import static java.lang.String.format;
-import static java.util.Collections.sort;
-import static picocli.CommandLine.usage;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.ParseResult;
 
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
@@ -48,6 +49,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -55,19 +57,21 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
-import picocli.CommandLine;
-import picocli.CommandLine.Help.Ansi;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.ParseResult;
+
+import static java.lang.String.format;
+import static java.util.Collections.sort;
+import static picocli.CommandLine.usage;
 
 /**
- * Base Command class.
+ * Base FFX Command class.
  *
  * @author Michael J. Schnieders
  */
 public abstract class FFXCommand {
 
-  /** The logger for this class. */
+  /**
+   * The logger for this class.
+   */
   public static final Logger logger = Logger.getLogger(FFXCommand.class.getName());
 
   /**
@@ -78,15 +82,19 @@ public abstract class FFXCommand {
    */
   public final Ansi color;
 
-  /** The array of args passed into the Script. */
+  /**
+   * The array of args passed into the Script.
+   */
   public String[] args;
 
-  /** Parse Result. */
+  /**
+   * Parse Result.
+   */
   public ParseResult parseResult = null;
 
-  private final FFXContext ffxContext;
-
-  /** -V or --version Prints the FFX version and exits. */
+  /**
+   * -V or --version Prints the FFX version and exits.
+   */
   @Option(
       names = {"-V", "--version"},
       versionHelp = true,
@@ -94,7 +102,9 @@ public abstract class FFXCommand {
       description = "Print the Force Field X version and exit.")
   public boolean version;
 
-  /** -h or --help Prints a help message. */
+  /**
+   * -h or --help Prints a help message.
+   */
   @Option(
       names = {"-h", "--help"},
       usageHelp = true,
@@ -103,12 +113,34 @@ public abstract class FFXCommand {
   public boolean help;
 
   /**
-   * Default constructor for an FFX Script.
-   *
-   * @param ffxContext a {@link ffx.utilities.FFXContext} object
+   * The Binding that provides variables to this Command.
    */
-  public FFXCommand(FFXContext ffxContext) {
-    this.ffxContext = ffxContext;
+  public FFXBinding binding;
+
+  /**
+   * Default constructor for an FFX Command.
+   */
+  public FFXCommand() {
+    this(new FFXBinding());
+  }
+
+  /**
+   * Create an FFX Command using the supplied command line arguments.
+   *
+   * @param args The command line arguments.
+   */
+  public FFXCommand(String[] args) {
+    this(new FFXBinding());
+    binding.setVariable("args", Arrays.asList(args));
+  }
+
+  /**
+   * Default constructor for an FFX Command.
+   *
+   * @param binding the Binding that provides variables to this Command.
+   */
+  public FFXCommand(FFXBinding binding) {
+    this.binding = binding;
     if (GraphicsEnvironment.isHeadless()) {
       color = Ansi.ON;
     } else {
@@ -117,40 +149,40 @@ public abstract class FFXCommand {
   }
 
   /**
-   * Obtain the Context for this command.
+   * Set the Binding that provides variables to this Command.
    *
-   * @return The FFXContext.
+   * @param binding The Binding to use.
    */
-  public FFXContext getFfxContext() {
-    return ffxContext;
+  public void setBinding(FFXBinding binding) {
+    this.binding = binding;
   }
 
   /**
-   * Use the System ClassLoader to find the requested command.
+   * Use the System ClassLoader to find the requested Command.
    *
-   * @param name Name of the script to load (e.g. Energy).
-   * @return The Script, if found, or null.
+   * @param name Name of the Command to load (e.g., Energy).
+   * @return The Command, if found, or null.
    */
   public static Class<? extends FFXCommand> getCommand(String name) {
     ClassLoader loader = FFXCommand.class.getClassLoader();
     String pathName = name;
-    Class<?> script;
+    Class<?> command;
     try {
       // First try to load the class directly.
-      script = loader.loadClass(pathName);
+      command = loader.loadClass(pathName);
     } catch (ClassNotFoundException e) {
-      // Next, try to load a script from the potential package.
+      // Next, try to load a Command from the Potential commands package.
       pathName = "ffx.potential.commands." + name;
       try {
-        script = loader.loadClass(pathName);
+        command = loader.loadClass(pathName);
       } catch (ClassNotFoundException e2) {
-        // Next, try to load a script from the algorithm package.
+        // Next, try to load a Command from the Algorithms commands package.
         pathName = "ffx.algorithms.commands." + name;
         try {
-          script = loader.loadClass(pathName);
-        } catch (ClassNotFoundException e3) {
+          command = loader.loadClass(pathName);
+        } catch (ClassNotFoundException e2b) {
           if (name.startsWith("xray.")) {
-            // Finally, try to load a script from the xray package.
+            // Finally, try to load a Command from the Refinement package.
             pathName = "ffx.xray.commands." + name.replaceAll("xray.", "");
           } else if (name.startsWith("realspace.")) {
             pathName = "ffx.realspace.commands." + name.replaceAll("realspace.", "");
@@ -158,7 +190,7 @@ public abstract class FFXCommand {
             pathName = "ffx." + name;
           }
           try {
-            script = loader.loadClass(pathName);
+            command = loader.loadClass(pathName);
           } catch (ClassNotFoundException e4) {
             logger.warning(format(" %s was not found.", name));
             return null;
@@ -166,27 +198,45 @@ public abstract class FFXCommand {
         }
       }
     }
-    return script.asSubclass(FFXCommand.class);
+    return command.asSubclass(FFXCommand.class);
   }
 
   /**
-   * List the embedded FFX Groovy Scripts.
+   * List the embedded FFX Commands.
    *
-   * @param logCommands List Scripts.
-   * @param logTestCommands List Test Scripts.
+   * @param logCommands     List Commands.
+   * @param logTestCommands List Test Commands.
    */
   public static void listCommands(boolean logCommands, boolean logTestCommands) {
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-    String location = "ffx";
-    URL scriptURL = classLoader.getResource(location);
-    if (scriptURL == null) {
-      logger.info(format(" The %s resource could not be found by the classloader.", location));
-      return;
+    try {
+      logger.info("\n  Potential Package Commands:");
+      URL url = classLoader.getResource("ffx/potential");
+      listCommandsForPackage(url, logCommands, logTestCommands);
+      logger.info("\n  Algorithms Package Commands:");
+      url = classLoader.getResource("ffx/algorithms");
+      listCommandsForPackage(url, logCommands, logTestCommands);
+      logger.info("\n  Refinement Package Commands:");
+      url = classLoader.getResource("ffx/xray");
+      listCommandsForPackage(url, logCommands, logTestCommands);
+    } catch (Exception e) {
+      logger.info(" The FFX resource could not be found by the classloader.");
     }
-    String scriptPath = scriptURL.getPath();
-    String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
+  }
+
+  /**
+   * List the embedded FFX Commands.
+   *
+   * @param commandURL      URL of package with Commands.
+   * @param logCommands     List Commands.
+   * @param logTestCommands List Test Commands.
+   */
+  private static void listCommandsForPackage(URL commandURL, boolean logCommands, boolean logTestCommands) {
+    String commandPath = commandURL.getPath();
+    String ffx = commandPath.substring(5, commandURL.getPath().indexOf("!"));
     List<String> commands = new ArrayList<>();
     List<String> testCommands = new ArrayList<>();
+
     try (JarFile jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8))) {
       // Iterates over Jar entries.
       Enumeration<JarEntry> enumeration = jar.entries();
@@ -194,9 +244,9 @@ public abstract class FFXCommand {
         ZipEntry zipEntry = enumeration.nextElement();
         String className = zipEntry.getName();
         if (className.startsWith("ffx")
-            && className.contains("commands")
             && className.endsWith(".class")
-            && !className.contains("$")) {
+            && !className.contains("$")
+            && className.contains("commands")) {
           className = className.replace("/", ".");
           className = className.replace(".class", "");
           // Present the classes using "short-cut" names.
@@ -212,7 +262,7 @@ public abstract class FFXCommand {
         }
       }
     } catch (Exception e) {
-      logger.info(format(" The %s resource could not be decoded.", location));
+      logger.info(format(" The %s resource could not be decoded.", commandPath));
       return;
     }
 
@@ -222,13 +272,13 @@ public abstract class FFXCommand {
 
     // Log the script names.
     if (logTestCommands) {
-      for (String script : testCommands) {
-        logger.info("   " + script);
+      for (String command : testCommands) {
+        logger.info("   " + command);
       }
     }
     if (logCommands) {
-      for (String script : commands) {
-        logger.info("   " + script);
+      for (String command : commands) {
+        logger.info("   " + command);
       }
     }
   }
@@ -250,19 +300,13 @@ public abstract class FFXCommand {
   }
 
   /**
-   * Initialize this Script based on the specified command line arguments.
+   * Initialize this Command based on the specified command line arguments.
    *
    * @return boolean Returns true if the script should continue and false to exit.
    */
   public boolean init() {
-
     // The args property could either be a list or an array of String arguments.
-    Object arguments = null;
-    try {
-      arguments = ffxContext.getVariable("args");
-    } catch (Exception e) {
-      logger.info(" Exception loading command line args:" + arguments);
-    }
+    Object arguments = binding.getVariable("args");
 
     if (arguments instanceof List<?> list) {
       int numArgs = list.size();
@@ -270,8 +314,12 @@ public abstract class FFXCommand {
       for (int i = 0; i < numArgs; i++) {
         args[i] = (String) list.get(i);
       }
-    } else {
+    } else if (arguments instanceof String[]) {
       args = (String[]) arguments;
+    } else if (arguments instanceof String) {
+      args = new String[]{(String) arguments};
+    } else {
+      args = new String[0];
     }
 
     CommandLine commandLine = new CommandLine(this);
@@ -295,10 +343,11 @@ public abstract class FFXCommand {
     return !version;
   }
 
+
   /**
-   * Execute the command.
+   * Execute this Command.
    *
-   * @return a {@link ffx.utilities.FFXCommand} object
+   * @return The current FFXCommand.
    */
   public FFXCommand run() {
     logger.info(helpString());

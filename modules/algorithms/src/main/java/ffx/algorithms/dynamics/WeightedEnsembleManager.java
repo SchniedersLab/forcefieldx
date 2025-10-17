@@ -2,21 +2,26 @@ package ffx.algorithms.dynamics;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.potential.utils.ProgressiveAlignmentOfCrystals;
 import ffx.potential.utils.StructureMetrics;
 import ffx.potential.utils.Superpose;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class implements the Weighted Ensemble algorithm. Simulations are ran in parallel with weights

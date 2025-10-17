@@ -37,13 +37,8 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.numerics.math.ScalarMath.binomial;
-import static java.util.Arrays.fill;
-
 import ffx.potential.nonbonded.pme.LambdaMode;
 import ffx.potential.parameters.ForceField;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresFactory;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
@@ -56,6 +51,12 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static ffx.numerics.math.ScalarMath.binomial;
+import static java.util.Arrays.fill;
 
 /**
  * Predict Mutual Induced Dipoles based on previous steps.

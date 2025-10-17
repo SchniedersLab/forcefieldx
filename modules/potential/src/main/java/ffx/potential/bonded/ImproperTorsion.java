@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
@@ -50,6 +46,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The ImproperTorsion class represents an Improper Torsion.

@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.TimerOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -63,7 +63,7 @@ import static java.lang.String.format;
  * ffxc xray.Timer [options] &lt;filename&gt;
  */
 @Command(description = " Time calculation of the X-ray target.", name = "xray.Timer")
-public class Timer extends AlgorithmsScript {
+public class Timer extends AlgorithmsCommand {
 
   @Mixin
   private TimerOptions timerOptions;
@@ -98,9 +98,9 @@ public class Timer extends AlgorithmsScript {
   /**
    * Timer constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Timer(Binding binding) {
+  public Timer(FFXBinding binding) {
     super(binding);
   }
 
@@ -157,7 +157,7 @@ public class Timer extends AlgorithmsScript {
     int nEvals = timerOptions.getIterations();
     long minTime = Long.MAX_VALUE;
     double sumTime2 = 0.0;
-    int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1); // Halfway point
+    int halfnEvals =  (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1; // Halfway point
     for (int i = 0; i < nEvals; i++) {
       long time = -System.nanoTime();
       double e;
@@ -169,7 +169,7 @@ public class Timer extends AlgorithmsScript {
       time += System.nanoTime();
       logger.info(format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9));
       minTime = time < minTime ? time : minTime;
-      if (i >= (int) (nEvals / 2)) {
+      if (i >= nEvals / 2) {
         double time2 = time * 1.0E-9;
         sumTime2 += (time2 * time2);
       }

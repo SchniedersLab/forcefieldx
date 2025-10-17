@@ -37,21 +37,22 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.min;
-
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.PDBFilter;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide side-chain).

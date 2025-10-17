@@ -39,9 +39,9 @@ package ffx.potential.commands;
 
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.TimerOptions;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
@@ -60,7 +60,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *   ffxc Timer [options] &lt;filename&gt;
  */
 @Command(name = "Timer", description = " Time energy evaluations.")
-public class Timer extends PotentialScript {
+public class Timer extends PotentialCommand {
 
   /** Mix in timing options. */
   @Mixin
@@ -74,7 +74,7 @@ public class Timer extends PotentialScript {
   private ForceFieldEnergy energy = null;
 
   public Timer() { super(); }
-  public Timer(Binding binding) { super(binding); }
+  public Timer(FFXBinding binding) { super(binding); }
   public Timer(String[] args) { super(args); }
 
   @Override

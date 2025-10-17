@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Integer.parseInt;
+import org.apache.commons.io.FilenameUtils;
 
+import javax.swing.filechooser.FileFilter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import javax.swing.filechooser.FileFilter;
-import org.apache.commons.io.FilenameUtils;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * The INTFileFilter class is used to choose TINKER Internal Coordinate (*.INT) files.

@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
-import static java.lang.System.arraycopy;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import picocli.CommandLine.Option;
+
+import static java.lang.System.arraycopy;
 
 /**
  * Represents command line options for scripts that save a structure to disc.

@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.numerics.math.ScalarMath.b2u;
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.crystal.Crystal;
@@ -59,12 +53,19 @@ import ffx.potential.parameters.ForceField;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 /**
  * Combine the X-ray target and chemical potential energy using the {@link

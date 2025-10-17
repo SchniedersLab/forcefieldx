@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
-import static java.util.Arrays.fill;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
+
+import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
+import static java.util.Arrays.fill;
 
 /**
  * The SliceLoop class is used to parallelize placing onto a 3D grid

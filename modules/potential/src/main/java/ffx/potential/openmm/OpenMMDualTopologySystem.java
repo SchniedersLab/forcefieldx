@@ -37,11 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
-import ffx.numerics.Potential;
-import ffx.openmm.amoeba.TorsionTorsionForce;
-import ffx.potential.MolecularAssembly;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.TorsionTorsion;

@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static ffx.potential.bonded.Bond.logNoBondType;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
@@ -52,6 +47,9 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.jogamp.vecmath.Vector3d;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -67,8 +65,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.jogamp.vecmath.Vector3d;
+
+import static ffx.potential.bonded.Bond.logNoBondType;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 /**
  * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.

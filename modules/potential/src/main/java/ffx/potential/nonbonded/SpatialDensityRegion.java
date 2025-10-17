@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.floor;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.floor;
 
 /**
  * This class implements a spatial decomposition based on partitioning a grid into octants.

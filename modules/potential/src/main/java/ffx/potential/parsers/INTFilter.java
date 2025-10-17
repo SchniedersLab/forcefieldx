@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static ffx.potential.bonded.Bond.logNoBondType;
-import static ffx.potential.bonded.BondedUtils.intxyz;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.Atom;
@@ -49,6 +44,8 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -57,7 +54,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.potential.bonded.Bond.logNoBondType;
+import static ffx.potential.bonded.BondedUtils.intxyz;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 
 /**
  * The INTFilter class parses TINKER internal coordinate (*.INT) files.

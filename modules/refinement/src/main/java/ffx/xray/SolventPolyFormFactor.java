@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.xray;
 
+import ffx.potential.bonded.Atom;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
 import static java.lang.Math.sqrt;
-
-import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  * SolventPolyFormFactor class.

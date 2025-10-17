@@ -37,30 +37,22 @@
 // ******************************************************************************
 package ffx.utilities;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * This represents the context of an FFX MolecularAssembly.
- * <p>
- * CompositeConfiguration is extended by adding the API used by the Groovy Binding class.
- * <p>
- * The Binding API represents the variable bindings of a script which can be altered from outside the
- * script object or created and passed into it.
- * <p>
- * The Binding API is not supposed to be used in a multithreaded context.
+ * The FFXBinding binds variable names to their instances for an FFX Command.
  *
  * @author Michael J. Schnieders
  */
-public class FFXContext extends CompositeConfiguration {
+public class FFXBinding {
 
   private Map<String, Object> variables;
 
   /**
    * <p>Constructor for FFXContext.</p>
    */
-  public FFXContext() {
+  public FFXBinding() {
     super();
   }
 
@@ -69,7 +61,7 @@ public class FFXContext extends CompositeConfiguration {
    *
    * @param variables a {@link java.util.Map} object
    */
-  public FFXContext(Map<String, Object> variables) {
+  public FFXBinding(Map<String, Object> variables) {
     this();
     this.variables = variables;
   }
@@ -79,7 +71,7 @@ public class FFXContext extends CompositeConfiguration {
    *
    * @param args are the command line arguments from a main()
    */
-  public FFXContext(String[] args) {
+  public FFXBinding(String[] args) {
     this();
     variables = new LinkedHashMap<>();
     variables.put("args", args);
@@ -90,26 +82,19 @@ public class FFXContext extends CompositeConfiguration {
    *
    * @param name the name of the variable to lookup
    * @return the variable value
-   * @throws java.lang.Exception if any.
    */
-  public Object getVariable(String name) throws Exception {
+  public Object getVariable(String name) {
     if (variables == null) {
-      throw new Exception(name);
+      return null;
     }
 
-    Object result = variables.get(name);
-
-    if (result == null && !variables.containsKey(name)) {
-      throw new Exception(name);
-    }
-
-    return result;
+    return variables.get(name);
   }
 
   /**
    * Sets the value of the given variable
    *
-   * @param name the name of the variable to set
+   * @param name  the name of the variable to set
    * @param value the new value for the given variable
    */
   public void setVariable(String name, Object value) {

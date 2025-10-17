@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static java.util.Arrays.sort;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.asin;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedBooleanArray;
@@ -61,6 +50,17 @@ import ffx.potential.utils.EnergyException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static java.util.Arrays.sort;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.asin;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * SurfaceAreaRegion performs an analytical computation of the weighted solvent accessible surface

@@ -37,24 +37,26 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.*;
-import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.lang.String;
+
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 public class TitrationManyBody {
 

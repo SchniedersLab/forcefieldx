@@ -47,13 +47,13 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.CIFFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.openscience.cdk.AtomContainer;
 import org.openscience.cdk.config.AtomTypeFactory;
@@ -100,7 +100,7 @@ import static org.openscience.cdk.tools.periodictable.PeriodicTable.getSymbol;
  */
 @Command(description = " Reorder the atoms of an XYZ file based on atomic weight.",
     name = "test.ReorderAtoms")
-public class ReorderAtoms extends PotentialScript {
+public class ReorderAtoms extends PotentialCommand {
 
   /**
    * -a or --atomType Change atom types of first file to match second.
@@ -152,7 +152,7 @@ public class ReorderAtoms extends PotentialScript {
   /**
    * Constructor using Binding.
    */
-  public ReorderAtoms(Binding binding) {
+  public ReorderAtoms(FFXBinding binding) {
     super(binding);
   }
 

@@ -51,7 +51,6 @@ import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;

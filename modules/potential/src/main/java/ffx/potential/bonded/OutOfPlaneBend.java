@@ -37,6 +37,13 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.OutOfPlaneBendType;
+
+import java.io.Serial;
+import java.util.logging.Logger;
+
 import static ffx.potential.parameters.AngleType.AngleMode.IN_PLANE;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -44,13 +51,6 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.signum;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.OutOfPlaneBendType;
-
-import java.io.Serial;
-import java.util.logging.Logger;
 
 /**
  * The OutOfPlaneBend class represents an Out-Of-Plane Bend.

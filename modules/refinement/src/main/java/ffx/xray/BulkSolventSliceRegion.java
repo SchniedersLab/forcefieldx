@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.util.Arrays.fill;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SliceRegion;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 /**
  * This class implements a spatial decomposition based on partitioning a grid into octants. The

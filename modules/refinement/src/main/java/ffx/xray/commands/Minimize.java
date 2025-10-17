@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -68,7 +68,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.Minimize [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Refine an X-ray/Neutron target.", name = "xray.Minimize")
-public class Minimize extends AlgorithmsScript {
+public class Minimize extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -117,9 +117,9 @@ public class Minimize extends AlgorithmsScript {
   /**
    * Minimize constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Minimize(Binding binding) {
+  public Minimize(FFXBinding binding) {
     super(binding);
   }
 

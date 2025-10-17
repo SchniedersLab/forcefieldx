@@ -38,7 +38,7 @@
 package ffx.algorithms.commands;
 
 import ffx.algorithms.ParallelStateEnergy;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -48,7 +48,7 @@ import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parsers.BARFilter;
 import ffx.potential.parsers.SystemFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -81,7 +81,7 @@ import static java.lang.String.format;
  * ffxc BAR [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 @Command(description = " Evaluates a free energy change with the Bennett Acceptance Ratio algorithm using pregenerated snapshots.", name = "BAR")
-public class BAR extends AlgorithmsScript {
+public class BAR extends AlgorithmsCommand {
 
   @Mixin
   private AlchemicalOptions alchemicalOptions;
@@ -195,9 +195,9 @@ public class BAR extends AlgorithmsScript {
   /**
    * BAR Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public BAR(Binding binding) {
+  public BAR(FFXBinding binding) {
     super(binding);
   }
 

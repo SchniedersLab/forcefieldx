@@ -40,6 +40,7 @@ package ffx.algorithms.optimize.manybody;
 import ffx.algorithms.mc.MCMove;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

@@ -37,17 +37,18 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.lang.String.format;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * RefinementModel class.

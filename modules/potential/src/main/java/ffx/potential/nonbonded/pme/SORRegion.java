@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t100;
-import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
-import static org.apache.commons.math3.util.FastMath.max;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -52,8 +46,15 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.FFXProperty;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
+import static org.apache.commons.math3.util.FastMath.max;
 
 /**
  * Parallel successive over-relaxation (SOR) solver for the self-consistent field.

@@ -37,6 +37,15 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.potential.parameters.AngleTorsionType;
+import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TorsionType;
+
+import java.io.Serial;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -46,15 +55,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.parameters.AngleTorsionType;
-import ffx.potential.parameters.AngleType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.TorsionType;
-
-import java.io.Serial;
-import java.util.logging.Logger;
 
 /**
  * The AngleTorsion class represents an angle torsion coupling between four bonded atoms.

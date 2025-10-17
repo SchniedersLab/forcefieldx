@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.realspace.parsers;
 
-import static org.apache.commons.io.FilenameUtils.isExtension;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-
 import ffx.potential.MolecularAssembly;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.commons.io.FilenameUtils.isExtension;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * RealSpaceFile class.

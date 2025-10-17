@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
-import static java.lang.String.format;
-
-import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import ffx.potential.SystemState;
 import ffx.utilities.Constants;
+
 import java.util.Collections;
 import java.util.List;
+
+import static java.lang.String.format;
 
 /**
  * The Adiabatic thermostat is for NVE simulations and does not alter particle velocities.

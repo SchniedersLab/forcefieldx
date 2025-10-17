@@ -40,9 +40,9 @@ package ffx.potential.commands;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parameters.BioType;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc Biotype &lt;filename&gt;
  */
 @Command(name = "Biotype", description = " Print out Biotype records for the atoms in an XYZ file.")
-public class Biotype extends PotentialScript {
+public class Biotype extends PotentialCommand {
 
   @Option(names = {"--name", "--moleculeName"}, paramLabel = "MOL", defaultValue = "MOL",
       description = "The molecule name to use for the Biotype records.")
@@ -90,7 +90,7 @@ public class Biotype extends PotentialScript {
     super();
   }
 
-  public Biotype(Binding binding) {
+  public Biotype(FFXBinding binding) {
     super(binding);
   }
 
@@ -197,7 +197,7 @@ public class Biotype extends PotentialScript {
     }
 
     // Return the bioTypes via the Binding for compatibility with callers.
-    getBinding().setVariable("bioTypes", bioTypes);
+    binding.setVariable("bioTypes", bioTypes);
 
     return this;
   }

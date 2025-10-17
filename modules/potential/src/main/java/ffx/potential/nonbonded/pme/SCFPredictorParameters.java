@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.numerics.math.ScalarMath.binomial;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-
 import ffx.potential.parameters.ForceField;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
 import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static ffx.numerics.math.ScalarMath.binomial;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 @SuppressWarnings("deprecation")
 public class SCFPredictorParameters {

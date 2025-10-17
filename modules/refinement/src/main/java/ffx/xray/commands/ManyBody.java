@@ -38,10 +38,9 @@
 package ffx.xray.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
-import ffx.algorithms.optimize.manybody.EnergyExpansion;
 import ffx.algorithms.optimize.TitrationManyBody;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -50,11 +49,11 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -79,7 +78,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.ManyBody [options] &lt;filename&gt;
  */
 @Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "xray.ManyBody")
-public class ManyBody extends AlgorithmsScript {
+public class ManyBody extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -116,9 +115,9 @@ public class ManyBody extends AlgorithmsScript {
 
   /**
    * ManyBody constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ManyBody(Binding binding) {
+  public ManyBody(FFXBinding binding) {
     super(binding);
   }
 

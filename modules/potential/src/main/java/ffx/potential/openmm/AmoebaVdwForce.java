@@ -50,7 +50,6 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,8 +62,6 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_Nonbon
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 

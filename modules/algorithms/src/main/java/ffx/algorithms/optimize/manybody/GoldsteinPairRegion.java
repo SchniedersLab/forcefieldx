@@ -37,19 +37,20 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.Double.isFinite;
-import static java.lang.String.format;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+
+import static java.lang.Double.isFinite;
+import static java.lang.String.format;
 
 public class GoldsteinPairRegion extends ParallelRegion {
 

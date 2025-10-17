@@ -38,7 +38,7 @@
 package ffx.algorithms.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.BarostatOptions;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.LambdaParticleOptions;
@@ -56,7 +56,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.cli.WriteoutOptions;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -80,7 +80,7 @@ import static java.lang.String.format;
  * ffxc Thermodynamics [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a free energy.", name = "Thermodynamics")
-public class Thermodynamics extends AlgorithmsScript {
+public class Thermodynamics extends AlgorithmsCommand {
 
   @Mixin
   public DynamicsOptions dynamicsOptions;
@@ -149,9 +149,9 @@ public class Thermodynamics extends AlgorithmsScript {
   /**
    * Thermodynamics Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Thermodynamics(Binding binding) {
+  public Thermodynamics(FFXBinding binding) {
     super(binding);
   }
 

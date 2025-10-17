@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-
-import ffx.potential.SystemState;
 import ffx.numerics.Potential;
+import ffx.potential.SystemState;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
  * Integrate Newton's equations of motion using a Beeman multistep recursion formula; the actual

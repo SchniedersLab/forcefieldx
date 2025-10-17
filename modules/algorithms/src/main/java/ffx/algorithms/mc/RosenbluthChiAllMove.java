@@ -37,25 +37,25 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static ffx.utilities.Constants.R;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.PDBFilter;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -65,9 +65,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.math3.util.FastMath;
+
+import static ffx.utilities.Constants.R;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 /**
  * Represents a Boltzmann-drawn spin of all residue torsions for use with RosenbluthCBMC

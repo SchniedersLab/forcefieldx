@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.numerics.math.SummaryStatistics;
@@ -45,7 +45,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.XPHFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.lang3.ArrayUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -55,8 +55,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 
-import static java.lang.String.format;
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
+import static java.lang.String.format;
 
 /**
  * Use the Rao-Blackwell Estimator to estimate a free energy difference of protonation for a CpHMD system.
@@ -66,7 +66,7 @@ import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
  * ffxc test.RaoBlackwellEstimator [options] &lt;filename&gt; [file2...];
  */
 @Command(description = " Use the Rao-Blackwell estimator to get a free energy difference for residues in a CpHMD system.", name = "test.RaoBlackwellEstimator")
-public class RaoBlackwellEstimator extends AlgorithmsScript {
+public class RaoBlackwellEstimator extends AlgorithmsCommand {
 
   @Option(names = {"--aFi", "--arcFile"}, paramLabel = "traj",
           description = "A file containing the the PDB from which to build the ExtendedSystem. There is currently no default.")
@@ -115,9 +115,9 @@ public class RaoBlackwellEstimator extends AlgorithmsScript {
 
   /**
    * RaoBlackwellEstimator Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public RaoBlackwellEstimator(Binding binding) {
+  public RaoBlackwellEstimator(FFXBinding binding) {
     super(binding);
   }
 
@@ -257,7 +257,7 @@ public class RaoBlackwellEstimator extends AlgorithmsScript {
     oneZeroDeltaLists = new ArrayList[numESVs][numberOfStates + 1];
     for (int i = 0; i < numESVs; i++) {
       for (int j = 0; j < numberOfStates + 1; j++) {
-        oneZeroDeltaLists[i][j] = new ArrayList<Double>();
+        oneZeroDeltaLists[i][j] = new ArrayList<>();
       }
     }
     // Make a list for tautomerizing ESV's energy differences (energy evals are done at tautomer = 1 for these arrays)
@@ -265,7 +265,7 @@ public class RaoBlackwellEstimator extends AlgorithmsScript {
     tautomerOneZeroDeltaList = new ArrayList[numTautomerESVs][numberOfStates + 1];
     for (int i = 0; i < numTautomerESVs; i++) {
       for (int j = 0; j < numberOfStates + 1; j++) {
-        tautomerOneZeroDeltaList[i][j] = new ArrayList<Double>();
+        tautomerOneZeroDeltaList[i][j] = new ArrayList<>();
       }
     }
 

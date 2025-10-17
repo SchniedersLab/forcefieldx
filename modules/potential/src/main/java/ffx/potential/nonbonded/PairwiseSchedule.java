@@ -39,6 +39,7 @@ package ffx.potential.nonbonded;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
+
 import java.util.logging.Logger;
 
 /**

@@ -37,17 +37,6 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.crystal.SymOp.asMatrixString;
-import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
-import static ffx.utilities.StringUtils.writeAtomRanges;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
-import static org.apache.commons.io.FilenameUtils.concat;
-import static org.apache.commons.io.FilenameUtils.getBaseName;
-import static org.apache.commons.io.FilenameUtils.getFullPath;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.SymOp;
@@ -60,11 +49,23 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parsers.DistanceMatrixFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.EigenDecomposition;
+
+import static ffx.crystal.SymOp.asMatrixString;
+import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
+import static ffx.utilities.StringUtils.writeAtomRanges;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
+import static org.apache.commons.io.FilenameUtils.concat;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.io.FilenameUtils.getFullPath;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 public class Superpose {
 

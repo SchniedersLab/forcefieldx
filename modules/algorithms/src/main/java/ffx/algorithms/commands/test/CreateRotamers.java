@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.algorithms.optimize.Minimize;
 import ffx.algorithms.optimize.Minimize.MinimizationEngine;
@@ -50,7 +50,7 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.RotamerLibrary.ProteinLibrary;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -73,7 +73,7 @@ import java.util.stream.Collectors;
  * ffxc test.CreateRotamers [options] &lt;filename&gt;
  */
 @Command(description = " Creates a set of conformation dependent rotamers.", name = "test.CreateRotamers")
-public class CreateRotamers extends AlgorithmsScript {
+public class CreateRotamers extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -114,9 +114,9 @@ public class CreateRotamers extends AlgorithmsScript {
 
   /**
    * CreateRotamers Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public CreateRotamers(Binding binding) {
+  public CreateRotamers(FFXBinding binding) {
     super(binding);
   }
 

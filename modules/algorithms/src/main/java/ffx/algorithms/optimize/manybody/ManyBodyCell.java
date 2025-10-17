@@ -43,10 +43,11 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.nonbonded.NeighborList;
-import ffx.utilities.StringOutputStream;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 import static ffx.crystal.SymOp.applyFracSymOp;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;

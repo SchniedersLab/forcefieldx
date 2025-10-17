@@ -37,17 +37,18 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import static java.lang.String.format;
-import static java.util.Arrays.stream;
-import static org.apache.commons.math3.util.FastMath.round;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static java.util.Arrays.stream;
+import static org.apache.commons.math3.util.FastMath.round;
 
 /**
  * The AsynchronousSend sends/receives Histogram counts from multiple walkers asynchronously.

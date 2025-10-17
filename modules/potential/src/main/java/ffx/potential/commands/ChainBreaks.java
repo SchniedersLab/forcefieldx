@@ -40,9 +40,9 @@ package ffx.potential.commands;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.utils.PotentialsUtils;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -64,7 +64,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
  *   ffxc ChainBreaks &lt;filename&gt;
  */
 @Command(name = "ChainBreaks", description = " Fix chain breaks in a pdb file.")
-public class ChainBreaks extends PotentialScript {
+public class ChainBreaks extends PotentialCommand {
 
   /** The final argument(s) should be one filename. */
   @Parameters(arity = "1", paramLabel = "file",
@@ -79,7 +79,7 @@ public class ChainBreaks extends PotentialScript {
     super();
   }
 
-  public ChainBreaks(Binding binding) {
+  public ChainBreaks(FFXBinding binding) {
     super(binding);
   }
 

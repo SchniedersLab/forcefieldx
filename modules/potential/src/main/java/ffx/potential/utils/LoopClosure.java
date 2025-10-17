@@ -37,7 +37,20 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.numerics.math.DoubleMath.*;
+import ffx.numerics.math.DoubleMath;
+import ffx.potential.bonded.SturmMethod;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.X;
+import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static ffx.numerics.math.DoubleMath.dot;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -52,19 +65,6 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tan;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-
-import ffx.numerics.math.DoubleMath;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-
-import ffx.potential.bonded.SturmMethod;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * LoopClosure class. The program can be used to find loop structures involving six backbone torsion angles given the

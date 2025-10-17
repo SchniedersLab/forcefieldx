@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
-import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-
 import ffx.potential.bonded.Atom;
 import ffx.utilities.FFXProperty;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -53,6 +47,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
+import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 /**
  * The SoluteType class defines one implicit solvent radius.

@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static java.lang.String.format;
-
 import ffx.potential.bonded.AminoAcidUtils;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
+
 import java.util.concurrent.ThreadLocalRandom;
+
+import static java.lang.String.format;
 
 /**
  * Represents a random chi[0] spin of the target residue. For use with RosenbluthRotamerMC.

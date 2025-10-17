@@ -37,16 +37,15 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.optimize.Minimize;
 import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import picocli.CommandLine.Command;
@@ -65,7 +64,7 @@ import java.util.Random;
  * ffxc test.CrystalSearch [options] &lt;filename&gt;
  */
 @Command(description = " Search for minimum energy polymoprhs for a given space group.", name = "test.CrystalSearch")
-public class CrystalSearch extends AlgorithmsScript {
+public class CrystalSearch extends AlgorithmsCommand {
 
   /**
    * -e or --eps Minimization convergence criteria (Kcal/mol/Ang).
@@ -97,9 +96,9 @@ public class CrystalSearch extends AlgorithmsScript {
 
   /**
    * CrystalSearch Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public CrystalSearch(Binding binding) {
+  public CrystalSearch(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
+
+import java.util.Random;
+import java.util.logging.Logger;
+
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-
-import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
-import java.util.Random;
-import java.util.logging.Logger;
 
 /**
  * Define an MC move to update lambda.

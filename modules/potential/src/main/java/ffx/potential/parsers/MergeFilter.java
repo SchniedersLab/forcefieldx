@@ -40,6 +40,7 @@ package ffx.potential.parsers;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+
 import java.io.File;
 import java.util.ArrayList;
 

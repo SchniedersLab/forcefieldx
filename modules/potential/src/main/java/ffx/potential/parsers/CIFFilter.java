@@ -37,22 +37,44 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.Crystal;
 import ffx.crystal.LatticeSystem;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
+import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.openscience.cdk.AtomContainer;
+import org.openscience.cdk.config.AtomTypeFactory;
+import org.openscience.cdk.graph.rebond.RebondTool;
+import org.openscience.cdk.interfaces.IAtom;
+import org.openscience.cdk.interfaces.IAtomType;
+import org.openscience.cdk.interfaces.IBond;
+import org.openscience.cdk.isomorphism.AtomMatcher;
+import org.openscience.cdk.isomorphism.BondMatcher;
+import org.openscience.cdk.isomorphism.Pattern;
+import org.openscience.cdk.isomorphism.VentoFoggia;
+import org.rcsb.cif.CifIO;
+import org.rcsb.cif.model.Column;
+import org.rcsb.cif.model.FloatColumn;
+import org.rcsb.cif.schema.StandardSchemata;
+import org.rcsb.cif.schema.core.AtomSite;
+import org.rcsb.cif.schema.core.Cell;
+import org.rcsb.cif.schema.core.Chemical;
+import org.rcsb.cif.schema.core.CifCoreBlock;
+import org.rcsb.cif.schema.core.CifCoreFile;
+import org.rcsb.cif.schema.core.Symmetry;
 
+import javax.vecmath.Point3d;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -60,46 +82,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.vecmath.Point3d;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
-
-import org.openscience.cdk.AtomContainer;
-import org.openscience.cdk.config.AtomTypeFactory;
-import org.openscience.cdk.graph.rebond.RebondTool;
-import org.openscience.cdk.interfaces.IBond;
-import org.openscience.cdk.interfaces.IAtom;
-import org.openscience.cdk.interfaces.IAtomType;
-import org.openscience.cdk.isomorphism.AtomMatcher;
-import org.openscience.cdk.isomorphism.BondMatcher;
-import org.openscience.cdk.isomorphism.VentoFoggia;
-import org.openscience.cdk.isomorphism.Pattern;
-
-import org.rcsb.cif.CifIO;
-import org.rcsb.cif.model.Column;
-import org.rcsb.cif.model.FloatColumn;
-import org.rcsb.cif.schema.core.AtomSite;
-import org.rcsb.cif.schema.core.CifCoreBlock;
-import org.rcsb.cif.schema.core.CifCoreFile;
-import org.rcsb.cif.schema.core.Chemical;
-import org.rcsb.cif.schema.core.Symmetry;
-import org.rcsb.cif.schema.core.Cell;
-import org.rcsb.cif.schema.StandardSchemata;
 
 import static ffx.crystal.SpaceGroupConversions.hrConversion;
 import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-
 import static java.lang.String.format;
-
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.io.FilenameUtils.getFullPath;
 import static org.apache.commons.io.FilenameUtils.getName;

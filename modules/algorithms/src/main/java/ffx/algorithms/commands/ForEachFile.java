@@ -42,13 +42,12 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.Utilities;
-import ffx.utilities.FFXScript;
+import ffx.utilities.FFXCommand;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FileUtils;
-import groovy.lang.Binding;
-import groovy.lang.Script;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
@@ -80,7 +79,7 @@ import static org.apache.commons.io.FilenameUtils.normalize;
  * ffxc ForEachFile [ForEachFile options] Command [Command options] &lt;FILE&gt; [&lt;FILE2&gt;]
  */
 @Command(description = " Run an FFX command on a series of files.", name = "ForEachFile")
-public class ForEachFile extends AlgorithmsScript {
+public class ForEachFile extends AlgorithmsCommand {
 
   /**
    * --recurse Maximum recursion level (0 only includes the current directory).
@@ -127,7 +126,7 @@ public class ForEachFile extends AlgorithmsScript {
   /**
    * FFX Script to run in each process.
    */
-  private Class<? extends FFXScript> script;
+  private Class<? extends FFXCommand> script;
 
   /**
    * List of files.
@@ -159,9 +158,9 @@ public class ForEachFile extends AlgorithmsScript {
   /**
    * ForEachFile Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ForEachFile(Binding binding) {
+  public ForEachFile(FFXBinding binding) {
     super(binding);
   }
 
@@ -187,7 +186,7 @@ public class ForEachFile extends AlgorithmsScript {
     // Set a flag to avoid double use of MPI in downstream commands.
     System.setProperty("pj.use.mpi", "false");
 
-    script = getScript(unmatched.get(0));
+    script = getCommand(unmatched.get(0));
     if (script != null) {
       logger.info(format(" The %s will be run on each file.", script));
     } else {
@@ -333,15 +332,15 @@ public class ForEachFile extends AlgorithmsScript {
         }
 
         // Create a Binding for command line arguments.
-        Binding binding = new Binding();
+        FFXBinding binding = new FFXBinding();
         binding.setVariable("args", commandArgs);
 
         // Create a new instance of the script and run it.
-        Script groovyScript = script.getDeclaredConstructor().newInstance();
-        groovyScript.setBinding(binding);
+        FFXCommand command = script.getDeclaredConstructor().newInstance();
+        command.setBinding(binding);
 
         try {
-          groovyScript.run();
+          command.run();
         } catch (Exception e) {
           logger.info(format(" Exception for file: %s", path));
           if (twoFilesPerCommand) {

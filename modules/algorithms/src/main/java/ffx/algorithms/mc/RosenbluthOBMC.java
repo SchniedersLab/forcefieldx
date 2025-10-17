@@ -37,27 +37,28 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static ffx.utilities.Constants.R;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.min;
-
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parsers.PDBFilter;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
+
+import static ffx.utilities.Constants.R;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * Orientational Biased Monte Carlo (as applied to chi0 torsion of peptide side-chains).

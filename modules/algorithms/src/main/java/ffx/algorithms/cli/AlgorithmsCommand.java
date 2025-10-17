@@ -43,14 +43,13 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import ffx.utilities.FFXScript;
-import groovy.lang.Binding;
+import ffx.utilities.FFXCommand;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.lang3.Strings;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -61,7 +60,7 @@ import static java.lang.String.format;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class AlgorithmsScript extends FFXScript {
+public class AlgorithmsCommand extends FFXCommand {
 
   /**
    * An instance of AlgorithmFunctions passed into the current context.
@@ -84,11 +83,11 @@ public class AlgorithmsScript extends FFXScript {
    */
   protected File baseDir;
 
-  public AlgorithmsScript() {
-    this(new groovy.lang.Binding());
+  public AlgorithmsCommand() {
+    super();
   }
 
-  public AlgorithmsScript(Binding binding) {
+  public AlgorithmsCommand(FFXBinding binding) {
     super(binding);
   }
 
@@ -97,10 +96,8 @@ public class AlgorithmsScript extends FFXScript {
    *
    * @param args The command line arguments.
    */
-  public AlgorithmsScript(String[] args) {
-    this(new Binding());
-    Binding binding = getBinding();
-    binding.setVariable("args", Arrays.asList(args));
+  public AlgorithmsCommand(String[] args) {
+    super(args);
   }
 
   /**
@@ -140,8 +137,6 @@ public class AlgorithmsScript extends FFXScript {
     if (!super.init()) {
       return false;
     }
-
-    Binding binding = getBinding();
 
     if (binding.hasVariable("functions")) {
       algorithmFunctions = (AlgorithmFunctions) binding.getVariable("functions");
@@ -244,13 +239,14 @@ public class AlgorithmsScript extends FFXScript {
 
   /**
    * Update the title line of the structure with Energy and Density.
+   *
    * @param energy Newly minimized energy value.
    */
-  public void updateTitle(double energy){
+  public void updateTitle(double energy) {
     // Replace existing energy and density label if present
     String oldName = activeAssembly.getName();
     Crystal crystal = activeAssembly.getCrystal();
-    if(crystal != null && !crystal.aperiodic()){
+    if (crystal != null && !crystal.aperiodic()) {
       double density = crystal.getDensity(activeAssembly.getMass());
       if (Strings.CI.contains(oldName, "Energy:")
           || Strings.CI.contains(oldName, "Density:")) {
@@ -259,10 +255,10 @@ public class AlgorithmsScript extends FFXScript {
         // The first element should always be the number of atoms in XYZ.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < numTokens; i++) {
-          if (Strings.CI.contains(tokens[i], "Energy:")){
+          if (Strings.CI.contains(tokens[i], "Energy:")) {
             // i++ skips the current entry (value associated with "Energy")
             tokens[i++] = Double.toString(energy);
-          } else if (Strings.CI.contains(tokens[i], "Density:")){
+          } else if (Strings.CI.contains(tokens[i], "Density:")) {
             // i++ skips the current entry (value associated with "Density")
             tokens[i++] = Double.toString(density);
           } else {
@@ -272,11 +268,11 @@ public class AlgorithmsScript extends FFXScript {
         }
         // Opted to add energy/density after to preserve formatting.
         activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
-                sb, energy, density));
+            sb, energy, density));
       } else {
         // Append energy and density to structure name (line 1 of XYZ).
         activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
-                oldName, energy, density));
+            oldName, energy, density));
       }
     } else {
       if (Strings.CI.contains(oldName, "Energy:")) {
@@ -285,10 +281,10 @@ public class AlgorithmsScript extends FFXScript {
         // The first element should always be number of atoms in XYZ.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < numTokens; i++) {
-          if (Strings.CI.contains(tokens[i], "Energy:")){
+          if (Strings.CI.contains(tokens[i], "Energy:")) {
             // i++ skips the current entry (value associated with "Energy")
             tokens[i++] = Double.toString(energy);
-          } else{
+          } else {
             // Accrue previous name.
             sb.append(tokens[i]).append(" ");
           }

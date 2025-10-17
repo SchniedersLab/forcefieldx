@@ -37,12 +37,13 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.System.arraycopy;
-
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+
 import java.util.Arrays;
+
+import static java.lang.System.arraycopy;
 
 /** Monte Carlo driver for DEE-MC. */
 public class RotamerMatrixMC extends BoltzmannMC {

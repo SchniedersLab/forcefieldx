@@ -39,11 +39,6 @@ package ffx.xray.parsers;
 
 import ffx.crystal.Crystal;
 
-import static ffx.utilities.TinkerUtils.version;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,6 +46,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.TinkerUtils.version;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * CCP4MapWriter class.

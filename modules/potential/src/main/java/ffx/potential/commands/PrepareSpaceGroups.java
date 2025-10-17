@@ -43,14 +43,20 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
-import groovy.lang.Binding;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +78,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc PrepareSpaceGroups [options] &lt;filename&gt;
  */
 @Command(name = "PrepareSpaceGroups", description = " Create sub-directories for selected space groups.")
-public class PrepareSpaceGroups extends PotentialScript {
+public class PrepareSpaceGroups extends PotentialCommand {
 
   /** Only consider space groups populated in the PDB above the specified rank (231 excludes none). */
   @Option(names = {"-r", "--PDB"}, paramLabel = "231", defaultValue = "231",
@@ -119,7 +125,7 @@ public class PrepareSpaceGroups extends PotentialScript {
   private ForceFieldEnergy energy;
 
   public PrepareSpaceGroups() { super(); }
-  public PrepareSpaceGroups(Binding binding) { super(binding); }
+  public PrepareSpaceGroups(FFXBinding binding) { super(binding); }
   public PrepareSpaceGroups(String[] args) { super(args); }
 
   @Override

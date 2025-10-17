@@ -37,6 +37,49 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
+import ffx.crystal.SpaceGroupInfo;
+import ffx.crystal.SymOp;
+import ffx.numerics.math.DoubleMath;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.NucleicAcidUtils;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.parameters.ForceField;
+import ffx.utilities.Hybrid36;
+import ffx.utilities.StringUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static ffx.potential.bonded.BondedUtils.numberAtoms;
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
 import static ffx.potential.bonded.PolymerUtils.assignAtomTypes;
@@ -52,34 +95,6 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
-
-import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SpaceGroupDefinitions;
-import ffx.crystal.SpaceGroupInfo;
-import ffx.crystal.SymOp;
-import ffx.numerics.math.DoubleMath;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities.FileType;
-import ffx.potential.bonded.*;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.parameters.ForceField;
-import ffx.utilities.Hybrid36;
-import ffx.utilities.StringUtils;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The following records are

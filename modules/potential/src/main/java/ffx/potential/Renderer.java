@@ -41,15 +41,18 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLSP;
 import ffx.potential.bonded.RendererCache;
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnBehaviorPost;
 
+import javax.swing.JLabel;
+import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Logger;
-import javax.swing.JLabel;
-import javax.swing.tree.TreeNode;
-
-import org.jogamp.java3d.*;
 
 /**
  * The Renderer class attempts to maximize throughput of graphics operations on MolecularAssembly

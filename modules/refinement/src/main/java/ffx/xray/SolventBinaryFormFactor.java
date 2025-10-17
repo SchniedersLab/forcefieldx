@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.numerics.math.DoubleMath.sub;
-
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * SolventBinaryFormFactor class.

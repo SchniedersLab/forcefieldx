@@ -39,14 +39,21 @@ package ffx.potential.commands;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Residue;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.utils.GetProteinFeatures;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +65,7 @@ import java.util.List;
  *   ffxc FeatureMap [options] &lt;pdb/xyz&gt; &lt;variants.csv&gt; [ddgFile]
  */
 @Command(name = "FeatureMap", description = " Create a Feature Map for a given protein structure")
-public class FeatureMap extends PotentialScript {
+public class FeatureMap extends PotentialCommand {
 
   @Option(names = {"-d", "--delimiter"}, paramLabel = ",",
       description = "Delimiter of input variant list file")
@@ -104,7 +111,7 @@ public class FeatureMap extends PotentialScript {
   private List<Residue> residues;
 
   public FeatureMap() { super(); }
-  public FeatureMap(Binding binding) { super(binding); }
+  public FeatureMap(FFXBinding binding) { super(binding); }
   public FeatureMap(String[] args) { super(args); }
 
   @Override

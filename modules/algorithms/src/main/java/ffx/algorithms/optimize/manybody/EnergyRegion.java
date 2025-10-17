@@ -42,6 +42,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.potential.bonded.Residue;
+
 import java.util.Arrays;
 
 public class EnergyRegion extends ParallelRegion {

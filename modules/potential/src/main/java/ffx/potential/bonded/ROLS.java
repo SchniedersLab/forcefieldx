@@ -39,14 +39,15 @@ package ffx.potential.bonded;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-import java.util.List;
-import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
 import org.jogamp.java3d.J3DGraphics2D;
 import org.jogamp.java3d.Material;
 import org.jogamp.java3d.Node;
 import org.jogamp.vecmath.Color3f;
+
+import javax.swing.tree.TreeNode;
+import java.util.List;
 
 /**
  * The ROLS Interace defines "Recursive Over Length Scales" (ROLS) Methods.

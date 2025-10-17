@@ -42,6 +42,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.potential.bonded.Atom;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

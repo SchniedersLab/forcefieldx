@@ -40,8 +40,8 @@ package ffx.potential.commands;
 import ffx.crystal.Crystal;
 import ffx.crystal.LatticeSystem;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
-import groovy.lang.Binding;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -52,7 +52,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -67,7 +66,7 @@ import static org.apache.commons.math3.util.FastMath.cos;
  *   ffxc XYZtoQE [options] &lt;filename&gt;
  */
 @Command(name = "XYZtoQE", description = "Generate QE input from a XYZ file.")
-public class ExportQE extends PotentialScript {
+public class ExportQE extends PotentialCommand {
 
   /** Number of structural optimization steps performed in this run. */
   @Option(names = {"--ns", "--nstep"}, paramLabel = "500", defaultValue = "500",
@@ -120,7 +119,7 @@ public class ExportQE extends PotentialScript {
   private String filename = null;
 
   public ExportQE() { super(); }
-  public ExportQE(Binding binding) { super(binding); }
+  public ExportQE(FFXBinding binding) { super(binding); }
   public ExportQE(String[] args) { super(args); }
 
   @Override

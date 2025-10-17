@@ -39,13 +39,13 @@ package ffx.potential.commands.test;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.Keyword;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -65,7 +65,7 @@ import static java.lang.String.format;
  */
 @Command(description = " Save a PDB file that includes all titrating tautomer hydrogen atoms.",
         name = "test.SaveAsConstantPhPDB")
-public class SaveAsConstantPhPDB extends PotentialScript {
+public class SaveAsConstantPhPDB extends PotentialCommand {
 
   @Option(names = {"--rt", "--rotamerTitration"}, paramLabel = "false",
           description = "Prepare PDB for rotamer optimization with titration states.")
@@ -87,9 +87,9 @@ public class SaveAsConstantPhPDB extends PotentialScript {
 
   /**
    * SaveAsConstantPhPDB constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public SaveAsConstantPhPDB(Binding binding) {
+  public SaveAsConstantPhPDB(FFXBinding binding) {
     super(binding);
   }
 

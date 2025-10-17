@@ -37,12 +37,13 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static java.lang.String.format;
-
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
 import ffx.potential.MolecularAssembly;
+
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * The MolecularMC class is a framework to take Monte Carlo steps on a molecular system. It does not

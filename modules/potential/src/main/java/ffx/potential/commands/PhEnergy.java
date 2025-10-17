@@ -45,13 +45,13 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.cli.AtomSelectionOptions;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XPHFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -86,7 +86,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
  */
 @Command(description = " Compute the force field potential energy for a CpHMD system.",
     name = "PhEnergy")
-public class PhEnergy extends PotentialScript {
+public class PhEnergy extends PotentialCommand {
 
     @Mixin
     private AtomSelectionOptions atomSelectionOptions = new AtomSelectionOptions();
@@ -210,9 +210,9 @@ public class PhEnergy extends PotentialScript {
 
     /**
      * Energy constructor.
-     * @param binding The Groovy Binding to use.
+     * @param binding The Binding to use.
      */
-    public PhEnergy(Binding binding) {
+    public PhEnergy(FFXBinding binding) {
         super(binding);
     }
 
@@ -289,7 +289,7 @@ public class PhEnergy extends PotentialScript {
         double[] averageCoordinates = Arrays.copyOf(x, x.length);
         if (gradient) {
             double[] g = new double[nVars];
-            int nAts = (int) (nVars / 3);
+            int nAts = nVars / 3;
             energy = forceFieldEnergy.energyAndGradient(x, g, true);
             logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"));
             for (int i = 0; i < nAts; i++) {

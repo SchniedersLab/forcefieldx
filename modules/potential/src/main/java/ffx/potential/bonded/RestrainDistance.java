@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.scale;
-import static ffx.numerics.math.DoubleMath.sub;
-
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.ConstantSwitch;
@@ -49,6 +45,10 @@ import ffx.potential.parameters.BondType;
 
 import java.io.Serial;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.scale;
+import static ffx.numerics.math.DoubleMath.sub;
 
 /**
  * RestraintDistance class.

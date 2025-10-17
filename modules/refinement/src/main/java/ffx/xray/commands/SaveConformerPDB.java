@@ -37,13 +37,13 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.SaveConformerPDB [options] &lt;filename&gt;
  */
 @Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "xray.SaveConformerPDB")
-public class SaveConformerPDB extends AlgorithmsScript {
+public class SaveConformerPDB extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -91,9 +91,9 @@ public class SaveConformerPDB extends AlgorithmsScript {
 
   /**
    * SaveConformerPDB constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public SaveConformerPDB(Binding binding) {
+  public SaveConformerPDB(FFXBinding binding) {
     super(binding);
   }
 

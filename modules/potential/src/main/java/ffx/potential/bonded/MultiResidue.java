@@ -37,24 +37,24 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.Material;
-import org.jogamp.vecmath.Color3f;
+
+import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as sequence optimization.

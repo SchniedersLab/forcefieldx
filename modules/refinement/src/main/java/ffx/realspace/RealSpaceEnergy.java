@@ -37,15 +37,16 @@
 // ******************************************************************************
 package ffx.realspace;
 
-import static java.lang.String.format;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.RefinementModel;
+
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * Combine the Real Space target and chemical potential energy.

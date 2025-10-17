@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.AnnealOptions;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
@@ -46,8 +46,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.realspace.cli.RealSpaceOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.RefinementEnergy;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -65,7 +65,7 @@ import java.util.List;
  * ffxc realspace.Anneal [options] &lt;filename&gt;
  */
 @Command(description = " Simulated annealing on a Real Space target.", name = "realspace.Anneal")
-public class Anneal extends AlgorithmsScript {
+public class Anneal extends AlgorithmsCommand {
 
   @Mixin
   private AnnealOptions annealOptions;
@@ -107,9 +107,9 @@ public class Anneal extends AlgorithmsScript {
 
   /**
    * Anneal constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Anneal(Binding binding) {
+  public Anneal(FFXBinding binding) {
     super(binding);
   }
 

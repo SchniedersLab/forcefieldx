@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
@@ -67,6 +62,12 @@ import org.jogamp.vecmath.Color3f;
 import org.jogamp.vecmath.Point2d;
 import org.jogamp.vecmath.Point3d;
 import org.jogamp.vecmath.Vector3d;
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * The RendererCache class defines constants related to rendering modes and caches primitives for

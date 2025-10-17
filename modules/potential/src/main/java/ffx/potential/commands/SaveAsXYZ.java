@@ -40,12 +40,12 @@ package ffx.potential.commands;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.SaveOptions;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -65,7 +65,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
 @Command(name = "SaveAsXYZ", description = " Save the system as an XYZ file.")
-public class SaveAsXYZ extends PotentialScript {
+public class SaveAsXYZ extends PotentialCommand {
 
   @Mixin
   private SaveOptions saveOptions = new SaveOptions();
@@ -116,7 +116,7 @@ public class SaveAsXYZ extends PotentialScript {
   private String filename = null;
 
   public SaveAsXYZ() { super(); }
-  public SaveAsXYZ(Binding binding) { super(binding); }
+  public SaveAsXYZ(FFXBinding binding) { super(binding); }
   public SaveAsXYZ(String[] args) { super(args); }
 
   @Override

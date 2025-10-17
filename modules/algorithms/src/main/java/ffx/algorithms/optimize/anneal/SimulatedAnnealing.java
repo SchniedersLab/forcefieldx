@@ -44,6 +44,7 @@ import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+
 import java.io.File;
 import java.util.Set;
 import java.util.logging.Level;

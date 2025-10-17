@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.String.format;
-
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
@@ -53,15 +51,18 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that can create multiple walkers, such as multi-walker

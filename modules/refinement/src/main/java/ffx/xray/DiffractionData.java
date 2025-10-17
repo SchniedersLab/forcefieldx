@@ -37,14 +37,7 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.utilities.TinkerUtils.version;
-import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-
 import edu.rit.pj.ParallelTeam;
-import ffx.xray.parsers.CCP4MapWriter;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -58,9 +51,12 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.CCP4MapWriter;
 import ffx.xray.parsers.DiffractionFile;
 import ffx.xray.parsers.MTZWriter;
 import ffx.xray.parsers.MTZWriter.MTZType;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -72,7 +68,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.utilities.TinkerUtils.version;
+import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * DiffractionData class.

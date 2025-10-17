@@ -37,13 +37,13 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -66,7 +66,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Compare the PDB model to the diffraction data.", name = "xray.ModelvsData")
-public class ModelvsData extends AlgorithmsScript {
+public class ModelvsData extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -119,9 +119,9 @@ public class ModelvsData extends AlgorithmsScript {
   /**
    * ModelvsData constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ModelvsData(Binding binding) {
+  public ModelvsData(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.Double3;
@@ -56,6 +49,13 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The Angle class represents an angle formed between three linearly bonded atoms.

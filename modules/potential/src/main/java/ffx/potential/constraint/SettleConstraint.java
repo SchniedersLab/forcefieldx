@@ -71,6 +71,13 @@
 
 package ffx.potential.constraint;
 
+import ffx.numerics.Constraint;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.sub;
@@ -79,12 +86,6 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
-
-import ffx.numerics.Constraint;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import java.util.logging.Logger;
 
 /**
  * SETTLE triatomic distance constraints, intended for rigid water models.

@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.log;
-
 import edu.rit.pj.ParallelTeam;
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
@@ -56,6 +50,12 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * ScaleBulkMinimize class.

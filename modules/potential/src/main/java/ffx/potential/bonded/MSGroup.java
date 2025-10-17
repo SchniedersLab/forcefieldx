@@ -37,19 +37,19 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.ForceField;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.Material;
-import org.jogamp.vecmath.Color3f;
+
+import static java.lang.String.format;
 
 /**
  * The MSGroup class has one sub-node containing atoms, and one that contains molecular

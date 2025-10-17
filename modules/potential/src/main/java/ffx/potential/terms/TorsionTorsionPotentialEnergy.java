@@ -38,7 +38,6 @@
 package ffx.potential.terms;
 
 import ffx.potential.bonded.BondedTerm;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 
 import java.util.ArrayList;

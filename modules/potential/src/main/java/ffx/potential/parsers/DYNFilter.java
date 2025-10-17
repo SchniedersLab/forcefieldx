@@ -37,10 +37,8 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.String.format;
-
 import ffx.crystal.Crystal;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,6 +47,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 
 /**
  * The DYNFilter class parses TINKER Restart (*.DYN) files.

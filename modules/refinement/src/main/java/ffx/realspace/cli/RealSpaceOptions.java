@@ -43,12 +43,11 @@ import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.DataRefinementOptions;
+import picocli.CommandLine.Option;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
-import picocli.CommandLine.Option;
 
 /**
  * Represents command line options for scripts that utilize a real-space density map.

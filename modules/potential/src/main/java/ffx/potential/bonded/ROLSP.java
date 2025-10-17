@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import org.jogamp.java3d.BranchGroup;
+
+import javax.swing.tree.TreeNode;
 import java.io.Serial;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-import javax.swing.tree.TreeNode;
-import org.jogamp.java3d.BranchGroup;
 
 /**
  * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length Scales (ROLS) Methods

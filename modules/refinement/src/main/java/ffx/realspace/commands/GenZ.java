@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.realspace.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.TitrationManyBody;
@@ -52,8 +52,8 @@ import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.realspace.cli.RealSpaceOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.RefinementEnergy;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -80,7 +80,7 @@ import static java.lang.String.format;
  * ffxc realspace.GenZ [options] &lt;filename&gt;
  */
 @Command(description = " Run GenZ for ensemble generation.", name = "ffxc realspace.GenZ")
-public class GenZ extends AlgorithmsScript {
+public class GenZ extends AlgorithmsCommand {
 
   @Mixin
   private ManyBodyOptions manyBodyOptions;
@@ -135,9 +135,9 @@ public class GenZ extends AlgorithmsScript {
 
   /**
    * GenZ Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public GenZ(Binding binding) {
+  public GenZ(FFXBinding binding) {
     super(binding);
   }
 

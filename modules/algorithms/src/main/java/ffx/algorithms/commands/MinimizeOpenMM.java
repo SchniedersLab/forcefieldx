@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
@@ -47,8 +47,8 @@ import ffx.potential.openmm.OpenMMEnergy;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FileUtils;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -69,7 +69,7 @@ import static java.lang.String.format;
  * ffxc MinimizeOpenMM [options] &lt;filename&gt;
  */
 @Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "MinimizeOpenMM")
-public class MinimizeOpenMM extends AlgorithmsScript {
+public class MinimizeOpenMM extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -96,9 +96,9 @@ public class MinimizeOpenMM extends AlgorithmsScript {
   /**
    * MinimizeOpenMM Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MinimizeOpenMM(Binding binding) {
+  public MinimizeOpenMM(FFXBinding binding) {
     super(binding);
   }
 

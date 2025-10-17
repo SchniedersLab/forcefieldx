@@ -40,14 +40,14 @@ package ffx.potential.commands;
 import edu.rit.pj.ParallelTeam;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.nonbonded.implicit.ConnollyRegion;
 import ffx.potential.nonbonded.implicit.GaussVol;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -64,7 +64,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
  *   ffxc VolumeArc [options] &lt;filename&gt;
  */
 @Command(name = "VolumeArc", description = " Calculate the surface area and volume using the GaussVol (default) or Connolly algorithm.")
-public class VolumeArc extends PotentialScript {
+public class VolumeArc extends PotentialCommand {
 
   private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
 
@@ -110,7 +110,7 @@ public class VolumeArc extends PotentialScript {
   public double totalSurfaceArea = 0.0;
 
   public VolumeArc() { super(); }
-  public VolumeArc(Binding binding) { super(binding); }
+  public VolumeArc(FFXBinding binding) { super(binding); }
   public VolumeArc(String[] args) { super(args); }
 
   @Override

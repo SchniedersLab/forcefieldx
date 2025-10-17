@@ -43,16 +43,16 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.GradientOptions;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.pme.AlchemicalParameters;
 import ffx.potential.openmm.OpenMMEnergy;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import groovy.lang.Binding;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +73,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * ffxc test.LambdaGradient [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Test potential energy derivatives with respect to Lambda.", name = "test.LambdaGradient")
-public class LambdaGradient extends PotentialScript {
+public class LambdaGradient extends PotentialCommand {
 
   @Mixin
   AlchemicalOptions alchemicalOptions;
@@ -139,9 +139,9 @@ public class LambdaGradient extends PotentialScript {
 
   /**
    * LambdaGradient Constructor
-   * @param binding Groovy Binding to use.
+   * @param binding Binding to use.
    */
-  public LambdaGradient(Binding binding) {
+  public LambdaGradient(FFXBinding binding) {
     super(binding);
   }
 

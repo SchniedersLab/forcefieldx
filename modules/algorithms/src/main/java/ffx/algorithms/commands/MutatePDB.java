@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -48,8 +48,8 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.Keyword;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -71,7 +71,7 @@ import static ffx.utilities.StringUtils.parseAtomRanges;
  * ffxc MutatePDB [options] &lt;pdb&gt;
  */
 @Command(description = " Mutate PDB residue(s).", name = "MutatePDB")
-public class MutatePDB extends AlgorithmsScript {
+public class MutatePDB extends AlgorithmsCommand {
 
   /**
    * -r or --resid Residue numbers.
@@ -127,9 +127,9 @@ public class MutatePDB extends AlgorithmsScript {
   /**
    * MutatePDB Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MutatePDB(Binding binding) {
+  public MutatePDB(FFXBinding binding) {
     super(binding);
   }
 

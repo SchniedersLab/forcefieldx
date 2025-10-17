@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZWriter;
 import ffx.xray.parsers.MTZWriter.MTZType;
-import groovy.lang.Binding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -67,7 +67,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc xray.CIF2MTZ &lt;filename&gt;
  */
 @Command(description = " Convert a CIF file to MTZ format.", name = "xray.CIFtoMTZ")
-public class CIFtoMTZ extends AlgorithmsScript {
+public class CIFtoMTZ extends AlgorithmsCommand {
 
   /**
    * A CIF filename.
@@ -95,9 +95,9 @@ public class CIFtoMTZ extends AlgorithmsScript {
 
   /**
    * CIF2MTZ constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public CIFtoMTZ(Binding binding) {
+  public CIFtoMTZ(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,14 +37,14 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import ffx.utilities.FFXProperty;
+
+import java.util.Comparator;
+
 import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
 import static ffx.utilities.PropertyGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-
-import ffx.utilities.FFXProperty;
-
-import java.util.Comparator;
 
 /**
  * The ChargeType class defines a partial atomic charge type.

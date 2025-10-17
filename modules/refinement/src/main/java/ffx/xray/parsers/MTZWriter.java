@@ -37,13 +37,6 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
-import static ffx.utilities.TinkerUtils.version;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -51,6 +44,7 @@ import ffx.crystal.ReflectionSpline;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.xray.DiffractionRefinementData;
+
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -61,6 +55,13 @@ import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.TinkerUtils.version;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * MTZWriter class.

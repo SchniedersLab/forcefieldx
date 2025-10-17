@@ -37,19 +37,20 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.abs;
-
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerRegion;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.DoubleStream;
+
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 /** Compute 4-Body energies. This code is experimental. */
 public class FourBodyEnergyRegion extends WorkerRegion {

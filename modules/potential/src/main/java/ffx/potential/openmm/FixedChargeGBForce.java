@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.potential.openmm;
 
+import ffx.openmm.CustomGBForce;
 import ffx.openmm.DoubleArray;
 import ffx.openmm.Force;
-import ffx.openmm.CustomGBForce;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;

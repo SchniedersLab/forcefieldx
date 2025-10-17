@@ -41,6 +41,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+
 import java.util.List;
 
 /**

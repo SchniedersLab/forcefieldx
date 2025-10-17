@@ -42,6 +42,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
+
 import java.util.ArrayList;
 import java.util.List;
 

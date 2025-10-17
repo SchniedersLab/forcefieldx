@@ -37,21 +37,19 @@
 // ******************************************************************************
 package ffx.algorithms.optimize;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MDEngine;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.Platform;
 import ffx.potential.openmm.OpenMMEnergy;
-import ffx.potential.MolecularAssembly;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -59,7 +57,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 /**
  * Minimize the potential energy of a system to an RMS gradient per atom convergence criteria.

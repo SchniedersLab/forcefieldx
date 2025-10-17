@@ -37,21 +37,19 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
-import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
-import static ffx.potential.cli.AtomSelectionOptions.actOnResidueAtoms;
-import static java.lang.String.format;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsFunctions;
-
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
 import javax.annotation.Nullable;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
+import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
+import static ffx.potential.cli.AtomSelectionOptions.actOnResidueAtoms;
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that utilize alchemistry on at least one topology.

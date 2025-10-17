@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.numerics.math.DoubleMath.length2;
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.pow;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
+
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.length2;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * Given unit cell parameters and symmetry operators, NCS copies are restrained to the asymmetric

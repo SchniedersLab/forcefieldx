@@ -37,29 +37,30 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.DoubleMath.dist;
-import static ffx.potential.bonded.BondedUtils.buildBond;
-import static ffx.potential.bonded.BondedUtils.buildHeavy;
-import static ffx.potential.bonded.BondedUtils.buildH;
-import static ffx.potential.bonded.BondedUtils.intxyz;
-import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.LAST_RESIDUE;
-import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.MIDDLE_RESIDUE;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.math.DoubleMath;
+import ffx.potential.bonded.AminoAcidUtils.ResiduePosition;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.AminoAcidUtils.ResiduePosition;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.dist;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.LAST_RESIDUE;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.potential.bonded.BondedUtils.buildBond;
+import static ffx.potential.bonded.BondedUtils.buildH;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
+import static ffx.potential.bonded.BondedUtils.intxyz;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * Utilities for creating Nucleic Acid residues.

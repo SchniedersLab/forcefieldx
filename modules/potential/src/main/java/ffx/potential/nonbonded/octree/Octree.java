@@ -37,9 +37,10 @@
 //******************************************************************************
 package ffx.potential.nonbonded.octree;
 
+import org.apache.commons.lang3.BooleanUtils;
+
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:

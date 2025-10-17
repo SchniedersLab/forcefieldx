@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.WeightedEnsembleManager;
@@ -46,7 +46,7 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.WriteoutOptions;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -62,7 +62,7 @@ import java.io.File;
  * ffxc test.WeightedEnsemble [options] &lt;filename&gt; [file2...];
  */
 @Command(description = " Runs parallel simulations with intermittent resampling.", name = "test.WeightedEnsemble")
-public class WeightedEnsemble extends AlgorithmsScript {
+public class WeightedEnsemble extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -105,9 +105,9 @@ public class WeightedEnsemble extends AlgorithmsScript {
 
   /**
    * Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public WeightedEnsemble(Binding binding) {
+  public WeightedEnsemble(FFXBinding binding) {
     super(binding);
   }
 

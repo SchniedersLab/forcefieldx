@@ -37,16 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescalingChainRule;
-import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
@@ -56,8 +46,19 @@ import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.EnergyException;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescalingChainRule;
+import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * Parallel computation of Born radii chain rule terms via the Grycuk method.

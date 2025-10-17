@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.potential.parsers.PDBFileFilter.isPDB;
-import static ffx.potential.parsers.XYZFileFilter.isXYZ;
-import static java.lang.String.format;
-
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -49,12 +45,17 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.potential.parsers.PDBFileFilter.isPDB;
+import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static java.lang.String.format;
 
 /**
  * PotentialsUtils implements core functionality for many Force Field X algorithms and scripts, such

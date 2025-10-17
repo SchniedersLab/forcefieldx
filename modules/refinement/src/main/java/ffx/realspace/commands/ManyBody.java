@@ -38,7 +38,7 @@
 package ffx.realspace.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.TitrationManyBody;
@@ -50,8 +50,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parsers.PDBFilter;
 import ffx.realspace.cli.RealSpaceOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.RefinementEnergy;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -75,7 +75,7 @@ import static java.lang.String.format;
  * ffxc ManyBody [options] &lt;filename&gt;
  */
 @Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "realspace.ManyBody")
-public class ManyBody extends AlgorithmsScript {
+public class ManyBody extends AlgorithmsCommand {
 
   @Mixin
   private RealSpaceOptions realSpaceOptions;
@@ -111,9 +111,9 @@ public class ManyBody extends AlgorithmsScript {
 
   /**
    * ManyBody constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ManyBody(Binding binding) {
+  public ManyBody(FFXBinding binding) {
     super(binding);
   }
 

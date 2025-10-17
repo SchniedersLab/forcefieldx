@@ -37,6 +37,20 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.reduction.SharedDouble;
+import ffx.crystal.Crystal;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.VDWType;
+import ffx.potential.parameters.VDWType.EPSILON_RULE;
+import ffx.potential.parameters.VDWType.RADIUS_RULE;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.potential.nonbonded.VanDerWaalsForm.getCombinedEps;
 import static ffx.potential.nonbonded.VanDerWaalsForm.getCombinedRadius;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -44,19 +58,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.SharedDouble;
-import ffx.crystal.Crystal;
-import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.VDWType.EPSILON_RULE;
-import ffx.potential.parameters.VDWType.RADIUS_RULE;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.VDWType;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Parallel calculation of continuum dispersion energy via pairwise descreening.

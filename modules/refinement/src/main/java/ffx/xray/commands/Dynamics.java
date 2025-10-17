@@ -37,16 +37,16 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -65,7 +65,7 @@ import java.util.List;
  * ffxc xray.Dynamics [options] &lt;filename&gt;
  */
 @Command(description = " Run Dynamics on an X-ray target.", name = "xray.Dynamics")
-public class Dynamics extends AlgorithmsScript {
+public class Dynamics extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -100,9 +100,9 @@ public class Dynamics extends AlgorithmsScript {
 
   /**
    * Dynamics constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Dynamics(Binding binding) {
+  public Dynamics(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.optimize.TitrationManyBody;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
@@ -49,7 +49,7 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.RotamerLibrary.NucleicSugarPucker;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -74,7 +74,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  * ffxc SaveRotamers [options] &lt;filename&gt;
  */
 @Command(description = " Save out rotamers.", name = "SaveRotamers")
-public class SaveRotamers extends AlgorithmsScript {
+public class SaveRotamers extends AlgorithmsCommand {
 
   @Option(names = {"--chain", "-c"}, paramLabel = " ",
       description = "Single character chain name.")
@@ -123,7 +123,7 @@ public class SaveRotamers extends AlgorithmsScript {
     super();
   }
 
-  public SaveRotamers(Binding binding) {
+  public SaveRotamers(FFXBinding binding) {
     super(binding);
   }
 
@@ -194,7 +194,7 @@ public class SaveRotamers extends AlgorithmsScript {
     if (upstreamPucker) {
       try {
         if (residue.getResidueType() == Residue.ResidueType.NA) {
-          prevResidue = (Residue) residue.getPreviousResidue();
+          prevResidue = residue.getPreviousResidue();
           if (prevResidue == null) {
             upstreamPucker = false;
           } else {

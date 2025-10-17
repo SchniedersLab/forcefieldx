@@ -38,10 +38,10 @@
 package ffx.algorithms.commands;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.optimize.TitrationManyBody;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
+import ffx.algorithms.optimize.TitrationManyBody;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -51,7 +51,7 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.parsers.PDBFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -75,7 +75,7 @@ import static java.lang.String.format;
  * ffxc ManyBody [options] &lt;filename&gt;
  */
 @Command(description = " Run ManyBody algorithm on a system.", name = "ManyBody")
-public class ManyBody extends AlgorithmsScript {
+public class ManyBody extends AlgorithmsCommand {
 
   @Mixin
   private ManyBodyOptions manyBodyOptions;
@@ -102,9 +102,9 @@ public class ManyBody extends AlgorithmsScript {
 
   /**
    * ManyBody Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ManyBody(Binding binding) {
+  public ManyBody(FFXBinding binding) {
     super(binding);
   }
 

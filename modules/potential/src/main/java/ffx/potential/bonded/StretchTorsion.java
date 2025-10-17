@@ -37,15 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.numerics.math.DoubleMath.dihedralAngle;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.acos;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.toDegrees;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -54,6 +45,15 @@ import ffx.potential.parameters.TorsionType;
 
 import java.io.Serial;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * The StretchTorsion class represents a coupling between a torsional angle and the three bonds

@@ -37,10 +37,10 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
+import ffx.utilities.FFXBinding;
 import ffx.xray.parsers.MTZFilter;
-import groovy.lang.Binding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -56,7 +56,7 @@ import java.util.List;
  * ffxc xray.MTZInfo &lt;filename&gt;
  */
 @Command(description = " Write out information on an MTZ file.", name = "xray.MTZInfo")
-public class MTZInfo extends AlgorithmsScript {
+public class MTZInfo extends AlgorithmsCommand {
 
   /**
    * An MTZ filename.
@@ -81,9 +81,9 @@ public class MTZInfo extends AlgorithmsScript {
 
   /**
    * MTZInfo constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MTZInfo(Binding binding) {
+  public MTZInfo(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.TitrationManyBody;
@@ -50,7 +50,7 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.parsers.PDBFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -75,7 +75,7 @@ import static java.lang.String.format;
  * ffxc ManyBody [options] &lt;filename&gt;
  */
 @Command(description = " Run GenZ function for free energy change.", name = "GenZ")
-public class GenZ extends AlgorithmsScript {
+public class GenZ extends AlgorithmsCommand {
 
   @Mixin
   private ManyBodyOptions manyBodyOptions;
@@ -132,7 +132,7 @@ public class GenZ extends AlgorithmsScript {
   /**
    * Binding to run mutate pdb
    */
-  Binding mutatorBinding;
+  FFXBinding mutatorBinding;
   /**
    * All the residues
    */
@@ -160,9 +160,9 @@ public class GenZ extends AlgorithmsScript {
   /**
    * ManyBody Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public GenZ(Binding binding) {
+  public GenZ(FFXBinding binding) {
     super(binding);
   }
 
@@ -240,7 +240,7 @@ public class GenZ extends AlgorithmsScript {
     String mutatedFileName = "";
     //Call the MutatePDB script and mutate the residue of interest
     if (filenames.size() == 1 && mutatingResidue != -1) {
-      mutatorBinding = new Binding();
+      mutatorBinding = new FFXBinding();
       if (unfolded) {
         // mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
         String[] args = {"-r", String.valueOf(mutatingResidue), "-n", resName, unfoldedFileName};
@@ -252,7 +252,7 @@ public class GenZ extends AlgorithmsScript {
       }
       MutatePDB mutatePDB = new MutatePDB(mutatorBinding);
       mutatePDB.run();
-      mutatedFileName = (String) mutatorBinding.getProperty("versionFileName");
+      mutatedFileName = (String) mutatorBinding.getVariable("versionFileName");
     }
 
     String listResidues = "";

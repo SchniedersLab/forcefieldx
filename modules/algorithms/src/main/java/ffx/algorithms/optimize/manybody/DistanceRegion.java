@@ -47,6 +47,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

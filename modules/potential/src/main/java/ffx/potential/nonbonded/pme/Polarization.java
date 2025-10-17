@@ -37,9 +37,9 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
-
 import ffx.utilities.FFXProperty;
+
+import static ffx.utilities.PropertyGroup.ElectrostaticsFunctionalForm;
 
 @FFXProperty(name = "polarization", clazz = String.class,
     propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual", description = """

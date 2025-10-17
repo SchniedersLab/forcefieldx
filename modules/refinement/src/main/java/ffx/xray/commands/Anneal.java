@@ -37,16 +37,16 @@
 //******************************************************************************
 package ffx.xray.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.AnnealOptions;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.cli.XrayOptions;
-import groovy.lang.Binding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -65,7 +65,7 @@ import java.util.List;
  * ffxc xray.Anneal [options] &lt;filename&gt;
  */
 @Command(description = " Simulated annealing on an X-ray target.", name = "xray.Anneal")
-public class Anneal extends AlgorithmsScript {
+public class Anneal extends AlgorithmsCommand {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -102,9 +102,9 @@ public class Anneal extends AlgorithmsScript {
 
   /**
    * Anneal constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public Anneal(Binding binding) {
+  public Anneal(FFXBinding binding) {
     super(binding);
   }
 

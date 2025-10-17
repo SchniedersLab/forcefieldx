@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -62,7 +62,7 @@ import static org.apache.commons.io.FilenameUtils.getFullPath;
 
 @Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
     name = "SuperposeCrystals")
-public class SuperposeCrystals extends AlgorithmsScript {
+public class SuperposeCrystals extends AlgorithmsCommand {
 
   @Option(names = {"--ac", "--alchemicalAtoms"}, paramLabel = "", defaultValue = "",
       description = "Atom indices to be excluded from both crystals (e.g. 1-24,32-65). Use if molecular identity and atom ordering are the same for both crystals (otherwise use \"--ac1\" and \"--ac2\".")
@@ -194,7 +194,7 @@ public class SuperposeCrystals extends AlgorithmsScript {
     super();
   }
 
-  public SuperposeCrystals(Binding binding) {
+  public SuperposeCrystals(FFXBinding binding) {
     super(binding);
   }
 
@@ -551,7 +551,9 @@ public class SuperposeCrystals extends AlgorithmsScript {
               }
             }
           }
-          finalGroups.add((ArrayList<Integer>) acceptedAtoms.clone());
+          ArrayList<Integer> clone = new ArrayList<>(acceptedAtoms.size());
+          clone.addAll(acceptedAtoms);
+          finalGroups.add(clone);
           if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Run %3d accepted atoms (size: %3d) added to finalGroups (size: %3d)", i, acceptedAtoms.size(), finalGroups.size()));
           }

@@ -40,8 +40,8 @@ package ffx.potential.commands;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
-import groovy.lang.Binding;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -62,7 +62,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc MoveIntoUnitCell &lt;filename&gt;
  */
 @Command(name = "MoveIntoUnitCell", description = " Move all molecules into the unit cell.")
-public class MoveIntoUnitCell extends PotentialScript {
+public class MoveIntoUnitCell extends PotentialCommand {
 
   /** The final argument is a PDB or XYZ coordinate file. */
   @Parameters(arity = "1", paramLabel = "file",
@@ -78,7 +78,7 @@ public class MoveIntoUnitCell extends PotentialScript {
   public double[][] unitCellCoordinates = null;
 
   public MoveIntoUnitCell() { super(); }
-  public MoveIntoUnitCell(Binding binding) { super(binding); }
+  public MoveIntoUnitCell(FFXBinding binding) { super(binding); }
   public MoveIntoUnitCell(String[] args) { super(args); }
 
   @Override

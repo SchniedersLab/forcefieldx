@@ -58,7 +58,6 @@ import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.terms.AnglePotentialEnergy;
-import ffx.potential.terms.AngleTorsionPotentialEnergy;
 import ffx.potential.terms.BondPotentialEnergy;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;

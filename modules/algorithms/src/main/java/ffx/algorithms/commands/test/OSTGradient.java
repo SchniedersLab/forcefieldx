@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.LambdaParticleOptions;
 import ffx.algorithms.cli.MultiDynamicsOptions;
@@ -50,7 +50,7 @@ import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.GradientOptions;
 import ffx.potential.utils.GradientUtils;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -71,7 +71,7 @@ import static java.lang.String.format;
  * ffxc test.OSTGradient [options] &lt;filename&gt;
  */
 @Command(description = " OSTGradient script tests the Orthogonal Space Tempering Potential.", name = "test.OSTGradient")
-public class OSTGradient extends AlgorithmsScript {
+public class OSTGradient extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -110,9 +110,9 @@ public class OSTGradient extends AlgorithmsScript {
 
   /**
    * OSTGradient Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public OSTGradient(Binding binding) {
+  public OSTGradient(FFXBinding binding) {
     super(binding);
   }
 

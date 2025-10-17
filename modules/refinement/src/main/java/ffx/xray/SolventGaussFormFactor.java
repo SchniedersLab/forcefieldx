@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.xray;
 
+import ffx.potential.bonded.Atom;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
 import static org.apache.commons.math3.util.FastMath.exp;
-
-import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  * SolventGaussFormFactor class.

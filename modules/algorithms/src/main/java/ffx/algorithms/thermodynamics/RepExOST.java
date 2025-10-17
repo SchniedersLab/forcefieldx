@@ -37,19 +37,18 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import static java.lang.String.format;
-import static java.util.Arrays.fill;
-
 import edu.rit.mp.LongBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.OSTOptions;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MDWriteAction;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.utilities.Constants;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,8 +61,9 @@ import java.util.function.LongConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
+
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 /**
  * An implementation of RepEx between Orthogonal Space Tempering potentials.

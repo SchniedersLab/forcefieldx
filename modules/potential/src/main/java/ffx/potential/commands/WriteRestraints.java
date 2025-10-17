@@ -40,10 +40,10 @@ package ffx.potential.commands;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -59,7 +59,7 @@ import static java.lang.String.format;
  *   ffxc WriteRestraints [options] &lt;filename&gt;
  */
 @Command(name = "WriteRestraints", description = " Log position restraints for a PDB file.")
-public class WriteRestraints extends PotentialScript {
+public class WriteRestraints extends PotentialCommand {
 
   @Option(names = {"--chain", "-c"}, description = "Single character chain name.")
   private String chain = null;
@@ -89,7 +89,7 @@ public class WriteRestraints extends PotentialScript {
   private String filename = null;
 
   public WriteRestraints() { super(); }
-  public WriteRestraints(Binding binding) { super(binding); }
+  public WriteRestraints(FFXBinding binding) { super(binding); }
   public WriteRestraints(String[] args) { super(args); }
 
   @Override

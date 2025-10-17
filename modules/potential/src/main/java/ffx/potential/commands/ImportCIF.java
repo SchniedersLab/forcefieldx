@@ -39,10 +39,10 @@ package ffx.potential.commands;
 
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parsers.CIFFilter;
 import ffx.potential.parsers.SystemFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -62,7 +62,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc ImportCIF &lt;filename.cif&gt; &lt;filename&gt;
  */
 @Command(name = "ImportCIF", description = " Convert a CIF file to PDB/XYZ format.")
-public class ImportCIF extends PotentialScript {
+public class ImportCIF extends PotentialCommand {
 
   /** --zp or --zPrime Manually specify Z' (only affects writing CIF files). */
   @Option(names = {"--zp", "--zPrime"}, paramLabel = "-1", defaultValue = "-1",
@@ -108,7 +108,7 @@ public class ImportCIF extends PotentialScript {
   public String[] createdFiles = null;
 
   public ImportCIF() { super(); }
-  public ImportCIF(Binding binding) { super(binding); }
+  public ImportCIF(FFXBinding binding) { super(binding); }
   public ImportCIF(String[] args) { super(args); }
 
   @Override

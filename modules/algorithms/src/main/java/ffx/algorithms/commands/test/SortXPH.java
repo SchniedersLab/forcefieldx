@@ -38,12 +38,12 @@
 package ffx.algorithms.commands.test;
 
 import edu.rit.pj.ParallelTeam;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.XPHFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -53,7 +53,6 @@ import picocli.CommandLine.Parameters;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -64,7 +63,7 @@ import java.util.List;
  * ffxc test.SortXPH [options] &lt;structures1&gt; &lt;structures2&gt;
  */
 @Command(description = " The SortXPH command unwinds .ARC files from CpHMD runs.", name = "test.SortXPH")
-public class SortXPH extends AlgorithmsScript {
+public class SortXPH extends AlgorithmsCommand {
 
   @Mixin
   private TopologyOptions topology;
@@ -131,9 +130,9 @@ public class SortXPH extends AlgorithmsScript {
   /**
    * SortXPH Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public SortXPH(Binding binding) {
+  public SortXPH(FFXBinding binding) {
     super(binding);
   }
 
@@ -203,7 +202,7 @@ public class SortXPH extends AlgorithmsScript {
     molecularAssembly.getPotentialEnergy().attachExtendedSystem(extendedSystem);
 
     int numParallel = topology.getTopologiesInParallel(1);
-    threadsPer = (int) (threadsAvail / numParallel);
+    threadsPer = threadsAvail / numParallel;
 
     for (int i = 0; i < nWindows; i++) {
       File arc = saveFile[i];

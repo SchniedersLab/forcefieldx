@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.BarostatOptions;
 import ffx.algorithms.thermodynamics.HistogramData;
 import ffx.crystal.CrystalPotential;
@@ -50,7 +50,7 @@ import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parsers.SystemFilter;
 import ffx.utilities.Constants;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
@@ -81,7 +81,7 @@ import static org.apache.commons.math3.util.FastMath.round;
  * ffxc test.MostBar [options] &lt;structures1&gt;
  */
 @Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "test.MostBar")
-public class MostBar extends AlgorithmsScript {
+public class MostBar extends AlgorithmsCommand {
 
   @Mixin
   private AlchemicalOptions alchemicalOptions;
@@ -207,9 +207,9 @@ public class MostBar extends AlgorithmsScript {
   /**
    * MostBar Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MostBar(Binding binding) {
+  public MostBar(FFXBinding binding) {
     super(binding);
   }
 

@@ -38,7 +38,7 @@
 package ffx.algorithms.commands.test;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.RepExOptions;
 import ffx.algorithms.dynamics.MDEngine;
@@ -53,7 +53,7 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XPHFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
@@ -81,7 +81,7 @@ import static java.lang.String.format;
  * ffxc PhDynamics [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Run constant pH dynamics on a system.", name = "PhDynamics")
-public class PhDynamics extends AlgorithmsScript {
+public class PhDynamics extends AlgorithmsCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions;
@@ -157,9 +157,9 @@ public class PhDynamics extends AlgorithmsScript {
 
   /**
    * PhDynamics Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public PhDynamics(Binding binding) {
+  public PhDynamics(FFXBinding binding) {
     super(binding);
   }
 
@@ -358,7 +358,7 @@ public class PhDynamics extends AlgorithmsScript {
                   dynamicsOptions.getDt() * titrSteps, initDynamics);
 
           if (sort) {
-            sortMyArc(structureFile, world.size(), (double) pHReplicaExchange.getPhScale()[world.rank()], world.rank());
+            sortMyArc(structureFile, world.size(), pHReplicaExchange.getPhScale()[world.rank()], world.rank());
           }
         } catch (Exception e) {
           logger.severe("Error during pH replica exchange with OpenMM: " + e.getMessage());
@@ -442,7 +442,7 @@ public class PhDynamics extends AlgorithmsScript {
           data = brTemp.readLine();
         }
       }
-      int numSnaps = (int) (totalLines / snapLength);
+      int numSnaps = totalLines / snapLength;
 
       // Build file readers
       for (int i = 0; i < nReplicas; i++) {

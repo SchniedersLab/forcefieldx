@@ -40,8 +40,9 @@ package ffx.xray.parsers;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.xray.DiffractionRefinementData;
-import java.io.File;
 import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.io.File;
 
 /**
  * DiffractionFileFilter interface.

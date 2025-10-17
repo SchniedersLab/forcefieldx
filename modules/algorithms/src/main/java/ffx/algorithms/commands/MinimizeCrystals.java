@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.algorithms.optimize.CrystalMinimize;
 import ffx.algorithms.optimize.Minimize;
@@ -49,8 +49,8 @@ import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FileUtils;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -73,7 +73,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * ffxc MinimizeCrystals [options] &lt;filename&gt;
  */
 @Command(description = " Minimize crystal unit cell parameters.", name = "MinimizeCrystals")
-public class MinimizeCrystals extends AlgorithmsScript {
+public class MinimizeCrystals extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -142,9 +142,9 @@ public class MinimizeCrystals extends AlgorithmsScript {
   /**
    * CrystalMin Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MinimizeCrystals(Binding binding) {
+  public MinimizeCrystals(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
 import ffx.algorithms.optimize.PhMinimize;
 import ffx.crystal.Crystal;
@@ -47,8 +47,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XPHFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.utilities.FFXBinding;
 import ffx.utilities.FileUtils;
-import groovy.lang.Binding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -68,7 +68,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * ffxc test.MinimizePh [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Run L-BFGS minimization on a CpHMD system.", name = "test.MinimizePh")
-public class MinimizePh extends AlgorithmsScript {
+public class MinimizePh extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -105,9 +105,9 @@ public class MinimizePh extends AlgorithmsScript {
   /**
    * MinimizePh Constructor.
    *
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public MinimizePh(Binding binding) {
+  public MinimizePh(FFXBinding binding) {
     super(binding);
   }
 

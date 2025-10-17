@@ -41,8 +41,8 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.cli.PotentialScript;
-import groovy.lang.Binding;
+import ffx.potential.cli.PotentialCommand;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -63,7 +63,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
  *   ffxc Frac2Cart &lt;filename&gt;
  */
 @Command(name = "Frac2Cart", description = " Convert from fractional to Cartesian coordinates.")
-public class Frac2Cart extends PotentialScript {
+public class Frac2Cart extends PotentialCommand {
 
   /** The final argument should be a file in PDB or XYZ format. */
   @Parameters(arity = "1", paramLabel = "file",
@@ -79,7 +79,7 @@ public class Frac2Cart extends PotentialScript {
   private double[][] fracCoordinates = null;
 
   public Frac2Cart() { super(); }
-  public Frac2Cart(Binding binding) { super(binding); }
+  public Frac2Cart(FFXBinding binding) { super(binding); }
   public Frac2Cart(String[] args) { super(args); }
 
   /** Return Cartesian Coordinate output. */
@@ -154,8 +154,8 @@ public class Frac2Cart extends PotentialScript {
     }
 
     // Export results via Binding for compatibility (match Cart2Frac binding names).
-    getBinding().setVariable("cart", cartCoordinates);
-    getBinding().setVariable("frac", fracCoordinates);
+    binding.setVariable("cart", cartCoordinates);
+    binding.setVariable("frac", fracCoordinates);
 
     return this;
   }

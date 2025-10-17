@@ -37,16 +37,17 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 
 /**
  * The InducedFilter class parses TINKER Induced Dipole (*.*U) files.

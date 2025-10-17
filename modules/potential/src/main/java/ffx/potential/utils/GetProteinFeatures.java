@@ -43,7 +43,13 @@ import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public class GetProteinFeatures {

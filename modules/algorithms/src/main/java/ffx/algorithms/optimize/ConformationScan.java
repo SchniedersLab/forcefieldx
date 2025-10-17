@@ -8,8 +8,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.bonded.RestrainDistance;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parsers.XYZFilter;
 
@@ -21,7 +21,8 @@ import java.util.logging.Logger;
 
 import static ffx.potential.utils.Superpose.applyRotation;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.sin;
 
 /**
  * This class is for a configuration optimization of two small systems. The search

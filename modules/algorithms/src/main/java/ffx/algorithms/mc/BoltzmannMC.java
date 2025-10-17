@@ -37,16 +37,16 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.logging.Logger;
+
 import static ffx.utilities.Constants.R;
 import static java.lang.Double.isFinite;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.min;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.logging.Logger;
 
 /**
  * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted Metropolis Monte Carlo

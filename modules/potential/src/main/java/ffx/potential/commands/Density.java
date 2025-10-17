@@ -39,11 +39,10 @@ package ffx.potential.commands;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.math.SummaryStatistics;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.potential.parsers.SystemFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -59,7 +58,7 @@ import static java.lang.String.format;
  *   ffxc Density [options] &lt;filename&gt;
  */
 @Command(name = "Density", description = " Calculate the mean system density for single topology systems.")
-public class Density extends PotentialScript {
+public class Density extends PotentialCommand {
 
   @Mixin
   private WriteoutOptions writeoutOptions = new WriteoutOptions();
@@ -93,7 +92,7 @@ public class Density extends PotentialScript {
     super();
   }
 
-  public Density(Binding binding) {
+  public Density(FFXBinding binding) {
     super(binding);
   }
 

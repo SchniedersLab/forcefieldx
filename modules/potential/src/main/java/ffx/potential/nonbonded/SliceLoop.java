@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import edu.rit.pj.IntegerForLoop;
+
 import java.util.ArrayList;
 
 /**

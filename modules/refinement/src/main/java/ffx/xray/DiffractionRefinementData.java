@@ -37,17 +37,18 @@
 // ******************************************************************************
 package ffx.xray;
 
+import ffx.crystal.ReflectionList;
+import ffx.numerics.math.ComplexNumber;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.crystal.ReflectionList;
-import ffx.numerics.math.ComplexNumber;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * DiffractionRefinementData class.

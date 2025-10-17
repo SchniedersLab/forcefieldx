@@ -37,13 +37,13 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.misc.GenerateRotamers;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -63,7 +63,7 @@ import java.util.List;
  * @author Michael Schnieders
  */
 @Command(description = " Apply a set of torsions to a system.", name = "test.ApplyTorsions")
-public class ApplyTorsions extends AlgorithmsScript {
+public class ApplyTorsions extends AlgorithmsCommand {
 
   /**
    * -c or --chain selects the chain name to use.
@@ -111,9 +111,9 @@ public class ApplyTorsions extends AlgorithmsScript {
 
   /**
    * ApplyTorsions Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public ApplyTorsions(Binding binding) {
+  public ApplyTorsions(FFXBinding binding) {
     super(binding);
   }
 

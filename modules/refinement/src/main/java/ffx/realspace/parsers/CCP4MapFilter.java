@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.realspace.parsers;
 
-import static java.lang.String.format;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.realspace.RealSpaceRefinementData;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static java.lang.String.format;
 
 /**
  * CCP4MapFilter class.

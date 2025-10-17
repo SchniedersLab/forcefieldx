@@ -47,28 +47,33 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.AtomSelectionOptions;
-import ffx.potential.cli.PotentialScript;
+import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
-import java.util.*;
-import java.util.logging.Level;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.logging.Level;
 
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia;
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration;
 import static ffx.utilities.StringUtils.parseAtomRanges;
 import static java.lang.String.format;
-import static org.apache.commons.io.FilenameUtils.*;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.getName;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * Compute the force field potential energy.
@@ -77,7 +82,7 @@ import static org.apache.commons.io.FilenameUtils.*;
  *   ffxc Energy &lt;filename&gt;
  */
 @Command(name = "Energy", description = " Compute the force field potential energy.")
-public class Energy extends PotentialScript {
+public class Energy extends PotentialCommand {
 
   @Mixin
   private AtomSelectionOptions atomSelectionOptions = new AtomSelectionOptions();
@@ -143,7 +148,7 @@ public class Energy extends PotentialScript {
     super();
   }
 
-  public Energy(Binding binding) {
+  public Energy(FFXBinding binding) {
     super(binding);
   }
 

@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.bonded.NamingUtils.renameAminoAcidToPDBStandard;
-import static ffx.potential.bonded.NamingUtils.renameNucleicAcidToPDBStandard;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -49,6 +44,7 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +52,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.bonded.NamingUtils.renameAminoAcidToPDBStandard;
+import static ffx.potential.bonded.NamingUtils.renameNucleicAcidToPDBStandard;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The Utilities class provides methods to locate functional units of an organic system.

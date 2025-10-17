@@ -37,18 +37,17 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-
 import ffx.algorithms.dynamics.Barostat;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
 
 import java.util.logging.Logger;
 
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 /**
  * Represents command line options for scripts that use a barostat/NPT.

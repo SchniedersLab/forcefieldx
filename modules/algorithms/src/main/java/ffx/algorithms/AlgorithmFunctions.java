@@ -40,6 +40,7 @@ package ffx.algorithms;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
+
 import java.io.File;
 
 /**

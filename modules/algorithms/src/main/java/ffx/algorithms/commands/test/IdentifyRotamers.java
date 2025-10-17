@@ -37,13 +37,13 @@
 //******************************************************************************
 package ffx.algorithms.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.ManyBodyOptions;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
-import groovy.lang.Binding;
+import ffx.utilities.FFXBinding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
@@ -60,7 +60,7 @@ import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
  * ffxc test.IdentifyRotamers [options] &lt;filename&gt;
  */
 @Command(description = " Identify the rotamers a system is in.", name = "test.IdentifyRotamers")
-public class IdentifyRotamers extends AlgorithmsScript {
+public class IdentifyRotamers extends AlgorithmsCommand {
 
   @Mixin
   private ManyBodyOptions mbOpts;
@@ -81,9 +81,9 @@ public class IdentifyRotamers extends AlgorithmsScript {
 
   /**
    * IdentifyRotamers Constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public IdentifyRotamers(Binding binding) {
+  public IdentifyRotamers(FFXBinding binding) {
     super(binding);
   }
 

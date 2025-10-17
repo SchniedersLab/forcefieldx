@@ -37,22 +37,21 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
-import static ffx.utilities.StringUtils.parseAtomRanges;
-import static ffx.utilities.StringUtils.parseResidueString;
-
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Residue;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Option;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import ffx.potential.bonded.Residue;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
+import static ffx.utilities.StringUtils.parseAtomRanges;
+import static ffx.utilities.StringUtils.parseResidueString;
 
 /**
  * Represents command line options for scripts that support atom selections.

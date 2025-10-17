@@ -43,12 +43,8 @@ import ffx.algorithms.dynamics.MDVerbosity;
 import ffx.algorithms.dynamics.MDWriteAction;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
-import ffx.algorithms.dynamics.thermostats.Thermostat;
-import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.SystemState;
-import ffx.potential.parsers.DYNFilter;
 import ffx.utilities.Constants;
 
 import javax.annotation.Nullable;

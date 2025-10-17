@@ -37,9 +37,8 @@
 //******************************************************************************
 package ffx.realspace.commands.test;
 
-import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
@@ -47,8 +46,8 @@ import ffx.potential.cli.GradientOptions;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.parsers.RealSpaceFile;
+import ffx.utilities.FFXBinding;
 import ffx.xray.RefinementEnergy;
-import groovy.lang.Binding;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
@@ -68,7 +67,7 @@ import static ffx.utilities.StringUtils.parseAtomRanges;
  * ffxc realspace.test.LambdaGradient [options] &lt;filename&gt;
  */
 @Command(description = " Test Lambda Derivatives on a Real Space target.", name = "realspace.test.LambdaGradient")
-public class LambdaGradient extends AlgorithmsScript {
+public class LambdaGradient extends AlgorithmsCommand {
 
   @Mixin
   private RealSpaceOptions realSpaceOptions;
@@ -104,9 +103,9 @@ public class LambdaGradient extends AlgorithmsScript {
 
   /**
    * LambdaGradient constructor.
-   * @param binding The Groovy Binding to use.
+   * @param binding The Binding to use.
    */
-  public LambdaGradient(Binding binding) {
+  public LambdaGradient(FFXBinding binding) {
     super(binding);
   }
 
@@ -159,7 +158,7 @@ public class LambdaGradient extends AlgorithmsScript {
 
     // Number of independent atoms.
     assert (n % 3 == 0);
-    int nAtoms = (int) (n / 3);
+    int nAtoms = n / 3;
 
     // Compute the Lambda = 0.0 energy.
     double lambda = 0.0;

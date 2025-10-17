@@ -37,16 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.numerics.math.MatrixMath.determinant3;
-import static ffx.numerics.math.ScalarMath.b2u;
-import static ffx.numerics.math.ScalarMath.u2b;
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.PI;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.Atom;
@@ -56,8 +46,19 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
 import java.util.List;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.ScalarMath.u2b;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Combine the X-ray target and chemical potential energy.

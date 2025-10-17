@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

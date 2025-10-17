@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
+import java.util.logging.Logger;
+
 import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-
-import java.util.logging.Logger;
 
 public class PMETimings {
 

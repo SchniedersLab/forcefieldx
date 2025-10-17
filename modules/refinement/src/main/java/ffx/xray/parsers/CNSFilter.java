@@ -37,12 +37,6 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
-import static ffx.crystal.SpaceGroupInfo.spaceGroupNames;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.min;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -50,13 +44,20 @@ import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.xray.DiffractionRefinementData;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
+
+import static ffx.crystal.SpaceGroupInfo.spaceGroupNames;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
  * CNSFilter class.

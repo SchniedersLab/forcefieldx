@@ -145,7 +145,7 @@
     "qdox-2.2.0.jar",
     "regex-25.0.0.jar",
     "snakeyaml-2.4.jar",
-    "spotbugs-annotations-4.9.6.jar",
+    "spotbugs-annotations-4.9.7.jar",
     "tornado-api-1.1.0.jar",
     "truffle-api-25.0.0.jar",
     "truffle-compiler-25.0.0.jar",

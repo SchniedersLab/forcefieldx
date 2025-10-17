@@ -37,6 +37,22 @@
 // ******************************************************************************
 package ffx.xray;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedDouble;
+import edu.rit.pj.reduction.SharedDoubleArray;
+import edu.rit.pj.reduction.SharedInteger;
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.ReflectionSpline;
+import ffx.numerics.OptimizationInterface;
+import ffx.numerics.math.ComplexNumber;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
@@ -58,22 +74,6 @@ import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tanh;
-
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.SharedDouble;
-import edu.rit.pj.reduction.SharedDoubleArray;
-import edu.rit.pj.reduction.SharedInteger;
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.ReflectionSpline;
-import ffx.numerics.OptimizationInterface;
-import ffx.numerics.math.ComplexNumber;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-
-import java.util.logging.Logger;
 
 /**
  * Optimize SigmaA coefficients (using spline coefficients) and structure factor derivatives using a

@@ -37,6 +37,14 @@
 // ******************************************************************************
 package ffx.xray;
 
+import ffx.crystal.HKL;
+import ffx.potential.bonded.Atom;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
@@ -53,13 +61,6 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.crystal.HKL;
-import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This implementation uses the coefficients from Su and Coppens and 3 coefficient parameters derived

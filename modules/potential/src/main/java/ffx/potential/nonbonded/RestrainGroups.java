@@ -37,20 +37,21 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
+import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Logger;
+
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.crystal.Crystal;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Apply a restraint between groups.

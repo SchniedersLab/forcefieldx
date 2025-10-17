@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.RelativeSolvationType;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * A relative solvation term for chemical perturbations.

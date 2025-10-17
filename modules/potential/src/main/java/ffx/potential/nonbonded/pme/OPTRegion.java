@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.potential.parameters.MultipoleType.t001;
-import static ffx.potential.parameters.MultipoleType.t010;
-import static ffx.potential.parameters.MultipoleType.t100;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t100;
 
 /**
  * Parallel computation of the OPT induced dipoles.

@@ -37,18 +37,19 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
-import static org.apache.commons.math3.util.FastMath.exp;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
+
 import java.io.IOException;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
  * The ReplicaExchange implements temperature and lambda replica exchange methods.

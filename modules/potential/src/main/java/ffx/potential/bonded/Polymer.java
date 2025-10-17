@@ -40,7 +40,11 @@ package ffx.potential.bonded;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
+import javax.swing.tree.TreeNode;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -48,10 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.swing.tree.TreeNode;
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.Material;
-import org.jogamp.vecmath.Color3f;
 
 /**
  * The Polymer class encapsulates a peptide or nucleotide chain.

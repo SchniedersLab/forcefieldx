@@ -44,7 +44,6 @@ import ffx.openmm.IntArray;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
-import ffx.potential.terms.AnglePotentialEnergy;
 import ffx.potential.terms.AngleTorsionPotentialEnergy;
 
 import java.util.logging.Logger;

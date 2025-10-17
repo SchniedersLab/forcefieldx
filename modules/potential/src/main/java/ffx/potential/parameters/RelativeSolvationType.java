@@ -37,14 +37,14 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
-import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
-import static java.lang.Double.parseDouble;
-import static java.lang.String.format;
-
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 
 /**
  * A BaseType for relative solvation energies (intended for nonstandard amino acids).

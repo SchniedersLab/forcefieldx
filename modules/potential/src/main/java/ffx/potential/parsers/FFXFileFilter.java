@@ -37,9 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import java.io.File;
-import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
+
+import javax.swing.filechooser.FileFilter;
+import java.io.File;
 
 /**
  * The FFXFileFilter class is used to choose Force Field X script (*.FFX) files.

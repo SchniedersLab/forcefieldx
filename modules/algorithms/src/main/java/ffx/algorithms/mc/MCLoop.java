@@ -37,21 +37,22 @@
 // ******************************************************************************
 package ffx.algorithms.mc;
 
-import static ffx.utilities.Constants.R;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.random;
-
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.algorithms.optimize.Minimize;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.Loop;
+
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
+
+import static ffx.utilities.Constants.R;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.random;
 
 /**
  * MCLoop class.
