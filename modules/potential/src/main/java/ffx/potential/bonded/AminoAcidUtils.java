@@ -360,8 +360,7 @@ public class AminoAcidUtils {
             buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType, forceField, bondList);
             break;
           case PCA:
-            buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField,
-                bondList);
+            buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField, bondList);
             break;
           case ACE:
             break;
@@ -2168,6 +2167,8 @@ public class AminoAcidUtils {
     buildH(res, PCA.HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1, ff, bonds);
     buildH(res, PCA.HG2, CG, 1.11, CB, 109.4, CD, 109.4, 1, ff, bonds);
     buildH(res, PCA.HG3, CG, 1.11, CB, 109.4, CD, 109.4, -1, ff, bonds);
+    // Covalent bond from the backbone nitrogen to the delta-carbon.
+    buildBond(N, CD, ff, bonds);
     return res;
   }
 

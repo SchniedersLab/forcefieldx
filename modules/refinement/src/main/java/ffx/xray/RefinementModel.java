@@ -111,10 +111,8 @@ public class RefinementModel {
           continue;
         }
         if (a.getAltLoc() == null) {
-          logger.severe(
-              format(
-                  " Atom %s has a null alternate location. Likely cause: attempting X-ray refinement from a .xyz file",
-                  a));
+          logger.severe(format(
+                  " Atom %s has a null alternate location. Likely cause: attempting X-ray refinement from a .xyz file", a));
         }
         if (!a.getAltLoc().equals(' ') || a.getOccupancy() < 1.0) {
           if (iNode instanceof Residue) {
@@ -134,6 +132,8 @@ public class RefinementModel {
           }
         }
       }
+
+      // Configure alternate conformers
       if (alternateConformer) {
         for (int j = 1; j < molecularAssemblies.length; j++) {
           List<MSNode> nlist = molecularAssemblies[j].getNodeList();
@@ -161,10 +161,8 @@ public class RefinementModel {
     }
 
     // For mapping between atoms between different molecular assemblies.
-    // xIndex = new List[molecularAssemblies.length];
     xIndex = new ArrayList<>(molecularAssemblies.length);
     for (int i = 0; i < molecularAssemblies.length; i++) {
-      // xIndex[i] = new ArrayList<>();
       xIndex.add(new ArrayList<>());
     }
 
@@ -182,14 +180,10 @@ public class RefinementModel {
         continue;
       }
       totalAtomList.add(a);
-//      a.setFormFactorIndex(index);
-//      xIndex[0].add(index);
-//      index++;
       if (a.isActive()) {
         activeAtomList.add(a);
         a.setFormFactorIndex(index);
-        // xIndex[0].add(index);
-        xIndex.get(0).add(index);
+        xIndex.getFirst().add(index);
         index++;
       }
     }
@@ -201,22 +195,23 @@ public class RefinementModel {
         if (!a.getUse()) {
           continue;
         }
-        Atom root = molecularAssemblies[0].findAtom(a);
+        Atom root = molecularAssemblies[0].findAtom(a, false);
+        Atom deuteriumMatch = molecularAssemblies[0].findAtom(a, true);
         if (root != null && root.getAltLoc().equals(a.getAltLoc())) {
-//          xIndex[i].add(root.getFormFactorIndex());
-//          a.setFormFactorIndex(root.getFormFactorIndex());
           if (a.isActive()) {
-            // xIndex[i].add(root.getFormFactorIndex());
             xIndex.get(i).add(root.getFormFactorIndex());
             a.setFormFactorIndex(root.getFormFactorIndex());
           }
+        } else if (deuteriumMatch != null) {
+          if (a.isActive()) {
+            xIndex.get(i).add(deuteriumMatch.getFormFactorIndex());
+            a.setFormFactorIndex(deuteriumMatch.getFormFactorIndex());
+          }
         } else {
-//          xIndex[i].add(index);
-//          index++;
           totalAtomList.add(a);
           if (a.isActive()) {
             activeAtomList.add(a);
-            // xIndex[i].add(index);
+            a.setFormFactorIndex(index);
             xIndex.get(i).add(index);
             index++;
           }
@@ -242,12 +237,12 @@ public class RefinementModel {
         }
       }
       if (list.size() == 1) {
-        Residue r = list.get(0);
+        Residue r = list.getFirst();
         logger.log(Level.INFO,
             "  Residue {0} is a single conformer with non-unity occupancy.\n  Occupancy will be refined independently.\n",
             r.getChainID() + " " + r);
       } else if (tocc < 1.0 || tocc > 1.0) {
-        Residue r = list.get(0);
+        Residue r = list.getFirst();
         logger.log(Level.INFO,
             "  Residue {0} occupancy does not sum to 1.0.\n  This should be fixed or checked due to possible instability in refinement.\n",
             r.getChainID() + " " + r);

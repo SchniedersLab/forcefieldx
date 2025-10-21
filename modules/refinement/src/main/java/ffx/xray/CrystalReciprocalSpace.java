@@ -437,6 +437,7 @@ public class CrystalReciprocalSpace {
         for (int iSymm = 0; iSymm < bulkNSymm; iSymm++) {
           for (int i = 0; i < nAtoms; i++) {
             atomFormFactors[iSymm][i] = new NeutronFormFactor(atoms[i], bAdd);
+            // logger.info(" SymOp " + iSymm + " " + atomFormFactors[iSymm][i].toString());
           }
         }
       } else {
@@ -803,9 +804,8 @@ public class CrystalReciprocalSpace {
    * @param norm a boolean.
    */
   public void densityNorm(double[] data, double[] meansd, boolean norm) {
-    double mean, sd;
-
-    mean = sd = 0.0;
+    double mean = 0.0;
+    double sd = 0.0;
     int n = 0;
     for (int k = 0; k < fftZ; k++) {
       for (int j = 0; j < fftY; j++) {

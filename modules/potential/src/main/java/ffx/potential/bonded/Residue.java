@@ -316,8 +316,22 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     Atom currentAtom = null;
     if (o instanceof Atom newAtom) {
       Character newAlt = newAtom.getAltLoc();
+      String newName = newAtom.getName().toUpperCase();
       MSNode atoms = getAtomNode();
       currentAtom = (Atom) atoms.contains(newAtom);
+      // Check for deuterium
+      if (currentAtom == null) {
+        if (newName.startsWith("H")) {
+          newAtom.setName(newName.replaceFirst("H", "D"));
+          currentAtom = (Atom) atoms.contains(newAtom);
+          newAtom.setName(newName);
+        } else if (newName.startsWith("D")) {
+          newAtom.setName(newName.replaceFirst("D", "H"));
+          currentAtom = (Atom) atoms.contains(newAtom);
+          newAtom.setName(newName);
+        }
+      }
+
       if (titrateConformers) {
         currentAtom = atomInitial;
         newAtom.setXyzIndex(currentAtom.getXyzIndex());
@@ -349,7 +363,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         }
       }
     } else {
-      logger.warning("Only an Atom can be added to a Residue.");
+      logger.warning(" Only an Atom can be added to a Residue.");
     }
     return currentAtom;
   }

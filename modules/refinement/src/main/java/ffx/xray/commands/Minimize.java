@@ -135,16 +135,17 @@ public class Minimize extends AlgorithmsCommand {
     String filename;
     if (filenames != null && !filenames.isEmpty()) {
       // Each alternate conformer is returned in a separate MolecularAssembly.
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      molecularAssemblies = algorithmFunctions.openAll(filenames.getFirst());
       activeAssembly = molecularAssemblies[0];
-      filename = filenames.get(0);
     } else if (activeAssembly == null) {
       logger.info(helpString());
       return this;
     } else {
       molecularAssemblies = new MolecularAssembly[]{activeAssembly};
-      filename = activeAssembly.getFile().getAbsolutePath();
     }
+
+    // Update the active filename
+    filename = activeAssembly.getFile().getAbsolutePath();
 
     logger.info("\n Running xray.Minimize on " + filename);
 
@@ -156,6 +157,8 @@ public class Minimize extends AlgorithmsCommand {
     diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
     diffractionData.scaleBulkFit();
     diffractionData.printStats();
+
+    // Log the energy of each MolecularAssembly
     algorithmFunctions.energy(molecularAssemblies);
 
     // RMS gradient convergence criteria for three stage refinement

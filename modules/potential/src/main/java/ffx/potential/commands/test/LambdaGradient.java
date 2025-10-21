@@ -174,7 +174,7 @@ public class LambdaGradient extends PotentialCommand {
 
     // Read in files.
     if (filenames == null || filenames.isEmpty()) {
-      activeAssembly = getActiveAssembly(null);
+      activeAssembly = getActiveAssembly(filenames);
       if (activeAssembly == null) {
         logger.info(helpString());
         return this;

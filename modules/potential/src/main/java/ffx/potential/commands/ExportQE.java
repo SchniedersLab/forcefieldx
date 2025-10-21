@@ -61,66 +61,94 @@ import static org.apache.commons.math3.util.FastMath.cos;
 
 /**
  * Generate Quantum Espresso (QE) input from an XYZ file.
- *
+ * <p>
  * Usage:
- *   ffxc XYZtoQE [options] &lt;filename&gt;
+ * ffxc XYZtoQE [options] &lt;filename&gt;
  */
 @Command(name = "XYZtoQE", description = "Generate QE input from a XYZ file.")
 public class ExportQE extends PotentialCommand {
 
-  /** Number of structural optimization steps performed in this run. */
+  /**
+   * Number of structural optimization steps performed in this run.
+   */
   @Option(names = {"--ns", "--nstep"}, paramLabel = "500", defaultValue = "500",
       description = "Number of structural optimization steps performed in this run.")
   private int nStep;
 
-  /** Convergence threshold on total energy (a.u) for ionic minimization. */
+  /**
+   * Convergence threshold on total energy (a.u) for ionic minimization.
+   */
   @Option(names = {"--ec", "--etot_conv_thr"}, paramLabel = "1.0e-6", defaultValue = "1.0e-6",
       description = "Convergence threshold on total energy (a.u) for ionic minimization.")
   private double etotConvThr;
 
-  /** Convergence threshold on forces (a.u) for ionic minimization. */
+  /**
+   * Convergence threshold on forces (a.u) for ionic minimization.
+   */
   @Option(names = {"--ef", "--forc_conv_thr"}, paramLabel = "1.0e-4", defaultValue = "1.0e-4",
       description = "Convergence threshold on forces (a.u) for ionic minimization.")
   private double forcConvThr;
 
-  /** Kinetic energy cutoff (Ry) for wavefunctions. */
+  /**
+   * Kinetic energy cutoff (Ry) for wavefunctions.
+   */
   @Option(names = {"--ke", "--ecutwfc"}, paramLabel = "50.0", defaultValue = "50.0",
       description = "Kinetic energy cutoff (Ry) for wavefunctions.")
   private double ecutwfc;
 
-  /** Kinetic energy cutoff (Ry) for charge density and potential. */
+  /**
+   * Kinetic energy cutoff (Ry) for charge density and potential.
+   */
   @Option(names = {"--rho", "--ecutrho"}, paramLabel = "500.0", defaultValue = "500.0",
       description = "Kinetic energy cutoff (Ry) for charge density and potential.")
   private double ecutrho;
 
-  /** Maximum number of iterations in a SCF step. */
+  /**
+   * Maximum number of iterations in a SCF step.
+   */
   @Option(names = {"--em", "--electron_maxstep"}, paramLabel = "1500", defaultValue = "1500",
       description = "Maximum number of iterations in a scf step.")
   private int electronMaxstep;
 
-  /** Convergence threshold for self consistency. */
+  /**
+   * Convergence threshold for self consistency.
+   */
   @Option(names = {"--ct", "--conv_thr"}, paramLabel = "1.0e-8", defaultValue = "1.0e-8",
       description = "Convergence threshold for self consistency.")
   private double convThr;
 
-  /** Mixing factor for self-consistency. */
+  /**
+   * Mixing factor for self-consistency.
+   */
   @Option(names = {"--mb", "--mixing_beta"}, paramLabel = "0.5", defaultValue = "0.5",
       description = "Mixing factor for self-consistency.")
   private double mixingBeta;
 
-  /** Perform QE calculation on hexagonal rather than rhombohedral representation. */
+  /**
+   * Perform QE calculation on hexagonal rather than rhombohedral representation.
+   */
   @Option(names = {"--hx", "--hexagonal"}, paramLabel = "true", defaultValue = "true",
       description = "Perform QE on hexagonal system.")
   private boolean hexagonal;
 
-  /** The final argument should be one filename (XYZ). */
+  /**
+   * The final argument should be one filename (XYZ).
+   */
   @Parameters(arity = "1", paramLabel = "file",
       description = "XYZ file to be converted.")
   private String filename = null;
 
-  public ExportQE() { super(); }
-  public ExportQE(FFXBinding binding) { super(binding); }
-  public ExportQE(String[] args) { super(args); }
+  public ExportQE() {
+    super();
+  }
+
+  public ExportQE(FFXBinding binding) {
+    super(binding);
+  }
+
+  public ExportQE(String[] args) {
+    super(args);
+  }
 
   @Override
   public ExportQE run() {
@@ -175,18 +203,18 @@ public class ExportQE extends PotentialCommand {
 
       // structural information on the system under investigation
       bwQE.write(format("&SYSTEM%n" +
-          "\tspace_group = %d,%n" +
-          "\tnat = %d,%n" +
-          "\tntyp = %d,%n" +
-          "\ta = %16.12f%n" +
-          "\tb = %16.12f%n" +
-          "\tc = %16.12f%n" +
-          "\tcosAB = %16.12f%n" +
-          "\tcosAC = %16.12f%n" +
-          "\tcosBC = %16.12f%n" +
-          "\tecutwfc = %6.4f,%n" +
-          "\tecutrho = %6.4f,%n" +
-          "\tvdw_corr = 'XDM',%n",
+              "\tspace_group = %d,%n" +
+              "\tnat = %d,%n" +
+              "\tntyp = %d,%n" +
+              "\ta = %16.12f%n" +
+              "\tb = %16.12f%n" +
+              "\tc = %16.12f%n" +
+              "\tcosAB = %16.12f%n" +
+              "\tcosAC = %16.12f%n" +
+              "\tcosBC = %16.12f%n" +
+              "\tecutwfc = %6.4f,%n" +
+              "\tecutrho = %6.4f,%n" +
+              "\tvdw_corr = 'XDM',%n",
           crystal.spaceGroup.number,
           activeAssembly.getAtomList().size(),
           atomTypes.size(),
@@ -230,10 +258,36 @@ public class ExportQE extends PotentialCommand {
       bwQE.write("ATOMIC_POSITIONS crystal_sg\n" + atomicPositions + "\n");
 
       // K_POINTS automatic
-      int k1; int k2; int k3;
-      if (xtalA < 5) { k1 = 8; } else if (xtalA <= 7) { k1 = 6; } else if (xtalA <= 12) { k1 = 4; } else { k1 = 2; }
-      if (xtalB < 5) { k2 = 8; } else if (xtalB <= 7) { k2 = 6; } else if (xtalB <= 12) { k2 = 4; } else { k2 = 2; }
-      if (xtalC < 5) { k3 = 8; } else if (xtalC <= 7) { k3 = 6; } else if (xtalC <= 12) { k3 = 4; } else { k3 = 2; }
+      int k1;
+      int k2;
+      int k3;
+      if (xtalA < 5) {
+        k1 = 8;
+      } else if (xtalA <= 7) {
+        k1 = 6;
+      } else if (xtalA <= 12) {
+        k1 = 4;
+      } else {
+        k1 = 2;
+      }
+      if (xtalB < 5) {
+        k2 = 8;
+      } else if (xtalB <= 7) {
+        k2 = 6;
+      } else if (xtalB <= 12) {
+        k2 = 4;
+      } else {
+        k2 = 2;
+      }
+      if (xtalC < 5) {
+        k3 = 8;
+      } else if (xtalC <= 7) {
+        k3 = 6;
+      } else if (xtalC <= 12) {
+        k3 = 4;
+      } else {
+        k3 = 2;
+      }
       bwQE.write("K_POINTS automatic\n" + k1 + " " + k2 + " " + k3 + " 1 1 1\n");
     } catch (IOException e) {
       logger.severe(" Error writing QE input file: " + e.getMessage());

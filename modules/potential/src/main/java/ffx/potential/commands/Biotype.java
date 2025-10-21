@@ -185,13 +185,9 @@ public class Biotype extends PotentialCommand {
       logger.info(biotype.toString());
     }
 
-    // Optionally save a PDB with updated atom/molecule names.
-    String dirString = getBaseDirString(filename);
-    String name = getName(filename);
-    name = removeExtension(name);
-
+    // Optionally, save a PDB with updated atom/molecule names.
     if (writePDB) {
-      File pdbFile = new File(dirString + name + ".pdb");
+      File pdbFile = createOutputFile(filename, "pdb");
       logger.info("\n Saving PDB file: " + pdbFile);
       potentialFunctions.saveAsPDB(activeAssembly, pdbFile);
     }

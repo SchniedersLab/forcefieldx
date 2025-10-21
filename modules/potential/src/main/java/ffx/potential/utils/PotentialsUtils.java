@@ -397,7 +397,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file provided to save assembly to.");
     } else {
-      PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+      PDBFilter pdbFilter = new PDBFilter(file, assembly,
+          assembly.getForceField(), assembly.getProperties());
       if (!pdbFilter.writeFile(file, append, false, writeEnd)) {
         logger.info(format(" Save failed for %s", assembly));
       }

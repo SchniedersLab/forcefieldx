@@ -43,35 +43,33 @@ import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.cli.PotentialCommand;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.FFXBinding;
+import ffx.utilities.FilePathInfo;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import static ffx.numerics.math.DoubleMath.dist;
 import static java.lang.String.format;
-import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.io.FilenameUtils.getName;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
  * Fix chain breaks in a PDB file.
- *
+ * <p>
  * Usage:
- *   ffxc ChainBreaks &lt;filename&gt;
+ * ffxc ChainBreaks &lt;filename&gt;
  */
 @Command(name = "ChainBreaks", description = " Fix chain breaks in a pdb file.")
 public class ChainBreaks extends PotentialCommand {
 
-  /** The final argument(s) should be one filename. */
+  /**
+   * The final argument(s) should be one filename.
+   */
   @Parameters(arity = "1", paramLabel = "file",
       description = "The atomic coordinate file in PDB or XYZ format.")
   private String filename = null;
 
-  private List<String> chainBreaks = new ArrayList<>();
   private List<double[]> newCoordinates;
   private final PotentialsUtils potentialsUtils = new PotentialsUtils();
 
@@ -100,27 +98,21 @@ public class ChainBreaks extends PotentialCommand {
       return null;
     }
 
-    // Get the base name of the file and its extension.
-    String name = getName(filename);
-    String ext = getExtension(name);
-    name = removeExtension(name);
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath();
 
-    if (!ext.toLowerCase().contains("pdb")) {
+    // Get the base name of the file and its extension.
+    FilePathInfo fileInfo = parseFilePath(filename);
+
+    if (!fileInfo.extension().toLowerCase().contains("pdb")) {
       logger.info(format(" The file extension does not include 'pdb': %s", filename));
       return null;
     }
 
+    logger.info(format("\n Fixing Chain Breaks for %s", filename));
     List<Residue> residues = activeAssembly.getResidueList();
-    chainBreaks = findChainBreaks(residues, 3.0);
-    logger.info(format(" Fixing Chain Breaks in %s", filename));
-
-    // Use the current base directory, or update if necessary based on the given filename.
-    String dirString = getBaseDirString(filename);
-    File editedPDBFile = new File(dirString + name + "_edited.pdb");
-
-    logger.info(format(" Saving New Coordinates to:\n %s", editedPDBFile));
-    potentialsUtils.saveAsPDB(activeAssembly, editedPDBFile, false, false);
-
+    List<String> chainBreaks = findChainBreaks(residues, 3.0);
+    saveByOriginalExtension(activeAssembly, filename);
     return this;
   }
 

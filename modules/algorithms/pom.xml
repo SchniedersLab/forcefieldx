@@ -51,6 +51,8 @@
             <argument>ffx.algorithms.commands.MinimizeCrystals</argument>
             <argument>ffx.algorithms.commands.MinimizeOpenMM</argument>
             <argument>ffx.algorithms.commands.MutatePDB</argument>
+            <argument>ffx.algorithms.commands.PhDynamics</argument>
+            <argument>ffx.algorithms.commands.PhMinimize</argument>
             <argument>ffx.algorithms.commands.SaveRotamers</argument>
             <argument>ffx.algorithms.commands.Scheduler</argument>
             <argument>ffx.algorithms.commands.SortArc</argument>
@@ -66,10 +68,8 @@
             <argument>ffx.algorithms.commands.test.Freefix</argument>
             <argument>ffx.algorithms.commands.test.IdentifyRotamers</argument>
             <argument>ffx.algorithms.commands.test.ManyBodyPhScan</argument>
-            <argument>ffx.algorithms.commands.test.MinimizePh</argument>
             <argument>ffx.algorithms.commands.test.MostBar</argument>
             <argument>ffx.algorithms.commands.test.OSTGradient</argument>
-            <argument>ffx.algorithms.commands.test.PhDynamics</argument>
             <argument>ffx.algorithms.commands.test.RaoBlackwellEstimator</argument>
             <argument>ffx.algorithms.commands.test.RepexThermo</argument>
             <argument>ffx.algorithms.commands.test.SortXPH</argument>

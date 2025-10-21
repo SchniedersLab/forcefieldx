@@ -1,6 +1,5 @@
 package ffx.algorithms.optimize;
 
-import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.PhReplicaExchange;

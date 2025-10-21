@@ -41,7 +41,6 @@ import ffx.crystal.Crystal;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Residue;
 import ffx.potential.cli.PotentialCommand;
 import ffx.potential.parsers.PDBFilter;
@@ -61,9 +60,9 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 /**
  * Calculates nucleic acid torsions as well as information regarding the sugar pucker.
- *
+ * <p>
  * Usage:
- *   ffxc NucleicAcidAnalysis [options] &lt;filename&gt;
+ * ffxc NucleicAcidAnalysis [options] &lt;filename&gt;
  */
 @Command(description = "Calculates nucleic acid torsions as well as information regarding the sugar pucker.", name = "NucleicAcidAnalysis")
 public class NucleicAcidAnalysis extends PotentialCommand {
@@ -74,7 +73,7 @@ public class NucleicAcidAnalysis extends PotentialCommand {
 
   @Parameters(arity = "1", paramLabel = "file",
       description = "The atomic coordinate file in PDB or XYZ or ARC format.")
-  private List<String> filenames = null;
+  private String filename = null;
 
   private List<Residue> residues;
 
@@ -92,11 +91,12 @@ public class NucleicAcidAnalysis extends PotentialCommand {
 
   @Override
   public NucleicAcidAnalysis run() {
+    // Init the context and bind variables.
     if (!init()) {
       return this;
     }
 
-    activeAssembly = getActiveAssembly(filenames.get(0));
+    activeAssembly = getActiveAssembly(filename);
     if (activeAssembly == null) {
       logger.info(helpString());
       return this;
@@ -106,9 +106,6 @@ public class NucleicAcidAnalysis extends PotentialCommand {
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()];
     forceFieldEnergy.getCoordinates(x);
     forceFieldEnergy.energy(x);
-
-    // Create NucleicAcidUtils instance once
-    NucleicAcidUtils naUtils = new NucleicAcidUtils();
 
     // Filter for nucleic acid residues
     List<String> nucleicAcidNames = Arrays.asList(
@@ -211,12 +208,12 @@ public class NucleicAcidAnalysis extends PotentialCommand {
       if (v0 != null && v1 != null && v3 != null && v4 != null && v2 != null) {
         P = calculateP(v0, v1, v2, v3, v4);
       }
-      
+
       Double nuMax = null;
       if (v2 != null && P != null) {
         nuMax = Math.abs(v2 / Math.cos(Math.toRadians(P)));
       }
-      
+
       String type = determineType(residue, P);
       String stage = determineStage(delta, chi, P);
 

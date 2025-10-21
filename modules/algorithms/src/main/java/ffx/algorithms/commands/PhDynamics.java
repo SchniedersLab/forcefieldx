@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.commands.test;
+package ffx.algorithms.commands;
 
 import edu.rit.pj.Comm;
 import ffx.algorithms.cli.AlgorithmsCommand;

@@ -135,11 +135,15 @@ public abstract class SystemFilter {
   private SystemFilter(ForceField forceField, CompositeConfiguration properties) {
     this.forceField = forceField;
     this.properties = properties;
-    if (properties != null) {
-      vdwH = properties.getBoolean("vdwHydrogens", false);
-      dieOnMissingAtom = properties.getBoolean("trajectory-dieOnMissing", false);
-      standardizeAtomNames = properties.getBoolean("standardizeAtomNames", true);
+    if (properties == null && forceField != null) {
+      this.properties = forceField.getProperties();
+    }
+    if (this.properties != null) {
+      vdwH = this.properties.getBoolean("vdwHydrogens", false);
+      dieOnMissingAtom = this.properties.getBoolean("trajectory-dieOnMissing", false);
+      standardizeAtomNames = this.properties.getBoolean("standardizeAtomNames", true);
     } else {
+      logger.info(" SystemFilter: Using default values due to no properties.");
       vdwH = false;
       dieOnMissingAtom = false;
       standardizeAtomNames = true;

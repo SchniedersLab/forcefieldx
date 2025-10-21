@@ -170,7 +170,7 @@ public class MolecularAssembly extends MSGroup {
   /**
    * Constructor for MolecularAssembly.
    *
-   * @param name a {@link java.lang.String} object.
+   * @param name     a {@link java.lang.String} object.
    * @param Polymers a {@link ffx.potential.bonded.MSNode} object.
    */
   public MolecularAssembly(String name, MSNode Polymers) {
@@ -180,10 +180,10 @@ public class MolecularAssembly extends MSGroup {
   /**
    * Constructor for MolecularAssembly.
    *
-   * @param name a {@link java.lang.String} object.
-   * @param Polymers a {@link ffx.potential.bonded.MSNode} object.
+   * @param name       a {@link java.lang.String} object.
+   * @param Polymers   a {@link ffx.potential.bonded.MSNode} object.
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   *                   object.
    */
   public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
     this(name, Polymers);
@@ -192,6 +192,7 @@ public class MolecularAssembly extends MSGroup {
 
   /**
    * Set the alternate location.
+   *
    * @param alternateLocation The alternate location.
    */
   public void setAlternateLocation(Character alternateLocation) {
@@ -200,6 +201,7 @@ public class MolecularAssembly extends MSGroup {
 
   /**
    * Get the alternate location.
+   *
    * @return The alternate location.
    */
   public Character getAlternateLocation() {
@@ -215,7 +217,9 @@ public class MolecularAssembly extends MSGroup {
     headerLines.add(line);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public MSNode addMSNode(MSNode o) {
     List<MSNode> Polymers = getAtomNodeList();
@@ -225,7 +229,7 @@ public class MolecularAssembly extends MSGroup {
         return getResidue(atom, true, Residue.ResidueType.AA);
       } else if (!atom.isHetero()) {
         String resName = atom.getResidueName();
-        switch (resName){
+        switch (resName) {
           case "HIS":
           case "HIE":
           case "HID":
@@ -235,12 +239,12 @@ public class MolecularAssembly extends MSGroup {
           case "GLH":
           case "LYS":
           case "LYD":
-            for (Residue residue: getResidueList()){
-              if(residue.getResidueNumber() == atom.getResidueNumber()){
+            for (Residue residue : getResidueList()) {
+              if (residue.getResidueNumber() == atom.getResidueNumber()) {
                 for (Atom currentAtom : residue.getAtomList()) {
                   if (atom.getResidueNumber() == currentAtom.getResidueNumber() && atom.getChainID() == currentAtom.getChainID()
-                          && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
-                          atom.getName().equals(currentAtom.getName())) {
+                      && atom.getAltLoc() != currentAtom.getAltLoc() && !atom.getResidueName().equals(currentAtom.getResidueName()) &&
+                      atom.getName().equals(currentAtom.getName())) {
                     titrateConformer = true;
                     atomInitial = currentAtom;
                     return getResidue(atom, true);
@@ -345,7 +349,7 @@ public class MolecularAssembly extends MSGroup {
    * random translation.
    *
    * @param x SymOp with translation range -x/2 .. x/2 (0 for random placement in the unit cell,
-   *     negative for no SymOp)
+   *          negative for no SymOp)
    */
   public void applyRandomSymOp(double x) {
     // The Unit Cell is needed here (not the ReplicatesCrystal).
@@ -378,7 +382,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** center */
+  /**
+   * center
+   */
   public void center() {
     double[] center = getMultiScaleCenter(false);
     offset = new Vector3d(center);
@@ -425,7 +431,7 @@ public class MolecularAssembly extends MSGroup {
   /**
    * centerView
    *
-   * @param rot a boolean.
+   * @param rot   a boolean.
    * @param trans a boolean.
    */
   public void centerView(boolean rot, boolean trans) {
@@ -444,7 +450,9 @@ public class MolecularAssembly extends MSGroup {
     // rotToCOM.setTransform(rotToCOMT3D);
   }
 
-  /** Compute fractional coordinates. */
+  /**
+   * Compute fractional coordinates.
+   */
   public void computeFractionalCoordinates() {
 
     // Count up the number of fractional coordinate entities.
@@ -558,7 +566,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** createBox */
+  /**
+   * createBox
+   */
   public void createBox() {
     int vertices = 8;
     LineArray la =
@@ -638,7 +648,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     try {
@@ -657,7 +669,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** detach */
+  /**
+   * detach
+   */
   public void detach() {
     synchronized (this) {
       if (branchGroup != null && branchGroup.isLive()) {
@@ -666,7 +680,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void finalize(boolean finalizeGroups, ForceField forceField) {
     setFinalized(false);
@@ -753,13 +769,37 @@ public class MolecularAssembly extends MSGroup {
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
   public Atom findAtom(Atom atom) {
+    return findAtom(atom, false);
+  }
+
+  /**
+   * findAtom
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a {@link ffx.potential.bonded.Atom} object.
+   */
+  public Atom findAtom(Atom atom, boolean matchDeuterium) {
     if (!atom.isHetero() || atom.isModRes()) {
       Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
       if (polymer != null) {
         Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);
         if (res != null) {
           MSNode node = res.getAtomNode();
-          return (Atom) node.contains(atom);
+          Atom foundAtom = (Atom) node.contains(atom);
+          // Match deuterium
+          if (foundAtom == null && matchDeuterium && atom.getAtomicNumber() == 1) {
+            String atomName = atom.getName().toUpperCase();
+            if (atomName.startsWith("H")) {
+              atom.setName(atomName.replaceFirst("H", "D"));
+              foundAtom = (Atom) node.contains(atom);
+              atom.setName(atomName);
+            } else if (atomName.startsWith("D")) {
+              atom.setName(atomName.replaceFirst("D", "H"));
+              foundAtom = (Atom) node.contains(atom);
+              atom.setName(atomName);
+            }
+          }
+          return foundAtom;
         }
       }
       return null;
@@ -1069,7 +1109,9 @@ public class MolecularAssembly extends MSGroup {
     cycles = c;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getExtent() {
     double[] Rc = {0, 0, 0};
@@ -1418,8 +1460,8 @@ public class MolecularAssembly extends MSGroup {
    * getPolymer
    *
    * @param chainID a {@link java.lang.Character} object.
-   * @param segID a {@link java.lang.String} object.
-   * @param create a boolean.
+   * @param segID   a {@link java.lang.String} object.
+   * @param create  a boolean.
    * @return a {@link ffx.potential.bonded.Polymer} object.
    */
   public Polymer getPolymer(Character chainID, String segID, boolean create) {
@@ -1572,7 +1614,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** Move to fractional coordinates. */
+  /**
+   * Move to fractional coordinates.
+   */
   public void moveToFractionalCoordinates() {
 
     if (fractionalCoordinates == null) {
@@ -1828,7 +1872,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
     for (MSNode msNode : getAtomNodeList()) {
@@ -1858,7 +1904,9 @@ public class MolecularAssembly extends MSGroup {
     this.potentialEnergy = potentialEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
     // Just Detach the whole system branch group
@@ -2032,7 +2080,7 @@ public class MolecularAssembly extends MSGroup {
     }
 
     Residue res;
-    if(titrateConformer){
+    if (titrateConformer) {
       res = polymer.getResidue(atomInitial.getResidueName(), atomInitial.getResidueNumber(), create, defaultRT);
       res.setName(atom.getResidueName());
     } else {
@@ -2040,7 +2088,7 @@ public class MolecularAssembly extends MSGroup {
     }
     if (create && res != null) {
       res.setTitrateConformers(titrateConformer);
-      if(titrateConformer){
+      if (titrateConformer) {
         res.setAtomInitial(atomInitial);
       }
       return (Atom) res.addMSNode(atom);
@@ -2083,7 +2131,7 @@ public class MolecularAssembly extends MSGroup {
       m.addMSNode(atom);
       if (resName == null) {
         logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.",
-                m, atom));
+            m, atom));
         molecules.add(m);
         moleculeHashMap.put(key, m);
       } else if (isWater) {
@@ -2133,7 +2181,9 @@ public class MolecularAssembly extends MSGroup {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void removeLeaves() {
     super.removeLeaves();
@@ -2307,7 +2357,9 @@ public class MolecularAssembly extends MSGroup {
         .collect(Collectors.toList());
   }
 
-  /** Renames water protons to H1 and H2. */
+  /**
+   * Renames water protons to H1 and H2.
+   */
   void renameWaterProtons() {
     for (Molecule water : getAllWaterInclMistyped()) {
       Atom H1 = water.getAtomByName("H1", false);

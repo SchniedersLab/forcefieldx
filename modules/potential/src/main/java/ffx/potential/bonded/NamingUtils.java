@@ -569,11 +569,11 @@ public class NamingUtils {
     logger.fine(format(" Probable ACE cap attached to residue %s; duplicate atom names may result.",
         residue));
     aceC.setName("C");
-    findBondedAtoms(aceC, 8).get(0).setName("O");
-    Atom CH3 = findBondedAtoms(aceC, 6).get(0);
+    findBondedAtoms(aceC, 8).getFirst().setName("O");
+    Atom CH3 = findBondedAtoms(aceC, 6).getFirst();
     CH3.setName("CH3");
     List<Atom> ntermHs = findBondedAtoms(CH3, 1);
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < ntermHs.size(); i++) {
       ntermHs.get(i).setName(format("H%d", (i + 1)));
     }
   }
@@ -1284,8 +1284,7 @@ public class NamingUtils {
       }
       break;
       default:
-        throw new IllegalArgumentException(
-            (format(" Amino acid %s (%s) not recognized!", residue, aa3)));
+        logger.info(format(" Amino acid %s (%s) not recognized!", residue, aa3));
     }
   }
 

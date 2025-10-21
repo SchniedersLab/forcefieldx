@@ -220,7 +220,7 @@ public class DiffractionData implements DataContainer {
   /**
    * construct a diffraction data assembly
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object array
+   * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular assembly} object array
    *     (typically containing alternate conformer assemblies), used as the atomic model for
    *     comparison against the data
    * @param properties system properties file
@@ -229,14 +229,14 @@ public class DiffractionData implements DataContainer {
    * @param datafile one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
    */
   public DiffractionData(
-      MolecularAssembly[] assembly,
+      MolecularAssembly[] molecularAssemblies,
       CompositeConfiguration properties,
       SolventModel solventmodel,
       DiffractionFile... datafile) {
 
-    this.assembly = assembly;
+    this.assembly = molecularAssemblies;
     this.solventModel = solventmodel;
-    this.modelName = assembly[0].getFile().getName();
+    this.modelName = molecularAssemblies[0].getName();
     this.dataFiles = datafile;
     this.n = datafile.length;
 
@@ -259,7 +259,7 @@ public class DiffractionData implements DataContainer {
     refineMolOcc = properties.getBoolean("refine-mol-occ", false);
     occMass = properties.getDouble("occmass", 10.0);
 
-    ForceField forceField = assembly[0].getForceField();
+    ForceField forceField = molecularAssemblies[0].getForceField();
     nativeEnvironmentApproximation =
         forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
 
@@ -282,7 +282,7 @@ public class DiffractionData implements DataContainer {
         reflectionList[i] = datafile[i].getDiffractionfilter().getReflectionList(tmp, properties);
         if (reflectionList[i] == null) {
           logger.info(" Crystal information from the PDB or property file will be used.");
-          crystalinit = assembly[i].getCrystal().getUnitCell();
+          crystalinit = molecularAssemblies[i].getCrystal().getUnitCell();
           double res = datafile[i].getDiffractionfilter().getResolution(tmp, crystalinit);
           if (res < 0.0) {
             logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
@@ -307,9 +307,9 @@ public class DiffractionData implements DataContainer {
           .readFile(tmp, reflectionList[i], refinementData[i], properties);
     }
 
-    if (!crystal[0].getUnitCell().equals(assembly[0].getCrystal().getUnitCell())) {
+    if (!crystal[0].getUnitCell().equals(molecularAssemblies[0].getCrystal().getUnitCell())) {
       logger.info("\n The PDB and reflection file crystal information do not match.");
-      logger.info(" PDB File:" + assembly[0].getCrystal().getUnitCell().toString());
+      logger.info(" PDB File:" + molecularAssemblies[0].getCrystal().getUnitCell().toString());
       logger.info(" Reflection File:" + crystal[0].getUnitCell().toString());
       logger.severe(" Please check the concordance of the PDB CRYST1 record with the diffraction file.");
     }
@@ -349,7 +349,7 @@ public class DiffractionData implements DataContainer {
     }
 
     // now set up the refinement model
-    refinementModel = new RefinementModel(assembly, refineMolOcc);
+    refinementModel = new RefinementModel(molecularAssemblies, refineMolOcc);
 
     // initialize atomic form factors
     for (Atom a : refinementModel.getTotalAtomArray()) {
@@ -387,7 +387,7 @@ public class DiffractionData implements DataContainer {
     crystalReciprocalSpacesFc = new CrystalReciprocalSpace[n];
     crystalReciprocalSpacesFs = new CrystalReciprocalSpace[n];
 
-    parallelTeam = assembly[0].getParallelTeam();
+    parallelTeam = molecularAssemblies[0].getParallelTeam();
 
     String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
     try {

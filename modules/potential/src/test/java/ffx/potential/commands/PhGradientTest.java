@@ -47,6 +47,7 @@ import java.util.Random;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /** JUnit Tests for the PhGradient Script */
 
@@ -54,7 +55,6 @@ import org.junit.runners.Parameterized;
 public class PhGradientTest extends PotentialTest {
 
   private final String info;
-  private final String filename;
   private final String filepath;
   private final String key;
   private final int nBonds;
@@ -81,8 +81,6 @@ public class PhGradientTest extends PotentialTest {
   private final double vanDerWaalsEnergy;
   private final double permanentEnergy;
   private final double polarizationEnergy;
-  private final double discretizerEnergy;
-  private final double acidostatEnergy;
   private final double extendedSystemBias;
   private final double totalEnergy;
   private final double tolerance = 1.0e-2;
@@ -117,7 +115,6 @@ public class PhGradientTest extends PotentialTest {
       int nPolar,
       double discretizerEnergy,
       double acidostatEnergy) {
-    this.filename = filename;
     this.info = info;
     this.key = key;
     this.bondEnergy = bondEnergy;
@@ -144,8 +141,6 @@ public class PhGradientTest extends PotentialTest {
     this.nPermanent = nPermanent;
     this.polarizationEnergy = polarizationEnergy;
     this.nPolar = nPolar;
-    this.discretizerEnergy = discretizerEnergy;
-    this.acidostatEnergy = acidostatEnergy;
 
     extendedSystemBias = discretizerEnergy + acidostatEnergy;
     filepath = getResourcePath(filename);
@@ -165,7 +160,7 @@ public class PhGradientTest extends PotentialTest {
             + acidostatEnergy;
   }
 
-  @Parameterized.Parameters
+  @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {

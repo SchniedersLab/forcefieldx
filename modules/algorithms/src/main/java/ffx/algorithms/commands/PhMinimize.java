@@ -35,11 +35,10 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.commands.test;
+package ffx.algorithms.commands;
 
 import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.MinimizeOptions;
-import ffx.algorithms.optimize.PhMinimize;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.extended.ExtendedSystem;
@@ -68,7 +67,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
  * ffxc test.MinimizePh [options] &lt;filename [file2...]&gt;
  */
 @Command(description = " Run L-BFGS minimization on a CpHMD system.", name = "test.MinimizePh")
-public class MinimizePh extends AlgorithmsCommand {
+public class PhMinimize extends AlgorithmsCommand {
 
   @Mixin
   private MinimizeOptions minimizeOptions;
@@ -98,7 +97,7 @@ public class MinimizePh extends AlgorithmsCommand {
   /**
    * MinimizePh Constructor.
    */
-  public MinimizePh() {
+  public PhMinimize() {
     super();
   }
 
@@ -107,7 +106,7 @@ public class MinimizePh extends AlgorithmsCommand {
    *
    * @param binding The Binding to use.
    */
-  public MinimizePh(FFXBinding binding) {
+  public PhMinimize(FFXBinding binding) {
     super(binding);
   }
 
@@ -116,7 +115,7 @@ public class MinimizePh extends AlgorithmsCommand {
    *
    * @param args Command line arguments.
    */
-  public MinimizePh(String[] args) {
+  public PhMinimize(String[] args) {
     super(args);
   }
 
@@ -124,7 +123,7 @@ public class MinimizePh extends AlgorithmsCommand {
    * {@inheritDoc}
    */
   @Override
-  public MinimizePh run() {
+  public PhMinimize run() {
 
     // Init the context and bind variables.
     if (!init()) {
@@ -163,8 +162,8 @@ public class MinimizePh extends AlgorithmsCommand {
       forceFieldEnergy.getCoordinates(x);
       forceFieldEnergy.energy(x, true);
     }
-    PhMinimize minimize = new PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener,
-        esvSystem);
+    ffx.algorithms.optimize.PhMinimize minimize =
+        new ffx.algorithms.optimize.PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener, esvSystem);
 
     double energy = minimize.getEnergy();
     double tolerance = 1.0e-10;

@@ -39,11 +39,11 @@ package ffx.potential.commands;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.math.SummaryStatistics;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.PotentialCommand;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.potential.parsers.SystemFilter;
 import ffx.utilities.FFXBinding;
-import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -53,9 +53,9 @@ import static java.lang.String.format;
 
 /**
  * Calculate the mean system density for single topology systems.
- *
+ * <p>
  * Usage:
- *   ffxc Density [options] &lt;filename&gt;
+ * ffxc Density [options] &lt;filename&gt;
  */
 @Command(name = "Density", description = " Calculate the mean system density for single topology systems.")
 public class Density extends PotentialCommand {
@@ -63,27 +63,37 @@ public class Density extends PotentialCommand {
   @Mixin
   private WriteoutOptions writeoutOptions = new WriteoutOptions();
 
-  /** First frame to evaluate (1-indexed). */
+  /**
+   * First frame to evaluate (1-indexed).
+   */
   @Option(names = {"-s", "--start"}, paramLabel = "1", defaultValue = "1",
       description = "First frame to evaluate (1-indexed).")
   private int start = 1;
 
-  /** Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory. */
+  /**
+   * Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.
+   */
   @Option(names = {"-f", "--final"}, paramLabel = "all frames", defaultValue = "0",
       description = "Last frame to evaluate (1-indexed); values less than 1 evaluate to end of trajectory.")
   private int finish = 0;
 
-  /** Stride: evaluate density every N frames. Must be positive. */
+  /**
+   * Stride: evaluate density every N frames. Must be positive.
+   */
   @Option(names = {"--st", "--stride"}, paramLabel = "1", defaultValue = "1",
       description = "Stride: evaluate density every N frames. Must be positive.")
   private int stride = 1;
 
-  /** Print out a file with density adjusted to match mean calculated density. */
+  /**
+   * Print out a file with density adjusted to match mean calculated density.
+   */
   @Option(names = {"-p", "--printout"}, defaultValue = "false",
       description = "Print out a file with density adjusted to match mean calculated density.")
   private boolean doPrint = false;
 
-  /** The final argument is a PDB or XYZ coordinate file. */
+  /**
+   * The final argument is a PDB or XYZ coordinate file.
+   */
   @Parameters(arity = "1", paramLabel = "file",
       description = "An atomic coordinate file in PDB or XYZ format.")
   private String filename = null;
@@ -131,7 +141,7 @@ public class Density extends PotentialCommand {
       int lastFrame = (finish < 1) ? nFrames : finish;
 
       densities[0] = density;
-      logger.info(format(" Evaluating density for system %s with mass %16.7g (g/mol).", filename, totMass));
+      logger.info(format("\n Evaluating density for system %s with mass %16.7g (g/mol).", filename, totMass));
       logger.info(format(" Density at frame %9d is %16.7g (g/mL) from a volume of %16.7g (A^3)", 1, density, volume));
 
       int ctr = 1;
@@ -148,9 +158,15 @@ public class Density extends PotentialCommand {
       logger.info(densStats.toString());
 
       if (doPrint) {
+        activeAssembly.setFractionalMode(MolecularAssembly.FractionalMode.MOLECULE);
+        activeAssembly.computeFractionalCoordinates();
         crystal.setDensity(densStats.mean, totMass);
-        String outFileName = FilenameUtils.removeExtension(filename);
-        writeoutOptions.saveFile(outFileName, potentialFunctions, activeAssembly);
+        activeAssembly.moveToFractionalCoordinates();
+        saveByExtension(activeAssembly, filename, writeoutOptions.fileType);
+        // Update filename to the written file.
+        filename = activeAssembly.getFile().getAbsolutePath();
+        logger.info("\n Saved density adjusted coordinates: " + filename);
+        logger.info("\n Molecule based fractional coordinates were maintained.");
       }
     }
 

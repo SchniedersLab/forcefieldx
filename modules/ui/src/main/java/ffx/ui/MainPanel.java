@@ -2096,7 +2096,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       logger.log(Level.INFO, " No filename is defined for {0}.", system);
       return;
     }
-    PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+    PDBFilter pdbFilter = new PDBFilter(saveFile, system, system.getForceField(), system.getProperties());
     if (pdbFilter.writeFile(saveFile, append, false, writeEnd)) {
       // Refresh Panels with the new System name
       hierarchy.setActive(system);
@@ -2133,7 +2133,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       return;
     }
 
-    PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+    PDBFilter pdbFilter = new PDBFilter(saveFile, system, system.getForceField(), system.getProperties());
     pdbFilter.writeFileAsP1(saveFile);
   }
 

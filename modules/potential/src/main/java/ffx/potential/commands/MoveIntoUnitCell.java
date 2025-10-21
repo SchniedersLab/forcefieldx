@@ -124,33 +124,14 @@ public class MoveIntoUnitCell extends PotentialCommand {
       }
     }
 
-    // Get the base name of the file and its extension.
-    String name = getName(filename);
-    String ext = getExtension(name);
-    name = removeExtension(name);
-
-    // Use the current base directory, or update if necessary based on the given filename.
-    String dirString = getBaseDirString(filename);
-
-    if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirString + name + ".xyz"));
-    } else {
-      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirString + name + ".pdb"));
-    }
-
+    // Save the updated coordinates.
+    saveByOriginalExtension(molecularAssemblies, filename);
     return this;
   }
 
   @Override
   public List<Potential> getPotentials() {
-    if (molecularAssemblies == null) {
-      return new ArrayList<>();
-    } else {
-      return Arrays.stream(molecularAssemblies)
-          .filter(a -> a != null)
-          .map(MolecularAssembly::getPotentialEnergy)
-          .filter(e -> e != null)
-          .collect(Collectors.toList());
-    }
+    return getPotentialsFromAssemblies(molecularAssemblies);
   }
+
 }

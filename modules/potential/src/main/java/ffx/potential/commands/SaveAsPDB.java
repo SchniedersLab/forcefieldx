@@ -130,7 +130,7 @@ public class SaveAsPDB extends PotentialCommand {
     ExtendedSystem esvSystem = null;
 
     if (openFilter instanceof XYZFilter && extended != null && !extended.isEmpty()) {
-      logger.info("Building extended system from " + extended);
+      logger.info(" Building extended system from " + extended);
       // Build extended system from file with residue info.
       activeAssembly = getActiveAssembly(extended);
       esvSystem = new ExtendedSystem(activeAssembly, 7.4, null);
@@ -139,7 +139,7 @@ public class SaveAsPDB extends PotentialCommand {
       openFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties(), esvSystem);
       openFilter.readFile();
-      logger.info("Reading ESV lambdas from XPH file");
+      logger.info(" Reading ESV lambdas from XPH file");
     }
 
     logger.info("\n Saving PDB for " + filename);

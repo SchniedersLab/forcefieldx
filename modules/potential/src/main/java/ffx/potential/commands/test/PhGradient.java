@@ -292,17 +292,16 @@ public class PhGradient extends PotentialCommand {
       avLen += len;
       len = sqrt(len);
 
-      double grad2 =
-          analytic[0] * analytic[0] + analytic[1] * analytic[1] + analytic[2] * analytic[2];
+      double grad2 = analytic[0] * analytic[0] + analytic[1] * analytic[1] + analytic[2] * analytic[2];
       avGrad += grad2;
 
       if (len > gradientTolerance) {
-        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len) +
+        logger.info(format(" %s\n Failed: %10.6f\n", a0, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
             format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
         ++nFailures;
       } else {
-        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len) +
+        logger.info(format(" %s\n Passed: %10.6f\n", a0, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
             format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
       }
@@ -457,7 +456,7 @@ public class PhGradient extends PotentialCommand {
   private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy, double[] x) {
     for (int i = 0; i <= 1; i++) {
       Residue residue = esvSystem.getTitratingResidueList().get(esvID);
-      esvSystem.setTitrationLambda(residue, (double) i);
+      esvSystem.setTitrationLambda(residue, i);
       if (esvID != 0) {
         printPermutationsR(esvSystem, esvID - 1, energy, x);
       } else {
@@ -468,7 +467,7 @@ public class PhGradient extends PotentialCommand {
           minEnergy = stateEnergy;
           minLambdaList = lambdaList;
         }
-        logger.info(format("\n"));
+        logger.info("\n");
       }
     }
   }
@@ -543,65 +542,65 @@ public class PhGradient extends PotentialCommand {
     BondPotentialEnergy bondPotentialEnergy = energy.getBondPotentialEnergy();
     if (bondPotentialEnergy != null) {
       energyAndInteractionList[0] = bondPotentialEnergy.getEnergy();
-      energyAndInteractionList[1] = (double) bondPotentialEnergy.getNumberOfBonds();
+      energyAndInteractionList[1] = bondPotentialEnergy.getNumberOfBonds();
     }
     // Angle Energy
     AnglePotentialEnergy anglePotentialEnergy = energy.getAnglePotentialEnergy();
     if (anglePotentialEnergy != null) {
       energyAndInteractionList[2] = anglePotentialEnergy.getEnergy();
-      energyAndInteractionList[3] = (double) anglePotentialEnergy.getNumberOfAngles();
+      energyAndInteractionList[3] = anglePotentialEnergy.getNumberOfAngles();
     }
     // Stretch-Bend Energy
     StretchBendPotentialEnergy stretchBendPotentialEnergy = energy.getStretchBendPotentialEnergy();
     if (stretchBendPotentialEnergy != null) {
       energyAndInteractionList[4] = stretchBendPotentialEnergy.getEnergy();
-      energyAndInteractionList[5] = (double) stretchBendPotentialEnergy.getNumberOfStretchBends();
+      energyAndInteractionList[5] = stretchBendPotentialEnergy.getNumberOfStretchBends();
     }
     // Urey-Bradley Energy
     UreyBradleyPotentialEnergy ureyBradleyPotentialEnergy = energy.getUreyBradleyPotentialEnergy();
     if (ureyBradleyPotentialEnergy != null) {
       energyAndInteractionList[6] = ureyBradleyPotentialEnergy.getEnergy();
-      energyAndInteractionList[7] = (double) ureyBradleyPotentialEnergy.getNumberOfUreyBradleys();
+      energyAndInteractionList[7] = ureyBradleyPotentialEnergy.getNumberOfUreyBradleys();
     }
     // Out-of-Plane Bend
     OutOfPlaneBendPotentialEnergy ofPlaneBendPotentialEnergy = energy.getOutOfPlaneBendPotentialEnergy();
     if (ofPlaneBendPotentialEnergy != null) {
       energyAndInteractionList[8] = ofPlaneBendPotentialEnergy.getEnergy();
-      energyAndInteractionList[9] = (double) ofPlaneBendPotentialEnergy.getNumberOfOutOfPlaneBends();
+      energyAndInteractionList[9] = ofPlaneBendPotentialEnergy.getNumberOfOutOfPlaneBends();
     }
     // Torsional Angle
     TorsionPotentialEnergy torsionPotentialEnergy = energy.getTorsionPotentialEnergy();
     if (torsionPotentialEnergy != null) {
       energyAndInteractionList[10] = torsionPotentialEnergy.getEnergy();
-      energyAndInteractionList[11] = (double) torsionPotentialEnergy.getNumberOfTorsions();
+      energyAndInteractionList[11] = torsionPotentialEnergy.getNumberOfTorsions();
     }
     // Improper Torsional Angle
     ImproperTorsionPotentialEnergy improperTorsionPotentialEnergy = energy.getImproperTorsionPotentialEnergy();
     if (improperTorsionPotentialEnergy != null) {
       energyAndInteractionList[12] = improperTorsionPotentialEnergy.getEnergy();
-      energyAndInteractionList[13] = (double) improperTorsionPotentialEnergy.getNumberOfImproperTorsions();
+      energyAndInteractionList[13] = improperTorsionPotentialEnergy.getNumberOfImproperTorsions();
     }
     // Pi-Orbital Torsion
     PiOrbitalTorsionPotentialEnergy piOrbitalTorsionPotentialEnergy = energy.getPiOrbitalTorsionPotentialEnergy();
     if (piOrbitalTorsionPotentialEnergy != null) {
       energyAndInteractionList[14] = piOrbitalTorsionPotentialEnergy.getEnergy();
-      energyAndInteractionList[15] = (double) piOrbitalTorsionPotentialEnergy.getNumberOfPiOrbitalTorsions();
+      energyAndInteractionList[15] = piOrbitalTorsionPotentialEnergy.getNumberOfPiOrbitalTorsions();
     }
     // Torsion-Torsion
     TorsionTorsionPotentialEnergy torsionTorsionPotentialEnergy = energy.getTorsionTorsionPotentialEnergy();
     if (torsionTorsionPotentialEnergy != null) {
       energyAndInteractionList[16] = torsionTorsionPotentialEnergy.getEnergy();
-      energyAndInteractionList[17] = (double) torsionTorsionPotentialEnergy.getNumberOfTorsionTorsions();
+      energyAndInteractionList[17] = torsionTorsionPotentialEnergy.getNumberOfTorsionTorsions();
     }
     // van Der Waals
     energyAndInteractionList[18] = energy.getVanDerWaalsEnergy();
-    energyAndInteractionList[19] = (double) energy.getVanDerWaalsInteractions();
+    energyAndInteractionList[19] = energy.getVanDerWaalsInteractions();
     // Permanent Multipoles
     energyAndInteractionList[20] = energy.getPermanentMultipoleEnergy();
-    energyAndInteractionList[21] = (double) energy.getPermanentInteractions();
+    energyAndInteractionList[21] = energy.getPermanentInteractions();
     // Polarization Energy
     energyAndInteractionList[22] = energy.getPolarizationEnergy();
-    energyAndInteractionList[23] = (double) energy.getPermanentInteractions();
+    energyAndInteractionList[23] = energy.getPermanentInteractions();
     // Extended System Bias
     energyAndInteractionList[24] = energy.getEsvBiasEnergy();
     // Total Energy

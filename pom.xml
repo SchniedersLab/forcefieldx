@@ -1057,7 +1057,7 @@
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
     <graal.version>25.0.0</graal.version>
-    <groovy-all.version>5.0.1</groovy-all.version>
+    <groovy-all.version>5.0.2</groovy-all.version>
     <guava.version>33.5.0-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.14</jacoco.version>

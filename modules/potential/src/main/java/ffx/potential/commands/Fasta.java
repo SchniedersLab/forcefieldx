@@ -49,13 +49,14 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getName;
 
 /**
  * Fasta outputs a sub-sequence from a FASTA file.
- *
+ * <p>
  * Usage:
  *   ffxc Fasta [options] &lt;filename.fasta&gt;
  */
@@ -76,8 +77,6 @@ public class Fasta extends PotentialCommand {
   @Parameters(arity = "1", paramLabel = "file",
       description = "A file in FASTA format.")
   private String fastaName = null;
-
-  private ProteinSequence proteinSequence;
 
   public Fasta() {
     super();
@@ -105,7 +104,7 @@ public class Fasta extends PotentialCommand {
     logger.info("\n Opening FASTA " + fastaName);
 
     try {
-      java.util.Map<String, ProteinSequence> fastaData =
+      Map<String, ProteinSequence> fastaData =
           FastaReaderHelper.readFastaProteinSequence(new File(fastaName));
       if (fastaData == null || fastaData.isEmpty()) {
         logger.warning(" No sequences found in FASTA file: " + fastaName);
@@ -123,11 +122,11 @@ public class Fasta extends PotentialCommand {
         lastResidue = length;
       }
 
-      proteinSequence = new ProteinSequence(seq.substring(firstResidue - 1, lastResidue));
+      ProteinSequence proteinSequence = new ProteinSequence(seq.substring(firstResidue - 1, lastResidue));
       proteinSequence.setOriginalHeader(sequence.getOriginalHeader());
       length = proteinSequence.getLength();
       logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
-          firstResidue, lastResidue, length, proteinSequence.toString()));
+          firstResidue, lastResidue, length, proteinSequence));
 
       Collection<ProteinSequence> proteinSequenceCollection = new ArrayList<>();
       proteinSequenceCollection.add(proteinSequence);

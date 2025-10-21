@@ -60,7 +60,7 @@ import java.util.List;
 
 /**
  * Create a Feature Map for a given protein structure.
- *
+ * <p>
  * Usage:
  *   ffxc FeatureMap [options] &lt;pdb/xyz&gt; &lt;variants.csv&gt; [ddgFile]
  */
@@ -121,18 +121,18 @@ public class FeatureMap extends PotentialCommand {
       return null;
     }
 
-    // Enable GK surface area for confidence calculation as in Groovy script.
+    // Enable GK surface area for confidence calculation.
     System.setProperty("gkterm", "true");
     System.setProperty("cavmodel", "cav");
     System.setProperty("surface-tension", "1.0");
 
     // Load the MolecularAssembly.
-    String structureFile = filenames != null && !filenames.isEmpty() ? filenames.get(0) : null;
-    activeAssembly = getActiveAssembly(structureFile);
+    activeAssembly = getActiveAssembly(filenames);
     if (activeAssembly == null) {
       logger.info(helpString());
       return null;
     }
+    String filename = activeAssembly.getFile().getAbsolutePath();
 
     ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy();
     int nVars = forceFieldEnergy.getNumberOfVariables();
@@ -146,7 +146,7 @@ public class FeatureMap extends PotentialCommand {
     // Handle multiple isoforms by parsing the PDB basename.
     String fileIsoform = null;
     if (multipleIsoforms) {
-      String baseName = new File(structureFile).getName();
+      String baseName = new File(filename).getName();
       baseName = baseName.replaceFirst("\\.pdb$", "");
       if (baseName.toUpperCase().contains("ENS")) {
         String[] geneSplit = baseName.split("_");
@@ -180,7 +180,7 @@ public class FeatureMap extends PotentialCommand {
     List<Double[]> ddGun = new ArrayList<>();
     List<String[]> polarityAndAcidityChange = new ArrayList<>();
     if (ddgFile != null) {
-      try (BufferedReader txtReader = new BufferedReader(new FileReader(new File(ddgFile)))) {
+      try (BufferedReader txtReader = new BufferedReader(new FileReader(ddgFile))) {
         String line;
         while ((line = txtReader.readLine()) != null) {
           if (line.contains(".pdb")) {

@@ -104,10 +104,11 @@ public class WriteRestraints extends PotentialCommand {
       logger.info(helpString());
       return this;
     }
+    filename = activeAssembly.getFile().getAbsolutePath();
 
     logger.info("\n Writing restraints for " + filename + "\n");
 
-    SystemFilter systemFilter = this.potentialFunctions.getFilter();
+    SystemFilter systemFilter = potentialFunctions.getFilter();
     int count = 0;
 
     if (systemFilter instanceof PDBFilter) {

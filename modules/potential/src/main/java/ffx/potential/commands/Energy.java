@@ -170,7 +170,7 @@ public class Energy extends PotentialCommand {
     topologyOptions.setAlchemicalProperties(numTopologies);
 
     if (filenames == null || filenames.isEmpty()) {
-      activeAssembly = getActiveAssembly(null);
+      activeAssembly = getActiveAssembly(filenames);
       if (activeAssembly == null) {
         logger.info(helpString());
         return this;

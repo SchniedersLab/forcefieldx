@@ -57,7 +57,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * Convert a CIF file to PDB/XYZ format.
- *
+ * <p>
  * Usage:
  *   ffxc ImportCIF &lt;filename.cif&gt; &lt;filename&gt;
  */
@@ -170,8 +170,7 @@ public class ImportCIF extends PotentialCommand {
         }
       } else {
         logger.info(helpString());
-        logger.info(" Expected 2 files as input to convert CIF file(s).");
-        return this;
+        logger.info(" Expected 1 or 2 file(s) as input to ImportCIF.");
       }
     } else {
       logger.info(helpString());
