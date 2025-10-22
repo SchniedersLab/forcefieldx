@@ -50,10 +50,11 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.Constants;
 import ffx.utilities.FFXBinding;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
 
@@ -65,7 +66,9 @@ import java.util.List;
 import java.util.Set;
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.log;
 
 /**
  * The ReductionPartition script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -83,70 +86,48 @@ public class GenZ extends AlgorithmsCommand {
   @Mixin
   private AlchemicalOptions alchemicalOptions;
 
-  @CommandLine.Option(names = {"--resC", "--residueChain"}, paramLabel = "A",
+  @Option(names = {"--resC", "--residueChain"}, paramLabel = "A", defaultValue = "A",
       description = "The chain that is mutating.")
-  private String mutatingChain = "A";
+  private String mutatingChain;
 
-  @CommandLine.Option(names = {"-n", "--residueName"}, paramLabel = "ALA",
+  @Option(names = {"-n", "--residueName"}, paramLabel = "ALA", defaultValue = "",
       description = "Mutant residue.")
   private String resName;
 
-  @CommandLine.Option(names = {"--rEE", "--ro-ensembleEnergy"}, paramLabel = "0.0",
+  @Option(names = {"--rEE", "--ro-ensembleEnergy"}, paramLabel = "0.0", defaultValue = "0.0",
       description = "Keep permutations within ensemble Energy kcal/mol from the GMEC.")
-  private String ensembleEnergy = "0.0";
+  private String ensembleEnergy;
 
-  @CommandLine.Option(names = {"--un", "--unfolded"}, paramLabel = "false",
+  @Option(names = {"--un", "--unfolded"}, paramLabel = "false", defaultValue = "false",
       description = "Run the unfolded state tripeptide.")
-  private boolean unfolded = false;
+  private boolean unfolded;
 
-  @CommandLine.Option(names = {"--pKa"}, paramLabel = "false",
+  @Option(names = {"--pKa"}, paramLabel = "false", defaultValue = "false",
       description = "Calculating protonation populations for pKa shift.")
-  private boolean pKa = false;
+  private boolean pKa;
 
-  @CommandLine.Option(names = {"--pB", "--printBoltzmann"}, paramLabel = "false",
+  @Option(names = {"--pB", "--printBoltzmann"}, paramLabel = "false", defaultValue = "false",
       description = "Save the Boltzmann weights of protonated residue and total Boltzmann weights.")
-  private boolean printBoltzmann = false;
+  private boolean printBoltzmann;
 
-  @CommandLine.Option(names = {"--pF", "--printFiles"}, paramLabel = "false",
+  @Option(names = {"--pF", "--printFiles"}, paramLabel = "false", defaultValue = "false",
       description = "Write to an energy restart file and ensemble file.")
-  private boolean printFiles = false;
+  private boolean printFiles;
 
-  @CommandLine.Option(names = {"--rCS", "--recomputeSelf"}, paramLabel = "false",
+  @Option(names = {"--rCS", "--recomputeSelf"}, paramLabel = "false", defaultValue = "false",
       description = "Recompute the self energies after loading a restart file.")
-  private boolean recomputeSelf = false;
+  private boolean recomputeSelf;
 
   /**
    * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1", paramLabel = "file",
+  @Parameters(arity = "1", paramLabel = "file", defaultValue = "",
       description = "XYZ or PDB input file.")
-  private List<String> filenames = null;
-
+  private String filename;
 
   ForceFieldEnergy potentialEnergy;
-  TitrationManyBody titrationManyBody;
   /**
-   * Assembly with mutations after running mutate pdb
-   */
-  MolecularAssembly mutatedAssembly;
-  /**
-   * Binding to run mutate pdb
-   */
-  FFXBinding mutatorBinding;
-  /**
-   * All the residues
-   */
-  List<Residue> residues;
-  /**
-   * Residues included in the partition function
-   */
-  List<Residue> selectedResidues;
-  /**
-   * File to save the unfolded state of a protein for free energy prediction
-   */
-  private String unfoldedFileName;
-  /**
-   * Population array for residue rotamers
+   * Populations for each rotamer of each residue.
    */
   private double[][] populationArray;
 
@@ -207,10 +188,21 @@ public class GenZ extends AlgorithmsCommand {
     }
     // Set the energy cutoff for permutations to include in the ensemble
     System.setProperty("ro-ensembleEnergy", ensembleEnergy);
-    activeAssembly = getActiveAssembly(filenames.get(0));
 
-    //Make an unfolded state assembly when predicting folding free energy difference
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename);
+    if (activeAssembly == null) {
+      logger.info(helpString());
+      return this;
+    }
+
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath();
+
+    // Make an unfolded state assembly when predicting folding free energy difference
+    String unfoldedFileName = null;
     if (unfolded) {
+      // File to save the unfolded state of a protein for free energy prediction
       unfoldedFileName = "wt" + mutatingResidue + ".pdb";
       List<Atom> atoms = activeAssembly.getAtomList();
       Set<Atom> excludeAtoms = new HashSet<>();
@@ -225,29 +217,27 @@ public class GenZ extends AlgorithmsCommand {
       PDBFilter pdbFilter = new PDBFilter(file, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties());
       pdbFilter.writeFile(file, false, excludeAtoms, true, true);
-      setActiveAssembly(getActiveAssembly(unfoldedFileName));
+
+      // Load the unfolded state system.
+      activeAssembly = getActiveAssembly(unfoldedFileName);
+      filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    //Allocate arrays for different values coming out of the partition function
+    // Allocate arrays for different values coming out of the partition function
     double[] boltzmannWeights = new double[2];
-    double[] offsets = new double[2];
-    double[][] populationArray = new double[1][55];
     double[][] titrateBoltzmann = null;
-    double[] protonationBoltzmannSums = null;
     double totalBoltzmann = 0;
     List<Residue> residueList = activeAssembly.getResidueList();
 
     String mutatedFileName = "";
-    //Call the MutatePDB script and mutate the residue of interest
-    if (filenames.size() == 1 && mutatingResidue != -1) {
-      mutatorBinding = new FFXBinding();
+    // Call the MutatePDB script and mutate the residue of interest
+    if (mutatingResidue != -1) {
+      FFXBinding mutatorBinding = new FFXBinding();
       if (unfolded) {
-        // mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
         String[] args = {"-r", String.valueOf(mutatingResidue), "-n", resName, unfoldedFileName};
         mutatorBinding.setVariable("args", args);
       } else {
-        // mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0), '--ch', mutatingChain)
-        String[] args = {"-r", String.valueOf(mutatingResidue), "-n", resName, "--ch", mutatingChain, unfoldedFileName};
+        String[] args = {"-r", String.valueOf(mutatingResidue), "-n", resName, "--ch", mutatingChain, filename};
         mutatorBinding.setVariable("args", args);
       }
       MutatePDB mutatePDB = new MutatePDB(mutatorBinding);
@@ -262,9 +252,7 @@ public class GenZ extends AlgorithmsCommand {
       listResidues = manyBodyOptions.selectInclusionResidues(residueList, mutatingResidue, onlyTitration, inclusionCutoff);
     }
 
-    String filename = filenames.get(0);
-
-    //Set the number of assemblies the partition function will be calculated for
+    // Set the number of assemblies the partition function will be calculated for
     int numLoop = 1;
     if (mutatingResidue != -1) {
       numLoop = 2;
@@ -274,21 +262,14 @@ public class GenZ extends AlgorithmsCommand {
     int[] optimalRotamers;
     Set<Atom> excludeAtoms = new HashSet<>();
 
-    //Calculate all possible permutations for the number of assembles
+    // Calculate all possible permutations for the number of assembles
     for (int j = 0; j < numLoop; j++) {
 
       // Load the MolecularAssembly second molecular assembly if applicable.
       if (j > 0) {
-        if (filenames.size() == 1) {
-          mutatedAssembly = getActiveAssembly(mutatedFileName);
-          setActiveAssembly(mutatedAssembly);
-          logger.info(activeAssembly.getResidueList().toString());
-          activeAssembly.getPotentialEnergy().energy();
-          filename = mutatedFileName;
-        } else {
-          setActiveAssembly(getActiveAssembly(filenames.get(j)));
-          filename = filenames.get(j);
-        }
+        activeAssembly = getActiveAssembly(mutatedFileName);
+        activeAssembly.getPotentialEnergy().energy();
+        filename = activeAssembly.getFile().getAbsolutePath();
       }
 
       if (activeAssembly == null) {
@@ -313,15 +294,16 @@ public class GenZ extends AlgorithmsCommand {
       }
 
       // Collect residues to optimize.
-      residues = manyBodyOptions.collectResidues(activeAssembly);
+      List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly);
       if (residues == null || residues.isEmpty()) {
         logger.info(" There are no residues in the active system to optimize.");
         return this;
       }
 
       // Handle rotamer optimization with titration.
+      TitrationManyBody titrationManyBody = null;
       if (manyBodyOptions.getTitration()) {
-        logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n");
+        logger.info("\n Adding titration hydrogen to : " + filename + "\n");
 
         // Collect residue numbers.
         List<Integer> resNumberList = new ArrayList<>();
@@ -340,15 +322,14 @@ public class GenZ extends AlgorithmsCommand {
       // Turn on softcoring lambda
       if (lambdaTerm) {
         alchemicalOptions.setFirstSystemAlchemistry(activeAssembly);
-        LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy;
+        LambdaInterface lambdaInterface = potentialEnergy;
         double lambda = alchemicalOptions.getInitialLambda();
         logger.info(format(" Setting ManyBody softcore lambda to: %5.3f", lambda));
         lambdaInterface.setLambda(lambda);
       }
 
       //Run rotamer optimization with specified parameters
-      RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
-          potentialEnergy, algorithmListener);
+      RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener);
       rotamerOptimization.setPrintFiles(printFiles);
       rotamerOptimization.setWriteEnergyRestart(printFiles);
       rotamerOptimization.setPHRestraint(pHRestraint);
@@ -358,7 +339,7 @@ public class GenZ extends AlgorithmsCommand {
       manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly);
 
       // Initialize fractions for selected residues
-      selectedResidues = rotamerOptimization.getResidues();
+      List<Residue> selectedResidues = rotamerOptimization.getResidues();
       rotamerOptimization.initFraction(selectedResidues);
 
       logger.info("\n Initial Potential Energy:");
@@ -372,7 +353,7 @@ public class GenZ extends AlgorithmsCommand {
 
       int[] currentRotamers = new int[selectedResidues.size()];
 
-      //Calculate possible permutations for assembly
+      // Calculate possible permutations for assembly
       try {
         rotamerOptimization.getFractions(selectedResidues.toArray(new Residue[0]), 0, currentRotamers);
       } catch (Exception e) {
@@ -380,11 +361,10 @@ public class GenZ extends AlgorithmsCommand {
         return this;
       }
 
-      //Collect the Bolztmann weights and calculated offset of each assembly
+      // Collect the Boltzmann weights and calculated offset of each assembly
       boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann();
-      offsets[j] = rotamerOptimization.getRefEnergy();
 
-      //Calculate the populations for the residue rotamers
+      // Calculate the populations for the residue rotamers
       populationArray = rotamerOptimization.getFraction();
       if (printBoltzmann) {
         titrateBoltzmann = rotamerOptimization.getPopulationBoltzmann();
@@ -403,51 +383,52 @@ public class GenZ extends AlgorithmsCommand {
         rotamerOptimization.getProtonationPopulations(selectedResidues.toArray(new Residue[0]));
       }
 
-
-    }
-
-    //Print information from the fraction protonated calculations
-    try (FileWriter fileWriter = new FileWriter("populations.txt")) {
-      int residueIndex = 0;
-      for (Residue residue : selectedResidues) {
-        fileWriter.write("\n");
-        protonationBoltzmannSums = new double[selectedResidues.size()];
-        // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-        Rotamer[] rotamers = residue.getRotamers();
-        for (int rotIndex = 0; rotIndex < rotamers.length; rotIndex++) {
-          String rotPop = format("%.6f", populationArray[residueIndex][rotIndex]);
-          fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
-              rotamers[rotIndex].toString() + "\t" + rotPop + "\n");
-          if (pKa) {
-            switch (rotamers[rotIndex].getName()) {
-              case "HIS":
-              case "LYS":
-              case "GLH":
-              case "ASH":
-              case "CYS":
-                if (printBoltzmann) {
-                  protonationBoltzmannSums[residueIndex] += titrateBoltzmann[residueIndex][rotIndex];
-                }
-                break;
-              default:
-                break;
-            }
-          }
-
-        }
-        // Print protonated and total boltzmann values
-        if (printBoltzmann) {
-          logger.info("\n Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
-              protonationBoltzmannSums[residueIndex]);
-          logger.info("\n Total Boltzmann: " + totalBoltzmann);
-        }
-        residueIndex += 1;
+      // Print information from the fraction protonated calculations
+      String populationFilename = "populations.txt";
+      if (j > 0) {
+        populationFilename = "populations."  + j + ".txt";
       }
-      System.out.println("\n Successfully wrote to the populations file.");
-    } catch (Exception e) {
-      logger.severe("Error writing populations file: " + e.getMessage());
-    }
+      try (FileWriter fileWriter = new FileWriter(populationFilename)) {
+        int residueIndex = 0;
+        for (Residue residue : selectedResidues) {
+          fileWriter.write("\n");
+          double protonationBoltzmannSum = 0.0;
+          // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+          Rotamer[] rotamers = residue.getRotamers();
+          for (int rotIndex = 0; rotIndex < rotamers.length; rotIndex++) {
+            String rotPop = format("%.6f", populationArray[residueIndex][rotIndex]);
+            fileWriter.write(residue.getName() + residue.getResidueNumber() + "\t" +
+                rotamers[rotIndex].toString() + "\t" + rotPop + "\n");
+            if (pKa) {
+              switch (rotamers[rotIndex].getName()) {
+                case "HIS":
+                case "LYS":
+                case "GLH":
+                case "ASH":
+                case "CYS":
+                  if (printBoltzmann) {
+                    protonationBoltzmannSum += titrateBoltzmann[residueIndex][rotIndex];
+                  }
+                  break;
+                default:
+                  break;
+              }
+            }
 
+          }
+          // Print protonated and total boltzmann values
+          if (printBoltzmann) {
+            logger.info("\n Residue " + residue.getName() + residue.getResidueNumber()
+                + " Protonated Boltzmann: " + protonationBoltzmannSum);
+          }
+          residueIndex += 1;
+        }
+        logger.info("\n Total Boltzmann: " + totalBoltzmann);
+        logger.info("\n Successfully wrote to the populations file: " + populationFilename);
+      } catch (Exception e) {
+        logger.severe("Error writing populations file: " + e.getMessage());
+      }
+    }
 
     // Save the pdb file with the most popular rotamers for all residues included in the partition function
     System.setProperty("standardizeAtomNames", "false");
@@ -465,15 +446,28 @@ public class GenZ extends AlgorithmsCommand {
       }
     }
     if (mutatingResidue != -1) {
-      //Calculate Gibbs free energy change of mutating residues
-      double gibbs = -(0.6) * (Math.log(boltzmannWeights[1] / boltzmannWeights[0]));
-      logger.info("\n Gibbs Free Energy Change: " + gibbs);
+      CompositeConfiguration properties = activeAssembly.getProperties();
+      String temp = properties.getString("temperature", "298.15");
+      double temperature = 298.15;
+      if (temp != null) {
+        temperature = parseDouble(temp);
+      }
+      double kT = temperature * Constants.R;
+      // Calculate free energy difference for mutating a residue.
+      double dG = -kT * log(boltzmannWeights[1] / boltzmannWeights[0]);
+      logger.info(format("\n Mutation Free Energy Difference: %12.8f (kcal/mol)", dG));
     }
-
 
     return this;
   }
 
+  /**
+   * The population for each rotamer of each residue.
+   * @return The population array.
+   */
+  public double[][] getPopulationArray() {
+    return populationArray;
+  }
 
   /**
    * Returns the potential energy of the active assembly. Used during testing assertions.
@@ -484,7 +478,4 @@ public class GenZ extends AlgorithmsCommand {
     return potentialEnergy;
   }
 
-  public double[][] getPopulationArray() {
-    return populationArray;
-  }
 }

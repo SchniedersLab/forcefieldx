@@ -107,6 +107,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.log;
 
 /**
@@ -120,183 +121,189 @@ import static org.apache.commons.math3.util.FastMath.log;
  */
 public class RotamerOptimization implements Terminatable {
 
-    /**
-     * Logger for this class.
-     */
-    private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
-    /**
-     * Fallback if there is no vdW node.
-     */
-    private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
-    /**
-     * MolecularAssembly to perform rotamer optimization on.
-     */
-    protected MolecularAssembly molecularAssembly;
-    /**
-     * The Potential to evaluate during rotamer optimization.
-     */
-    protected final Potential potential;
-    /**
-     * AlgorithmListener who should receive updates as the optimization runs.
-     */
-    protected final AlgorithmListener algorithmListener;
-    /**
-     * World Parallel Java communicator.
-     */
-    private final Comm world;
-    /**
-     * Number of Parallel Java processes.
-     */
-    private final int numProc;
-    /**
-     * Rank of this process.
-     */
-    private final int rank;
-    /**
-     * Flag to indicate if this is the master process.
-     */
-    protected final boolean rank0;
-    /**
-     * Flag to control the verbosity of printing.
-     */
-    private final boolean print = false;
-    /**
-     * Flag to calculate and print additional energies (mostly for debugging).
-     */
-    private final boolean verboseEnergies = true;
+  /**
+   * Logger for this class.
+   */
+  private static final Logger logger = Logger.getLogger(RotamerOptimization.class.getName());
+  /**
+   * Fallback if there is no vdW node.
+   */
+  private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
+  protected MolecularAssembly molecularAssembly;
+  /**
+   * The Potential to evaluate during rotamer optimization.
+   */
+  protected final Potential potential;
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
+  protected final AlgorithmListener algorithmListener;
+  /**
+   * World Parallel Java communicator.
+   */
+  private final Comm world;
+  /**
+   * Number of Parallel Java processes.
+   */
+  private final int numProc;
+  /**
+   * Rank of this process.
+   */
+  private final int rank;
+  /**
+   * Flag to indicate if this is the master process.
+   */
+  protected final boolean rank0;
+  /**
+   * Flag to control the verbosity of printing.
+   */
+  private final boolean print = false;
+  /**
+   * Flag to calculate and print additional energies (mostly for debugging).
+   */
+  private final boolean verboseEnergies = true;
 
-    /**
-     * If true, write out an energy restart file.
-     */
-    protected boolean writeEnergyRestart = true;
-    /**
-     * Parameters for box optimization are stored here.
-     */
-    BoxOptimization boxOpt;
-    /**
-     * Represents the method called to obtain the directory corresponding to the current energy; will
-     * be a simple return null for potential energy evaluations. While current energy calls will fill
-     * the rotamer list with the current rotamers of the residue, other methods may skip applying the
-     * rotamer directly.
-     */
-    private final BiFunction<List<Residue>, List<Rotamer>, File> dirSupplier;
-    /**
-     * Represents the method called to obtain energy for the current rotamer or state; defaults to the
-     * existing potential energy code. May discard the input file.
-     */
-    private final ToDoubleFunction<File> eFunction;
-    /**
-     * Flag to indicate verbose logging.
-     */
-    private final boolean verbose;
-    /**
-     * The DistanceMatrix class handles calculating distances between residues.
-     */
-    private DistanceMatrix dM;
-    /**
-     * The EnergyExpansion class compute terms in the many-body energy expansion.
-     */
-    private EnergyExpansion eE;
-    /**
-     * The EliminatedRotamers class tracks eliminated rotamers and rotamer paris.
-     */
-    private EliminatedRotamers eR;
-    /**
-     * RotamerLibrary instance.
-     */
-    protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
-    /**
-     * Parallel evaluation of quantities used during Goldstein Pair elimination.
-     */
-    private GoldsteinPairRegion goldsteinPairRegion;
-    /**
-     * Parallel evaluation of many-body energy sums.
-     */
-    private EnergyRegion energyRegion;
-    /**
-     * Flag to indicate a request to terminate the optimization.
-     */
-    private boolean terminate = false;
-    /**
-     * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
-     */
-    private boolean done = true;
-    /**
-     * Two-Body cutoff distance.
-     */
-    private double twoBodyCutoffDist;
-    /**
-     * Flag to control use of 3-body terms.
-     */
-    private boolean threeBodyTerm = false;
-    /**
-     * Three-body cutoff distance.
-     */
-    private double threeBodyCutoffDist;
-    /**
-     * Interaction partners of a Residue that come after it.
-     */
-    private int[][] resNeighbors;
-    /**
-     * All interaction partners of a Residue, including prior residues.
-     */
-    private int[][] bidiResNeighbors;
-    /**
-     * Flag to prune clashes.
-     */
-    private boolean pruneClashes = true;
-    /**
-     * Flag to prune pair clashes.
-     */
-    private boolean prunePairClashes = true;
-    /**
-     * Number of permutations whose energy is explicitly evaluated.
-     */
-    private int evaluatedPermutations = 0;
-    /**
-     * Permutations are printed when modulo this field is zero.
-     */
-    private int evaluatedPermutationsPrint = 0;
-    /**
-     * Total boltzmann calculated during the partition function
-     */
-    private double totalBoltzmann = 0;
-    /**
-     * Reference energy for calculating boltzmanns in the partition function
-     */
-    private double refEnergy = 0;
-    /**
-     * Rotamer populations from the partition function
-     */
-    private double[][] fraction;
-    /**
-     * Botlzmann weights of every rotamer
-     */
-    private double[][] populationBoltzmann;
-    /**
-     * pH during titration rotamer optimization
-     */
-    private double pH;
-    /**
-     * Energy restraint on titration
-     */
-    private double pHRestraint = 0;
-    /**
-     * Recompute the self energies from restart when changing the pH
-     */
-    private boolean recomputeSelf = false;
-    /**
-     * True when running the GenZ algorithm
-     */
-    boolean genZ = false;
-    /**
-     * List of residues to optimize; they may not be contiguous or all members of the same chain.
-     */
-    private List<Residue> residueList;
-    /**
-     * This is the optimal rotamers corresponding to residueList.
-     */
-    protected int[] optimum;
+  /**
+   * If true, write out an energy restart file.
+   */
+  protected boolean writeEnergyRestart = true;
+  /**
+   * Parameters for box optimization are stored here.
+   */
+  BoxOptimization boxOpt;
+  /**
+   * Represents the method called to obtain the directory corresponding to the current energy; will
+   * be a simple return null for potential energy evaluations. While current energy calls will fill
+   * the rotamer list with the current rotamers of the residue, other methods may skip applying the
+   * rotamer directly.
+   */
+  private final BiFunction<List<Residue>, List<Rotamer>, File> dirSupplier;
+  /**
+   * Represents the method called to obtain energy for the current rotamer or state; defaults to the
+   * existing potential energy code. May discard the input file.
+   */
+  private final ToDoubleFunction<File> eFunction;
+  /**
+   * Flag to indicate verbose logging.
+   */
+  private final boolean verbose;
+  /**
+   * The DistanceMatrix class handles calculating distances between residues.
+   */
+  private DistanceMatrix dM;
+  /**
+   * The EnergyExpansion class compute terms in the many-body energy expansion.
+   */
+  private EnergyExpansion eE;
+  /**
+   * The EliminatedRotamers class tracks eliminated rotamers and rotamer paris.
+   */
+  private EliminatedRotamers eR;
+  /**
+   * RotamerLibrary instance.
+   */
+  protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
+  /**
+   * Parallel evaluation of quantities used during Goldstein Pair elimination.
+   */
+  private GoldsteinPairRegion goldsteinPairRegion;
+  /**
+   * Parallel evaluation of many-body energy sums.
+   */
+  private EnergyRegion energyRegion;
+  /**
+   * Flag to indicate a request to terminate the optimization.
+   */
+  private boolean terminate = false;
+  /**
+   * Flag to indicate if the algorithm is running (done == false) or completed (done == true).
+   */
+  private boolean done = true;
+  /**
+   * Two-Body cutoff distance.
+   */
+  private double twoBodyCutoffDist;
+  /**
+   * Flag to control use of 3-body terms.
+   */
+  private boolean threeBodyTerm = false;
+  /**
+   * Three-body cutoff distance.
+   */
+  private double threeBodyCutoffDist;
+  /**
+   * Interaction partners of a Residue that come after it.
+   */
+  private int[][] resNeighbors;
+  /**
+   * All interaction partners of a Residue, including prior residues.
+   */
+  private int[][] bidiResNeighbors;
+  /**
+   * Flag to prune clashes.
+   */
+  private boolean pruneClashes = true;
+  /**
+   * Flag to prune pair clashes.
+   */
+  private boolean prunePairClashes = true;
+  /**
+   * Number of permutations whose energy is explicitly evaluated.
+   */
+  private int evaluatedPermutations = 0;
+  /**
+   * Permutations are printed when modulo this field is zero.
+   */
+  private int evaluatedPermutationsPrint = 0;
+  /**
+   * The temperature used during either Monte Carlo sampling,
+   * calculation of Boltzmann weights and the partition function.
+   * The default is 298.15 Kelvin.
+   */
+  private double temperature = 298.15;
+  /**
+   * Total boltzmann is the value of the partition function.
+   */
+  private double totalBoltzmann = 0;
+  /**
+   * Reference energy for calculating boltzmanns in the partition function
+   */
+  private double refEnergy = 0;
+  /**
+   * Rotamer populations from the partition function
+   */
+  private double[][] fraction;
+  /**
+   * Botlzmann weights of every rotamer
+   */
+  private double[][] populationBoltzmann;
+  /**
+   * pH during titration rotamer optimization
+   */
+  private double pH;
+  /**
+   * Energy restraint on titration
+   */
+  private double pHRestraint = 0;
+  /**
+   * Recompute the self energies from restart when changing the pH
+   */
+  private boolean recomputeSelf = false;
+  /**
+   * True when running the GenZ algorithm
+   */
+  boolean genZ = false;
+  /**
+   * List of residues to optimize; they may not be contiguous or all members of the same chain.
+   */
+  private List<Residue> residueList;
+  /**
+   * This is the optimal rotamers corresponding to residueList.
+   */
+  protected int[] optimum;
 
   /**
    * Size of the sliding window.
@@ -461,10 +468,6 @@ public class RotamerOptimization implements Terminatable {
    */
   private int nMCSteps = 1000000;
   /**
-   * MC temperature (K).
-   */
-  private double mcTemp = 298.15;
-  /**
    * Check to see if proposed move has an eliminated 2-body or higher-order term.
    */
   private boolean mcUseAll = false;
@@ -563,6 +566,13 @@ public class RotamerOptimization implements Terminatable {
 
     CompositeConfiguration properties = molecularAssembly.getProperties();
     verbose = properties.getBoolean("verbose", false);
+
+    // Monte Carlo Options.
+    String temp = properties.getString("temperature", "298.15");
+    if (temp != null) {
+      this.temperature = parseDouble(temp);
+      logIfRank0(format(" Temperature: %10.6f", this.temperature));
+    }
 
     // Set the default 2-body Cutoff to the van der Waals cutoff.
     ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
@@ -667,14 +677,8 @@ public class RotamerOptimization implements Terminatable {
       logger.info(format(" (KEY) multiResPairClashAddition: %.2f", this.multiResPairClashAddn));
     }
 
-    // Monte Carlo Options.
-    String mcTemp = properties.getString("ro-mcTemp");
     String mcUseAll = properties.getString("ro-mcUseAll");
     String mcNoEnum = properties.getString("ro-debug-mcNoEnum");
-    if (mcTemp != null) {
-      this.mcTemp = parseDouble(mcTemp);
-      logIfRank0(format(" (KEY) mcTemp: %10.6f", this.mcTemp));
-    }
     if (mcUseAll != null) {
       this.mcUseAll = parseBoolean(mcUseAll);
       logIfRank0(format(" (KEY) mcUseAll: %b", this.mcUseAll));
@@ -1002,14 +1006,14 @@ public class RotamerOptimization implements Terminatable {
   }
 
   /**
-     * Init fraction array
-     *
-     * @param residueList a {@link java.util.List} object.
+   * Init fraction array
+   *
+   * @param residueList a {@link java.util.List} object.
    */
-    public void initFraction(List<Residue> residueList) {
-        fraction = new double[residueList.size()][56];
-        genZ = true;
-    }
+  public void initFraction(List<Residue> residueList) {
+    fraction = new double[residueList.size()][56];
+    genZ = true;
+  }
 
   /**
    * Returns the restart file.
@@ -1221,15 +1225,15 @@ public class RotamerOptimization implements Terminatable {
             e = globalOptimization(residueList);
             arraycopy(optimumSubset, 0, optimum, 0, residueList.size());
           }
-            case WINDOW -> {
-                if(genZ) {
-                    e = slidingWindowCentered(residueList);
-                } else {
-                    e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
-                            direction, -1);
-                }
+          case WINDOW -> {
+            if (genZ) {
+              e = slidingWindowCentered(residueList);
+            } else {
+              e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance,
+                  direction, -1);
             }
-            case BOX -> e = boxOpt.boxOptimization(residueList);
+          }
+          case BOX -> e = boxOpt.boxOptimization(residueList);
           default -> {
           }
         }
@@ -1237,7 +1241,7 @@ public class RotamerOptimization implements Terminatable {
         done = true;
       }
     } catch (Exception exception) {
-        exception.printStackTrace();
+      exception.printStackTrace();
     } finally {
       try {
         if (energyWriter != null) {
@@ -1327,41 +1331,51 @@ public class RotamerOptimization implements Terminatable {
     return currentEnergy;
   }
 
-    /**
-     * Set the K for the harmonic pH restraint
-     * @param pHRestraint KpH
-     */
-    public void setPHRestraint(double pHRestraint) {this.pHRestraint = pHRestraint;}
-    /**
-     * Set the environment pH
-     * @param pH
-     */
-    public void setpH(double pH) {
-        this.pH = pH;
-    }
-    /**
-     * Sets to recompute self energies at a different pH using an energy restart file
-     * @param recomputeSelf
-     */
-    public void setRecomputeSelf(boolean recomputeSelf) {
-        this.recomputeSelf = recomputeSelf;
-    }
+  /**
+   * Set the K for the harmonic pH restraint
+   *
+   * @param pHRestraint KpH
+   */
+  public void setPHRestraint(double pHRestraint) {
+    this.pHRestraint = pHRestraint;
+  }
 
-    /**
-     * Return the K in the harmonic pH restraint
-     * @return double KpH
-     */
-    public double getPHRestraint() {
-        return pHRestraint;
-    }
+  /**
+   * Set the environment pH
+   *
+   * @param pH
+   */
+  public void setpH(double pH) {
+    this.pH = pH;
+  }
 
-    /**
-     * Get the enviroment pH
-     * @return double pH
-     */
-    public double getPH() {
-        return pH;
-    }
+  /**
+   * Sets to recompute self energies at a different pH using an energy restart file
+   *
+   * @param recomputeSelf
+   */
+  public void setRecomputeSelf(boolean recomputeSelf) {
+    this.recomputeSelf = recomputeSelf;
+  }
+
+  /**
+   * Return the K in the harmonic pH restraint
+   *
+   * @return double KpH
+   */
+  public double getPHRestraint() {
+    return pHRestraint;
+  }
+
+  /**
+   * Get the enviroment pH
+   *
+   * @return double pH
+   */
+  public double getPH() {
+    return pH;
+  }
+
   /**
    * Sets the approximate dimensions of boxes, over-riding numXYZBoxes in determining box size.
    * Rounds box size up and number of boxes down to get a whole number of boxes along each axis.
@@ -1415,14 +1429,18 @@ public class RotamerOptimization implements Terminatable {
    *
    * @param titrationBoxes a boolean.
    */
-  public void setTitrationBoxes(boolean titrationBoxes) {boxOpt.titrationBoxes = titrationBoxes;}
+  public void setTitrationBoxes(boolean titrationBoxes) {
+    boxOpt.titrationBoxes = titrationBoxes;
+  }
 
-    /**
-     * Sets the size around the titratable residues.
-     *
-     * @param titrationBoxSize double size of the titration box.
-     */
-    public void setTitrationBoxSize(double titrationBoxSize) {boxOpt.titrationBoxSize = titrationBoxSize;}
+  /**
+   * Sets the size around the titratable residues.
+   *
+   * @param titrationBoxSize double size of the titration box.
+   */
+  public void setTitrationBoxSize(double titrationBoxSize) {
+    boxOpt.titrationBoxSize = titrationBoxSize;
+  }
 
   /**
    * setCoordinatesToEnsemble.
@@ -1907,7 +1925,7 @@ public class RotamerOptimization implements Terminatable {
     assert initialRots.length == nRes;
 
     RotamerMatrixMC rmc = new RotamerMatrixMC(initialRots, residues, useForceFieldEnergy, this);
-    rmc.setTemperature(mcTemp);
+    rmc.setTemperature(temperature);
     RotamerMatrixMove rmove = new RotamerMatrixMove(useAllElims, initialRots, residues, this, eR,
         monteCarloTesting);
     List<MCMove> rmList = new ArrayList<>(1);
@@ -2302,8 +2320,9 @@ public class RotamerOptimization implements Terminatable {
    */
   public void partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
     // This is the initialization condition.
-    double LOG10 = log(10.0);
-    double temperature = 298.15;
+    final double LOG10 = log(10.0);
+    final double beta = 1.0 / (Constants.kB * temperature);
+
     if (i == 0) {
       totalBoltzmann = 0;
       evaluatedPermutations = 0;
@@ -2312,8 +2331,7 @@ public class RotamerOptimization implements Terminatable {
 
     if (evaluatedPermutations >= evaluatedPermutationsPrint) {
       if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
-        logIfRank0(
-            format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
+        logIfRank0(format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
         evaluatedPermutationsPrint *= 10;
       }
     }
@@ -2417,13 +2435,13 @@ public class RotamerOptimization implements Terminatable {
           if (evaluatedPermutations == 1) {
             refEnergy = totalEnergy;
           }
-          double boltzmannWeight = Math.exp((-1.0 / (Constants.kB * 298.15)) * (totalEnergy - refEnergy));
+          double boltzmannWeight = exp(-beta * (totalEnergy - refEnergy));
 
-                    // Collect Boltzmann weight for every rotamer for residues included in the optimization
-                    for (int res=0; res < residues.length; res++) {
-                        int currentRotamer = currentRotamers[res];
-                        populationBoltzmann[res][currentRotamer] += boltzmannWeight;
-                    }
+          // Collect Boltzmann weight for every rotamer for residues included in the optimization
+          for (int res = 0; res < residues.length; res++) {
+            int currentRotamer = currentRotamers[res];
+            populationBoltzmann[res][currentRotamer] += boltzmannWeight;
+          }
 
           // Sum Boltzmann of all permutations
           totalBoltzmann += boltzmannWeight;
@@ -2478,175 +2496,177 @@ public class RotamerOptimization implements Terminatable {
    */
   public void getFractions(Residue[] residues, int i, int[] currentRotamers) throws Exception {
     populationBoltzmann = new double[residues.length][56];
-    if(!usingBoxOptimization){
+    if (!usingBoxOptimization) {
       partitionFunction(residues, i, currentRotamers);
       optimum = new int[residues.length];
       for (int m = 0; m < fraction.length; m++) {
         for (int n = 0; n < 56; n++) {
           fraction[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
-          if(n > 0 && fraction[m][n] > fraction[m][n-1]){
+          if (n > 0 && fraction[m][n] > fraction[m][n - 1]) {
             optimum[m] = n;
-          } else if(n == 0){
+          } else if (n == 0) {
             optimum[m] = n;
           }
         }
         Rotamer highestPopRot = residues[m].getRotamers()[optimum[m]];
-        RotamerLibrary.applyRotamer(residues[m],highestPopRot);
+        RotamerLibrary.applyRotamer(residues[m], highestPopRot);
       }
     }
-      logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
-    }
+    logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+  }
 
-    /**
-     * Return population of each rotamer for residues in the system
-     *
-     * @param residues        residue array
-     * @param i               int
-     * @param currentRotamers empty array
-     * @throws Exception too many permutations to continue
-     */
-    public void getFractions(Residue[] residues, int i, int[] currentRotamers, boolean usingBoxOptimization) throws Exception {
-        double [][] fractionSubset = new double[residues.length][56];
-        populationBoltzmann = new double[residues.length][56];
-        partitionFunction(residues, i, currentRotamers);
-        optimumSubset = new int[residues.length];
-        for (int m = 0; m < fractionSubset.length; m++) {
-            for (int n = 0; n < 56; n++) {
-                fractionSubset[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
-                if(n > 0 && fractionSubset[m][n] > fractionSubset[m][n-1]){
-                    optimumSubset[m] = n;
-                } else if(n == 0){
-                    optimumSubset[m] = n;
-                }
-            }
-            Rotamer highestPopRot = residues[m].getRotamers()[optimumSubset[m]];
-            RotamerLibrary.applyRotamer(residues[m],highestPopRot);
-            Residue residue = residues[m];
-            int index = residueList.indexOf(residue);
-            fraction[index] = fractionSubset[m];
-            optimum[index] = optimumSubset[m];
+  /**
+   * Return population of each rotamer for residues in the system
+   *
+   * @param residues        residue array
+   * @param i               int
+   * @param currentRotamers empty array
+   * @throws Exception too many permutations to continue
+   */
+  public void getFractions(Residue[] residues, int i, int[] currentRotamers, boolean usingBoxOptimization) throws Exception {
+    double[][] fractionSubset = new double[residues.length][56];
+    populationBoltzmann = new double[residues.length][56];
+    partitionFunction(residues, i, currentRotamers);
+    optimumSubset = new int[residues.length];
+    for (int m = 0; m < fractionSubset.length; m++) {
+      for (int n = 0; n < 56; n++) {
+        fractionSubset[m][n] = populationBoltzmann[m][n] / totalBoltzmann;
+        if (n > 0 && fractionSubset[m][n] > fractionSubset[m][n - 1]) {
+          optimumSubset[m] = n;
+        } else if (n == 0) {
+          optimumSubset[m] = n;
         }
-        logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+      }
+      Rotamer highestPopRot = residues[m].getRotamers()[optimumSubset[m]];
+      RotamerLibrary.applyRotamer(residues[m], highestPopRot);
+      Residue residue = residues[m];
+      int index = residueList.indexOf(residue);
+      fraction[index] = fractionSubset[m];
+      optimum[index] = optimumSubset[m];
     }
+    logger.info("\n   Total permutations evaluated: " + evaluatedPermutations + "\n");
+  }
 
-    /**
-     * Return the populations of the titratable residue states and print
-     * @param residues residues in the system
-     * @return double array of populations
-     */
-    public double[][] getProtonationPopulations(Residue[] residues){
-        double[][] populations = new double[residues.length][3];
-        int residueIndex = 0;
-        for (Residue residue : residues) {
-            int index = residueList.indexOf(residue);
-            // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
-            double protSum = 0;
-            double deprotSum = 0;
-            double tautomerSum = 0;
-            Rotamer[] rotamers = residue.getRotamers();
-            for (int rotIndex=0; rotIndex < rotamers.length; rotIndex++) {
-                    switch (rotamers[rotIndex].getName()) {
-                        case "HIS":
-                        case "LYS":
-                        case "GLH":
-                        case "ASH":
-                        case "CYS":
-                            protSum += fraction[index][rotIndex];
-                            populations[residueIndex][0] = protSum;
-                            break;
-                        case "HIE":
-                        case "LYD":
-                        case "GLU":
-                        case "ASP":
-                        case "CYD":
-                            deprotSum += fraction[index][rotIndex];
-                            populations[residueIndex][1] = deprotSum;
-                            break;
-                        case "HID":
-                            tautomerSum += fraction[index][rotIndex];
-                            populations[residueIndex][2] = tautomerSum;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            String formatedProtSum = format("%.6f", protSum);
-            String formatedDeprotSum = format("%.6f", deprotSum);
-            String formatedTautomerSum = format("%.6f", tautomerSum);
-            switch (residue.getName()) {
-                case "HIS":
-                case "HIE":
-                case "HID":
-                    logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
-                            "HIE" + "\t" + formatedDeprotSum + "\t" +
-                            "HID" + "\t" + formatedTautomerSum);
-                    break;
-                case "LYS":
-                case "LYD":
-                    logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
-                            "LYD" + "\t" + formatedDeprotSum);
-                    break;
-                case "ASH":
-                case "ASP":
-                    logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
-                            "ASH" + "\t" + formatedProtSum);
-                    break;
-                case "GLH":
-                case "GLU":
-                    logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
-                            "GLH" + "\t" + formatedProtSum);
-                    break;
-                case "CYS":
-                case "CYD":
-                    logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
-                            "CYD" + "\t" + formatedDeprotSum);
-                    break;
-                default:
-                    break;
-            }
-                residueIndex++;
-            }
-
-
-        return populations;
-    }
-
-    public double slidingWindowCentered(List<Residue> residueList) throws Exception {
-        String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
-        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
-        // TO DO make generic for a list of given residue centers, make array that is filled with TR or take array of centers
-        double e = 0.0;
-        for (Residue titrationResidue : residueList) {
-            if (titratableResiudesList.contains(titrationResidue.getName())) {
-                e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance, Direction.FORWARD, residueList.indexOf(titrationResidue));
-            }
+  /**
+   * Return the populations of the titratable residue states and print
+   *
+   * @param residues residues in the system
+   * @return double array of populations
+   */
+  public double[][] getProtonationPopulations(Residue[] residues) {
+    double[][] populations = new double[residues.length][3];
+    int residueIndex = 0;
+    for (Residue residue : residues) {
+      int index = residueList.indexOf(residue);
+      // Set sums for to protonated, deprotonated, and tautomer states of titratable residues
+      double protSum = 0;
+      double deprotSum = 0;
+      double tautomerSum = 0;
+      Rotamer[] rotamers = residue.getRotamers();
+      for (int rotIndex = 0; rotIndex < rotamers.length; rotIndex++) {
+        switch (rotamers[rotIndex].getName()) {
+          case "HIS":
+          case "LYS":
+          case "GLH":
+          case "ASH":
+          case "CYS":
+            protSum += fraction[index][rotIndex];
+            populations[residueIndex][0] = protSum;
+            break;
+          case "HIE":
+          case "LYD":
+          case "GLU":
+          case "ASP":
+          case "CYD":
+            deprotSum += fraction[index][rotIndex];
+            populations[residueIndex][1] = deprotSum;
+            break;
+          case "HID":
+            tautomerSum += fraction[index][rotIndex];
+            populations[residueIndex][2] = tautomerSum;
+            break;
+          default:
+            break;
         }
-        return e;
+      }
+      String formatedProtSum = format("%.6f", protSum);
+      String formatedDeprotSum = format("%.6f", deprotSum);
+      String formatedTautomerSum = format("%.6f", tautomerSum);
+      switch (residue.getName()) {
+        case "HIS":
+        case "HIE":
+        case "HID":
+          logger.info(residue.getResidueNumber() + "\tHIS" + "\t" + formatedProtSum + "\t" +
+              "HIE" + "\t" + formatedDeprotSum + "\t" +
+              "HID" + "\t" + formatedTautomerSum);
+          break;
+        case "LYS":
+        case "LYD":
+          logger.info(residue.getResidueNumber() + "\tLYS" + "\t" + formatedProtSum + "\t" +
+              "LYD" + "\t" + formatedDeprotSum);
+          break;
+        case "ASH":
+        case "ASP":
+          logger.info(residue.getResidueNumber() + "\tASP" + "\t" + formatedDeprotSum + "\t" +
+              "ASH" + "\t" + formatedProtSum);
+          break;
+        case "GLH":
+        case "GLU":
+          logger.info(residue.getResidueNumber() + "\tGLU" + "\t" + formatedDeprotSum + "\t" +
+              "GLH" + "\t" + formatedProtSum);
+          break;
+        case "CYS":
+        case "CYD":
+          logger.info(residue.getResidueNumber() + "\tCYS" + "\t" + formatedProtSum + "\t" +
+              "CYD" + "\t" + formatedDeprotSum);
+          break;
+        default:
+          break;
+      }
+      residueIndex++;
     }
 
-    /**
-     * Return the rotamer index for each conformer (A,B,C) in xray and realspace genZ
-     * @return int array of rotamer indexes for each conformer (A,B,C)
-     * @throws Exception
-     */
-    public int[][] getConformers() throws Exception{
-        int[][] conformers = new int[fraction.length][3];
-        for(int i = 0; i < fraction.length; i++){
-            double[] tempArray = new double[fraction[0].length];
-            java.lang.System.arraycopy(fraction[i], 0, tempArray, 0, fraction[0].length);
-            List<Double> elements = new ArrayList<Double>();
-            for (int j = 0; j < tempArray.length; j++) {
-                elements.add(tempArray[j]);
-            }
-            Arrays.sort(tempArray);
-            int count = -1;
-            for(int k = tempArray.length-3; k < tempArray.length; k++){
-                count++;
-                conformers[i][count] = elements.indexOf(tempArray[k]);
-            }
-        }
-        return conformers;
+
+    return populations;
+  }
+
+  public double slidingWindowCentered(List<Residue> residueList) throws Exception {
+    String[] titratableResidues = new String[]{"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD", "CYS", "CYD"};
+    List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+    // TO DO make generic for a list of given residue centers, make array that is filled with TR or take array of centers
+    double e = 0.0;
+    for (Residue titrationResidue : residueList) {
+      if (titratableResiudesList.contains(titrationResidue.getName())) {
+        e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance, Direction.FORWARD, residueList.indexOf(titrationResidue));
+      }
     }
+    return e;
+  }
+
+  /**
+   * Return the rotamer index for each conformer (A,B,C) in xray and realspace genZ
+   *
+   * @return int array of rotamer indexes for each conformer (A,B,C)
+   * @throws Exception
+   */
+  public int[][] getConformers() throws Exception {
+    int[][] conformers = new int[fraction.length][3];
+    for (int i = 0; i < fraction.length; i++) {
+      double[] tempArray = new double[fraction[0].length];
+      java.lang.System.arraycopy(fraction[i], 0, tempArray, 0, fraction[0].length);
+      List<Double> elements = new ArrayList<Double>();
+      for (int j = 0; j < tempArray.length; j++) {
+        elements.add(tempArray[j]);
+      }
+      Arrays.sort(tempArray);
+      int count = -1;
+      for (int k = tempArray.length - 3; k < tempArray.length; k++) {
+        count++;
+        conformers[i][count] = elements.indexOf(tempArray[k]);
+      }
+    }
+    return conformers;
+  }
 
 
   /**
@@ -3407,23 +3427,23 @@ public class RotamerOptimization implements Terminatable {
              windowStart += increment) {
           long windowTime = -System.nanoTime();
 // Set the start at the residue based on my center
-          if(windowCenter > -1){
-              windowStart =  windowCenter - windowSize/2;
-              if(windowStart < 0){
-                  windowStart = 0;
-              }
-              windowEnd = windowCenter + windowSize/2;
-              if(windowEnd >= residueList.size()){
-                  windowEnd = residueList.size() - 1;
-              }
+          if (windowCenter > -1) {
+            windowStart = windowCenter - windowSize / 2;
+            if (windowStart < 0) {
+              windowStart = 0;
+            }
+            windowEnd = windowCenter + windowSize / 2;
+            if (windowEnd >= residueList.size()) {
+              windowEnd = residueList.size() - 1;
+            }
           } else {
-              windowEnd = windowStart + (windowSize - 1);
+            windowEnd = windowStart + (windowSize - 1);
           }
 
-          if(windowCenter > -1){
-              logIfRank0(format("\n Center window at residue %d.\n", residueList.get(windowCenter).getResidueNumber()));
+          if (windowCenter > -1) {
+            logIfRank0(format("\n Center window at residue %d.\n", residueList.get(windowCenter).getResidueNumber()));
           } else {
-              logIfRank0(format("\n Iteration %d of the sliding window.\n", counter++));
+            logIfRank0(format("\n Iteration %d of the sliding window.\n", counter++));
           }
 
           Residue firstResidue = residueList.get(windowStart);
@@ -3442,8 +3462,8 @@ public class RotamerOptimization implements Terminatable {
 
           if (distance > 0) {
             for (int i = windowStart; i <= windowEnd; i++) {
-              if(windowCenter > -1){
-                  i = windowCenter;
+              if (windowCenter > -1) {
+                i = windowCenter;
               }
               Residue residuei = residueList.get(i);
               int indexI = allResiduesList.indexOf(residuei);
@@ -3471,8 +3491,8 @@ public class RotamerOptimization implements Terminatable {
                   }
                 }
               }
-              if(windowCenter > -1){
-                  break;
+              if (windowCenter > -1) {
+                break;
               }
             }
           }
@@ -3592,16 +3612,16 @@ public class RotamerOptimization implements Terminatable {
           logIfRank0(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
           logIfRank0(
               format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
-          if(genZ){
-              int[] currentRotamers = new int[optimumSubset.length];
-              usingBoxOptimization = true;
-              Residue[] residueSubsetArray = currentWindow.toArray(new Residue[currentWindow.size()]);
-              getFractions(residueSubsetArray,0,currentRotamers, true);
-              Residue[] titrationResidueArray = new Residue[]{residueList.get(windowCenter)};
-              getProtonationPopulations(titrationResidueArray);
+          if (genZ) {
+            int[] currentRotamers = new int[optimumSubset.length];
+            usingBoxOptimization = true;
+            Residue[] residueSubsetArray = currentWindow.toArray(new Residue[currentWindow.size()]);
+            getFractions(residueSubsetArray, 0, currentRotamers, true);
+            Residue[] titrationResidueArray = new Residue[]{residueList.get(windowCenter)};
+            getProtonationPopulations(titrationResidueArray);
           }
-          if(windowCenter > -1){
-              break;
+          if (windowCenter > -1) {
+            break;
           }
         }
 
@@ -4904,7 +4924,7 @@ public class RotamerOptimization implements Terminatable {
     FORWARD, BACKWARD
   }
 
-    //    /**
+  //    /**
   //     * Writes eliminated singles and pairs to a CSV file. Reads in .log file.
   //     *
   //     * @throws java.io.FileNotFoundException if any.
