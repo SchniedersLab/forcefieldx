@@ -437,12 +437,16 @@ public class BAR extends AlgorithmsCommand {
           } else {
             archiveName = FilenameUtils.getBaseName(files[j]) + ".arc";
           }
+          int col = j;
+          if (dtIndex == 2) {
+            col = Math.floorMod(j - dtIndex, 2);
+          }
           if (!autodetect) {
             // Path to a file in the same directory as supplied archives.
-            fullFilePaths[i][j - dtIndex] = directoryPath + File.separator + archiveName;
+            fullFilePaths[i][col] = directoryPath + File.separator + archiveName;
           } else {
             // Paths to auto-detected subdirectories.
-            fullFilePaths[i][j - dtIndex] = directoryPath + i + File.separator + archiveName;
+            fullFilePaths[i][col] = directoryPath + i + File.separator + archiveName;
           }
           // For Dual-Topology, stop after two files for first ensemble
           if (i == 0 && j == 1) {
