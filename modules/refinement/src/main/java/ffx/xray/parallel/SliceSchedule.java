@@ -120,7 +120,7 @@ public class SliceSchedule extends IntegerSchedule {
   /**
    * updateWeights.
    *
-   * @param weights an array of {@link int} objects.
+   * @param weights an array of weights.
    */
   public void updateWeights(int[] weights) {
     this.weights = weights;
