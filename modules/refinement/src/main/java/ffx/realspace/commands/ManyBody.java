@@ -167,11 +167,10 @@ public class ManyBody extends AlgorithmsCommand {
       }
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-      titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
+      titrationManyBody = new TitrationManyBody(filenames.getFirst(), activeAssembly.getForceField(),
           resNumberList, titrationPH, manyBodyOptions);
-      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly();
-      setActiveAssembly(protonatedAssembly);
-      potentialEnergy = protonatedAssembly.getPotentialEnergy();
+      activeAssembly = titrationManyBody.getProtonatedAssembly();
+      potentialEnergy = activeAssembly.getPotentialEnergy();
       molecularAssemblies = new MolecularAssembly[]{activeAssembly};
     }
 

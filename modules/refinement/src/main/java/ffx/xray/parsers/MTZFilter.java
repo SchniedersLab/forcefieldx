@@ -112,12 +112,8 @@ public class MTZFilter implements DiffractionFileFilter {
    * @param iter The iteration in the running average.
    * @param properties The CompositeConfiguration defines the properties of each system.
    */
-  public void averageFcs(
-      File mtzFile1,
-      File mtzFile2,
-      ReflectionList reflectionlist,
-      int iter,
-      CompositeConfiguration properties) {
+  public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
+                         int iter, CompositeConfiguration properties) {
 
     DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
     DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
@@ -235,31 +231,17 @@ public class MTZFilter implements DiffractionFileFilter {
       StringBuilder sb = new StringBuilder();
       sb.append(format(" Reading %s\n", mtzFile.getName()));
       sb.append("  Setting up reflection list based on MTZ file.\n");
-      sb.append(
-          format(
-              "  Space group number: %d (name: %s)\n",
+      sb.append(format("  Space group number: %d (name: %s)\n",
               spaceGroupNum, SpaceGroupInfo.spaceGroupNames[spaceGroupNum - 1]));
       sb.append(format("  Resolution:         %8.3f\n", 0.999999 * resHigh));
-      sb.append(
-          format(
-              "  Cell:               %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
-              dataSet.cell[0],
-              dataSet.cell[1],
-              dataSet.cell[2],
-              dataSet.cell[3],
-              dataSet.cell[4],
-              dataSet.cell[5]));
+      sb.append(format("  Cell:               %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+              dataSet.cell[0], dataSet.cell[1], dataSet.cell[2],
+              dataSet.cell[3], dataSet.cell[4], dataSet.cell[5]));
       logger.info(sb.toString());
     }
 
-    Crystal crystal =
-        new Crystal(
-            dataSet.cell[0],
-            dataSet.cell[1],
-            dataSet.cell[2],
-            dataSet.cell[3],
-            dataSet.cell[4],
-            dataSet.cell[5],
+    Crystal crystal = new Crystal(dataSet.cell[0], dataSet.cell[1], dataSet.cell[2],
+            dataSet.cell[3], dataSet.cell[4], dataSet.cell[5],
             SpaceGroupInfo.spaceGroupNames[spaceGroupNum - 1]);
 
     double sampling = 0.6;
@@ -267,7 +249,6 @@ public class MTZFilter implements DiffractionFileFilter {
       sampling = properties.getDouble("sampling", 0.6);
     }
     Resolution resolution = new Resolution(0.999999 * resHigh, sampling);
-
     return new ReflectionList(crystal, resolution, properties);
   }
 
@@ -280,8 +261,8 @@ public class MTZFilter implements DiffractionFileFilter {
   /** {@inheritDoc} */
   @Override
   public double getResolution(File mtzFile, Crystal crystal) {
-    ReflectionList reflectionList = getReflectionList(mtzFile, null);
-    return reflectionList.getMaxResolution();
+    getReflectionList(mtzFile, null);
+    return resHigh;
   }
 
   /** printHeader */
@@ -325,11 +306,8 @@ public class MTZFilter implements DiffractionFileFilter {
 
   /** {@inheritDoc} */
   @Override
-  public boolean readFile(
-      File mtzFile,
-      ReflectionList reflectionList,
-      DiffractionRefinementData refinementData,
-      CompositeConfiguration properties) {
+  public boolean readFile(File mtzFile, ReflectionList reflectionList,
+      DiffractionRefinementData refinementData, CompositeConfiguration properties) {
     int nRead, nIgnore, nRes, nFriedel, nCut;
     ByteOrder byteOrder = ByteOrder.nativeOrder();
     FileInputStream fileInputStream;
@@ -347,7 +325,6 @@ public class MTZFilter implements DiffractionFileFilter {
 
       // Eat "MTZ" title.
       dataInputStream.read(bytes, offset, 4);
-      // String mtzstr;
 
       // Header offset.
       dataInputStream.read(headerOffset, offset, 4);
@@ -462,14 +439,10 @@ public class MTZFilter implements DiffractionFileFilter {
 
       if (none > (nZero * 2) && refinementData.rFreeFlag < 0) {
         refinementData.setFreeRFlag(0);
-        sb.append(
-            format(
-                " Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
+        sb.append(format(             " Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
       } else if (nZero > (none * 2) && refinementData.rFreeFlag < 0) {
         refinementData.setFreeRFlag(1);
-        sb.append(
-            format(
-                " Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
+        sb.append(format(" Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
       } else if (refinementData.rFreeFlag < 0) {
         refinementData.setFreeRFlag(0);
         sb.append(format(" Setting R free flag to MTZ default: %d\n", refinementData.rFreeFlag));
@@ -603,11 +576,8 @@ public class MTZFilter implements DiffractionFileFilter {
    *     object.
    * @return a boolean.
    */
-  private boolean readFcs(
-      File mtzFile,
-      ReflectionList reflectionList,
-      DiffractionRefinementData fcData,
-      CompositeConfiguration properties) {
+  private boolean readFcs(File mtzFile, ReflectionList reflectionList,
+      DiffractionRefinementData fcData, CompositeConfiguration properties) {
 
     int nRead, nIgnore, nRes, nFriedel, nCut;
     ByteOrder byteOrder = ByteOrder.nativeOrder();

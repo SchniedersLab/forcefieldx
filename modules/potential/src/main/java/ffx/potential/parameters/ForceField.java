@@ -478,6 +478,10 @@ public class ForceField {
       angleType.quartic = getDouble("ANGLE-QUARTIC", AngleType.DEFAULT_ANGLE_QUARTIC);
       angleType.pentic = getDouble("ANGLE-PENTIC", AngleType.DEFAULT_ANGLE_PENTIC);
       angleType.sextic = getDouble("ANGLE-SEXTIC", AngleType.DEFAULT_ANGLE_SEXTIC);
+      double ridingScale = getDouble("RIDING_HYDROGEN_SCALE", 1.0);
+      if (ridingScale > 1.0 && hasHydrogenAtomClass(angleType.atomClasses)) {
+        angleType.angleUnit *= ridingScale;
+      }
     }
     return angleType;
   }
@@ -625,6 +629,26 @@ public class ForceField {
   }
 
   /**
+   * Determines if the given atom classes correspond to a hydrogen type.
+   *
+   * @param atomClasses an array of integers representing atom classes to be checked
+   * @return true if at least one of the atom classes corresponds to a hydrogen, false otherwise
+   */
+  private boolean hasHydrogenAtomClass(int[] atomClasses) {
+    for (AtomType type : atomTypes.values()) {
+      if (type.atomicNumber == 1) {
+        continue;
+      }
+      for (int i : atomClasses) {
+        if (type.atomClass == i) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * getBondType
    *
    * @param key a {@link java.lang.String} object.
@@ -636,6 +660,10 @@ public class ForceField {
       bondType.bondUnit = getDouble("BONDUNIT", BondType.DEFAULT_BOND_UNIT);
       bondType.cubic = getDouble("BOND_CUBIC", BondType.DEFAULT_BOND_CUBIC);
       bondType.quartic = getDouble("BOND_QUARTIC", BondType.DEFAULT_BOND_QUARTIC);
+      double ridingScale = getDouble("RIDING_HYDROGEN_SCALE", 1.0);
+      if (ridingScale > 1.0 && hasHydrogenAtomClass(bondType.atomClasses)) {
+        bondType.bondUnit *= ridingScale;
+      }
     }
     return bondType;
   }
@@ -1292,6 +1320,10 @@ public class ForceField {
       ureyBradleyType.ureyUnit = getDouble("UREYUNIT", UreyBradleyType.DEFAULT_UREY_UNIT);
       ureyBradleyType.cubic = getDouble("UREY_CUBIC", UreyBradleyType.DEFAULT_UREY_CUBIC);
       ureyBradleyType.quartic = getDouble("UREY_QUARTIC", UreyBradleyType.DEFAULT_UREY_QUARTIC);
+      double ridingScale = getDouble("RIDING_HYDROGEN_SCALE", 1.0);
+      if (ridingScale > 1.0 && hasHydrogenAtomClass(ureyBradleyType.atomClasses)) {
+        ureyBradleyType.ureyUnit *= ridingScale;
+      }
     }
     return ureyBradleyType;
   }

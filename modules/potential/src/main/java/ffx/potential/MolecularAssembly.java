@@ -1046,6 +1046,20 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
+   * Check if this Assembly contains Deuterium.
+   * @return True if one or more atoms is deuterium.
+   */
+  public boolean hasDeuterium() {
+    Atom[] atoms = getAtomArray();
+    for (Atom atom : atoms) {
+      if (atom.isDeuterium()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * getCrystal
    *
    * @return a {@link ffx.crystal.Crystal} object.
@@ -1383,33 +1397,34 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * getNodeList
+   * A list that includes residues, molecules, water and ions.
    *
-   * @return a {@link java.util.List} object.
+   * @return a {@link java.util.List} of residues, molecules, water and ions.
    */
   public List<MSNode> getNodeList() {
-    List<MSNode> residues = new ArrayList<>();
-    ListIterator<MSNode> li, lj;
-    MSNode o;
-    Polymer c;
-    for (li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-      o = li.next();
-      if (o instanceof Polymer) {
-        c = (Polymer) o;
-        for (lj = c.getAtomNodeList().listIterator(); lj.hasNext(); ) {
-          o = lj.next();
-          if (o instanceof Residue) {
-            residues.add(o);
-          }
+    return getNodeList(false);
+  }
+
+  /**
+   * A list that includes residues, molecules, water and ions.
+   *
+   * @param ignorePolymers If true, the list will not include residues.
+   * @return a {@link java.util.List} of residues, molecules, water and ions.
+   */
+  public List<MSNode> getNodeList(boolean ignorePolymers) {
+    List<MSNode> nodeList = new ArrayList<>();
+    if (!ignorePolymers) {
+      Polymer[] polymers = getChains();
+      if (polymers != null) {
+        for (Polymer polymer : polymers) {
+          nodeList.addAll(polymer.getResidues());
         }
       }
     }
-
-    residues.addAll(ions.getChildList());
-    residues.addAll(water.getChildList());
-    residues.addAll(molecules.getChildList());
-
-    return residues;
+    nodeList.addAll(ions.getChildList());
+    nodeList.addAll(water.getChildList());
+    nodeList.addAll(molecules.getChildList());
+    return nodeList;
   }
 
   /**
@@ -2321,6 +2336,26 @@ public class MolecularAssembly extends MSGroup {
     wireframe.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
     wireframe.setCapability(Shape3D.ALLOW_LOCAL_TO_VWORLD_READ);
     return wireframe;
+  }
+
+  /**
+   * Return the residue given a polymer ID and residue ID.
+   *
+   * @param polymerID The polymer ID.
+   * @param resID     The residue ID.
+   * @return The requested Residue or null if it can't be found.
+   */
+  public Residue getResidue(int polymerID, int resID) {
+    Polymer[] polymers = getChains();
+    if (polymers == null || polymers.length <= polymerID) {
+      return null;
+    }
+    Polymer polymer = polymers[polymerID];
+    List<Residue> residues = polymer.getResidues();
+    if (residues == null || residues.size() <= resID) {
+      return null;
+    }
+    return residues.get(resID);
   }
 
   /**

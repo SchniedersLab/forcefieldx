@@ -38,7 +38,7 @@
 package ffx.xray.cli;
 
 import ffx.utilities.FFXProperty;
-import ffx.xray.RefinementMinimize;
+import ffx.xray.refine.RefinementMode;
 import picocli.CommandLine.Option;
 
 import static ffx.utilities.PropertyGroup.StructuralRefinement;
@@ -54,7 +54,7 @@ public abstract class DataRefinementOptions {
   /**
    * The refinement mode to use.
    */
-  protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
+  protected RefinementMode refinementMode = RefinementMode.COORDINATES;
 
   /**
    * --wA or --dataWeight The weight of the data (wA).

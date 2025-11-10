@@ -97,9 +97,9 @@ public class DiffractionFile {
 
     if (isExtension(filename, "mtz")) {
       diffractionFilter = new MTZFilter();
-    } else if (isExtension(filename, new String[] {"cif", "ent", "sf"})) {
+    } else if (isExtension(filename, "cif", "ent", "sf")) {
       diffractionFilter = new CIFFilter();
-    } else if (isExtension(filename, new String[] {"cns", "hkl"})) {
+    } else if (isExtension(filename, "cns", "hkl")) {
       diffractionFilter = new CNSFilter();
     } else {
       diffractionFilter = null;

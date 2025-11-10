@@ -42,10 +42,11 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.math.ComplexNumber;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.solvent.SolventModel;
 
 import java.util.logging.Logger;
 
+import static ffx.numerics.math.ScalarMath.u2b;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -244,23 +245,27 @@ public class CrystalStats {
             refinementData.modelAnisoB[2]));
     sb.append("REMARK   3\n");
 
-    if (refinementData.crystalReciprocalSpaceFs.solventModel != SolventModel.NONE) {
+    CrystalReciprocalSpace crystalReciprocalSpaceFs = refinementData.crystalReciprocalSpaceFs;
+    SolventModel solventModel = crystalReciprocalSpaceFs.getSolventModel();
+    if (solventModel != SolventModel.NONE) {
       sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
-      switch (refinementData.crystalReciprocalSpaceFs.solventModel) {
+      double solventA = crystalReciprocalSpaceFs.getSolventA();
+      double solventB = crystalReciprocalSpaceFs.getSolventB();
+      switch (solventModel) {
         case BINARY:
           sb.append("REMARK   3   METHOD USED: BINARY MASK\n");
-          sb.append(format("REMARK   3    PROBE RADIUS  : %g\n", refinementData.solventA));
-          sb.append(format("REMARK   3    SHRINK RADIUS : %g\n", refinementData.solventB));
+          sb.append(format("REMARK   3    PROBE RADIUS  : %g\n", solventA));
+          sb.append(format("REMARK   3    SHRINK RADIUS : %g\n", solventB));
           break;
         case POLYNOMIAL:
           sb.append("REMARK   3   METHOD USED: POLYNOMIAL SWITCH\n");
-          sb.append(format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n", refinementData.solventA));
-          sb.append(format("REMARK   3    SWITCH RADIUS        : %g\n", refinementData.solventB));
+          sb.append(format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n", solventA));
+          sb.append(format("REMARK   3    SWITCH RADIUS        : %g\n", solventB));
           break;
         case GAUSSIAN:
           sb.append("REMARK   3   METHOD USED: GAUSSIAN\n");
-          sb.append(format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n", refinementData.solventA));
-          sb.append(format("REMARK   3    STD DEV SCALE        : %g\n", refinementData.solventB));
+          sb.append(format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n", solventA));
+          sb.append(format("REMARK   3    STD DEV SCALE        : %g\n", solventB));
           break;
       }
       sb.append(format("REMARK   3    K_SOL: %g\n", refinementData.bulkSolventK));
@@ -356,12 +361,12 @@ public class CrystalStats {
   /**
    * Output Cruickshank and Blow DPI indices.
    *
-   * @param nAtoms number of atoms in the structure
+   * @param nAtoms            number of atoms in the structure
    * @param nNonHydrogenAtoms number of non-H atoms in the structure
    * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank"> D. W. J.
-   *     Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
+   * Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
    * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank"> D. M. Blow, Acta
-   *     Cryst. (2002). D58, 792-797</a>
+   * Cryst. (2002). D58, 792-797</a>
    */
   void printDPIStats(int nAtoms, int nNonHydrogenAtoms) {
     int nhkli = 0;
@@ -397,7 +402,9 @@ public class CrystalStats {
     }
   }
 
-  /** Print HKL statistics/completeness info. */
+  /**
+   * Print HKL statistics/completeness info.
+   */
   void printHKLStats() {
     double[][] res = new double[nBins][2];
     int[][] nhkl = new int[nBins][3];
@@ -471,7 +478,7 @@ public class CrystalStats {
     completeness = (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0;
     highCompleteness =
         (((double) nhkl[nBins - 1][0] + nhkl[nBins - 1][1])
-                / (nhkl[nBins - 1][0] + nhkl[nBins - 1][1] + nhkl[nBins - 1][2]))
+            / (nhkl[nBins - 1][0] + nhkl[nBins - 1][1] + nhkl[nBins - 1][2]))
             * 100.0;
 
     if (print) {
@@ -479,7 +486,9 @@ public class CrystalStats {
     }
   }
 
-  /** Print R factors and associated statistics in a binned fashion. */
+  /**
+   * Print R factors and associated statistics in a binned fashion.
+   */
   void printRStats() {
     double[][] res = new double[nBins][2];
     double[] nhkl = new double[nBins + 1];
@@ -555,34 +564,21 @@ public class CrystalStats {
     }
 
     StringBuilder sb =
-        new StringBuilder(
-            format(
-                "\n %15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
+        new StringBuilder(format("\n %15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
                 "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
     for (int i = 0; i < nBins; i++) {
       sb.append(format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
-      sb.append(
-          format(
-              "%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
+      sb.append(format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
               (rb[i][0] / sumfo[i][0]) * 100.0,
               (rb[i][1] / sumfo[i][1]) * 100.0,
-              s[i][0],
-              s[i][1],
-              s[i][2],
-              s[i][3]));
+              s[i][0], s[i][1], s[i][2], s[i][3]));
     }
 
     sb.append(format(" %7.3f %7.3f | ", res[0][0], res[nBins - 1][1]));
-    sb.append(
-        format(
-            "%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
+    sb.append(format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
             (rb[nBins][0] / sumfo[nBins][0]) * 100.0,
             (rb[nBins][1] / sumfo[nBins][1]) * 100.0,
-            s[nBins][0],
-            s[nBins][1],
-            s[nBins][2],
-            s[nBins][3]));
-    sb.append(" s and w are analagous to D and sum_wc");
+            s[nBins][0], s[nBins][1], s[nBins][2], s[nBins][3]));
 
     resLow = res[0][0];
     resHigh = res[nBins - 1][1];
@@ -599,7 +595,9 @@ public class CrystalStats {
     }
   }
 
-  /** Print scaling and bulk solvent statistics. */
+  /**
+   * Print scaling and bulk solvent statistics.
+   */
   void printScaleStats() {
     int[] nhkl = new int[nBins];
     double[] scale = new double[nBins];
@@ -621,73 +619,56 @@ public class CrystalStats {
       scale[b] += (fh - scale[b]) / nhkl[b];
     }
 
-    StringBuilder sb =
-        new StringBuilder(
-            format(" Fc to Fo scale: %4.2f\n", exp(0.25 * refinementData.modelScaleK)));
-    sb.append(" Fc to Fo spline scale: ");
+    StringBuilder sb = new StringBuilder(
+        format(" K_Overall (Fc to Fo Scale): %4.2f\n", exp(0.25 * refinementData.modelScaleK)));
+    sb.append(" Fc to Fo Spline Scale: ");
     for (int i = 0; i < nBins; i++) {
       sb.append(format("%4.2f ", scale[i]));
     }
-    sb.append("\n Aniso B tensor:\n");
-    sb.append(
-        format(
-            "  %10.4f %10.4f %10.4f\n",
-            refinementData.modelAnisoB[0],
-            refinementData.modelAnisoB[3],
-            refinementData.modelAnisoB[4]));
-    sb.append(
-        format(
-            "  %10.4f %10.4f %10.4f\n",
-            refinementData.modelAnisoB[3],
-            refinementData.modelAnisoB[1],
-            refinementData.modelAnisoB[5]));
-    sb.append(
-        format(
-            "  %10.4f %10.4f %10.4f\n",
-            refinementData.modelAnisoB[4],
-            refinementData.modelAnisoB[5],
-            refinementData.modelAnisoB[2]));
-    if (refinementData.crystalReciprocalSpaceFs.solventModel != SolventModel.NONE) {
-      switch (refinementData.crystalReciprocalSpaceFs.solventModel) {
-        case BINARY:
-          sb.append(" Bulk solvent model: Binary mask\n");
-          sb.append(
-              format(
-                  "  Probe radius: %8.3f\n  Shrink radius: %8.3f\n",
-                  refinementData.solventA, refinementData.solventB));
-          break;
-        case POLYNOMIAL:
-          sb.append(" Bulk solvent model: Polynomial switch\n");
-          sb.append(
-              format(
-                  "  a:     %8.3f\n  w:     %8.3f\n",
-                  refinementData.solventA, refinementData.solventB));
-          break;
-        case GAUSSIAN:
-          sb.append(" Bulk solvent model: Gaussian\n");
-          sb.append(
-              format(
-                  "  A: %8.3f\n  sd scale: %8.3f\n",
-                  refinementData.solventA, refinementData.solventB));
-          break;
+    sb.append("\n B_Overall Anisotropic Tensor:\n");
+    sb.append(format("  %10.4f %10.4f %10.4f\n", refinementData.modelAnisoB[0],
+        refinementData.modelAnisoB[3], refinementData.modelAnisoB[4]));
+    sb.append(format("  %10.4f %10.4f %10.4f\n", refinementData.modelAnisoB[3],
+        refinementData.modelAnisoB[1], refinementData.modelAnisoB[5]));
+    sb.append(format("  %10.4f %10.4f %10.4f\n", refinementData.modelAnisoB[4],
+        refinementData.modelAnisoB[5], refinementData.modelAnisoB[2]));
+
+    CrystalReciprocalSpace crystalReciprocalSpaceFs = refinementData.crystalReciprocalSpaceFs;
+    SolventModel solventModel = crystalReciprocalSpaceFs.getSolventModel();
+    if (solventModel != SolventModel.NONE) {
+      double solventA = crystalReciprocalSpaceFs.getSolventA();
+      double solventB = crystalReciprocalSpaceFs.getSolventB();
+      switch (solventModel) {
+        case BINARY -> {
+          sb.append(" Bulk Solvent Model: Binary Mask\n");
+          sb.append(format("  Probe Radius:           %8.4f\n", solventA));
+          sb.append(format("  Shrink Radius:          %8.4f\n", solventB));
+        }
+        case POLYNOMIAL -> {
+          sb.append(" Bulk Solvent Model: Polynomial Switch\n");
+          sb.append(format("  Probe Radius:           %8.4f\n", solventA));
+          sb.append(format("  Window Width:           %8.4f\n", solventB));
+        }
+        case GAUSSIAN -> {
+          sb.append(" Bulk Solvent Model: Gaussian\n");
+          sb.append(format("  Exponential Scale A:    %8.4f\n", solventA));
+          sb.append(format("  Radius Scale Factor:    %8.4f\n", solventB));
+        }
+        case NONE -> sb.append(" Bulk Solvent Model: None\n");
       }
-      sb.append(
-          format(
-              "  Scale: %8.3f\n  B:     %8.3f\n",
-              refinementData.bulkSolventK,
-              refinementData.bulkSolventUeq * 8.0 * Math.PI * Math.PI));
+      sb.append(format("  Scattering Density (k): %8.4f\n", refinementData.bulkSolventK));
+      sb.append(format("  B-Factor:               %8.4f\n", u2b(refinementData.bulkSolventUeq)));
     }
-    sb.append(
-        format(
-            "\n -log Likelihood: %14.3f (free set: %14.3f)",
-            refinementData.llkR, refinementData.llkF));
+    sb.append(format("\n -log Likelihood: %14.3f (free set: %14.3f)", refinementData.llkR, refinementData.llkF));
 
     if (print) {
       logger.info(sb.toString());
     }
   }
 
-  /** Print signal to noise ratio statistics. */
+  /**
+   * Print signal to noise ratio statistics.
+   */
   void printSNStats() {
     double[][] res = new double[nBins][2];
     double[] nhkl = new double[nBins + 1];

@@ -55,7 +55,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize;
+import ffx.xray.refine.RefinementMode;
 import ffx.xray.cli.XrayOptions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
@@ -211,9 +211,9 @@ public class GenZ extends AlgorithmsCommand {
     boolean isTitrating = false;
 
     // The refinement mode must be coordinates.
-    if (xrayOptions.refinementMode != RefinementMinimize.RefinementMode.COORDINATES) {
+    if (xrayOptions.refinementMode != RefinementMode.COORDINATES) {
       logger.info(" Refinement mode set to COORDINATES.");
-      xrayOptions.refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
+      xrayOptions.refinementMode = RefinementMode.COORDINATES;
     }
 
     // Collect residues to optimize.
@@ -263,9 +263,8 @@ public class GenZ extends AlgorithmsCommand {
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
           resNumberList, titrationPH, manyBodyOptions);
-      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly();
-      setActiveAssembly(protonatedAssembly);
-      potentialEnergy = protonatedAssembly.getPotentialEnergy();
+      activeAssembly = titrationManyBody.getProtonatedAssembly();
+      potentialEnergy = activeAssembly.getPotentialEnergy();
     }
 
     // Load parsed X-ray properties.

@@ -1224,7 +1224,7 @@ public final class PDBFilter extends SystemFilter {
                 ssbonds.add(line);
                 break;
               }
-              case HELIX:
+              case HELIX: {
 // =============================================================================
 // HELIX records are used to identify the position of helices in the molecule.
 // Helices are named, numbered, and classified by type. The residues where the
@@ -1263,6 +1263,7 @@ public final class PDBFilter extends SystemFilter {
 // 2 - 7 ribbon/helix                          9
 // Polyproline                                10
 // =============================================================================
+              }
               case SHEET: {
 // =============================================================================
 // SHEET records are used to identify the position of sheets in the molecule.
@@ -1897,25 +1898,26 @@ public final class PDBFilter extends SystemFilter {
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
                            boolean versioning, String[] extraLines) {
     // Set standardize atom names to false in the presence of deuterium
-    List<Atom> deuteriumAtoms = new ArrayList<>();
-    for (Atom atom : activeMolecularAssembly.getAtomArray()) {
-      if (atom.getName().startsWith("D")) {
-        String name = atom.getName().replace("D", "H");
-        atom.setName(name);
-        deuteriumAtoms.add(atom);
-      }
-    }
     if (standardizeAtomNames) {
       logger.info(" Setting atom names to PDB standard.");
-      renameAtomsToPDBStandard(activeMolecularAssembly);
-    }
 
-    for (Atom atom : activeMolecularAssembly.getAtomArray()) {
-      if (deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")) {
-        String name = atom.getName().replace("H", "D");
-        atom.setName(name);
+      List<Atom> deuteriumAtoms = new ArrayList<>();
+      for (Atom atom : activeMolecularAssembly.getAtomArray()) {
+        if (atom.getName().startsWith("D")) {
+          String name = atom.getName().replaceFirst("D", "H");
+          atom.setName(name);
+          deuteriumAtoms.add(atom);
+        }
+      }
+      renameAtomsToPDBStandard(activeMolecularAssembly);
+      for (Atom atom : activeMolecularAssembly.getAtomArray()) {
+        if (deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")) {
+          String name = atom.getName().replaceFirst("H", "D");
+          atom.setName(name);
+        }
       }
     }
+
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
     if (saveFile == null) {
       return false;
@@ -2364,23 +2366,24 @@ public final class PDBFilter extends SystemFilter {
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
     // Set standardize atom names to false in the presence of deuterium
-    List<Atom> deuteriumAtoms = new ArrayList<>();
-    for (Atom atom : activeMolecularAssembly.getAtomArray()) {
-      if (atom.getName().startsWith("D")) {
-        String name = atom.getName().replace("D", "H");
-        atom.setName(name);
-        deuteriumAtoms.add(atom);
-      }
-    }
     if (standardizeAtomNames) {
+      List<Atom> deuteriumAtoms = new ArrayList<>();
+      for (Atom atom : activeMolecularAssembly.getAtomArray()) {
+        if (atom.getName().startsWith("D")) {
+          String name = atom.getName().replaceFirst("D", "H");
+          atom.setName(name);
+          deuteriumAtoms.add(atom);
+        }
+      }
+
       logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
-    }
 
-    for (Atom atom : activeMolecularAssembly.getAtomArray()) {
-      if (deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")) {
-        String name = atom.getName().replace("H", "D");
-        atom.setName(name);
+      for (Atom atom : activeMolecularAssembly.getAtomArray()) {
+        if (deuteriumAtoms.contains(atom) && atom.getName().startsWith("H")) {
+          String name = atom.getName().replaceFirst("H", "D");
+          atom.setName(name);
+        }
       }
     }
     activeMolecularAssembly.setFile(saveFile);

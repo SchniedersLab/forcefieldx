@@ -154,8 +154,7 @@ public class SaveRotamers extends AlgorithmsCommand {
       }
       titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
           resNumberList, 7.0);
-      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly();
-      setActiveAssembly(protonatedAssembly);
+      activeAssembly = titrationManyBody.getProtonatedAssembly();
     }
     RotamerLibrary rLib = new RotamerLibrary(
         RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true);

@@ -61,6 +61,7 @@ import static ffx.potential.bonded.BondedUtils.buildH;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
+import static ffx.potential.bonded.BondedUtils.findBondedAtoms;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
@@ -475,12 +476,15 @@ public class AminoAcidUtils {
       // Check for a neutral C-terminus.
       boolean neutralCTerminus = false;
       if (OXT == null) {
-        OXT = (Atom) residue.getAtomNode("OH");
-        if (OXT != null) {
-          neutralCTerminus = true;
+        // Find oxygen bonded to the carbonyl carbon.
+        List<Atom> oxygen = findBondedAtoms(C, 8);
+        for (Atom atom : oxygen) {
+          String name = atom.getName();
+          if (name.equalsIgnoreCase("OH")) {
+            neutralCTerminus = true;
+          }
         }
       }
-
       if (OXT == null) {
         String resName = C.getResidueName();
         int resSeq = C.getResidueNumber();
@@ -525,9 +529,8 @@ public class AminoAcidUtils {
       atomType = atom.getAtomType();
       if (atomType == null) {
         /*
-         * Sometimes with a deuterons, a proton has been constructed in
-         * its place, so we have a "dummy" deuteron still hanging
-         * around.
+         * Sometimes with deuterium, a proton has been constructed in
+         * its place, so we have a "dummy" deuterium still hanging around.
          */
         String protonEq = atom.getName().replaceFirst("D", "H");
         Atom correspH = (Atom) residue.getAtomNode(protonEq);
@@ -1149,8 +1152,11 @@ public class AminoAcidUtils {
    * Constant <code>LYD</code>
    */
   public enum LYD implements SideChainType {
-    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5), CE(6), HE2(7), HE3(7), NZ(
-        8), HZ1(9), HZ2(9);
+    CB(0), HB2(1), HB3(1),
+    CG(2), HG2(3), HG3(3),
+    CD(4), HD2(5), HD3(5),
+    CE(6), HE2(7), HE3(7),
+    NZ(8), HZ1(9), HZ2(9);
 
     /**
      * Biotype for this atom.
@@ -1235,7 +1241,7 @@ public class AminoAcidUtils {
    * Constant <code>PCA</code>
    */
   public enum PCA implements SideChainType {
-    CB(0), HB2(1), HB3(2), CG(2), HG2(3), HG3(3), CD(4), OE(5);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), OE(5);
 
     /**
      * Biotype for this atom.
@@ -1405,8 +1411,14 @@ public class AminoAcidUtils {
    * Constant <code>TYR</code>
    */
   public enum TYR implements SideChainType {
-    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(3), HD2(4), CE1(5), HE1(6), CE2(5), HE2(6), CZ(
-        7), OH(8), HH(9);
+    CB(0), HB2(1), HB3(1),
+    CG(2),
+    CD1(3), HD1(4),
+    CD2(3), HD2(4),
+    CE1(5), HE1(6),
+    CE2(5), HE2(6),
+    CZ(7),
+    OH(8), HH(9);
 
     /**
      * Biotype for this atom.
@@ -1434,8 +1446,14 @@ public class AminoAcidUtils {
    * Constant <code>TYD</code>
    */
   public enum TYD implements SideChainType {
-    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(3), HD2(4), CE1(5), HE1(6), CE2(5), HE2(6), CZ(
-        7), OH(8);
+    CB(0), HB2(1), HB3(1),
+    CG(2),
+    CD1(3), HD1(4),
+    CD2(3), HD2(4),
+    CE1(5), HE1(6),
+    CE2(5), HE2(6),
+    CZ(7),
+    OH(8);
 
     /**
      * Biotype for this atom.

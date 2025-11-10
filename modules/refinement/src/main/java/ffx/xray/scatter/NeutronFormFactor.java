@@ -35,11 +35,11 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.scatter;
 
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -77,7 +77,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public final class NeutronFormFactor implements FormFactor {
 
-  private static final Logger logger = Logger.getLogger(ffx.xray.NeutronFormFactor.class.getName());
+  private static final Logger logger = Logger.getLogger(NeutronFormFactor.class.getName());
 
   private static final double twoPI2 = 2.0 * PI * PI;
   private static final double inverseTwoPI32 = pow(2.0 * PI, -1.5);
@@ -254,9 +254,6 @@ public final class NeutronFormFactor implements FormFactor {
 
     String key;
     if (atom.getAtomicNumber() == 1) {
-      // if (!atom.getResidueName().equalsIgnoreCase("DOD")) {
-      //  logger.info(" Atom:" + atom + " " + atom.isDeuterium());
-      //}
       if (atom.isDeuterium()) {
         key = atom.getAtomicNumber() + "_2";
       } else {

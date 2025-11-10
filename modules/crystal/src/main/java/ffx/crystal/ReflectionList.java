@@ -43,6 +43,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import static ffx.crystal.SymOp.applySymRot;
 import static ffx.crystal.SymOp.applyTransSymRot;
@@ -64,6 +65,8 @@ import static org.apache.commons.math3.util.FastMath.rint;
  * @since 1.0
  */
 public class ReflectionList {
+
+  private static final Logger logger = Logger.getLogger(ReflectionList.class.getName());
 
   /**
    * The HKL list.

@@ -155,13 +155,9 @@ public class CCP4MapWriter {
    * write data to file, does not normalize
    *
    * @param data map data to write out
-   * @param norm should the data be normalized by mean/sd?
+   * @param norm Normalize the data by mean/sd.
    */
   public void write(double[] data, boolean norm) {
-    ByteOrder b = ByteOrder.nativeOrder();
-    FileOutputStream fos;
-    DataOutputStream dos;
-
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
     double mean = 0.0;
@@ -197,6 +193,16 @@ public class CCP4MapWriter {
     sd = sqrt(sd / n);
 
     if (norm) {
+      if (logger.isLoggable(Level.INFO)) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n Normalizing CCP4 Map");
+        sb.append(format("\n  Min:           %8.4f", min));
+        sb.append(format("\n  Max:           %8.4f", max));
+        sb.append(format("\n  Mean:          %8.4f", mean));
+        sb.append(format("\n  Standard Dev.: %8.4f", sd));
+        logger.info(sb.toString());
+      }
+
       for (int k = 0; k < extz; k++) {
         for (int j = 0; j < exty; j++) {
           for (int i = 0; i < extx; i++) {
@@ -207,6 +213,7 @@ public class CCP4MapWriter {
       }
       // recurse
       write(data, false);
+      return;
     }
 
     File file = version(new File(filename));
@@ -216,85 +223,74 @@ public class CCP4MapWriter {
       if (logger.isLoggable(Level.INFO)) {
         StringBuilder sb = new StringBuilder();
         sb.append(format("\n Writing CCP4 map file: \"%s\"", name));
-        sb.append(format("\n  Map min: %g max: %g mean: %g standard dev.: %g", min, max, mean, sd));
+        sb.append(format("\n  Min:           %8.4f", min));
+        sb.append(format("\n  Max:           %8.4f", max));
+        sb.append(format("\n  Mean:          %8.4f", mean));
+        sb.append(format("\n  Standard Dev.: %8.4f", sd));
         logger.info(sb.toString());
       }
 
-      fos = new FileOutputStream(file);
-      dos = new DataOutputStream(fos);
+      FileOutputStream fos = new FileOutputStream(file);
+      DataOutputStream dos = new DataOutputStream(fos);
 
       byte[] bytes = new byte[2048];
-      int offset = 0;
-
-      int imapdata;
-      float fmapdata;
-      String mapstr;
-
-      // header
       ByteBuffer bb = ByteBuffer.wrap(bytes);
-      bb.order(b).putInt(extx);
-      bb.order(b).putInt(exty);
-      bb.order(b).putInt(extz);
+      // Set the byte order to the native order of the operating system.
+      bb.order(ByteOrder.nativeOrder());
 
+      // Header
+      bb.putInt(extx).putInt(exty).putInt(extz);
       // mode (2 = reals, only one we accept)
-      bb.order(b).putInt(2);
+      bb.putInt(2);
+      bb.putInt(orix).putInt(oriy).putInt(oriz);
+      bb.putInt(nx).putInt(ny).putInt(nz);
 
-      bb.order(b).putInt(orix);
-      bb.order(b).putInt(oriy);
-      bb.order(b).putInt(oriz);
-      bb.order(b).putInt(nx);
-      bb.order(b).putInt(ny);
-      bb.order(b).putInt(nz);
+      bb.putFloat((float) crystal.a);
+      bb.putFloat((float) crystal.b);
+      bb.putFloat((float) crystal.c);
+      bb.putFloat((float) crystal.alpha);
+      bb.putFloat((float) crystal.beta);
+      bb.putFloat((float) crystal.gamma);
 
-      bb.order(b).putFloat((float) crystal.a);
-      bb.order(b).putFloat((float) crystal.b);
-      bb.order(b).putFloat((float) crystal.c);
-      bb.order(b).putFloat((float) crystal.alpha);
-      bb.order(b).putFloat((float) crystal.beta);
-      bb.order(b).putFloat((float) crystal.gamma);
+      bb.putInt(1).putInt(2).putInt(3);
+      bb.putFloat((float) min);
+      bb.putFloat((float) max);
+      bb.putFloat((float) mean);
 
-      bb.order(b).putInt(1);
-      bb.order(b).putInt(2);
-      bb.order(b).putInt(3);
-
-      bb.order(b).putFloat((float) min);
-      bb.order(b).putFloat((float) max);
-      bb.order(b).putFloat((float) mean);
-
-      bb.order(b).putInt(crystal.spaceGroup.number);
-      // bb.order(b).putInt(1);
+      bb.putInt(crystal.spaceGroup.number);
+      // bb.putInt(1);
 
       // symmetry bytes - should set this up at some point
       // imapdata = swap ? ByteSwap.swap(320) : 320;
-      bb.order(b).putInt(80);
-
-      bb.order(b).putInt(0);
+      bb.putInt(80);
+      bb.putInt(0);
 
       for (int i = 0; i < 12; i++) {
-        bb.order(b).putFloat(0.0f);
+        bb.putFloat(0.0f);
       }
 
       for (int i = 0; i < 15; i++) {
-        bb.order(b).putInt(0);
+        bb.putInt(0);
       }
+
+      int offset = 0;
       dos.write(bytes, offset, 208);
       bb.rewind();
 
-      mapstr = "MAP ";
+      String mapstr = "MAP ";
       dos.writeBytes(mapstr);
 
       // machine code: double, float, int, uchar
       // 0x4441 for LE, 0x1111 for BE
+      int imapdata;
       if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
         imapdata = 0x4441;
       } else {
         imapdata = 0x1111;
       }
-      bb.order(b).putInt(imapdata);
-
-      bb.order(b).putFloat((float) sd);
-
-      bb.order(b).putInt(1);
+      bb.putInt(imapdata);
+      bb.putFloat((float) sd);
+      bb.putInt(1);
       dos.write(bytes, offset, 12);
 
       StringBuilder sb = new StringBuilder();
@@ -324,8 +320,8 @@ public class CCP4MapWriter {
         for (int j = 0; j < exty; j++) {
           for (int i = 0; i < extx; i++) {
             int index = stride * (i + extx * (j + exty * k));
-            fmapdata = (float) data[index];
-            bb.order(b).putFloat(fmapdata);
+            float fmapdata = (float) data[index];
+            bb.putFloat(fmapdata);
             if (!bb.hasRemaining()) {
               dos.write(bytes);
               bb.rewind();
@@ -337,7 +333,6 @@ public class CCP4MapWriter {
         dos.write(bytes);
         bb.rewind();
       }
-
       dos.close();
     } catch (Exception e) {
       String message = "Fatal exception evaluating structure factors.\n";

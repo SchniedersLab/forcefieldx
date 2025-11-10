@@ -52,6 +52,7 @@ import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -87,7 +88,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param parallelTeam the ParallelTeam to execute the SigmaAMinimize.
+   * @param parallelTeam   the ParallelTeam to execute the SigmaAMinimize.
    */
   SigmaAMinimize(
       ReflectionList reflectionList,
@@ -103,37 +104,66 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     grad = new double[n];
     scaling = new double[n];
 
-    for (int i = 0; i < refinementData.nBins; i++) {
-      // For optimization scaling, best to move to 0.0.
-      x[i] = refinementData.sigmaA[i] - 1.0;
-      scaling[i] = 1.0;
-      x[i + refinementData.nBins] = refinementData.sigmaW[i];
-      scaling[i + refinementData.nBins] = 2.0;
-    }
-
-    // Generate Es
-    int type = SplineEnergy.Type.FCTOESQ;
+    // Generate Fc to Esq Spline
+    SplineEnergy.SplineType type = SplineEnergy.SplineType.FCTOESQ;
     SplineMinimize splineMinimize =
         new SplineMinimize(reflectionList, refinementData, refinementData.esqFc, type);
-    splineMinimize.minimize(7, 1.0);
+    splineMinimize.minimize(7, 1.0e-1);
 
-    type = SplineEnergy.Type.FOTOESQ;
+    // Generate Fo to Esq Spline
+    type = SplineEnergy.SplineType.FOTOESQ;
     splineMinimize = new SplineMinimize(reflectionList, refinementData, refinementData.esqFo, type);
-    splineMinimize.minimize(7, 1.0);
+    splineMinimize.minimize(7, 1.0e-1);
 
-    setWEstimate();
+    int offset = refinementData.nBins;
+    for (int i = 0; i < refinementData.nBins; i++) {
+      // Sigma A "s" parameter.
+      x[i] = 1.0;
+      scaling[i] = 1.0;
+      // Sigma A "w" parameter.
+      x[i + offset] = 0.05;
+      scaling[i + offset] = 20.0;
+    }
+    sigmaAEnergy.setScaling(scaling);
+    sigmaAEnergy.scaleCoordinates(x);
+
+    logger.fine(" S=1.0, W=0.05");
+    logger.fine(format(" Likelihood Target:        %16.8f", calculateLikelihood()));
+    logger.fine(format(" Likelihood Target (Free): %16.8f", calculateLikelihoodFree()));
+
+//    for (int i = 0; i < refinementData.nBins; i++) {
+//      x[i] = refinementData.sigmaA[i];
+//      scaling[i] = 1.0;
+//      x[i + refinementData.nBins] = refinementData.sigmaW[i];
+//      scaling[i + refinementData.nBins] = 2.0;
+//    }
+//    setWEstimate();
+//    logger.info(" Default:");
+//    logger.info(format(" Likelihood Target:        %16.8f", calculateLikelihood()));
+//    logger.info(format(" Likelihood Target (Free): %16.8f", calculateLikelihoodFree()));
+//    sigmaAEnergy.setScaling(scaling);
+//    sigmaAEnergy.unscaleCoordinates(x);
+//    logSigmA();
+//    sigmaAEnergy.scaleCoordinates(x);
+
   }
 
-  /**
-   * calculateLikelihoodFree
-   *
-   * @return a double.
-   */
-  public double calculateLikelihoodFree() {
-    sigmaAEnergy.setScaling(scaling);
-    double energy = sigmaAEnergy.energyAndGradient(x, grad);
-    sigmaAEnergy.setScaling(null);
-    return energy;
+  private void logSigmA() {
+    int offset = refinementData.nBins;
+    StringBuilder sigA = new StringBuilder(" Sigma A: ");
+    StringBuilder sigAScale = new StringBuilder(" Scale A: ");
+    StringBuilder sigW = new StringBuilder(" Sigma W: ");
+    StringBuilder sigWScale = new StringBuilder(" Scale W: ");
+    for (int i = 0; i < refinementData.nBins; i++) {
+      sigA.append(format("%5.3f ", x[i]));
+      sigW.append(format("%5.3f ", x[i + offset]));
+      sigAScale.append(format("%5.3f ", scaling[i]));
+      sigWScale.append(format("%5.3f ", scaling[i + offset]));
+    }
+    logger.info(sigA.toString());
+    logger.info(sigAScale.toString());
+    logger.info(sigW.toString());
+    logger.info(sigWScale.toString());
   }
 
   /**
@@ -181,7 +211,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
   /**
    * minimize
    *
-   * @param m a int.
+   * @param m   a int.
    * @param eps a double.
    * @return a {@link ffx.xray.SigmaAEnergy} object.
    */
@@ -208,10 +238,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         logger.warning("\n Optimization failed.\n");
     }
 
+    sigmaAEnergy.unscaleCoordinates(x);
+    int offset = refinementData.nBins;
     for (int i = 0; i < refinementData.nBins; i++) {
-      refinementData.sigmaA[i] = 1.0 + x[i] / scaling[i];
-      int index = i + refinementData.nBins;
-      refinementData.sigmaW[i] = x[index] / scaling[index];
+      refinementData.sigmaA[i] = x[i];
+      refinementData.sigmaW[i] = x[i + offset];
     }
 
     if (logger.isLoggable(Level.INFO)) {
@@ -221,24 +252,27 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
       logger.info(sb.toString());
     }
 
-    sigmaAEnergy.setScaling(null);
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(" Final Result: ");
+      logSigmA();
+      sigmaAEnergy.setScaling(scaling);
+      sigmaAEnergy.scaleCoordinates(x);
+      logger.fine(format(" Likelihood Target:        %16.8f", calculateLikelihood()));
+      logger.fine(format(" Likelihood Target (Free): %16.8f", calculateLikelihoodFree()));
+      sigmaAEnergy.setScaling(null);
+    }
+
     return sigmaAEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public boolean optimizationUpdate(
-      int iter,
-      int nBFGS,
-      int nfun,
-      double grms,
-      double xrms,
-      double f,
-      double df,
-      double angle,
-      LineSearchResult info) {
+  public boolean optimizationUpdate(int iter, int nBFGS, int nfun, double grms, double xrms,
+                                    double f, double df, double angle, LineSearchResult info) {
     long currentTime = System.nanoTime();
-    Double seconds = (currentTime - time) * 1.0e-9;
+    Double seconds = (currentTime - time) * NS2SEC;
     time = currentTime;
     this.grms = grms;
     this.nSteps = iter;
@@ -256,10 +290,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     } else {
       if (info == LineSearchResult.Success) {
         logger.info(format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8.3f",
-                iter, f, grms, df, xrms, angle, nfun, seconds));
+            iter, f, grms, df, xrms, angle, nfun, seconds));
       } else {
         logger.info(format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8s",
-                iter, f, grms, df, xrms, angle, nfun, info));
+            iter, f, grms, df, xrms, angle, nfun, info));
       }
     }
     if (terminate) {
@@ -270,7 +304,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void terminate() {
     terminate = true;
@@ -319,12 +355,12 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
       mean += (wi - mean) / tot;
     }
-    logger.info(format(" Starting mean w:    %8.3f", mean));
+    logger.fine(format(" Starting mean w:    %8.3f", mean));
     double initialScale = 0.01;
     if (mean > 0.0) {
       initialScale = 1.0 / mean;
     }
-    logger.info(format(" Starting w scaling: %8.3f", initialScale));
+    logger.fine(format(" Starting w scaling: %8.3f", initialScale));
     for (int i = 0; i < refinementData.nBins; i++) {
       x[i] -= x[i + refinementData.nBins];
       x[i] *= scaling[i];
@@ -351,7 +387,18 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     sigmaAEnergy.setScaling(scaling);
     sigmaAEnergy.energyAndGradient(x, grad);
     sigmaAEnergy.setScaling(null);
-
     return refinementData.llkR;
+  }
+
+  /**
+   * calculateLikelihoodFree
+   *
+   * @return a double.
+   */
+  public double calculateLikelihoodFree() {
+    sigmaAEnergy.setScaling(scaling);
+    double energy = sigmaAEnergy.energyAndGradient(x, grad);
+    sigmaAEnergy.setScaling(null);
+    return energy;
   }
 }

@@ -35,58 +35,45 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.parallel;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.util.logging.Logger;
 
-import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.crystal.HKL;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.AtomType;
-import ffx.xray.scatter.XRayFormFactor;
-import org.junit.Before;
-import org.junit.Test;
+import static java.lang.String.format;
 
 /**
- * @author Timothy D. Fenn
+ * Enum representing the different methods of grid processing.
  */
-public class FormFactorTest extends AlgorithmsTest {
+public enum GridMethod {
+  /**
+   * Decompose into 3D special domains..
+   */
+  SPATIAL,
+  /**
+   * Decompose into 2D slices.
+   */
+  SLICE,
+  /**
+   * Decompose into 1D rows.
+   */
+  ROW;
 
-  private XRayFormFactor carbonFormFactor;
+  // Private logger for the parse method.
+  private static final Logger logger = Logger.getLogger(GridMethod.class.getName());
 
-  @Before
-  public void setUp() {
-    double[] d = new double[3];
-    double[] anisou = new double[6];
-    anisou[0] = anisou[1] = anisou[2] = 1.0;
-    anisou[3] = anisou[4] = anisou[5] = 0.0;
-    Atom carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A', 1.0, 20.0, "A");
-    AtomType atomType = new AtomType(1, 1, "C", null, 6, 12.01, 1);
-    carbon.setAtomType(atomType);
-    carbon.setAltLoc('A');
-    carbon.setAnisou(anisou);
-    carbonFormFactor = new XRayFormFactor(carbon, false);
-  }
-
-  @Test
-  public void testCarbonFF() {
-    assertNotNull(" Carbon form factors should exist", XRayFormFactor.getFormFactor("6"));
-    double[][] formFactor = XRayFormFactor.getFormFactor("6");
-
-    assertEquals(" Carbon form factors", 5, (int) formFactor[0][0]);
-    assertEquals(" Carbon form factors", 2.09921, formFactor[1][0], 0.0001);
-    assertEquals(" Carbon form factors", 13.18997, formFactor[2][0], 0.0001);
-  }
-
-  @Test
-  public void testCarbonfrho() {
-    HKL hkl = new HKL(1, 1, 1);
-    assertEquals("carbon (1 1 1) structure factor should be correct", 2.3986e-26,
-        carbonFormFactor.f(hkl), 1e-30);
-
-    double[] xyz = {1.0, 1.0, 1.0};
-    assertEquals("carbon (1 1 1) electron density should be correct", 0.081937,
-        carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
+  /**
+   * Parses the provided method name and returns the corresponding GridMethod enum value.
+   * If the provided method name is not recognized, the default value SLICE is returned.
+   *
+   * @param methodName the name of the grid method to parse (case-insensitive, trimming whitespace).
+   * @return the GridMethod corresponding to the provided method name.
+   */
+  public static GridMethod parse(String methodName) {
+    try {
+      return valueOf(methodName.trim().toUpperCase());
+    } catch (Exception e) {
+      logger.info(format(" %s was not recognized; SLICE grid method selected.", methodName));
+      return SLICE;
+    }
   }
 }

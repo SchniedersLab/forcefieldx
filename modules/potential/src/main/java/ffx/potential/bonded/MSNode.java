@@ -194,6 +194,22 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
+   * Returns the first active heavy atom in the list of atoms for the current structure.
+   * Heavy atoms are defined as non-hydrogen atoms.
+   *
+   * @return The first heavy atom found in the structure or null if no active heavy atom is present.
+   */
+  public Atom getFirstActiveHeavyAtom() {
+    List<Atom> atomList = getAtomList();
+    for (Atom atom : atomList) {
+      if (atom.isHeavy() && atom.isActive()) {
+        return atom;
+      }
+    }
+    return null;
+  }
+
+  /**
    * getAtomList.
    *
    * @param originalOrder a boolean.

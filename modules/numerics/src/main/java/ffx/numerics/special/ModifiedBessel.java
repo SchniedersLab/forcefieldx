@@ -43,7 +43,7 @@ import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * Implementation of the modified Bessel function of the first kind using Chebyshev polynomials.
+ * Modified Bessel function of the first kind implementation using Chebyshev polynomials.
  * <p>
  * Adapted from the CERN "cern.jet.math.tdouble" package as included with the
  * <a href="http://sourceforge.net/projects/parallelcolt">ParallelColt library</a>.
@@ -196,7 +196,7 @@ public class ModifiedBessel {
    * Modified zero-order Bessel function.
    * <p>
    * The function is defined as i0(x) = J0( ix ). The range is partitioned into the two intervals
-   * [0,8] and (8, infinity). Chebyshev polynomial expansions are employed in each interval.
+   * [0,8] and (8, infinity). Chebyshev polynomial expansions are used in each interval.
    *
    * @param x input parameter
    * @return i0(x)

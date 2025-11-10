@@ -45,6 +45,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.numerics.math.ScalarMath.b2u;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -71,7 +72,11 @@ public class DiffractionRefinementData {
   public final double[][] fomPhi;
   /** mFo - DFc coefficients. */
   public final double[][] foFc1;
-
+  /** 2mFo - DFc coefficients. */
+  final double[][] foFc2;
+  /**
+   * F / Sig_F Cutoff.
+   */
   public final double fSigFCutoff;
   /** Number of scale parameters. */
   final int nScale;
@@ -79,8 +84,6 @@ public class DiffractionRefinementData {
   final double[][] fSigF;
   /** Scaled sum of Fc and Fs */
   final double[][] fcTot;
-  /** 2mFo - DFc coefficients. */
-  final double[][] foFc2;
   /** Derivatives with respect to Fc. */
   final double[][] dFc;
   /** Derivatives with respect to Fs. */
@@ -111,10 +114,12 @@ public class DiffractionRefinementData {
   double[] esqFc;
   /** Scaled, E-like Fo. */
   double[] esqFo;
-  /** Bulk solvent parameters. */
-  double solventA, solventB;
-  /** bulk solvent scale and Ueq */
+  /** Bulk solvent scale and Ueq */
   double bulkSolventK, bulkSolventUeq;
+  /**
+   * If true, the bulk solvent K and Ueq were set by properties and are fixed.
+   */
+  boolean bulkSolventFixed = false;
   /** Overall model scale. */
   double modelScaleK;
   /** model anisotropic B */
@@ -169,7 +174,7 @@ public class DiffractionRefinementData {
 
     // Initial guess for scaling/bulk solvent correction.
     bulkSolventK = 0.33;
-    bulkSolventUeq = 50.0 / (8.0 * PI * PI);
+    bulkSolventUeq = b2u(50.0);
     modelScaleK = 0.0;
   }
 

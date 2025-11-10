@@ -51,7 +51,7 @@ public class GradientOptions {
   /**
    * The ArgGroup keeps the GradientOptions together when printing help.
    */
-  @ArgGroup(heading = "%n Gradient Options%n", validate = false)
+  @ArgGroup(heading = "%n Coordinate Gradient Options%n", validate = false)
   private final GradientOptionGroup group = new GradientOptionGroup();
 
   /**

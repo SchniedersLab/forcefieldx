@@ -42,12 +42,14 @@ import ffx.crystal.ReflectionList;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
 import ffx.numerics.optimization.OptimizationListener;
-import ffx.xray.SplineEnergy.Type;
+import ffx.xray.SplineEnergy.SplineType;
 
 import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.utilities.Constants.NS2SEC;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 /**
@@ -61,12 +63,14 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
   private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
 
   private final SplineEnergy splineEnergy;
+  private final SplineType splineType;
   private final int n;
   private final double[] x;
   private final double[] grad;
   private final double[] scaling;
   private boolean done = false;
   private boolean terminate = false;
+  private long time;
   private double grms;
   private int nSteps;
 
@@ -75,21 +79,19 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param x an array of double.
-   * @param type a int.
+   * @param x              an array of double.
+   * @param type           the SplineType.
    */
-  public SplineMinimize(
-      ReflectionList reflectionList,
-      DiffractionRefinementData refinementData,
-      double[] x,
-      int type) {
+  public SplineMinimize(ReflectionList reflectionList,
+                        DiffractionRefinementData refinementData, double[] x, SplineType type) {
     this.x = x;
+    this.splineType = type;
     n = x.length;
     splineEnergy = new SplineEnergy(reflectionList, refinementData, n, type);
     grad = new double[n];
     scaling = new double[n];
     for (int i = 0; i < n; i++) {
-      if (type == Type.FOTOESQ || type == Type.FCTOESQ) {
+      if (type == SplineType.FOTOESQ || type == SplineType.FCTOESQ) {
         x[i] = 0.1;
       } else {
         x[i] = 1.0;
@@ -124,26 +126,17 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
   /**
    * minimize
    *
-   * @return a {@link ffx.xray.SplineEnergy} object.
-   */
-  public SplineEnergy minimize() {
-    return minimize(0.5);
-  }
-
-  /**
-   * minimize
-   *
    * @param eps a double.
    * @return a {@link ffx.xray.SplineEnergy} object.
    */
   public SplineEnergy minimize(double eps) {
-    return minimize(5, eps);
+    return minimize(7, eps);
   }
 
   /**
-   * minimize
+   * Minimize
    *
-   * @param m a int.
+   * @param m   a int.
    * @param eps a double.
    * @return a {@link ffx.xray.SplineEnergy} object.
    */
@@ -154,14 +147,15 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     double e = splineEnergy.energyAndGradient(x, grad);
 
     done = false;
+    time = -System.nanoTime();
     int status = LBFGS.minimize(n, m, x, e, grad, eps, splineEnergy, this);
     done = true;
     switch (status) {
       case 0:
-        logger.fine(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+        logger.fine(format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
         break;
       case 1:
-        logger.fine(String.format("\n Optimization terminated at step %d.\n", nSteps));
+        logger.fine(format("\n Optimization terminated at step %d.\n", nSteps));
         break;
       default:
         logger.warning("\n Spline Optimization failed.\n");
@@ -172,20 +166,45 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     return splineEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public boolean optimizationUpdate(
-      int iter,
-      int nBFGS,
-      int nfun,
-      double grms,
-      double xrms,
-      double f,
-      double df,
-      double angle,
-      LineSearchResult info) {
+  public boolean optimizationUpdate(int iter, int nBFGS, int nfun, double grms, double xrms, double f,
+                                    double df, double angle, LineSearchResult info) {
+
+    long currentTime = System.nanoTime();
+    Double seconds = (currentTime - time) * NS2SEC;
+    time = currentTime;
     this.grms = grms;
     this.nSteps = iter;
+
+    Level level = Level.FINE;
+
+    if (logger.isLoggable(level)) {
+      if (iter == 0) {
+        String name = splineType.toString();
+        if (nBFGS > 0) {
+          logger.log(level, format("\n Limited Memory BFGS Quasi-Newton Optimization of %s", name));
+        } else {
+          logger.log(level, format("\n Steepest Decent Optimization of %s", name));
+        }
+        logger.log(level, format(" Number of Parameters: %d\n", n));
+        logger.log(level," Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
+      }
+      if (info == null) {
+        logger.log(level, format("%6d %12.2e %10.2e", iter, f, grms));
+      } else {
+        if (info == LineSearchResult.Success) {
+          logger.log(level, format("%6d %12.2e %10.2e %10.5e %9.5f %8.2f %6d %8.3f",
+              iter, f, grms, df, xrms, angle, nfun, seconds));
+        } else {
+          logger.log(level, format("%6d %12.2e %10.2e %10.5e %9.5f %8.2f %6d %8s",
+              iter, f, grms, df, xrms, angle, nfun, info));
+        }
+      }
+    }
+
     if (terminate) {
       logger.info(" The optimization received a termination request.");
       // Tell the L-BFGS optimizer to terminate.
@@ -194,7 +213,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void terminate() {
     terminate = true;

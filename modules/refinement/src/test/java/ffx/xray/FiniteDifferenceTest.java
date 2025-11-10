@@ -38,7 +38,7 @@
 package ffx.xray;
 
 import static ffx.numerics.math.ScalarMath.b2u;
-import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
+import static ffx.xray.solvent.SolventModel.NONE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -52,8 +52,8 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parallel.GridMethod;
+import ffx.xray.solvent.SolventModel;
 import ffx.xray.parsers.MTZFilter;
 
 import java.io.File;
@@ -61,6 +61,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import ffx.xray.refine.RefinementMode;
+import ffx.xray.scatter.XRayFormFactor;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +112,11 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
     MTZFilter mtzFilter = new MTZFilter();
     ReflectionList reflectionList;
     Crystal crystal = Crystal.checkProperties(properties);
-    Resolution resolution = Resolution.checkProperties(properties);
+    double defaultResolution = -1.0;
+    if (crystal != null) {
+      defaultResolution = mtzFilter.getResolution(mtzFile, crystal);
+    }
+    Resolution resolution = Resolution.checkProperties(properties, false, defaultResolution);
     if (crystal == null || resolution == null) {
       reflectionList = mtzFilter.getReflectionList(mtzFile);
     } else {
@@ -132,7 +138,6 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
     // initialize atomic form factors
     for (Atom atom : atomArray) {
       XRayFormFactor xrayFormFactor = new XRayFormFactor(atom, use_3g, 2.0);
-      atom.setFormFactorIndex(xrayFormFactor.ffIndex);
       if (atom.getOccupancy() == 0.0) {
         atom.setFormFactorWidth(1.0);
         continue;
@@ -158,12 +163,7 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
     }
 
     String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
-    CrystalReciprocalSpace.GridMethod gridMethod;
-    try {
-      gridMethod = CrystalReciprocalSpace.GridMethod.valueOf(gridString);
-    } catch (Exception e) {
-      gridMethod = CrystalReciprocalSpace.GridMethod.SLICE;
-    }
+    GridMethod gridMethod = GridMethod.parse(gridString);
 
     // set up FFT and run it
     ParallelTeam parallelTeam = new ParallelTeam();
@@ -182,7 +182,7 @@ public class FiniteDifferenceTest extends AlgorithmsTest {
     sigmaAMinimize = new SigmaAMinimize(reflectionList, refinementData, parallelTeam);
     sigmaAMinimize.minimize(7, 2.0e-2);
 
-    SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+    SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData, refinementData.spline, SplineEnergy.SplineType.FOFC);
     splineMinimize.minimize(7, 1e-5);
 
     CrystalStats crystalstats = new CrystalStats(reflectionList, refinementData);

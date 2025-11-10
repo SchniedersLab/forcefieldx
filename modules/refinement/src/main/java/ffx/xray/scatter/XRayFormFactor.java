@@ -35,11 +35,11 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.scatter;
 
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
 
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -68,16 +68,16 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank"> Z. Su and P. Coppens,
- *     Acta Cryst. (1997). A53, 749-762</a>
+ * Acta Cryst. (1997). A53, 749-762</a>
  * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank"> Z. Su and P. Coppens,
- *     Acta Cryst. (1998). A54, 357</a>
+ * Acta Cryst. (1998). A54, 357</a>
  * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank"> The Coppens
- *     lab website (Source data)</a>
+ * lab website (Source data)</a>
  * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3"
- *     target="_blank"> R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams. Newsletter of the IUCr
- *     Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ * target="_blank"> R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams. Newsletter of the IUCr
+ * Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank"> M. J. Schnieders, T.
- *     D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst. (2009). D65 952-965.</a>
+ * D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst. (2009). D65 952-965.</a>
  * @since 1.0
  */
 public final class XRayFormFactor implements FormFactor {
@@ -1276,7 +1276,7 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * Constructor for XRayFormFactor.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param atom  a {@link ffx.potential.bonded.Atom} object.
    * @param use3G a boolean.
    */
   public XRayFormFactor(Atom atom, boolean use3G) {
@@ -1286,9 +1286,9 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * Constructor for XRayFormFactor.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param atom  a {@link ffx.potential.bonded.Atom} object.
    * @param use3G a boolean.
-   * @param badd a double.
+   * @param badd  a double.
    */
   public XRayFormFactor(Atom atom, boolean use3G, double badd) {
     this(atom, use3G, badd, atom.getXYZ(null));
@@ -1297,10 +1297,10 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * Constructor for XRayFormFactor.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param atom  a {@link ffx.potential.bonded.Atom} object.
    * @param use3G a boolean.
-   * @param badd a double.
-   * @param xyz an array of double.
+   * @param badd  a double.
+   * @param xyz   an array of double.
    */
   public XRayFormFactor(Atom atom, boolean use3G, double badd, double[] xyz) {
     this.atom = atom;
@@ -1312,31 +1312,25 @@ public final class XRayFormFactor implements FormFactor {
       charge = (int) atom.getMultipoleType().getCharge();
     }
 
-    int atomindex = atom.getFormFactorIndex();
-    if (atomindex < 0) {
-      // if it has a charge, first try to find Su&Coppens 6G params
-      if (formFactors.containsKey(key + "_" + charge)) {
-        formFactor = getFormFactor(key + "_" + charge);
-      } else {
-        // if not, use 3G params if requested
-        if (use3G) {
-          // first look for charged form
-          if (formFactors.containsKey(key + "_" + charge + "_3g")) {
-            formFactor = getFormFactor(key + "_" + charge + "_3g");
-          } else {
-            // if this fails, we don't have the SFs
-            formFactor = getFormFactor(key + "_3g");
-          }
-        } else {
-          formFactor = getFormFactor(key);
-        }
-      }
-      ffIndex = (int) formFactor[0][0];
-      atom.setFormFactorIndex(ffIndex);
+
+    // if it has a charge, first try to find Su&Coppens 6G params
+    if (formFactors.containsKey(key + "_" + charge)) {
+      formFactor = getFormFactor(key + "_" + charge);
     } else {
-      ffIndex = atomindex;
-      formFactor = ffactors[atomindex];
+      // if not, use 3G params if requested
+      if (use3G) {
+        // first look for charged form
+        if (formFactors.containsKey(key + "_" + charge + "_3g")) {
+          formFactor = getFormFactor(key + "_" + charge + "_3g");
+        } else {
+          // if this fails, we don't have the SFs
+          formFactor = getFormFactor(key + "_3g");
+        }
+      } else {
+        formFactor = getFormFactor(key);
+      }
     }
+    ffIndex = (int) formFactor[0][0];
 
     int i;
     for (i = 0; i < formFactor[1].length; i++) {
@@ -1405,7 +1399,7 @@ public final class XRayFormFactor implements FormFactor {
    * @param atom a {@link java.lang.String} object.
    * @return an array of double.
    */
-  static double[][] getFormFactor(String atom) {
+  public static double[][] getFormFactor(String atom) {
     double[][] formFactor = null;
     if (formFactors.containsKey(atom)) {
       formFactor = formFactors.get(atom);
@@ -1429,7 +1423,7 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * f_n
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
+   * @param hkl        a {@link ffx.crystal.HKL} object.
    * @param nGaussians a int.
    * @return a double.
    */
@@ -1442,25 +1436,33 @@ public final class XRayFormFactor implements FormFactor {
     return occupancy * sum;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double rho(double f, double lambda, double[] xyz) {
     return rhoN(f, lambda, xyz, nGaussians);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementMode) {
     rhoGradN(xyz, nGaussians, dfc, refinementMode);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void update(double[] xyz) {
     update(xyz, u2b(uAdd));
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void update(double[] xyz, double bAdd) {
     this.xyz[0] = xyz[0];
@@ -1511,10 +1513,10 @@ public final class XRayFormFactor implements FormFactor {
       if (bIso < 0.0) {
         StringBuilder sb = new StringBuilder();
         sb.append(" Negative B factor for atom: ").append(atom);
-        sb.append("\n Resetting B to 0.01\n");
+        sb.append("\n Resetting B to 5.0\n");
         logger.warning(sb.toString());
-        bIso = 0.01;
-        atom.setTempFactor(0.01);
+        bIso = 5.0;
+        atom.setTempFactor(5.0);
       }
       anisou[0] = anisou[1] = anisou[2] = b2u(bIso);
       anisou[3] = anisou[4] = anisou[5] = 0.0;
@@ -1541,9 +1543,9 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * rho_n
    *
-   * @param f a double.
-   * @param lambda a double.
-   * @param xyz an array of double.
+   * @param f          a double.
+   * @param lambda     a double.
+   * @param xyz        an array of double.
    * @param nGaussians a int.
    * @return a double.
    */
@@ -1566,10 +1568,10 @@ public final class XRayFormFactor implements FormFactor {
   /**
    * rho_grad_n
    *
-   * @param xyz an array of double.
-   * @param nGaussians a int.
-   * @param dfc a double.
-   * @param refinementMode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+   * @param xyz            an array of double.
+   * @param nGaussians     a int.
+   * @param dfc            a double.
+   * @param refinementMode a {@link RefinementMode} object.
    */
   private void rhoGradN(double[] xyz, int nGaussians, double dfc, RefinementMode refinementMode) {
     assert (nGaussians > 0 && nGaussians <= this.nGaussians);
@@ -1584,31 +1586,10 @@ public final class XRayFormFactor implements FormFactor {
     fill(gradp, 0.0);
     fill(gradu, 0.0);
     double aex;
-    boolean refinexyz = false;
-    boolean refineb = false;
-    boolean refineanisou = false;
-    boolean refineocc = false;
-    if (refinementMode == RefinementMode.COORDINATES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      refinexyz = true;
-    }
-    if (refinementMode == RefinementMode.BFACTORS
-        || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      refineb = true;
-      if (hasAnisou) {
-        refineanisou = true;
-      }
-    }
-    if (refinementMode == RefinementMode.OCCUPANCIES
-        || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      refineocc = true;
-    }
+    boolean refinexyz = refinementMode.includesCoordinates();
+    boolean refineb = refinementMode.includesBFactors();
+    boolean refineanisou = refineb && hasAnisou;
+    boolean refineocc = refinementMode.includesOccupancies();
 
     for (int i = 0; i < nGaussians; i++) {
       aex = ainv[i] * exp(-0.5 * quadForm(dxyz, uinv[i]));

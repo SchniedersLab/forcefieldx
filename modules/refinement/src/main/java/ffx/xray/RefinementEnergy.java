@@ -45,23 +45,18 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Descriptions;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-import ffx.potential.parameters.ForceField;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
+import ffx.xray.refine.RefinementModel;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
@@ -79,203 +74,110 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
   private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
 
-  /** MolecularAssembly instances being refined. */
-  private final MolecularAssembly[] molecularAssemblies;
-  /** Container to huge experimental data. */
+  /**
+   * Container to store experimental data.
+   */
   private final DataContainer data;
-  /** An array of atoms being refined. */
-  private final Atom[] atomArray;
-  /** The number of atoms being refined. */
-  private final int nAtoms;
-  /** An array of active atoms. */
-  private final Atom[] activeAtomArray;
-  /** An array of XYZIndex values. */
-  private final List<List<Integer>> xIndex;
-  /** The refinement mode being used. */
+  /**
+   * Refinement model to use.
+   */
+  private final RefinementModel refinementModel;
+  /**
+   * Specifies the refinement mode used in the energy refinement process.
+   * Controls the approach or strategy applied during optimization or
+   * analysis of refinement parameters.
+   */
   private final RefinementMode refinementMode;
-  /** Atomic coordinates for computing the chemical energy. */
-  private final double[][] xChemical;
-  /** Array for storing chemical gradient. */
-  private final double[][] gChemical;
-  /** A thermostat instance. */
-  protected Thermostat thermostat;
-  /** The number of XYZ coordinates being refined. */
-  int nXYZ;
-  /** The number of b-factor parameters being refined. */
-  int nBFactor;
-  /** The number of occupancy parameters being refined. */
-  int nOccupancy;
-  /** Compute fast varying forces, slowly varying forces, or both. */
-  private STATE state = STATE.BOTH;
-  /** The Potential based on experimental data. */
-  private CrystalPotential dataEnergy;
-  /** The total number of parameters being refined. */
-  private int n;
-  /** The kT scale factor. */
-  private double kTScale;
-  /** Array for storing the experimental gradient. */
-  private double[] gXray;
-  /** Total potential energy. */
+  /**
+   * Total potential energy.
+   */
   private double totalEnergy;
-  /** Optimization scale factors. */
+  /**
+   * An array of atoms being refined.
+   */
+  private final Atom[] scatteringAtoms;
+  /**
+   * The number of atoms being refined.
+   */
+  private final int nAtoms;
+  /**
+   * MolecularAssembly instances being refined.
+   */
+  private final MolecularAssembly[] molecularAssemblies;
+  /**
+   * Atomic coordinates for computing the chemical energy.
+   */
+  private final double[][] xChemical;
+  /**
+   * Array for storing chemical gradient.
+   */
+  private final double[][] gChemical;
+  /**
+   * The Potential based on experimental data.
+   */
+  private CrystalPotential dataEnergy;
+  /**
+   * Array for storing the experimental gradient.
+   */
+  private double[] gExperiment;
+  /**
+   * Optimization scale factors.
+   */
   private double[] optimizationScaling;
-  /** Print a file if there is an error in the energy. */
-  private boolean printOnFailure;
+  /**
+   * The total number of parameters being refined.
+   */
+  private final int n;
+  /**
+   * The number of XYZ coordinates being refined.
+   */
+  private final int nXYZ;
+  /**
+   * The number of b-factor parameters being refined.
+   */
+  private final int nBFactor;
+  /**
+   * The number of occupancy parameters being refined.
+   */
+  private final int nOccupancy;
+  /**
+   * Compute fast varying forces, slowly varying forces, or both.
+   */
+  private STATE state = STATE.BOTH;
 
   /**
-   * RefinementEnergy Constructor.
-   *
-   * @param data input {@link DiffractionData data} for refinement
-   * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for refinement
+   * A thermostat instance.
    */
-  public RefinementEnergy(DataContainer data, RefinementMode refinementMode) {
-    this(data, refinementMode, null);
-  }
+  protected Thermostat thermostat;
+  /**
+   * The kT scale factor.
+   */
+  private double kTScale;
 
   /**
-   * RefinementEnergy Constructor.
+   * Constructs a RefinementEnergy instance with the input data and optimization scaling factors.
    *
-   * @param data input {@link DiffractionData data} for refinement
-   * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for refinement
-   * @param optimizationScaling scaling of refinement parameters
+   * @param dataContainer the data container that provides refinement-related data such as
+   *                      refinement model, scattering atoms, and molecular assemblies
    */
-  @SuppressWarnings("fallthrough")
-  public RefinementEnergy(
-      DataContainer data, RefinementMode refinementMode, double[] optimizationScaling) {
+  public RefinementEnergy(DataContainer dataContainer) {
+    this.data = dataContainer;
+    refinementModel = dataContainer.getRefinementModel();
+    refinementMode = refinementModel.getRefinementMode();
+    molecularAssemblies = refinementModel.getMolecularAssemblies();
+    scatteringAtoms = refinementModel.getScatteringAtoms();
+    nAtoms = scatteringAtoms.length;
 
-    this.data = data;
-    this.refinementMode = refinementMode;
-    this.optimizationScaling = optimizationScaling;
-    molecularAssemblies = data.getMolecularAssemblies();
-    atomArray = data.getAtomArray();
-    nAtoms = atomArray.length;
-
-    RefinementModel refinementModel = data.getRefinementModel();
-
-    // Determine if lambda derivatives are needed.
-    ForceField forceField = molecularAssemblies[0].getForceField();
-    // boolean lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
-    printOnFailure = forceField.getBoolean("PRINT_ON_FAILURE", true);
-
-    // Fill an active atom array.
-    int count = 0;
-    int nUse = 0;
-    for (Atom a : atomArray) {
-      if (a.isActive()) {
-        count++;
-      }
-      if (a.getUse()) {
-        nUse++;
-      }
-    }
-    int nActive = count;
-    activeAtomArray = new Atom[count];
-    count = 0;
-    for (Atom a : atomArray) {
-      if (a.isActive()) {
-        activeAtomArray[count++] = a;
-      }
-    }
-
-    xIndex = refinementModel.getxIndex();
     thermostat = null;
     kTScale = 1.0;
 
-    // Determine size of fit.
-    n = nXYZ = nBFactor = nOccupancy = 0;
-    switch (refinementMode) {
-      case COORDINATES:
-        nXYZ = nActive * 3;
-        break;
-      case COORDINATES_AND_BFACTORS:
-      case COORDINATES_AND_OCCUPANCIES:
-      case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-        // Coordinate params.
-        nXYZ = nActive * 3;
-      case BFACTORS:
-      case OCCUPANCIES:
-      case BFACTORS_AND_OCCUPANCIES:
-        if (data instanceof DiffractionData) {
-          DiffractionData diffractionData = (DiffractionData) data;
-          // bfactor params
-          if (refinementMode == RefinementMode.BFACTORS
-              || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-              || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-              || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            int resnum = -1;
-            int nres = diffractionData.getnResidueBFactor() + 1;
-            for (Atom a : atomArray) {
-              // Ignore hydrogens and atoms that are not active.
-              if (a.getAtomicNumber() == 1 || !a.isActive()) {
-                continue;
-              }
-              if (a.getAnisou(null) == null) {
-                if (diffractionData.isAddAnisou()) {
-                  logger.info(
-                      format(" Adding ANISOU to %s.", a.describe(Descriptions.Resnum_Name)));
-                  double[] anisou = new double[6];
-                  double u = b2u(a.getTempFactor());
-                  anisou[0] = anisou[1] = anisou[2] = u;
-                  anisou[3] = anisou[4] = anisou[5] = 0.0;
-                  a.setAnisou(anisou);
-                  nBFactor += 6;
-                } else if (diffractionData.isResidueBFactor()) {
-                  if (resnum != a.getResidueNumber()) {
-                    if (nres >= diffractionData.getnResidueBFactor()) {
-                      nBFactor++;
-                      nres = 1;
-                    } else {
-                      nres++;
-                    }
-                    resnum = a.getResidueNumber();
-                  }
-                } else {
-                  nBFactor++;
-                }
-              } else {
-                nBFactor += 6;
-              }
-            }
-            if (diffractionData.isResidueBFactor()) {
-              if (nres < diffractionData.getnResidueBFactor()) {
-                nBFactor--;
-              }
-            }
-          }
-
-          // Occupancy params.
-          if (refinementMode == RefinementMode.OCCUPANCIES
-              || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-              || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-              || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            for (List<Residue> list : refinementModel.getAltResidues()) {
-              nOccupancy += list.size();
-            }
-            for (List<Molecule> list : refinementModel.getAltMolecules()) {
-              nOccupancy += list.size();
-            }
-            if (nActive != nAtoms) {
-              logger.severe(" Occupancy refinement is not supported with inactive atoms.");
-            }
-          }
-        } else {
-          logger.severe(" Refinement method not supported for this data type!");
-        }
-        break;
-    }
-
-    logger.info(
-        String.format(
-            "\n RefinementEnergy\n  Number of atoms:\t\t%d\n  Atoms being used:  \t\t%d\n  Active atoms: \t\t%d",
-            nAtoms, nUse, nActive));
-
+    // Set the number of refinement parameters.
+    nXYZ = refinementModel.getNumCoordParameters();
+    nBFactor = refinementModel.getNumBFactorParameters();
+    nOccupancy = refinementModel.getNumOccupancyParameters();
     n = nXYZ + nBFactor + nOccupancy;
-    logger.info(
-        String.format(
-            "  Number of variables:\t\t%d (nXYZ %d, nB %d, nOcc %d)\n",
-            n, nXYZ, nBFactor, nOccupancy));
 
-    // initialize force field and Xray energies
+    // Initialize force field and Xray energies
     for (MolecularAssembly molecularAssembly : molecularAssemblies) {
       ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
       if (forceFieldEnergy == null) {
@@ -284,15 +186,17 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
       }
     }
 
-    if (data instanceof DiffractionData) {
-      DiffractionData diffractionData = (DiffractionData) data;
+    if (dataContainer instanceof DiffractionData diffractionData) {
       if (!diffractionData.getScaled()[0]) {
         diffractionData.printStats();
       }
-      dataEnergy = new XRayEnergy(diffractionData, nXYZ, nBFactor, nOccupancy, refinementMode);
-    } else if (data instanceof RealSpaceData) {
-      RealSpaceData realSpaceData = (RealSpaceData) data;
-      dataEnergy = new RealSpaceEnergy(realSpaceData, nXYZ, 0, 0, refinementMode);
+      dataEnergy = new XRayEnergy(diffractionData);
+      // We will handle parameter (un)scaling within this class.
+      dataEnergy.setScaling(null);
+    } else if (dataContainer instanceof RealSpaceData realSpaceData) {
+      dataEnergy = new RealSpaceEnergy(realSpaceData);
+      // We will handle parameter (un)scaling within this class.
+      dataEnergy.setScaling(null);
     }
 
     int assemblySize = molecularAssemblies.length;
@@ -303,9 +207,12 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
       xChemical[i] = new double[len];
       gChemical[i] = new double[len];
     }
+    gExperiment = new double[n];
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean algorithmUpdate(MolecularAssembly active) {
     if (thermostat != null) {
@@ -316,19 +223,25 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     return dataEnergy.destroy();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
     return energy(x, false);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x, boolean print) {
     double weight = data.getWeight();
@@ -339,46 +252,25 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     unscaleCoordinates(x);
+    refinementModel.setParameters(x);
+    RefinementMode refinementMode = refinementModel.getRefinementMode();
 
-    int assemblysize = molecularAssemblies.length;
-    switch (refinementMode) {
-      case COORDINATES:
-        // Compute the chemical energy.
-        for (int i = 0; i < assemblysize; i++) {
-          ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-          getAssemblyi(i, x, xChemical[i]);
-          double curE = fe.energy(xChemical[i], print);
-          e += (curE - e) / (i + 1);
-        }
-        double chemE = e;
+    int numAssemblies = molecularAssemblies.length;
 
-        e = chemE * kTScale;
-
-        // Compute the X-ray target energy.
-        double xE = dataEnergy.energy(x, print);
-        e += weight * xE;
-        break;
-      case BFACTORS:
-      case OCCUPANCIES:
-      case BFACTORS_AND_OCCUPANCIES:
-        // Compute the X-ray target energy and gradient.
-        e = dataEnergy.energy(x, print);
-        break;
-      case COORDINATES_AND_BFACTORS:
-      case COORDINATES_AND_OCCUPANCIES:
-      case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-        // Compute the chemical energy and gradient.
-        for (int i = 0; i < assemblysize; i++) {
-          ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-          getAssemblyi(i, x, xChemical[i]);
-          double curE = fe.energy(xChemical[i], print);
-          e += (curE - e) / (i + 1);
-        }
-        e += weight * dataEnergy.energy(x, print);
-        break;
-      default:
-        String message = "Unknown refinement mode.";
-        logger.log(Level.SEVERE, message);
+    if (refinementMode.includesCoordinates()) {
+      // Compute the chemical energy.
+      for (int i = 0; i < numAssemblies; i++) {
+        ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+        forceFieldEnergy.getCoordinates(xChemical[i]);
+        double curE = forceFieldEnergy.energy(xChemical[i], print);
+        e += curE;
+      }
+      e = e * kTScale / numAssemblies;
+      // Compute the experimental target energy.
+      e += weight * dataEnergy.energy(x, print);
+    } else {
+      // Only compute the experimental target energy.
+      e = dataEnergy.energy(x, print);
     }
 
     scaleCoordinates(x);
@@ -407,154 +299,111 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     double weight = data.getWeight();
     double e = 0.0;
     fill(g, 0.0);
+    fill(gExperiment, 0.0);
 
     if (thermostat != null) {
       kTScale = KCAL_TO_GRAM_ANG2_PER_PS2 / (thermostat.getTargetTemperature() * kB);
     }
 
     unscaleCoordinates(x);
+    refinementModel.setParameters(x);
 
-    int assemblysize = molecularAssemblies.length;
-    switch (refinementMode) {
-      case COORDINATES:
-        // Compute the chemical energy and gradient.
-        for (int i = 0; i < assemblysize; i++) {
-          ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-          getAssemblyi(i, x, xChemical[i]);
-          double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
-          e += (curE - e) / (i + 1);
-          setAssemblyi(i, g, gChemical[i]);
-        }
-        double chemE = e;
+    if (refinementMode.includesCoordinates()) {
+      int numAssemblies = molecularAssemblies.length;
+      // Compute the chemical energy and gradient.
+      for (int i = 0; i < numAssemblies; i++) {
+        ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
+        forceFieldEnergy.getCoordinates(xChemical[i]);
+        double curE = forceFieldEnergy.energyAndGradient(xChemical[i], gChemical[i], print);
+        e += curE;
+        // Aggregate the contribution of this conformer into the overall gradient.
+        refinementModel.addAssemblyGradient(i, g);
+      }
 
-        e = chemE * kTScale;
-        // normalize gradients for multiple-counted atoms
-        if (assemblysize > 1) {
-          for (int i = 0; i < nXYZ; i++) {
-            g[i] /= assemblysize;
-          }
-        }
+      e = kTScale * e / numAssemblies;
+      // normalize gradient for multiple-counted atoms
+      if (numAssemblies > 1) {
         for (int i = 0; i < nXYZ; i++) {
-          g[i] *= kTScale;
+          g[i] /= numAssemblies;
         }
+      }
+      for (int i = 0; i < nXYZ; i++) {
+        g[i] *= kTScale;
+      }
 
-        // Compute the X-ray target energy and gradient.
-        if (gXray == null || gXray.length != nXYZ) {
-          gXray = new double[nXYZ];
-        }
-        double xE = dataEnergy.energyAndGradient(x, gXray);
-        // System.out.println("Xray E: " + xE + " scaled Xray E: " + weight * xE);
-        e += weight * xE;
+      double xE = dataEnergy.energyAndGradient(x, gExperiment);
+      e += weight * xE;
 
-        // Add the chemical and X-ray gradients.
-        for (int i = 0; i < nXYZ; i++) {
-          g[i] += weight * gXray[i];
-        }
-        break;
-      case BFACTORS:
-      case OCCUPANCIES:
-      case BFACTORS_AND_OCCUPANCIES:
-        // Compute the X-ray target energy and gradient.
-        e = dataEnergy.energyAndGradient(x, g);
-        break;
-      case COORDINATES_AND_BFACTORS:
-      case COORDINATES_AND_OCCUPANCIES:
-      case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-        // Compute the chemical energy and gradient.
-        for (int i = 0; i < assemblysize; i++) {
-          ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-          getAssemblyi(i, x, xChemical[i]);
-          double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
-          e += (curE - e) / (i + 1);
-          setAssemblyi(i, g, gChemical[i]);
-        }
-        // normalize gradients for multiple-counted atoms
-        if (assemblysize > 1) {
-          for (int i = 0; i < nXYZ; i++) {
-            g[i] /= assemblysize;
-          }
-        }
+      // Add the chemical coordinate gradient to experimental coordinate gradient.
+      for (int i = 0; i < nXYZ; i++) {
+        g[i] += weight * gExperiment[i];
+      }
 
-        // Compute the X-ray target energy and gradient.
-        if (gXray == null || gXray.length != n) {
-          gXray = new double[n];
-        }
-        e += weight * dataEnergy.energyAndGradient(x, gXray);
+//      for (int i = 0; i < 10; i++) {
+//        Atom atom = scatteringAtoms[i];
+//        double width = atom.getFormFactorWidth();
+//        double bfactor = atom.getTempFactor();
+//        double[] grad = new double[3];
+//        atom.getXYZGradient(grad);
+//        logger.info(format(" Atom Grad %d w=%16.8f b=%16.8f: %16.8f %16.8f %16.8f",
+//            i, width, bfactor, grad[0], grad[1], grad[2]));
+//        grad[0] = gExperiment[i * 3];
+//        grad[1] = gExperiment[i * 3 + 1];
+//        grad[2] = gExperiment[i * 3 + 2];
+//        logger.info(format(" Xray Grad %d w=%16.8f b=%16.8f: %16.8f %16.8f %16.8f",
+//            i, width, bfactor, grad[0], grad[1], grad[2]));
+//      }
 
-        // Add the chemical and X-ray gradients.
-        for (int i = 0; i < nXYZ; i++) {
-          g[i] += weight * gXray[i];
+      if (refinementMode.includesBFactors() || refinementMode.includesOccupancies()) {
+        for (int i = nXYZ; i < n; i++) {
+          g[i] = weight * gExperiment[i];
         }
-
-        // bfactors, occ
-        if (n > nXYZ) {
-          for (int i = nXYZ; i < n; i++) {
-            g[i] = weight * gXray[i];
-          }
-        }
-        break;
-      default:
-        String message = "Unknown refinement mode.";
-        logger.log(Level.SEVERE, message);
+      }
+    } else if (refinementMode.includesBFactors() || refinementMode.includesOccupancies()) {
+      // Compute the X-ray target energy and gradient.
+      e = dataEnergy.energyAndGradient(x, g);
     }
 
     scaleCoordinatesAndGradient(x, g);
-
     totalEnergy = e;
     return e;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getAcceleration(double[] acceleration) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    int n = getNumberOfVariables();
-    if (acceleration == null || acceleration.length < n) {
-      acceleration = new double[n];
-    }
-    int index = 0;
-    double[] a = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atomArray[i].isActive()) {
-        atomArray[i].getAcceleration(a);
-        acceleration[index++] = a[0];
-        acceleration[index++] = a[1];
-        acceleration[index++] = a[2];
-      }
-    }
-    return acceleration;
+    return dataEnergy.getAcceleration(acceleration);
   }
 
   /**
-   * getActiveAtoms.
-   *
-   * @return an array of {@link ffx.potential.bonded.Atom} objects.
+   * {@inheritDoc}
    */
-  public Atom[] getActiveAtoms() {
-    return activeAtomArray;
-  }
-
-  /** {@inheritDoc} */
   @Override
   public double[] getCoordinates(double[] parameters) {
     return dataEnergy.getCoordinates(parameters);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setCoordinates(double[] parameters) {
     dataEnergy.setCoordinates(parameters);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Crystal getCrystal() {
     return dataEnergy.getCrystal();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setCrystal(Crystal crystal) {
     logger.severe(" RefinementEnergy does implement setCrystal yet.");
@@ -569,13 +418,17 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return dataEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public STATE getEnergyTermState() {
     return state;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setEnergyTermState(STATE state) {
     this.state = state;
@@ -587,24 +440,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
   }
 
   /**
-   * get the current kT scaling weight
-   *
-   * @return kT scale
+   * {@inheritDoc}
    */
-  public double getKTScale() {
-    return this.kTScale;
-  }
-
-  /**
-   * set the current kT scaling weight
-   *
-   * @param ktscale requested kT scale
-   */
-  public void setKTScale(double ktscale) {
-    this.kTScale = ktscale;
-  }
-
-  /** {@inheritDoc} */
   @Override
   public double getLambda() {
     double lambda = 1.0;
@@ -618,7 +455,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return lambda;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setLambda(double lambda) {
     for (MolecularAssembly molecularAssembly : molecularAssemblies) {
@@ -634,57 +473,41 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getMass() {
     return dataEnergy.getMass();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     return dataEnergy.getNumberOfVariables();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getPreviousAcceleration(double[] previousAcceleration) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    int n = getNumberOfVariables();
-    if (previousAcceleration == null || previousAcceleration.length < n) {
-      previousAcceleration = new double[n];
-    }
-    int index = 0;
-    double[] a = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atomArray[i].isActive()) {
-        atomArray[i].getPreviousAcceleration(a);
-        previousAcceleration[index++] = a[0];
-        previousAcceleration[index++] = a[1];
-        previousAcceleration[index++] = a[2];
-      }
-    }
-    return previousAcceleration;
+    return dataEnergy.getPreviousAcceleration(previousAcceleration);
   }
 
   /**
-   * Getter for the field <code>printOnFailure</code>.
-   *
-   * @return a boolean.
+   * {@inheritDoc}
    */
-  public boolean getPrintOnFailure() {
-    return printOnFailure;
-  }
-
-  /** {@inheritDoc} */
   @Override
   public double[] getScaling() {
     return optimizationScaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     optimizationScaling = scaling;
@@ -708,7 +531,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     this.thermostat = thermostat;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
@@ -736,40 +561,17 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return dataEnergy.getVariableTypes();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getVelocity(double[] velocity) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    int n = getNumberOfVariables();
-    if (velocity == null || velocity.length < n) {
-      velocity = new double[n];
-    }
-    int index = 0;
-    double[] v = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      Atom a = atomArray[i];
-      if (a.isActive()) {
-        a.getVelocity(v);
-        velocity[index++] = v[0];
-        velocity[index++] = v[1];
-        velocity[index++] = v[2];
-      }
-    }
-    return velocity;
+    return dataEnergy.getVelocity(velocity);
   }
 
   /**
-   * Get the current data weight (wA).
-   *
-   * @return weight wA
+   * {@inheritDoc}
    */
-  public double getXWeight() {
-    return data.getWeight();
-  }
-
-  /** {@inheritDoc} */
   @Override
   public double getd2EdL2() {
     double d2EdL2 = 0.0;
@@ -790,7 +592,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return d2EdL2;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getdEdL() {
     double dEdL = 0.0;
@@ -817,7 +621,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     return dEdL;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void getdEdXdL(double[] gradient) {
     double weight = data.getWeight();
@@ -849,155 +655,48 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     // Compute the X-ray target energy and gradient.
-    if (gXray == null || gXray.length != nXYZ) {
-      gXray = new double[nXYZ];
+    if (gExperiment == null || gExperiment.length != nXYZ) {
+      gExperiment = new double[nXYZ];
     } else {
       for (int j = 0; j < nXYZ; j++) {
-        gXray[j] = 0.0;
+        gExperiment[j] = 0.0;
       }
     }
     if (data instanceof DiffractionData) {
       XRayEnergy xRayEnergy = (XRayEnergy) dataEnergy;
-      xRayEnergy.getdEdXdL(gXray);
+      xRayEnergy.getdEdXdL(gExperiment);
     } else if (data instanceof RealSpaceData) {
       RealSpaceEnergy realSpaceEnergy = (RealSpaceEnergy) dataEnergy;
-      realSpaceEnergy.getdEdXdL(gXray);
+      realSpaceEnergy.getdEdXdL(gExperiment);
     }
 
     // Add the chemical and X-ray gradients.
     for (int i = 0; i < nXYZ; i++) {
-      gradient[i] += weight * gXray[i];
+      gradient[i] += weight * gExperiment[i];
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setAcceleration(double[] acceleration) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    if (acceleration == null) {
-      return;
-    }
-    int index = 0;
-    double[] accel = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atomArray[i].isActive()) {
-        accel[0] = acceleration[index++];
-        accel[1] = acceleration[index++];
-        accel[2] = acceleration[index++];
-        atomArray[i].setAcceleration(accel);
-      }
-    }
+    dataEnergy.setAcceleration(acceleration);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setPreviousAcceleration(double[] previousAcceleration) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    if (previousAcceleration == null) {
-      return;
-    }
-    int index = 0;
-    double[] prev = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atomArray[i].isActive()) {
-        prev[0] = previousAcceleration[index++];
-        prev[1] = previousAcceleration[index++];
-        prev[2] = previousAcceleration[index++];
-        atomArray[i].setPreviousAcceleration(prev);
-      }
-    }
+    dataEnergy.setPreviousAcceleration(previousAcceleration);
   }
 
   /**
-   * Sets the printOnFailure flag; if override is true, over-rides any existing property.
-   * Essentially sets the default value of printOnFailure for an algorithm. For example, rotamer
-   * optimization will generally run into force field issues in the normal course of execution as it
-   * tries unphysical self and 2-Body configurations, so the algorithm should not print out a large
-   * number of error PDBs.
-   *
-   * @param onFail To set
-   * @param override Override properties
+   * {@inheritDoc}
    */
-  public void setPrintOnFailure(boolean onFail, boolean override) {
-    if (override) {
-      // Ignore any pre-existing value
-      printOnFailure = onFail;
-    } else {
-      try {
-        molecularAssemblies[0].getForceField().getBoolean("PRINT_ON_FAILURE");
-        /*
-         * If the call was successful, the property was explicitly set
-         * somewhere and should be kept. If an exception was thrown, the
-         * property was never set explicitly, so over-write.
-         */
-      } catch (Exception ex) {
-        printOnFailure = onFail;
-      }
-    }
-  }
-
-  /** {@inheritDoc} */
   @Override
   public void setVelocity(double[] velocity) {
-    if (this.nBFactor > 0 || this.nOccupancy > 0) {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
-    if (velocity == null) {
-      return;
-    }
-    int index = 0;
-    double[] vel = new double[3];
-    for (int i = 0; i < nAtoms; i++) {
-      if (atomArray[i].isActive()) {
-        vel[0] = velocity[index++];
-        vel[1] = velocity[index++];
-        vel[2] = velocity[index++];
-        atomArray[i].setVelocity(vel);
-      }
-    }
-  }
-
-  /**
-   * Get the MolecularAssembly associated with index i of n; put in xChem.
-   *
-   * @param i The desired MolecularAssembly index for xChem.
-   * @param x All parameters.
-   * @param xChem The xChem parameters for the particular MolecularAssembly that will be passed to
-   *     {@link ffx.potential.ForceFieldEnergy}.
-   */
-  private void getAssemblyi(int i, double[] x, double[] xChem) {
-    assert (x != null && xChem != null);
-    for (int j = 0; j < xChem.length; j += 3) {
-      int index = j / 3;
-      //int aindex = xIndex[i].get(index) * 3;
-      int aindex = xIndex.get(i).get(index) * 3;
-      xChem[j] = x[aindex];
-      xChem[j + 1] = x[aindex + 1];
-      xChem[j + 2] = x[aindex + 2];
-    }
-  }
-
-  /**
-   * Set the MolecularAssembly associated with index i of n; put in x.
-   *
-   * @param i the desired MolecularAssembly index for "setting" x.
-   * @param x All parameters.
-   * @param xChem The xChem parameters for the particular MolecularAssembly that will be passed to
-   *     {@link ffx.potential.ForceFieldEnergy}.
-   */
-  private void setAssemblyi(int i, double[] x, double[] xChem) {
-    assert (x != null && xChem != null);
-    for (int j = 0; j < xChem.length; j += 3) {
-      int index = j / 3;
-      // int aindex = xIndex[i].get(index) * 3;
-      int aindex = xIndex.get(i).get(index) * 3;
-      x[aindex] += xChem[j];
-      x[aindex + 1] += xChem[j + 1];
-      x[aindex + 2] += xChem[j + 2];
-    }
+    dataEnergy.setVelocity(velocity);
   }
 }

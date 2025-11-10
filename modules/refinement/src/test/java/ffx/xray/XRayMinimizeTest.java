@@ -106,7 +106,11 @@ public class XRayMinimizeTest extends AlgorithmsTest {
     MTZFilter mtzFilter = new MTZFilter();
     CIFFilter cifFilter = new CIFFilter();
     Crystal crystal = Crystal.checkProperties(properties);
-    Resolution resolution = Resolution.checkProperties(properties);
+    double defaultResolution = -1.0;
+    if (crystal != null) {
+      defaultResolution = mtzFilter.getResolution(mtzFile, crystal);
+    }
+    Resolution resolution = Resolution.checkProperties(properties, false, defaultResolution);
     if (crystal == null || resolution == null) {
       if (mtzname != null) {
         reflectionList = mtzFilter.getReflectionList(mtzFile);
@@ -149,7 +153,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
     sigmaAMinimize.minimize(7, 2.0e-2);
 
     SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData,
-        refinementData.spline, SplineEnergy.Type.FOFC);
+        refinementData.spline, SplineEnergy.SplineType.FOFC);
     splineMinimize.minimize(7, 1e-5);
   }
 
@@ -263,7 +267,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
       return;
     }
     SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData,
-        refinementData.spline, SplineEnergy.Type.FOFC);
+        refinementData.spline, SplineEnergy.SplineType.FOFC);
     SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
     int n = splineMinimize.getNumberOfVariables();
     double[] x = new double[n];
@@ -292,7 +296,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
       return;
     }
     SplineMinimize splineMinimize = new SplineMinimize(
-        reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.F1F2);
+        reflectionList, refinementData, refinementData.spline, SplineEnergy.SplineType.F1F2);
     SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
     int n = splineMinimize.getNumberOfVariables();
     double[] x = new double[n];
@@ -321,7 +325,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
       return;
     }
     SplineMinimize splineMinimize = new SplineMinimize(
-        reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FCTOESQ);
+        reflectionList, refinementData, refinementData.spline, SplineEnergy.SplineType.FCTOESQ);
     SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
     int n = splineMinimize.getNumberOfVariables();
     double[] x = new double[n];
@@ -350,7 +354,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
       return;
     }
     SplineMinimize splineMinimize = new SplineMinimize(
-        reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOTOESQ);
+        reflectionList, refinementData, refinementData.spline, SplineEnergy.SplineType.FOTOESQ);
     SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
     int n = splineMinimize.getNumberOfVariables();
     double[] x = new double[n];

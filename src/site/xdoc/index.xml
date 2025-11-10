@@ -153,6 +153,11 @@
                 <img src="images/UofI.png" alt="UI" width="125" align="middle"/>
               </p>
             </td>
+            <td width="150">
+              <p>
+                <img src="images/PedersenSLF.png" alt="SLF" width="125" align="middle"/>
+              </p>
+            </td>
           </tr>
           <tr>
             <td>
@@ -165,7 +170,10 @@
               SFARI Award 1019623
             </td>
             <td>
-              Mid-Career Scholar Award
+              U. of Iowa Mid-Career Scholar Award
+            </td>
+            <td>
+              Butch Pedersen Legacy Foundation Award
             </td>
           </tr>
           <tr>
@@ -175,6 +183,7 @@
             <td>
               NIH T32 GM152268
             </td>
+            <td><!-- Empty cell --></td>
             <td><!-- Empty cell --></td>
             <td><!-- Empty cell --></td>
           </tr>

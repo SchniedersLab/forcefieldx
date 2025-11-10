@@ -138,8 +138,7 @@ public class Minimize extends AlgorithmsCommand {
     // Beginning force field energy.
     algorithmFunctions.energy(activeAssembly);
 
-    RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
-        realSpaceOptions.refinementMode);
+    RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData);
 
     int nBFGS = minimizeOptions.getNBFGS();
     double eps = minimizeOptions.getEps();

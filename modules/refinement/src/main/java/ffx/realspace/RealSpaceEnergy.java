@@ -41,8 +41,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.RefinementModel;
+import ffx.xray.refine.RefinementModel;
 
 import java.util.logging.Logger;
 
@@ -59,45 +58,49 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
   private static final Logger logger = Logger.getLogger(RealSpaceEnergy.class.getName());
 
-  /** The Real Space data to refine against. */
+  /**
+   * The Real Space data to refine against.
+   */
   private final RealSpaceData realSpaceData;
-  /** The Refinement Model that contains info on mapping between alternate conformers. */
+  /**
+   * The Refinement Model that contains info on mapping between alternate conformers.
+   */
   private final RefinementModel refinementModel;
-  /** Value of the lambda state variable. */
+  /**
+   * Value of the lambda state variable.
+   */
   protected double lambda = 1.0;
-  /** The number of parameters that are being refined. */
-  private int nXYZ;
-  /** The refinement mode. */
-  private RefinementMode refinementMode;
-  /** If true, the XYZ coordinates will be refined. */
-  private boolean refineXYZ = false;
-  /** Optimization scaling used to improve convergence. */
+  /**
+   * The number of parameters that are being refined.
+   */
+  private final int nXYZ;
+  /**
+   * Optimization scaling used to improve convergence.
+   */
   private double[] optimizationScaling = null;
-  /** Total energy of the refinement. */
+  /**
+   * Total energy of the refinement.
+   */
   private double totalEnergy;
-  /** The RealSpaceEnergy is updated with FAST varying energy terms. */
+  /**
+   * The RealSpaceEnergy is updated with FAST varying energy terms.
+   */
   private STATE state = STATE.BOTH;
 
   /**
    * Diffraction data energy target
    *
    * @param realSpaceData {@link ffx.realspace.RealSpaceData} object to associate with the target
-   * @param nxyz number of xyz parameters
-   * @param nb number of b factor parameters
-   * @param nocc number of occupancy parameters
-   * @param refinementMode the {@link ffx.xray.RefinementMinimize.RefinementMode} type of refinement
-   *     requested
    */
-  public RealSpaceEnergy(
-      RealSpaceData realSpaceData, int nxyz, int nb, int nocc, RefinementMode refinementMode) {
+  public RealSpaceEnergy(RealSpaceData realSpaceData) {
     this.realSpaceData = realSpaceData;
-    this.refinementModel = realSpaceData.getRefinementModel();
-    this.refinementMode = refinementMode;
-    this.nXYZ = nxyz;
-    setRefinementBooleans();
+    refinementModel = realSpaceData.getRefinementModel();
+    nXYZ = refinementModel.getNumCoordParameters();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     return realSpaceData.destroy();
@@ -110,33 +113,14 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
    */
   @Override
   public double energy(double[] x) {
-
-    double e = 0.0;
-
     // Unscale the coordinates.
     unscaleCoordinates(x);
 
-    if (refineXYZ) {
-      int index = 0;
-      double[] xyz = new double[3];
-      for (Atom a : refinementModel.getTotalAtomArray()) {
-        if (a.isActive()) {
-          int i = index * 3;
-          xyz[0] = x[i];
-          xyz[1] = x[i + 1];
-          xyz[2] = x[i + 2];
-          a.setXYZ(xyz);
-          a.setXYZGradient(0.0, 0.0, 0.0);
-          a.setLambdaXYZGradient(0.0, 0.0, 0.0);
-          index++;
-        }
-      }
-    }
+    // Set the parameters.
+    refinementModel.setParameters(x);
 
     // Target function for real space refinement.
-    if (refineXYZ) {
-      e = realSpaceData.computeRealSpaceTarget();
-    }
+    double e = realSpaceData.computeRealSpaceTarget();
 
     // Scale the coordinates.
     scaleCoordinates(x);
@@ -145,36 +129,25 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     return e;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
-    double e = 0.0;
     // Unscale the coordinates.
     unscaleCoordinates(x);
 
-    if (refineXYZ) {
-      int index = 0;
-      double[] xyz = new double[3];
-      for (Atom a : refinementModel.getTotalAtomArray()) {
-        if (a.isActive()) {
-          int i = index * 3;
-          xyz[0] = x[i];
-          xyz[1] = x[i + 1];
-          xyz[2] = x[i + 2];
-          a.setXYZ(xyz);
-          a.setXYZGradient(0.0, 0.0, 0.0);
-          a.setLambdaXYZGradient(0.0, 0.0, 0.0);
-          index++;
-        }
-      }
-    }
+    // Set model parameters.
+    refinementModel.setParameters(x);
+
+    // Zero out the gradient.
+    refinementModel.zeroGradient();
 
     // Target function for real space refinement
-    if (refineXYZ) {
-      e = realSpaceData.computeRealSpaceTarget();
-      // Pack gradients into gradient array
-      getXYZGradients(g);
-    }
+    double e = realSpaceData.computeRealSpaceTarget();
+
+    // Pack the gradient into gradient array
+    refinementModel.getGradient(g);
 
     // Scale the coordinates and gradients.
     scaleCoordinatesAndGradient(x, g);
@@ -183,7 +156,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     return e;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getAcceleration(double[] acceleration) {
     int n = getNumberOfVariables();
@@ -192,18 +167,18 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] acc = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        a.getAcceleration(acc);
-        acceleration[index++] = acc[0];
-        acceleration[index++] = acc[1];
-        acceleration[index++] = acc[2];
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      a.getAcceleration(acc);
+      acceleration[index++] = acc[0];
+      acceleration[index++] = acc[1];
+      acceleration[index++] = acc[2];
     }
     return acceleration;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] x) {
     int n = getNumberOfVariables();
@@ -211,48 +186,58 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
       x = new double[n];
     }
     int index = 0;
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        x[index++] = a.getX();
-        x[index++] = a.getY();
-        x[index++] = a.getZ();
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      x[index++] = a.getX();
+      x[index++] = a.getY();
+      x[index++] = a.getZ();
     }
     return x;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public ffx.crystal.Crystal getCrystal() {
     realSpaceData.getCrystal();
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setCrystal(Crystal crystal) {
     logger.severe(" RealSpaceEnergy does implement setCrystal yet.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public STATE getEnergyTermState() {
     return state;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setEnergyTermState(STATE state) {
     this.state = state;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getLambda() {
     return lambda;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setLambda(double lambda) {
     if (lambda <= 1.0 && lambda >= 0.0) {
@@ -264,31 +249,27 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getMass() {
     double[] mass = new double[nXYZ];
-    int i = 0;
-    if (refineXYZ) {
-      for (Atom a : refinementModel.getTotalAtomArray()) {
-        if (a.isActive()) {
-          double m = a.getMass();
-          mass[i++] = m;
-          mass[i++] = m;
-          mass[i++] = m;
-        }
-      }
-    }
+    refinementModel.getMass(mass);
     return mass;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     return nXYZ;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getPreviousAcceleration(double[] previousAcceleration) {
     int n = getNumberOfVariables();
@@ -297,49 +278,34 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] prev = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        a.getPreviousAcceleration(prev);
-        previousAcceleration[index++] = prev[0];
-        previousAcceleration[index++] = prev[1];
-        previousAcceleration[index++] = prev[2];
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      a.getPreviousAcceleration(prev);
+      previousAcceleration[index++] = prev[0];
+      previousAcceleration[index++] = prev[1];
+      previousAcceleration[index++] = prev[2];
     }
     return previousAcceleration;
   }
 
   /**
-   * Getter for the field <code>refinementMode</code>.
-   *
-   * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+   * {@inheritDoc}
    */
-  public RefinementMode getRefinementMode() {
-    return refinementMode;
-  }
-
-  /**
-   * Setter for the field <code>refinementMode</code>.
-   *
-   * @param refinementMode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
-   */
-  public void setRefinementMode(RefinementMode refinementMode) {
-    this.refinementMode = refinementMode;
-    setRefinementBooleans();
-  }
-
-  /** {@inheritDoc} */
   @Override
   public double[] getScaling() {
     return optimizationScaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     optimizationScaling = scaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
@@ -352,16 +318,8 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
    */
   @Override
   public VARIABLE_TYPE[] getVariableTypes() {
-
-    int nActive = 0;
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        nActive++;
-      }
-    }
-
+    int nActive = refinementModel.getActiveAtoms().length;
     VARIABLE_TYPE[] type = new VARIABLE_TYPE[nActive * 3];
-
     int index = 0;
     for (int i = 0; i < nActive; i++) {
       type[index++] = VARIABLE_TYPE.X;
@@ -371,7 +329,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     return type;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getVelocity(double[] velocity) {
     int n = getNumberOfVariables();
@@ -380,36 +340,42 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] v = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        a.getVelocity(v);
-        velocity[index++] = v[0];
-        velocity[index++] = v[1];
-        velocity[index++] = v[2];
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      a.getVelocity(v);
+      velocity[index++] = v[0];
+      velocity[index++] = v[1];
+      velocity[index++] = v[2];
     }
     return velocity;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getd2EdL2() {
     return 0.0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getdEdL() {
     return realSpaceData.getdEdL();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void getdEdXdL(double[] gradient) {
     realSpaceData.getdEdXdL(gradient);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setAcceleration(double[] acceleration) {
     if (acceleration == null) {
@@ -417,13 +383,11 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] accel = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        accel[0] = acceleration[index++];
-        accel[1] = acceleration[index++];
-        accel[2] = acceleration[index++];
-        a.setAcceleration(accel);
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      accel[0] = acceleration[index++];
+      accel[1] = acceleration[index++];
+      accel[2] = acceleration[index++];
+      a.setAcceleration(accel);
     }
   }
 
@@ -433,20 +397,15 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
    * @param x an array of coordinates for active atoms.
    */
   public void setCoordinates(double[] x) {
-    assert (x != null);
-    double[] xyz = new double[3];
-    int index = 0;
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        xyz[0] = x[index++];
-        xyz[1] = x[index++];
-        xyz[2] = x[index++];
-        a.moveTo(xyz);
-      }
+    if (x == null) {
+      return;
     }
+    refinementModel.setParameters(x);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setPreviousAcceleration(double[] previousAcceleration) {
     if (previousAcceleration == null) {
@@ -454,17 +413,17 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] prev = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        prev[0] = previousAcceleration[index++];
-        prev[1] = previousAcceleration[index++];
-        prev[2] = previousAcceleration[index++];
-        a.setPreviousAcceleration(prev);
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      prev[0] = previousAcceleration[index++];
+      prev[1] = previousAcceleration[index++];
+      prev[2] = previousAcceleration[index++];
+      a.setPreviousAcceleration(prev);
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setVelocity(double[] velocity) {
     if (velocity == null) {
@@ -472,62 +431,11 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
     int index = 0;
     double[] vel = new double[3];
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        vel[0] = velocity[index++];
-        vel[1] = velocity[index++];
-        vel[2] = velocity[index++];
-        a.setVelocity(vel);
-      }
-    }
-  }
-
-  /**
-   * If the refinement mode has changed, this should be called to update which parameters are being
-   * fit.
-   */
-  private void setRefinementBooleans() {
-    refineXYZ =
-        (refinementMode == RefinementMode.COORDINATES
-            || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-            || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-            || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES);
-  }
-
-  /**
-   * Get the number of xyz parameters being fit.
-   *
-   * @return the number of xyz parameters
-   */
-  private int getNXYZ() {
-    return nXYZ;
-  }
-
-  /**
-   * Set the number of xyz parameters.
-   *
-   * @param nxyz requested number of xyz parameters
-   */
-  private void setNXYZ(int nxyz) {
-    this.nXYZ = nxyz;
-  }
-
-  /**
-   * Fill gradient array with xyz gradient.
-   *
-   * @param g array to add gradient to
-   */
-  private void getXYZGradients(double[] g) {
-    assert (g != null);
-    double[] grad = new double[3];
-    int index = 0;
-    for (Atom a : refinementModel.getTotalAtomArray()) {
-      if (a.isActive()) {
-        a.getXYZGradient(grad);
-        g[index++] = grad[0];
-        g[index++] = grad[1];
-        g[index++] = grad[2];
-      }
+    for (Atom a : refinementModel.getActiveAtoms()) {
+      vel[0] = velocity[index++];
+      vel[1] = velocity[index++];
+      vel[2] = velocity[index++];
+      a.setVelocity(vel);
     }
   }
 }

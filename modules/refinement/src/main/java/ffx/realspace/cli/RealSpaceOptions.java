@@ -41,7 +41,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.DataRefinementOptions;
 import picocli.CommandLine.Option;
 
@@ -59,11 +58,6 @@ import java.util.logging.Logger;
 public class RealSpaceOptions extends DataRefinementOptions {
 
   private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-
-  /**
-   * The refinement mode to use.
-   */
-  public RefinementMode refinementMode = RefinementMode.COORDINATES;
 
   /**
    * -X or --data Specify input data filename and weight applied to the data (wA).
@@ -124,7 +118,6 @@ public class RealSpaceOptions extends DataRefinementOptions {
     RealSpaceFile[] mapFiles = processData(filenames, molecularAssemblies[0]).toArray(new RealSpaceFile[0]);
     RealSpaceData realspaceData = new RealSpaceData(molecularAssemblies, molecularAssemblies[0].getProperties(),
         molecularAssemblies[0].getParallelTeam(), mapFiles);
-
-    return new RefinementEnergy(realspaceData, RefinementMode.COORDINATES);
+    return new RefinementEnergy(realspaceData);
   }
 }

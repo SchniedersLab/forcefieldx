@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.parallel;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
@@ -62,9 +62,9 @@ public class GradientSchedule extends IntegerSchedule {
    * Constructor for GradientSchedule.
    *
    * @param nThreads a int.
-   * @param nAtoms a int.
+   * @param nAtoms   a int.
    */
-  protected GradientSchedule(int nThreads, int nAtoms) {
+  public GradientSchedule(int nThreads, int nAtoms) {
     this.nThreads = nThreads;
     threadDone = new boolean[nThreads];
     ranges = new Range[nThreads];
@@ -94,13 +94,17 @@ public class GradientSchedule extends IntegerSchedule {
     return weightsToReturn;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean isFixedSchedule() {
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Range next(int threadID) {
     if (!threadDone[threadID]) {
@@ -110,7 +114,9 @@ public class GradientSchedule extends IntegerSchedule {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void start(int nThreads, Range chunkRange) {
     this.nThreads = nThreads;
@@ -132,7 +138,7 @@ public class GradientSchedule extends IntegerSchedule {
    *
    * @param weights an array of {@link int} objects.
    */
-  void updateWeights(int[] weights) {
+  public void updateWeights(int[] weights) {
     this.weights = weights;
   }
 

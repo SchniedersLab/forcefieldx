@@ -35,59 +35,49 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.scatter;
 
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
 
 import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.Math.sqrt;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * SolventPolyFormFactor class.
+ * SolventGaussFormFactor class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
-public final class SolventPolyFormFactor implements FormFactor {
+public final class SolventGaussFormFactor implements FormFactor {
 
   private final Atom atom;
   private final double[] xyz = new double[3];
   private final double[] dxyz = new double[3];
   private final double[] g = new double[3];
-  private final double iw;
-  private final double aradMinusW, aradPlusW;
-  private final double aradMinusW2, aradPlusW2;
-  private final double wMinusArad;
+  private final double isd2;
 
   /**
-   * Constructor for SolventPolyFormFactor.
+   * Constructor for SolventGaussFormFactor.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param arad a double.
-   * @param w a double.
+   * @param sd a double.
    */
-  public SolventPolyFormFactor(Atom atom, double arad, double w) {
-    this(atom, arad, w, atom.getXYZ(null));
+  public SolventGaussFormFactor(Atom atom, double sd) {
+    this(atom, sd, atom.getXYZ(null));
   }
 
   /**
-   * Constructor for SolventPolyFormFactor.
+   * Constructor for SolventGaussFormFactor.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param arad a double.
-   * @param w a double.
+   * @param sd a double.
    * @param xyz an array of double.
    */
-  public SolventPolyFormFactor(Atom atom, double arad, double w, double[] xyz) {
+  public SolventGaussFormFactor(Atom atom, double sd, double[] xyz) {
     this.atom = atom;
-    this.iw = 1.0 / w;
-    aradMinusW = arad - w;
-    aradPlusW = arad + w;
-    wMinusArad = w - arad;
-    aradMinusW2 = aradMinusW * aradMinusW;
-    aradPlusW2 = aradPlusW * aradPlusW;
+    isd2 = 1.0 / (sd * sd);
     update(xyz);
   }
 
@@ -95,14 +85,7 @@ public final class SolventPolyFormFactor implements FormFactor {
   @Override
   public double rho(double f, double lambda, double[] xyz) {
     sub(this.xyz, xyz, dxyz);
-    double ri2 = length2(dxyz);
-    if (ri2 <= aradMinusW2) {
-      return 0.0;
-    }
-    if (ri2 >= aradPlusW2) {
-      return f;
-    }
-    return rho(f, lambda, sqrt(ri2));
+    return rho(f, lambda, length2(dxyz));
   }
 
   /**
@@ -110,20 +93,11 @@ public final class SolventPolyFormFactor implements FormFactor {
    *
    * @param f a double.
    * @param lambda a double.
-   * @param ri a double.
+   * @param rsq a double.
    * @return a double.
    */
-  public double rho(double f, double lambda, double ri) {
-    if (ri <= aradMinusW) {
-      return 0.0;
-    }
-    if (ri >= aradPlusW) {
-      return f;
-    }
-    double d = ri + wMinusArad;
-    double dw = d * iw;
-    double dw2 = dw * dw;
-    return f * (0.75 - 0.25 * dw) * dw2;
+  public double rho(double f, double lambda, double rsq) {
+    return f + exp(-rsq * isd2);
   }
 
   /** {@inheritDoc} */
@@ -135,18 +109,9 @@ public final class SolventPolyFormFactor implements FormFactor {
       return;
     }
     sub(this.xyz, xyz, dxyz);
-    double ri2 = length2(dxyz);
-    if (ri2 <= aradMinusW2 || ri2 >= aradPlusW2) {
-      return;
-    }
-    double ri = sqrt(ri2);
-    double d = ri + wMinusArad;
-    double dw = d * iw;
-    double dw2 = dw * dw;
-    double rho = (0.75 - 0.25 * dw) * dw2;
-    double iri = 1.0 / ri;
-    double dp = (1.5 * dw - 0.75 * dw2) * iri * iw;
-    double prefactor = -dp * (dfc / rho);
+    double r2 = length2(dxyz);
+    double rho = exp(-r2 * isd2);
+    double prefactor = -dfc * 2.0 * rho * isd2;
     g[0] = prefactor * dxyz[0];
     g[1] = prefactor * dxyz[1];
     g[2] = prefactor * dxyz[2];

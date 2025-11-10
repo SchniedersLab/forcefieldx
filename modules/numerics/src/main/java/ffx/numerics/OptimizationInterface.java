@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
@@ -142,7 +143,7 @@ public interface OptimizationInterface {
    * @param scaling The scaling value to use for each variable.
    * @since 1.0
    */
-  void setScaling(double[] scaling);
+  void setScaling(@Nullable double[] scaling);
 
   /**
    * Get the total energy of the system

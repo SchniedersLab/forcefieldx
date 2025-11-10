@@ -35,50 +35,51 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.solvent;
 
-import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
- * FormFactor interface.
- *
- * @author Timothy D. Fenn
- * @since 1.0
+ * Enum representing different solvent modeling approaches.
  */
-public interface FormFactor {
+public enum SolventModel {
 
   /**
-   * Compute the real space density rho
-   *
-   * @param f the current density to modify
-   * @param lambda the state variable
-   * @param xyz the requested point for evaluating density
-   * @return the real space density value at xyz
+   * Do not model solvent scattering.
    */
-  double rho(double f, double lambda, double[] xyz);
+  NONE,
+  /**
+   * The classic binary (0, 1) model.
+   */
+  BINARY,
+  /**
+   * Smooth the boundary of the classic model using Gaussians.
+   */
+  GAUSSIAN,
+  /**
+   * Smooth the boundar of the classic model using a cubic polynomial switch (default).
+   */
+  POLYNOMIAL;
+
+  // Private logger for the parse method.
+  private static final Logger logger = Logger.getLogger(SolventModel.class.getName());
 
   /**
-   * Compute the real space gradient
+   * Parse a solvent model string and return a SolventModel enum.
    *
-   * @param xyz the requested point for evaluating gradient
-   * @param dfc the multiplier to apply to the gradient
-   * @param refinementmode {@link ffx.xray.RefinementMinimize.RefinementMode} determines which
-   *     gradients will be computed
+   * @param solventName The solvent model String.
+   * @return The SolventModel to use.
    */
-  void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
+  public static SolventModel parse(String solventName) {
+    try {
+      return valueOf(solventName.trim().toUpperCase());
+    } catch (Exception e) {
+      logger.info(format(" %s was not recognized; Polynomial solvent model selected.", solventName));
+      return POLYNOMIAL;
+    }
+  }
 
-  /**
-   * update the coordinates to the current position
-   *
-   * @param xyz an array of double.
-   */
-  void update(double[] xyz);
 
-  /**
-   * update the coordinates to the current position and Badd
-   *
-   * @param xyz an array of double.
-   * @param badd a double.
-   */
-  void update(double[] xyz, double badd);
 }

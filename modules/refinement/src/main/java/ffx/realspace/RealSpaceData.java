@@ -48,16 +48,13 @@ import ffx.numerics.spline.TriCubicSpline;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
 import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.DataContainer;
 import ffx.xray.DiffractionData;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.RefinementModel;
+import ffx.xray.refine.RefinementMode;
+import ffx.xray.refine.RefinementModel;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -222,7 +219,7 @@ public class RealSpaceData implements DataContainer {
     refinementModel = new RefinementModel(molecularAssemblies);
 
     // Initialize the RealSpaceRegion.
-    int nAtoms = refinementModel.getTotalAtomArray().length;
+    int nAtoms = refinementModel.getScatteringAtoms().length;
     realSpaceRegion =
         new RealSpaceRegion(parallelTeam.getThreadCount(), nAtoms, refinementData.length);
   }
@@ -314,11 +311,11 @@ public class RealSpaceData implements DataContainer {
       logger.info(sb.toString());
     }
 
-    // now set up the refinement model
-    refinementModel = new RefinementModel(molecularAssemblies);
+    // Set up the refinement model
+    refinementModel = new RefinementModel(RefinementMode.COORDINATES, molecularAssemblies);
 
     // Initialize the RealSpaceRegion.
-    int nAtoms = refinementModel.getTotalAtomArray().length;
+    int nAtoms = refinementModel.getScatteringAtoms().length;
     realSpaceRegion =
         new RealSpaceRegion(parallelTeam.getThreadCount(), nAtoms, refinementData.length);
   }
@@ -343,38 +340,6 @@ public class RealSpaceData implements DataContainer {
       logger.info(Utilities.stackTraceToString(ex));
       return false;
     }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Atom[] getActiveAtomArray() {
-    return refinementModel.getActiveAtomArray();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public List<List<Molecule>> getAltMolecules() {
-    return refinementModel.getAltMolecules();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public List<List<Residue>> getAltResidues() {
-    return refinementModel.getAltResidues();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Atom[] getAtomArray() {
-    return refinementModel.getTotalAtomArray();
   }
 
   /**
@@ -414,14 +379,6 @@ public class RealSpaceData implements DataContainer {
   }
 
   /**
-   * {@inheritDoc}
-   */
-  @Override
-  public MolecularAssembly[] getMolecularAssemblies() {
-    return molecularAssemblies;
-  }
-
-  /**
    * Getter for the field <code>realSpaceGradient</code>.
    *
    * @param gradient the gradient array.
@@ -429,10 +386,10 @@ public class RealSpaceData implements DataContainer {
    * gradient is null or too small.
    */
   public double[] getRealSpaceGradient(double[] gradient) {
-    int nAtoms = refinementModel.getTotalAtomArray().length;
+    int nAtoms = refinementModel.getScatteringAtoms().length;
     int nActiveAtoms = 0;
     for (int i = 0; i < nAtoms; i++) {
-      if (refinementModel.getTotalAtomArray()[i].isActive()) {
+      if (refinementModel.getScatteringAtoms()[i].isActive()) {
         nActiveAtoms++;
       }
     }
@@ -540,9 +497,9 @@ public class RealSpaceData implements DataContainer {
     realSpacedUdL = 0.0;
     // Initialize gradient to zero; allocate space if necessary.
     int nActive = 0;
-    int nAtoms = refinementModel.getTotalAtomArray().length;
+    int nAtoms = refinementModel.getScatteringAtoms().length;
     for (int i = 0; i < nAtoms; i++) {
-      if (refinementModel.getTotalAtomArray()[i].isActive()) {
+      if (refinementModel.getScatteringAtoms()[i].isActive()) {
         nActive++;
       }
     }
@@ -592,10 +549,10 @@ public class RealSpaceData implements DataContainer {
    * @return an array of {@link double} objects.
    */
   double[] getdEdXdL(double[] gradient) {
-    int nAtoms = refinementModel.getTotalAtomArray().length;
+    int nAtoms = refinementModel.getScatteringAtoms().length;
     int nActiveAtoms = 0;
     for (int i = 0; i < nAtoms; i++) {
-      if (refinementModel.getTotalAtomArray()[i].isActive()) {
+      if (refinementModel.getScatteringAtoms()[i].isActive()) {
         nActiveAtoms++;
       }
     }
@@ -664,7 +621,7 @@ public class RealSpaceData implements DataContainer {
       realSpacedUdL = shareddUdL.get();
       int index = 0;
       for (int i = 0; i < nAtoms; i++) {
-        Atom atom = refinementModel.getTotalAtomArray()[i];
+        Atom atom = refinementModel.getScatteringAtoms()[i];
         if (atom.isActive()) {
           int ii = index * 3;
           double gx = gradient.getX(i);
@@ -722,7 +679,7 @@ public class RealSpaceData implements DataContainer {
         gradient.reset(threadID, lb, ub);
         lambdaGrad.reset(threadID, lb, ub);
         for (int i = lb; i <= ub; i++) {
-          Atom a = refinementModel.getTotalAtomArray()[i];
+          Atom a = refinementModel.getScatteringAtoms()[i];
           a.setXYZGradient(0.0, 0.0, 0.0);
           a.setLambdaXYZGradient(0.0, 0.0, 0.0);
         }
@@ -766,7 +723,7 @@ public class RealSpaceData implements DataContainer {
           int originZ = getRefinementData()[i].getOrigin()[2];
 
           for (int ia = first; ia <= last; ia++) {
-            Atom a = refinementModel.getTotalAtomArray()[ia];
+            Atom a = refinementModel.getScatteringAtoms()[ia];
             // Only include atoms in the target function that have
             // their use flag set to true and are Active.
             if (!a.getUse()) {

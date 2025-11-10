@@ -39,6 +39,7 @@ package ffx.crystal;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
@@ -85,16 +86,34 @@ public class Resolution {
   }
 
   /**
+   * Returns a string representation of the Resolution object, including the resolution and sampling values.
+   *
+   * @return A formatted string containing the resolution and sampling values of the object.
+   */
+  @Override
+  public String toString() {
+    return format(" Resolution: %6.3f Sampling: %6.3f", resolution, sampling);
+  }
+
+  /**
    * checkProperties
    *
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param isNeutron If true, this is a neutron diffraction data set.
+   * @param defaultResolution The resolution from the reflection file.
    * @return a {@link ffx.crystal.Resolution} object.
    */
-  public static Resolution checkProperties(CompositeConfiguration properties) {
-    double resolution = properties.getDouble("resolution", -1.0);
+  public static Resolution checkProperties(CompositeConfiguration properties,
+                                           boolean isNeutron, double defaultResolution) {
+    double resolution = properties.getDouble("resolution", defaultResolution);
+    if (isNeutron) {
+      resolution = properties.getDouble("neutron-resolution", resolution);
+    } else {
+      resolution = properties.getDouble("xray-resolution", resolution);
+    }
     double sampling = properties.getDouble("sampling", 0.6);
 
-    if (resolution < 0.0) {
+    if (resolution <= 0.0) {
       return null;
     }
 

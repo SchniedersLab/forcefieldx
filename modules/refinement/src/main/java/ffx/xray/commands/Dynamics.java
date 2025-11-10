@@ -37,20 +37,24 @@
 //******************************************************************************
 package ffx.xray.commands;
 
+import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.WriteoutOptions;
 import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.cli.XrayOptions;
+import ffx.xray.refine.RefinementMode;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
@@ -65,7 +69,7 @@ import java.util.List;
  * ffxc xray.Dynamics [options] &lt;filename&gt;
  */
 @Command(description = " Run Dynamics on an X-ray target.", name = "xray.Dynamics")
-public class Dynamics extends AlgorithmsCommand {
+public class Dynamics extends AlgorithmsCommand implements AlgorithmListener {
 
   @Mixin
   private XrayOptions xrayOptions;
@@ -74,13 +78,26 @@ public class Dynamics extends AlgorithmsCommand {
   private DynamicsOptions dynamicsOptions;
 
   @Mixin
+  AtomSelectionOptions atomSelectionOptions;
+
+  @Mixin
   private WriteoutOptions writeoutOptions;
+
+  /**
+   * --mtz Write out MTZ containing structure factor coefficients.
+   */
+  @Option(names = {"--mtz"}, paramLabel = "false",
+      description = "Write out an MTZ containing structure factor coefficients.")
+  private boolean mtz = false;
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames;
+
+  private MolecularAssembly[] molecularAssemblies;
+  private DiffractionData diffractionData;
   private RefinementEnergy refinementEnergy;
 
   /**
@@ -92,6 +109,7 @@ public class Dynamics extends AlgorithmsCommand {
 
   /**
    * Dynamics constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Dynamics(String[] args) {
@@ -100,6 +118,7 @@ public class Dynamics extends AlgorithmsCommand {
 
   /**
    * Dynamics constructor.
+   *
    * @param binding The Binding to use.
    */
   public Dynamics(FFXBinding binding) {
@@ -117,38 +136,49 @@ public class Dynamics extends AlgorithmsCommand {
     xrayOptions.init();
 
     String filename;
-    MolecularAssembly[] molecularAssemblies;
     if (filenames != null && !filenames.isEmpty()) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      // Each alternate conformer is returned in a separate MolecularAssembly.
+      molecularAssemblies = algorithmFunctions.openAll(filenames.getFirst());
       activeAssembly = molecularAssemblies[0];
-      filename = filenames.get(0);
     } else if (activeAssembly == null) {
       logger.info(helpString());
       return this;
     } else {
       molecularAssemblies = new MolecularAssembly[]{activeAssembly};
-      filename = activeAssembly.getFile().getAbsolutePath();
+    }
+
+    // Update the active filename
+    filename = activeAssembly.getFile().getAbsolutePath();
+
+    // Apply active atom flags.
+    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+      atomSelectionOptions.setActiveAtoms(molecularAssembly);
     }
 
     logger.info("\n Running xray.Dynamics on " + filename);
 
-    // Load parsed X-ray properties.
-    CompositeConfiguration properties = molecularAssemblies[0].getProperties();
+    // Combine script flags (in parseResult) with properties.
+    CompositeConfiguration properties = activeAssembly.getProperties();
     xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData);
+
+    // Log the energy of each MolecularAssembly
     algorithmFunctions.energy(molecularAssemblies);
 
-    // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
-    if (!dyn.exists()) {
-      dyn = null;
+    // Restart is currently only supported for COORDINATES mode.
+    File dyn = null;
+    if (xrayOptions.refinementMode == RefinementMode.COORDINATES) {
+      dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
+      if (!dyn.exists()) {
+        dyn = null;
+      }
     }
 
-    MolecularDynamics molecularDynamics =
-        dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener);
+    MolecularDynamics molecularDynamics = dynamicsOptions.getDynamics(writeoutOptions,
+        refinementEnergy, activeAssembly, this);
     refinementEnergy.setThermostat(molecularDynamics.getThermostat());
     boolean initVelocities = true;
     molecularDynamics.dynamic(dynamicsOptions.getSteps(), dynamicsOptions.getDt(), dynamicsOptions.getReport(),
@@ -163,14 +193,27 @@ public class Dynamics extends AlgorithmsCommand {
 
     logger.info(" ");
     diffractionData.writeModel(FilenameUtils.removeExtension(filename) + ".pdb");
-    diffractionData.writeData(FilenameUtils.removeExtension(filename) + ".mtz");
+
+    if (mtz) {
+      diffractionData.writeData(FilenameUtils.removeExtension(filename) + ".mtz");
+    }
 
     return this;
   }
 
   @Override
   public List<Potential> getPotentials() {
-    return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList((Potential) refinementEnergy);
+    return getPotentialsFromAssemblies(molecularAssemblies);
+  }
+
+  @Override
+  public boolean destroyPotentials() {
+    return diffractionData == null ? true : diffractionData.destroy();
+  }
+
+  @Override
+  public boolean algorithmUpdate(MolecularAssembly active) {
+    logger.info(" R/Rfree " + diffractionData.printOptimizationUpdate());
+    return true;
   }
 }

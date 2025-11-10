@@ -52,10 +52,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
@@ -87,6 +84,7 @@ public class CIFtoMTZ extends AlgorithmsCommand {
 
   /**
    * CIF2MTZ constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public CIFtoMTZ(String[] args) {
@@ -95,6 +93,7 @@ public class CIFtoMTZ extends AlgorithmsCommand {
 
   /**
    * CIF2MTZ constructor.
+   *
    * @param binding The Binding to use.
    */
   public CIFtoMTZ(FFXBinding binding) {
@@ -115,8 +114,6 @@ public class CIFtoMTZ extends AlgorithmsCommand {
     String cif = filenames.get(1);
 
     logger.info("\n Running CIF2MTZ on " + cif);
-
-    // Use PotentialsFunctions methods instead of Groovy method closures to do work.
     molecularAssemblies = algorithmFunctions.openAll(pdb);
 
     CIFFilter cifFilter = new CIFFilter();
@@ -124,12 +121,12 @@ public class CIFtoMTZ extends AlgorithmsCommand {
         cifFilter.getReflectionList(new File(cif), molecularAssemblies[0].getProperties());
 
     if (reflectionlist == null) {
-      System.out.println(" Using crystal information from the PDB file to generate MTZ file.");
+      logger.info(" Using crystal information from the PDB file to generate MTZ file.");
 
       Crystal crystal = molecularAssemblies[0].getCrystal().getUnitCell();
       double res = cifFilter.getResolution(new File(cif), crystal);
       if (res < 0.0) {
-        System.out.println(" Resolution could not be determined from the PDB and CIF files.");
+        logger.info(" The resolution could not be determined from the PDB and CIF files.");
         return this;
       }
 
@@ -138,10 +135,8 @@ public class CIFtoMTZ extends AlgorithmsCommand {
           molecularAssemblies[0].getProperties());
     }
 
-    refinementData = new DiffractionRefinementData(molecularAssemblies[0].getProperties(),
-        reflectionlist);
-    cifFilter.readFile(new File(cif), reflectionlist, refinementData,
-        molecularAssemblies[0].getProperties());
+    refinementData = new DiffractionRefinementData(molecularAssemblies[0].getProperties(), reflectionlist);
+    cifFilter.readFile(new File(cif), reflectionlist, refinementData, molecularAssemblies[0].getProperties());
 
     MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementData,
         removeExtension(cif) + ".mtz", MTZType.DATAONLY);
@@ -152,14 +147,6 @@ public class CIFtoMTZ extends AlgorithmsCommand {
 
   @Override
   public List<Potential> getPotentials() {
-    if (molecularAssemblies == null) {
-      return new ArrayList<>();
-    } else {
-      return Arrays.stream(molecularAssemblies)
-          .filter(a -> a != null)
-          .map(a -> a.getPotentialEnergy())
-          .filter(e -> e != null)
-          .collect(Collectors.toList());
-    }
+    return getPotentialsFromAssemblies(molecularAssemblies);
   }
 }

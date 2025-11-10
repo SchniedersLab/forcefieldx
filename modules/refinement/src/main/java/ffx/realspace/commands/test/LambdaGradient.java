@@ -143,9 +143,7 @@ public class LambdaGradient extends AlgorithmsCommand {
 
     RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
         activeAssembly.getParallelTeam(), mapFileArray);
-
-    RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata,
-        realSpaceOptions.refinementMode);
+    RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata);
     potential = refinementEnergy;
     LambdaInterface lambdaInterface = refinementEnergy;
 

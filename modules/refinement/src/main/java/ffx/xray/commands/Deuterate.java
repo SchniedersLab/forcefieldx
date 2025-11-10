@@ -48,7 +48,6 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -69,6 +68,8 @@ public class Deuterate extends AlgorithmsCommand {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
   private List<String> filenames;
 
+  private MolecularAssembly[] molecularAssemblies;
+
   /**
    * Deuterate constructor.
    */
@@ -78,6 +79,7 @@ public class Deuterate extends AlgorithmsCommand {
 
   /**
    * Deuterate constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Deuterate(String[] args) {
@@ -86,6 +88,7 @@ public class Deuterate extends AlgorithmsCommand {
 
   /**
    * Deuterate constructor.
+   *
    * @param binding The Binding to use.
    */
   public Deuterate(FFXBinding binding) {
@@ -102,7 +105,6 @@ public class Deuterate extends AlgorithmsCommand {
       return this;
     }
 
-    MolecularAssembly[] molecularAssemblies;
     String filename;
     if (filenames != null && !filenames.isEmpty()) {
       molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
@@ -118,22 +120,21 @@ public class Deuterate extends AlgorithmsCommand {
 
     logger.info("\n Running xray.Deuterate on " + filename);
 
-    for (int i = 0; i < molecularAssemblies.length; i++) {
-      Atom[] atoms = molecularAssemblies[i].getAtomArray();
+    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+      Atom[] atoms = molecularAssembly.getAtomArray();
       for (Atom a : atoms) {
-        if (a.getAtomicNumber() == 1) {
-          Atom b = a.getBonds().get(0).get1_2(a);
+        if (a.isHydrogen()) {
+          Atom b = a.getBonds().getFirst().get1_2(a);
 
           // Criteria for converting H to D
-          if (b.getAtomicNumber() == 7
-              || b.getAtomicNumber() == 8) {
+          if (b.getAtomicNumber() == 7 || b.getAtomicNumber() == 8) {
             String name = a.getName().replaceFirst("H", "D");
             a.setName(name);
           }
         }
       }
 
-      List<MSNode> water = molecularAssemblies[i].getWater();
+      List<MSNode> water = molecularAssembly.getWater();
       for (MSNode node : water) {
         Molecule wat = (Molecule) node;
         wat.setName("DOD");
@@ -147,6 +148,6 @@ public class Deuterate extends AlgorithmsCommand {
 
   @Override
   public List<Potential> getPotentials() {
-    return Collections.emptyList();
+    return getPotentialsFromAssemblies(molecularAssemblies);
   }
 }

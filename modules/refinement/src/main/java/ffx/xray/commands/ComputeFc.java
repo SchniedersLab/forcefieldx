@@ -50,21 +50,18 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 
 /**
- * The X-ray ComputeFc script.
+ * Compute structure factors and save them to an MTZ file.
  * <br>
  * Usage:
  * <br>
  * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Write out computed structure factors.", name = "xray.ComputeFc")
+@Command(description = " Write out computed structure factors without bulk solvent.", name = "xray.ComputeFc")
 public class ComputeFc extends AlgorithmsCommand {
 
   @Mixin
@@ -88,6 +85,7 @@ public class ComputeFc extends AlgorithmsCommand {
 
   /**
    * ComputeFc constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public ComputeFc(String[] args) {
@@ -96,6 +94,7 @@ public class ComputeFc extends AlgorithmsCommand {
 
   /**
    * ComputeFc constructor.
+   *
    * @param binding The Binding to use.
    */
   public ComputeFc(FFXBinding binding) {
@@ -113,6 +112,7 @@ public class ComputeFc extends AlgorithmsCommand {
 
     String filename;
     if (filenames != null && !filenames.isEmpty()) {
+      // Each alternate conformer is returned in a separate MolecularAssembly.
       molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
       activeAssembly = molecularAssemblies[0];
       filename = filenames.get(0);
@@ -124,18 +124,18 @@ public class ComputeFc extends AlgorithmsCommand {
       filename = activeAssembly.getFile().getAbsolutePath();
     }
 
-    // Load parsed X-ray properties.
+    logger.info("\n Running xray.ComputeFc on " + filename);
+
+    // Combine script flags (in parseResult) with properties.
     CompositeConfiguration properties = activeAssembly.getProperties();
     xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
     diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
 
-    logger.info("\n Running xray.ComputeFc on " + filename);
-
-    // Compute structure factors
-    diffractionData.computeAtomicDensity();
-    diffractionData.getReflectionList();
+    // Compute structure factors.
+    diffractionData.scaleBulkFit();
+    diffractionData.printStats();
 
     // Output Fcs
     MTZWriter mtzWriter = new MTZWriter(diffractionData.getReflectionList()[0],
@@ -147,15 +147,7 @@ public class ComputeFc extends AlgorithmsCommand {
 
   @Override
   public List<Potential> getPotentials() {
-    if (molecularAssemblies == null) {
-      return new ArrayList<>();
-    } else {
-      return Arrays.stream(molecularAssemblies)
-          .filter(a -> a != null)
-          .map(a -> a.getPotentialEnergy())
-          .filter(e -> e != null)
-          .collect(Collectors.toList());
-    }
+    return getPotentialsFromAssemblies(molecularAssemblies);
   }
 
   @Override

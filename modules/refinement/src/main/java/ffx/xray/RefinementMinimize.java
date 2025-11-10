@@ -43,389 +43,256 @@ import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
 import ffx.realspace.RealSpaceData;
+import ffx.xray.refine.RefinementMode;
+import ffx.xray.refine.RefinementModel;
 
-import java.util.List;
+import javax.annotation.Nullable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.String.format;
 
 /**
- * Refinement minimization class using {@link OptimizationListener} interface, constructs a {@link
- * ffx.xray.RefinementEnergy} object for this purpose
+ * The RefinementMinimize class is responsible for performing energy minimization for refinement
+ * tasks. It provides multiple methods for minimization, allowing customization of gradient
+ * root mean square (RMS) values, maximum iterations, and matrix conditioning settings if necessary.
+ * The class enables iterative optimization with monitoring capabilities through an optional listener,
+ * and supports graceful termination during the process.
+ * <p>
+ * This class implements both the OptimizationListener and Terminatable interfaces and
+ * acts as an intermediary for managing refinement energy computation and convergence behavior.
  *
  * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
   private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
-  private static final double toSeconds = 1.0e-9;
-  public final RefinementEnergy refinementEnergy;
-  private final AlgorithmListener listener;
+
+  /**
+   * A {@link DataContainer} instance that serves as the primary data model for the
+   * refinement process in {@link RefinementMinimize}.
+   * <p>
+   * This data container must contain a valid {@link RefinementModel} and
+   * at least one type of data representation, such as {@link DiffractionData}
+   * or {@link RealSpaceData}. It is utilized to manage parameters, weights,
+   * and additional metadata necessary for optimization and energy calculations during
+   * refinement.
+   * <p>
+   * The data within this container supports methods for managing weights, printing
+   * optimization updates, and handling data-specific configurations.
+   */
   private final DataContainer dataContainer;
-  private final Atom[] activeAtomArray;
-  private final int nXYZ;
-  private final int nB;
-  private final int nOcc;
+  /**
+   * The {@code listener} field is an instance of {@link AlgorithmListener}.
+   * It serves as an observer to handle updates during the progress of the refinement algorithm.
+   * The listener provides mechanisms for monitoring the algorithm's state or terminating
+   * the process based on user interaction or external conditions.
+   */
+  private final AlgorithmListener listener;
+  /**
+   * The {@code refinementModel} field represents the {@link RefinementModel}
+   * used in the optimization process during refinement. This model encapsulates
+   * structural and energy-related parameters crucial for refining the input data
+   * during the minimization workflows.
+   * <p>
+   * It is a required component of the {@link RefinementMinimize} class and is
+   * initialized during object construction to ensure accurate and efficient
+   * refinement operations.
+   * <p>
+   * The field is immutable and must be present in the associated
+   * {@link DataContainer} provided during the instantiation of
+   * {@link RefinementMinimize}.
+   */
+  private final RefinementModel refinementModel;
+  /**
+   * Represents the energy of the refinement process, utilized during the refinement and optimization
+   * steps in the {@link RefinementMinimize} class. This variable encapsulates the current state of
+   * the refinement energy, which may include contributions from diffraction or real-space data.
+   * <p>
+   * The {@link RefinementEnergy} instance is central to the refinement workflow, enabling evaluation,
+   * gradients, and convergence determination based on the energy values during minimization stages.
+   */
+  private final RefinementEnergy refinementEnergy;
+
+  /**
+   * The variable n represents the number of data points or observations
+   * involved in the refinement process. It is a constant value, initialized
+   * during the creation of the RefinementMinimize object, and does not change
+   * during the lifetime of the object.
+   */
   private final int n;
+  /**
+   * Stores the current set of variables for the minimization process.
+   * Represents an array of doubles used to describe the system's state
+   * during the refinement or optimization procedure.
+   * <p>
+   * This is immutable and finalized to maintain the integrity of the optimization
+   * algorithm and prevent unintended modifications during runtime.
+   */
   private final double[] x;
+  /**
+   * The `grad` array stores the current gradient vector for the refinement process.
+   * It represents the gradient of the objective function with respect to the parameters
+   * being optimized during the minimization procedure.
+   * <p>
+   * This variable is crucial in determining the direction and magnitude of parameter adjustments
+   * to refine the model toward a minimized energy state. It is updated iteratively during the optimization process.
+   */
   private final double[] grad;
+  /**
+   * This array defines scaling factors applied to specific problem variables during optimization.
+   * The scaling factors are used to normalize variable gradients, ensuring convergence and
+   * stability during numerical minimization. Scaling may depend on the problem's dimensionality
+   * or the relative magnitude of specific variable contributions to the objective function.
+   * <p>
+   * Initialized and used internally by the optimization algorithm to adjust step sizes or
+   * condition the optimization landscape.
+   */
   private final double[] scaling;
-  private final RefinementMode refinementMode;
+  /**
+   * A flag indicating whether the refinement process has completed.
+   * <p>
+   * The `done` variable is used within the `RefinementMinimize` class to track the
+   * completion status of the refinement procedure. It is set to `false` initially
+   * and updated to `true` when the process is finished.
+   */
   private boolean done = false;
+  /**
+   * Flag indicating whether the optimization or refinement process should be terminated.
+   * <p>
+   * This variable is used to signal that the current operation should stop, typically in response
+   * to an external or internal condition. It is managed by the class and leveraged by relevant methods
+   * to ensure termination of iterative processes when required.
+   */
   private boolean terminate = false;
+  /**
+   * A variable that represents the elapsed time or duration associated
+   * with the refinement process in milliseconds.
+   * <p>
+   * This variable may be used internally to measure or limit the
+   * computation time of the refinement operations, such as minimization
+   * or optimization processes.
+   */
   private long time;
+  /**
+   * The grms variable represents the gradient root mean square (RMS) of the
+   * current optimization step. It is used as a measure of convergence in
+   * optimization algorithms, indicating how close the current system is to a
+   * locally optimal state. A lower value of grms typically corresponds to a
+   * better convergence during the refinement process.
+   */
   private double grms;
+  /**
+   * The variable nSteps represents the number of steps or iterations completed during
+   * the refinement minimization process. This value is used to track the progress of
+   * the optimization algorithm and ensure it adheres to a defined maximum iteration limit.
+   */
   private int nSteps;
-  private double eps = 0.1;
 
   /**
-   * constructor for refinement, assumes coordinates and B factor optimization
+   * Constructor for the RefinementMinimize class, which initializes the refinement process
+   * with a specified data container and no algorithm listener.
    *
-   * @param data input {@link ffx.xray.DataContainer} that will be used as the model, must contain a
-   *     {@link ffx.xray.RefinementModel}
+   * @param dataContainer the data container object containing refinement data and methods
    */
-  public RefinementMinimize(DataContainer data) {
-    this(data, RefinementMode.COORDINATES_AND_BFACTORS, null);
+  public RefinementMinimize(DataContainer dataContainer) {
+    this(dataContainer, null);
   }
 
   /**
-   * constructor for refinement
+   * Constructor for the RefinementMinimize class, initializing the refinement process
+   * with a specified data container and an optional algorithm listener for updates.
    *
-   * @param data input {@link ffx.xray.DataContainer} that will be used as the model, must contain a
-   *     {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData} or {@link
-   *     ffx.realspace.RealSpaceData}
-   * @param refinementmode {@link ffx.xray.RefinementMinimize.RefinementMode} for refinement
+   * @param dataContainer     the data container object containing refinement data and methods
+   * @param algorithmListener an optional algorithm listener that provides updates during processing (can be null)
    */
-  public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
-    this(data, refinementmode, null);
-  }
+  public RefinementMinimize(DataContainer dataContainer, @Nullable AlgorithmListener algorithmListener) {
+    this.dataContainer = dataContainer;
+    this.listener = algorithmListener;
+    this.refinementModel = dataContainer.getRefinementModel();
 
-  /**
-   * constructor for refinement
-   *
-   * @param data input {@link ffx.xray.DataContainer} that will be used as the model, must contain a
-   *     {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData} or {@link
-   *     ffx.realspace.RealSpaceData}
-   * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for refinement
-   * @param listener {@link ffx.algorithms.AlgorithmListener} a listener for updates
-   */
-  public RefinementMinimize(
-      DataContainer data, RefinementMode refinementMode, AlgorithmListener listener) {
-    dataContainer = data;
-    this.listener = listener;
-    this.refinementMode = refinementMode;
-    refinementEnergy = new RefinementEnergy(data, refinementMode, null);
-    nXYZ = refinementEnergy.nXYZ;
-    nB = refinementEnergy.nBFactor;
-    nOcc = refinementEnergy.nOccupancy;
-    n = refinementEnergy.getNumberOfVariables();
+    // Create the target potential to optimize.
+    refinementEnergy = new RefinementEnergy(dataContainer);
 
-    Atom[] atomArray = data.getAtomArray();
-    RefinementModel refinementModel = data.getRefinementModel();
-    int nAtoms = atomArray.length;
-
-    // Fill an active atom array.
-    int count = 0;
-    for (Atom a : atomArray) {
-      if (a.isActive()) {
-        count++;
-      }
-    }
-    int nActive = count;
-    activeAtomArray = new Atom[count];
-    count = 0;
-    for (Atom a : atomArray) {
-      if (a.isActive()) {
-        activeAtomArray[count++] = a;
-      }
-    }
-
+    // Define the number of parameters to optimize.
+    n = refinementModel.getNumParameters();
     x = new double[n];
     grad = new double[n];
     scaling = new double[n];
+    refinementModel.loadOptimizationScaling(scaling);
 
     refinementEnergy.getCoordinates(x);
     refinementEnergy.setScaling(scaling);
-
-    double xyzscale = 1.0;
-    double bisoscale = 1.0;
-    double anisouscale = 50.0;
-    double occscale = 15.0;
-
-    if (refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      bisoscale = 0.4;
-      anisouscale = 40.0;
-    }
-
-    if (refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      occscale = 10.0;
-    }
-
-    // set up scaling
-    if (refinementMode == RefinementMode.COORDINATES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      for (int i = 0; i < n; i++) {
-        scaling[i] = xyzscale;
-      }
-    }
-
-    if (refinementMode == RefinementMode.BFACTORS
-        || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      int i = nXYZ;
-      int resnum = -1;
-      if (data instanceof DiffractionData) {
-        DiffractionData diffractionData = (DiffractionData) data;
-        int nres = diffractionData.getnResidueBFactor() + 1;
-        for (Atom a : activeAtomArray) {
-          // Ignore hydrogens or inactive atoms.
-          if (a.getAtomicNumber() == 1) {
-            continue;
-          }
-          if (a.getAnisou(null) != null) {
-            for (int j = 0; j < 6; j++) {
-              scaling[i + j] = anisouscale;
-            }
-            i += 6;
-          } else if (diffractionData.isResidueBFactor()) {
-            if (resnum != a.getResidueNumber()) {
-              if (nres >= diffractionData.getnResidueBFactor()) {
-                if (resnum > -1 && i < nXYZ + nB - 1) {
-                  i++;
-                }
-                if (i < nXYZ + nB) {
-                  scaling[i] = bisoscale;
-                }
-                nres = 1;
-              } else {
-                nres++;
-              }
-              resnum = a.getResidueNumber();
-            }
-          } else {
-            scaling[i] = bisoscale;
-            i++;
-          }
-        }
-      } else {
-        logger.severe(" B refinement not supported for this data type!");
-      }
-    }
-
-    if (refinementMode == RefinementMode.OCCUPANCIES
-        || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-      if (nAtoms != nActive) {
-        logger.severe(" Occupancy refinement is not supported for inactive atoms.");
-      }
-      if (data instanceof DiffractionData) {
-
-        int i = nXYZ + nB;
-        for (List<Residue> list : refinementModel.getAltResidues()) {
-          for (int j = 0; j < list.size(); j++) {
-            scaling[i] = occscale;
-            i++;
-          }
-        }
-        for (List<Molecule> list : refinementModel.getAltMolecules()) {
-          for (int j = 0; j < list.size(); j++) {
-            scaling[i] = occscale;
-            i++;
-          }
-        }
-      } else {
-        logger.severe(" Occupancy refinement not supported for this data type!");
-      }
-    }
   }
 
   /**
-   * Parse a string into a refinement mode.
+   * Minimizes the refinement energy using a default gradient root mean square (RMS) value of 1.0.
    *
-   * @param str Refinement mode string.
-   * @return An instance of RefinementMode.
-   */
-  public static RefinementMode parseMode(String str) {
-    try {
-      return RefinementMode.valueOf(str.toUpperCase());
-    } catch (Exception e) {
-      logger.info(
-          format(
-              " Could not parse %s as a refinement mode; defaulting to coordinates.", str));
-      return RefinementMode.COORDINATES;
-    }
-  }
-
-  /**
-   * Getter for the field <code>eps</code>.
-   *
-   * @return a {@link java.lang.Double} object.
-   */
-  public Double getEps() {
-    boolean hasaniso = false;
-
-    for (Atom a : activeAtomArray) {
-      // ignore hydrogens!!!
-      if (a.getAtomicNumber() == 1) {
-        continue;
-      }
-      if (a.getAnisou(null) != null) {
-        hasaniso = true;
-        break;
-      }
-    }
-
-    switch (refinementMode) {
-      case COORDINATES:
-        eps = 0.4;
-        break;
-      case BFACTORS, BFACTORS_AND_OCCUPANCIES:
-        if (hasaniso) {
-          eps = 20.0;
-        } else {
-          eps = 0.01;
-        }
-        break;
-      case COORDINATES_AND_BFACTORS, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-        if (hasaniso) {
-          eps = 20.0;
-        } else {
-          eps = 0.2;
-        }
-        break;
-      case OCCUPANCIES:
-        eps = 0.1;
-        break;
-      case COORDINATES_AND_OCCUPANCIES:
-        eps = 0.2;
-        break;
-    }
-
-    return eps;
-  }
-
-  /**
-   * get the number of B factor parameters being fit
-   *
-   * @return the number of B factor parameters
-   */
-  public int getNB() {
-    return nB;
-  }
-
-  /**
-   * get the number of occupancy parameters being fit
-   *
-   * @return the number of occupancy parameters
-   */
-  public int getNOcc() {
-    return nOcc;
-  }
-
-  /**
-   * get the number of xyz parameters being fit
-   *
-   * @return the number of xyz parameters
-   */
-  public int getNXYZ() {
-    return nXYZ;
-  }
-
-  /**
-   * minimize assuming an eps of 1.0 and Integer.MAX_VALUE cycles
-   *
-   * @return {@link ffx.xray.RefinementEnergy} result
+   * @return a {@link RefinementEnergy} object representing the result of the minimization process.
    */
   public RefinementEnergy minimize() {
     return minimize(1.0);
   }
 
   /**
-   * minimize assuming Integer.MAX_VALUE cycles
+   * Minimizes the refinement energy using a specified gradient root mean square (RMS) value.
    *
-   * @param eps input gradient rms desired
-   * @return {@link ffx.xray.RefinementEnergy} result
+   * @param eps the desired gradient RMS value for the refinement process
+   * @return a {@link RefinementEnergy} object representing the result of the minimization process
    */
   public RefinementEnergy minimize(double eps) {
-    return minimize(7, eps, Integer.MAX_VALUE - 2);
+    return minimize(7, eps, Integer.MAX_VALUE);
   }
 
   /**
-   * minimize assuming an eps of 1.0 and limited cycles
+   * Minimizes the refinement energy with a specified maximum number of iterations,
+   * using a gradient RMS value of 1.0 and default matrix conditioning cycles.
    *
-   * @param maxiter maximum iterations allowed
-   * @return {@link ffx.xray.RefinementEnergy} result
+   * @param maxIterations the maximum number of iterations allowed for the minimization process
+   * @return a {@link RefinementEnergy} object representing the result of the minimization process
    */
-  public RefinementEnergy minimize(int maxiter) {
-    return minimize(7, 1.0, maxiter);
+  public RefinementEnergy minimize(int maxIterations) {
+    return minimize(7, 1.0, maxIterations);
   }
 
   /**
-   * minimize with input eps and cycles
+   * Minimizes the refinement energy using a specified gradient root mean square (RMS) value
+   * and maximum number of iterations.
    *
-   * @param eps input gradient rms desired
-   * @param maxiter maximum iterations allowed
-   * @return {@link ffx.xray.RefinementEnergy} result
+   * @param eps           the desired gradient RMS value for the refinement process
+   * @param maxIterations the maximum number of iterations allowed for the minimization process
+   * @return a {@link RefinementEnergy} object representing the result of the minimization process
    */
-  public RefinementEnergy minimize(double eps, int maxiter) {
-    return minimize(7, eps, maxiter);
+  public RefinementEnergy minimize(double eps, int maxIterations) {
+    return minimize(7, eps, maxIterations);
   }
 
   /**
-   * minimize with input cycles for matrix conditioning, eps and cycles
+   * Minimizes the refinement energy using the provided matrix conditioning cycles, gradient RMS value,
+   * and a maximum number of iterations. The default number of matrix conditioning steps is 7, while
+   * 0 is for steepest decent.
    *
-   * @param m number of cycles of matrix updates
-   * @param eps input gradient rms desired
-   * @param maxiter maximum iterations allowed
-   * @return {@link ffx.xray.RefinementEnergy} result
+   * @param m       the number of matrix conditioning cycles for the optimization process
+   * @param eps     the desired gradient root mean square (RMS) value for convergence
+   * @param maxiter the maximum number of iterations allowed for the minimization process
+   * @return a {@link RefinementEnergy} object representing the outcome of the minimization process
    */
   public RefinementEnergy minimize(int m, double eps, int maxiter) {
-    String typestring;
     if (dataContainer instanceof DiffractionData) {
-      typestring = "X-ray";
+      logger.info(" Beginning X-ray Refinement");
     } else if (dataContainer instanceof RealSpaceData) {
-      typestring = "Real Space";
+      logger.info(" Beginning Real Space Refinement");
     } else {
-      typestring = "null";
+      logger.info(" Beginning Refinement");
     }
 
-    logger.info(" Beginning " + typestring + " Refinement");
-    switch (refinementMode) {
-      case COORDINATES:
-        logger.info(" Mode: Coordinates");
-        break;
-      case BFACTORS:
-        logger.info(" Mode: B-Factors");
-        break;
-      case COORDINATES_AND_BFACTORS:
-        logger.info(" Mode: Coordinates and B-Factors");
-        break;
-      case OCCUPANCIES:
-        logger.info(" Mode: Occupancies");
-        break;
-      case COORDINATES_AND_OCCUPANCIES:
-        logger.info(" Mode: Coordinates and Occupancies");
-        break;
-      case BFACTORS_AND_OCCUPANCIES:
-        logger.info(" Mode: B-Factors and Occupancies");
-        break;
-      case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-        logger.info(" Mode: Coordinates, B-Factors and Occupancies");
-        break;
-    }
-    logger.info(" Number of Parameters: " + n);
+    RefinementMode refinementMode = refinementModel.getRefinementMode();
+    logger.info(refinementMode.toString());
+    logger.info(refinementModel.toString());
 
     refinementEnergy.getCoordinates(x);
 
@@ -455,34 +322,30 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder();
       mtime += System.nanoTime();
-      sb.append(format(" Optimization time: %g (sec)", mtime * toSeconds));
+      sb.append(format(" Optimization time: %g (sec)", mtime * NS2SEC));
       logger.info(sb.toString());
     }
 
     return refinementEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public boolean optimizationUpdate(
-      int iter,
-      int nBFGS,
-      int nfun,
-      double grms,
-      double xrms,
-      double f,
-      double df,
-      double angle,
-      LineSearchResult info) {
+  public boolean optimizationUpdate(int iter, int nBFGS, int nfun, double grms, double xrms, double f,
+                                    double df, double angle, @Nullable LineSearchResult info) {
+
     long currentTime = System.nanoTime();
-    Double seconds = (currentTime - time) * 1.0e-9;
+    double seconds = (currentTime - time) * NS2SEC;
     time = currentTime;
     this.grms = grms;
     this.nSteps = iter;
 
     // Update display.
     if (listener != null) {
-      MolecularAssembly[] molecularAssembly = dataContainer.getMolecularAssemblies();
+      RefinementModel refinementModel = dataContainer.getRefinementModel();
+      MolecularAssembly[] molecularAssembly = refinementModel.getMolecularAssemblies();
       for (MolecularAssembly ma : molecularAssembly) {
         listener.algorithmUpdate(ma);
       }
@@ -503,7 +366,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     } else if (info == LineSearchResult.Success) {
       StringBuilder sb = new StringBuilder();
       sb.append(format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
-              iter, f, grms, df, xrms, angle, nfun, seconds));
+          iter, f, grms, df, xrms, angle, nfun, seconds));
       sb.append(dataContainer.printOptimizationUpdate());
       logger.info(sb.toString());
     } else {
@@ -512,14 +375,16 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
               iter, f, grms, df, xrms, angle, nfun, info));
     }
     if (terminate) {
-      logger.info(" The optimization recieved a termination request.");
+      logger.info(" The optimization received a termination request.");
       // Tell the L-BFGS optimizer to terminate.
       return false;
     }
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void terminate() {
     terminate = true;
@@ -534,22 +399,4 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
   }
 
-  /** Different refinement mode selection types. */
-  public enum RefinementMode {
-
-    /** refine coordinates only */
-    COORDINATES,
-    /** refine B factors only (if anisotropic, refined as such) */
-    BFACTORS,
-    /** refine coordinates and B factors (if anisotropic, refined as such) */
-    COORDINATES_AND_BFACTORS,
-    /** refine occupancies only (alternate conformers are constrained) */
-    OCCUPANCIES,
-    /** refine B factors and occupancies */
-    BFACTORS_AND_OCCUPANCIES,
-    /** refine coordinates and occupancies */
-    COORDINATES_AND_OCCUPANCIES,
-    /** refine all */
-    COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
-  }
 }

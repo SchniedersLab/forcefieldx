@@ -94,14 +94,14 @@ public class GradientUtils {
       logger.info(" The gradient of no atoms was evaluated.");
       return nFailures;
     } else if (gradientAtoms.equalsIgnoreCase("ALL")) {
-      logger.info(" Checking gradient for all degrees of freedom.\n");
+      logger.info(" Checking gradient for all atoms.\n");
       degreesOfFreedomToTest = new ArrayList<>();
       for (int i = 0; i < nAtoms; i++) {
         degreesOfFreedomToTest.add(i);
       }
     } else {
       degreesOfFreedomToTest = parseAtomRanges(" Gradient atoms", gradientAtoms, nAtoms);
-      logger.info(" Checking gradient for degrees of freedom in the range: " + gradientAtoms + "\n");
+      logger.info(" Checking gradient for atoms in the range: " + gradientAtoms + "\n");
     }
 
     // Collect analytic gradient.
@@ -169,18 +169,18 @@ public class GradientUtils {
       avGrad += grad2;
 
       if (len > gradientTolerance) {
-        logger.info(format(" Degree of Freedom %d\n Failed: %10.6f\n", k + 1, len) +
+        logger.info(format(" Atom %d\n Failed: %10.6f\n", k + 1, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", g[i0], g[i1], g[i2]) +
-            format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+            format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
         ++nFailures;
       } else {
-        logger.info(format(" Degree of Freedom %d\n Passed: %10.6f\n", k + 1, len) +
+        logger.info(format(" Atom %d\n Passed: %10.6f\n", k + 1, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", g[i0], g[i1], g[i2]) +
             format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
       }
 
       if (grad2 > expGrad2) {
-        logger.info(format(" Degree of Freedom %d has an unusually large gradient: %10.6f", k + 1, Math.sqrt(grad2)));
+        logger.info(format(" Atom %d has an unusually large gradient: %10.6f", k + 1, Math.sqrt(grad2)));
       }
       logger.info("\n");
     }

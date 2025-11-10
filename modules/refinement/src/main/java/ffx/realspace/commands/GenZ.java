@@ -238,16 +238,15 @@ public class GenZ extends AlgorithmsCommand {
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
           resNumberList, titrationPH, manyBodyOptions);
-      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly();
-      setActiveAssembly(protonatedAssembly);
-      potentialEnergy = protonatedAssembly.getPotentialEnergy();
+      activeAssembly = titrationManyBody.getProtonatedAssembly();
+      potentialEnergy = activeAssembly.getPotentialEnergy();
     }
     molecularAssemblies = new MolecularAssembly[]{activeAssembly};
     refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies);
 
     if (lambdaTerm) {
       alchemicalOptions.setFirstSystemAlchemistry(activeAssembly);
-      LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy;
+      LambdaInterface lambdaInterface = potentialEnergy;
       double lambda = alchemicalOptions.getInitialLambda();
       logger.info(format(" Setting ManyBody softcore lambda to: %5.3f", lambda));
       lambdaInterface.setLambda(lambda);

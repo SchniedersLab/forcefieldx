@@ -211,7 +211,7 @@ public class Minimize extends AlgorithmsCommand {
       }
     } else {
       // Handle Single Topology Cases.
-      setActiveAssembly(topologies[0]);
+      activeAssembly = topologies[0];
       String modelFilename = activeAssembly.getFile().getAbsolutePath();
       if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
         baseDir = new File(FilenameUtils.getFullPath(modelFilename));

@@ -40,6 +40,7 @@ package ffx.xray.commands;
 import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.TimerOptions;
 import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
@@ -50,7 +51,6 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Parameters;
 
-import java.util.Collections;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -71,12 +71,18 @@ public class Timer extends AlgorithmsCommand {
   @Mixin
   private XrayOptions xrayOptions;
 
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions;
+
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames;
-  
+
+  private DiffractionData diffractionData;
+  private MolecularAssembly[] molecularAssemblies;
+
   private RefinementEnergy refinementEnergy;
 
   /**
@@ -122,8 +128,8 @@ public class Timer extends AlgorithmsCommand {
     }
 
     String filename;
-    MolecularAssembly[] molecularAssemblies;
-    if (filenames != null && filenames.size() > 0) {
+    if (filenames != null && !filenames.isEmpty()) {
+      // Each alternate conformer is returned in a separate MolecularAssembly.
       molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
       activeAssembly = molecularAssemblies[0];
       filename = filenames.get(0);
@@ -137,12 +143,17 @@ public class Timer extends AlgorithmsCommand {
 
     logger.info("\n Running xray.Timer on " + filename);
 
+    // Apply active atom flags.
+    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+      atomSelectionOptions.setActiveAtoms(molecularAssembly);
+    }
+
     // Combine script flags (in parseResult) with properties.
     CompositeConfiguration properties = activeAssembly.getProperties();
     xrayOptions.setProperties(parseResult, properties);
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData);
 
     // Print the initial energy of each conformer.
@@ -154,20 +165,28 @@ public class Timer extends AlgorithmsCommand {
     refinementEnergy.getCoordinates(x);
     Potential energy = refinementEnergy.getDataEnergy();
 
+    logger.info("\n Beginning Timings\n");
+
     int nEvals = timerOptions.getIterations();
+    boolean gradient = !timerOptions.getNoGradient();
     long minTime = Long.MAX_VALUE;
     double sumTime2 = 0.0;
-    int halfnEvals =  (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1; // Halfway point
+    int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1; // Halfway point
     for (int i = 0; i < nEvals; i++) {
       long time = -System.nanoTime();
       double e;
-      if (timerOptions.getNoGradient()) {
-        e = energy.energy(x);
-      } else {
+      if (gradient) {
         e = energy.energyAndGradient(x, g);
+      } else {
+        e = energy.energy(x);
       }
       time += System.nanoTime();
-      logger.info(format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9));
+      if (gradient) {
+        logger.info(format(" Energy & Gradient: %12.6f in %6.3f (sec)", e, time * 1.0E-9));
+      } else {
+        logger.info(format(" Energy: %12.6f in %6.3f (sec)", e, time * 1.0E-9));
+      }
+
       minTime = time < minTime ? time : minTime;
       if (i >= nEvals / 2) {
         double time2 = time * 1.0E-9;
@@ -183,12 +202,13 @@ public class Timer extends AlgorithmsCommand {
     return this;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public List<Potential> getPotentials() {
-    return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy);
+    return getPotentialsFromAssemblies(molecularAssemblies);
+  }
+
+  @Override
+  public boolean destroyPotentials() {
+    return diffractionData == null ? true : diffractionData.destroy();
   }
 }

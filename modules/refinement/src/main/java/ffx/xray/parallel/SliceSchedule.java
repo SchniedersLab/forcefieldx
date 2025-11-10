@@ -35,55 +35,61 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.parallel;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
 
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.min;
 
 /**
- * RowSchedule class.
+ * SliceSchedule class.
  *
- * @author Michael J. Schnieders
+ * @author Armin Avdic
  * @since 1.0
  */
-public class RowSchedule extends IntegerSchedule {
+public class SliceSchedule extends IntegerSchedule {
 
-  private final int[] lowerBounds;
   private final int fftZ;
-  private final int fftY;
+  private final int[] lowerBounds;
   private int nThreads;
   private boolean[] threadDone;
   private Range[] ranges;
   private int[] weights;
 
   /**
-   * Constructor for RowSchedule.
+   * Constructor for SliceSchedule.
    *
    * @param nThreads a int.
-   * @param fftZ a int.
-   * @param fftY a int.
+   * @param fftZ     a int.
    */
-  protected RowSchedule(int nThreads, int fftZ, int fftY) {
+  public SliceSchedule(int nThreads, int fftZ) {
     this.nThreads = nThreads;
-    threadDone = new boolean[nThreads];
-    ranges = new Range[nThreads];
-    lowerBounds = new int[nThreads + 1];
-    this.fftY = fftY;
     this.fftZ = fftZ;
+    int length = min(nThreads, fftZ);
+    threadDone = new boolean[length];
+    ranges = new Range[length];
+    lowerBounds = new int[length + 1];
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean isFixedSchedule() {
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Range next(int threadID) {
+    if (threadID >= min(fftZ, nThreads)) {
+      return null;
+    }
     if (!threadDone[threadID]) {
       threadDone[threadID] = true;
       return ranges[threadID];
@@ -91,18 +97,21 @@ public class RowSchedule extends IntegerSchedule {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void start(int nThreads, Range chunkRange) {
     this.nThreads = nThreads;
+    int length = min(nThreads, fftZ);
 
-    if (nThreads != threadDone.length) {
-      threadDone = new boolean[nThreads];
+    if (length != threadDone.length) {
+      threadDone = new boolean[length];
     }
     fill(threadDone, false);
 
-    if (nThreads != ranges.length) {
-      ranges = new Range[nThreads];
+    if (length != ranges.length) {
+      ranges = new Range[length];
     }
     fill(lowerBounds, 0);
     defineRanges();
@@ -113,13 +122,13 @@ public class RowSchedule extends IntegerSchedule {
    *
    * @param weights an array of {@link int} objects.
    */
-  void updateWeights(int[] weights) {
+  public void updateWeights(int[] weights) {
     this.weights = weights;
   }
 
   private int totalWeight() {
     int totalWeight = 0;
-    for (int i = 0; i < fftZ * fftY; i++) {
+    for (int i = 0; i < fftZ; i++) {
       totalWeight += weights[i];
     }
     return totalWeight;
@@ -128,36 +137,38 @@ public class RowSchedule extends IntegerSchedule {
   private void defineRanges() {
     double totalWeight = totalWeight();
 
+    int length = min(nThreads, fftZ);
+
     // Infrequent edge case where the total weight is less than or equal to the number of threads.
-    if (totalWeight <= nThreads) {
-      Range temp = new Range(0, fftZ * fftY - 1);
-      ranges = temp.subranges(nThreads);
+    if (totalWeight <= length) {
+      Range temp = new Range(0, fftZ - 1);
+      ranges = temp.subranges(length);
       return;
     }
 
-    // Handle the case where we only have a single thread, which will receive all the rows.
+    // Handle the case where we only have a single thread, which will receive all the slices.
     if (nThreads == 1) {
-      ranges[0] = new Range(0, fftZ * fftY - 1);
+      ranges[0] = new Range(0, fftZ - 1);
       return;
     }
 
-    double targetWeight = (totalWeight / nThreads);
-    int lastRow = fftZ * fftY - 1;
+    double targetWeight = (totalWeight / nThreads) * .96;
+    int lastSlice = fftZ - 1;
 
-    int currentRow = 0;
+    int currentSlice = 0;
     lowerBounds[0] = 0;
     int currentThread = 0;
-    while (currentThread < nThreads) {
+    while (currentThread < length) {
       int threadWeight = 0;
-      while (threadWeight < targetWeight && currentRow < lastRow) {
-        threadWeight += weights[currentRow];
-        currentRow++;
+      while (threadWeight < targetWeight && currentSlice < lastSlice) {
+        threadWeight += weights[currentSlice];
+        currentSlice++;
       }
       currentThread++;
-      if (currentRow < lastRow) {
-        lowerBounds[currentThread] = currentRow;
+      if (currentSlice < lastSlice) {
+        lowerBounds[currentThread] = currentSlice;
       } else {
-        lowerBounds[currentThread] = lastRow;
+        lowerBounds[currentThread] = lastSlice;
         break;
       }
     }
@@ -168,18 +179,13 @@ public class RowSchedule extends IntegerSchedule {
     for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
       ranges[currentThread] =
           new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
-      // logger.info(String.format("Range for thread %d %s.", currentThread,
-      // ranges[currentThread]));
-
     }
 
     // Final range for the last thread that will receive work.
-    ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastRow);
-    // logger.info(String.format("Range for thread %d %s.", lastThread - 1, ranges[lastThread -
-    // 1]));
+    ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastSlice);
 
     // Left-over threads with null ranges.
-    for (int it = lastThread; it < nThreads; it++) {
+    for (int it = lastThread; it < length; it++) {
       ranges[it] = null;
     }
   }
@@ -189,9 +195,10 @@ public class RowSchedule extends IntegerSchedule {
    *
    * @return an array of {@link int} objects.
    */
-  int[] getThreadWeights() {
-    int[] weightsToReturn = new int[nThreads];
-    arraycopy(weights, 0, weightsToReturn, 0, nThreads);
+  public int[] getThreadWeights() {
+    int length = min(fftZ, nThreads);
+    int[] weightsToReturn = new int[length];
+    arraycopy(weights, 0, weightsToReturn, 0, length);
     return weightsToReturn;
   }
 
@@ -200,9 +207,10 @@ public class RowSchedule extends IntegerSchedule {
    *
    * @return an array of {@link int} objects.
    */
-  int[] getLowerBounds() {
-    int[] boundsToReturn = new int[nThreads];
-    arraycopy(lowerBounds, 1, boundsToReturn, 0, nThreads);
+  public int[] getLowerBounds() {
+    int length = min(fftZ, nThreads);
+    int[] boundsToReturn = new int[length];
+    arraycopy(lowerBounds, 1, boundsToReturn, 0, length);
     return boundsToReturn;
   }
 }

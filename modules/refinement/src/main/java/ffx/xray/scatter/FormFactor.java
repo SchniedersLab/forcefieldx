@@ -35,58 +35,50 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.scatter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.crystal.HKL;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.AtomType;
-import ffx.xray.scatter.XRayFormFactor;
-import org.junit.Before;
-import org.junit.Test;
+import ffx.xray.refine.RefinementMode;
 
 /**
+ * FormFactor interface.
+ *
  * @author Timothy D. Fenn
+ * @since 1.0
  */
-public class FormFactorTest extends AlgorithmsTest {
+public interface FormFactor {
 
-  private XRayFormFactor carbonFormFactor;
+  /**
+   * Compute the real space density rho
+   *
+   * @param f the current density to modify
+   * @param lambda the state variable
+   * @param xyz the requested point for evaluating density
+   * @return the real space density value at xyz
+   */
+  double rho(double f, double lambda, double[] xyz);
 
-  @Before
-  public void setUp() {
-    double[] d = new double[3];
-    double[] anisou = new double[6];
-    anisou[0] = anisou[1] = anisou[2] = 1.0;
-    anisou[3] = anisou[4] = anisou[5] = 0.0;
-    Atom carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A', 1.0, 20.0, "A");
-    AtomType atomType = new AtomType(1, 1, "C", null, 6, 12.01, 1);
-    carbon.setAtomType(atomType);
-    carbon.setAltLoc('A');
-    carbon.setAnisou(anisou);
-    carbonFormFactor = new XRayFormFactor(carbon, false);
-  }
+  /**
+   * Compute the real space gradient
+   *
+   * @param xyz the requested point for evaluating gradient
+   * @param dfc the multiplier to apply to the gradient
+   * @param refinementmode {@link RefinementMode} determines which
+   *     gradients will be computed
+   */
+  void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
 
-  @Test
-  public void testCarbonFF() {
-    assertNotNull(" Carbon form factors should exist", XRayFormFactor.getFormFactor("6"));
-    double[][] formFactor = XRayFormFactor.getFormFactor("6");
+  /**
+   * update the coordinates to the current position
+   *
+   * @param xyz an array of double.
+   */
+  void update(double[] xyz);
 
-    assertEquals(" Carbon form factors", 5, (int) formFactor[0][0]);
-    assertEquals(" Carbon form factors", 2.09921, formFactor[1][0], 0.0001);
-    assertEquals(" Carbon form factors", 13.18997, formFactor[2][0], 0.0001);
-  }
-
-  @Test
-  public void testCarbonfrho() {
-    HKL hkl = new HKL(1, 1, 1);
-    assertEquals("carbon (1 1 1) structure factor should be correct", 2.3986e-26,
-        carbonFormFactor.f(hkl), 1e-30);
-
-    double[] xyz = {1.0, 1.0, 1.0};
-    assertEquals("carbon (1 1 1) electron density should be correct", 0.081937,
-        carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
-  }
+  /**
+   * update the coordinates to the current position and Badd
+   *
+   * @param xyz an array of double.
+   * @param badd a double.
+   */
+  void update(double[] xyz, double badd);
 }

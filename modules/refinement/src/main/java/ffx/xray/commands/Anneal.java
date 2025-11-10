@@ -43,18 +43,20 @@ import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.AtomSelectionOptions;
 import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.cli.XrayOptions;
+import ffx.xray.refine.RefinementMode;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,7 +76,17 @@ public class Anneal extends AlgorithmsCommand {
   private DynamicsOptions dynamicsOptions;
 
   @Mixin
+  AtomSelectionOptions atomSelectionOptions;
+
+  @Mixin
   private AnnealOptions annealOptions;
+
+  /**
+   * --mtz Write out MTZ containing structure factor coefficients.
+   */
+  @Option(names = {"--mtz"}, paramLabel = "false",
+      description = "Write out an MTZ containing structure factor coefficients.")
+  private boolean mtz = false;
 
   /**
    * One or more filenames.
@@ -82,6 +94,8 @@ public class Anneal extends AlgorithmsCommand {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames;
 
+  private MolecularAssembly[] molecularAssemblies;
+  private DiffractionData diffractionData;
   private SimulatedAnnealing simulatedAnnealing = null;
   private RefinementEnergy refinementEnergy;
 
@@ -94,6 +108,7 @@ public class Anneal extends AlgorithmsCommand {
 
   /**
    * Anneal constructor that sets the command line arguments.
+   *
    * @param args Command line arguments.
    */
   public Anneal(String[] args) {
@@ -102,6 +117,7 @@ public class Anneal extends AlgorithmsCommand {
 
   /**
    * Anneal constructor.
+   *
    * @param binding The Binding to use.
    */
   public Anneal(FFXBinding binding) {
@@ -119,9 +135,9 @@ public class Anneal extends AlgorithmsCommand {
     xrayOptions.init();
 
     String filename;
-    MolecularAssembly[] molecularAssemblies;
     if (filenames != null && !filenames.isEmpty()) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      // Each alternate conformer is returned in a separate MolecularAssembly.
+      molecularAssemblies = algorithmFunctions.openAll(filenames.getFirst());
       activeAssembly = molecularAssemblies[0];
     } else if (activeAssembly == null) {
       logger.info(helpString());
@@ -130,25 +146,38 @@ public class Anneal extends AlgorithmsCommand {
       molecularAssemblies = new MolecularAssembly[]{activeAssembly};
     }
 
+    // Update the active filename
     filename = activeAssembly.getFile().getAbsolutePath();
+
+    // Apply active atom flags.
+    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+      atomSelectionOptions.setActiveAtoms(molecularAssembly);
+    }
 
     logger.info("\n Running simulated annealing on X-ray target including " + filename + "\n");
 
-    // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
-    if (!dyn.exists()) {
-      dyn = null;
-    }
-
+    // Combine script flags (in parseResult) with properties.
     CompositeConfiguration properties = activeAssembly.getProperties();
     xrayOptions.setProperties(parseResult, properties);
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
+
+    // Set up diffraction data (can be multiple files)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, properties);
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData);
 
-    // Print the initial energy of each conformer.
+    // Log the energy of each MolecularAssembly
     algorithmFunctions.energy(molecularAssemblies);
 
-    simulatedAnnealing = annealOptions.createAnnealer(dynamicsOptions, activeAssembly, refinementEnergy, algorithmListener, dyn);
+    // Restart is currently only supported for COORDINATES mode.
+    File dyn = null;
+    if (xrayOptions.refinementMode == RefinementMode.COORDINATES) {
+      dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
+      if (!dyn.exists()) {
+        dyn = null;
+      }
+    }
+
+    simulatedAnnealing = annealOptions.createAnnealer(dynamicsOptions,
+        activeAssembly, refinementEnergy, algorithmListener, dyn);
     simulatedAnnealing.setPrintInterval(dynamicsOptions.getReport());
     simulatedAnnealing.setSaveFrequency(dynamicsOptions.getWrite());
     simulatedAnnealing.setRestartFrequency(dynamicsOptions.getCheckpoint());
@@ -166,14 +195,21 @@ public class Anneal extends AlgorithmsCommand {
 
     logger.info(" ");
     diffractionData.writeModel(FilenameUtils.removeExtension(filename) + ".pdb");
-    diffractionData.writeData(FilenameUtils.removeExtension(filename) + ".mtz");
+
+    if (mtz) {
+      diffractionData.writeData(FilenameUtils.removeExtension(filename) + ".mtz");
+    }
 
     return this;
   }
 
   @Override
   public List<Potential> getPotentials() {
-    return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList((Potential) refinementEnergy);
+    return getPotentialsFromAssemblies(molecularAssemblies);
+  }
+
+  @Override
+  public boolean destroyPotentials() {
+    return diffractionData == null ? true : diffractionData.destroy();
   }
 }

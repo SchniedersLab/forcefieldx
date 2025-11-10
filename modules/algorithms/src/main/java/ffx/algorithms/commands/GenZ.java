@@ -314,9 +314,8 @@ public class GenZ extends AlgorithmsCommand {
         // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
         titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
             resNumberList, titrationPH, manyBodyOptions);
-        MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly();
-        setActiveAssembly(protonatedAssembly);
-        potentialEnergy = protonatedAssembly.getPotentialEnergy();
+        activeAssembly = titrationManyBody.getProtonatedAssembly();
+        potentialEnergy = activeAssembly.getPotentialEnergy();
       }
 
       // Turn on softcoring lambda

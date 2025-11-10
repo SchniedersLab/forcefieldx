@@ -47,7 +47,8 @@ import ffx.potential.cli.GradientOptions;
 import ffx.utilities.FFXBinding;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
+import ffx.xray.refine.RefinementModel;
 import ffx.xray.cli.XrayOptions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import picocli.CommandLine.Command;
@@ -162,8 +163,10 @@ public class LambdaGradient extends AlgorithmsCommand {
     // Finite-difference step size in Angstroms.
     double step = gradientOptions.getDx();
 
-    int n = refinementEnergy.getNumberOfVariables();
-    Atom[] atoms = refinementEnergy.getActiveAtoms();
+    RefinementModel refinementModel = diffractionData.getRefinementModel();
+
+    int n = refinementModel.getNumParameters();
+    Atom[] atoms = refinementModel.getActiveAtoms();
     int nAtoms = atoms.length;
     double[] x = new double[n];
     double[] gradient = new double[n];
@@ -391,7 +394,8 @@ public class LambdaGradient extends AlgorithmsCommand {
       logger.info(format(" RMS gradient: %10.6f", avGrad));
     }
 
-    refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.BFACTORS);
+    diffractionData.getRefinementModel().setRefinementMode(RefinementMode.BFACTORS);
+    refinementEnergy = new RefinementEnergy(diffractionData);
     n = refinementEnergy.getNumberOfVariables();
     gradient = new double[n];
     x = new double[n];

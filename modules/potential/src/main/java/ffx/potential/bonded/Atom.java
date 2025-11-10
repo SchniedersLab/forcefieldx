@@ -343,7 +343,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double occupancyAcceleration;
   private double occupancyPreviousAcceleration;
   /**
-   * Array of tempFactor values for each altLoc.
+   * The temperature factor for this atom.
    *
    * @since 1.0
    */
@@ -413,7 +413,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private String segID = null;
   private double formFactorWidth = 3.5;
   private double formFactorWidth2 = formFactorWidth * formFactorWidth;
-  private int formFactorIndex = -1;
+  private int xrayCoordIndex = -1;
   private ArrayList<Vector3d> trajectory;
 
   /**
@@ -901,11 +901,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Getter for the field <code>anisou</code>.
+   * Get the anisou array, or null if the field is null.
    *
    * @param anisou the anisou array to fill.
-   * @return The passed in anisou array filled with the tensor values, or a new array
-   * if anisou is null or too small.
+   * @return The passed in anisou array filled with the tensor values, a new array
+   * if the passed array is null or too small, or null if the field is null.
    */
   public double[] getAnisou(@Nullable double[] anisou) {
     if (this.anisou == null) {
@@ -1207,21 +1207,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Getter for the field <code>formFactorIndex</code>.
-   *
-   * @return The index of the form factor in the form factor array.
+   * The index of this atom in the overall refinement model coordinate array.
+   * @return The index of the atom in the refinement model coordinate array.
    */
-  public int getFormFactorIndex() {
-    return formFactorIndex;
+  public int getXrayCoordIndex() {
+    return xrayCoordIndex;
   }
 
   /**
-   * Setter for the field <code>formFactorIndex</code>.
+   * The index of this atom in the overall refinement model coordinate array.
    *
-   * @param formFactorIndex The index of the form factor in the form factor array.
+   * @param xrayCoordIndex The index of the atom in the refinement model coordinate array.
    */
-  public void setFormFactorIndex(int formFactorIndex) {
-    this.formFactorIndex = formFactorIndex;
+  public void setXrayCoordIndex(int xrayCoordIndex) {
+    this.xrayCoordIndex = xrayCoordIndex;
   }
 
   /**
@@ -1967,7 +1966,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param xyz an array of double.
    */
   public void setXYZ(double[] xyz) {
-    assert Arrays.stream(xyz).allMatch(Double::isFinite);
     if (active) {
       arraycopy(xyz, 0, this.xyz, 0, 3);
     }
@@ -2121,8 +2119,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @return a boolean.
    */
   public boolean isDeuterium() {
-    String name = getName();
-    return (isHydrogen() && (name.charAt(0) == 'D' || name.charAt(0) == 'd'));
+    String name = getName().toUpperCase();
+    return isHydrogen() && name.charAt(0) == 'D';
   }
 
   /**
@@ -2575,7 +2573,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param c a double.
    */
   public void moveTo(double a, double b, double c) {
-    assert Double.isFinite(a) && Double.isFinite(b) && Double.isFinite(c);
     if (active) {
       xyz[0] = a;
       xyz[1] = b;

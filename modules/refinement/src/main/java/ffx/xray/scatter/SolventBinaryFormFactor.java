@@ -35,49 +35,46 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.scatter;
 
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
 
-import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
-import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * SolventGaussFormFactor class.
+ * SolventBinaryFormFactor class.
  *
  * @author Timothy D. Fenn
  * @since 1.0
  */
-public final class SolventGaussFormFactor implements FormFactor {
+public final class SolventBinaryFormFactor implements FormFactor {
 
-  private final Atom atom;
   private final double[] xyz = new double[3];
   private final double[] dxyz = new double[3];
-  private final double[] g = new double[3];
-  private final double isd2;
+  private final double probeRad;
 
   /**
-   * Constructor for SolventGaussFormFactor.
+   * Constructor for SolventBinaryFormFactor.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param sd a double.
+   * @param probeRad a double.
    */
-  public SolventGaussFormFactor(Atom atom, double sd) {
-    this(atom, sd, atom.getXYZ(null));
+  public SolventBinaryFormFactor(Atom atom, double probeRad) {
+    this(atom, probeRad, atom.getXYZ(null));
   }
 
   /**
-   * Constructor for SolventGaussFormFactor.
+   * Constructor for SolventBinaryFormFactor.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param sd a double.
+   * @param probeRad a double.
    * @param xyz an array of double.
    */
-  public SolventGaussFormFactor(Atom atom, double sd, double[] xyz) {
-    this.atom = atom;
-    isd2 = 1.0 / (sd * sd);
+  public SolventBinaryFormFactor(Atom atom, double probeRad, double[] xyz) {
+    this.probeRad = probeRad;
+
     update(xyz);
   }
 
@@ -85,7 +82,7 @@ public final class SolventGaussFormFactor implements FormFactor {
   @Override
   public double rho(double f, double lambda, double[] xyz) {
     sub(this.xyz, xyz, dxyz);
-    return rho(f, lambda, length2(dxyz));
+    return rho(f, lambda, DoubleMath.length(dxyz));
   }
 
   /**
@@ -93,30 +90,24 @@ public final class SolventGaussFormFactor implements FormFactor {
    *
    * @param f a double.
    * @param lambda a double.
-   * @param rsq a double.
+   * @param ri a double.
    * @return a double.
    */
-  public double rho(double f, double lambda, double rsq) {
-    return f + exp(-rsq * isd2);
+  public double rho(double f, double lambda, double ri) {
+    if (ri <= probeRad) {
+      return 0.0;
+    } else {
+      return f;
+    }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Derivatives are zero or infinite for the binary model.
+   *
+   * <p>{@inheritDoc}
+   */
   @Override
-  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
-    if (refinementmode == RefinementMode.BFACTORS
-        || refinementmode == RefinementMode.OCCUPANCIES
-        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES) {
-      return;
-    }
-    sub(this.xyz, xyz, dxyz);
-    double r2 = length2(dxyz);
-    double rho = exp(-r2 * isd2);
-    double prefactor = -dfc * 2.0 * rho * isd2;
-    g[0] = prefactor * dxyz[0];
-    g[1] = prefactor * dxyz[1];
-    g[2] = prefactor * dxyz[2];
-    atom.addToXYZGradient(g[0], g[1], g[2]);
-  }
+  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {}
 
   /** {@inheritDoc} */
   @Override

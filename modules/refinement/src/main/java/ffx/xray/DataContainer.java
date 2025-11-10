@@ -37,12 +37,7 @@
 // ******************************************************************************
 package ffx.xray;
 
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Residue;
-
-import java.util.List;
+import ffx.xray.refine.RefinementModel;
 
 /**
  * DataContainer interface.
@@ -53,44 +48,9 @@ import java.util.List;
 public interface DataContainer {
 
   /**
-   * getActiveAtomArray
-   *
-   * @return an array of {@link ffx.potential.bonded.Atom} objects.
-   */
-  Atom[] getActiveAtomArray();
-
-  /**
-   * getAltMolecules
-   *
-   * @return a {@link java.util.List} object.
-   */
-  List<List<Molecule>> getAltMolecules();
-
-  /**
-   * getAltResidues
-   *
-   * @return a {@link java.util.List} object.
-   */
-  List<List<Residue>> getAltResidues();
-
-  /**
-   * getAtomArray
-   *
-   * @return an array of {@link ffx.potential.bonded.Atom} objects.
-   */
-  Atom[] getAtomArray();
-
-  /**
-   * getMolecularAssemblies
-   *
-   * @return an array of {@link ffx.potential.MolecularAssembly} objects.
-   */
-  MolecularAssembly[] getMolecularAssemblies();
-
-  /**
    * getRefinementModel
    *
-   * @return a {@link ffx.xray.RefinementModel} object.
+   * @return a {@link RefinementModel} object.
    */
   RefinementModel getRefinementModel();
 

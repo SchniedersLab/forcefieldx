@@ -67,7 +67,7 @@ public class SplineEnergy implements OptimizationInterface {
   private final ReflectionList reflectionList;
   private final ReflectionSpline spline;
   private final int nParams;
-  private final int type;
+  private final SplineType type;
   private final Crystal crystal;
   private final DiffractionRefinementData refinementData;
   private final double[][] fc;
@@ -88,7 +88,7 @@ public class SplineEnergy implements OptimizationInterface {
       ReflectionList reflectionList,
       DiffractionRefinementData refinementData,
       int nParams,
-      int type) {
+      SplineType type) {
     this.reflectionList = reflectionList;
     this.crystal = reflectionList.crystal;
     this.refinementData = refinementData;
@@ -213,7 +213,7 @@ public class SplineEnergy implements OptimizationInterface {
         continue;
       }
 
-      if (type == Type.FOTOESQ && fo[i][0] <= 0.0) {
+      if (type == SplineType.FOTOESQ && fo[i][0] <= 0.0) {
         continue;
       }
 
@@ -227,7 +227,7 @@ public class SplineEnergy implements OptimizationInterface {
       double dr = 0.0;
       double w = 0.0;
       switch (type) {
-        case Type.FOFC:
+        case SplineType.FOFC:
           w = 1.0;
           double f1 = refinementData.getF(i);
           double f2 = fct.abs();
@@ -236,7 +236,7 @@ public class SplineEnergy implements OptimizationInterface {
           dr = -2.0 * f2 * d;
           sumfo += f1 * f1;
           break;
-        case Type.F1F2:
+        case SplineType.F1F2:
           w = 2.0 / ih.epsilonc();
           double ieps = 1.0 / eps;
           f1 = pow(fct.abs(), 2.0) * ieps;
@@ -245,14 +245,14 @@ public class SplineEnergy implements OptimizationInterface {
           d2 = d * d / f1;
           dr = 2.0 * d;
           break;
-        case Type.FCTOESQ:
+        case SplineType.FCTOESQ:
           w = 2.0 / ih.epsilonc();
           f1 = pow(fct.abs() / sqrt(eps), 2);
           d = f1 * fh - 1.0;
           d2 = d * d / f1;
           dr = 2.0 * d;
           break;
-        case Type.FOTOESQ:
+        case SplineType.FOTOESQ:
           w = 2.0 / ih.epsilonc();
           f1 = pow(refinementData.getF(i) / sqrt(eps), 2);
           d = f1 * fh - 1.0;
@@ -287,7 +287,7 @@ public class SplineEnergy implements OptimizationInterface {
       }
     }
 
-    if (gradient && type == Type.FOFC) {
+    if (gradient && type == SplineType.FOFC) {
       double isumfo = 1.0 / sumfo;
       for (int i = 0; i < g.length; i++) {
         g[i] *= isumfo;
@@ -298,7 +298,7 @@ public class SplineEnergy implements OptimizationInterface {
       StringBuilder sb = new StringBuilder("\n");
       sb.append(" Computed Potential Energy\n");
       sb.append(format("   residual:  %8.3f\n", sum / sumfo));
-      if (type == Type.FOFC || type == Type.F1F2) {
+      if (type == SplineType.FOFC || type == SplineType.F1F2) {
         sb.append(
             format(
                 "   R:  %8.3f  Rfree:  %8.3f\n", (r / rf) * 100.0, (rfree / rfreef) * 100.0));
@@ -319,11 +319,30 @@ public class SplineEnergy implements OptimizationInterface {
     return sum / sumfo;
   }
 
-  public interface Type {
+  /**
+   * The SplineType enum represents types of splines that can be used in X-ray
+   * diffraction energy calculations within the context of the SplineEnergy class.
+   * Each constant corresponds to a specific mathematical or computational
+   * formulation of a spline used for handling structure factor data.
+   * <p>
+   * FOFC     Spline Fo to Fc
+   * F1F2     Spline F1 to F2
+   * FCTOESQ  Spline Fc to ESQ
+   * FOTOESQ  Spline Fo to ESQ
+   */
+  public enum SplineType {
+    FOFC,     // Spline Fo to Fc
+    F1F2,     // F1F2: Spline F1 to F2
+    FCTOESQ,  // Spline Fc to ESQ
+    FOTOESQ;   // Spline Fo to ESQ
 
-    int FOFC = 1;
-    int F1F2 = 2;
-    int FCTOESQ = 3;
-    int FOTOESQ = 4;
+    public String toString() {
+      return switch (this) {
+        case FOFC -> "Fo to Fc";
+        case F1F2 -> "F1 to F2";
+        case FCTOESQ -> "Fc to Esq";
+        case FOTOESQ -> "Fo to Esq";
+      };
+    }
   }
 }

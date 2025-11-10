@@ -35,91 +35,75 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.xray;
+package ffx.xray.solvent;
 
-import ffx.numerics.math.DoubleMath;
+import edu.rit.pj.ParallelTeam;
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.potential.nonbonded.RowRegion;
 
-import static ffx.numerics.math.DoubleMath.sub;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
 
 /**
- * SolventBinaryFormFactor class.
+ * This class implements a spatial decomposition based on partitioning a grid into rows. The
+ * over-ridden "selectAtoms" method selects atoms that are not in the asymmetric unit, but are
+ * within the supplied cutoff radius.
  *
- * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  * @since 1.0
  */
-public final class SolventBinaryFormFactor implements FormFactor {
+public class BulkSolventRowRegion extends RowRegion {
 
-  private final double[] xyz = new double[3];
-  private final double[] dxyz = new double[3];
-  private final double probeRad;
+  /** Constant <code>logger</code> */
+  protected static final Logger logger = Logger.getLogger(BulkSolventRowRegion.class.getName());
 
-  /**
-   * Constructor for SolventBinaryFormFactor.
-   *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param probeRad a double.
-   */
-  public SolventBinaryFormFactor(Atom atom, double probeRad) {
-    this(atom, probeRad, atom.getXYZ(null));
-  }
+  private final BulkSolventList bulkSolventList;
+  private final int gZ;
+  private final int gY;
 
   /**
-   * Constructor for SolventBinaryFormFactor.
+   * Constructor for BulkSolventDensityRegion.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param probeRad a double.
-   * @param xyz an array of double.
+   * @param gX a int.
+   * @param gY a int.
+   * @param gZ a int.
+   * @param grid an array of double.
+   * @param nSymm a int.
+   * @param threadCount a int.
+   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+   * @param coordinates an array of double.
+   * @param cutoff a double.
+   * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
-  public SolventBinaryFormFactor(Atom atom, double probeRad, double[] xyz) {
-    this.probeRad = probeRad;
-
-    update(xyz);
+  public BulkSolventRowRegion(int gX, int gY, int gZ, double[] grid, int nSymm,
+      int threadCount, Crystal crystal, Atom[] atoms, double[][][] coordinates, double cutoff,
+      ParallelTeam parallelTeam) {
+    super(gX, gY, gZ, grid, nSymm, threadCount, atoms, coordinates);
+    this.gZ = gZ;
+    this.gY = gY;
+    // Asymmetric unit atoms never selected by this class.
+    fill(select[0], false);
+    bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
   }
 
   /** {@inheritDoc} */
   @Override
-  public double rho(double f, double lambda, double[] xyz) {
-    sub(this.xyz, xyz, dxyz);
-    return rho(f, lambda, DoubleMath.length(dxyz));
-  }
-
-  /**
-   * rho
-   *
-   * @param f a double.
-   * @param lambda a double.
-   * @param ri a double.
-   * @return a double.
-   */
-  public double rho(double f, double lambda, double ri) {
-    if (ri <= probeRad) {
-      return 0.0;
-    } else {
-      return f;
+  public void run() {
+    try {
+      execute(0, (gZ * gY) - 1, rowLoop[getThreadIndex()]);
+    } catch (Exception e) {
+      String message = " Exception in BulkSolventRowRegion.";
+      logger.log(Level.SEVERE, message, e);
     }
   }
 
-  /**
-   * Derivatives are zero or infinite for the binary model.
-   *
-   * <p>{@inheritDoc}
-   */
-  @Override
-  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {}
-
   /** {@inheritDoc} */
   @Override
-  public void update(double[] xyz) {
-    update(xyz, 0.0);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void update(double[] xyz, double badd) {
-    this.xyz[0] = xyz[0];
-    this.xyz[1] = xyz[1];
-    this.xyz[2] = xyz[2];
+  public void selectAtoms() {
+    bulkSolventList.buildList(coordinates, select, false);
   }
 }

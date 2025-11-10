@@ -50,7 +50,10 @@ import org.apache.commons.lang3.Strings;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -120,11 +123,30 @@ public class AlgorithmsCommand extends FFXCommand {
    * @return All Potentials. Sometimes empty, never null.
    */
   public List<Potential> getPotentials() {
-    List<Potential> plist = new ArrayList<>();
+    List<Potential> potentials = new ArrayList<>();
     if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
-      plist.add(activeAssembly.getPotentialEnergy());
+      potentials.add(activeAssembly.getPotentialEnergy());
     }
-    return plist;
+    return potentials;
+  }
+
+  /**
+   * Returns a List of all Potential objects from the supplied MolecularAssembly array.
+   * Should be written to tolerate nulls, as many tests run help() and exit without
+   * instantiating their Potentials.
+   *
+   * @param assemblies An array of MolecularAssembly instances.
+   * @return All Potentials. Sometimes empty, never null.
+   */
+  public List<Potential> getPotentialsFromAssemblies(MolecularAssembly[] assemblies) {
+    if (assemblies == null) {
+      return new ArrayList<>();
+    }
+    return Arrays.stream(assemblies)
+        .filter(Objects::nonNull)
+        .map(MolecularAssembly::getPotentialEnergy)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -224,17 +246,6 @@ public class AlgorithmsCommand extends FFXCommand {
       assemblies = new MolecularAssembly[]{activeAssembly};
     }
     return assemblies;
-  }
-
-  /**
-   * Set the Active Assembly. This is a work-around for a strange Groovy static compilation bug where
-   * direct assignment of activeAssembly in Groovy scripts that extend AlgorithmsScript fails (a NPE
-   * results).
-   *
-   * @param molecularAssembly The MolecularAssembly that should be active.
-   */
-  public void setActiveAssembly(MolecularAssembly molecularAssembly) {
-    activeAssembly = molecularAssembly;
   }
 
   /**

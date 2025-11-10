@@ -121,7 +121,7 @@ public class CNSFilter implements DiffractionFileFilter {
 
     Resolution resolution = null;
     if (properties != null) {
-      resolution = Resolution.checkProperties(properties);
+      resolution = Resolution.checkProperties(properties, false, -1.0);
       resHigh = resolution.resolution;
     }
 
@@ -130,8 +130,7 @@ public class CNSFilter implements DiffractionFileFilter {
     }
 
     if (spaceGroupNum < 0 || cell[0] < 0 || resolution == null) {
-      logger.info(
-          " The CNS file contains insufficient information to generate the reflection list.");
+      logger.info(" The CNS file contains insufficient information to generate the reflection list.");
       return null;
     }
 

@@ -39,12 +39,10 @@ package ffx.xray.cli;
 
 import ffx.potential.MolecularAssembly;
 import ffx.utilities.FFXProperty;
-import ffx.xray.CrystalReciprocalSpace;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.solvent.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.refine.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -110,8 +108,8 @@ public class XrayOptions extends DataRefinementOptions {
    * Parse options.
    */
   public void init() {
-    refinementMode = RefinementMinimize.parseMode(group.modeString);
-    solventModel = CrystalReciprocalSpace.parseSolventModel(solventGroup.solventString);
+    refinementMode = RefinementMode.parseMode(group.modeString);
+    solventModel = SolventModel.parse(solventGroup.solventString);
   }
 
   /**
@@ -154,6 +152,7 @@ public class XrayOptions extends DataRefinementOptions {
         DiffractionFile diffractionfile = new DiffractionFile(reflectionGroup.data[i], w, neutron);
         diffractionfiles.add(diffractionfile);
       }
+
     }
 
     if (diffractionfiles.isEmpty()) {
@@ -283,8 +282,10 @@ public class XrayOptions extends DataRefinementOptions {
       CompositeConfiguration properties) {
     // Set up diffraction data (can be multiple files)
     List<DiffractionFile> diffractionFiles = processData(filenames, assemblies);
-    return new DiffractionData(assemblies, properties, solventModel,
+    DiffractionData diffractionData = new DiffractionData(assemblies, properties, solventModel,
         diffractionFiles.toArray(new DiffractionFile[0]));
+    diffractionData.getRefinementModel().setRefinementMode(refinementMode);
+    return diffractionData;
   }
 
   /**
@@ -481,6 +482,6 @@ public class XrayOptions extends DataRefinementOptions {
   public RefinementEnergy toXrayEnergy(DiffractionData diffractionData) {
     diffractionData.scaleBulkFit();
     diffractionData.printStats();
-    return new RefinementEnergy(diffractionData, refinementMode);
+    return new RefinementEnergy(diffractionData);
   }
 }

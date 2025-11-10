@@ -49,7 +49,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.OptimizationInterface;
 import ffx.numerics.math.ComplexNumber;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.solvent.SolventModel;
 
 import java.util.logging.Logger;
 
@@ -78,8 +78,9 @@ import static org.apache.commons.math3.util.FastMath.tanh;
 /**
  * Optimize SigmaA coefficients (using spline coefficients) and structure factor derivatives using a
  * likelihood target function.
- *
- * <p>This target can also be used for structure refinement.
+ * <p>
+ * This target can also be used for structure refinement.
+ * <p>
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank"> K. Cowtan, J. Appl.
@@ -100,17 +101,6 @@ public class SigmaAEnergy implements OptimizationInterface {
 
   private static final Logger logger = Logger.getLogger(SigmaAEnergy.class.getName());
   private static final double twoPI2 = 2.0 * PI * PI;
-  private static final double sim_a = 1.639294;
-  private static final double sim_b = 3.553967;
-  private static final double sim_c = 2.228716;
-  private static final double sim_d = 3.524142;
-  private static final double sim_e = 7.107935;
-  private static final double sim_A = -1.28173889903;
-  private static final double sim_B = 0.69231689903;
-  private static final double sim_g = 2.13643992379;
-  private static final double sim_p = 0.04613803811;
-  private static final double sim_q = 1.82167089029;
-  private static final double sim_r = -0.74817947490;
 
   private final ReflectionList reflectionList;
   private final DiffractionRefinementData refinementData;
@@ -134,7 +124,15 @@ public class SigmaAEnergy implements OptimizationInterface {
    */
   private final double[][] transposeA;
 
+  /**
+   * Sa is 1) the proportion of the calculated structure factor which is correct
+   * and also takes into account any difference in scale between the observed and
+   * calculated data. See Eq. 3 in Cowtan (2005).
+   */
   private final double[] sa;
+  /**
+   * W scales the width of the Gaussian error term. See Eq. 3 in Cowtan (2005).
+   */
   private final double[] wa;
 
   private final SigmaARegion sigmaARegion;
@@ -149,10 +147,8 @@ public class SigmaAEnergy implements OptimizationInterface {
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
    * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
    */
-  SigmaAEnergy(
-      ReflectionList reflectionList,
-      DiffractionRefinementData refinementData,
-      ParallelTeam parallelTeam) {
+  SigmaAEnergy(ReflectionList reflectionList, DiffractionRefinementData refinementData,
+               ParallelTeam parallelTeam) {
     this.reflectionList = reflectionList;
     this.refinementData = refinementData;
     this.parallelTeam = parallelTeam;
@@ -179,35 +175,6 @@ public class SigmaAEnergy implements OptimizationInterface {
 
     sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
     useCernBessel = true;
-  }
-
-  /**
-   * From sim and sim_integ functions in clipper utils:
-   * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
-   * and from lnI0 and i1OverI0 functions in bessel.h in scitbx module of cctbx:
-   * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
-   *
-   * @param x a double.
-   * @return a double.
-   */
-  private static double sim(double x) {
-    if (x >= 0.0) {
-      return (((x + sim_a) * x + sim_b) * x) / (((x + sim_c) * x + sim_d) * x + sim_e);
-    } else {
-      return -(-(-(-x + sim_a) * x + sim_b) * x) / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
-    }
-  }
-
-  /**
-   * sim_integ
-   *
-   * @param x0 a double.
-   * @return a double.
-   */
-  private static double sim_integ(double x0) {
-    double x = abs(x0);
-    double z = (x + sim_p) / sim_q;
-    return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0) + sim_r * atan(z) + x + 1.0;
   }
 
   /**
@@ -320,16 +287,18 @@ public class SigmaAEnergy implements OptimizationInterface {
       int nSum = sigmaARegion.nSum.get();
       int nSumr = sigmaARegion.nSumR.get();
       StringBuilder sb = new StringBuilder("\n");
-      sb.append(" sigmaA (s and w) fit using only R free reflections\n");
+      sb.append(" Sigma A (s and w) fit using only R free reflections\n");
       sb.append(format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n", nSum, nSumr, nSum + nSumr));
-      sb.append(format("   residual: %10g (free set) %10g (working set) %10g (total)\n", sum, sumR, sum + sumR));
-      sb.append("    x: ");
+      sb.append(format("   residual: %10.4f (free set) %10.4f (working set) %10.4f (total)\n", sum, sumR, sum + sumR));
+      sb.append("    X: ");
       for (double x1 : x) {
-        sb.append(format("%g ", x1));
+        sb.append(format("%8.5f ", x1));
       }
-      sb.append("\n    g: ");
-      for (double v : g) {
-        sb.append(format("%g ", v));
+      if (gradient) {
+        sb.append("\n    G: ");
+        for (double v : g) {
+          sb.append(format("%8.5f ", v));
+        }
       }
       sb.append("\n");
       logger.info(sb.toString());
@@ -421,13 +390,14 @@ public class SigmaAEnergy implements OptimizationInterface {
       mat3Mat3(resm, transposeA, ustar);
 
       for (int i = 0; i < nBins; i++) {
-        sa[i] = 1.0 + x[i];
+        sa[i] = x[i];
         wa[i] = x[nBins + i];
       }
 
-      // Cheap method of preventing negative w values.
+      // Prevent negative w values.
       for (int i = 0; i < nBins; i++) {
         if (wa[i] <= 0.0) {
+          // logger.info(format(" Negative Sigma W for bin %d with %9.6f", i, wa[i]));
           wa[i] = 1.0e-6;
         }
       }
@@ -467,8 +437,10 @@ public class SigmaAEnergy implements OptimizationInterface {
         sumR.addAndGet(lSumR);
         nSum.addAndGet(lSumN);
         nSumR.addAndGet(lSumRN);
-        for (int i = 0; i < lGrad.length; i++) {
-          grad.getAndAdd(i, lGrad[i]);
+        if (gradient) {
+          for (int i = 0; i < lGrad.length; i++) {
+            grad.getAndAdd(i, lGrad[i]);
+          }
         }
       }
 
@@ -481,87 +453,113 @@ public class SigmaAEnergy implements OptimizationInterface {
           ihc[0] = ih.getH();
           ihc[1] = ih.getK();
           ihc[2] = ih.getL();
-          vec3Mat3(ihc, ustar, resv);
-          double u = modelK - dot(resv, ihc);
           double s = crystal.invressq(ih);
+          // Bulk solvent scale
           double ebs = exp(-twoPI2 * solventUEq * s);
           double ksebs = solventK * ebs;
+          // Overall model scale.
+          vec3Mat3(ihc, ustar, resv);
+          double u = modelK - dot(resv, ihc);
           double kmems = exp(0.25 * u);
           double km2 = exp(0.5 * u);
+
+          // ε_c is the number of symm ops relating a
+          // reflection to itself or its Friedel opposite
           double epsc = ih.epsilonc();
 
-          // Spline setup
+          // Scale Fc to give Ec
           double ecscale = spline.f(s, refinementData.esqFc);
+          // Scale Fo to give Eo
           double eoscale = spline.f(s, refinementData.esqFo);
           double sqrtECScale = sqrt(ecscale);
           double sqrtEOScale = sqrt(eoscale);
           double iSqrtEOScale = 1.0 / sqrtEOScale;
 
+          // Determine the s and w coefficients for this reflection.
           double sai = spline.f(s, sa);
           double wai = spline.f(s, wa);
           double sa2 = sai * sai;
 
           // Structure factors
+          // Fc due to atomic scattering.
           refinementData.getFcIP(i, fcc);
-          refinementData.getFsIP(i, fsc);
           fct.copy(fcc);
-          if (refinementData.crystalReciprocalSpaceFs.solventModel != SolventModel.NONE) {
+          // Fs due to bulk solvent scattering.
+          refinementData.getFsIP(i, fsc);
+          if (refinementData.crystalReciprocalSpaceFs.getSolventModel() != SolventModel.NONE) {
             resc.copy(fsc);
             resc.timesIP(ksebs);
+            // Add atomic and bulk solvent scattering.
             fct.plusIP(resc);
           }
+          // Apply overall model scale
           kfct.copy(fct);
           kfct.timesIP(kmems);
-
+          // Determine Ec by scaling atomic scattering.
           ecc.copy(fcc);
           ecc.timesIP(sqrtECScale);
+          // Determine Es by scaling bulk solvent scattering.
           esc.copy(fsc);
           esc.timesIP(sqrtECScale);
+          // Determine Etot by scaling Ftot.
           ect.copy(fct);
           ect.timesIP(sqrtECScale);
+          // Determine K Etot by scaling K Ftot
           kect.copy(kfct);
           kect.timesIP(sqrtECScale);
+          // Scale Fo to Eo
           double eo = fSigF[i][0] * sqrtEOScale;
-          double sigeo = fSigF[i][1] * sqrtEOScale;
           double eo2 = eo * eo;
+          // Scale σ_Fo to give σ_Eo
+          double sigeo = fSigF[i][1] * sqrtEOScale;
+          // |K Etot|
           double akect = kect.abs();
           double kect2 = akect * akect;
 
           // FOM
+          // d is the denominator is the FOM calculation given by Eq. 10 in Cowtan (2005)
           double d = 2.0 * sigeo * sigeo + epsc * wai;
           double id = 1.0 / d;
           double id2 = id * id;
-          double fomx = 2.0 * eo * sai * kect.abs() * id;
+          // Numerator in the FOM calculation over d.
+          double fomx = 2.0 * eo * sai * akect * id;
 
           double inot, dinot, cf;
           if (ih.centric()) {
+            // ln(cosh(fom))
             inot = (abs(fomx) < 10.0) ? log(cosh(fomx)) : abs(fomx) + log(0.5);
+            // Figure of Merit
             dinot = tanh(fomx);
             cf = 0.5;
           } else {
             if (useCernBessel) {
+              // ln(modified Zero-Order Bessel function)
               inot = lnI0(fomx);
+              // Figure of Merit
               dinot = i1OverI0(fomx);
             } else {
-              inot = sim_integ(fomx);
-              dinot = sim(fomx);
+              inot = lnI0_clipper(fomx);
+              dinot = i1OverI0_clipper(fomx);
             }
             cf = 1.0;
           }
+
+          // Overall likelihood target.
           double llk = cf * log(d) + (eo2 + sa2 * kect2) * id - inot;
 
           // Map coefficients
           double f = dinot * eo;
+          // Calculated phase.
           double phi = kect.phase();
           double sinPhi = sin(phi);
           double cosPhi = cos(phi);
+          // Store Figure of Merit and calculated phase.
           fomPhi[i][0] = dinot;
           fomPhi[i][1] = phi;
           mfo.re(f * cosPhi);
           mfo.im(f * sinPhi);
           mfo2.re(2.0 * f * cosPhi);
           mfo2.im(2.0 * f * sinPhi);
-          akect = kect.abs();
           dfcc.re(sai * akect * cosPhi);
           dfcc.im(sai * akect * sinPhi);
           // Set up map coefficients
@@ -587,7 +585,7 @@ public class SigmaAEnergy implements OptimizationInterface {
             }
             continue;
           }
-          // Update Fctot
+          // Store total Fc
           fcTot[i][0] = kfct.re();
           fcTot[i][1] = kfct.im();
           // mFo - DFc
@@ -615,8 +613,7 @@ public class SigmaAEnergy implements OptimizationInterface {
           double dfsr = fct.re() * dfp21;
           double dfsi = fct.im() * dfp21;
           double dfsa = 2.0 * (sai * kect2 - eo * akect * dinot) * id;
-          double dfwa =
-              epsc * (cf * id - (eo2 + sa2 * kect2) * id2 + 2.0 * eo * sai * akect * id2 * dinot);
+          double dfwa = epsc * (cf * id - (eo2 + sa2 * kect2) * id2 + 2.0 * eo * sai * akect * id2 * dinot);
 
           // Partial LLK wrt Fc or Fs
           dFc[i][0] = dfcr * dfScale;
@@ -631,13 +628,16 @@ public class SigmaAEnergy implements OptimizationInterface {
           } else {
             lSumR += llk;
             lSumRN++;
-            dfsa = dfwa = 0.0;
+            dfsa = 0.0;
+            dfwa = 0.0;
           }
 
           if (gradient) {
+            // Spline control point indices
             int i0 = spline.i0();
             int i1 = spline.i1();
             int i2 = spline.i2();
+            // Spline derivatives at control points.
             double g0 = spline.dfi0();
             double g1 = spline.dfi1();
             double g2 = spline.dfi2();
@@ -659,8 +659,57 @@ public class SigmaAEnergy implements OptimizationInterface {
         lSumR = 0.0;
         lSumN = 0;
         lSumRN = 0;
-        fill(lGrad, 0.0);
+        if (gradient) {
+          fill(lGrad, 0.0);
+        }
       }
     }
+  }
+
+  /**
+   * Bessel function implementations from clipper / scitbx are kept for comparison.
+   */
+  private static final double sim_a = 1.639294;
+  private static final double sim_b = 3.553967;
+  private static final double sim_c = 2.228716;
+  private static final double sim_d = 3.524142;
+  private static final double sim_e = 7.107935;
+  private static final double sim_A = -1.28173889903;
+  private static final double sim_B = 0.69231689903;
+  private static final double sim_g = 2.13643992379;
+  private static final double sim_p = 0.04613803811;
+  private static final double sim_q = 1.82167089029;
+  private static final double sim_r = -0.74817947490;
+
+  /**
+   * From the "sim" function in:
+   * <a href="http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html">clipper utils.</a>
+   * and from lnI0 and i1OverI0 functions in bessel.h in the scitbx module of
+   * <a href="http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h">cctbx</a>.
+   *
+   * @param x a double.
+   * @return the i1(x)/i0(x)
+   */
+  private static double i1OverI0_clipper(double x) {
+    if (x >= 0.0) {
+      return (((x + sim_a) * x + sim_b) * x) / (((x + sim_c) * x + sim_d) * x + sim_e);
+    } else {
+      return -(-(-(-x + sim_a) * x + sim_b) * x) / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
+    }
+  }
+
+  /**
+   * From the "sim_integ" function in:
+   * <a href="http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html">clipper utils.</a>
+   * and from lnI0 and i1OverI0 functions in bessel.h in the scitbx module of
+   * <a href="http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h">cctbx</a>.
+   *
+   * @param x0 a double.
+   * @return the ln(i0(x0)).
+   */
+  private static double lnI0_clipper(double x0) {
+    double x = abs(x0);
+    double z = (x + sim_p) / sim_q;
+    return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0) + sim_r * atan(z) + x + 1.0;
   }
 }
