@@ -642,7 +642,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     } else {
       longRangeCorrection = 0.0;
     }
-    logger.info(format(" VdW lambda %8.3f", lambda));
+    logger.fine(format(" VdW lambda %8.3f", lambda));
   }
 
   /**

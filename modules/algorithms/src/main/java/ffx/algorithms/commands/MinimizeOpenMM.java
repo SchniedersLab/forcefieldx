@@ -181,12 +181,14 @@ public class MinimizeOpenMM extends AlgorithmsCommand {
         algorithmFunctions.saveAsXYZ(activeAssembly, saveFile);
       } else if (ext.toUpperCase().contains("ARC")) {
         saveFile = new File(dirName + name + ".arc");
+        saveFile = algorithmFunctions.versionFile(saveFile);
         xyzFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
             activeAssembly.getProperties());
         writeFilter = xyzFilter;
         algorithmFunctions.saveAsXYZ(activeAssembly, saveFile);
       } else {
         saveFile = new File(dirName + name + ".pdb");
+        saveFile = algorithmFunctions.versionFile(saveFile);
         pdbFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
             activeAssembly.getProperties());
         writeFilter = pdbFilter;
