@@ -119,7 +119,6 @@ public class CrystalReciprocalSpace {
   private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
   private static final double toSeconds = 1.0e-9;
   private final boolean neutron;
-  private final double bAdd;
   private final double fftScale;
   private final double[] densityGrid;
   private final double[] solventGrid;
@@ -204,9 +203,11 @@ public class CrystalReciprocalSpace {
   private final SolventScaleRegion solventScaleRegion;
   private final SolventGradientRegion solventGradientRegion;
   private final Complex3DParallel complexFFT3D;
-
+  /**
+   * Isotropic b-factor offset added to all b-factors.
+   */
+  private double bAdd;
   boolean lambdaTerm = false;
-
   private final SolventModel solventModel;
   private final boolean solvent;
   private double solventA;
@@ -546,7 +547,7 @@ public class CrystalReciprocalSpace {
             atomicRowRegion = new RowRegion(fftX, fftY, fftZ, densityGrid, nSymm, threadCount,
                 scatteringAtoms, coordinates);
             solventRowRegion = new BulkSolventRowRegion(fftX, fftY, fftZ, solventGrid, bulkNSymm,
-                    threadCount, crystal, scatteringAtoms, coordinates, 4.0, parallelTeam);
+                threadCount, crystal, scatteringAtoms, coordinates, 4.0, parallelTeam);
             if (solventModel == SolventModel.GAUSSIAN) {
               atomicRowRegion.setInitValue(0.0);
             } else {
@@ -572,8 +573,8 @@ public class CrystalReciprocalSpace {
             atomicSliceRegion = new SliceRegion(fftX, fftY, fftZ, densityGrid, nSymm,
                 threadCount, scatteringAtoms, coordinates);
             solventSliceRegion = new BulkSolventSliceRegion(fftX, fftY, fftZ, solventGrid,
-                    bulkNSymm, threadCount, crystal, scatteringAtoms, coordinates, 4.0,
-                    parallelTeam);
+                bulkNSymm, threadCount, crystal, scatteringAtoms, coordinates, 4.0,
+                parallelTeam);
             if (solventModel == SolventModel.GAUSSIAN) {
               atomicSliceRegion.setInitValue(0.0);
             } else {
@@ -1344,7 +1345,7 @@ public class CrystalReciprocalSpace {
 
           // Atomic timing and balance analysis
           ASB.append(format("\n RowLoop (Atomic): %7.5f (sec)                 | Total Weight: %7.0f\n",
-                  atomicGridTime * toSeconds, atomicRowWeightTotal));
+              atomicGridTime * toSeconds, atomicRowWeightTotal));
           ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight    Balance(%)  Normalized\n");
 
           // check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1389,7 +1390,7 @@ public class CrystalReciprocalSpace {
 
           // Atomic timing and balance analysis
           ASB.append(format("\n SliceLoop (Atomic): %7.5f (sec)               | Total Weight: %7.0f\n",
-                  atomicGridTime * toSeconds, atomicSliceWeightTotal));
+              atomicGridTime * toSeconds, atomicSliceWeightTotal));
           ASB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight    Balance(%)  Normalized\n");
 
           // check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1651,7 +1652,7 @@ public class CrystalReciprocalSpace {
 
           // Solvent timing and balance analysis
           solventSB.append(format("\n RowLoop (Solvent): %7.5f (sec)                | Total Weight: %7.0f\n",
-                  solventGridTime * toSeconds, solventRowWeightTotal));
+              solventGridTime * toSeconds, solventRowWeightTotal));
           solventSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight     Balance(%)  Normalized\n");
 
           // Check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1680,7 +1681,7 @@ public class CrystalReciprocalSpace {
 
           // Bulk solvent timing and balance analysis
           bulkSB.append(format("\n RowLoop (Bulk Solvent): %7.5f (sec)           | Total Weight: %7.0f\n",
-                  bulkSolventRowTotal * toSeconds, bulkSolventRowWeightTotal));
+              bulkSolventRowTotal * toSeconds, bulkSolventRowWeightTotal));
           bulkSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Rows       Weight     Balance(%)  Normalized\n");
 
           // check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1739,7 +1740,7 @@ public class CrystalReciprocalSpace {
 
           // Solvent timing and balance analysis
           solventSB.append(format("\n SliceLoop (Solvent): %7.5f (sec)              | Total Weight: %7.0f\n",
-                  solventGridTime * toSeconds, solventSliceWeightTotal));
+              solventGridTime * toSeconds, solventSliceWeightTotal));
           solventSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices    Weight     Balance(%)  Normalized\n");
 
           // Check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1768,7 +1769,7 @@ public class CrystalReciprocalSpace {
 
           // Bulk solvent timing and balance analysis
           bulkSB.append(format(" SliceLoop (Bulk Solvent): %7.5f (sec)         | Total Weight: %7.0f\n",
-                  bulkSolventSliceTotal * toSeconds, bulkSolventSliceWeightTotal));
+              bulkSolventSliceTotal * toSeconds, bulkSolventSliceWeightTotal));
           bulkSB.append(" Thread     LoopTime    Balance(%)  Normalized   |      Slices     Weight     Balance(%)  Normalized\n");
 
           // Check for no weights issued, then set to 1 so a 0 is printed instead of NaN
@@ -1833,7 +1834,7 @@ public class CrystalReciprocalSpace {
       FormFactor atomff = atomFormFactors[iSymm][n];
       crystal.toFractionalCoordinates(xyz, uvw);
       final int frad = Math.min(
-              aRadGrid, (int) Math.floor(scatteringAtoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
+          aRadGrid, (int) Math.floor(scatteringAtoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
 
       // Logic to loop within the cutoff box.
       final double frx = fftX * uvw[0];
@@ -3522,7 +3523,7 @@ public class CrystalReciprocalSpace {
       }
 
       @Override
-      public void run(int lb, int ub) throws Exception {
+      public void run(int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
           HKL ih = reflectionList.hklList.get(i);
           double[] fc = hklData[ih.getIndex()];

@@ -38,57 +38,89 @@
 package ffx.xray;
 
 import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.xray.commands.ManyBody;
+import ffx.xray.commands.test.Gradient;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests X-Ray many body optimization and the X-Ray many body groovy script under varying
- * parameters.
+ * Tests X-Ray Gradient.
  *
- * @author Mallory R. Tollefson
+ * @author Michael J. Schnieders
  */
-public class XRayManyBodyTest extends AlgorithmsTest {
+public class XRayGradientTest extends AlgorithmsTest {
 
   @Test
-  public void testManyBodyGlobal() {
-    // Set-up the input arguments for the script.
+  public void testAlametXYZGradient() {
+    // Set-up the input arguments.
     String[] args = {
-        "-a", "2",      // All with rotamer elimination
-        "-L", "2",      // Richardson rotamer library
-        "--sR", "1",    // Start Residue 1
-        "--fR", "5",    // Last Residue 5
-        "--eR", getResourcePath("2DRM.restart"),
-        getResourcePath("2DRM.pdb"),
-        getResourcePath("2DRM.cif")
+        "-m", "coordinates",
+        "--sol", "none",
+        "--aRadBuffer", "3.0",
+        "-G", "0.5",
+        "--tol", "1.0e-2",
+        "--params", "1-2",
+        getResourcePath("alamet.pdb_2"),
+        getResourcePath("alamet.mtz")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the ManyBody script.
-    ManyBody manyBody = new ManyBody(binding).run();
-    algorithmsScript = manyBody;
+    // alamet.pdb was refined with CNS
+    // alamet.pdb_2 was refined with FFX
 
-    // Target is lowered by ~30.
-    double actualInitialEnergy = manyBody.getInitialTargetEnergy();
-    double actualFinalEnergy = manyBody.getFinalTargetEnergy();
-    double expectedInitialEnergy = 4394.274267978165;
-    double expectedFinalEnergy = 4364.922272352412;
-
-    double tol = 1.0;
-    assertEquals(" Initial Energy", expectedInitialEnergy, actualInitialEnergy, tol);
-    assertEquals(" Final Energy", expectedFinalEnergy, actualFinalEnergy, tol);
+    // Construct and evaluate the Gradient script.
+    Gradient gradient = new Gradient(binding).run();
+    algorithmsScript = gradient;
+    assertEquals(" Number of failed gradient components.", 0, gradient.nFailures);
   }
 
   @Test
-  public void testManyBodyHelp() {
+  public void test1N7SXYZGradient() {
+    // Set-up the input arguments.
+    String[] args = {
+        "-m", "coordinates",
+        "--aRadBuffer", "4.0",
+        "--params", "1-2",
+        getResourcePath("1N7S.pdb"),
+        getResourcePath("1N7S.cif")
+    };
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the Gradient script.
+    Gradient gradient = new Gradient(binding).run();
+    algorithmsScript = gradient;
+    assertEquals(" Number of failed gradient components.", 0, gradient.nFailures);
+  }
+
+  @Test
+  public void test1N7SBFactorsGradient() {
+    // Set-up the input arguments.
+    String[] args = {
+        "-m", "bfactors",
+        "--aRadBuffer", "4.0",
+        "--params", "1-2",
+        getResourcePath("1N7S.pdb"),
+        getResourcePath("1N7S.cif")
+    };
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the Gradient script.
+    Gradient gradient = new Gradient(binding).run();
+    algorithmsScript = gradient;
+    assertEquals(" Number of failed gradient components.", 0, gradient.nFailures);
+  }
+
+  @Test
+  public void testGradientHelp() {
     // Set-up the input arguments for the Biotype script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Construct and evaluate the ManyBody script.
-    ManyBody manyBody = new ManyBody(binding).run();
-    algorithmsScript = manyBody;
+    // Construct and evaluate the Gradient script.
+    Gradient gradient = new Gradient(binding).run();
+    algorithmsScript = gradient;
   }
 }

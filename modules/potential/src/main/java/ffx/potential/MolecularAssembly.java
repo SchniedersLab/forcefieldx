@@ -209,6 +209,33 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
+   * Set the occupancy for all atoms of the Assembly.
+   *
+   * @param occupancy the occupancy to use.
+   */
+  public void setOccupancy(double occupancy) {
+    List<Atom> atoms = getAtomList();
+    for (Atom atom : atoms) {
+      atom.setOccupancy(occupancy);
+    }
+  }
+
+  /**
+   * Set the occupancy for all atoms of the Assembly that have the given alternate location.
+   *
+   * @param occupancy         the occupancy to use.
+   * @param alternateLocation the alternate location to filter by.
+   */
+  public void setOccupancy(double occupancy, Character alternateLocation) {
+    List<Atom> atoms = getAtomList();
+    for (Atom atom : atoms) {
+      if (atom.getAltLoc().equals(alternateLocation)) {
+        atom.setOccupancy(occupancy);
+      }
+    }
+  }
+
+  /**
    * Adds a header line to this MolecularAssembly (particularly for PDB formats)
    *
    * @param line Line to add.
@@ -1047,6 +1074,7 @@ public class MolecularAssembly extends MSGroup {
 
   /**
    * Check if this Assembly contains Deuterium.
+   *
    * @return True if one or more atoms is deuterium.
    */
   public boolean hasDeuterium() {

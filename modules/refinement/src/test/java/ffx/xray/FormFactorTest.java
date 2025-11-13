@@ -37,16 +37,18 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
 import ffx.xray.scatter.XRayFormFactor;
+import ffx.xray.scatter.XRayScatteringParameters;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Timothy D. Fenn
@@ -66,14 +68,13 @@ public class FormFactorTest extends AlgorithmsTest {
     carbon.setAtomType(atomType);
     carbon.setAltLoc('A');
     carbon.setAnisou(anisou);
-    carbonFormFactor = new XRayFormFactor(carbon, false);
+    carbonFormFactor = new XRayFormFactor(carbon, false, 0.0);
   }
 
   @Test
   public void testCarbonFF() {
-    assertNotNull(" Carbon form factors should exist", XRayFormFactor.getFormFactor("6"));
-    double[][] formFactor = XRayFormFactor.getFormFactor("6");
-
+    assertNotNull(" Carbon form factors should exist", XRayScatteringParameters.getFormFactor(6,0, false));
+    double[][] formFactor = XRayScatteringParameters.getFormFactor(6, 0, false).formFactor();
     assertEquals(" Carbon form factors", 5, (int) formFactor[0][0]);
     assertEquals(" Carbon form factors", 2.09921, formFactor[1][0], 0.0001);
     assertEquals(" Carbon form factors", 13.18997, formFactor[2][0], 0.0001);
@@ -82,11 +83,37 @@ public class FormFactorTest extends AlgorithmsTest {
   @Test
   public void testCarbonfrho() {
     HKL hkl = new HKL(1, 1, 1);
-    assertEquals("carbon (1 1 1) structure factor should be correct", 2.3986e-26,
+    assertEquals("carbon (1 1 1) structure factor", 2.3986e-26,
         carbonFormFactor.f(hkl), 1e-30);
 
     double[] xyz = {1.0, 1.0, 1.0};
-    assertEquals("carbon (1 1 1) electron density should be correct", 0.081937,
+    assertEquals("carbon (1 1 1) electron density", 0.081937,
         carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
+  }
+
+  @Test
+  public void testFormFactors() {
+    for (int i = 1; i <= 18; i++) {
+      XRayScatteringParameters parameters = XRayScatteringParameters.getFormFactor(i, 0, false);
+      double[][] formFactor = parameters.formFactor();
+      double sum = 0.0;
+      for (int j = 0; j < 6; j++) {
+        sum += formFactor[1][j];
+      }
+      assertEquals(format(" Form factor 6G sum for %s", parameters), i, sum, 1e-2);
+    }
+  }
+
+  @Test
+  public void testFormFactors3G() {
+    for (int i = 1; i <= 18; i++) {
+      XRayScatteringParameters parameters = XRayScatteringParameters.getFormFactor(i, 0, true);
+      double[][] formFactor = parameters.formFactor();
+      double sum = 0.0;
+      for (int j = 0; j < parameters.numberOfGaussians(); j++) {
+        sum += formFactor[1][j];
+      }
+      assertEquals(format(" Form factor 3G sum for %s", parameters), i, sum, 1e-1);
+    }
   }
 }

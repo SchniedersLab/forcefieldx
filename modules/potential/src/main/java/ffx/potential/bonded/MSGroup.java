@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 
+import static ffx.numerics.math.DoubleMath.dist2;
 import static java.lang.String.format;
 
 /**
@@ -1000,6 +1001,70 @@ public abstract class MSGroup extends MSNode {
     ureyBradleyNode.removeAllChildren();
     ureyBradleyNode = t;
     termNode.add(ureyBradleyNode);
+  }
+
+  /**
+   * Check if this group of atoms contains an altLoc.
+   * @param altLoc the alternate location to look for.
+   * @return True if a matching alternate location is found.
+   */
+  public boolean conatainsAltLoc(Character altLoc) {
+    List<Atom> atoms = getAtomList();
+    for (Atom a : atoms) {
+      if (a.getAltLoc() == altLoc) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Set the occupancy for each atom of the group.
+   * @param occupancy The occupancy.
+   */
+  public void setOccupancy(double occupancy) {
+    List<Atom> atoms = getAtomList();
+    for (Atom a : atoms) {
+      a.setOccupancy(occupancy);
+    }
+  }
+
+  /**
+   * Sets the alternate location identifier for all atoms in the atom list.
+   * The alternate location identifier distinguishes atoms in different
+   * conformations or alternate positions within a structure.
+   *
+   * @param altLoc the alternate location identifier to be set for the atoms
+   */
+  public void setAltLoc(Character altLoc) {
+    List<Atom> atoms = getAtomList();
+    for (Atom a : atoms) {
+      a.setAltLoc(altLoc);
+    }
+  }
+
+  /**
+   * Check if a group of atoms have the same coordinates as this group.
+   * @param other The second group of atoms.
+   * @return True if both groups have the same coordinates.
+   */
+  public boolean conformationEquals(MSGroup other) {
+    List<Atom> atoms = getAtomList();
+    List<Atom> otherAtoms = other.getAtomList();
+    if (atoms.size() != otherAtoms.size()) return false;
+    double[] xyz = new double[3];
+    double[] xyzOther = new double[3];
+    for (int i = 0; i < atoms.size(); i++) {
+      Atom a1 = atoms.get(i);
+      Atom a2 = otherAtoms.get(i);
+      a1.getXYZ(xyz);
+      a2.getXYZ(xyzOther);
+      if (dist2(xyz, xyzOther) > 0.0) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /** {@inheritDoc} */

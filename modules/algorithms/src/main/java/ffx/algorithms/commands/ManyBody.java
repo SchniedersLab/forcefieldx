@@ -150,7 +150,6 @@ public class ManyBody extends AlgorithmsCommand {
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename);
 
-
     if (activeAssembly == null) {
       logger.info(helpString());
       return this;

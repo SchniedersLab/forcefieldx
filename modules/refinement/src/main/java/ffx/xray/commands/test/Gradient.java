@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.xray.commands.test;
 
+import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.AtomSelectionOptions;
@@ -69,7 +70,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * ffxc test.Gradient [options] &lt;filename&gt;
  */
 @Command(description = " Test the potential energy gradient.", name = "test.Gradient")
-public class Gradient extends PotentialCommand {
+public class Gradient extends AlgorithmsCommand {
 
   @Mixin
   AtomSelectionOptions atomSelectionOptions;
@@ -150,7 +151,7 @@ public class Gradient extends PotentialCommand {
     String filename;
     if (filenames != null && !filenames.isEmpty()) {
       // Each alternate conformer is returned in a separate MolecularAssembly.
-      molecularAssemblies = potentialFunctions.openAll(filenames.getFirst());
+      molecularAssemblies = algorithmFunctions.openAll(filenames.getFirst());
       activeAssembly = molecularAssemblies[0];
     } else if (activeAssembly == null) {
       logger.info(helpString());
@@ -237,6 +238,7 @@ public class Gradient extends PotentialCommand {
       logger.info(format(" %s", refinedParameter));
       if (error > tolerance) {
         logger.info(format("  Failed: %10.6f", error));
+        nFailures++;
       } else {
         logger.info(format("  Passed: %10.6f", error));
       }

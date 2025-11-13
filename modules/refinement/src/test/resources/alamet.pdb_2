@@ -1,0 +1,319 @@
+REMARK FFX output ISO-8601 date: 2025-11-13T08:16:19 
+REMARK
+REMARK   3
+REMARK   3 REFINEMENT
+REMARK   3   PROGRAM     : FORCE FIELD X
+REMARK   3
+REMARK   3  DATA SET 1
+REMARK   3   DATA SET TYPE   : X-RAY
+REMARK   3   DATA SET WEIGHT : 1.0
+REMARK   3
+REMARK   3  DATA USED IN REFINEMENT
+REMARK   3   RESOLUTION RANGE HIGH (ANGSTROMS) :   0.43
+REMARK   3   RESOLUTION RANGE LOW  (ANGSTROMS) :   7.62
+REMARK   3   DATA CUTOFF            (SIGMA(F)) : NONE
+REMARK   3   COMPLETENESS FOR RANGE        (%) :  80.60
+REMARK   3   NUMBER OF REFLECTIONS             : 22344
+REMARK   3
+REMARK   3  FIT TO DATA USED IN REFINEMENT
+REMARK   3   CROSS-VALIDATION METHOD          : THROUGHOUT
+REMARK   3   FREE R VALUE TEST SET SELECTION  : RANDOM
+REMARK   3   R VALUE               (OBSERVED) : 0.054261
+REMARK   3   R VALUE            (WORKING SET) : 0.053951
+REMARK   3   FREE R VALUE                     : 0.057549
+REMARK   3   FREE R VALUE TEST SET SIZE   (%) :    9.0
+REMARK   3   FREE R VALUE TEST SET COUNT      : 2000
+REMARK   3
+REMARK   3  FIT IN THE HIGHEST RESOLUTION BIN
+REMARK   3   TOTAL NUMBER OF BINS USED           : 8
+REMARK   3   BIN RESOLUTION RANGE HIGH           :   0.43
+REMARK   3   BIN RESOLUTION RANGE LOW            :   0.45
+REMARK   3   REFLECTION IN BIN     (WORKING SET) : 197
+REMARK   3   BIN COMPLETENESS (WORKING+TEST) (%) :   5.69
+REMARK   3   BIN R VALUE           (WORKING SET) : 0.277421
+REMARK   3   BIN FREE R VALUE SET COUNT          : 18
+REMARK   3   BIN FREE R VALUE                    : 0.181231
+REMARK   3
+REMARK   3  OVERALL SCALE FACTORS
+REMARK   3   SCALE: 1.90
+REMARK   3   ANISOTROPIC SCALE TENSOR:
+REMARK   3    0.0990758 0.000803340 0.122097
+REMARK   3    0.000803340 -0.0671484 0.000118994
+REMARK   3    0.122097 0.000118994 0.0201423
+REMARK   3
+REMARK   3  ERROR ESTIMATES
+REMARK   3   ACTA CRYST (1999) D55, 583-601
+REMARK   3   ACTA CRYST (2002) D58, 792-797
+REMARK   3   BLOW DPI ALL ATOMS (EQN 7)          :  0.0013
+REMARK   3   BLOW DPI NONH ATOMS (EQN 7)         :  0.0020
+REMARK   3   CRUICKSHANK DPI ALL ATOMS (EQN 27)  :  0.0013
+REMARK   3   CRUICKSHANK DPI NONH ATOMS (EQN 27) :  0.0020
+REMARK   3
+REMARK   3  DATA TARGET
+REMARK   3   METHOD USED: MAXIMUM LIKELIHOOD
+REMARK   3    -LOG LIKELIHOOD            : -25436.0
+REMARK   3    -LOG LIKELIHOOD (FREE SET) : -2509.05
+REMARK   3
+REMARK   3  CHEMICAL SYSTEM 1
+REMARK   3  CALCULATED POTENTIAL ENERGY
+REMARK   3   BOND STRETCHING            :  163.441 (116)
+REMARK   3   BOND RMSD                  :  0.0547144
+REMARK   3   ANGLE BENDING              :  2418.08 (208)
+REMARK   3   ANGLE RMSD                 :  13.5735
+REMARK   3   STRETCH-BEND               :  0.440994 (164)
+REMARK   3   OUT-OF-PLANE BEND          :  0.695757 (36)
+REMARK   3   TORSIONAL ANGLE            :  18.8693 (256)
+REMARK   3   PI-ORBITAL TORSION         :  0.785249 (4)
+REMARK   3   VAN DER WAALS              :  469.860 (20501)
+REMARK   3   ATOMIC MULTIPOLES          :  -803.145 (10005)
+REMARK   3   POLARIZATION               :  -48.0721 (10005)
+REMARK   3   TOTAL POTENTIAL (KCAL/MOL) :  2220.96
+REMARK   3   REPLICATES CELL POTENTIAL  :  44419.2
+REMARK   3
+
+CRYST1   13.096    5.343   15.926  90.00 108.56  90.00 P 1       
+ATOM      1  C   ALA A   1       6.124   0.570  -3.855  1.00  0.84           C 0
+ANISOU    1  C   ALA A   1      135    117     75      1     -4     10       C 0
+ATOM      2  CA  ALA A   1       6.365  -0.257  -5.106  1.00  1.08           C 0
+ANISOU    2  CA  ALA A   1      142    175    114    -28     25    -27       C 0
+ATOM      3  CB  ALA A   1       5.146  -0.144  -6.026  1.00  2.30           C 0
+ANISOU    3  CB  ALA A   1      265    350    270    -12    -13    -35       C 0
+ATOM      4  H1  ALA A   1       7.711  -0.240  -6.618  1.00  0.78           H 0
+ANISOU    4  H1  ALA A   1      126    110     71     -4      7    -13       H 0
+ATOM      5  H2  ALA A   1       8.355   0.168  -5.286  1.00  0.78           H 0
+ANISOU    5  H2  ALA A   1      126    110     71     -4      7    -13       H 0
+ATOM      6  H3  ALA A   1       7.489   1.194  -6.098  1.00  0.78           H 0
+ANISOU    6  H3  ALA A   1      126    110     71     -4      7    -13       H 0
+ATOM      7  HA  ALA A   1       5.647  -0.323  -6.038  1.00  1.08           H 0
+ANISOU    7  HA  ALA A   1      142    175    114    -28     25    -27       H 0
+ATOM      8  HB1 ALA A   1       4.285  -0.481  -5.526  1.00  2.30           H 0
+ANISOU    8  HB1 ALA A   1      265    350    270    -12    -13    -35       H 0
+ATOM      9  HB2 ALA A   1       5.290  -0.774  -6.883  1.00  2.30           H 0
+ANISOU    9  HB2 ALA A   1      265    350    270    -12    -13    -35       H 0
+ATOM     10  HB3 ALA A   1       4.999   0.849  -6.348  1.00  2.30           H 0
+ANISOU   10  HB3 ALA A   1      265    350    270    -12    -13    -35       H 0
+ATOM     11  N   ALA A   1       7.570   0.275  -5.810  1.00  0.78           N 0
+ANISOU   11  N   ALA A   1      126    110     71     -4      7    -13       N 0
+ATOM     12  O   ALA A   1       6.410   1.766  -3.802  1.00  0.97           O 0
+ANISOU   12  O   ALA A   1      197    119     88    -35     14    -22       O 0
+ATOM     13  C   MET A   2       5.099  -0.515  -0.494  1.00  0.75           C 0
+ANISOU   13  C   MET A   2      121    101     70     -6      0      9       C 0
+ATOM     14  CA  MET A   2       5.081   0.524  -1.637  1.00  0.76           C 0
+ANISOU   14  CA  MET A   2      132     96     69    -14     -2     -5       C 0
+ATOM     15  CB  MET A   2       3.701   1.162  -1.798  1.00  1.00           C 0
+ANISOU   15  CB  MET A   2      139    132    110      5     -5      0       C 0
+ATOM     16  CE  MET A   2      -0.089  -0.460  -2.005  1.00  1.87           C 0
+ANISOU   16  CE  MET A   2      163    268    320    -44    -27     17       C 0
+ATOM     17  CG  MET A   2       2.585   0.146  -1.954  1.00  1.23           C 0
+ANISOU   17  CG  MET A   2      146    151    180      4    -32     17       C 0
+ATOM     18  H   MET A   2       5.448  -0.993  -2.952  1.00  0.91           H 0
+ANISOU   18  H   MET A   2      172    110     85    -12     25     -1       H 0
+ATOM     19  HA  MET A   2       5.743   1.265  -1.370  1.00  0.76           H 0
+ANISOU   19  HA  MET A   2      132     96     69    -14     -2     -5       H 0
+ATOM     20  HB2 MET A   2       3.760   1.805  -2.623  1.00  1.00           H 0
+ANISOU   20  HB2 MET A   2      139    132    110      5     -5      0       H 0
+ATOM     21  HB3 MET A   2       3.498   1.783  -0.985  1.00  1.00           H 0
+ANISOU   21  HB3 MET A   2      139    132    110      5     -5      0       H 0
+ATOM     22  HE1 MET A   2      -1.112  -0.202  -2.114  1.00  1.87           H 0
+ANISOU   22  HE1 MET A   2      163    268    320    -44    -27     17       H 0
+ATOM     23  HE2 MET A   2       0.046  -1.005  -1.111  1.00  1.87           H 0
+ANISOU   23  HE2 MET A   2      163    268    320    -44    -27     17       H 0
+ATOM     24  HE3 MET A   2       0.187  -1.164  -2.749  1.00  1.87           H 0
+ANISOU   24  HE3 MET A   2      163    268    320    -44    -27     17       H 0
+ATOM     25  HG2 MET A   2       2.569  -0.512  -1.135  1.00  1.23           H 0
+ANISOU   25  HG2 MET A   2      146    151    180      4    -32     17       H 0
+ATOM     26  HG3 MET A   2       2.706  -0.404  -2.831  1.00  1.23           H 0
+ANISOU   26  HG3 MET A   2      146    151    180      4    -32     17       H 0
+ATOM     27  N   MET A   2       5.527  -0.108  -2.869  1.00  0.91           N 0
+ANISOU   27  N   MET A   2      172    110     85    -12     25     -1       N 0
+ATOM     28  O   MET A   2       4.786  -0.100   0.640  1.00  0.96           O 0
+ANISOU   28  O   MET A   2      231    118     66     -6     18     -3       O 0
+ATOM     29  OXT MET A   2       5.374  -1.707  -0.775  1.00  0.99           O 0
+ANISOU   29  OXT MET A   2      183     99    106      1     12      0       O 0
+ATOM     30  SD  MET A   2       0.983   0.980  -2.070  1.00  1.53           S 0
+ANISOU   30  SD  MET A   2      134    186    297      5    -11     29       S 0
+TER      31      MET A   2                                                      
+ATOM     32  C   ALA B   1      -6.109  -0.566   3.871  1.00  0.71           C 0
+ANISOU   32  C   ALA B   1      123    111     54    -14      9     -8       C 0
+ATOM     33  CA  ALA B   1      -6.351   0.247   5.145  1.00  0.52           C 0
+ANISOU   33  CA  ALA B   1      109     65     42      3     -7      8       C 0
+ATOM     34  CB  ALA B   1      -5.134   0.146   6.058  1.00  0.46           C 0
+ANISOU   34  CB  ALA B   1       60    176     32     -5    -18    -37       C 0
+ATOM     35  H1  ALA B   1      -7.669   0.244   6.630  1.00  0.84           H 0
+ANISOU   35  H1  ALA B   1      113    116     93      1     12      4       H 0
+ATOM     36  H2  ALA B   1      -7.477  -1.196   6.120  1.00  0.84           H 0
+ANISOU   36  H2  ALA B   1      113    116     93      1     12      4       H 0
+ATOM     37  H3  ALA B   1      -8.325  -0.150   5.321  1.00  0.84           H 0
+ANISOU   37  H3  ALA B   1      113    116     93      1     12      4       H 0
+ATOM     38  HA  ALA B   1      -6.530   1.249   4.899  1.00  0.52           H 0
+ANISOU   38  HA  ALA B   1      109     65     42      3     -7      8       H 0
+ATOM     39  HB1 ALA B   1      -4.290   0.415   5.557  1.00  0.46           H 0
+ANISOU   39  HB1 ALA B   1       60    176     32     -5    -18    -37       H 0
+ATOM     40  HB2 ALA B   1      -5.017  -0.829   6.380  1.00  0.46           H 0
+ANISOU   40  HB2 ALA B   1       60    176     32     -5    -18    -37       H 0
+ATOM     41  HB3 ALA B   1      -5.262   0.743   6.837  1.00  0.46           H 0
+ANISOU   41  HB3 ALA B   1       60    176     32     -5    -18    -37       H 0
+ATOM     42  N   ALA B   1      -7.541  -0.259   5.852  1.00  0.84           N 0
+ANISOU   42  N   ALA B   1      113    116     93      1     12      4       N 0
+ATOM     43  O   ALA B   1      -6.376  -1.787   3.822  1.00  1.01           O 0
+ANISOU   43  O   ALA B   1      203    107    100    -26     14      5       O 0
+ATOM     44  C   MET B   2      -5.072   0.507   0.516  1.00  0.76           C 0
+ANISOU   44  C   MET B   2      121    108     71    -15     -6    -10       C 0
+ATOM     45  CA  MET B   2      -5.066  -0.524   1.641  1.00  0.80           C 0
+ANISOU   45  CA  MET B   2      126    119     70      2     13      3       C 0
+ATOM     46  CB  MET B   2      -3.671  -1.171   1.798  1.00  0.96           C 0
+ANISOU   46  CB  MET B   2      133    121    111     10     -7      9       C 0
+ATOM     47  CE  MET B   2       0.120   0.457   2.018  1.00  1.89           C 0
+ANISOU   47  CE  MET B   2      169    269    318    -40    -24     21       C 0
+ATOM     48  CG  MET B   2      -2.557  -0.135   1.972  1.00  1.21           C 0
+ANISOU   48  CG  MET B   2      127    156    188     -7    -30     -3       C 0
+ATOM     49  H   MET B   2      -5.419   0.992   2.952  1.00  0.79           H 0
+ANISOU   49  H   MET B   2      149    114     60     -9     17     -1       H 0
+ATOM     50  HA  MET B   2      -4.041  -0.654   1.865  1.00  0.80           H 0
+ANISOU   50  HA  MET B   2      126    119     70      2     13      3       H 0
+ATOM     51  HB2 MET B   2      -3.462  -1.790   0.963  1.00  0.96           H 0
+ANISOU   51  HB2 MET B   2      133    121    111     10     -7      9       H 0
+ATOM     52  HB3 MET B   2      -3.724  -1.828   2.607  1.00  0.96           H 0
+ANISOU   52  HB3 MET B   2      133    121    111     10     -7      9       H 0
+ATOM     53  HE1 MET B   2       1.150   0.164   2.135  1.00  1.89           H 0
+ANISOU   53  HE1 MET B   2      169    269    318    -40    -24     21       H 0
+ATOM     54  HE2 MET B   2      -0.146   1.147   2.759  1.00  1.89           H 0
+ANISOU   54  HE2 MET B   2      169    269    318    -40    -24     21       H 0
+ATOM     55  HE3 MET B   2      -0.003   0.974   1.126  1.00  1.89           H 0
+ANISOU   55  HE3 MET B   2      169    269    318    -40    -24     21       H 0
+ATOM     56  HG2 MET B   2      -2.690   0.393   2.844  1.00  1.21           H 0
+ANISOU   56  HG2 MET B   2      127    156    188     -7    -30     -3       H 0
+ATOM     57  HG3 MET B   2      -2.540   0.518   1.147  1.00  1.21           H 0
+ANISOU   57  HG3 MET B   2      127    156    188     -7    -30     -3       H 0
+ATOM     58  N   MET B   2      -5.507   0.107   2.881  1.00  0.79           N 0
+ANISOU   58  N   MET B   2      149    114     60     -9     17     -1       N 0
+ATOM     59  O   MET B   2      -4.799   0.105  -0.655  1.00  0.98           O 0
+ANISOU   59  O   MET B   2      217    132     68    -10     19    -12       O 0
+ATOM     60  OXT MET B   2      -5.346   1.706   0.811  1.00  0.97           O 0
+ANISOU   60  OXT MET B   2      182    104     99     12     15     -7       O 0
+ATOM     61  SD  MET B   2      -0.965  -0.993   2.096  1.00  1.54           S 0
+ANISOU   61  SD  MET B   2      129    196    301     17    -10     37       S 0
+TER      62      MET B   2                                                      
+ATOM     63  C   ALA C   1      -3.566  -2.107  -3.671  1.00  0.79           C 0
+ANISOU   63  C   ALA C   1      133    105     73      7      5     -5       C 0
+ATOM     64  CA  ALA C   1      -3.812  -2.935  -2.424  1.00  0.86           C 0
+ANISOU   64  CA  ALA C   1      123    130     80      8      7      9       C 0
+ATOM     65  CB  ALA C   1      -2.597  -2.819  -1.500  1.00  1.22           C 0
+ANISOU   65  CB  ALA C   1      124    258    121      4    -18     35       C 0
+ATOM     66  H1  ALA C   1      -5.149  -2.918  -0.908  1.00  0.81           H 0
+ANISOU   66  H1  ALA C   1      113    113     82      3      3      5       H 0
+ATOM     67  H2  ALA C   1      -5.795  -2.515  -2.217  1.00  0.81           H 0
+ANISOU   67  H2  ALA C   1      113    113     82      3      3      5       H 0
+ATOM     68  H3  ALA C   1      -4.901  -1.480  -1.456  1.00  0.81           H 0
+ANISOU   68  H3  ALA C   1      113    113     82      3      3      5       H 0
+ATOM     69  HA  ALA C   1      -3.083  -3.164  -1.672  1.00  0.86           H 0
+ANISOU   69  HA  ALA C   1      123    130     80      8      7      9       H 0
+ATOM     70  HB1 ALA C   1      -1.733  -3.130  -2.015  1.00  1.22           H 0
+ANISOU   70  HB1 ALA C   1      124    258    121      4    -18     35       H 0
+ATOM     71  HB2 ALA C   1      -2.727  -3.443  -0.694  1.00  1.22           H 0
+ANISOU   71  HB2 ALA C   1      124    258    121      4    -18     35       H 0
+ATOM     72  HB3 ALA C   1      -2.469  -1.851  -1.206  1.00  1.22           H 0
+ANISOU   72  HB3 ALA C   1      124    258    121      4    -18     35       H 0
+ATOM     73  N   ALA C   1      -5.004  -2.410  -1.702  1.00  0.81           N 0
+ANISOU   73  N   ALA C   1      113    113     82      3      3      5       N 0
+ATOM     74  O   ALA C   1      -3.846  -0.907  -3.723  1.00  0.97           O 0
+ANISOU   74  O   ALA C   1      200    116     85     28     16     17       O 0
+ATOM     75  C   MET C   2      -2.543  -3.188  -7.036  1.00  0.76           C 0
+ANISOU   75  C   MET C   2      123    110     66      5      3    -10       C 0
+ATOM     76  CA  MET C   2      -2.525  -2.155  -5.899  1.00  0.77           C 0
+ANISOU   76  CA  MET C   2      126    104     70     10      5      6       C 0
+ATOM     77  CB  MET C   2      -1.138  -1.511  -5.742  1.00  1.01           C 0
+ANISOU   77  CB  MET C   2      138    128    117      0    -13      4       C 0
+ATOM     78  CE  MET C   2       2.639  -3.143  -5.524  1.00  1.89           C 0
+ANISOU   78  CE  MET C   2      165    272    322     45    -32    -17       C 0
+ATOM     79  CG  MET C   2      -0.022  -2.534  -5.567  1.00  1.18           C 0
+ANISOU   79  CG  MET C   2      127    153    183      3    -40     -8       C 0
+ATOM     80  H   MET C   2      -2.902  -3.691  -4.573  1.00  0.81           H 0
+ANISOU   80  H   MET C   2      158    100     69     13     10      2       H 0
+ATOM     81  HA  MET C   2      -3.192  -1.415  -6.164  1.00  0.77           H 0
+ANISOU   81  HA  MET C   2      126    104     70     10      5      6       H 0
+ATOM     82  HB2 MET C   2      -1.214  -0.847  -4.944  1.00  1.01           H 0
+ANISOU   82  HB2 MET C   2      138    128    117      0    -13      4       H 0
+ATOM     83  HB3 MET C   2      -0.951  -0.900  -6.564  1.00  1.01           H 0
+ANISOU   83  HB3 MET C   2      138    128    117      0    -13      4       H 0
+ATOM     84  HE1 MET C   2       3.673  -2.864  -5.413  1.00  1.89           H 0
+ANISOU   84  HE1 MET C   2      165    272    322     45    -32    -17       H 0
+ATOM     85  HE2 MET C   2       2.511  -3.656  -6.423  1.00  1.89           H 0
+ANISOU   85  HE2 MET C   2      165    272    322     45    -32    -17       H 0
+ATOM     86  HE3 MET C   2       2.372  -3.855  -4.790  1.00  1.89           H 0
+ANISOU   86  HE3 MET C   2      165    272    322     45    -32    -17       H 0
+ATOM     87  HG2 MET C   2      -0.013  -3.190  -6.390  1.00  1.18           H 0
+ANISOU   87  HG2 MET C   2      127    153    183      3    -40     -8       H 0
+ATOM     88  HG3 MET C   2      -0.149  -3.060  -4.705  1.00  1.18           H 0
+ANISOU   88  HG3 MET C   2      127    153    183      3    -40     -8       H 0
+ATOM     89  N   MET C   2      -2.973  -2.772  -4.657  1.00  0.81           N 0
+ANISOU   89  N   MET C   2      158    100     69     13     10      2       N 0
+ATOM     90  O   MET C   2      -2.238  -2.773  -8.188  1.00  0.91           O 0
+ANISOU   90  O   MET C   2      231    125     56     11     22     11       O 0
+ATOM     91  OXT MET C   2      -2.814  -4.383  -6.744  1.00  1.02           O 0
+ANISOU   91  OXT MET C   2      186    108    109     -1     16     15       O 0
+ATOM     92  SD  MET C   2       1.575  -1.691  -5.452  1.00  1.55           S 0
+ANISOU   92  SD  MET C   2      138    188    300    -14    -16    -38       S 0
+TER      93      MET C   2                                                      
+ATOM     94  C   ALA D   1       3.597   2.100   3.700  1.00  0.76           C 0
+ANISOU   94  C   ALA D   1      126    121     58      4      0      4       C 0
+ATOM     95  CA  ALA D   1       3.835   2.913   2.421  1.00  0.74           C 0
+ANISOU   95  CA  ALA D   1      127     97     66      9      2      0       C 0
+ATOM     96  CB  ALA D   1       2.619   2.816   1.510  1.00  1.15           C 0
+ANISOU   96  CB  ALA D   1      135    246    105     10    -19     42       C 0
+ATOM     97  H1  ALA D   1       5.181   2.885   0.912  1.00  0.83           H 0
+ANISOU   97  H1  ALA D   1      126    115     82     -2     17      2       H 0
+ATOM     98  H2  ALA D   1       4.944   1.462   1.469  1.00  0.83           H 0
+ANISOU   98  H2  ALA D   1      126    115     82     -2     17      2       H 0
+ATOM     99  H3  ALA D   1       5.828   2.517   2.249  1.00  0.83           H 0
+ANISOU   99  H3  ALA D   1      126    115     82     -2     17      2       H 0
+ATOM    100  HA  ALA D   1       3.997   3.909   2.654  1.00  0.74           H 0
+ANISOU  100  HA  ALA D   1      127     97     66      9      2      0       H 0
+ATOM    101  HB1 ALA D   1       1.765   3.078   2.000  1.00  1.15           H 0
+ANISOU  101  HB1 ALA D   1      135    246    105     10    -19     42       H 0
+ATOM    102  HB2 ALA D   1       2.505   1.829   1.219  1.00  1.15           H 0
+ANISOU  102  HB2 ALA D   1      135    246    105     10    -19     42       H 0
+ATOM    103  HB3 ALA D   1       2.756   3.401   0.717  1.00  1.15           H 0
+ANISOU  103  HB3 ALA D   1      135    246    105     10    -19     42       H 0
+ATOM    104  N   ALA D   1       5.039   2.398   1.735  1.00  0.83           N 0
+ANISOU  104  N   ALA D   1      126    115     82     -2     17      2       N 0
+ATOM    105  O   ALA D   1       3.870   0.882   3.750  1.00  1.02           O 0
+ANISOU  105  O   ALA D   1      205    107    104     35     14      0       O 0
+ATOM    106  C   MET D   2       2.559   3.177   7.051  1.00  0.75           C 0
+ANISOU  106  C   MET D   2      118     99     76     14     -8     11       C 0
+ATOM    107  CA  MET D   2       2.552   2.139   5.920  1.00  0.80           C 0
+ANISOU  107  CA  MET D   2      133    111     69      2      5     -4       C 0
+ATOM    108  CB  MET D   2       1.165   1.498   5.759  1.00  0.95           C 0
+ANISOU  108  CB  MET D   2      136    127    103    -18      0    -12       C 0
+ATOM    109  CE  MET D   2      -2.639   3.117   5.550  1.00  1.86           C 0
+ANISOU  109  CE  MET D   2      165    261    318     43    -20    -18       C 0
+ATOM    110  CG  MET D   2       0.050   2.528   5.604  1.00  1.28           C 0
+ANISOU  110  CG  MET D   2      147    156    187      0    -22     -4       C 0
+ATOM    111  H   MET D   2       2.936   3.700   4.586  1.00  0.88           H 0
+ANISOU  111  H   MET D   2      165    121     75      7     32      0       H 0
+ATOM    112  HA  MET D   2       1.507   2.006   5.706  1.00  0.80           H 0
+ANISOU  112  HA  MET D   2      133    111     69      2      5     -4       H 0
+ATOM    113  HB2 MET D   2       0.966   0.878   6.587  1.00  0.95           H 0
+ANISOU  113  HB2 MET D   2      136    127    103    -18      0    -12       H 0
+ATOM    114  HB3 MET D   2       1.215   0.823   4.957  1.00  0.95           H 0
+ANISOU  114  HB3 MET D   2      136    127    103    -18      0    -12       H 0
+ATOM    115  HE1 MET D   2      -3.658   2.820   5.424  1.00  1.86           H 0
+ANISOU  115  HE1 MET D   2      165    261    318     43    -20    -18       H 0
+ATOM    116  HE2 MET D   2      -2.364   3.819   4.802  1.00  1.86           H 0
+ANISOU  116  HE2 MET D   2      165    261    318     43    -20    -18       H 0
+ATOM    117  HE3 MET D   2      -2.506   3.629   6.433  1.00  1.86           H 0
+ANISOU  117  HE3 MET D   2      165    261    318     43    -20    -18       H 0
+ATOM    118  HG2 MET D   2       0.159   3.064   4.725  1.00  1.28           H 0
+ANISOU  118  HG2 MET D   2      147    156    187      0    -22     -4       H 0
+ATOM    119  HG3 MET D   2       0.040   3.177   6.424  1.00  1.28           H 0
+ANISOU  119  HG3 MET D   2      147    156    187      0    -22     -4       H 0
+ATOM    120  N   MET D   2       2.992   2.787   4.691  1.00  0.88           N 0
+ANISOU  120  N   MET D   2      165    121     75      7     32      0       N 0
+ATOM    121  O   MET D   2       2.278   2.774   8.204  1.00  1.05           O 0
+ANISOU  121  O   MET D   2      222    128     85      8     22      7       O 0
+ATOM    122  OXT MET D   2       2.837   4.373   6.767  1.00  0.93           O 0
+ANISOU  122  OXT MET D   2      180     95     98    -11     12     -8       O 0
+ATOM    123  SD  MET D   2      -1.546   1.680   5.479  1.00  1.52           S 0
+ANISOU  123  SD  MET D   2      124    194    297     -9     -7    -27       S 0
+TER     124      MET D   2                                                      
+END

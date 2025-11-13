@@ -398,12 +398,12 @@ public final class DoubleMath {
   }
 
   /**
-   * Finds the difference between two vectors.
+   * Finds the difference a - b.
    *
    * @param a First vector
    * @param b Second vector
-   * @param ret Return Values
-   * @return Returns the difference ret.
+   * @param ret Return a reference to ret.
+   * @return Returns the difference a - b in ret.
    */
   public static double[] sub(double[] a, double[] b, double[] ret) {
     ret[0] = a[0] - b[0];

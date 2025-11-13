@@ -1026,7 +1026,7 @@
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.7.1</assembly.version>
-    <biojava.version>7.2.2</biojava.version>
+    <biojava.version>7.2.3</biojava.version>
     <cdk.version>2.11</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>

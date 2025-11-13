@@ -178,7 +178,7 @@ public class XRayMinimizeTest extends AlgorithmsTest {
                 "1N7S.pdb",
                 "1N7S.mtz",
                 null,
-                19.41267149593652,
+                19.43334760963002,
                 21.555930987392596,
                 0.9336845537932159,
                 0.1319269157669047
