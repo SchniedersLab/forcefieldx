@@ -70,7 +70,7 @@ public class SORRegion extends ParallelRegion {
   private static final double DEFAULT_POLAR_SOR = 0.7;
   @FFXProperty(name = "polar-sor", propertyGroup = ElectrostaticsFunctionalForm, defaultValue = "0.7",
       description = "The induced dipole successive over-relaxation convergence acceleration factor.")
-  private final double polsor;
+  private double polsor;
   private final SORLoop[] sorLoop;
   private final SharedDouble sharedEps;
   private final SharedDouble sharedEpsCR;
@@ -105,6 +105,22 @@ public class SORRegion extends ParallelRegion {
     sharedEps = new SharedDouble();
     sharedEpsCR = new SharedDouble();
     polsor = forceField.getDouble("POLAR_SOR", DEFAULT_POLAR_SOR);
+  }
+
+  /**
+   * Get the current SOR convergence parameter.
+   * @return The SOR convergence parameter.
+   */
+  public double getPolarSOR() {
+    return polsor;
+  }
+
+  /**
+   * Set the current SOR convergence parameter.
+   * @param polarSOR Set the SOR parameter to use.
+   */
+  public void setPolarSOR(double polarSOR) {
+    this.polsor = polarSOR;
   }
 
   public double getEps() {
@@ -157,14 +173,11 @@ public class SORRegion extends ParallelRegion {
       int nAtoms = atoms.length;
       execute(0, nAtoms - 1, sorLoop[ti]);
     } catch (RuntimeException ex) {
-      logger.warning(
-          "Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex());
+      logger.warning("Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex());
       throw ex;
     } catch (Exception e) {
-      String message =
-          "Fatal exception computing the mutual induced dipoles in thread "
-              + getThreadIndex()
-              + "\n";
+      String message = "Fatal exception computing the mutual induced dipoles in thread "
+              + getThreadIndex() + "\n";
       logger.log(Level.SEVERE, message, e);
     }
   }

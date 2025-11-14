@@ -91,6 +91,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_COEFFICIENT;
+import static ffx.potential.nonbonded.pme.SCFAlgorithm.SOR;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
@@ -176,7 +177,20 @@ public class ParticleMeshEwald implements LambdaInterface {
           The default value in the absence of the keyword is 1.0e-6 Debyes.
           """)
   private final double poleps;
+  /**
+   * Fall back to SOR to converge induced dipoles if the preconditioned CG solver fails.
+   * The SOR parameter used is conservative (0.65), but should succeed.
+   */
+  private final boolean sorFallback;
+  /**
+   * The SOR parameter is conservative (0.65) to handle unstable atomic configurations.
+   */
+  private final double sorFallBackPolarSOR = 0.65;
+  /**
+   * Fall back to Direct polarization if the SCF fails.
+   */
   private final boolean directFallback;
+
   /**
    * Specify an SCF predictor algorithm.
    */
@@ -545,8 +559,10 @@ public class ParticleMeshEwald implements LambdaInterface {
       scfAlgorithm = SCFAlgorithm.CG;
     }
 
-    // Fall back to the direct
-    directFallback = forceField.getBoolean("DIRECT_SCF_FALLBACK", true);
+    // Fall back to SOR. SOR will produce converged induced dipoles, but generally less efficient than CG.
+    sorFallback = forceField.getBoolean("SOR_SCF_FALLBACK", true);
+    // Fall back to the direct polarization if the SOR fallback option is turned off.
+    directFallback = forceField.getBoolean("DIRECT_SCF_FALLBACK", !sorFallback);
 
     // Define how force arrays will be accumulated.
     String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
@@ -612,7 +628,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         sb.append(format("    SCF Predictor:                     %8s\n",
             scfPredictorParameters.scfPredictor));
         sb.append(format("    SCF Algorithm:                     %8s\n", scfAlgorithm));
-        if (scfAlgorithm == SCFAlgorithm.SOR) {
+        if (scfAlgorithm == SOR) {
           sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
         } else {
           sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n",
@@ -1737,7 +1753,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     // Turn off Pre-conditioned conjugate gradient SCF solver.
     SCFAlgorithm scfBack = scfAlgorithm;
-    scfAlgorithm = SCFAlgorithm.SOR;
+    scfAlgorithm = SOR;
 
     if (alchemicalParameters.doLigandGKElec) {
       generalizedKirkwoodTerm = true;
@@ -1822,7 +1838,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     // Turn off Pre-conditioned conjugate gradient SCF solver.
     SCFAlgorithm scfBack = scfAlgorithm;
-    scfAlgorithm = SCFAlgorithm.SOR;
+    scfAlgorithm = SOR;
     generalizedKirkwoodTerm = false;
 
     double energy = computeEnergy(false);
@@ -1923,13 +1939,9 @@ public class ParticleMeshEwald implements LambdaInterface {
           reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
           field.reset(parallelTeam);
           fieldCR.reset(parallelTeam);
-          inducedDipoleFieldRegion.init(
-              atoms, crystal, use, molecule,
-              ipdamp, thole, coordinates, realSpaceNeighborParameters,
-              inducedDipole, inducedDipoleCR,
-              reciprocalSpaceTerm, reciprocalSpace,
-              lambdaMode, ewaldParameters,
-              field, fieldCR, pmeTimings);
+          inducedDipoleFieldRegion.init(atoms, crystal, use, molecule, ipdamp, thole, coordinates,
+              realSpaceNeighborParameters, inducedDipole, inducedDipoleCR, reciprocalSpaceTerm,
+              reciprocalSpace, lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
           inducedDipoleFieldRegion.executeWith(sectionTeam);
           reciprocalSpace.computeInducedPhi(
               cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
@@ -2243,27 +2255,12 @@ public class ParticleMeshEwald implements LambdaInterface {
       pmeTimings.gkEnergyTotal = -System.nanoTime();
       generalizedKirkwood.computePermanentGKField();
       pmeTimings.gkEnergyTotal += System.nanoTime();
-      logger.fine(
-          format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+      logger.fine(format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
     }
-    directRegion.init(
-        atoms,
-        polarizability,
-        globalMultipole,
-        cartesianMultipolePhi,
-        field,
-        fieldCR,
-        generalizedKirkwoodTerm,
-        generalizedKirkwood,
-        ewaldParameters,
-        soluteDielectric,
-        inducedDipole,
-        inducedDipoleCR,
-        directDipole,
-        directDipoleCR,
-        directField,
-        directFieldCR
-    );
+    directRegion.init(atoms, polarizability, globalMultipole, cartesianMultipolePhi,
+        field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters,
+        soluteDielectric, inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
+        directField, directFieldCR);
     directRegion.executeWith(parallelTeam);
 
     // Return unless mutual polarization is selected.
@@ -2301,25 +2298,27 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
       };
     } catch (EnergyException ex) {
-      if (directFallback) {
-        // SCF Failure: warn and revert to direct polarization.
-        logger.warning(ex.toString());
-        // Compute the direct induced dipoles.
-        if (generalizedKirkwoodTerm) {
-          pmeTimings.gkEnergyTotal = -System.nanoTime();
-          generalizedKirkwood.computePermanentGKField();
-          pmeTimings.gkEnergyTotal += System.nanoTime();
-          logger.fine(
-              format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
-        }
-        directRegion.init(atoms, polarizability, globalMultipole, cartesianMultipolePhi,
-            field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood,
-            ewaldParameters, soluteDielectric, inducedDipole, inducedDipoleCR,
-            directDipole, directDipoleCR, directField, directFieldCR);
-        directRegion.executeWith(parallelTeam);
-        expandInducedDipoles();
+      logger.warning(ex.toString());
+      if (sorFallback) {
+        // Converge induced dipoles using a conservative SOR iteration.
+        SCFAlgorithm currentSCFAlgorithm = scfAlgorithm;
+        scfAlgorithm = SOR;
+        double currentPolarSOR = sorRegion.getPolarSOR();
+        // Use a conservative SOR convergence parameter to overcome the failure of CG.
+        sorRegion.setPolarSOR(sorFallBackPolarSOR);
+        int ret = selfConsistentField(print);
+        // Revert the SCF algorithm and SOR parameter.
+        scfAlgorithm = currentSCFAlgorithm;
+        sorRegion.setPolarSOR(currentPolarSOR);
+        logger.info(" SOR induced dipoles computed due to SCF failure.");
+        return ret;
+      } else if (directFallback) {
+        // Use direct induced dipoles.
+        polarization = Polarization.DIRECT;
+        int ret = selfConsistentField(print);
+        polarization = Polarization.MUTUAL;
         logger.info(" Direct induced dipoles computed due to SCF failure.");
-        return 0;
+        return ret;
       } else {
         throw ex;
       }
@@ -2371,20 +2370,9 @@ public class ParticleMeshEwald implements LambdaInterface {
               format(" Computed GK induced field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
         }
 
-        sorRegion.init(
-            atoms,
-            polarizability,
-            inducedDipole,
-            inducedDipoleCR,
-            directDipole,
-            directDipoleCR,
-            cartesianInducedDipolePhi,
-            cartesianInducedDipolePhiCR,
-            field,
-            fieldCR,
-            generalizedKirkwoodTerm,
-            generalizedKirkwood,
-            ewaldParameters);
+        sorRegion.init(atoms, polarizability, inducedDipole, inducedDipoleCR,
+            directDipole, directDipoleCR, cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
+            field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
         parallelTeam.execute(sorRegion);
 
         expandInducedDipoles();

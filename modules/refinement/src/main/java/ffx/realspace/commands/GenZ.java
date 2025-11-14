@@ -150,6 +150,10 @@ public class GenZ extends AlgorithmsCommand {
       return this;
     }
 
+    // Atomic clashes are expected and will be handled using direct induced dipoles.
+    System.setProperty("sor-scf-fallback", "false");
+    System.setProperty("direct-scf-fallback", "true");
+
     double titrationPH = manyBodyOptions.getTitrationPH();
     double inclusionCutoff = manyBodyOptions.getInclusionCutoff();
     int mutatingResidue = manyBodyOptions.getInterestedResidue();

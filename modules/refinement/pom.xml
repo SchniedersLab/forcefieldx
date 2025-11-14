@@ -73,9 +73,9 @@
             <argument>ffx.xray.commands.Minimize</argument>
             <argument>ffx.xray.commands.ModelvsData</argument>
             <argument>ffx.xray.commands.MTZInfo</argument>
-            <argument>ffx.xray.commands.SaveConformerPDB</argument>
             <argument>ffx.xray.commands.Timer</argument>
             <argument>ffx.xray.commands.test.Alchemical</argument>
+            <argument>ffx.xray.commands.test.Gradient</argument>
             <argument>ffx.xray.commands.test.LambdaGradient</argument>
           </arguments>
         </configuration>

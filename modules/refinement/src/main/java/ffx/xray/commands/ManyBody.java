@@ -126,6 +126,10 @@ public class ManyBody extends AlgorithmsCommand {
 
     xrayOptions.init();
 
+    // Atomic clashes are expected and will be handled using direct induced dipoles.
+    System.setProperty("sor-scf-fallback", "false");
+    System.setProperty("direct-scf-fallback", "true");
+
     // This flag is for ForceFieldEnergyOpenMM and must be set before reading files.
     // It enforces that all torsions include a Fourier series with 6 terms.
     // Otherwise, during titration the number of terms for each torsion may change and
