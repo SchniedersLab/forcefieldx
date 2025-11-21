@@ -148,9 +148,9 @@ public class ModelvsData extends AlgorithmsCommand {
     String filename;
     if (filenames != null && !filenames.isEmpty()) {
       // Each alternate conformer is returned in a separate MolecularAssembly.
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0));
+      molecularAssemblies = algorithmFunctions.openAll(filenames.getFirst());
       activeAssembly = molecularAssemblies[0];
-      filename = filenames.get(0);
+      filename = filenames.getFirst();
     } else if (activeAssembly == null) {
       logger.info(helpString());
       return this;

@@ -56,6 +56,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import static org.apache.commons.io.FilenameUtils.concat;
 import static org.apache.commons.io.FilenameUtils.getName;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -193,7 +195,7 @@ public class SaveAsPDB extends PotentialCommand {
           logger.info(" Saving PDB to         " + snapshotFile);
           snapshotFilter.writeFile(snapshotFile, true, false, false);
           try {
-            Files.writeString(snapshotFile.toPath(), "END\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            Files.writeString(snapshotFile.toPath(), "END\n", APPEND, CREATE);
           } catch (IOException e) { /* ignore */ }
           snapshotCounter++;
         }
@@ -220,7 +222,7 @@ public class SaveAsPDB extends PotentialCommand {
     saveOptions.preSaveOperations(activeAssembly);
     potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true);
     try {
-      Files.writeString(saveFile.toPath(), "ENDMDL\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+      Files.writeString(saveFile.toPath(), "ENDMDL\n", APPEND, CREATE);
     } catch (IOException e) { /* ignore */ }
 
     PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter();
@@ -245,7 +247,7 @@ public class SaveAsPDB extends PotentialCommand {
       }
       // Add a final "END" record.
       try {
-        Files.writeString(saveFile.toPath(), "END\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        Files.writeString(saveFile.toPath(), "END\n", APPEND, CREATE);
       } catch (IOException e) { /* ignore */ }
     }
     return this;

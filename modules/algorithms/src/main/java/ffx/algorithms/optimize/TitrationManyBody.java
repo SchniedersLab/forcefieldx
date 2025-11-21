@@ -89,7 +89,7 @@ public class TitrationManyBody {
   }
 
   public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
-      double pH, ManyBodyOptions manyBodyOptions) {
+                           double pH, ManyBodyOptions manyBodyOptions) {
     this.filename = filename;
     this.forceField = forceField;
     this.resNumberList = resNumberList;
@@ -97,7 +97,7 @@ public class TitrationManyBody {
     this.manyBodyOptions = manyBodyOptions;
   }
 
-  public MolecularAssembly getProtonatedAssembly(){
+  public MolecularAssembly getProtonatedAssembly() {
     MolecularAssembly protonatedAssembly = new MolecularAssembly(filename);
     protonatedAssembly.setForceField(forceField);
     File structureFile = new File(filename);
@@ -119,7 +119,7 @@ public class TitrationManyBody {
     }
 
     TitrationUtils titrationUtils;
-    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(), proteinDielectric,tanhCorrection);
+    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField(), proteinDielectric, tanhCorrection);
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
@@ -140,11 +140,11 @@ public class TitrationManyBody {
   }
 
   public MolecularAssembly[] getProtonatedAssemblies() {
-    logger.info("Getting protonated assemblies");
+    logger.info(" Adding protons that titrate to molecular assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
     int locs = 1;
-    if(altLocs!=null){
+    if (altLocs != null) {
       locs = altLocs.size();
       for (int i = 0; i < locs; i++) {
         if (altLocs.get(i) == null) {
@@ -154,61 +154,53 @@ public class TitrationManyBody {
     }
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[locs];
     molecularAssemblies[0] = molecularAssembly;
-    for (int i = 0; i < altLocs.size(); i++) {
-      if (i != 0) {
-        logger.info(filename);
-        MolecularAssembly newAssembly = new MolecularAssembly(filename);
-        newAssembly.setForceField(forceField);
-        File structureFile = new File(filename);
-        protonFilter = new PDBFilter(structureFile, newAssembly, forceField,
-            forceField.getProperties(), resNumberList);
-        protonFilter.setRotamerTitration(true);
-        protonFilter.setAltID(newAssembly, altLocs.get(i));
-        protonFilter.readFile();
-        protonFilter.applyAtomProperties();
-        newAssembly.finalize(true, forceField);
-        potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);
-        double proteinDielectric = 1.0;
-        boolean tanhCorrection = false;
-        try {
-          proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC", 1.0);
-          tanhCorrection = forceField.getBoolean("TANH_CORRECTION", true);
-        } catch (Exception e) {
-          logger.info("Protein Dielectric or Tanh Correction is Null");
-        }
+    for (int i = 1; i < altLocs.size(); i++) {
+      logger.info(filename);
+      MolecularAssembly newAssembly = new MolecularAssembly(filename);
+      newAssembly.setForceField(forceField);
+      File structureFile = new File(filename);
+      protonFilter = new PDBFilter(structureFile, newAssembly, forceField,
+          forceField.getProperties(), resNumberList);
+      protonFilter.setRotamerTitration(true);
+      protonFilter.setAltID(newAssembly, altLocs.get(i));
+      protonFilter.readFile();
+      protonFilter.applyAtomProperties();
+      newAssembly.finalize(true, forceField);
+      potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);
 
-        TitrationUtils titrationUtils;
-        titrationUtils = new TitrationUtils(molecularAssembly.getForceField(), proteinDielectric,tanhCorrection);
-        titrationUtils.setRotamerPhBias(298.15, pH);
-        for (Residue residue : molecularAssembly.getResidueList()) {
-          String resName = residue.getName();
-          if (resNumberList.contains(residue.getResidueNumber())) {
-            if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
-                || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
-                || resName.equalsIgnoreCase("CYS")) {
-              residue.setTitrationUtils(titrationUtils);
-            }
+      double proteinDielectric = forceField.getDouble("SOLUTE_DIELECTRIC", 1.0);
+      boolean tanhCorrection = forceField.getBoolean("TANH_CORRECTION", true);
+      TitrationUtils titrationUtils = new TitrationUtils(molecularAssembly.getForceField(),
+          proteinDielectric, tanhCorrection);
+      titrationUtils.setRotamerPhBias(298.15, pH);
+      for (Residue residue : molecularAssembly.getResidueList()) {
+        String resName = residue.getName();
+        if (resNumberList.contains(residue.getResidueNumber())) {
+          if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
+              || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+              || resName.equalsIgnoreCase("CYS")) {
+            residue.setTitrationUtils(titrationUtils);
           }
         }
-        potentialEnergy.energy();
-        molecularAssemblies[i] = newAssembly;
       }
+      potentialEnergy.energy();
+      molecularAssemblies[i] = newAssembly;
     }
     return molecularAssemblies;
   }
 
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
-      List<Residue> residueList) {
+                                    List<Residue> residueList) {
     boolean isTitrating = false;
     int i = 0;
     for (Residue residue : residueList) {
       RotamerLibrary rotamerLibrary = manyBodyOptions.getRotamerLibrary(true);
       residue.setRotamers(rotamerLibrary);
       String resName = residue.getName();
-      if(resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
-              || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
-              || resName.equalsIgnoreCase("CYS")){
+      if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
+          || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+          || resName.equalsIgnoreCase("CYS")) {
         Rotamer rotamer = residue.getRotamers()[optimalRotamers[i]];
         applyRotamer(residue, rotamer);
         if (residue.getTitrationUtils() != null) {
@@ -248,7 +240,7 @@ public class TitrationManyBody {
         }
       }
       i++;
-      }
+    }
 
     setExcludeAtoms(excludeAtoms);
 
@@ -256,7 +248,7 @@ public class TitrationManyBody {
   }
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
-                                    MolecularAssembly molecularAssembly, List<Residue> residueList){
+                                    MolecularAssembly molecularAssembly, List<Residue> residueList) {
     boolean isTitrating = false;
     double proteinDielectric = 1.0;
     boolean tanhCorrection = false;
@@ -267,19 +259,19 @@ public class TitrationManyBody {
       logger.info("Protein Dielectric or Tanh Correction is Null");
     }
     TitrationUtils titrationUtils;
-    titrationUtils = new TitrationUtils(molecularAssembly.getForceField(), proteinDielectric,tanhCorrection);
+    titrationUtils = new TitrationUtils(molecularAssembly.getForceField(), proteinDielectric, tanhCorrection);
     titrationUtils.setRotamerPhBias(298.15, pH);
     for (Residue residue : residueList) {
       String resName = residue.getName();
       if (resNumberList.contains(residue.getResidueNumber())) {
         if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
-                || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
-                || resName.equalsIgnoreCase("CYS")) {
+            || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+            || resName.equalsIgnoreCase("CYS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }
     }
-    isTitrating = excludeExcessAtoms(excludeAtoms,optimalRotamers, residueList);
+    isTitrating = excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList);
     return isTitrating;
   }
 

@@ -46,6 +46,7 @@ import java.util.logging.Logger;
 
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.length2;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.numerics.math.MatrixMath.determinant3;
 import static ffx.numerics.math.MatrixMath.mat3Inverse;
@@ -67,6 +68,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * This implementation uses the coefficients from International Tables, Vol. C, chapter 4.4.4.
  *
  * @author Timothy D. Fenn
+ * @see <a href="https://www.ncnr.nist.gov/resources/n-lengths/list.html" target="_blank">
+ *   NIST Center for Neutron Research</a>
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank"> V. F. Sears, Int.
  *     Tables Vol. C (2006). Table 4.4.4.1</a>
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank"> B. T. M. Willis,
@@ -158,10 +161,10 @@ public final class NeutronFormFactor implements FormFactor {
       {{46}, {5.91, 0.0}},    // Pd
       {{47}, {5.922, 0.0}},   // Ag
       {{48}, {4.87, -0.70}},  // Cd
-      {{49}, {2.08, -0.0539}},// In; nCNS 4.065
+      {{49}, {4.065, -0.0539}}, // In
       {{50}, {6.225, 0.0}},   // Sn
       {{51}, {5.57, 0.0}},    // Sb
-      {{52}, {5.80, 0.0}},    // Te; nCNS 5.68
+      {{52}, {5.80, 0.0}},    // Te
       {{53}, {5.28, 0.0}},    // I
       {{54}, {4.92, 0.0}},    // Xe
       {{55}, {5.42, 0.0}},    // Cs
@@ -171,9 +174,9 @@ public final class NeutronFormFactor implements FormFactor {
       {{59}, {4.58, 0.0}},    // Pr
       {{60}, {7.69, 0.0}},    // Nd
                               // No PM
-      {{61}, {0.80, -1.65}},  // Sm cCNS 0.0
-      {{62}, {7.22, -1.26}},  // Eu nCNS 5.3
-      {{63}, {6.5, -13.82}},  // Gd nCNS 9.5
+      {{61}, {0.80, -1.65}},  // Sm
+      {{62}, {7.22, -1.26}},  // Eu
+      {{63}, {6.5, -13.82}},  // Gd
       {{64}, {7.38, 0.0}},    // Tb
       {{65}, {16.9, -0.276}}, // Dy
       {{66}, {8.01, 0.0}},    // Ho
@@ -357,8 +360,7 @@ public final class NeutronFormFactor implements FormFactor {
   @Override
   public double rho(double f, double lambda, double[] xyz) {
     sub(this.xyz, xyz, xyz);
-    double r = length(xyz);
-    if (r > atom.getFormFactorWidth()) {
+    if (length2(xyz) > atom.getFormFactorWidth2()) {
       return f;
     }
     double sum = ainv[0] * exp(-0.5 * quadForm(xyz, uinv[0]));
@@ -367,14 +369,13 @@ public final class NeutronFormFactor implements FormFactor {
 
   /** {@inheritDoc} */
   @Override
-  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
+  public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementMode) {
     sub(this.xyz, xyz, dxyz);
-    double r = length(dxyz);
-    double r2 = r * r;
     fill(gradp, 0.0);
     fill(gradu, 0.0);
 
-    if (r > atom.getFormFactorWidth()) {
+    double r2 = length2(dxyz);
+    if (r2 > atom.getFormFactorWidth2()) {
       return;
     }
 
@@ -382,25 +383,16 @@ public final class NeutronFormFactor implements FormFactor {
     boolean refineb = false;
     boolean refineanisou = false;
     boolean refineocc = false;
-    if (refinementmode == RefinementMode.COORDINATES
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+    if (refinementMode.includesCoordinates()) {
       refinexyz = true;
     }
-    if (refinementmode == RefinementMode.BFACTORS
-        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+    if (refinementMode.includesBFactors()) {
       refineb = true;
       if (hasAnisou) {
         refineanisou = true;
       }
     }
-    if (refinementmode == RefinementMode.OCCUPANCIES
-        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-        || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+    if (refinementMode.includesOccupancies()) {
       refineocc = true;
     }
 

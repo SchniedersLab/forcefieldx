@@ -191,7 +191,8 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * Set the alternate location.
+   * Set the alternate location label for the MolecularAssembly.
+   * Atomic alternate locations are not modified.
    *
    * @param alternateLocation The alternate location.
    */
@@ -200,7 +201,7 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * Get the alternate location.
+   * Get the alternate location label for the MolecularAssembly.
    *
    * @return The alternate location.
    */
@@ -942,7 +943,6 @@ public class MolecularAssembly extends MSGroup {
     for (int i = 0; i < atoms.size(); i++) {
       atomArray[i].setXyzIndex(i + 1);
     }
-
     return atomArray;
   }
 

@@ -203,8 +203,33 @@ public class ManyBody extends AlgorithmsCommand {
     Set<Atom> excludeAtoms = new HashSet<>();
 
     for (int i = 0; i < molecularAssemblies.length; i++) {
+
+      // Only optimization of the root location is currently tested.
+      if (i > 0) {
+        break;
+      }
       activeAssembly = molecularAssemblies[i];
       activeAssembly.setFile(new File(filenames.getFirst()));
+
+
+      // Save current B-factors
+      Atom[] atoms = activeAssembly.getAtomArray();
+      double[] bfactors = new double[atoms.length];
+      double averageBFactor = 0;
+      for (int j = 0; j < atoms.length; j++) {
+        double bfactor = atoms[j].getTempFactor();
+        bfactors[j] = bfactor;
+        averageBFactor += bfactor;
+      }
+      // Set each atom to use the average b-factor to avoid a bias toward the initial rotamer.
+      averageBFactor /= atoms.length;
+      for (Atom atom : atoms) {
+        atom.setTempFactor(averageBFactor);
+      }
+
+      diffractionData.scaleBulkFit();
+      diffractionData.printStats();
+
       RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener);
       manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly);
 
@@ -247,6 +272,11 @@ public class ManyBody extends AlgorithmsCommand {
         logger.info(format("  Xray Target with Bias%16.8f\n", phBias + finalTargetEnergy));
       } else {
         logger.info(format("\n  Final Target Energy  %16.8f\n", finalTargetEnergy));
+      }
+
+      // Revert to the saved B-factors.
+      for (int j = 0; j < atoms.length; j++) {
+        atoms[j].setTempFactor(bfactors[j]);
       }
       diffractionData.scaleBulkFit();
       diffractionData.printStats();

@@ -73,8 +73,8 @@ public class XRayManyBodyTest extends AlgorithmsTest {
     // Target is lowered by ~30.
     double actualInitialEnergy = manyBody.getInitialTargetEnergy();
     double actualFinalEnergy = manyBody.getFinalTargetEnergy();
-    double expectedInitialEnergy = 4394.274267978165;
-    double expectedFinalEnergy = 4364.922272352412;
+    double expectedInitialEnergy = 6177.457854769329;
+    double expectedFinalEnergy = 6177.0459797797575;
 
     double tol = 1.0;
     assertEquals(" Initial Energy", expectedInitialEnergy, actualInitialEnergy, tol);

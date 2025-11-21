@@ -632,11 +632,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
   }
 
   /**
-   * runPythonScript - Execute a Python script.
+   * Run a script that is not Groovy (e.g., a Python script).
    *
    * @param file    a {@link java.io.File} object.
    * @param argList List of String inputs to the script.
-   * @return Returns a reference to the executed script.
    */
   public void runNonGroovyScript(File file, List<String> argList) {
     logger.info(" Attempting to execute Polyglot script:\n  " + file.getAbsolutePath() + "\n");

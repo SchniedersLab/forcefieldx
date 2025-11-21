@@ -48,6 +48,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.xray.parallel.GridMethod;
+import ffx.xray.scatter.NeutronFormFactor;
 import ffx.xray.solvent.SolventModel;
 import ffx.xray.parsers.CCP4MapWriter;
 import ffx.xray.parsers.DiffractionFile;
@@ -71,6 +72,7 @@ import java.util.logging.Logger;
 
 import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.utilities.TinkerUtils.version;
+import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
@@ -233,6 +235,7 @@ public class DiffractionData implements DataContainer {
       // index++;
 
       XRayFormFactor atomff = new XRayFormFactor(a, use_3g, 2.0);
+      // NeutronFormFactor neutronFF = new NeutronFormFactor(a, 2.0);
       if (a.getOccupancy() == 0.0) {
         a.setFormFactorWidth(1.0);
         continue;
@@ -250,10 +253,13 @@ public class DiffractionData implements DataContainer {
       xyz[1] = a.getY();
       xyz[2] = a.getZ();
       double rho = atomff.rho(0.0, 1.0, xyz);
+      // double rhoN = abs(neutronFF.rho(0.0, 1.0, xyz));
+      // while (rho > 0.001 || rhoN > 0.001) {
       while (rho > 0.001) {
         arad += 0.1;
         xyz[0] = a.getX() + arad;
         rho = atomff.rho(0.0, 1.0, xyz);
+        // rhoN = abs(neutronFF.rho(0.0, 1.0, xyz));
       }
       arad += aRadBuff;
       a.setFormFactorWidth(arad);

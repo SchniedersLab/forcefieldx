@@ -314,6 +314,10 @@ public class BondedUtils {
     }
 
     if (atom == null) {
+      boolean buildDeuterium = forceField.getBoolean("build-deuterium", false);
+      if (buildDeuterium && atomName.startsWith("H")) {
+        atomName = atomName.replaceFirst("H", "D");
+      }
       String resName = ia.getResidueName();
       int resSeq = ia.getResidueNumber();
       Character chainID = ia.getChainID();

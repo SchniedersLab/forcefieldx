@@ -193,7 +193,7 @@ public class RowSchedule extends IntegerSchedule {
   /**
    * getThreadWeights.
    *
-   * @return an array of {@link int} objects.
+   * @return the thread weights.
    */
   public int[] getThreadWeights() {
     int[] weightsToReturn = new int[nThreads];
@@ -204,7 +204,7 @@ public class RowSchedule extends IntegerSchedule {
   /**
    * Getter for the field <code>lowerBounds</code>.
    *
-   * @return an array of {@link int} objects.
+   * @return the lower bounds.
    */
   public int[] getLowerBounds() {
     int[] boundsToReturn = new int[nThreads];

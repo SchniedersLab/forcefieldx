@@ -40,6 +40,7 @@ package ffx.xray.commands.test;
 import ffx.algorithms.cli.AlgorithmsCommand;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.cli.AtomSelectionOptions;
 import ffx.potential.cli.PotentialCommand;
 import ffx.utilities.FFXBinding;
@@ -229,11 +230,12 @@ public class Gradient extends AlgorithmsCommand {
         error += diff * diff;
       }
       error = sqrt(error);
+      Atom atom = refinedParameter.getAtom();
       if (numParams == 1) {
-        logger.info(format("\n Refinement parameter %d with index %d", parameter + 1, index));
+        logger.info(format("\n Refinement parameter %d with index %d: %s", parameter + 1, index, atom));
       } else {
-        logger.info(format("\n Refinement parameter %d with indices %d - %s",
-            parameter + 1, index, index + numParams - 1));
+        logger.info(format("\n Refinement parameter %d with indices %d - %s: %s",
+            parameter + 1, index, index + numParams - 1, atom));
       }
       logger.info(format(" %s", refinedParameter));
       if (error > tolerance) {
@@ -251,6 +253,9 @@ public class Gradient extends AlgorithmsCommand {
       logger.info(numeric.toString());
       logger.info(analytic.toString());
     }
+
+    logger.info("\n %d / %d failures.".formatted(nFailures, numParameters));
+
     return this;
   }
 

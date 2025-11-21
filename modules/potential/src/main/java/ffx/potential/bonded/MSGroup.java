@@ -115,6 +115,10 @@ public abstract class MSGroup extends MSNode {
   private double[] center;
   /** List of under-constrained Atoms */
   private List<Atom> danglingAtomList;
+  /**
+   * If true, the getAtomNode command will search for deuterium.
+   */
+  private boolean matchDeuterium = true;
 
   /** Default Constructor initializes a MultiScaleGroup and a few of its sub-nodes. */
   public MSGroup() {
@@ -674,7 +678,33 @@ public abstract class MSGroup extends MSNode {
         return msNode;
       }
     }
+    if (matchDeuterium) {
+      n = n.replaceFirst("H", "D");
+      for (MSNode msNode : list) {
+        if (msNode.getName().compareTo(n) == 0) {
+          return msNode;
+        }
+      }
+    }
     return null;
+  }
+
+  /**
+   * Sets the flag to determine whether deuterium matches should be considered.
+   *
+   * @param matchDeuterium a boolean indicating if deuterium matching is enabled
+   */
+  public void setMatchDeuterium(boolean matchDeuterium) {
+    this.matchDeuterium = matchDeuterium;
+  }
+
+  /**
+   * Retrieves the current value of the matchDeuterium flag.
+   *
+   * @return true if matchDeuterium is enabled, false otherwise
+   */
+  public boolean getMatchDeuterium() {
+    return matchDeuterium;
   }
 
   /**
@@ -1036,7 +1066,7 @@ public abstract class MSGroup extends MSNode {
    *
    * @param altLoc the alternate location identifier to be set for the atoms
    */
-  public void setAltLoc(Character altLoc) {
+  public void setAtomicAltLoc(Character altLoc) {
     List<Atom> atoms = getAtomList();
     for (Atom a : atoms) {
       a.setAltLoc(altLoc);

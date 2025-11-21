@@ -80,7 +80,6 @@ import static org.apache.commons.math3.util.FastMath.tanh;
  * likelihood target function.
  * <p>
  * This target can also be used for structure refinement.
- * <p>
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank"> K. Cowtan, J. Appl.

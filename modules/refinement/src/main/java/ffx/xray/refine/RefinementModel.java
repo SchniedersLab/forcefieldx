@@ -859,9 +859,9 @@ public class RefinementModel {
           refinedBFactor.addConstrainedAtom(a);
         }
         // Scattering Atoms constrained to this B-factor
-        for (Atom a : refinedCoords.constrainedAtomsThatScatter) {
-          refinedBFactor.addConstrainedAtomThatScatters(a);
-        }
+        // for (Atom a : refinedCoords.constrainedAtomsThatScatter) {
+        //  refinedBFactor.addConstrainedAtomThatScatters(a);
+        // }
       }
     }
 

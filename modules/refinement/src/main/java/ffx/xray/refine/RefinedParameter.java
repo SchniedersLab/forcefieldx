@@ -60,6 +60,16 @@ public abstract class RefinedParameter {
   }
 
   /**
+   * Retrieves the primary atom associated with this RefinedParameter instance.
+   * The returned atom serves as the central reference in the refinement process.
+   *
+   * @return the primary {@link Atom} associated with this RefinedParameter.
+   */
+  public Atom getAtom() {
+    return atom;
+  }
+
+  /**
    * Sets the index for this RefinedParameter instance.
    *
    * @param index the integer value to set as the index
