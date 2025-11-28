@@ -1037,7 +1037,7 @@
     <clover.version>4.4.1</clover.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.12.0</commons-configuration2.version>
+    <commons-configuration2.version>2.13.0</commons-configuration2.version>
     <commons-io.version>2.21.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
@@ -1107,7 +1107,7 @@
     <tornado.version>1.1.0</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
-    <versions.version>2.19.1</versions.version>
+    <versions.version>2.20.1</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
     <wrapper.version>3.3.4</wrapper.version>

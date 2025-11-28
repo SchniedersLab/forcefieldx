@@ -307,6 +307,9 @@ public class ReplicatesCrystal extends Crystal {
             && alpha == replicatesCrystal.alpha
             && beta == replicatesCrystal.beta
             && gamma == replicatesCrystal.gamma
+            && l == replicatesCrystal.l
+            && m == replicatesCrystal.m
+            && n == replicatesCrystal.n
             && spaceGroup.number == replicatesCrystal.spaceGroup.number
             && spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
   }

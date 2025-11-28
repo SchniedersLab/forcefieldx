@@ -45,6 +45,7 @@ import ffx.potential.bonded.Atom;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
@@ -56,6 +57,8 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
  * @since 1.0
  */
 public class XtalEnergy implements Potential {
+
+  private static final Logger logger = Logger.getLogger(XtalEnergy.class.getName());
 
   /**
    * MolecularAssembly to compute the crystal energy for.
@@ -132,6 +135,9 @@ public class XtalEnergy implements Potential {
 
     nParams = 3 * nActive + 6;
     crystal = forceFieldEnergy.getCrystal();
+
+    logger.info(" XtalEnergy Crystal: " + crystal);
+
     unitCell = crystal.getUnitCell();
     type = new VARIABLE_TYPE[nParams];
     mass = new double[nParams];
@@ -682,6 +688,7 @@ public class XtalEnergy implements Potential {
     }
 
     crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
     forceFieldEnergy.setCrystal(crystal);
 
     // Use the atomic coordinates from the optimizer.
