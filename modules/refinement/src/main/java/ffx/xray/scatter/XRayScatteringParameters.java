@@ -49,7 +49,6 @@ import static java.lang.String.format;
  * on their atomic properties or a unique key. Instances of this class consist of an atom's
  * name, a description, and its associated X-ray form factor data.
  *
- * @author Timothy D. Fenn
  * @author Michael J. Schnieders
  * @since 1.0
  */

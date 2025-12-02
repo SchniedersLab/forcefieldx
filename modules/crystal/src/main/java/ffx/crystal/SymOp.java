@@ -827,12 +827,9 @@ public class SymOp {
     var rot = symOp.rot;
     var trans = symOp.tr;
     // Apply Symmetry Operator.
-    mate[0] =
-        (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
-    mate[1] =
-        (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
-    mate[2] =
-        (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
+    mate[0] = (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
+    mate[1] = (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
+    mate[2] = (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
     mate[0] = mod(mate[0], nx);
     mate[1] = mod(mate[1], ny);
     mate[2] = mod(mate[2], nz);

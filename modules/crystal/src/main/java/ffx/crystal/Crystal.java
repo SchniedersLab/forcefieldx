@@ -52,9 +52,9 @@ import java.util.logging.Logger;
 import static ffx.crystal.SpaceGroupDefinitions.spaceGroupFactory;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3Mat3Multiply;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.mat3Transpose;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.PropertyGroup.UnitCellAndSpaceGroup;
@@ -760,8 +760,8 @@ public class Crystal {
     for (int i = 0; i < n; i++) {
       SymOp symop = spaceGroup.symOps.get(i);
       double[][] rot = symop.rot;
-      double[][] rt = transpose3(rot);
-      double[][] rmrt = mat3Mat3(mat3Mat3(rot, m), rt);
+      double[][] rt = mat3Transpose(rot);
+      double[][] rmrt = mat3Mat3Multiply(mat3Mat3Multiply(rot, m), rt);
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
           r[j][k] += rmrt[j][k];
@@ -786,8 +786,8 @@ public class Crystal {
     for (int i = 0; i < n; i++) {
       SymOp symop = spaceGroup.symOps.get(i);
       double[][] rot = symop.rot;
-      double[][] rt = transpose3(rot);
-      double[][] rmrt = mat3Mat3(mat3SymVec6(rot, v), rt);
+      double[][] rt = mat3Transpose(rot);
+      double[][] rmrt = mat3Mat3Multiply(mat3SymVec6(rot, v), rt);
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 3; k++) {
           r[j][k] += rmrt[j][k];

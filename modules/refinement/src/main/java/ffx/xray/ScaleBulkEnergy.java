@@ -53,9 +53,9 @@ import javax.annotation.Nullable;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3Mat3Multiply;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.mat3Transpose;
 import static ffx.numerics.math.MatrixMath.vec3Mat3;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -135,13 +135,13 @@ public class ScaleBulkEnergy implements OptimizationInterface {
     this.n = n;
     this.solventN = n - refinementData.nScale;
 
-    recipt = transpose3(crystal.A);
-    j11 = mat3Mat3(mat3Mat3(crystal.A, u11), recipt);
-    j22 = mat3Mat3(mat3Mat3(crystal.A, u22), recipt);
-    j33 = mat3Mat3(mat3Mat3(crystal.A, u33), recipt);
-    j12 = mat3Mat3(mat3Mat3(crystal.A, u12), recipt);
-    j13 = mat3Mat3(mat3Mat3(crystal.A, u13), recipt);
-    j23 = mat3Mat3(mat3Mat3(crystal.A, u23), recipt);
+    recipt = mat3Transpose(crystal.A);
+    j11 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u11), recipt);
+    j22 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u22), recipt);
+    j33 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u33), recipt);
+    j12 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u12), recipt);
+    j13 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u13), recipt);
+    j23 = mat3Mat3Multiply(mat3Mat3Multiply(crystal.A, u23), recipt);
 
     int threadCount = parallelTeam.getThreadCount();
     this.parallelTeam = parallelTeam;
@@ -378,7 +378,7 @@ public class ScaleBulkEnergy implements OptimizationInterface {
 
       // Generate Ustar.
       mat3SymVec6(crystal.A, modelB, resM);
-      mat3Mat3(resM, recipt, uStar);
+      mat3Mat3Multiply(resM, recipt, uStar);
 
       if (gradient) {
         if (grad == null) {

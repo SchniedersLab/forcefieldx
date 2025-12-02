@@ -49,7 +49,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.MatrixMath.mat3Determinant;
 import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.numerics.math.ScalarMath.u2b;
 import static ffx.utilities.Constants.R;
@@ -559,7 +559,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         // -T S     = -1/2 kB T * ln [(2 PI e)^2 det(U)]
         //          = -1/2 kB T * ln [det(U)] + C
         // -T dS/dU = -1/2 kB T * U^-1
-        double det = determinant3(anisou1);
+        double det = mat3Determinant(anisou1);
         e += u2b(-oneHalf * kTbNonzero * Math.log(det));
         if (gradient) {
           gradu[0] = u2b(-oneHalf * kTbNonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det));
@@ -595,8 +595,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         // Both atoms are anisotropic.
         anisou1 = a1.getAnisou(anisou1);
         anisou2 = a2.getAnisou(anisou1);
-        double det1 = determinant3(anisou1);
-        double det2 = determinant3(anisou2);
+        double det1 = mat3Determinant(anisou1);
+        double det2 = mat3Determinant(anisou2);
         double bdiff = det1 - det2;
         double bdiff2 = bdiff * bdiff;
         e += eightPI23 * kTbSimWeight * bdiff2;
@@ -627,7 +627,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
         anisou1 = a1.getAnisou(anisou1);
         double u2 = b2u(a2.getTempFactor());
-        double det1 = determinant3(anisou1);
+        double det1 = mat3Determinant(anisou1);
         // Determinant of a diagonal matrix.
         double det2 = u2 * u2 * u2;
         double bdiff = det1 - det2;

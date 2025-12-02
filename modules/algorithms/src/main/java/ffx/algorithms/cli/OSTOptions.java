@@ -335,6 +335,7 @@ public class OSTOptions {
    *
    * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
    * @param molecularAssemblies      an array of {@link ffx.potential.MolecularAssembly} objects.
+   * @param crystalPotential         a {@link ffx.crystal.CrystalPotential} object.
    * @param dynamicsOptions          a {@link ffx.algorithms.cli.DynamicsOptions} object.
    * @param thermodynamicsOptions    a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
    * @param verbose                  Whether to print out additional information about MC-OST.
@@ -342,13 +343,14 @@ public class OSTOptions {
    * @return An assembled MonteCarloOST ready to run.
    */
   public MonteCarloOST setupMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering,
-                                  MolecularAssembly[] molecularAssemblies, DynamicsOptions dynamicsOptions,
+                                  MolecularAssembly[] molecularAssemblies, CrystalPotential crystalPotential,
+                                  DynamicsOptions dynamicsOptions,
                                   ThermodynamicsOptions thermodynamicsOptions, boolean verbose,
                                   File dynRestart, AlgorithmListener algorithmListener) {
     dynamicsOptions.init();
 
-    MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
-        orthogonalSpaceTempering, molecularAssemblies[0], molecularAssemblies[0].getProperties(),
+    MonteCarloOST monteCarloOST = new MonteCarloOST(crystalPotential, orthogonalSpaceTempering,
+        molecularAssemblies[0], molecularAssemblies[0].getProperties(),
         algorithmListener, dynamicsOptions, verbose, mcGroup.mcMDSteps, dynRestart);
 
     MolecularDynamics md = monteCarloOST.getMD();

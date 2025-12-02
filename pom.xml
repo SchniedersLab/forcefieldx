@@ -1002,8 +1002,8 @@
               <execution>
                 <configuration>
                   <packages>
-                    <!-- package>torch==2.7.0</package -->
                     <package>numpy==2.2.4</package>
+                    <package>torch==2.7.0</package>
                   </packages>
                   <externalDirectory>
                     ${project.basedir}/python-resources
@@ -1025,7 +1025,7 @@
     <antrun.version>3.2.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.7.1</assembly.version>
+    <assembly.version>3.8.0</assembly.version>
     <biojava.version>7.2.3</biojava.version>
     <cdk.version>2.11</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
@@ -1091,14 +1091,14 @@
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
     <release.version>3.2.0</release.version>
-    <resources.version>3.3.1</resources.version>
+    <resources.version>3.4.0</resources.version>
     <scm.version>2.2.1</scm.version>
     <site.version>3.21.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
-    <source.version>3.3.1</source.version>
+    <source.version>3.4.0</source.version>
     <spotbugs.version>4.9.8</spotbugs.version>
     <surefire.version>3.5.4</surefire.version>
     <!-- Control the target JRE version -->

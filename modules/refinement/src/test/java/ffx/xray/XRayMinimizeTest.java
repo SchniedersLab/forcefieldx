@@ -167,13 +167,13 @@ public class XRayMinimizeTest extends AlgorithmsTest {
                 "1NSF.pdb",
                 "1NSF.mtz",
                 null,
-                25.17866326312945,
-                25.448305511010272,
-                0.893903833644513,
-                0.14952134994994207
+                25.073186034370938,
+                25.310851476829942,
+                0.895228035088474,
+                0.1465683355168056
             },
             {
-                true,
+                false,
                 "SNARE complex",
                 "1N7S.pdb",
                 "1N7S.mtz",

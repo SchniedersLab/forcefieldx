@@ -54,9 +54,9 @@ import ffx.xray.solvent.SolventModel;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.DoubleMath.dot;
-import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3Mat3Multiply;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.mat3Transpose;
 import static ffx.numerics.math.MatrixMath.vec3Mat3;
 import static ffx.numerics.special.ModifiedBessel.i1OverI0;
 import static ffx.numerics.special.ModifiedBessel.lnI0;
@@ -168,7 +168,7 @@ public class SigmaAEnergy implements OptimizationInterface {
         * refinementData.crystalReciprocalSpaceFc.getYDim()
         * refinementData.crystalReciprocalSpaceFc.getZDim();
     dfScale = (crystal.volume * crystal.volume) / nGrid2;
-    transposeA = transpose3(crystal.A);
+    transposeA = mat3Transpose(crystal.A);
     sa = new double[nBins];
     wa = new double[nBins];
 
@@ -309,9 +309,8 @@ public class SigmaAEnergy implements OptimizationInterface {
 
   private class SigmaARegion extends ParallelRegion {
 
-    private final double[][] resm = new double[3][3];
     private final double[] model_b = new double[6];
-    private final double[][] ustar = new double[3][3];
+    private final double[][] uStar = new double[3][3];
     boolean gradient = true;
     double modelK;
     double solventK;
@@ -385,8 +384,8 @@ public class SigmaAEnergy implements OptimizationInterface {
       arraycopy(refinementData.modelAnisoB, 0, model_b, 0, 6);
 
       // Generate Ustar
-      mat3SymVec6(crystal.A, model_b, resm);
-      mat3Mat3(resm, transposeA, ustar);
+      mat3SymVec6(crystal.A, model_b, uStar);
+      mat3Mat3Multiply(uStar, transposeA, uStar);
 
       for (int i = 0; i < nBins; i++) {
         sa[i] = x[i];
@@ -396,7 +395,6 @@ public class SigmaAEnergy implements OptimizationInterface {
       // Prevent negative w values.
       for (int i = 0; i < nBins; i++) {
         if (wa[i] <= 0.0) {
-          // logger.info(format(" Negative Sigma W for bin %d with %9.6f", i, wa[i]));
           wa[i] = 1.0e-6;
         }
       }
@@ -457,7 +455,7 @@ public class SigmaAEnergy implements OptimizationInterface {
           double ebs = exp(-twoPI2 * solventUEq * s);
           double ksebs = solventK * ebs;
           // Overall model scale.
-          vec3Mat3(ihc, ustar, resv);
+          vec3Mat3(ihc, uStar, resv);
           double u = modelK - dot(resv, ihc);
           double kmems = exp(0.25 * u);
           double km2 = exp(0.5 * u);
@@ -516,7 +514,7 @@ public class SigmaAEnergy implements OptimizationInterface {
           double kect2 = akect * akect;
 
           // FOM
-          // d is the denominator is the FOM calculation given by Eq. 10 in Cowtan (2005)
+          // d is the denominator in the FOM calculation given by Eq. 10 in Cowtan (2005)
           double d = 2.0 * sigeo * sigeo + epsc * wai;
           double id = 1.0 / d;
           double id2 = id * id;

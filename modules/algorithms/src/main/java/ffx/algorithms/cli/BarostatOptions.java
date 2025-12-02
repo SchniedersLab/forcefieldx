@@ -295,7 +295,7 @@ public class BarostatOptions {
      */
     @Option(names = {"--maxV", "--maxVolumeMove"},
         paramLabel = DEFAULT_MAX_VOLUME_MOVE, defaultValue = DEFAULT_MAX_VOLUME_MOVE,
-        description = "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
+        description = "Default maximum volume move for proposed unit cell moves (uniformly distributed) in Angstroms^3.")
     private double maxV = parseDouble(DEFAULT_MAX_VOLUME_MOVE);
 
     /**

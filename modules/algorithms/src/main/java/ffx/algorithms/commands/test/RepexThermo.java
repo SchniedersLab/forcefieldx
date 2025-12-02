@@ -250,7 +250,7 @@ public class RepexThermo extends Thermodynamics {
           dynamicsOptions, barostatOptions);
 
       if (isMC) {
-        mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, dynamicsOptions, thermodynamicsOptions,
+        mcOST = ostOptions.setupMCOST(orthogonalSpaceTempering, topologies, finalPotential, dynamicsOptions, thermodynamicsOptions,
             verbose, null, algorithmListener);
         md = mcOST.getMD();
       } else {

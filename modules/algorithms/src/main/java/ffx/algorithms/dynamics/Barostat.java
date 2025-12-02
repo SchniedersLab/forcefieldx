@@ -282,7 +282,7 @@ public class Barostat implements CrystalPotential {
    * @return a double.
    */
   public double density() {
-    return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
+    return unitCell.getDensity(mass);
   }
 
   /**
@@ -299,7 +299,7 @@ public class Barostat implements CrystalPotential {
    */
   @Override
   public double energy(double[] x) {
-    // Do not apply the Barostat for energy only evaluations.
+    // Do not apply the Barostat for energy-only evaluations.
     return potential.energy(x);
   }
 
@@ -635,9 +635,9 @@ public class Barostat implements CrystalPotential {
 
     // Enforce minimum & maximum density constraints.
     double den = density();
-    if(Double.isNaN(den) || Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c) || Double.isNaN(alpha) || Double.isNaN(beta) || Double.isNaN(gamma)){
+    if (Double.isNaN(den) || Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c) || Double.isNaN(alpha) || Double.isNaN(beta) || Double.isNaN(gamma)) {
       logger.warning(format(" Found value of NaN: density: %7.4f a: %7.4f b: %7.4f c: %7.4f alpha: %7.4f beta: %7.4f gamma: %7.4f",
-              den, a, b, c, alpha, beta, gamma));
+          den, a, b, c, alpha, beta, gamma));
       File errorFile = new File(FilenameUtils.removeExtension(molecularAssembly.getFile().getName()) + "_err.xyz");
       XYZFilter.version(errorFile);
       XYZFilter writeFilter = new XYZFilter(errorFile, molecularAssembly, molecularAssembly.getForceField(), molecularAssembly.getProperties());
@@ -1030,7 +1030,7 @@ public class Barostat implements CrystalPotential {
           }
         }
         case CUBIC_LATTICE ->
-            // a = b = c, alpha = beta = gamma = 90
+          // a = b = c, alpha = beta = gamma = 90
             currentE = mcABC(currentE);
         case TRICLINIC_LATTICE -> {
           if (check(a, b) && check(b, c) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 90.0)) {
@@ -1086,9 +1086,9 @@ public class Barostat implements CrystalPotential {
     barostatCount++;
 
     // Sanity check for values.
-    if(Double.isNaN(currentDensity)||Double.isNaN(a)||Double.isNaN(b)||Double.isNaN(c)||Double.isNaN(alpha)||Double.isNaN(beta)||Double.isNaN(gamma)){
+    if (Double.isNaN(currentDensity) || Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c) || Double.isNaN(alpha) || Double.isNaN(beta) || Double.isNaN(gamma)) {
       logger.warning(format(" Statistic Value was NaN: Density: %5.3f A: %5.3f B: %5.3f C: %5.3f Alpha: %5.3f Beta: %5.3f Gamma: %5.3f",
-              currentDensity, a, b, c, alpha, beta, gamma));
+          currentDensity, a, b, c, alpha, beta, gamma));
     }
     densityStats.addValue(currentDensity);
     aStats.addValue(a);

@@ -39,6 +39,9 @@ package ffx.xray.scatter;
 
 import ffx.xray.refine.RefinementMode;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.pow;
+
 /**
  * FormFactor interface.
  *
@@ -47,38 +50,52 @@ import ffx.xray.refine.RefinementMode;
  */
 public interface FormFactor {
 
-  /**
-   * Compute the real space density rho
-   *
-   * @param f the current density to modify
-   * @param lambda the state variable
-   * @param xyz the requested point for evaluating density
-   * @return the real space density value at xyz
-   */
-  double rho(double f, double lambda, double[] xyz);
+    /**
+     * Compute the real space density rho
+     *
+     * @param f      the current density to modify
+     * @param lambda the state variable
+     * @param xyz    the requested point for evaluating density
+     * @return the real space density value at xyz
+     */
+    double rho(double f, double lambda, double[] xyz);
 
-  /**
-   * Compute the real space gradient
-   *
-   * @param xyz the requested point for evaluating gradient
-   * @param dfc the multiplier to apply to the gradient
-   * @param refinementmode {@link RefinementMode} determines which
-   *     gradients will be computed
-   */
-  void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
+    /**
+     * Compute the real space gradient
+     *
+     * @param xyz            the requested point for evaluating gradient
+     * @param dfc            the multiplier to apply to the gradient
+     * @param refinementmode {@link RefinementMode} determines which
+     *                       gradients will be computed
+     */
+    void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode);
 
-  /**
-   * update the coordinates to the current position
-   *
-   * @param xyz an array of double.
-   */
-  void update(double[] xyz);
+    /**
+     * update the coordinates to the current position
+     *
+     * @param xyz an array of double.
+     */
+    void update(double[] xyz);
 
-  /**
-   * update the coordinates to the current position and Badd
-   *
-   * @param xyz an array of double.
-   * @param badd a double.
-   */
-  void update(double[] xyz, double badd);
+    /**
+     * update the coordinates to the current position and Badd
+     *
+     * @param xyz  an array of double.
+     * @param badd a double.
+     */
+    void update(double[] xyz, double badd);
+
+    double[] v0 = {0.0, 0.0, 0.0};
+    double[] vx = {1.0, 0.0, 0.0};
+    double[] vy = {0.0, 1.0, 0.0};
+    double[] vz = {0.0, 0.0, 1.0};
+    double[][] dUdU11 = {vx, v0, v0};
+    double[][] dUdU22 = {v0, vy, v0};
+    double[][] dUdU33 = {v0, v0, vz};
+    double[][] dUdU12 = {vy, vx, v0};
+    double[][] dUdU13 = {vz, v0, vx};
+    double[][] dUdU23 = {v0, vz, vy};
+    double twoPI2 = 2.0 * PI * PI;
+    double inverseTwoPI32 = pow(2.0 * PI, -1.5);
+    double oneThird = 1.0 / 3.0;
 }

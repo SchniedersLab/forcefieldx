@@ -4,7 +4,7 @@ import ffx.potential.bonded.Atom;
 
 import java.util.logging.Logger;
 
-import static ffx.numerics.math.MatrixMath.determinant3;
+import static ffx.numerics.math.MatrixMath.mat3Determinant;
 import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.numerics.math.ScalarMath.u2b;
 import static java.lang.String.format;
@@ -158,7 +158,7 @@ public class RefinedBFactor extends RefinedParameter {
     if (!isAnisou) {
       return;
     }
-    double det = determinant3(anisou);
+    double det = mat3Determinant(anisou);
     if (det > 0.0) {
       atom.setAnisou(anisou);
       det = Math.pow(det, 1.0 / 3.0);
