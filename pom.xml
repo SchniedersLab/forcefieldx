@@ -1057,7 +1057,7 @@
     <git-commit-id.version>9.0.2</git-commit-id.version>
     <gmavenplus.version>4.2.1</gmavenplus.version>
     <graal.version>25.0.1</graal.version>
-    <groovy-all.version>5.0.2</groovy-all.version>
+    <groovy-all.version>5.0.3</groovy-all.version>
     <guava.version>33.5.0-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.14</jacoco.version>
@@ -1090,7 +1090,7 @@
     <properties.version>1.2.1</properties.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.2.0</release.version>
+    <release.version>3.3.0</release.version>
     <resources.version>3.4.0</resources.version>
     <scm.version>2.2.1</scm.version>
     <site.version>3.21.0</site.version>

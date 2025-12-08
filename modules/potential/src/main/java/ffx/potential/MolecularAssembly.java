@@ -2085,6 +2085,7 @@ public class MolecularAssembly extends MSGroup {
    * by 2 AMU.
    */
   private void applyHeavyHydrogen() {
+    logger.info(" Setting Hydrogen Mass to 3 AMU");
     List<Bond> bonds = getBondList();
     for (Bond bond : bonds) {
       Atom a1 = bond.getAtom(0);
