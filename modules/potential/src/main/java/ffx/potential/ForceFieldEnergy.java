@@ -49,7 +49,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Constraint;
 import ffx.numerics.math.Double3;
 import ffx.numerics.switching.ConstantSwitch;
-import ffx.numerics.switching.UnivariateFunctionFactory;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
@@ -82,7 +81,6 @@ import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
-import ffx.potential.parameters.TorsionType;
 import ffx.potential.terms.AnglePotentialEnergy;
 import ffx.potential.terms.AngleTorsionPotentialEnergy;
 import ffx.potential.terms.BondPotentialEnergy;
@@ -126,6 +124,8 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.DEFAULT_VDW_CUTOFF;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_CUTOFF;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static ffx.potential.terms.RestrainDistancePotentialEnergy.configureRestrainDistances;
+import static ffx.potential.terms.RestrainTorsionPotentialEnergy.configureRestrainTorsions;
 import static ffx.utilities.PropertyGroup.NonBondedCutoff;
 import static ffx.utilities.PropertyGroup.PotentialFunctionSelection;
 import static java.lang.Double.isInfinite;
@@ -1169,7 +1169,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     // Collect restrain distances.
-    RestrainDistance[] restrainDistances = configureRestrainDistances(properties);
+    RestrainDistance[] restrainDistances = configureRestrainDistances(properties, atoms, crystal, lambdaTerm);
     if (restrainDistances != null && restrainDistances.length > 0) {
       restrainDistanceTerm = true;
     } else {
@@ -1184,7 +1184,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     // Collect restrain torsions.
-    Torsion[] restrainTorsions = configureRestrainTorsions(properties, forceField);
+    Torsion[] torsions = null;
+    if (torsionPotentialEnergy != null) {
+      torsions = torsionPotentialEnergy.getTorsionArray();
+    }
+    Torsion[] restrainTorsions = configureRestrainTorsions(properties, forceField, atoms, torsions);
     if (restrainTorsions != null && restrainTorsions.length > 0) {
       restrainTorsionTerm = true;
     } else {
@@ -1343,143 +1347,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
     }
     return nSpecial;
-  }
-
-  /**
-   * Method to parse the restrain-torsion-cos records.
-   *
-   * @param properties Configuration properties.
-   * @param forceField Force field properties.
-   * @return An array of restrain torsions, or null if none were found.
-   */
-  private Torsion[] configureRestrainTorsions(CompositeConfiguration properties, ForceField forceField) {
-    StringBuilder restrainLog = new StringBuilder("\n  Restrain-Torsions");
-
-    String[] restrainTorsions = properties.getStringArray("restrain-torsion");
-    double torsionUnits = forceField.getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
-    List<Torsion> restrainTorsionList = new ArrayList<>(restrainTorsions.length);
-    for (String restrainString : restrainTorsions) {
-      // Add the key back to the input line.
-      restrainString = "restrain-torsion " + restrainString;
-      // Split the line on the pound symbol to remove comments.
-      String input = restrainString.split("#+")[0];
-      // Split the line on whitespace.
-      String[] tokens = input.trim().split(" +");
-      // Restrain torsion records have a similar form as torsion records.
-      // The first four tokens are atom indices instead of atom classes.
-      TorsionType torsionType = TorsionType.parse(input, tokens);
-      torsionType.torsionUnit = torsionUnits;
-
-      // Collect the atom indices.
-      int[] atomIndices = torsionType.atomClasses;
-      int ai1 = atomIndices[0] - 1;
-      int ai2 = atomIndices[1] - 1;
-      int ai3 = atomIndices[2] - 1;
-      int ai4 = atomIndices[3] - 1;
-      Atom a1 = atoms[ai1];
-      Atom a2 = atoms[ai2];
-      Atom a3 = atoms[ai3];
-      Atom a4 = atoms[ai4];
-
-      // Collect the bonds between the atoms making up the restrain torsion.
-      Bond firstBond = a1.getBond(a2);
-      Bond middleBond = a2.getBond(a3);
-      Bond lastBond = a3.getBond(a4);
-      Torsion torsion = new Torsion(firstBond, middleBond, lastBond);
-      torsion.setTorsionType(torsionType);
-      restrainTorsionList.add(torsion);
-      restrainLog.append("\n   ").append(torsion);
-    }
-
-    if (!restrainTorsionList.isEmpty()) {
-      logger.info(restrainLog.toString());
-      return restrainTorsionList.toArray(new Torsion[0]);
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Method to parse the restrain-distance records.
-   *
-   * @param properties Configuration properties.
-   */
-  private RestrainDistance[] configureRestrainDistances(CompositeConfiguration properties) {
-    List<RestrainDistance> restrainDistanceList = new ArrayList<>();
-    String[] bondRestraints = properties.getStringArray("restrain-distance");
-    for (String bondRest : bondRestraints) {
-      try {
-        String[] toks = bondRest.split("\\s+");
-        if (toks.length < 2) {
-          throw new IllegalArgumentException(
-              format(" restrain-distance value %s could not be parsed!", bondRest));
-        }
-        // Internally, everything starts with 0, but restrain distance starts at 1, so that 1 has to
-        // be subtracted
-        int at1 = Integer.parseInt(toks[0]) - 1;
-        int at2 = Integer.parseInt(toks[1]) - 1;
-
-        double forceConst = 100.0;
-        double flatBottomRadius = 0;
-        Atom a1 = atoms[at1];
-        Atom a2 = atoms[at2];
-
-        if (toks.length > 2) {
-          forceConst = Double.parseDouble(toks[2]);
-        }
-        double dist;
-        switch (toks.length) {
-          case 2:
-          case 3:
-            double[] xyz1 = new double[3];
-            xyz1 = a1.getXYZ(xyz1);
-            double[] xyz2 = new double[3];
-            xyz2 = a2.getXYZ(xyz2);
-            // Current distance between restrained atoms
-            dist = crystal.minDistOverSymOps(xyz1, xyz2);
-            break;
-          case 4:
-            dist = Double.parseDouble(toks[3]);
-            break;
-          case 5:
-          default:
-            double minDist = Double.parseDouble(toks[3]);
-            double maxDist = Double.parseDouble(toks[4]);
-            dist = 0.5 * (minDist + maxDist);
-            flatBottomRadius = 0.5 * Math.abs(maxDist - minDist);
-            break;
-        }
-
-        UnivariateSwitchingFunction switchF;
-        double lamStart = RestrainDistance.DEFAULT_RB_LAM_START;
-        double lamEnd = RestrainDistance.DEFAULT_RB_LAM_END;
-        if (toks.length > 5) {
-          int offset = 5;
-          if (toks[5].matches("^[01](?:\\.[0-9]*)?")) {
-            offset = 6;
-            lamStart = Double.parseDouble(toks[5]);
-            if (toks[6].matches("^[01](?:\\.[0-9]*)?")) {
-              offset = 7;
-              lamEnd = Double.parseDouble(toks[6]);
-            }
-          }
-          switchF = UnivariateFunctionFactory.parseUSF(toks, offset);
-        } else {
-          switchF = new ConstantSwitch();
-        }
-
-        RestrainDistance restrainDistance = createRestrainDistance(a1, a2, dist,
-            forceConst, flatBottomRadius, lamStart, lamEnd, switchF);
-        restrainDistanceList.add(restrainDistance);
-      } catch (Exception ex) {
-        logger.info(format(" Exception in parsing restrain-distance: %s", ex));
-      }
-    }
-    if (!restrainDistanceList.isEmpty()) {
-      return restrainDistanceList.toArray(new RestrainDistance[0]);
-    } else {
-      return null;
-    }
   }
 
   /**
@@ -3014,36 +2881,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
     }
     return g;
-  }
-
-  /**
-   * setRestrainDistance
-   *
-   * @param a1                a {@link ffx.potential.bonded.Atom} object.
-   * @param a2                a {@link ffx.potential.bonded.Atom} object.
-   * @param distance          a double.
-   * @param forceConstant     the force constant in kcal/mole.
-   * @param flatBottom        Radius of a flat-bottom potential in Angstroms.
-   * @param lamStart          At what lambda does the restraint begin to take effect?
-   * @param lamEnd            At what lambda does the restraint hit full strength?
-   * @param switchingFunction Switching function to use as a lambda dependence.
-   */
-  private RestrainDistance createRestrainDistance(Atom a1, Atom a2, double distance, double forceConstant,
-                                                  double flatBottom, double lamStart, double lamEnd,
-                                                  UnivariateSwitchingFunction switchingFunction) {
-    boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
-    RestrainDistance restrainDistance = new RestrainDistance(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
-    int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
-    if (flatBottom != 0) {
-      BondType bondType = new BondType(classes, forceConstant, distance,
-          BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
-      restrainDistance.setBondType(bondType);
-    } else {
-      BondType bondType = new BondType(classes, forceConstant, distance,
-          BondType.BondFunction.HARMONIC);
-      restrainDistance.setBondType(bondType);
-    }
-    return restrainDistance;
   }
 
   private Crystal configureNCS(ForceField forceField, Crystal unitCell) {

@@ -37,9 +37,15 @@
 // ******************************************************************************
 package ffx.potential.terms;
 
+import ffx.crystal.Crystal;
+import ffx.numerics.switching.ConstantSwitch;
+import ffx.numerics.switching.UnivariateFunctionFactory;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.RestrainDistance;
 import ffx.potential.parameters.BondType;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -47,6 +53,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * Restrain-Distance potential energy term using {@link ffx.potential.bonded.RestrainDistance} instances.
@@ -270,5 +278,123 @@ public class RestrainDistancePotentialEnergy extends EnergyTerm {
   public String toString() {
     return String.format("  %s %20.8f %12d %12.3f\n", "Restrain Distance ",
         getEnergy(), getNumberOfRestrainDistances(), getTime());
+  }
+
+  /**
+   * Method to parse the restrain-distance records.
+   *
+   * @param properties Configuration properties.
+   */
+  public static RestrainDistance[] configureRestrainDistances(
+      CompositeConfiguration properties,
+      Atom[] atoms, Crystal crystal, boolean lambdaTerm) {
+    List<RestrainDistance> restrainDistanceList = new ArrayList<>();
+    String[] bondRestraints = properties.getStringArray("restrain-distance");
+    for (String bondRest : bondRestraints) {
+      try {
+        String[] toks = bondRest.split("\\s+");
+        if (toks.length < 2) {
+          throw new IllegalArgumentException(
+              format(" restrain-distance value %s could not be parsed!", bondRest));
+        }
+        // Internally, everything starts with 0, but restrain distance starts at 1, so that 1 has to
+        // be subtracted
+        int at1 = Integer.parseInt(toks[0]) - 1;
+        int at2 = Integer.parseInt(toks[1]) - 1;
+
+        double forceConst = 100.0;
+        double flatBottomRadius = 0;
+        Atom a1 = atoms[at1];
+        Atom a2 = atoms[at2];
+
+        if (toks.length > 2) {
+          forceConst = Double.parseDouble(toks[2]);
+        }
+        double dist;
+        switch (toks.length) {
+          case 2:
+          case 3:
+            double[] xyz1 = new double[3];
+            xyz1 = a1.getXYZ(xyz1);
+            double[] xyz2 = new double[3];
+            xyz2 = a2.getXYZ(xyz2);
+            // Current distance between restrained atoms
+            dist = crystal.minDistOverSymOps(xyz1, xyz2);
+            break;
+          case 4:
+            dist = Double.parseDouble(toks[3]);
+            break;
+          case 5:
+          default:
+            double minDist = Double.parseDouble(toks[3]);
+            double maxDist = Double.parseDouble(toks[4]);
+            dist = 0.5 * (minDist + maxDist);
+            flatBottomRadius = 0.5 * Math.abs(maxDist - minDist);
+            break;
+        }
+
+        UnivariateSwitchingFunction switchF;
+        double lamStart = RestrainDistance.DEFAULT_RB_LAM_START;
+        double lamEnd = RestrainDistance.DEFAULT_RB_LAM_END;
+        if (toks.length > 5) {
+          int offset = 5;
+          if (toks[5].matches("^[01](?:\\.[0-9]*)?")) {
+            offset = 6;
+            lamStart = Double.parseDouble(toks[5]);
+            if (toks[6].matches("^[01](?:\\.[0-9]*)?")) {
+              offset = 7;
+              lamEnd = Double.parseDouble(toks[6]);
+            }
+          }
+          switchF = UnivariateFunctionFactory.parseUSF(toks, offset);
+        } else {
+          switchF = new ConstantSwitch();
+        }
+
+        RestrainDistance restrainDistance = createRestrainDistance(a1, a2, dist,
+            forceConst, flatBottomRadius, lamStart, lamEnd, switchF, lambdaTerm, crystal);
+        restrainDistanceList.add(restrainDistance);
+      } catch (Exception ex) {
+        logger.info(format(" Exception in parsing restrain-distance: %s", ex));
+      }
+    }
+    if (!restrainDistanceList.isEmpty()) {
+      return restrainDistanceList.toArray(new RestrainDistance[0]);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * setRestrainDistance
+   *
+   * @param a1                a {@link ffx.potential.bonded.Atom} object.
+   * @param a2                a {@link ffx.potential.bonded.Atom} object.
+   * @param distance          a double.
+   * @param forceConstant     the force constant in kcal/mole.
+   * @param flatBottom        Radius of a flat-bottom potential in Angstroms.
+   * @param lamStart          At what lambda does the restraint begin to take effect?
+   * @param lamEnd            At what lambda does the restraint hit full strength?
+   * @param switchingFunction Switching function to use as a lambda dependence.
+   * @param lambdaTerm        Restrain distance is a function of lambda.
+   * @param crystal           The unit cel and space group information.
+   */
+  private static RestrainDistance createRestrainDistance(Atom a1, Atom a2, double distance, double forceConstant,
+                                                         double flatBottom, double lamStart, double lamEnd,
+                                                         UnivariateSwitchingFunction switchingFunction,
+                                                         boolean lambdaTerm, Crystal crystal) {
+    boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
+    RestrainDistance restrainDistance = new RestrainDistance(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
+    int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
+    if (flatBottom != 0) {
+      BondType bondType = new BondType(classes, forceConstant, distance,
+          BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
+      restrainDistance.setBondType(bondType);
+    } else {
+      BondType bondType = new BondType(classes, forceConstant, distance,
+          BondType.BondFunction.HARMONIC);
+      restrainDistance.setBondType(bondType);
+    }
+    return restrainDistance;
   }
 }

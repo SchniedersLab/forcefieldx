@@ -37,12 +37,18 @@
 // ******************************************************************************
 package ffx.potential.terms;
 
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TorsionType;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -242,5 +248,128 @@ public class RestrainTorsionPotentialEnergy extends EnergyTerm {
     for (Torsion torsion : getRestrainTorsions()) {
       logger.info(" Restrain Torsion \t" + torsion.toString());
     }
+  }
+
+  /**
+   * Method to parse the restrain-torsion records.
+   *
+   * @param properties Configuration properties.
+   * @param forceField Force field properties.
+   * @param atoms      Array of atoms in the system.
+   * @param torsions   Array of torsions in the system.
+   * @return An array of restrain torsions, or null if none were found.
+   */
+  public static Torsion[] configureRestrainTorsions(CompositeConfiguration properties,
+                                                    ForceField forceField,
+                                                    Atom[] atoms,
+                                                    Torsion[] torsions) {
+    StringBuilder restrainLog = new StringBuilder("\n  Restrain-Torsions");
+
+    String[] restrainTorsions = properties.getStringArray("restrain-torsion");
+    double torsionUnits = forceField.getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
+    List<Torsion> restrainTorsionList = new ArrayList<>(restrainTorsions.length);
+    for (String restrainString : restrainTorsions) {
+      // Add the key back to the input line.
+      restrainString = "restrain-torsion " + restrainString;
+      // Split the line on the pound symbol to remove comments.
+      String input = restrainString.split("#+")[0];
+      // Split the line on whitespace.
+      String[] tokens = input.trim().split(" +");
+      // Restrain torsion records have a similar form as torsion records.
+      // The first four tokens are atom indices instead of atom classes.
+      TorsionType torsionType = TorsionType.parse(input, tokens);
+      torsionType.torsionUnit = torsionUnits;
+
+      // Collect the atom indices.
+      int[] atomIndices = torsionType.atomClasses;
+      int ai1 = atomIndices[0] - 1;
+      int ai2 = atomIndices[1] - 1;
+      int ai3 = atomIndices[2] - 1;
+      int ai4 = atomIndices[3] - 1;
+      Atom a1 = atoms[ai1];
+      Atom a2 = atoms[ai2];
+      Atom a3 = atoms[ai3];
+      Atom a4 = atoms[ai4];
+
+      // Collect the bonds between the atoms making up the restrain torsion.
+      Bond firstBond = a1.getBond(a2);
+      Bond middleBond = a2.getBond(a3);
+      Bond lastBond = a3.getBond(a4);
+      Torsion torsion = new Torsion(firstBond, middleBond, lastBond);
+      torsion.setTorsionType(torsionType);
+      restrainTorsionList.add(torsion);
+      restrainLog.append("\n   ").append(torsion);
+    }
+
+    // Apply the property "restrain-all-torsions".
+    restrainTorsionList.addAll(restrainAllTorsions(torsions, properties));
+
+    if (!restrainTorsionList.isEmpty()) {
+      logger.info(restrainLog.toString());
+      return restrainTorsionList.toArray(new Torsion[0]);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Method to parse the restrain-torsion-cos records.
+   *
+   * @param torsions   Array of torsions.
+   * @param properties Configuration properties.
+   * @return An array of restrain torsions, or null if none were found.
+   */
+  private static List<Torsion> restrainAllTorsions(Torsion[] torsions,
+                                                   CompositeConfiguration properties) {
+
+    List<Torsion> restrainTorsionList = new ArrayList<>();
+
+    String restrainTorsions;
+    boolean noHydrogenTorsions = false;
+    if (properties.containsKey("restrain-all-torsions")) {
+      restrainTorsions = properties.getString("restrain-all-torsions");
+    } else if (properties.containsKey("restrain-heavy-torsions")) {
+      restrainTorsions = properties.getString("restrain-heavy-torsions");
+      noHydrogenTorsions = true;
+    } else {
+      return restrainTorsionList;
+    }
+
+    logger.info(" Restrain torsions " + restrainTorsions);
+    // Split the line on the pound symbol to remove comments.
+    String input = restrainTorsions.split("#+")[0];
+    // Split the line on whitespace.
+    String[] tokens = input.trim().split(" +");
+    double forceConstant = Double.parseDouble(tokens[0]);
+    logger.info(" Force constant %10.6f".formatted(forceConstant));
+
+    for (Torsion torsion : torsions) {
+      // Skip torsions with hydrogen
+      if (noHydrogenTorsions && torsion.containsHydrogen()) {
+        continue;
+      }
+
+      // Re-use current atom classes (they will not be used).
+      TorsionType torsionType = torsion.torsionType;
+      int[] atomClasses = torsionType.atomClasses.clone();
+      // Single term in the Fourier series.
+      double[] amplitude = {forceConstant};
+      double[] phase = {torsion.measure() + 180.0};
+      int[] periodicity = {1};
+
+      // Create the new TorsionType for the restraint.
+      TorsionType newTorsionType = new TorsionType(atomClasses, amplitude, phase, periodicity);
+      newTorsionType.torsionUnit = torsionType.torsionUnit;
+
+      Bond b1 = torsion.getBond(0);
+      Bond b2 = torsion.getBond(1);
+      Bond b3 = torsion.getBond(2);
+      Torsion newTorsion = new Torsion(b1, b2, b3);
+      newTorsion.setTorsionType(newTorsionType);
+
+      restrainTorsionList.add(newTorsion);
+    }
+
+    return restrainTorsionList;
   }
 }
