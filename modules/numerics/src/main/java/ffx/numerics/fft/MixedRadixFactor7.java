@@ -207,19 +207,32 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-      final double[] twids = twiddles[k];
-      final double w1r = twids[0];
-      final double w1i = -sign * twids[1];
-      final double w2r = twids[2];
-      final double w2i = -sign * twids[3];
-      final double w3r = twids[4];
-      final double w3i = -sign * twids[5];
-      final double w4r = twids[6];
-      final double w4i = -sign * twids[7];
-      final double w5r = twids[8];
-      final double w5i = -sign * twids[9];
-      final double w6r = twids[10];
-      final double w6i = -sign * twids[11];
+//      final double[] twids = twiddles[k];
+//      final double w1r = twids[0];
+//      final double w1i = -sign * twids[1];
+//      final double w2r = twids[2];
+//      final double w2i = -sign * twids[3];
+//      final double w3r = twids[4];
+//      final double w3i = -sign * twids[5];
+//      final double w4r = twids[6];
+//      final double w4i = -sign * twids[7];
+//      final double w5r = twids[8];
+//      final double w5i = -sign * twids[9];
+//      final double w6r = twids[10];
+//      final double w6i = -sign * twids[11];
+      final int index = k * 6;
+      final double w1r = wr[index];
+      final double w2r = wr[index + 1];
+      final double w3r = wr[index + 2];
+      final double w4r = wr[index + 3];
+      final double w5r = wr[index + 4];
+      final double w6r = wr[index + 5];
+      final double w1i = -sign * wi[index];
+      final double w2i = -sign * wi[index + 1];
+      final double w3i = -sign * wi[index + 2];
+      final double w4i = -sign * wi[index + 3];
+      final double w5i = -sign * wi[index + 4];
+      final double w6i = -sign * wi[index + 5];
       for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
         final double z0r = data[i];
         final double z1r = data[i + di];
@@ -316,7 +329,7 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
   protected void passSIMD(PassData passData) {
     if (im == 1) {
       // If the inner loop limit is not divisible by the loop increment, use the scalar method.
-      if (innerLoopLimit % LOOP != 0) {
+      if (innerLoopLimit % INTERLEAVED_LOOP != 0) {
         passScalar(passData);
       } else {
         interleaved(passData);
@@ -350,7 +363,7 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
     final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
     final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
     // First pass of the 7-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP, i += LENGTH, j += LENGTH) {
       DoubleVector
           z0 = fromArray(DOUBLE_SPECIES, data, i),
           z1 = fromArray(DOUBLE_SPECIES, data, i + di),
@@ -403,21 +416,35 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(NEGATE_IM),
-          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(NEGATE_IM),
-          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(NEGATE_IM),
-          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(NEGATE_IM),
-          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(NEGATE_IM),
-          w6r = broadcast(DOUBLE_SPECIES, twids[10]),
-          w6i = broadcast(DOUBLE_SPECIES, -sign * twids[11]).mul(NEGATE_IM);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP, i += LENGTH, j += LENGTH) {
+//      final double[] twids = twiddles[k];
+//      DoubleVector
+//          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
+//          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(NEGATE_IM),
+//          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
+//          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(NEGATE_IM),
+//          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
+//          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(NEGATE_IM),
+//          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
+//          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(NEGATE_IM),
+//          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
+//          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]).mul(NEGATE_IM),
+//          w6r = broadcast(DOUBLE_SPECIES, twids[10]),
+//          w6i = broadcast(DOUBLE_SPECIES, -sign * twids[11]).mul(NEGATE_IM);
+      final int index = k * 6;
+      final DoubleVector
+          w1r = broadcast(DOUBLE_SPECIES, wr[index]),
+          w2r = broadcast(DOUBLE_SPECIES, wr[index + 1]),
+          w3r = broadcast(DOUBLE_SPECIES, wr[index + 2]),
+          w4r = broadcast(DOUBLE_SPECIES, wr[index + 3]),
+          w5r = broadcast(DOUBLE_SPECIES, wr[index + 4]),
+          w6r = broadcast(DOUBLE_SPECIES, wr[index + 5]),
+          w1i = broadcast(DOUBLE_SPECIES, -sign * wi[index]).mul(NEGATE_IM),
+          w2i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 1]).mul(NEGATE_IM),
+          w3i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 2]).mul(NEGATE_IM),
+          w4i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 3]).mul(NEGATE_IM),
+          w5i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 4]).mul(NEGATE_IM),
+          w6i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 5]).mul(NEGATE_IM);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP, i += LENGTH, j += LENGTH) {
         DoubleVector
             z0 = fromArray(DOUBLE_SPECIES, data, i),
             z1 = fromArray(DOUBLE_SPECIES, data, i + di),
@@ -563,20 +590,34 @@ public class MixedRadixFactor7 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
-          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]),
-          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
-          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]),
-          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
-          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]),
-          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
-          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]),
-          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
-          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]),
-          w6r = broadcast(DOUBLE_SPECIES, twids[10]),
-          w6i = broadcast(DOUBLE_SPECIES, -sign * twids[11]);
+//      final double[] twids = twiddles[k];
+//      DoubleVector
+//          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
+//          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]),
+//          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
+//          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]),
+//          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
+//          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]),
+//          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
+//          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]),
+//          w5r = broadcast(DOUBLE_SPECIES, twids[8]),
+//          w5i = broadcast(DOUBLE_SPECIES, -sign * twids[9]),
+//          w6r = broadcast(DOUBLE_SPECIES, twids[10]),
+//          w6i = broadcast(DOUBLE_SPECIES, -sign * twids[11]);
+      final int index = k * 6;
+      final DoubleVector
+          w1r = broadcast(DOUBLE_SPECIES, wr[index]),
+          w2r = broadcast(DOUBLE_SPECIES, wr[index + 1]),
+          w3r = broadcast(DOUBLE_SPECIES, wr[index + 2]),
+          w4r = broadcast(DOUBLE_SPECIES, wr[index + 3]),
+          w5r = broadcast(DOUBLE_SPECIES, wr[index + 4]),
+          w6r = broadcast(DOUBLE_SPECIES, wr[index + 5]),
+          w1i = broadcast(DOUBLE_SPECIES, -sign * wi[index]),
+          w2i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 1]),
+          w3i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 2]),
+          w4i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 3]),
+          w5i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 4]),
+          w6i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 5]);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
         final DoubleVector
             z0r = fromArray(DOUBLE_SPECIES, data, i),

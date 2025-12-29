@@ -212,17 +212,17 @@ public class Complex3D {
         break;
     }
 
-    // Do not use SIMD by default for now.
-    useSIMD = false;
-    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+    // Use SIMD by default.
+    useSIMD = true;
+    String simd = System.getProperty("fft.simd", Boolean.toString(useSIMD));
     try {
       useSIMD = Boolean.parseBoolean(simd);
     } catch (Exception e) {
       useSIMD = false;
     }
 
-    packFFTs = false;
-    String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
+    packFFTs = true;
+    String pack = System.getProperty("fft.pack", Boolean.toString(packFFTs));
     try {
       packFFTs = Boolean.parseBoolean(pack);
     } catch (Exception e) {

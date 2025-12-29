@@ -88,9 +88,8 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
     }
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      final double w_r = twids[0];
-      final double w_i = -sign * twids[1];
+      final double w_r = wr[k];
+      final double w_i = -sign * wi[k];
       for (int k1 = 0; k1 < innerLoopLimit; k1++, i += ii, j += ii) {
         final double z0_r = data[i];
         final double z0_i = data[i + im];
@@ -177,12 +176,12 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   }
 
   /**
-   * Handle factors of 2 using the 128-bit SIMD vectors.
+   * Handle factors of 2 using the SIMD vectors.
    *
    * @param passData The interleaved pass data.
    */
   private void interleaved(PassData passData) {
-    if (innerLoopLimit % LOOP == 0) {
+    if (innerLoopLimit % INTERLEAVED_LOOP == 0) {
       // Use the preferred SIMD vector.
       interleaved(passData, LENGTH);
     } else {
@@ -206,7 +205,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   }
 
   /**
-   * Handle factors of 2 using the 128-bit SIMD vectors.
+   * Handle factors of 2 using the SIMD vectors.
    *
    * @param passData The pass blocked data.
    */
@@ -258,12 +257,11 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          w_r = broadcast(SPECIES_128, twids[0]),
-          w_i = broadcast(SPECIES_128, -sign * twids[1]);
+      final DoubleVector
+          w_r = broadcast(SPECIES_128, wr[k]),
+          w_i = broadcast(SPECIES_128, -sign * wi[k]);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
-        DoubleVector
+        final DoubleVector
             z0_r = fromArray(SPECIES_128, data, i),
             z1_r = fromArray(SPECIES_128, data, i + di),
             z0_i = fromArray(SPECIES_128, data, i + im),
@@ -301,10 +299,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          w_r = broadcast(SPECIES_256, twids[0]),
-          w_i = broadcast(SPECIES_256, -sign * twids[1]);
+      final DoubleVector
+          w_r = broadcast(SPECIES_256, wr[k]),
+          w_i = broadcast(SPECIES_256, -sign * wi[k]);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
         DoubleVector
             z0_r = fromArray(SPECIES_256, data, i),
@@ -344,10 +341,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          w_r = broadcast(SPECIES_512, twids[0]),
-          w_i = broadcast(SPECIES_512, -sign * twids[1]);
+      final DoubleVector
+          w_r = broadcast(SPECIES_512, wr[k]),
+          w_i = broadcast(SPECIES_512, -sign * wi[k]);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
         DoubleVector
             z0_r = fromArray(SPECIES_512, data, i),
@@ -373,7 +369,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_128, i += LENGTH_128, j += LENGTH_128) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
       DoubleVector
           z0 = fromArray(SPECIES_128, data, i),
           z1 = fromArray(SPECIES_128, data, i + di);
@@ -383,17 +379,16 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          wr = broadcast(SPECIES_128, twids[0]),
-          wi = broadcast(SPECIES_128, -sign * twids[1]).mul(NEGATE_IM_128);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_128, i += LENGTH_128, j += LENGTH_128) {
+      final DoubleVector
+          w_r = broadcast(SPECIES_128, wr[k]),
+          w_i = broadcast(SPECIES_128, -sign * wi[k]).mul(NEGATE_IM_128);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
         DoubleVector
             z0 = fromArray(SPECIES_128, data, i),
             z1 = fromArray(SPECIES_128, data, i + di);
         z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
+        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
       }
     }
   }
@@ -408,7 +403,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_256, i += LENGTH_256, j += LENGTH_256) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       DoubleVector
           z0 = fromArray(SPECIES_256, data, i),
           z1 = fromArray(SPECIES_256, data, i + di);
@@ -418,17 +413,16 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          wr = broadcast(SPECIES_256, twids[0]),
-          wi = broadcast(SPECIES_256, -sign * twids[1]).mul(NEGATE_IM_256);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_256, i += LENGTH_256, j += LENGTH_256) {
+      final DoubleVector
+          w_r = broadcast(SPECIES_256, wr[k]),
+          w_i = broadcast(SPECIES_256, -sign * wi[k]).mul(NEGATE_IM_256);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
         DoubleVector
             z0 = fromArray(SPECIES_256, data, i),
             z1 = fromArray(SPECIES_256, data, i + di);
         z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
+        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
       }
     }
   }
@@ -443,7 +437,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
-    for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_512, i += LENGTH_512, j += LENGTH_512) {
+    for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
       DoubleVector
           z0 = fromArray(SPECIES_512, data, i),
           z1 = fromArray(SPECIES_512, data, i + di);
@@ -453,17 +447,16 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final double[] twids = twiddles[k];
-      DoubleVector
-          wr = broadcast(SPECIES_512, twids[0]),
-          wi = broadcast(SPECIES_512, -sign * twids[1]).mul(NEGATE_IM_512);
-      for (int k1 = 0; k1 < innerLoopLimit; k1 += LOOP_512, i += LENGTH_512, j += LENGTH_512) {
+      final DoubleVector
+          w_r = broadcast(SPECIES_512, wr[k]),
+          w_i = broadcast(SPECIES_512, -sign * wi[k]).mul(NEGATE_IM_512);
+      for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
         DoubleVector
             z0 = fromArray(SPECIES_512, data, i),
             z1 = fromArray(SPECIES_512, data, i + di);
         z0.add(z1).intoArray(ret, j);
         DoubleVector x = z0.sub(z1);
-        x.mul(wr).add(x.mul(wi).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
+        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
       }
     }
   }

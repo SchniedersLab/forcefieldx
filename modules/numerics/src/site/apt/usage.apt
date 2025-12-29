@@ -4,24 +4,10 @@
  Michael J. Schnieders
  <michael-schnieders@uiowa.edu>
  ------
- 2014-03-22
+ 2025-12-28
  ------
 
 Usage
-
-* FFX Commons Repository
-
-  Specify Force Field X Commons in the list of repositories in your pom.xml
-
-+-----+
-<repositories>
-  <repository>
-    <name>Force Field X Commons</name>
-    <id>ffx.commons</id>
-    <url>https://kenai.com/projects/ffx/sources/ffx-commons/show/content</url>
-  </repository>
-</repositories>
-+-----+
 
 * Numerics Dependency
 
@@ -31,7 +17,7 @@ Usage
 <dependencies>
   <dependency>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>numerics</artifactId>
+    <artifactId>ffx-numerics</artifactId>
     <version>${project.version}</version>
     <type>jar</type>
   </dependency>

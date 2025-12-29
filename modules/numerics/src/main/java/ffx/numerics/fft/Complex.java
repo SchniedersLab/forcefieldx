@@ -78,9 +78,6 @@ import static org.apache.commons.math3.util.FastMath.sin;
 public class Complex {
 
   private static final Logger logger = Logger.getLogger(Complex.class.getName());
-  // TINKER v. 5.0 factors to achieve exact numerical agreement.
-  // private static final int[] availableFactors = {5, 4, 3, 2};
-  // private static final int firstUnavailablePrime = 7;
   private static final int[] availableFactors = {7, 6, 5, 4, 3, 2};
   private static final int firstUnavailablePrime = 11;
   /**
@@ -112,10 +109,6 @@ public class Complex {
    * Factorization of n.
    */
   private final int[] factors;
-  /**
-   * Twiddle factors.
-   */
-  private final double[][][] twiddle;
   /**
    * Packing of non-contiguous data.
    */
@@ -157,11 +150,7 @@ public class Complex {
   /**
    * Cache the last set of radix factors.
    */
-  private static int[] factorsCache;
-  /**
-   * Cache the last set tiddle factors.
-   */
-  private static double[][][] twiddleCache = null;
+  private static int[] factorsCache = null;
   /**
    * Cache the last set of radix factors. These classes are static and thread-safe.
    */
@@ -236,18 +225,16 @@ public class Complex {
       // The last set of factors, twiddles and mixed radix factors will be reused.
       if (this.n == lastN && this.im == lastIm && this.nFFTs == lastNFFTs) {
         factors = factorsCache;
-        twiddle = twiddleCache;
         mixedRadixFactors = mixedRadixFactorsCache;
       } else {
         // The cache cannot be reused and will be updated.
         factors = factor(n);
-        twiddle = wavetable(n, factors);
+        double[][][] twiddle = wavetable(n, factors);
         mixedRadixFactors = new MixedRadixFactor[factors.length];
         lastN = this.n;
         lastIm = this.im;
         lastNFFTs = this.nFFTs;
         factorsCache = factors;
-        twiddleCache = twiddle;
         mixedRadixFactorsCache = mixedRadixFactors;
         // Allocate space for each pass and radix instances for each factor.
         int product = 1;
@@ -270,16 +257,17 @@ public class Complex {
               mixedRadixFactors[i] = new MixedRadixFactorPrime(passConstants);
             }
           }
+          // logger.info(" Mixed Radix Factor: " + mixedRadixFactors[i]);
         }
       }
 
-      // Do not use SIMD by default for now.
-      useSIMD = false;
-      String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+      // Use SIMD by default.
+      useSIMD = true;
+      String simd = System.getProperty("fft.simd", Boolean.toString(useSIMD));
       try {
         useSIMD = Boolean.parseBoolean(simd);
       } catch (Exception e) {
-        logger.info(" Invalid value for fft.useSIMD: " + simd);
+        logger.info(" Invalid value for fft.simd: " + simd);
         useSIMD = false;
       }
 
@@ -490,9 +478,9 @@ public class Complex {
    * The value of k is the FFT number (0 to nFFTs-1).
    * The value of nextFFT is the stride between FFT data sets. The nextFFT value is ignored if the number of FFTs is 1.
    *
-   * @param data   an array of double.
-   * @param offset the offset to the beginning of the data.
-   * @param stride the stride between data points.
+   * @param data    an array of double.
+   * @param offset  the offset to the beginning of the data.
+   * @param stride  the stride between data points.
    * @param nextFFT the offset to the beginning of the next FFT when nFFTs > 1.
    */
   public void inverse(double[] data, int offset, int stride, int nextFFT) {
@@ -558,7 +546,6 @@ public class Complex {
       } else {
         mixedRadixFactor.passScalar(passData[pass]);
       }
-
     }
 
     // If the number of factors is odd, the final result is in the scratch array.
@@ -810,7 +797,7 @@ public class Complex {
     try {
       dimNotFinal = Integer.parseInt(args[0]);
       if (dimNotFinal < 1) {
-        dimNotFinal = 100;
+        dimNotFinal = 128;
       }
       reps = Integer.parseInt(args[1]);
       if (reps < 1) {

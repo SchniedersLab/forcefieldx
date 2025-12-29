@@ -31,7 +31,6 @@
         </executions>
         <!-- Flags to try:
              -XX:ObjectAlignmentInBytes=8 (does a value larger than the default of 8 reduce cache line interference)
-             -XX:-UseNeon (default is off on MacOS with an M2 chip)
         -->
         <configuration>
           <executable>java</executable>
@@ -42,17 +41,17 @@
             <classpath/>
             <argument>--add-modules</argument>
             <argument>jdk.incubator.vector</argument>
-            <argument>-Dfft.useSIMD=true</argument>
-            <argument>-Dfft.packFFTs=true</argument>
+            <argument>-Dfft.simd=true</argument>
+            <argument>-Dfft.pack=true</argument>
             <argument>-Dfft.localZTranspose=false</argument>
-            <!-- argument>-XX:ObjectAlignmentInBytes=8</argument -->
-            <!-- argument>-XX:+UseNeon</argument -->
-            <argument>-Dffx.log=ALL</argument>
+            <!-- argument>-Dfft.tileX=64</argument -->
+            <!-- argument>-Dfft.tileY=64</argument -->
+            <!-- argument>-XX:ObjectAlignmentInBytes=16</argument -->
             <argument>ffx.numerics.fft.Complex3DParallel</argument>
             <argument>64</argument>
             <argument>8</argument>
-            <argument>1000</argument>
-            <argument>true</argument>
+            <argument>500</argument>
+            <argument>false</argument>
           </arguments>
         </configuration>
       </plugin>

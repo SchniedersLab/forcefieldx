@@ -37,6 +37,15 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+
+import java.util.Random;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 /**
  * Compute the 2D FFT of complex, double precision input of arbitrary dimensions
  * via 1D Mixed Radix FFTs.
@@ -54,11 +63,11 @@ package ffx.numerics.fft;
  * double imag = input[x*nextX + y*nextY + im]<br>
  * where for BLOCKED_X <br>
  * nextX = 1<br>
- * nextY = nX<br>
+ * nextY = 2*nX<br>
  * im = nX<br>
  * and for BLOCKED_XY <br>
  * nextX = 1<br>
- * nextY = nX*nY<br>
+ * nextY = nX<br>
  * im = nX*nY<br>
  *
  * @author Michal J. Schnieders
@@ -108,17 +117,27 @@ public class Complex2D {
    */
   private boolean useSIMD;
   /**
-   * Compute nY FFTs along the X dimension all at once.
+   * Number of FFTs to compute along X in one batch. The optimal size depends on cache layout
+   * and SIMD register width. The default is to compute 8 at a time (tileSizeX = 8).
    */
-  private final Complex packedFFTX;
+  private int nFFTX;
   /**
-   * Compute nX FFTs along the Y dimension all at once.
+   * Number of FFTs to compute along Y in one batch. The optimal size depends on cache layout
+   * and SIMD register width. The default is to compute 8 at a time (tileSizeY = 8).
    */
-  private final Complex packedFFTY;
+  private int nFFTY;
+  /**
+   * Compute tileSizeX FFTs along the X dimension all at once.
+   */
+  private final Complex fftXTile;
+  /**
+   * Compute tileSizeY FFTs along the Y dimension all at once.
+   */
+  private final Complex fftYTile;
   /**
    * Working array for packed FFTs.
    */
-  private final double[] packedData;
+  private final double[] tile;
   /**
    * The offset between real values in the packed data.
    */
@@ -127,6 +146,18 @@ public class Complex2D {
    * The offset between any real value and its corresponding imaginary value for the packed data.
    */
   private final int im;
+  /**
+   * For FFTs along X, the offset between any real value and its corresponding
+   * imaginary value for tiled data.
+   * This will be 1 for interleaved or nX for blocked.
+   */
+  private final int imX;
+  /**
+   * For FFTs along Y, the offset between any real value and its corresponding
+   * imaginary value for tiled data.
+   * This will be 1 for interleaved or nY for blocked.
+   */
+  private final int imY;
   /**
    * The offset between real values along the X-dimension in the transposed packed data.
    */
@@ -159,8 +190,33 @@ public class Complex2D {
     this.nY = nY;
     this.externalIm = imOffset;
     this.layout = layout;
+
+    int dX = nY;
+    String pX = System.getProperty("fft.tileX", Integer.toString(dX));
+    try {
+      nFFTX = Integer.parseInt(pX);
+      if (nFFTX < 1 || nFFTX > nY) {
+        nFFTX = dX;
+      }
+    } catch (Exception e) {
+      nFFTX = dX;
+    }
+
+    int dY = nX;
+    String pY = System.getProperty("fft.tileY", Integer.toString(dY));
+    try {
+      nFFTY = Integer.parseInt(pY);
+      if (nFFTY < 1 || nFFTY > nX) {
+        nFFTY = dY;
+      }
+    } catch (Exception e) {
+      nFFTY = dY;
+    }
+
     if (layout == DataLayout2D.INTERLEAVED) {
       im = 1;
+      imX = 1;
+      imY = 1;
       ii = 2;
       nextX = 2;
       nextY = 2 * nX;
@@ -168,6 +224,20 @@ public class Complex2D {
       trNextX = 2 * nY;
     } else if (layout == DataLayout2D.BLOCKED_X) {
       im = nX;
+      if (nFFTX == nX) {
+        // All at once.
+        imX = nX;
+      } else {
+        // Internal tiles using BLOCKED_XY
+        imX = nX * nFFTX;
+      }
+      if (nFFTY == nY) {
+        // All at once.
+        imY = nX;
+      } else {
+        // Internal Tiles using BLOCKED_XY
+        imY = nY * nFFTY;
+      }
       ii = 1;
       nextX = 1;
       nextY = 2 * nX;
@@ -175,30 +245,32 @@ public class Complex2D {
       trNextX = 2 * nY;
     } else if (layout == DataLayout2D.BLOCKED_XY) {
       im = nX * nY;
+      imX = nX * nFFTX;   // Packed, FFT along X
+      imY = nY * nFFTY;   // Packed, FFT along Y
       ii = 1;
       nextX = 1;
       nextY = nX;
       trNextY = 1;
       trNextX = nY;
     } else {
-      throw new IllegalArgumentException("Unsupported data layout: " + layout);
+      throw new IllegalArgumentException(" Unsupported data layout: " + layout);
     }
 
     if (this.externalIm != im) {
-      throw new IllegalArgumentException("Unsupported im offset: " + imOffset);
+      throw new IllegalArgumentException(" Unsupported im offset: " + imOffset);
     }
 
-    // Do not use SIMD by default for now.
-    useSIMD = false;
-    String simd = System.getProperty("fft.useSIMD", Boolean.toString(useSIMD));
+    // Use SIMD by default.
+    useSIMD = true;
+    String simd = System.getProperty("fft.simd", Boolean.toString(useSIMD));
     try {
       useSIMD = Boolean.parseBoolean(simd);
     } catch (Exception e) {
       useSIMD = false;
     }
 
-    packFFTs = false;
-    String pack = System.getProperty("fft.packFFTs", Boolean.toString(packFFTs));
+    packFFTs = true;
+    String pack = System.getProperty("fft.pack", Boolean.toString(packFFTs));
     try {
       packFFTs = Boolean.parseBoolean(pack);
     } catch (Exception e) {
@@ -213,17 +285,19 @@ public class Complex2D {
     }
 
     // Create 1D FFTs that will be used for computing 1 FFT at a time.
-    fftX = new Complex(nX, layout1D, externalIm);
+    fftX = new Complex(nX, layout1D, im);
     fftX.setUseSIMD(useSIMD);
-    fftY = new Complex(nY, layout1D, externalIm);
+    fftY = new Complex(nY, layout1D, im);
     fftY.setUseSIMD(useSIMD);
 
-    // Create 1D FFTs that will be used for computing all FFTs at once.
-    packedFFTY = new Complex(nY, layout1D, externalIm, nX);
-    packedFFTY.setUseSIMD(useSIMD);
-    packedFFTX = new Complex(nX, layout1D, im, nY);
-    packedFFTX.setUseSIMD(useSIMD);
-    packedData = new double[2 * nX * nY];
+    // Create 1D FFTs that will be used for computing more than 1 FFT at a time.
+    fftXTile = new Complex(nX, layout1D, imX, nFFTX);
+    fftXTile.setUseSIMD(useSIMD);
+    fftYTile = new Complex(nY, layout1D, imY, nFFTY);
+    fftYTile.setUseSIMD(useSIMD);
+
+    int arraySize = max(nX * nFFTX, nFFTY * nY);
+    tile = new double[2 * arraySize];
   }
 
   /**
@@ -244,8 +318,8 @@ public class Complex2D {
     this.useSIMD = useSIMD;
     fftX.setUseSIMD(useSIMD);
     fftY.setUseSIMD(useSIMD);
-    packedFFTX.setUseSIMD(useSIMD);
-    packedFFTY.setUseSIMD(useSIMD);
+    fftXTile.setUseSIMD(useSIMD);
+    fftYTile.setUseSIMD(useSIMD);
   }
 
   /**
@@ -272,11 +346,221 @@ public class Complex2D {
         fftY.fft(input, offset, nextY);
       }
     } else {
-      // For FFTs along Y, the input data is already contiguous.
-      packedFFTY.fft(input, index, ii);
-      transpose(input, index);
-      packedFFTX.fft(packedData, 0, ii);
-      untranspose(input, index);
+      if (nFFTY == nX) {
+        fftYTile.fft(input, index, ii);
+      } else {
+        for (int x = 0; x < nX; x += nFFTY) {
+          getFFTYTile(input, index, tile, x, nFFTY);
+          fftYTile.fft(tile, 0, ii);
+          setFFTYTile(input, index, tile, x, nFFTY);
+        }
+      }
+      if (nFFTX == nY) {
+        transpose(input, index);
+        fftXTile.fft(tile, 0, ii);
+        unTranspose(input, index);
+      } else {
+        for (int y = 0; y < nY; y += nFFTX) {
+          getFFTXTile(input, index, tile, y, nFFTX);
+          fftXTile.fft(tile, 0, ii);
+          setFFTXTile(input, index, tile, y, nFFTX);
+        }
+      }
+    }
+  }
+
+  /**
+   * Compute the 2D IFFT.
+   *
+   * @param input The input array must be of size 2 * nX * nY.
+   * @param index The offset into the input array of the first element.
+   */
+  public void ifft(final double[] input, int index) {
+    if (!packFFTs) {
+      for (int offset = index, y = 0; y < nY; y++, offset += nextY) {
+        fftX.ifft(input, offset, nextX);
+      }
+      for (int offset = index, x = 0; x < nX; x++, offset += nextX) {
+        fftY.ifft(input, offset, nextY);
+      }
+    } else {
+      if (nFFTY == nX) {
+        fftYTile.ifft(input, index, ii);
+      } else {
+        for (int x = 0; x < nX; x += nFFTY) {
+          getFFTYTile(input, index, tile, x, nFFTY);
+          fftYTile.ifft(tile, 0, ii);
+          setFFTYTile(input, index, tile, x, nFFTY);
+        }
+      }
+      if (nFFTX == nY) {
+        transpose(input, index);
+        fftXTile.ifft(tile, 0, ii);
+        unTranspose(input, index);
+      } else {
+        for (int y = 0; y < nY; y += nFFTX) {
+          getFFTXTile(input, index, tile, y, nFFTX);
+          fftXTile.ifft(tile, 0, ii);
+          setFFTXTile(input, index, tile, y, nFFTX);
+        }
+      }
+    }
+  }
+
+  /**
+   * The input is of size nX x nY.
+   * Extract a tile of size tileSize x nY.
+   * <p>
+   * Input order:
+   * real(x,y) = input[offset + x*nextX + y*nextY]
+   * imag(x,y) = input[offset + x*nextX + y*nextY + externalIm]
+   * Output::
+   * For each Y, all X-values for the tile are contiguous in memory.
+   *
+   * @param input    The input data.
+   * @param offset   The offset into the input data.
+   * @param tile     The output tile.
+   * @param firstX   The first x-index of the tile.
+   * @param tileSize The size of the tile along X.
+   */
+  private void getFFTYTile(final double[] input, int offset, final double[] tile, int firstX, int tileSize) {
+    int index = 0;
+    // Handle padding
+    int padX = firstX + tileSize;
+    int lastX = min(nX, padX);
+    // Outer loop over the Y dimension.
+    for (int y = 0; y < nY; y++) {
+      int dy = offset + y * nextY;
+      // Inner loop over the X dimension.
+      for (int x = firstX; x < lastX; x++) {
+        int dx = x * nextX;
+        double real = input[dx + dy];
+        double imag = input[dx + dy + externalIm];
+        // Contiguous storage into a packed array.
+        tile[index] = real;
+        tile[index + imY] = imag;
+        index += ii;
+      }
+      for (int x = lastX; x < padX; x++) {
+        index += ii;
+      }
+    }
+  }
+
+  /**
+   * Set a tile of size tileSize x nY.
+   * Put it into the input array of size nX x nY.
+   * <p>
+   * Input array order:
+   * real(x,y) = input[offset + x*nextX + y*nextY]
+   * imag(x,y) = input[offset + x*nextX + y*nextY + externalIm]
+   *
+   * @param input    The input data.
+   * @param offset   The offset into the input data.
+   * @param tile     The output tile.
+   * @param firstX   The first x-index of the tile.
+   * @param tileSize The size of the tile along X.
+   */
+  private void setFFTYTile(final double[] input, int offset, final double[] tile, int firstX, int tileSize) {
+    int index = 0;
+    // Handle padding
+    int padX = firstX + tileSize;
+    int lastX = min(nX, padX);
+    // Outer loop over the Y dimension.
+    for (int y = 0; y < nY; y++) {
+      int dy = offset + y * nextY;
+      // Inner loop over the X dimension.
+      for (int x = firstX; x < lastX; x++) {
+        double real = tile[index];
+        double imag = tile[index + imY];
+        index += ii;
+        int dx = x * nextX;
+        input[dx + dy] = real;
+        input[dx + dy + externalIm] = imag;
+      }
+      for (int x = lastX; x < padX; x++) {
+        index += ii;
+      }
+    }
+  }
+
+  /**
+   * The input is of size nX x nY.
+   * Extract a tile of size nX * tileSize.
+   * <p>
+   * Input order:
+   * real(x,y) = input[offset + x*nextX + y*nextY]
+   * imag(x,y) = input[offset + x*nextX + y*nextY + externalIm]
+   * Tile order:
+   * For each X, all Y-values for the tile a contiguous in memory.
+   *
+   * @param input    The input data.
+   * @param offset   The offset into the input data.
+   * @param tile     The output tile.
+   * @param firstY   The first y-index of the tile.
+   * @param tileSize The size of the tile along Y.
+   */
+  private void getFFTXTile(final double[] input, int offset, final double[] tile, int firstY, int tileSize) {
+    int index = 0;
+    // Handle padding
+    int padY = firstY + tileSize;
+    int lastY = min(nY, padY);
+    // Outer loop over the X dimension.
+    for (int x = 0; x < nX; x++) {
+      int dx = offset + x * nextX;
+      // Inner loop over the Y dimension.
+      for (int y = firstY; y < lastY; y++) {
+        int dy = y * nextY;
+        double real = input[dx + dy];
+        double imag = input[dx + dy + externalIm];
+        // Contiguous storage into a packed array.
+        tile[index] = real;
+        tile[index + imX] = imag;
+        index += ii;
+      }
+      for (int y = lastY; y < padY; y++) {
+        index += ii;
+      }
+    }
+  }
+
+  /**
+   * Set a tile of size nX * tileSize.
+   * Results are written back into the "input" array of size nX x nY.
+   * <p>
+   * Tile order:
+   * For each X, all Y-values for the tile a contiguous in memory.
+   * <p>
+   * Input order:
+   * real(x,y) = input[offset + x*nextX + y*nextY]
+   * imag(x,y) = input[offset + x*nextX + y*nextY + externalIm]
+   *
+   * @param input    The input data.
+   * @param offset   The offset into the input data.
+   * @param tile     The output tile.
+   * @param firstY   The first y-index of the tile.
+   * @param tileSize The size of the tile along Y.
+   */
+  private void setFFTXTile(final double[] input, int offset, final double[] tile, int firstY, int tileSize) {
+    int index = 0;
+    // Handle padding
+    int padY = firstY + tileSize;
+    int lastY = min(nY, padY);
+    // Outer loop over the X dimension.
+    for (int x = 0; x < nX; x++) {
+      int dx = offset + x * nextX;
+      // Inner loop over the Y dimension.
+      for (int y = firstY; y < lastY; y++) {
+        double real = tile[index];
+        double imag = tile[index + imX];
+        index += ii;
+        int dy = y * nextY;
+        input[dx + dy] = real;
+        input[dx + dy + externalIm] = imag;
+      }
+      for (int y = lastY; y < padY; y++) {
+        index += ii;
+      }
     }
   }
 
@@ -303,8 +587,8 @@ public class Complex2D {
         double real = input[dx + y * nextY];
         double imag = input[dx + y * nextY + externalIm];
         // Contiguous storage into the packed array.
-        packedData[index] = real;
-        packedData[index + im] = imag;
+        tile[index] = real;
+        tile[index + im] = imag;
         index += ii;
       }
     }
@@ -323,15 +607,15 @@ public class Complex2D {
    * @param output The output data.
    * @param offset The offset into the output data.
    */
-  private void untranspose(final double[] output, int offset) {
+  private void unTranspose(final double[] output, int offset) {
     int index = offset;
     // Outer loop over the Y dimension.
     for (int y = 0; y < nY; y++) {
       int dy = y * trNextY;
       // Inner loop over the X dimension.
       for (int x = 0; x < nX; x++) {
-        double real = packedData[dy + x * trNextX];
-        double imag = packedData[dy + x * trNextX + im];
+        double real = tile[dy + x * trNextX];
+        double imag = tile[dy + x * trNextX + im];
         // Contiguous storage into the output array.
         output[index] = real;
         output[index + externalIm] = imag;
@@ -341,25 +625,119 @@ public class Complex2D {
   }
 
   /**
-   * Compute the 2D IFFT.
+   * Test the Complex2D FFT.
    *
-   * @param input The input array must be of size 2 * nX * nY.
-   * @param index The offset into the input array of the first element.
+   * @param args an array of {@link java.lang.String} objects.
+   * @throws java.lang.Exception if any.
+   * @since 1.0
    */
-  public void ifft(final double[] input, int index) {
-    if (!packFFTs) {
-      for (int offset = index, y = 0; y < nY; y++, offset += nextY) {
-        fftX.ifft(input, offset, nextX);
+  public static void main(String[] args) throws Exception {
+    int dimNotFinal = 128;
+    int reps = 5;
+    boolean blocked = false;
+    try {
+      dimNotFinal = Integer.parseInt(args[0]);
+      if (dimNotFinal < 1) {
+        dimNotFinal = 128;
       }
-      for (int offset = index, x = 0; x < nX; x++, offset += nextX) {
-        fftY.ifft(input, offset, nextY);
+      reps = Integer.parseInt(args[1]);
+      if (reps < 1) {
+        reps = 5;
       }
-    } else {
-      // For FFTs along Y, the input data is already contiguous.
-      packedFFTY.ifft(input, index, ii);
-      transpose(input, index);
-      packedFFTX.ifft(packedData, 0, ii);
-      untranspose(input, index);
+      blocked = Boolean.parseBoolean(args[2]);
+    } catch (Exception e) {
+      //
     }
+    final int dim = dimNotFinal;
+    System.out.printf("Initializing a %d cubed grid.\n"
+            + "The best timing out of %d repetitions will be used.%n",
+        dim, reps);
+    // One dimension of the serial array divided by the number of threads.
+    Complex2D complex2D;
+    if (blocked) {
+      complex2D = new Complex2D(dim, dim, DataLayout2D.BLOCKED_X, dim);
+    } else {
+      complex2D = new Complex2D(dim, dim);
+    }
+    ParallelTeam parallelTeam = new ParallelTeam();
+    final double[] data = initRandomData(dim, parallelTeam);
+
+    double toSeconds = 0.000000001;
+    long forwardTime = Long.MAX_VALUE;
+    long inverseTime = Long.MAX_VALUE;
+
+    // Warm-up
+    System.out.println(" Warm Up FFT");
+    complex2D.fft(data, 0);
+    System.out.println(" Warm Up IFFT");
+    complex2D.ifft(data, 0);
+
+    for (int i = 0; i < reps; i++) {
+      System.out.printf(" Iteration %d%n", i + 1);
+      long time = System.nanoTime();
+      complex2D.fft(data, 0);
+      time = (System.nanoTime() - time);
+      System.out.printf("  FFT:   %9.6f (sec)%n", toSeconds * time);
+      if (time < forwardTime) {
+        forwardTime = time;
+      }
+      time = System.nanoTime();
+      complex2D.ifft(data, 0);
+      time = (System.nanoTime() - time);
+      System.out.printf("  IFFT:  %9.6f (sec)%n", toSeconds * time);
+      if (time < inverseTime) {
+        inverseTime = time;
+      }
+    }
+
+    System.out.printf(" Best FFT Time:    %9.6f (sec)%n", toSeconds * forwardTime);
+    System.out.printf(" Best IFFT Time:   %9.6f (sec)%n", toSeconds * inverseTime);
+    parallelTeam.shutdown();
+  }
+
+  /**
+   * Initialize a 2D data for testing purposes.
+   *
+   * @param dim The dimension of the 2D grid.
+   * @return The 3D data.
+   * @since 1.0
+   */
+  public static double[] initRandomData(int dim, ParallelTeam parallelTeam) {
+    int n = dim * dim;
+    double[] data = new double[2 * n];
+    try {
+      parallelTeam.execute(
+          new ParallelRegion() {
+            @Override
+            public void run() {
+              try {
+                execute(
+                    0,
+                    dim - 1,
+                    new IntegerForLoop() {
+                      @Override
+                      public void run(final int lb, final int ub) {
+                        Random randomNumberGenerator = new Random(1);
+                        int index = dim * lb * 2;
+                        for (int i = lb; i <= ub; i++) {
+                          for (int j = 0; j < dim; j++) {
+                            double randomNumber = randomNumberGenerator.nextDouble();
+                            data[index] = randomNumber;
+                            index += 2;
+                          }
+                        }
+                      }
+                    });
+              } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.exit(-1);
+              }
+            }
+          });
+    } catch (Exception e) {
+      System.out.println(e.getMessage());
+      System.exit(-1);
+    }
+    return data;
   }
 }
