@@ -268,7 +268,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[21,26.1]</version>
+                  <version>[25,26.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -1026,7 +1026,7 @@
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.8.0</assembly.version>
-    <biojava.version>7.2.3</biojava.version>
+    <biojava.version>7.2.4</biojava.version>
     <cdk.version>2.11</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
@@ -1043,13 +1043,13 @@
     <commons-math3.version>3.6.1</commons-math3.version>
     <commons-text.version>1.15.0</commons-text.version>
     <!-- Control the source version -->
-    <compileVersion>21</compileVersion>
+    <compileVersion>25</compileVersion>
     <compiler.version>3.14.1</compiler.version>
     <dependency.version>3.9.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.4</deploy.version>
     <enforcer.version>3.6.2</enforcer.version>
-    <exec.version>3.6.2</exec.version>
+    <exec.version>3.6.3</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
@@ -1076,7 +1076,7 @@
     <jxr.version>3.6.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.25.2</log4j.version>
+    <log4j.version>2.25.3</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
@@ -1090,7 +1090,7 @@
     <properties.version>1.2.1</properties.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.3.0</release.version>
+    <release.version>3.3.1</release.version>
     <resources.version>3.4.0</resources.version>
     <scm.version>2.2.1</scm.version>
     <site.version>3.21.0</site.version>
@@ -1102,7 +1102,7 @@
     <spotbugs.version>4.9.8</spotbugs.version>
     <surefire.version>3.5.4</surefire.version>
     <!-- Control the target JRE version -->
-    <targetVersion>21</targetVersion>
+    <targetVersion>25</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>1.1.0</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->

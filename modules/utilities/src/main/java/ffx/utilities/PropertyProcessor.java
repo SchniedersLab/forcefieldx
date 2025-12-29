@@ -65,7 +65,7 @@ import javax.lang.model.type.TypeMirror;
  */
 @SupportedAnnotationTypes({"ffx.utilities.FFXProperty", "ffx.utilities.FFXProperties"})
 @SupportedOptions({"propertyDir"})
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_25)
 public class PropertyProcessor extends AbstractProcessor {
 
   /**
