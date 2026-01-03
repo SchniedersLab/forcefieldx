@@ -3,6 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <artifactId>ffx-ui</artifactId>
+  <parent>
+    <artifactId>forcefieldx</artifactId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
+    <relativePath>../../pom.xml</relativePath>
+    <version>26.0.0</version>
+  </parent>
   <build>
     <plugins>
       <plugin>
@@ -144,7 +150,7 @@
     <dependency>
       <artifactId>ffx-pj</artifactId>
       <groupId>${project.groupId}</groupId>
-      <version>${pj.version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <artifactId>ffx-crystal</artifactId>
@@ -217,10 +223,4 @@
   <modelVersion>4.0.0</modelVersion>
   <name>User Interfaces</name>
   <packaging>jar</packaging>
-  <parent>
-    <artifactId>forcefieldx</artifactId>
-    <groupId>edu.uiowa.eng.ffx</groupId>
-    <relativePath>../../pom.xml</relativePath>
-    <version>1.0.0</version>
-  </parent>
 </project>

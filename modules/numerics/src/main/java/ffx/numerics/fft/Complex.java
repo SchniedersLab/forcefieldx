@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -79,7 +79,9 @@ public class Complex {
 
   private static final Logger logger = Logger.getLogger(Complex.class.getName());
   private static final int[] availableFactors = {7, 6, 5, 4, 3, 2};
+  // private static final int[] availableFactors = {4, 3, 2};
   private static final int firstUnavailablePrime = 11;
+  // private static final int firstUnavailablePrime = 5;
   /**
    * Number of complex numbers in the transform.
    */
@@ -130,6 +132,11 @@ public class Complex {
    * Use SIMD operators.
    */
   private boolean useSIMD;
+  /**
+   * The SIMD width to prefer. The default is the preferred width for the platform, but
+   * can be set to less than this by the flag fft.width.
+   */
+  private int simdWidth;
   /**
    * Minimum SIMD loop length set to the preferred SIMD vector length.
    */
@@ -269,6 +276,24 @@ public class Complex {
       } catch (Exception e) {
         logger.info(" Invalid value for fft.simd: " + simd);
         useSIMD = false;
+      }
+
+      simdWidth = MixedRadixFactor.LENGTH;
+      String width = System.getProperty("fft.simd.width", Integer.toString(simdWidth));
+      try {
+        simdWidth = Integer.parseInt(width);
+        if (simdWidth < 2 || simdWidth > MixedRadixFactor.LENGTH || simdWidth % 2 != 0) {
+          logger.info(" Invalid value for fft.simd.width: " + width);
+          simdWidth = MixedRadixFactor.LENGTH;
+        }
+      } catch (Exception e) {
+        logger.info(" Invalid value for fft.simd.width: " + width);
+        simdWidth = MixedRadixFactor.LENGTH;
+      }
+
+      for (MixedRadixFactor mixedRadixFactor : mixedRadixFactors) {
+        mixedRadixFactor.setSIMDWidth(simdWidth);
+        //logger.info(mixedRadixFactor.toString());
       }
 
       // Minimum SIMD inner loop length.
@@ -541,6 +566,13 @@ public class Complex {
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
       MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
+      boolean applySIMD = false;
+      // If the useSIMD flag is true, evaluate this pass for optimal SIMD width.
+      if (useSIMD) {
+        // Check the requested SIMD species.
+
+      }
+
       if (useSIMD && mixedRadixFactor.innerLoopLimit >= minSIMDLoopLength) {
         mixedRadixFactor.passSIMD(passData[pass]);
       } else {
@@ -617,7 +649,7 @@ public class Complex {
    * @param n the length of the data.
    * @return integer factors
    */
-  private static int[] factor(int n) {
+  protected static int[] factor(int n) {
     if (n < 2) {
       return null;
     }
@@ -708,12 +740,13 @@ public class Complex {
       // System.out.println("\n  Factor: " + factor);
       // System.out.println("   Product: " + product);
       ret[i] = new double[outLoopLimit][2 * nTwiddle];
+
       // System.out.printf("   Size: T(%d,%d)\n", outLoopLimit, nTwiddle);
       final double[][] twid = ret[i];
       for (int j = 0; j < factor - 1; j++) {
         twid[0][2 * j] = 1.0;
         twid[0][2 * j + 1] = 0.0;
-        // System.out.printf("    T(%d,%d) = %10.6f %10.6f\n", 0, j, twid[0][2 * j], twid[0][2 * j + 1]);
+        // System.out.printf("  T(%d,%d) = %10.6f %10.6f\n", 0, j, twid[0][2 * j], twid[0][2 * j + 1]);
       }
       for (int k = 1; k < outLoopLimit; k++) {
         int m = 0;
@@ -723,7 +756,7 @@ public class Complex {
           final double theta = TwoPI_N * m;
           twid[k][2 * j] = cos(theta);
           twid[k][2 * j + 1] = sin(theta);
-          // System.out.printf("    T(%d,%d) = %10.6f %10.6f\n", k, j, twid[k][2 * j], twid[k][2 * j + 1]);
+          // System.out.printf("  T(%d,%d) = %10.6f %10.6f\n", k, j, twid[k][2 * j], twid[k][2 * j + 1]);
         }
       }
     }

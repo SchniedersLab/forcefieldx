@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -274,6 +274,10 @@ public abstract class MixedRadixFactor {
    * Increment for the inner loop.
    */
   protected final int jstep;
+  /**
+   * The SIMD width to use.
+   */
+  protected int simdWidth;
 
   /**
    * Constructor for the mixed radix factor.
@@ -315,6 +319,8 @@ public abstract class MixedRadixFactor {
         wi[index + j] = twids[2 * j + 1];
       }
     }
+
+    simdWidth = getOptimalSIMDWidth();
   }
 
   /**
@@ -323,12 +329,6 @@ public abstract class MixedRadixFactor {
    * @return a string representation of the mixed radix factor.
    */
   public String toString() {
-    int length;
-    if (im == 1) {
-      length = INTERLEAVED_LOOP;
-    } else {
-      length = BLOCK_LOOP;
-    }
     return "MixedRadixFactor {" +
         "\n n =" + n +
         "\n nFFTs =" + nFFTs +
@@ -337,7 +337,7 @@ public abstract class MixedRadixFactor {
         "\n product =" + product +
         "\n outerLoopLimit =" + outerLoopLimit +
         "\n innerLoopLimit =" + innerLoopLimit +
-        "\n simd length =" + length +
+        "\n simd length =" + simdWidth +
         "\n nextInput =" + nextInput +
         "\n di =" + di +
         "\n dj =" + dj +
@@ -352,6 +352,52 @@ public abstract class MixedRadixFactor {
    * @param passData the pass data.
    */
   protected abstract void passScalar(PassData passData);
+
+  /**
+   * Check if the requested SIMD length is valid.
+   * @param width Requested SIMD species width.
+   * @return True if this width is supported.
+   */
+  protected boolean isValidSIMDWidth(int width) {
+    if (width != LENGTH) {
+      return false;
+    }
+    if (im == 1) {
+      // Interleaved
+      return innerLoopLimit % INTERLEAVED_LOOP == 0;
+    } else {
+      // Blocked
+      return innerLoopLimit % BLOCK_LOOP == 0;
+    }
+  }
+
+  /**
+   * Determine the optimal SIMD width. Currently supported widths are 2, 4 and 8.
+   * If no SIMD width is valid, return 0 to indicate use of the scalar path.
+   * @return The optimal SIMD width.
+   */
+  protected int getOptimalSIMDWidth() {
+    // Check the platform specific preferred width.
+    if (isValidSIMDWidth(LENGTH)) {
+      return LENGTH;
+    }
+    // No valid SIMD width.
+    return 0;
+  }
+
+  /**
+   * Set the SIMD width to use. If the supplied width is not supported, then the
+   * width will be set by the "getOptimalSIMDWidth" method.
+   *
+   * @param width The SIMD width to use.
+   */
+  public void setSIMDWidth(int width) {
+    if (isValidSIMDWidth(width)) {
+      simdWidth = width;
+    } else {
+      simdWidth = getOptimalSIMDWidth();
+    }
+  }
 
   /**
    * Apply the mixed radix factor using SIMD operations.

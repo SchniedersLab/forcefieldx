@@ -3,7 +3,7 @@
 @REM 
 @REM Description: Force Field X - Software for Molecular Biophysics.
 @REM 
-@REM Copyright: Copyright (c) Michael J. Schnieders 2001-2025.
+@REM Copyright: Copyright (c) Michael J. Schnieders 2001-2026.
 @REM 
 @REM This file is part of Force Field X.
 @REM 

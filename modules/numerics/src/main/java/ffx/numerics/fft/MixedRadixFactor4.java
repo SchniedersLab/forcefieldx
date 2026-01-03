@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -50,6 +50,11 @@ import static jdk.incubator.vector.DoubleVector.fromArray;
  */
 public class MixedRadixFactor4 extends MixedRadixFactor {
 
+  /**
+   * Available SIMD sizes for Pass 4.
+   */
+  private static int[] simdSizes = {8, 4, 2};
+
   private final int di2;
   private final int di3;
   private final int dj2;
@@ -57,6 +62,7 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
   /**
    * Construct a MixedRadixFactor4.
+   *
    * @param passConstants PassConstants.
    */
   public MixedRadixFactor4(PassConstants passConstants) {
@@ -65,6 +71,55 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
     di3 = 3 * di;
     dj2 = 2 * dj;
     dj3 = 3 * dj;
+  }
+
+  /**
+   * Check if the requested SIMD length is valid.
+   *
+   * @param width Requested SIMD species width.
+   * @return True if this width is supported.
+   */
+  @Override
+  public boolean isValidSIMDWidth(int width) {
+    if (width <= 0 || width > LENGTH) {
+      return false;
+    }
+    // Must be a supported width.
+    if (width != 2 && width != 4 && width != 8) {
+      return false;
+    }
+    if (im == 1) {
+      // Interleaved
+      return innerLoopLimit % (width / 2) == 0;
+    } else {
+      // Blocked
+      return innerLoopLimit % width == 0;
+    }
+  }
+
+  /**
+   * Determine the optimal SIMD width. Currently supported widths are 2, 4 and 8.
+   * If no SIMD width is valid, return 0 to indicate use of the scalar path.
+   *
+   * @return The optimal SIMD width.
+   */
+  public int getOptimalSIMDWidth() {
+    // Check the platform specific preferred width.
+    if (isValidSIMDWidth(LENGTH)) {
+      return LENGTH;
+    }
+    // Fall back to a smaller SIMD vector that fits the inner loop limit.
+    for (int size : simdSizes) {
+      if (size >= LENGTH) {
+        // Skip anything greater than or equal to the preferred SIMD vector size (which was too big).
+        continue;
+      }
+      if (isValidSIMDWidth(size)) {
+        return size;
+      }
+    }
+    // No valid SIMD width is found.
+    return 0;
   }
 
   /**
@@ -141,24 +196,26 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
   /**
    * Handle factors of 4 using SIMD vectors.
+   *
+   * @param passData The pass data.
    */
   @Override
   protected void passSIMD(PassData passData) {
-    if (im == 1) {
-      interleaved(passData);
+    if (!isValidSIMDWidth(simdWidth)) {
+      passScalar(passData);
     } else {
-      blocked(passData);
+      if (im == 1) {
+        interleaved(passData, simdWidth);
+      } else {
+        blocked(passData, simdWidth);
+      }
     }
   }
 
   /**
-   * Available SIMD sizes for Pass 4.
-   */
-  private static int[] simdSizes = {8, 4, 2};
-
-  /**
    * Handle factors of 4 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void interleaved(PassData passData, int simdLength) {
@@ -183,7 +240,8 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
   /**
    * Handle factors of 4 using the chosen SIMD vector.
-   * @param passData The pass data.
+   *
+   * @param passData   The pass data.
    * @param simdLength The SIMD vector length.
    */
   private void blocked(PassData passData, int simdLength) {
@@ -203,62 +261,6 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
         break;
       default:
         passScalar(passData);
-    }
-  }
-
-  /**
-   * Handle factors of 4 using the 128-bit SIMD vectors.
-   * @param passData The interleaved pass data.
-   */
-  private void interleaved(PassData passData) {
-    if (innerLoopLimit % INTERLEAVED_LOOP == 0) {
-      // Use the preferred SIMD vector.
-      interleaved(passData, LENGTH);
-    } else {
-      // If the inner loop limit is odd, use the scalar method unless the inner loop limit is 1.
-      if (innerLoopLimit % 2 != 0 && innerLoopLimit != 1) {
-        passScalar(passData);
-        return;
-      }
-      // Fall back to a smaller SIMD vector that fits the inner loop limit.
-      for (int size : simdSizes) {
-        if (size >= LENGTH) {
-          // Skip anything greater than or equal to the preferred SIMD vector size (which was too big).
-          continue;
-        }
-        // Divide the SIMD size by two because for interleaved a single SIMD vectors stores both real and imaginary parts.
-        if (innerLoopLimit % (size / 2) == 0) {
-          interleaved(passData, size);
-        }
-      }
-    }
-  }
-
-  /**
-   * Handle factors of 4 using the 128-bit SIMD vectors.
-   * @param passData The pass blocked data.
-   */
-  private void blocked(PassData passData) {
-    if (innerLoopLimit % BLOCK_LOOP == 0) {
-      // Use the preferred SIMD vector.
-      blocked(passData, LENGTH);
-    } else {
-      // If the inner loop limit is odd, use the scalar method unless the inner loop limit is 1.
-      if (innerLoopLimit % 2 != 0) {
-        passScalar(passData);
-        return;
-      }
-      // Fall back to a smaller SIMD vector that fits the inner loop limit.
-      for (int size : simdSizes) {
-        if (size >= LENGTH) {
-          // Skip anything greater than or equal to the preferred SIMD vector size (which was too big).
-          continue;
-        }
-        // Divide the SIMD size by two because for interleaved a single SIMD vectors stores both real and imaginary parts.
-        if (innerLoopLimit % size == 0) {
-          blocked(passData, size);
-        }
-      }
     }
   }
 
@@ -416,7 +418,7 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
             t4_i = z1_i.sub(z3_i).mul(sign);
         t1_r.add(t2_r).intoArray(ret, j);
         t1_i.add(t2_i).intoArray(ret, j + im);
-        DoubleVector
+        final DoubleVector
             x1_r = t3_r.sub(t4_i), x1_i = t3_i.add(t4_r),
             x2_r = t1_r.sub(t2_r), x2_i = t1_i.sub(t2_i),
             x3_r = t3_r.add(t4_i), x3_i = t3_i.sub(t4_r);
@@ -500,7 +502,7 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
             t4_i = z1_i.sub(z3_i).mul(sign);
         t1_r.add(t2_r).intoArray(ret, j);
         t1_i.add(t2_i).intoArray(ret, j + im);
-        DoubleVector
+        final DoubleVector
             x1_r = t3_r.sub(t4_i), x1_i = t3_i.add(t4_r),
             x2_r = t1_r.sub(t2_r), x2_i = t1_i.sub(t2_i),
             x3_r = t3_r.add(t4_i), x3_i = t3_i.sub(t4_r);
@@ -543,16 +545,8 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-//      final double[] twids = twiddles[k];
-//      DoubleVector
-//          w1r = broadcast(SPECIES_128, twids[0]),
-//          w1i = broadcast(SPECIES_128, -sign * twids[1]).mul(NEGATE_IM_128),
-//          w2r = broadcast(SPECIES_128, twids[2]),
-//          w2i = broadcast(SPECIES_128, -sign * twids[3]).mul(NEGATE_IM_128),
-//          w3r = broadcast(SPECIES_128, twids[4]),
-//          w3i = broadcast(SPECIES_128, -sign * twids[5]).mul(NEGATE_IM_128);
       final int index = 3 * k;
-      DoubleVector
+      final DoubleVector
           w1r = broadcast(SPECIES_128, wr[index]),
           w2r = broadcast(SPECIES_128, wr[index + 1]),
           w3r = broadcast(SPECIES_128, wr[index + 2]),
@@ -560,18 +554,18 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
           w2i = broadcast(SPECIES_128, -sign * wi[index + 1]).mul(NEGATE_IM_128),
           w3i = broadcast(SPECIES_128, -sign * wi[index + 2]).mul(NEGATE_IM_128);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
-        DoubleVector
+        final DoubleVector
             z0 = fromArray(SPECIES_128, data, i),
             z1 = fromArray(SPECIES_128, data, i + di),
             z2 = fromArray(SPECIES_128, data, i + di2),
             z3 = fromArray(SPECIES_128, data, i + di3);
-        DoubleVector
+        final DoubleVector
             t1 = z0.add(z2),
             t2 = z1.add(z3),
             t3 = z0.sub(z2),
             t4 = z1.sub(z3).mul(sign).rearrange(SHUFFLE_RE_IM_128);
         t1.add(t2).intoArray(ret, j);
-        DoubleVector
+        final DoubleVector
             x1 = t3.add(t4.mul(NEGATE_RE_128)),
             x2 = t1.sub(t2),
             x3 = t3.add(t4.mul(NEGATE_IM_128));
@@ -593,12 +587,12 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
     int j = passData.outOffset;
     // First pass of the 4-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
-      DoubleVector
+      final DoubleVector
           z0 = fromArray(SPECIES_256, data, i),
           z1 = fromArray(SPECIES_256, data, i + di),
           z2 = fromArray(SPECIES_256, data, i + di2),
           z3 = fromArray(SPECIES_256, data, i + di3);
-      DoubleVector
+      final DoubleVector
           t1 = z0.add(z2),
           t2 = z1.add(z3),
           t3 = z0.sub(z2),
@@ -611,16 +605,8 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-//      final double[] twids = twiddles[k];
-//      DoubleVector
-//          w1r = broadcast(SPECIES_256, twids[0]),
-//          w1i = broadcast(SPECIES_256, -sign * twids[1]).mul(NEGATE_IM_256),
-//          w2r = broadcast(SPECIES_256, twids[2]),
-//          w2i = broadcast(SPECIES_256, -sign * twids[3]).mul(NEGATE_IM_256),
-//          w3r = broadcast(SPECIES_256, twids[4]),
-//          w3i = broadcast(SPECIES_256, -sign * twids[5]).mul(NEGATE_IM_256);
       final int index = 3 * k;
-      DoubleVector
+      final DoubleVector
           w1r = broadcast(SPECIES_256, wr[index]),
           w2r = broadcast(SPECIES_256, wr[index + 1]),
           w3r = broadcast(SPECIES_256, wr[index + 2]),
@@ -628,18 +614,18 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
           w2i = broadcast(SPECIES_256, -sign * wi[index + 1]).mul(NEGATE_IM_256),
           w3i = broadcast(SPECIES_256, -sign * wi[index + 2]).mul(NEGATE_IM_256);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
-        DoubleVector
+        final DoubleVector
             z0 = fromArray(SPECIES_256, data, i),
             z1 = fromArray(SPECIES_256, data, i + di),
             z2 = fromArray(SPECIES_256, data, i + di2),
             z3 = fromArray(SPECIES_256, data, i + di3);
-        DoubleVector
+        final DoubleVector
             t1 = z0.add(z2),
             t2 = z1.add(z3),
             t3 = z0.sub(z2),
             t4 = z1.sub(z3).mul(sign).rearrange(SHUFFLE_RE_IM_256);
         t1.add(t2).intoArray(ret, j);
-        DoubleVector
+        final DoubleVector
             x1 = t3.add(t4.mul(NEGATE_RE_256)),
             x2 = t1.sub(t2),
             x3 = t3.add(t4.mul(NEGATE_IM_256));
@@ -661,12 +647,12 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
     int j = passData.outOffset;
     // First pass of the 4-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
-      DoubleVector
+      final DoubleVector
           z0 = fromArray(SPECIES_512, data, i),
           z1 = fromArray(SPECIES_512, data, i + di),
           z2 = fromArray(SPECIES_512, data, i + di2),
           z3 = fromArray(SPECIES_512, data, i + di3);
-      DoubleVector
+      final DoubleVector
           t1 = z0.add(z2),
           t2 = z1.add(z3),
           t3 = z0.sub(z2),
@@ -679,14 +665,6 @@ public class MixedRadixFactor4 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-//      final double[] twids = twiddles[k];
-//      DoubleVector
-//          w1r = broadcast(SPECIES_512, twids[0]),
-//          w1i = broadcast(SPECIES_512, -sign * twids[1]).mul(NEGATE_IM_512),
-//          w2r = broadcast(SPECIES_512, twids[2]),
-//          w2i = broadcast(SPECIES_512, -sign * twids[3]).mul(NEGATE_IM_512),
-//          w3r = broadcast(SPECIES_512, twids[4]),
-//          w3i = broadcast(SPECIES_512, -sign * twids[5]).mul(NEGATE_IM_512);
       final int index = 3 * k;
       DoubleVector
           w1r = broadcast(SPECIES_512, wr[index]),

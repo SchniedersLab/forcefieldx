@@ -1082,7 +1082,6 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <picocli.version>4.7.7</picocli.version>
-    <pj.version>1.0.1</pj.version>
     <pmd.version>3.28.0</pmd.version>
     <project-info-reports.version>3.9.0</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
@@ -1315,5 +1314,5 @@
     <url>https://github.com/SchniedersLab/forcefieldx</url>
   </scm>
   <url>https://ffx.biochem.uiowa.edu</url>
-  <version>1.0.0</version>
+  <version>26.0.0</version>
 </project>

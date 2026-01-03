@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -209,17 +209,11 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
    */
   @Override
   protected void passSIMD(PassData passData) {
-    if (im == 1) {
-      // If the inner loop limit is not divisible by the loop increment, use the scalar method.
-      if (innerLoopLimit % INTERLEAVED_LOOP != 0) {
-        passScalar(passData);
-      } else {
-        interleaved(passData);
-      }
+    if (!isValidSIMDWidth(simdWidth)) {
+      passScalar(passData);
     } else {
-      // If the inner loop limit is not divisible by the loop increment, use the scalar method.
-      if (innerLoopLimit % BLOCK_LOOP != 0) {
-        passScalar(passData);
+      if (im == 1) {
+        interleaved(passData);
       } else {
         blocked(passData);
       }
@@ -241,13 +235,13 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
     final double sinPI_5s = sign * sinPI_5;
     // First pass of the 5-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP, i += LENGTH, j += LENGTH) {
-      DoubleVector
+      final DoubleVector
           z0 = fromArray(DOUBLE_SPECIES, data, i),
           z1 = fromArray(DOUBLE_SPECIES, data, i + di),
           z2 = fromArray(DOUBLE_SPECIES, data, i + di2),
           z3 = fromArray(DOUBLE_SPECIES, data, i + di3),
           z4 = fromArray(DOUBLE_SPECIES, data, i + di4);
-      DoubleVector
+      final DoubleVector
           t1 = z1.add(z4),
           t2 = z2.add(z3),
           t3 = z1.sub(z4),
@@ -268,16 +262,6 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
 
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-//      final double[] twids = twiddles[k];
-//      DoubleVector
-//          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
-//          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]).mul(NEGATE_IM),
-//          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
-//          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]).mul(NEGATE_IM),
-//          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
-//          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]).mul(NEGATE_IM),
-//          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
-//          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]).mul(NEGATE_IM);
       final int index = k * 4;
       final DoubleVector
           w1r = broadcast(DOUBLE_SPECIES, wr[index]),
@@ -289,13 +273,13 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
           w3i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 2]).mul(NEGATE_IM),
           w4i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 3]).mul(NEGATE_IM);
       for (int k1 = 0; k1 < innerLoopLimit; k1 += INTERLEAVED_LOOP, i += LENGTH, j += LENGTH) {
-        DoubleVector
+        final DoubleVector
             z0 = fromArray(DOUBLE_SPECIES, data, i),
             z1 = fromArray(DOUBLE_SPECIES, data, i + di),
             z2 = fromArray(DOUBLE_SPECIES, data, i + di2),
             z3 = fromArray(DOUBLE_SPECIES, data, i + di3),
             z4 = fromArray(DOUBLE_SPECIES, data, i + di4);
-        DoubleVector
+        final DoubleVector
             t1 = z1.add(z4),
             t2 = z2.add(z3),
             t3 = z1.sub(z4),
@@ -308,7 +292,7 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
             t10 = t3.mul(sin2PI_5s).add(t4.mul(sinPI_5s)).rearrange(SHUFFLE_RE_IM),
             t11 = t4.mul(-sin2PI_5s).add(t3.mul(sinPI_5s)).rearrange(SHUFFLE_RE_IM);
         z0.add(t5).intoArray(ret, j);
-        DoubleVector
+        final DoubleVector
             x1 = t8.add(t10.mul(NEGATE_RE)),
             x2 = t9.add(t11.mul(NEGATE_RE)),
             x3 = t9.add(t11.mul(NEGATE_IM)),
@@ -383,16 +367,6 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
     }
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
-//      final double[] twids = twiddles[k];
-//      DoubleVector
-//          w1r = broadcast(DOUBLE_SPECIES, twids[0]),
-//          w1i = broadcast(DOUBLE_SPECIES, -sign * twids[1]),
-//          w2r = broadcast(DOUBLE_SPECIES, twids[2]),
-//          w2i = broadcast(DOUBLE_SPECIES, -sign * twids[3]),
-//          w3r = broadcast(DOUBLE_SPECIES, twids[4]),
-//          w3i = broadcast(DOUBLE_SPECIES, -sign * twids[5]),
-//          w4r = broadcast(DOUBLE_SPECIES, twids[6]),
-//          w4i = broadcast(DOUBLE_SPECIES, -sign * twids[7]);
       final int index = k * 4;
       final DoubleVector
           w1r = broadcast(DOUBLE_SPECIES, wr[index]),
@@ -440,7 +414,7 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
             t11i = t4i.mul(-sin2PI_5s).add(t3i.mul(sinPI_5s));
         z0r.add(t5r).intoArray(ret, j);
         z0i.add(t5i).intoArray(ret, j + im);
-        DoubleVector
+        final DoubleVector
             x1r = t8r.sub(t10i), x1i = t8i.add(t10r),
             x2r = t9r.sub(t11i), x2i = t9i.add(t11r),
             x3r = t9r.add(t11i), x3i = t9i.sub(t11r),
@@ -456,5 +430,4 @@ public class MixedRadixFactor5 extends MixedRadixFactor {
       }
     }
   }
-
 }

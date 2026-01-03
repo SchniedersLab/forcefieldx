@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -583,13 +583,53 @@ public class Complex2D {
     for (int x = 0; x < nX; x++) {
       int dx = offset + x * nextX;
       // Inner loop over the Y dimension (the number of FFTs).
-      for (int y = 0; y < nY; y++) {
+      int y = 0;
+//      for (; y < nY - 1; y += 2, index += 2 * ii) {
+//        int i1 = dx + y * nextY;
+//        int i2 = i1 + nextY;
+//        // Non-contiguous reads.
+//        double real1 = input[i1];
+//        double imag1 = input[i1 + externalIm];
+//        double real2 = input[i2];
+//        double imag2 = input[i2 + externalIm];
+//        // Contiguous storage into the packed array.
+//        tile[index] = real1;
+//        tile[index + im] = imag1;
+//        tile[index + ii] = real2;
+//        tile[index + ii + im] = imag2;
+//      }
+      for (; y < nY - 3; y += 4, index += 4*ii) {
+        int i1 = dx + y * nextY;
+        int i2 = i1 + nextY;
+        int i3 = i2 + nextY;
+        int i4 = i3 + nextY;
+        // Non-contiguous reads.
+        double real1 = input[i1];
+        double imag1 = input[i1 + externalIm];
+        double real2 = input[i2];
+        double imag2 = input[i2 + externalIm];
+        double real3 = input[i3];
+        double imag3 = input[i3 + externalIm];
+        double real4 = input[i4];
+        double imag4 = input[i4 + externalIm];
+        // Contiguous storage into the packed array.
+        int ii2 = ii + ii;
+        int ii3 = ii2 + ii;
+        tile[index] = real1;
+        tile[index + im] = imag1;
+        tile[index + ii] = real2;
+        tile[index + ii + im] = imag2;
+        tile[index + ii2] = real3;
+        tile[index + ii2 + im] = imag3;
+        tile[index + ii3] = real4;
+        tile[index + ii3 + im] = imag4;
+      }
+      for (; y < nY; y++, index += ii) {
         double real = input[dx + y * nextY];
         double imag = input[dx + y * nextY + externalIm];
         // Contiguous storage into the packed array.
         tile[index] = real;
         tile[index + im] = imag;
-        index += ii;
       }
     }
   }
@@ -613,13 +653,51 @@ public class Complex2D {
     for (int y = 0; y < nY; y++) {
       int dy = y * trNextY;
       // Inner loop over the X dimension.
-      for (int x = 0; x < nX; x++) {
+      int x = 0;
+//      for (; x < nX - 1; x += 2, index += 2 * ii) {
+//        int i1 = dy + x * trNextX;
+//        int i2 = i1 + trNextX;
+//        double real1 = tile[i1];
+//        double imag1 = tile[i1 + im];
+//        double real2 = tile[i2];
+//        double imag2 = tile[i2 + im];
+//        // Contiguous storage into the output array.
+//        output[index] = real1;
+//        output[index + externalIm] = imag1;
+//        output[index + ii] = real2;
+//        output[index + ii + externalIm] = imag2;
+//      }
+      for (; x < nX - 3; x+=4, index += 4*ii) {
+        int i1 = dy + x * trNextX;
+        int i2 = i1 + trNextX;
+        int i3 = i2 + trNextX;
+        int i4 = i3 + trNextX;
+        double real1 = tile[i1];
+        double imag1 = tile[i1 + im];
+        double real2 = tile[i2];
+        double imag2 = tile[i2 + im];
+        double real3 = tile[i3];
+        double imag3 = tile[i3 + im];
+        double real4 = tile[i4];
+        double imag4 = tile[i4 + im];
+        // Contiguous storage into the output array.
+        int ii2 = ii + ii;
+        int ii3 = ii2 + ii;
+        output[index] = real1;
+        output[index + externalIm] = imag1;
+        output[index + ii] = real2;
+        output[index + ii + externalIm] = imag2;
+        output[index + ii2] = real3;
+        output[index + ii2 + externalIm] = imag3;
+        output[index + ii3] = real4;
+        output[index + ii3 + externalIm] = imag4;
+      }
+      for (; x < nX; x++, index += ii) {
         double real = tile[dy + x * trNextX];
         double imag = tile[dy + x * trNextX + im];
         // Contiguous storage into the output array.
         output[index] = real;
         output[index + externalIm] = imag;
-        index += ii;
       }
     }
   }

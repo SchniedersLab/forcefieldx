@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2025.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
 //
 // This file is part of Force Field X.
 //
@@ -739,15 +739,13 @@ public class Complex3DParallel {
           double fftxy = fftXYLoop[i].getTime() * 1e-9;
           double ziz = fftZIZLoop[i].getTime() * 1e-9;
           double ifftxy = ifftXYLoop[i].getTime() * 1e-9;
-          String s = format("  Thread %3d: FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
-              i, fftxy, ziz, ifftxy);
+          String s = format("  Thread %3d: FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n", i, fftxy, ziz, ifftxy);
           sb.append(s);
           xysum += fftxy;
           zizsum += ziz;
           ixysum += ifftxy;
         }
-        String s = format("  Sum       : FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n",
-            xysum, zizsum, ixysum);
+        String s = format("  Sum       : FFTXY=%8.6f, FFTZIZ=%8.6f, IFFTXY=%8.6f\n", xysum, zizsum, ixysum);
         sb.append(s);
       } else {
         double xysum = 0.0;
@@ -1041,40 +1039,69 @@ public class Complex3DParallel {
   private class TransposeLoop extends IntegerForLoop {
 
     private long time;
-    // For contiguous writes in the inner loop.
-    private final double[] work = new double[2 * nY];
 
     @Override
     public void run(final int lb, final int ub) {
       if (internalImZ == 1) {
         for (int z = 0; z < nZ; z++) {
           for (int x = lb; x <= ub; x++) {
-            for (int y = 0, i = 0; y < nY; y++, i += 2) {
-              int inputIndex = x * nextX + y * nextY + z * nextZ;
-              double real = input[inputIndex];
-              double imag = input[inputIndex + im];
-              work[i] = real;
-              work[i + 1] = imag;
+            int y = 0;
+            int i = 0;
+            int iZX = x * nextX + z * nextZ;
+            int trZX = x * trNextX + z * trNextZ;
+            for (; y < nY - 3; y += 4, i += 8) {
+              int i1 = iZX + y * nextY;
+              int i2 = i1 + nextY;
+              int i3 = i2 + nextY;
+              int i4 = i3 + nextY;
+              int dest = trZX + y * trNextY;
+              work3D[dest] = input[i1];
+              work3D[dest + 1] = input[i1 + im];
+              work3D[dest + 2] = input[i2];
+              work3D[dest + 3] = input[i2 + im];
+              work3D[dest + 4] = input[i3];
+              work3D[dest + 5] = input[i3 + im];
+              work3D[dest + 6] = input[i4];
+              work3D[dest + 7] = input[i4 + im];
             }
-            // Contiguous write of nY interleaved complex values.
-            arraycopy(work, 0, work3D, x * trNextX + z * trNextZ, nY * 2);
+            for (; y < nY; y++, i += 2) {
+              int i1 = iZX + y * nextY;
+              int dest = trZX + y * trNextY;
+              work3D[dest] = input[i1];
+              work3D[dest + 1] = input[i1 + im];
+            }
           }
         }
       } else {
         for (int z = 0; z < nZ; z++) {
           for (int x = lb; x <= ub; x++) {
-            for (int y = 0, i = 0; y < nY; y++, i++) {
-              int inputIndex = x * nextX + y * nextY + z * nextZ;
-              double real = input[inputIndex];
-              double imag = input[inputIndex + im];
-              work[i] = real;
-              work[i + nY] = imag;
+            int y = 0;
+            int i = 0;
+            int iZX = x * nextX + z * nextZ;
+            int trZX = x * trNextX + z * trNextZ;
+            for (; y < nY - 3; y += 4, i += 4) {
+              int i1 = iZX + y * nextY;
+              int i2 = i1 + nextY;
+              int i3 = i2 + nextY;
+              int i4 = i3 + nextY;
+              // Real values
+              int destPos = trZX + y * trNextY;
+              work3D[destPos] = input[i1];
+              work3D[destPos + 1] = input[i2];
+              work3D[destPos + 2] = input[i3];
+              work3D[destPos + 3] = input[i4];
+              // Imaginary values
+              work3D[destPos + internalImZ] = input[i1 + im];
+              work3D[destPos + 1 + internalImZ] = input[i2 + im];
+              work3D[destPos + 2 + internalImZ] = input[i3 + im];
+              work3D[destPos + 3 + internalImZ] = input[i4 + im];
             }
-            int destPos = x * trNextX + z * trNextZ;
-            // Contiguous write of nY real values.
-            arraycopy(work, 0, work3D, destPos, nY);
-            // Contiguous write of nY imaginary values.
-            arraycopy(work, nY, work3D, destPos + internalImZ, nY);
+            for (; y < nY; y++, i++) {
+              int i1 = iZX + y * nextY;
+              int destPos = trZX + y * trNextY;
+              work3D[destPos] = input[i1];
+              work3D[destPos + internalImZ] = input[i1 + im];
+            }
           }
         }
       }
@@ -1127,13 +1154,30 @@ public class Complex3DParallel {
         for (int x = 0; x < nX; x++) {
           int trZX = trZ + x * trNextX;
           int iZX = iZ + x * nextX;
-          for (int y = 0; y < nY; y++) {
+          int y = 0;
+          for (; y < nY - 3; y += 4) {
+            int w1 = y * trNextY + trZX;
+            int w2 = w1 + trNextY;
+            int w3 = w2 + trNextY;
+            int w4 = w3 + trNextY;
+            int i1 = y * nextY + iZX;
+            int i2 = i1 + nextY;
+            int i3 = i2 + nextY;
+            int i4 = i3 + nextY;
+            input[i1] = work3D[w1];
+            input[i1 + im] = work3D[w1 + internalImZ];
+            input[i2] = work3D[w2];
+            input[i2 + im] = work3D[w2 + internalImZ];
+            input[i3] = work3D[w3];
+            input[i3 + im] = work3D[w3 + internalImZ];
+            input[i4] = work3D[w4];
+            input[i4 + im] = work3D[w4 + internalImZ];
+          }
+          for (; y < nY; y++) {
             int workIndex = y * trNextY + trZX;
-            double real = work3D[workIndex];
-            double imag = work3D[workIndex + internalImZ];
             int inputIndex = y * nextY + iZX;
-            input[inputIndex] = real;
-            input[inputIndex + im] = imag;
+            input[inputIndex] = work3D[workIndex];
+            input[inputIndex + im] = work3D[workIndex + internalImZ];
           }
         }
       }
