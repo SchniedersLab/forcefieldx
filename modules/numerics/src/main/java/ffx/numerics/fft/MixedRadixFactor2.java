@@ -38,6 +38,8 @@
 package ffx.numerics.fft;
 
 import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorShuffle;
+import jdk.incubator.vector.VectorSpecies;
 
 import static jdk.incubator.vector.DoubleVector.SPECIES_128;
 import static jdk.incubator.vector.DoubleVector.SPECIES_256;
@@ -66,6 +68,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
   /**
    * Check if the requested SIMD length is valid.
+   *
    * @param width Requested SIMD species width.
    * @return True if this width is supported.
    */
@@ -90,6 +93,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   /**
    * Determine the optimal SIMD width. Currently supported widths are 2, 4 and 8.
    * If no SIMD width is valid, return 0 to indicate use of the scalar path.
+   *
    * @return The optimal SIMD width.
    */
   @Override
@@ -228,17 +232,64 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   }
 
   /**
+   * ButterFly for radix-2 with blocked data.
+   *
+   * @param data The input array to retrieve data from.
+   * @param i    The index to read the first real input.
+   * @param w_r  The real part of the twiddle factor.
+   * @param w_i  The imaginary part of the twiddle factor.
+   * @param ret  The array to store into.
+   * @param j    The index to store the first real output.
+   */
+  private void butterFly2Blocked(
+      VectorSpecies<Double> species,
+      double[] data, int i, double w_r, double w_i, double[] ret, int j) {
+    final DoubleVector
+        z0_r = fromArray(species, data, i),
+        z0_i = fromArray(species, data, i + im),
+        z1_r = fromArray(species, data, i + di),
+        z1_i = fromArray(species, data, i + di + im);
+    z0_r.add(z1_r).intoArray(ret, j);
+    z0_i.add(z1_i).intoArray(ret, j + im);
+    final DoubleVector
+        x_r = z0_r.sub(z1_r),
+        x_i = z0_i.sub(z1_i);
+    x_r.mul(w_r).sub(x_i.mul(w_i)).intoArray(ret, j + dj);
+    x_i.mul(w_r).add(x_r.mul(w_i)).intoArray(ret, j + dj + im);
+  }
+
+  /**
+   * ButterFly for radix-2 with blocked data.
+   *
+   * @param z0  The first vector of real + imaginary data.
+   * @param z1  The second vector of real + imaginary data.
+   * @param w_r The real part of the twiddle factor.
+   * @param w_i The imaginary part of the twiddle factor.
+   * @param j   The index to store the first real output.
+   * @param ret The array to store into.
+   */
+  private void butterFly2Interleaved(
+      DoubleVector z0, DoubleVector z1,
+      DoubleVector w_r, DoubleVector w_i,
+      VectorShuffle<Double> shuffle_re_im,
+      int j, double[] ret) {
+    z0.add(z1).intoArray(ret, j);
+    final DoubleVector x = z0.sub(z1);
+    x.mul(w_r).add(x.mul(w_i).rearrange(shuffle_re_im)).intoArray(ret, j + dj);
+  }
+
+  /**
    * Handle factors of 2 using the 128-bit SIMD vectors.
    */
   private void blocked128(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
-      DoubleVector
+      final DoubleVector
           z0_r = fromArray(SPECIES_128, data, i),
           z0_i = fromArray(SPECIES_128, data, i + im),
           z1_r = fromArray(SPECIES_128, data, i + di),
@@ -251,10 +302,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final DoubleVector
-          w_r = broadcast(SPECIES_128, wr[k]),
-          w_i = broadcast(SPECIES_128, -sign * wi[k]),
-          n_i = w_i.neg();
+      final double
+          w_r = wr[k],
+          w_i = -sign * wi[k];
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_128, i += LENGTH_128, j += LENGTH_128) {
         final DoubleVector
             z0_r = fromArray(SPECIES_128, data, i),
@@ -263,9 +313,11 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1_i = fromArray(SPECIES_128, data, i + di + im);
         z0_r.add(z1_r).intoArray(ret, j);
         z0_i.add(z1_i).intoArray(ret, j + im);
-        DoubleVector x_r = z0_r.sub(z1_r), x_i = z0_i.sub(z1_i);
-        w_r.mul(x_r).add(n_i.mul(x_i)).intoArray(ret, j + dj);
-        w_r.mul(x_i).add(w_i.mul(x_r)).intoArray(ret, j + dj + im);
+        final DoubleVector
+            x_r = z0_r.sub(z1_r),
+            x_i = z0_i.sub(z1_i);
+        x_r.mul(w_r).sub(x_i.mul(w_i)).intoArray(ret, j + dj);
+        x_i.mul(w_r).add(x_r.mul(w_i)).intoArray(ret, j + dj + im);
       }
     }
   }
@@ -276,10 +328,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   private void blocked256(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
-    // First pass of the 2-point FFT has no twiddle factors.
     for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
       final DoubleVector
           z0_r = fromArray(SPECIES_256, data, i),
@@ -294,10 +345,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final DoubleVector
-          w_r = broadcast(SPECIES_256, wr[k]),
-          w_i = broadcast(SPECIES_256, -sign * wi[k]),
-          n_i = w_i.neg();
+      final double
+          w_r = wr[k],
+          w_i = -sign * wi[k];
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_256, i += LENGTH_256, j += LENGTH_256) {
         final DoubleVector
             z0_r = fromArray(SPECIES_256, data, i),
@@ -306,9 +356,11 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1_i = fromArray(SPECIES_256, data, i + di + im);
         z0_r.add(z1_r).intoArray(ret, j);
         z0_i.add(z1_i).intoArray(ret, j + im);
-        final DoubleVector x_r = z0_r.sub(z1_r), x_i = z0_i.sub(z1_i);
-        w_r.mul(x_r).add(n_i.mul(x_i)).intoArray(ret, j + dj);
-        w_r.mul(x_i).add(w_i.mul(x_r)).intoArray(ret, j + dj + im);
+        final DoubleVector
+            x_r = z0_r.sub(z1_r),
+            x_i = z0_i.sub(z1_i);
+        x_r.mul(w_r).sub(x_i.mul(w_i)).intoArray(ret, j + dj);
+        x_i.mul(w_r).add(x_r.mul(w_i)).intoArray(ret, j + dj + im);
       }
     }
   }
@@ -319,7 +371,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   private void blocked512(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
@@ -337,10 +389,9 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
 
     j += dj;
     for (int k = 1; k < outerLoopLimit; k++, j += dj) {
-      final DoubleVector
-          w_r = broadcast(SPECIES_512, wr[k]),
-          w_i = broadcast(SPECIES_512, -sign * wi[k]),
-          n_i = w_i.neg();
+      final double
+          w_r = wr[k],
+          w_i = -sign * wi[k];
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP_512, i += LENGTH_512, j += LENGTH_512) {
         final DoubleVector
             z0_r = fromArray(SPECIES_512, data, i),
@@ -349,9 +400,11 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1_i = fromArray(SPECIES_512, data, i + di + im);
         z0_r.add(z1_r).intoArray(ret, j);
         z0_i.add(z1_i).intoArray(ret, j + im);
-        final DoubleVector x_r = z0_r.sub(z1_r), x_i = z0_i.sub(z1_i);
-        w_r.mul(x_r).add(n_i.mul(x_i)).intoArray(ret, j + dj);
-        w_r.mul(x_i).add(w_i.mul(x_r)).intoArray(ret, j + dj + im);
+        final DoubleVector
+            x_r = z0_r.sub(z1_r),
+            x_i = z0_i.sub(z1_i);
+        x_r.mul(w_r).sub(x_i.mul(w_i)).intoArray(ret, j + dj);
+        x_i.mul(w_r).add(x_r.mul(w_i)).intoArray(ret, j + dj + im);
       }
     }
   }
@@ -362,7 +415,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   private void interleaved128(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
@@ -385,7 +438,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1 = fromArray(SPECIES_128, data, i + di);
         z0.add(z1).intoArray(ret, j);
         final DoubleVector x = z0.sub(z1);
-        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
+        x.fma(w_r, x.mul(w_i).rearrange(SHUFFLE_RE_IM_128)).intoArray(ret, j + dj);
       }
     }
   }
@@ -396,7 +449,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   private void interleaved256(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
@@ -419,7 +472,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1 = fromArray(SPECIES_256, data, i + di);
         z0.add(z1).intoArray(ret, j);
         final DoubleVector x = z0.sub(z1);
-        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
+        x.fma(w_r, x.mul(w_i).rearrange(SHUFFLE_RE_IM_256)).intoArray(ret, j + dj);
       }
     }
   }
@@ -430,7 +483,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
   private void interleaved512(PassData passData) {
     final double[] data = passData.in;
     final double[] ret = passData.out;
-    int sign = passData.sign;
+    final int sign = passData.sign;
     int i = passData.inOffset;
     int j = passData.outOffset;
     // First pass of the 2-point FFT has no twiddle factors.
@@ -453,7 +506,7 @@ public class MixedRadixFactor2 extends MixedRadixFactor {
             z1 = fromArray(SPECIES_512, data, i + di);
         z0.add(z1).intoArray(ret, j);
         final DoubleVector x = z0.sub(z1);
-        x.mul(w_r).add(x.mul(w_i).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
+        x.fma(w_r, x.mul(w_i).rearrange(SHUFFLE_RE_IM_512)).intoArray(ret, j + dj);
       }
     }
   }

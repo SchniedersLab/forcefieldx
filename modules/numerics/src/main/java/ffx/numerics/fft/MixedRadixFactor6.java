@@ -247,14 +247,14 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
           ta2 = ta1.mul(-0.5).add(z0),
           ta3 = z2.sub(z4).mul(tau).rearrange(SHUFFLE_RE_IM),
           a0 = z0.add(ta1),
-          a1 = ta2.add(ta3.mul(NEGATE_RE)),
-          a2 = ta2.add(ta3.mul(NEGATE_IM)),
+          a1 = ta3.fma(NEGATE_RE, ta2),
+          a2 = ta3.fma(NEGATE_IM, ta2),
           tb1 = z5.add(z1),
           tb2 = tb1.mul(-0.5).add(z3),
           tb3 = z5.sub(z1).mul(tau).rearrange(SHUFFLE_RE_IM),
           b0 = z3.add(tb1),
-          b1 = tb2.add(tb3.mul(NEGATE_RE)),
-          b2 = tb2.add(tb3.mul(NEGATE_IM));
+          b1 = tb3.fma(NEGATE_RE, tb2),
+          b2 = tb3.fma(NEGATE_IM, tb2);
       a0.add(b0).intoArray(ret, j);
       a1.sub(b1).intoArray(ret, j + dj);
       a2.add(b2).intoArray(ret, j + dj2);
@@ -290,14 +290,14 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
             ta2 = ta1.mul(-0.5).add(z0),
             ta3 = z2.sub(z4).mul(tau).rearrange(SHUFFLE_RE_IM),
             a0 = z0.add(ta1),
-            a1 = ta2.add(ta3.mul(NEGATE_RE)),
-            a2 = ta2.add(ta3.mul(NEGATE_IM)),
+            a1 = ta3.fma(NEGATE_RE, ta2),
+            a2 = ta3.fma(NEGATE_IM, ta2),
             tb1 = z5.add(z1),
             tb2 = tb1.mul(-0.5).add(z3),
             tb3 = z5.sub(z1).mul(tau).rearrange(SHUFFLE_RE_IM),
             b0 = z3.add(tb1),
-            b1 = tb2.add(tb3.mul(NEGATE_RE)),
-            b2 = tb2.add(tb3.mul(NEGATE_IM));
+            b1 = tb3.fma(NEGATE_RE, tb2),
+            b2 = tb3.fma(NEGATE_IM, tb2);
         a0.add(b0).intoArray(ret, j);
         final DoubleVector
             x1 = a1.sub(b1),
@@ -305,11 +305,11 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
             x3 = a0.sub(b0),
             x4 = a1.add(b1),
             x5 = a2.sub(b2);
-        w1r.mul(x1).add(w1i.mul(x1).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj);
-        w2r.mul(x2).add(w2i.mul(x2).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj2);
-        w3r.mul(x3).add(w3i.mul(x3).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj3);
-        w4r.mul(x4).add(w4i.mul(x4).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj4);
-        w5r.mul(x5).add(w5i.mul(x5).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj5);
+        w1r.fma(x1, w1i.mul(x1).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj);
+        w2r.fma(x2, w2i.mul(x2).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj2);
+        w3r.fma(x3, w3i.mul(x3).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj3);
+        w4r.fma(x4, w4i.mul(x4).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj4);
+        w5r.fma(x5, w5i.mul(x5).rearrange(SHUFFLE_RE_IM)).intoArray(ret, j + dj5);
       }
     }
   }
@@ -383,17 +383,17 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
     j += jstep;
     for (int k = 1; k < outerLoopLimit; k++, j += jstep) {
       final int index = k * 5;
-      final DoubleVector
-          w1r = broadcast(DOUBLE_SPECIES, wr[index]),
-          w2r = broadcast(DOUBLE_SPECIES, wr[index + 1]),
-          w3r = broadcast(DOUBLE_SPECIES, wr[index + 2]),
-          w4r = broadcast(DOUBLE_SPECIES, wr[index + 3]),
-          w5r = broadcast(DOUBLE_SPECIES, wr[index + 4]),
-          w1i = broadcast(DOUBLE_SPECIES, -sign * wi[index]),
-          w2i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 1]),
-          w3i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 2]),
-          w4i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 3]),
-          w5i = broadcast(DOUBLE_SPECIES, -sign * wi[index + 4]);
+      final double
+          w1r = wr[index],
+          w2r = wr[index + 1],
+          w3r = wr[index + 2],
+          w4r = wr[index + 3],
+          w5r = wr[index + 4],
+          w1i = -sign * wi[index],
+          w2i = -sign * wi[index + 1],
+          w3i = -sign * wi[index + 2],
+          w4i = -sign * wi[index + 3],
+          w5i = -sign * wi[index + 4];
       for (int k1 = 0; k1 < innerLoopLimit; k1 += BLOCK_LOOP, i += LENGTH, j += LENGTH) {
         final DoubleVector
             z0r = fromArray(DOUBLE_SPECIES, data, i),
@@ -441,16 +441,16 @@ public class MixedRadixFactor6 extends MixedRadixFactor {
             x3r = a0r.sub(b0r), x3i = a0i.sub(b0i),
             x4r = a1r.add(b1r), x4i = a1i.add(b1i),
             x5r = a2r.sub(b2r), x5i = a2i.sub(b2i);
-        w1r.mul(x1r).add(w1i.neg().mul(x1i)).intoArray(ret, j + dj);
-        w2r.mul(x2r).add(w2i.neg().mul(x2i)).intoArray(ret, j + dj2);
-        w3r.mul(x3r).add(w3i.neg().mul(x3i)).intoArray(ret, j + dj3);
-        w4r.mul(x4r).add(w4i.neg().mul(x4i)).intoArray(ret, j + dj4);
-        w5r.mul(x5r).add(w5i.neg().mul(x5i)).intoArray(ret, j + dj5);
-        w1r.mul(x1i).add(w1i.mul(x1r)).intoArray(ret, j + dj + im);
-        w2r.mul(x2i).add(w2i.mul(x2r)).intoArray(ret, j + dj2 + im);
-        w3r.mul(x3i).add(w3i.mul(x3r)).intoArray(ret, j + dj3 + im);
-        w4r.mul(x4i).add(w4i.mul(x4r)).intoArray(ret, j + dj4 + im);
-        w5r.mul(x5i).add(w5i.mul(x5r)).intoArray(ret, j + dj5 + im);
+        x1r.mul(w1r).sub(x1i.mul(w1i)).intoArray(ret, j + dj);
+        x2r.mul(w2r).sub(x2i.mul(w2i)).intoArray(ret, j + dj2);
+        x3r.mul(w3r).sub(x3i.mul(w3i)).intoArray(ret, j + dj3);
+        x4r.mul(w4r).sub(x4i.mul(w4i)).intoArray(ret, j + dj4);
+        x5r.mul(w5r).sub(x5i.mul(w5i)).intoArray(ret, j + dj5);
+        x1i.mul(w1r).add(x1r.mul(w1i)).intoArray(ret, j + dj + im);
+        x2i.mul(w2r).add(x2r.mul(w2i)).intoArray(ret, j + dj2 + im);
+        x3i.mul(w3r).add(x3r.mul(w3i)).intoArray(ret, j + dj3 + im);
+        x4i.mul(w4r).add(x4r.mul(w4i)).intoArray(ret, j + dj4 + im);
+        x5i.mul(w5r).add(x5r.mul(w5i)).intoArray(ret, j + dj5 + im);
       }
     }
   }
