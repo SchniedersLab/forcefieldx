@@ -83,6 +83,17 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   @Option(names = {"--startSnap"}, paramLabel = "-1", defaultValue = "-1",
           description = "Start energy evaluations at a snap other than 2.")
   private int startSnap;
+  @Option(names = {"--discreteStateResidues", "--dsR"}, paramLabel = "<selection>", defaultValue = "",
+          description = "Specified residues are set to discrete state when doing analysis.")
+  private String discreteStateResidues = "";
+
+  @Option(names = {"--discreteState", "--dS"}, paramLabel = "<selection>", defaultValue = "0.0",
+          description = "Specified residues are set to discrete state when doing analysis.")
+  private double discreteState = 0.0;
+
+  @Option(names = {"--chain", "--ch"}, paramLabel = " ", defaultValue = "A",
+    description = "Single character chain name (default is \'A\').")
+  private Character chain = 'A';
 
   @Option(names = {"--bootstrapIter"}, paramLabel = "100000", defaultValue = "100000",
           description = "Number of bootstrap iterations. Set -1 for no bootstrapping.")
@@ -100,7 +111,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
           description = "PDB input file in the same directory as the ARC file.")
   private String filename;
 
-  private Potential forceFieldEnergy;
+  private ForceFieldEnergy forceFieldEnergy;
   private ArrayList<Double>[][] oneZeroDeltaLists;
   private ArrayList<Double>[][] tautomerOneZeroDeltaList;
   private int numESVs;
@@ -177,7 +188,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     } else if (esvSystem.getSpecialResidueList().size() == 1) {
       int specialResidueNumber = esvSystem.getSpecialResidueList().get(0).intValue();
       for (Residue residue : esvSystem.getTitratingResidueList()) {
-        if (residue.getResidueNumber() == specialResidueNumber) {
+        if (residue.getResidueNumber() == specialResidueNumber && residue.getChainID() == chain) {
           specialResidue = residue;
         }
       }
@@ -231,12 +242,30 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
         specifiedResidues[i] = Integer.parseInt(specifiedResiduesString[i].trim());
       }
     }
+
+    int[] dsResidueNums;
+    Residue[] dsResidues = null;
+    if(discreteStateResidues != null && !discreteStateResidues.isEmpty()){
+      String[] discreteStateResiduesString = discreteStateResidues.split(",");
+      dsResidueNums = new int[discreteStateResiduesString.length];
+      dsResidues = new Residue[dsResidueNums.length];
+      for (int i = 0; i < discreteStateResiduesString.length; i++) {
+        dsResidueNums[i] = Integer.parseInt(discreteStateResiduesString[i].trim());
+      }
+      int index=0;
+      for (Residue residue : esvSystem.getTitratingResidueList()) {
+        if (ArrayUtils.contains(dsResidueNums, residue.getResidueNumber()) && residue.getChainID() == chain) {
+          dsResidues[index] = residue;
+          index++;
+        }
+      }
+    }
     ArrayList<Residue> onlyResidues = new ArrayList<>();
     ArrayList<Integer> onlyResidueIndices = new ArrayList<>();
     if(specifiedResidues != null){
       for (int i = 0; i < esvSystem.getTitratingResidueList().size(); i++) {
         Residue residue = esvSystem.getTitratingResidueList().get(i);
-        if (ArrayUtils.contains(specifiedResidues, residue.getResidueNumber())) {
+        if (ArrayUtils.contains(specifiedResidues, residue.getResidueNumber()) && residue.getChainID() == chain) {
           onlyResidues.add(residue);
           onlyResidueIndices.add(i);
         }
@@ -317,6 +346,9 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
         for(int i = 0; i < startSnap - 2; i++){
           xphFilter.readNext();
         }
+      }
+      for(Residue dsResidue: dsResidues){
+        esvSystem.setTitrationLambda(dsResidue, discreteState, false);
       }
 
       // Get coordinates/energies with each new snap and calculate energy differences
