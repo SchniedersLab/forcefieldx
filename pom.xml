@@ -1027,7 +1027,7 @@
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.8.0</assembly.version>
     <biojava.version>7.2.4</biojava.version>
-    <cdk.version>2.11</cdk.version>
+    <cdk.version>2.12</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
@@ -1037,7 +1037,7 @@
     <clover.version>4.4.1</clover.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.13.0</commons-configuration2.version>
+    <commons-configuration2.version>2.14.0</commons-configuration2.version>
     <commons-io.version>2.21.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
@@ -1054,11 +1054,11 @@
     <fastutil.version>8.5.12</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0</ffx.version>
-    <git-commit-id.version>9.0.2</git-commit-id.version>
+    <git-commit-id.version>10.0.0</git-commit-id.version>
     <gmavenplus.version>4.3.1</gmavenplus.version>
     <graal.version>25.0.2</graal.version>
-    <groovy-all.version>5.0.4</groovy-all.version>
-    <guava.version>33.5.0-jre</guava.version>
+    <groovy-all.version>5.0.5</groovy-all.version>
+    <guava.version>33.6.0-jre</guava.version>
     <install.version>3.1.4</install.version>
     <jacoco.version>0.8.14</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
@@ -1076,7 +1076,7 @@
     <jxr.version>3.6.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.25.3</log4j.version>
+    <log4j.version>2.25.4</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
@@ -1090,7 +1090,7 @@
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
     <release.version>3.3.1</release.version>
-    <resources.version>3.4.0</resources.version>
+    <resources.version>3.5.0</resources.version>
     <scm.version>2.2.1</scm.version>
     <site.version>3.21.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
@@ -1211,6 +1211,7 @@
       <plugin>
         <artifactId>maven-pmd-plugin</artifactId>
         <configuration>
+          <skip>false</skip>
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
