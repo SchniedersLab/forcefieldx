@@ -205,6 +205,17 @@ public class MutatePDB extends AlgorithmsCommand {
     CompositeConfiguration properties = Keyword.loadProperties(structureFile);
     ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
     ForceField forceField = forceFieldFilter.parse();
+    String[] patches = properties.getStringArray("patch");
+    if (patches != null) {
+      for (String patch : patches) {
+        logger.info(" Attempting to read force field patch from " + patch + ".");
+        CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+        patchConfiguration.addProperty("parameters", patch);
+        forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+        ForceField patchForceField = forceFieldFilter.parse();
+        forceField.append(patchForceField);
+      }
+    }
     molecularAssembly.setForceField(forceField);
 
     PDBFilter pdbFilter = new PDBFilter(structureFile, molecularAssembly, forceField, properties);
