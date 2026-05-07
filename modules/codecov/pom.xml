@@ -11,7 +11,7 @@
     <artifactId>forcefieldx</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
-    <version>26.0.1</version>
+    <version>26.0.2</version>
   </parent>
   <build>
     <plugins>
