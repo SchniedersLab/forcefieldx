@@ -21,7 +21,7 @@ jupyter-console==6.5.1
 jupyter-core==5.2.0
 jupyter-events==0.5.0
 jupyter==1.1.1
-jupyterlab-server==2.27.3
+jupyterlab-server==2.28.0
 jupyterlab==4.5.9
 kotlin-jupyter-kernel==0.15.0.598
 mistune==3.2.1

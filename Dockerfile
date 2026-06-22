@@ -5,15 +5,15 @@ RUN apt-get install -y wget unzip curl zip
 RUN apt-get install -y libfreetype6 fontconfig fonts-dejavu
 RUN apt-get install -y python3-pip
 
-# Download JDK 22 for x64 or Arm64
+# Download JDK 25 for x64 or Arm64
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         JDK=jdk-22_linux-aarch64_bin.tar.gz; \
+         JDK=jdk-25_linux-aarch64_bin.tar.gz; \
          ;; \
        amd64|i386:x86-64) \
-         JDK=jdk-22_linux-x64_bin.tar.gz; \
+         JDK=jdk-25_linux-x64_bin.tar.gz; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -21,10 +21,10 @@ RUN set -eux; \
          ;; \
     esac; \
     echo ${JDK}; \
-    wget https://download.oracle.com/java/22/archive/${JDK}; \
+    wget https://download.oracle.com/java/25/archive/${JDK}; \
     tar xzf ${JDK};
 
-ENV JAVA_HOME=/jdk-22
+ENV JAVA_HOME=/jdk-25
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Add requirements.txt and install them using pip3
