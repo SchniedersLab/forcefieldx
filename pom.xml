@@ -1037,7 +1037,7 @@
     <clover.version>4.4.1</clover.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-configuration2.version>2.14.0</commons-configuration2.version>
+    <commons-configuration2.version>2.15.1</commons-configuration2.version>
     <commons-io.version>2.22.0</commons-io.version>
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
@@ -1045,29 +1045,29 @@
     <!-- Control the source version -->
     <compileVersion>25</compileVersion>
     <compiler.version>3.15.0</compiler.version>
-    <dependency.version>3.10.0</dependency.version>
+    <dependency.version>3.11.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
     <deploy.version>3.1.4</deploy.version>
-    <enforcer.version>3.6.2</enforcer.version>
+    <enforcer.version>3.6.3</enforcer.version>
     <exec.version>3.6.3</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.12</fastutil.version>
     <git-commit-id.version>10.0.0</git-commit-id.version>
-    <gmavenplus.version>4.3.1</gmavenplus.version>
-    <graal.version>25.0.2</graal.version>
+    <gmavenplus.version>5.0.0</gmavenplus.version>
+    <graal.version>25.0.3</graal.version>
     <groovy-all.version>5.0.6</groovy-all.version>
     <guava.version>33.6.0-jre</guava.version>
     <install.version>3.1.4</install.version>
-    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
     <jar.version>3.5.0</jar.version>
     <jarsigner.version>3.1.0</jarsigner.version>
-    <javaparser.version>3.28.1</javaparser.version>
+    <javaparser.version>3.28.2</javaparser.version>
     <java3d.version>1.7.2</java3d.version>
     <javadoc.version>3.12.0</javadoc.version>
     <jakarta-xml.version>4.0.5</jakarta-xml.version>
     <jdepend.version>2.2.0</jdepend.version>
-    <jna.version>5.18.1</jna.version>
+    <jna.version>5.19.1</jna.version>
     <jogamp-fat.version>2.6.0</jogamp-fat.version>
     <jopenmm.version>8.3.4</jopenmm.version>
     <junit.version>4.13.2</junit.version>
@@ -1090,14 +1090,14 @@
     <release.version>3.3.1</release.version>
     <resources.version>3.5.0</resources.version>
     <scm.version>2.2.1</scm.version>
-    <site.version>3.21.0</site.version>
+    <site.version>3.22.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.4.0</source.version>
-    <spotbugs.version>4.9.8</spotbugs.version>
-    <surefire.version>3.5.5</surefire.version>
+    <spotbugs.version>4.10.2</spotbugs.version>
+    <surefire.version>3.5.6</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>25</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>
