@@ -39,6 +39,8 @@
       <iframe id="kotlin-iframe" width="100%" height="500"
               src="https://nbviewer.org/github/SchniedersLab/forcefieldx/blob/master/ipynb-kotlin/ForceFieldX-Kotlin.ipynb">
       </iframe>
+      <br/>
+      <img src="images/binder.png" alt="Binder"/>
     </section>
   </body>
 </document>
