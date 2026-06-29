@@ -9,14 +9,14 @@ import java.util.ArrayList
 import ffx.utilities.FFXBinding
 import ffx.potential.commands.Energy
 
-% Set the FFX_HOME variable to the root FFX directoy.
+% Set the FFX_HOME variable to the root FFX directory.
 
 FFX_HOME = "/Users/mjschnie/Data/ffx-project/forcefieldx";
 
 % Script input Arguments
 A = ArrayList;
 A.add("-m");
-A.add(FFX_HOME + "/examples/peptide.xyz");
+A.add(FFX_HOME + "/examples/dhfr.xyz");
 
 % Create a Binding
 binding = FFXBinding;

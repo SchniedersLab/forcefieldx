@@ -6,7 +6,7 @@
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>forcefieldx</artifactId>
-    <version>26.0.2</version>
+    <version>26.0.3</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>ffx-numerics</artifactId>
@@ -48,9 +48,9 @@
             <!-- argument>-Dfft.tileY=64</argument -->
             <!-- argument>-XX:ObjectAlignmentInBytes=16</argument -->
             <argument>ffx.numerics.fft.Complex3DParallel</argument>
-            <argument>256</argument>
+            <argument>128</argument>
             <argument>8</argument>
-            <argument>20</argument>
+            <argument>100</argument>
             <argument>true</argument>
           </arguments>
         </configuration>

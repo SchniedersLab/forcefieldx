@@ -212,6 +212,7 @@
       <item name="Google Colab" href="/colab.html"/>
       <item name="Docker" href="/docker.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
+      <item name="Matlab" href="/matlab.html"/>
     </menu>
     <menu name="Developer Guide" inherit="top">
       <item name="Introduction" href="/modules.html" collapse="true">
