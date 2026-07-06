@@ -35,6 +35,7 @@
             <argument>ffx.potential.commands.Cart2Frac</argument>
             <argument>ffx.potential.commands.ChainBreaks</argument>
             <argument>ffx.potential.commands.Density</argument>
+            <argument>ffx.potential.commands.ANIExternal</argument>
             <argument>ffx.potential.commands.Energy</argument>
             <argument>ffx.potential.commands.ExportQE</argument>
             <argument>ffx.potential.commands.Fasta</argument>

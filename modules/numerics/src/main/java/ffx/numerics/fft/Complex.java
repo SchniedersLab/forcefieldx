@@ -566,13 +566,6 @@ public class Complex {
     for (int i = 0; i < nfactors; i++) {
       final int pass = i % 2;
       MixedRadixFactor mixedRadixFactor = mixedRadixFactors[i];
-      boolean applySIMD = false;
-      // If the useSIMD flag is true, evaluate this pass for optimal SIMD width.
-      if (useSIMD) {
-        // Check the requested SIMD species.
-
-      }
-
       if (useSIMD && mixedRadixFactor.innerLoopLimit >= minSIMDLoopLength) {
         mixedRadixFactor.passSIMD(passData[pass]);
       } else {

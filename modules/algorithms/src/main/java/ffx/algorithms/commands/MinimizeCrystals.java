@@ -306,7 +306,7 @@ public class MinimizeCrystals extends AlgorithmsCommand {
             break;
           }
         }
-        // Minimization has cycled between lattice and coords. Therefore increase number of cycles and check if done.
+        // Minimization has cycled between lattice and coords. Therefore, increase the number of cycles and check if done.
         if (cycles > 0 && ++numCycles >= cycles) {
           logger.info(format(" Current cycle (%3d) has exceeded maximum allowable cycles (%3d).", numCycles, cycles));
           break;

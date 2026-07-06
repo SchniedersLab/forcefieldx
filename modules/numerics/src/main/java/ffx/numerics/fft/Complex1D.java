@@ -38,6 +38,7 @@
 package ffx.numerics.fft;
 
 import java.util.Random;
+import java.util.logging.Logger;
 
 /**
  * This algorithm factors a size n FFT into nX * nY,
@@ -48,9 +49,8 @@ import java.util.Random;
  */
 public class Complex1D {
 
-  /**
-   * Overall FFT length.
-   */
+  private static final Logger logger = Logger.getLogger(Complex1D.class.getName());
+
   private final int n;
   /**
    * The overall FFT length n = nX * nY.
@@ -110,6 +110,18 @@ public class Complex1D {
    * The offset between real values along the Y-dimension in the transposed packed data.
    */
   private final int trNextY;
+  /**
+   * Cached real twiddle factors for indices x*nY + y.
+   */
+  private final double[] twiddleRe;
+  /**
+   * Cached imaginary twiddle factors for indices x*nY + y.
+   */
+  private final double[] twiddleIm;
+  /**
+   * Use SIMD operators.
+   */
+  private boolean useSIMD;
 
   /**
    * Construct a Complex instance for interleaved data of length n. Factorization of n is designed to use special
@@ -155,6 +167,8 @@ public class Complex1D {
       nextY = -1;
       trNextX = -1;
       trNextY = 1;
+      twiddleRe = null;
+      twiddleIm = null;
     } else {
       int n1 = 1;
       int n2 = 1;
@@ -188,6 +202,35 @@ public class Complex1D {
       }
       fftY = new Complex(nY, dataLayout, externalIm, nX);
       fftX = new Complex(nX, internalDataLayout, internalIm, nY);
+      twiddleRe = new double[n];
+      twiddleIm = new double[n];
+      precomputeTwiddleFactors();
+    }
+
+    // Use SIMD by default.
+    useSIMD = true;
+    String simd = System.getProperty("fft.simd", Boolean.toString(useSIMD));
+    try {
+      useSIMD = Boolean.parseBoolean(simd);
+    } catch (Exception e) {
+      logger.info(" Invalid value for fft.simd: " + simd);
+      useSIMD = false;
+    }
+    fftX.setUseSIMD(useSIMD);
+    if (fftY != null) {
+      fftY.setUseSIMD(useSIMD);
+    }
+  }
+
+  /**
+   * Configure use of SIMD operators.
+   *
+   * @param useSIMD True to use SIMD operators.
+   */
+  public void setUseSIMD(boolean useSIMD) {
+    fftX.setUseSIMD(useSIMD);
+    if (fftY != null) {
+      fftY.setUseSIMD(useSIMD);
     }
   }
 
@@ -207,23 +250,28 @@ public class Complex1D {
    * @param stride the stride between data points.
    */
   public void fft(double[] data, int offset, int stride) {
-    // STEP 1: We need to pack the data if the stride is greater than 2. Skip for now.
-    // To Do.
+    if (nY == 1) {
+      fftX.fft(data, offset, stride);
+      return;
+    }
+
+    // STEP 1: We need to pack the data if the stride is greater than the native layout. Skip for now.
+    if (stride != ii) {
+      throw new UnsupportedOperationException(
+          "Complex1D.fft currently requires stride == " + ii + " for this data layout.");
+    }
 
     // STEP 2: Perform nX FFTs of size nY.
     fftY.fft(data, offset, stride);
 
-    // STEP 3: Apply twiddle factors
-    // To Do.
+    // STEP 3: Apply twiddle factors while transposing.
+    transpose(data, offset);
 
-    // STEP 4: Transpose
-    // transpose(data, offset);
+    // STEP 4: Perform nY FFTs of size nX.
+    fftX.fft(buffer, 0, ii);
 
-    // STEP 5: Perform nY FFTs of size nX.
-    fftX.fft(buffer, 0, 2);
-
-    // STEP 6: Un-Transpose
-    // unTranspose(data, offset);
+    // STEP 5: Un-Transpose
+    unTranspose(data, offset);
   }
 
   /**
@@ -240,18 +288,56 @@ public class Complex1D {
    * @param stride the stride between data points.
    */
   public void ifft(double[] data, int offset, int stride) {
-    // TO DO
+    if (nY == 1) {
+      fftX.ifft(data, offset, stride);
+      return;
+    }
+
+    // STEP 1: We need to pack the data if the stride is greater than the native layout. Skip for now.
+    if (stride != ii) {
+      throw new UnsupportedOperationException(
+          "Complex1D.ifft currently requires stride == " + ii + " for this data layout.");
+    }
+
+    // STEP 2: Pack the frequency-domain data for nY inverse FFTs of size nX.
+    transposeFrequencyDomain(data, offset);
+
+    // STEP 3: Perform nY inverse FFTs of size nX.
+    fftX.ifft(buffer, 0, ii);
+
+    // STEP 4: Scatter back to the intermediate layout while applying inverse twiddle factors.
+    unTransposeIntermediate(data, offset);
+
+    // STEP 5: Perform nX inverse FFTs of size nY.
+    fftY.ifft(data, offset, stride);
   }
 
   /**
-   * Transpose the input array for Fourier transforms of length width.
+   * Precompute the Cooley-Tukey twiddle factors between the inner FFT stages.
+   */
+  private void precomputeTwiddleFactors() {
+    final double twoPiOverN = -2.0 * Math.PI / n;
+    for (int x = 0; x < nX; x++) {
+      int offset = x * nY;
+      twiddleRe[offset] = 1.0;
+      twiddleIm[offset] = 0.0;
+      for (int y = 1; y < nY; y++) {
+        double theta = twoPiOverN * x * y;
+        twiddleRe[offset + y] = Math.cos(theta);
+        twiddleIm[offset + y] = Math.sin(theta);
+      }
+    }
+  }
+
+  /**
+   * Pack the twiddled, transposed data into the point-major layout used by batched Complex FFTs.
    * <p>
    * Input order:
    * real(x,y) = input[offset + x*nextX + y*nextY]
    * imag(x,y) = input[offset + x*nextX + y*nextY + im]
    * Output order:
-   * real(x,y) = packedData[y*trNextY + x*trNextX]
-   * imag(x,y) = packedData[y*trNextY + x*trXextX + im]
+   * real(x,y) = buffer[x*trNextX + y*trNextY]
+   * imag(x,y) = buffer[x*trNextX + y*trNextY + internalIm]
    *
    * @param input  The input data.
    * @param offset The offset into the input data.
@@ -261,24 +347,89 @@ public class Complex1D {
     // Outer loop over the X dimension.
     for (int x = 0; x < nX; x++) {
       int dx = offset + x * nextX;
+      int twiddleOffset = x * nY;
       // Inner loop over the Y dimension (the number of FFTs).
       for (int y = 0; y < nY; y++) {
         double real = input[dx + y * nextY];
         double imag = input[dx + y * nextY + externalIm];
-        // Contiguous storage into the packed array.
-        buffer[index] = real;
-        buffer[index + internalIm] = imag;
+        if (y == 0) {
+          buffer[index] = real;
+          buffer[index + internalIm] = imag;
+        } else {
+          double cosine = twiddleRe[twiddleOffset + y];
+          double sine = twiddleIm[twiddleOffset + y];
+          buffer[index] = real * cosine - imag * sine;
+          buffer[index + internalIm] = real * sine + imag * cosine;
+        }
         index += ii;
       }
     }
   }
 
   /**
-   * Unpack the output array after Fourier transforms.
+   * Pack contiguous frequency-domain input into the point-major layout used by batched inverse FFTs
+   * of length nX.
    * <p>
    * Input order:
-   * real_xy = packedData[y*trNextY + x*trNextX]
-   * imag_xy = packedData[y*trNextY + x*trXextX + im]
+   * real(x,y) = input[offset + x*trNextX + y*trNextY]
+   * imag(x,y) = input[offset + x*trNextX + y*trNextY + im]
+   * Output order:
+   * real(x,y) = buffer[x*trNextX + y*trNextY]
+   * imag(x,y) = buffer[x*trNextX + y*trNextY + internalIm]
+   *
+   * @param input  The input data.
+   * @param offset The offset into the input data.
+   */
+  private void transposeFrequencyDomain(final double[] input, int offset) {
+    int index = 0;
+    // Outer loop over the X dimension.
+    for (int x = 0; x < nX; x++) {
+      int dx = offset + x * trNextX;
+      // Inner loop over the Y dimension.
+      for (int y = 0; y < nY; y++) {
+        int indexXY = dx + y * trNextY;
+        buffer[index] = input[indexXY];
+        buffer[index + internalIm] = input[indexXY + externalIm];
+        index += ii;
+      }
+    }
+  }
+
+  /**
+   * Unpack the point-major FFT results back into contiguous output order.
+   * <p>
+   * Input order:
+   * real_xy = buffer[x*trNextX + y*trNextY]
+   * imag_xy = buffer[x*trNextX + y*trNextY + internalIm]
+   * Output order:
+   * real_xy = output[offset + (x*nY + y)*ii]
+   * imag_xy = output[offset + (x*nY + y)*ii + im]
+   *
+   * @param output The output data.
+   * @param offset The offset into the output data.
+   */
+  private void unTranspose(final double[] output, int offset) {
+    int outputIndex = offset;
+    // Outer loop over the X dimension.
+    for (int x = 0; x < nX; x++) {
+      int dx = x * trNextX;
+      // Inner loop over the Y dimension.
+      for (int y = 0; y < nY; y++) {
+        int indexXY = dx + y * trNextY;
+        output[outputIndex] = buffer[indexXY];
+        output[outputIndex + externalIm] = buffer[indexXY + internalIm];
+        outputIndex += ii;
+      }
+    }
+  }
+
+  /**
+   * Unpack point-major inverse FFT results back into the intermediate x + nX*y layout used by the
+   * final inverse FFTs of length nY, while applying the inverse twiddle factors.
+   * <p>
+   * Input order:
+   * real_xy = buffer[x*trNextX + y*trNextY]
+   * imag_xy = buffer[x*trNextX + y*trNextY + internalIm]
    * Output order:
    * real_xy = output[offset + x*nextX + y*nextY]
    * imag_xy = output[offset + x*nextX + y*nextY + im]
@@ -286,18 +437,26 @@ public class Complex1D {
    * @param output The output data.
    * @param offset The offset into the output data.
    */
-  private void unTranspose(final double[] output, int offset) {
-    int index = offset;
-    // Outer loop over the Y dimension.
-    for (int y = 0; y < nY; y++) {
-      int dy = y * trNextY;
-      // Inner loop over the X dimension.
-      for (int x = 0; x < nX; x++) {
-        double real = buffer[dy + x * trNextX];
-        double imag = buffer[dy + x * trNextX + internalIm];
-        // Contiguous storage into the output array.
-        output[index] = real;
-        output[index + externalIm] = imag;
+  private void unTransposeIntermediate(final double[] output, int offset) {
+    int index = 0;
+    // Outer loop over the X dimension.
+    for (int x = 0; x < nX; x++) {
+      int dx = offset + x * nextX;
+      int twiddleOffset = x * nY;
+      // Inner loop over the Y dimension.
+      for (int y = 0; y < nY; y++) {
+        int indexXY = dx + y * nextY;
+        double real = buffer[index];
+        double imag = buffer[index + internalIm];
+        if (y == 0) {
+          output[indexXY] = real;
+          output[indexXY + externalIm] = imag;
+        } else {
+          double cosine = twiddleRe[twiddleOffset + y];
+          double sine = twiddleIm[twiddleOffset + y];
+          output[indexXY] = real * cosine + imag * sine;
+          output[indexXY + externalIm] = imag * cosine - real * sine;
+        }
         index += ii;
       }
     }

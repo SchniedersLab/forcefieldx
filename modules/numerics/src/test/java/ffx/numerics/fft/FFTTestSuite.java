@@ -44,6 +44,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /** FFTTestSuite collects all Unit tests from the ffx.numerics.fft package. */
 @RunWith(Suite.class)
 @SuiteClasses({
+  Complex1DTest.class,
   ComplexTest.class,
   Complex3DTest.class,
   Complex3DParallelTest.class,
