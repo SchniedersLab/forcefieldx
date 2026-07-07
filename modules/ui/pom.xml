@@ -5,7 +5,7 @@
   <artifactId>ffx-ui</artifactId>
   <parent>
     <artifactId>forcefieldx</artifactId>
-    <groupId>edu.uiowa.eng.ffx</groupId>
+    <groupId>edu.uiowa.biochem.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
     <version>26.0.3</version>
   </parent>

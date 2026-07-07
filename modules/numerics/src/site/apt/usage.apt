@@ -16,7 +16,7 @@ Usage
 +-----+
 <dependencies>
   <dependency>
-    <groupId>edu.uiowa.eng.ffx</groupId>
+    <groupId>edu.uiowa.biochem.ffx</groupId>
     <artifactId>ffx-numerics</artifactId>
     <version>${project.version}</version>
     <type>jar</type>

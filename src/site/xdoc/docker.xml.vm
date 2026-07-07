@@ -18,19 +18,19 @@
         <p>After starting Docker Desktop, in a terminal window run the following command within the root FFX
           directory:
         </p>
-        <source>docker build --no-cache -t ffxdocker -f Dockerfile .</source>
+        <source>docker build --no-cache -t forcefieldx -f Dockerfile .</source>
       </subsection>
       <subsection name="Run the Container in a Terminal Window">
         <p>To launch the FFX container in a terminal window, run the command:</p>
-        <source>docker run -it --rm ffxdocker bash</source>
+        <source>docker run -it --rm forcefieldx bash</source>
         <p>Check that FFX is in your path:</p>
         <source>which ffxc</source>
       </subsection>
       <subsection name="Use Jupyter Notebooks Locally in Web Browser">
         <p>To launch an FFX Jupyter Notebook interface in a web browser, run the command:</p>
-        <source>docker run -it --rm -p 8888:8888 ffxdocker</source>
+        <source>docker run -it --rm -p 8888:8888 forcefieldx</source>
         <p>To launch an FFX Jupyter Lab interface in a web browser, run the command:</p>
-        <source>docker run -it --rm -p 8888:8888 ffxdocker jupyter lab --ip=0.0.0.0</source>
+        <source>docker run -it --rm -p 8888:8888 forcefieldx jupyter lab --ip=0.0.0.0</source>
         <p>Both Java and Kotlin notebooks are available.</p>
       </subsection>
     </section>
