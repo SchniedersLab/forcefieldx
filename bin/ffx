@@ -143,7 +143,7 @@ if [ $hasAwkSed ]; then
     JVFIRST="$(echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }')"
 
     if [ "$JVFIRST" -lt 25 ] || [ "$JVFIRST" -gt 26 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 21 through 26." 1>&2
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 25 through 26." 1>&2
         exit 1
     fi
 

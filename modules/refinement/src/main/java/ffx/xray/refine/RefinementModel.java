@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.numerics.math.ScalarMath.b2u;
@@ -96,7 +95,7 @@ public class RefinementModel {
 
   /**
    * If true, hydrogen atom b-factors are taken from their heavy atom.
-   * This also enforced using byResidue b-factor refinement (i.e., this flag is redundant).
+   * This is also enforced using byResidue b-factor refinement (i.e., this flag is redundant).
    */
   private final boolean ridingHydrogen;
 
@@ -115,6 +114,11 @@ public class RefinementModel {
    * If true, H/D occupancy will each be set to 0.5.
    */
   private final boolean resetHDOccupancy;
+
+  /**
+   * If true, H/D pairs bound to the same heavy atom share an occupancy parameter.
+   */
+  private final boolean constrainHydrogenOccupancy;
 
   /**
    * Occupancy mass for extended Lagrangian.
@@ -207,6 +211,7 @@ public class RefinementModel {
     bMass = properties.getDouble("bfactor-mass", 5.0);
     occMass = properties.getDouble("occupancy-mass", 10.0);
     resetHDOccupancy = properties.getBoolean("reset-hd-occupancy", false);
+    constrainHydrogenOccupancy = properties.getBoolean("constrain-hydrogen-occupancy", true);
 
     // Load occupancy refinement properties
     refineMolOcc = properties.getBoolean("refine-mol-occ", false);
@@ -575,7 +580,6 @@ public class RefinementModel {
     }
   }
 
-
   /**
    * Populates the provided array with mass values retrieved from all refined parameters.
    *
@@ -927,9 +931,10 @@ public class RefinementModel {
    * Alternate residues and molecules are tracked separately in internal structures, and any atoms
    * that scatter due to constraints are also linked appropriately.
    *
-   * @return A map of atoms to their corresponding refined occupancy objects. These objects
-   * encapsulate information about atoms with alternate conformations or partial occupancies
-   * and their constrained scattering atoms.
+   * @return A map of atoms to their corresponding refined occupancy objects. For H/D occupancy
+   * refinement, keys are heavy atoms when hydrogen occupancies are constrained, and primary H/D
+   * atoms otherwise. These objects encapsulate information about atoms with alternate
+   * conformations or partial occupancies and their constrained scattering atoms.
    */
   private Map<Atom, RefinedOccupancy> createOccupancyModel() {
     logger.fine("\n Creating Occupancy Refinement Model\n");
@@ -956,14 +961,17 @@ public class RefinementModel {
               if (atom.isActive() && atom.isHydrogen()) {
                 double occupancy = atom.getOccupancy();
                 if (occupancy < 1.0) {
-                  Atom heavy = atom.getBonds().getFirst().get1_2(atom);
-                  if (refinedOccupancies.containsKey(heavy)) {
-                    RefinedOccupancy refinedOccupancy = refinedOccupancies.get(heavy);
+                  Atom occupancyKey = atom;
+                  if (constrainHydrogenOccupancy) {
+                    occupancyKey = atom.getBonds().getFirst().get1_2(atom);
+                  }
+                  if (refinedOccupancies.containsKey(occupancyKey)) {
+                    RefinedOccupancy refinedOccupancy = refinedOccupancies.get(occupancyKey);
                     refinedOccupancy.addConstrainedAtomThatScatters(atom);
                   } else {
                     RefinedOccupancy refinedOccupancy = new RefinedOccupancy(atom);
-                    refinedOccupancies.put(heavy, refinedOccupancy);
-                    occupancyAtomList.add(heavy);
+                    refinedOccupancies.put(occupancyKey, refinedOccupancy);
+                    occupancyAtomList.add(occupancyKey);
                   }
                 }
               }
@@ -974,8 +982,8 @@ public class RefinementModel {
       // Find matching hydrogen / deuterium in the 2nd Assembly.
       if (molecularAssemblies.length > 1) {
         MolecularAssembly molecularAssembly = molecularAssemblies[1];
-        for (Atom heavy : occupancyAtomList) {
-          RefinedOccupancy refinedOccupancy = refinedOccupancies.get(heavy);
+        for (Atom occupancyKey : occupancyAtomList) {
+          RefinedOccupancy refinedOccupancy = refinedOccupancies.get(occupancyKey);
           // Collect the H/D atoms from conformation A.
           List<Atom> atoms = new ArrayList<>(refinedOccupancy.constrainedAtomsThatScatter);
           atoms.add(refinedOccupancy.atom);

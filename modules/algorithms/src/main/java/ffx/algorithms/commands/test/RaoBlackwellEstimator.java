@@ -38,7 +38,6 @@
 package ffx.algorithms.commands.test;
 
 import ffx.algorithms.cli.AlgorithmsCommand;
-import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.numerics.math.SummaryStatistics;
 import ffx.potential.ForceFieldEnergy;
@@ -92,7 +91,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   private double discreteState = 0.0;
 
   @Option(names = {"--chain", "--ch"}, paramLabel = " ", defaultValue = "A",
-    description = "Single character chain name (default is \'A\').")
+    description = "Single character chain name (default is 'A').")
   private Character chain = 'A';
 
   @Option(names = {"--bootstrapIter"}, paramLabel = "100000", defaultValue = "100000",
@@ -186,7 +185,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
       logger.severe(" Multiple special residues were identified in the key file. " +
               "Only one can be specified with this algorithm.");
     } else if (esvSystem.getSpecialResidueList().size() == 1) {
-      int specialResidueNumber = esvSystem.getSpecialResidueList().get(0).intValue();
+      int specialResidueNumber = esvSystem.getSpecialResidueList().getFirst().intValue();
       for (Residue residue : esvSystem.getTitratingResidueList()) {
         if (residue.getResidueNumber() == specialResidueNumber && residue.getChainID() == chain) {
           specialResidue = residue;
@@ -311,7 +310,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     // Set up the force field energy and extended system
     esvSystem.setFixedTitrationState(true);
     esvSystem.setFixedTautomerState(true);
-    ((ForceFieldEnergy) forceFieldEnergy).attachExtendedSystem(esvSystem);
+    forceFieldEnergy.attachExtendedSystem(esvSystem);
     logger.info(format(" Attached extended system with %d residues.", numESVs));
 
     // Read in first energy snapshot
@@ -371,14 +370,14 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
           }
 
           // Evaluate energy (regular Rao-Blackwell if no special residue is found)
-          ArrayList<Double> results = getZeroOneDeltas(i, esvSystem, (ForceFieldEnergy) forceFieldEnergy, x);
+          ArrayList<Double> results = getZeroOneDeltas(i, esvSystem, forceFieldEnergy, x);
 
           Residue res = esvSystem.getTitratingResidueList().get(i);
           if(esvSystem.isTautomer(res)){
             tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j].add(results.get(0));
             oneZeroDeltaLists[i][j].add(results.get(1));
           } else{
-            oneZeroDeltaLists[i][j].add(results.get(0));
+            oneZeroDeltaLists[i][j].add(results.getFirst());
           }
         }
 
@@ -491,9 +490,9 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     ArrayList<Double> denominator = new ArrayList<>();
     denominator.ensureCapacity(index.length);
 
-    for(int i = 0; i < index.length; i++) {
-      numerator.add(num.get(index[i]));
-      denominator.add(denom.get(index[i]));
+    for (int j : index) {
+      numerator.add(num.get(j));
+      denominator.add(denom.get(j));
     }
 
     return -(1.0 / beta) * Math.log(average(numerator) / average(denominator));
@@ -507,7 +506,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     logger.info("\n Rao-Blackwell Estimator Results: ");
     ArrayList<String> line = new ArrayList<>();
     if(specialResidue != null){
-      logger.info(" Special Residue: " + specialResidue.toString());
+      logger.info(" Special Residue: " + specialResidue);
       if(esvSystem.isTautomer(specialResidue)){
         logger.info(format("  %-10s %-10s %-23s %-28s %-28s %-28s", "Residue", "Tautomer", "DeltaGTitr", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"));
       } else{
@@ -606,7 +605,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   private static ArrayList<Double> getZeroOneDeltas(int i, ExtendedSystem esv,
                                                     ForceFieldEnergy forceFieldEnergy, double[] x)
   {
-      ArrayList<Double> deltaU = new ArrayList<Double>();
+      ArrayList<Double> deltaU = new ArrayList<>();
       Residue res = esv.getExtendedResidueList().get(i);
       double titrationState = esv.getTitrationLambda(res);
       double tautomerState = esv.getTautomerLambda(res);
@@ -651,7 +650,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   }
 
   private static ArrayList<Double> mult(double a, ArrayList<Double> u) {
-        ArrayList<Double> result = new ArrayList<Double>();
+        ArrayList<Double> result = new ArrayList<>();
         for (Double d : u) {
             result.add(a * d);
         }
@@ -662,7 +661,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     if (v.size() != u.size()) {
       throw new IllegalArgumentException("Vector sizes must be equal.");
     }
-    ArrayList<Double> result = new ArrayList<Double>();
+    ArrayList<Double> result = new ArrayList<>();
     for (int i = 0; i < v.size(); i++) {
       result.add(v.get(i) * u.get(i));
     }
@@ -670,7 +669,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   }
 
   private static ArrayList<Double> subtract(double a, ArrayList<Double> u) {
-    ArrayList<Double> result = new ArrayList<Double>();
+    ArrayList<Double> result = new ArrayList<>();
     for (Double d : u) {
       result.add(a - d);
     }
@@ -678,7 +677,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   }
 
   private static ArrayList<Double> exp(ArrayList<Double> u) {
-    ArrayList<Double> result = new ArrayList<Double>();
+    ArrayList<Double> result = new ArrayList<>();
     for (Double d : u) {
       result.add(Math.exp(d));
     }
@@ -689,7 +688,7 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     if (a.size() != b.size()) {
       throw new IllegalArgumentException("Vector sizes must be equal.");
     }
-    ArrayList<Double> result = new ArrayList<Double>();
+    ArrayList<Double> result = new ArrayList<>();
     for (int i = 0; i < a.size(); i++) {
       result.add(a.get(i) / b.get(i));
     }

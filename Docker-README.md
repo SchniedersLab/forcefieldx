@@ -10,7 +10,7 @@
    #### 2. Boot up the new builder instance
    docker buildx inspect --bootstrap
    #### 3. Build the image and push it to Docker Hub
-   docker buildx build --push --platform linux/amd64,linux/arm64 -t mjschnie/forcefieldx:26.0.3 -f Dockerfile .
+   docker buildx build --push --platform linux/amd64,linux/arm64 -t mjschnie/forcefieldx:26.0.4 -f Dockerfile .
 
 ### Test the Docker image in Bash
   docker run -it --rm forcefieldx bash
