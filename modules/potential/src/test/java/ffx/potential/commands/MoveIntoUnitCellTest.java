@@ -39,9 +39,14 @@ package ffx.potential.commands;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 /** Test the Cart2Frac script. */
 public class MoveIntoUnitCellTest extends PotentialTest {
@@ -73,6 +78,49 @@ public class MoveIntoUnitCellTest extends PotentialTest {
     assertEquals(8.93905400, unitCellCoordinates[6][0], tolerance);
     assertEquals(1.44760200, unitCellCoordinates[6][1], tolerance);
     assertEquals(8.86539400, unitCellCoordinates[6][2], tolerance);
+  }
+
+  @Test
+  public void testMoveIntoUnitCellArc() throws IOException {
+    // Set-up the input arguments for the MoveIntoUnitCell script.
+    // Each snapshot of watertiny.arc is watertiny.xyz translated by a lattice vector:
+    // (0, 0, 0), (+a, 0, 0) and (0, 0, -a).
+    String filepath = getResourcePath("watertiny.arc");
+    String[] args = {filepath};
+    binding.setVariable("args", args);
+    File baseDir = registerTemporaryDirectory().toFile();
+    binding.setVariable("baseDir", baseDir);
+
+    // Contruct and evaluate the MoveIntoUnitCell script.
+    MoveIntoUnitCell moveIntoUnitCell = new MoveIntoUnitCell(binding).run();
+    potentialScript = moveIntoUnitCell;
+
+    // The coordinates are from the final (third) snapshot of the archive.
+    double[][] origCoordinates = moveIntoUnitCell.origCoordinates;
+    assertNotNull(origCoordinates);
+    assertEquals(81, origCoordinates.length);
+    double tolerance = 1.0e-6;
+    assertEquals(-0.382446, origCoordinates[6][0], tolerance);
+    assertEquals(1.447602, origCoordinates[6][1], tolerance);
+    assertEquals(-9.777606, origCoordinates[6][2], tolerance);
+
+    // Moving into the unit cell gives the same result as for watertiny.xyz.
+    double[][] unitCellCoordinates = moveIntoUnitCell.unitCellCoordinates;
+    assertNotNull(unitCellCoordinates);
+    assertEquals(81, unitCellCoordinates.length);
+    assertEquals(8.93905400, unitCellCoordinates[6][0], tolerance);
+    assertEquals(1.44760200, unitCellCoordinates[6][1], tolerance);
+    assertEquals(8.86539400, unitCellCoordinates[6][2], tolerance);
+
+    // All three snapshots should be written to the output archive.
+    File saveFile = new File(baseDir, "watertiny.arc");
+    assertTrue(saveFile.exists());
+    // Each snapshot is written with a line of unit cell parameters (a, b, c, alpha, beta, gamma).
+    long nSnapshots = Files.readAllLines(saveFile.toPath()).stream()
+        .map(line -> line.trim().split(" +"))
+        .filter(tokens -> tokens.length == 6 && tokens[3].equals("90.00000000"))
+        .count();
+    assertEquals(3, nSnapshots);
   }
 
   @Test
