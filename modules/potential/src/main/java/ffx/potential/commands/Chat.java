@@ -146,6 +146,15 @@ public class Chat extends PotentialCommand {
   private double topP = 0.95;
 
   /**
+   * Use TornadoVM to run the model.
+   *
+   * Note that "-Djitllm.kvcache.fp32=true" is needed on MacOS.
+   */
+  @Option(names = {"-t", "--use-tornadovm"}, defaultValue = "false",
+      description = "Use TornadoVM to run the model.")
+  private boolean useTornadoVM = false;
+
+  /**
    * Path to a GGUF model file.
    */
   @Option(names = {"-m", "--model"}, required = true,
@@ -214,6 +223,7 @@ public class Chat extends PotentialCommand {
         "--temperature", Double.toString(temperature),
         "--top-p", Double.toString(topP),
         "--ctx-size", Integer.toString(contextSize),
+        "--use-tornadovm", Boolean.toString(useTornadoVM),
     };
 
     Options options = Options.parseOptions(args);
@@ -328,6 +338,7 @@ public class Chat extends PotentialCommand {
     logger.fine(" Stream: " + options.stream());
     logger.fine(" Echo: " + options.echo());
     logger.fine(" Max tokens: " + options.maxTokens());
+    logger.fine(" Use TornadoVM: " + options.useTornadovm());
 
     GenerationRequest.Builder builder =
         request(options).prompt(options.prompt()).systemPrompt(options.systemPrompt());
