@@ -52,6 +52,7 @@ import picocli.CommandLine.Parameters;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices;
@@ -111,8 +112,8 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   private String filename;
 
   private ForceFieldEnergy forceFieldEnergy;
-  private ArrayList<Double>[][] oneZeroDeltaLists;
-  private ArrayList<Double>[][] tautomerOneZeroDeltaList;
+  private List<List<ArrayList<Double>>> oneZeroDeltaLists;
+  private List<List<ArrayList<Double>>> tautomerOneZeroDeltaList;
   private int numESVs;
   private int numTautomerESVs;
 
@@ -140,7 +141,6 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public RaoBlackwellEstimator run() {
 
     if (!init()) {
@@ -282,19 +282,23 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
     // Create the oneZeroDeltaLists and tautomerOneZeroDeltaList arrays
     // Make a list for ESV's energy differences (energy evals are done at tautomer = 0 for these arrays)
     numESVs = esvSystem.getTitratingResidueList().size();
-    oneZeroDeltaLists = new ArrayList[numESVs][numberOfStates + 1];
+    oneZeroDeltaLists = new ArrayList<>(numESVs);
     for (int i = 0; i < numESVs; i++) {
+      List<ArrayList<Double>> stateDeltaLists = new ArrayList<>(numberOfStates + 1);
       for (int j = 0; j < numberOfStates + 1; j++) {
-        oneZeroDeltaLists[i][j] = new ArrayList<>();
+        stateDeltaLists.add(new ArrayList<>());
       }
+      oneZeroDeltaLists.add(stateDeltaLists);
     }
     // Make a list for tautomerizing ESV's energy differences (energy evals are done at tautomer = 1 for these arrays)
     numTautomerESVs = esvSystem.getTautomerizingResidueList().size();
-    tautomerOneZeroDeltaList = new ArrayList[numTautomerESVs][numberOfStates + 1];
+    tautomerOneZeroDeltaList = new ArrayList<>(numTautomerESVs);
     for (int i = 0; i < numTautomerESVs; i++) {
+      List<ArrayList<Double>> stateDeltaLists = new ArrayList<>(numberOfStates + 1);
       for (int j = 0; j < numberOfStates + 1; j++) {
-        tautomerOneZeroDeltaList[i][j] = new ArrayList<>();
+        stateDeltaLists.add(new ArrayList<>());
       }
+      tautomerOneZeroDeltaList.add(stateDeltaLists);
     }
 
     // Set up the XPHFilter
@@ -374,10 +378,10 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
 
           Residue res = esvSystem.getTitratingResidueList().get(i);
           if(esvSystem.isTautomer(res)){
-            tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j].add(results.get(0));
-            oneZeroDeltaLists[i][j].add(results.get(1));
+            tautomerOneZeroDeltaList.get(esvSystem.getTautomerizingResidueList().indexOf(res)).get(j).add(results.get(0));
+            oneZeroDeltaLists.get(i).get(j).add(results.get(1));
           } else{
-            oneZeroDeltaLists[i][j].add(results.getFirst());
+            oneZeroDeltaLists.get(i).get(j).add(results.getFirst());
           }
         }
 
@@ -409,14 +413,14 @@ public class RaoBlackwellEstimator extends AlgorithmsCommand {
             logger.info("  Performing RBE without bootstrap. Ignore standard deviation values.");
           }
           for (int j = 0; j < numberOfStates; j++) {
-            double[] bootstrapMeanStd = RBE(oneZeroDeltaLists[i][j], bootstrap, bootstrapIter);
+            double[] bootstrapMeanStd = RBE(oneZeroDeltaLists.get(i).get(j), bootstrap, bootstrapIter);
             energyLists[i][j] = bootstrapMeanStd[0];
             if (bootstrap) {
               energyStdLists[i][j] = bootstrapMeanStd[1];
             }
 
             if (esvSystem.getTautomerizingResidueList().contains(res)) {
-              bootstrapMeanStd = RBE(tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j],
+              bootstrapMeanStd = RBE(tautomerOneZeroDeltaList.get(esvSystem.getTautomerizingResidueList().indexOf(res)).get(j),
                       bootstrap, bootstrapIter);
               tautomerEnergyLists[tautomerCount][j] = bootstrapMeanStd[0];
               if (bootstrap) {

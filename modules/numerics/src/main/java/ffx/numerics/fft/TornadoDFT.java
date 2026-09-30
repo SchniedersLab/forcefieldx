@@ -113,7 +113,7 @@ public class TornadoDFT {
 
     ImmutableTaskGraph itg = graph.snapshot();
     TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
-    executionPlan.withWarmUp().withDevice(device);
+    executionPlan.withWarmUpIterations(1).withDevice(device);
     time = -System.nanoTime();
     executionPlan.execute();
     time += System.nanoTime();

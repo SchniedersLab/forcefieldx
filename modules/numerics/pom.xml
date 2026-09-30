@@ -80,7 +80,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>tornado</groupId>
+      <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-api</artifactId>
       <version>${tornado.version}</version>
       <exclusions>

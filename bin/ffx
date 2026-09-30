@@ -147,7 +147,7 @@ if [ $hasAwkSed ]; then
         exit 1
     fi
 
-    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
+    EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --sun-misc-unsafe-memory-access=allow --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 
     if [ "$JVFIRST" -gt 23 ]; then
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders"

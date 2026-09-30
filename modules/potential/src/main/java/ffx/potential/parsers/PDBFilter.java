@@ -1263,6 +1263,8 @@ public final class PDBFilter extends SystemFilter {
 // 2 - 7 ribbon/helix                          9
 // Polyproline                                10
 // =============================================================================
+                structs.add(line);
+                break;
               }
               case SHEET: {
 // =============================================================================
