@@ -13,10 +13,10 @@ public class GenZTest extends AlgorithmsTest{
         }
 
         String filepath = getResourcePath("DEHK.genz.pdb");
-        String[] args = {"--tR", "--pH", "7.0", "--rEE", "2.0", "--kPH 2.0", "-O","--pKa", filepath};
+        String[] args = {"--tR", "--pH", "7.0", "--rEE", "2.0", "--kPH 2.0", "-O", filepath};
         binding.setVariable("args", args);
 
-        GenZ genZ = new GenZ(binding).run();
+        GenZpKa genZ = new GenZpKa(binding).run();
         algorithmsScript = genZ;
 
         double expectedAspPop = 1.00;
@@ -63,7 +63,7 @@ public class GenZTest extends AlgorithmsTest{
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        GenZ genZ = new GenZ(binding).run();
+        GenZpKa genZ = new GenZpKa(binding).run();
         algorithmsScript = genZ;
     }
 }

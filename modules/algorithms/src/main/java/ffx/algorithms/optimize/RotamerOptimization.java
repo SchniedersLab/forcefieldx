@@ -2419,6 +2419,12 @@ public class RotamerOptimization implements Terminatable {
                   biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - pH)) -
                       TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
                 }
+                case "CYD" -> {
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.CYStoCYD.pKa - 7)) -
+                          TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.CYStoCYD.pKa - pH)) -
+                          TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
+                }
                 default -> {
                 }
               }

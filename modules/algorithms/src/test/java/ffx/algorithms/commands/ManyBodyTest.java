@@ -218,7 +218,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -296.824576745933;
+    double expectedApproximateEnergy = -271.32449877570684;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
   }
