@@ -523,13 +523,6 @@ public final class Main extends JFrame {
     System.setProperty("log4j2.disable.jmx", "true");
     org.apache.logging.log4j.LogManager.getRootLogger().atLevel(org.apache.logging.log4j.Level.OFF);
 
-    // Attempt to suppress SLF4J loggers.
-    // https://www.slf4j.org/manual.html
-    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
-    // The statement below causes a warning to be printed to the console for SLF4J 2.0.16.
-    // System.setProperty(LoggerFactory.PROVIDER_PROPERTY_KEY, "org.slf4j.nop.NOPServiceProvider");
-    // org.slf4j.Logger rootLogger = org.slf4j.LoggerFactory.getILoggerFactory().getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-
     // Attempt to suppress Apache Commons loggers.
     // https://commons.apache.org/proper/commons-logging/guide.html
     System.setProperty(LogFactoryImpl.LOG_PROPERTY, "org.apache.commons.logging.impl.NoOpLog");

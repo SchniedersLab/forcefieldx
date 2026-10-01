@@ -37,30 +37,20 @@
 // ******************************************************************************
 package ffx.potential;
 
-import com.sun.jna.NativeLong;
-import edu.uiowa.torchani.TorchANIUtils;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.parameters.ForceField;
 
-import java.util.logging.Logger;
-
-import static edu.uiowa.torchani.TorchANILibrary.ctorch;
 import static ffx.utilities.Constants.HARTREE_TO_KCAL_PER_MOL;
 
 public class ANIEnergy implements Potential, LambdaInterface {
 
-  /** A Logger for the ANIEnergy class. */
-  private static final Logger logger = Logger.getLogger(ANIEnergy.class.getName());
-
   private final int nAtoms;
   private final Atom[] atoms;
-  private final NativeLong nAtomsLong;
   private final int[] species;
   private final double[] coordinates;
   private final double[] grad;
-  private final String pathToANI;
+  private final GraalPyANI ani;
   private double lambda = 1.0;
   private double energy;
   private final MolecularAssembly molecularAssembly;
@@ -68,12 +58,8 @@ public class ANIEnergy implements Potential, LambdaInterface {
   private STATE state = STATE.FAST;
 
   public ANIEnergy(MolecularAssembly molecularAssembly) {
-    TorchANIUtils.init();
-    System.out.println(" ANI Dir: " + TorchANIUtils.getLibDirectory());
-
     atoms = molecularAssembly.getAtomArray();
     nAtoms = atoms.length;
-    nAtomsLong = new NativeLong(nAtoms);
     species = new int[nAtoms];
     coordinates = new double[3 * nAtoms];
     grad = new double[3 * nAtoms];
@@ -84,19 +70,17 @@ public class ANIEnergy implements Potential, LambdaInterface {
     }
 
     this.molecularAssembly = molecularAssembly;
-
-    ForceField forceField = molecularAssembly.getForceField();
-    pathToANI = forceField.getString("ANI_PATH", "ANI2x.pt");
+    ani = new GraalPyANI(species);
   }
 
   /**
-   * Compute the ANI energy and gradint.
+   * Compute the ANI energy and gradient.
    *
    * @param gradient If true, compute the gradient.
    * @param print If true, turn on extra printing.
    * @return The ANI energy.
    */
-  public double energy(boolean gradient, boolean print) {
+  public synchronized double energy(boolean gradient, boolean print) {
     getCoordinates(coordinates);
     if (gradient) {
       energyAndGradient(coordinates, grad);
@@ -112,16 +96,19 @@ public class ANIEnergy implements Potential, LambdaInterface {
   }
 
   @Override
-  public double energy(double[] x) {
-    energy = ctorch(pathToANI, nAtomsLong, species, x, grad) * HARTREE_TO_KCAL_PER_MOL;
+  public synchronized double energy(double[] x) {
+    energy = ani.energy(x) * HARTREE_TO_KCAL_PER_MOL;
     return energy;
   }
 
   @Override
-  public double energyAndGradient(double[] x, double[] g) {
-    energy = ctorch(pathToANI, nAtomsLong, species, x, g) * HARTREE_TO_KCAL_PER_MOL;
+  public synchronized double energyAndGradient(double[] x, double[] g) {
+    energy = ani.energyAndGradient(x, g) * HARTREE_TO_KCAL_PER_MOL;
     for (int i = 0; i < grad.length; i++) {
-      grad[i] = g[i] * HARTREE_TO_KCAL_PER_MOL;
+      g[i] *= HARTREE_TO_KCAL_PER_MOL;
+    }
+    if (g != grad) {
+      System.arraycopy(g, 0, grad, 0, grad.length);
     }
     return energy;
   }

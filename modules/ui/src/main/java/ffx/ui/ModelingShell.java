@@ -149,8 +149,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     super();
     this.mainPanel = mainPanel;
     headless = java.awt.GraphicsEnvironment.isHeadless();
-    FFXBinding binding = new FFXBinding();
-    initContext(binding);
+    initShellContext();
   }
 
   /**
@@ -249,15 +248,22 @@ public class ModelingShell extends Console implements AlgorithmListener {
   @Override
   public void clearContext() {
     super.clearContext();
-    FFXBinding binding = new FFXBinding();
-    initContext(binding);
+    initShellContext();
   }
 
   @Override
   public void clearContext(EventObject evt) {
     super.clearContext(evt);
+    initShellContext();
+  }
+
+  /**
+   * Initialize the Force Field X variables in the interactive Groovy shell.
+   */
+  private void initShellContext() {
     FFXBinding binding = new FFXBinding();
     initContext(binding);
+    binding.getVariables().forEach(this::setVariable);
   }
 
   /**

@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.potential.commands;
 
+import ffx.potential.GraalPyANI;
 import ffx.potential.bonded.Atom;
 import ffx.potential.cli.PotentialCommand;
 import ffx.utilities.FFXBinding;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
-import org.graalvm.python.embedding.GraalPyResources;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.logging.Level;
 
 /**
  * The ANI command evaluates the ANI2x energy of a system.
@@ -66,6 +66,10 @@ public class ANI extends PotentialCommand {
   @Parameters(arity = "1", paramLabel = "file",
       description = "The atomic coordinate file in PDB or XYZ format.")
   private String filename = null;
+
+  @Option(names = {"-p", "--printPython"},
+      description = "Print the Python code used to evaluate ANI-2x.")
+  private boolean printPython;
 
   public ANI() {
     super();
@@ -95,72 +99,54 @@ public class ANI extends PotentialCommand {
     // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath();
 
-    logger.info("\n Running Energy on " + filename);
+    logger.info("\n Running ANI-2x Energy on " + filename);
 
-    String FFX_HOME = System.getProperty("basedir");
-    Path graalpy = Paths.get(FFX_HOME, "python-resources");
-    String graalpyString = System.getProperty("graalpy", graalpy.toString());
-    graalpy = Paths.get(graalpyString);
+    if (printPython) {
+      logger.info("\n Python code used to evaluate ANI-2x:\n");
+      logger.info(GraalPyANI.getPythonSource());
+      logger.info("");
+    }
+
+    Path graalpy;
+    try {
+      graalpy = GraalPyANI.getGraalPyPath();
+    } catch (IllegalStateException e) {
+      logger.severe(" " + e.getMessage());
+      return this;
+    }
     logger.info(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy);
-    String torchScript = "ANI2x.pt";
-    torchScript = System.getProperty("torchscript", torchScript);
+    if (!Files.isDirectory(graalpy)) {
+      logger.severe(" GraalPy resource directory was not found: " + graalpy);
+      return this;
+    }
+
+    Path torchScript = GraalPyANI.getTorchScriptPath();
     logger.info(" torchscript (-Dtorchscript=path.to.torchscript): " + torchScript);
+    if (!Files.isRegularFile(torchScript)) {
+      logger.severe(" TorchScript model was not found: " + torchScript);
+      return this;
+    }
+
     // Collect atomic number and coordinates for each atom.
     Atom[] atoms = activeAssembly.getAtomArray();
     int nAtoms = atoms.length;
     int[] species = new int[nAtoms];
-    double[][] coords = new double[nAtoms][3];
+    double[] coordinates = new double[nAtoms * 3];
     for (int i = 0; i < nAtoms; i++) {
       Atom a = atoms[i];
       species[i] = a.getAtomicNumber();
-      coords[i][0] = a.getX();
-      coords[i][1] = a.getY();
-      coords[i][2] = a.getZ();
+      int index = 3 * i;
+      coordinates[index] = a.getX();
+      coordinates[index + 1] = a.getY();
+      coordinates[index + 2] = a.getZ();
     }
-    double energy = 0.0;
     double[] grad = new double[nAtoms * 3];
-    // Construct a Polyglot Python environment.
-    try (Context context = GraalPyResources.contextBuilder(graalpy)
-        .option("python.WarnExperimentalFeatures", "false").build()) {
-      // Place the coords and species arrays into the context.
-      Value polyglotBindings = context.getPolyglotBindings();
-      polyglotBindings.putMember("coords", coords);
-      polyglotBindings.putMember("species", species);
-      polyglotBindings.putMember("torchScript", torchScript);
-
-      // Construct the Python code to run ANI-2x using TorchScript.
-      String torch = """
-             import platform
-             import polyglot
-             import torch
-
-             # Load the Java arrays into the Torch tensors.
-             species = polyglot.import_value('species')
-             coords = polyglot.import_value('coords')
-             torchScript = polyglot.import_value('torchScript')
-             speciesTensor = torch.tensor([species], dtype=torch.int64)
-             coordinatesTensor = torch.tensor([coords], dtype=torch.double)
-
-             # Load and evaluate the ANI-2x forward method.
-             ani = torch.jit.load(torchScript)
-             gradient = ani(speciesTensor, coordinatesTensor)""";
-
-      torch = torch.stripIndent();
-      logger.info(torch);
-
-      // Evaluate ANI-2x and collect the energy and gradient.
-      Value result = context.eval("python", torch);
-      Value bindings = context.getBindings("python");
-      Value ret = bindings.getMember("gradient");
-      for (int i = 0; i < nAtoms * 3; i++) {
-        grad[i] = ret.getArrayElement(i).asDouble();
-      }
-      energy = ret.getArrayElement(nAtoms * 3).asDouble();
+    try {
+      GraalPyANI ani = new GraalPyANI(species);
+      double energy = ani.energyAndGradient(coordinates, grad);
       logger.info(" ANI-2x Energy (Hartree): " + energy);
-      // Context close does not return.
-      // context.close(true)
-    } catch (Exception e) {
-      logger.info(" Exception:\n" + e);
+    } catch (org.graalvm.polyglot.PolyglotException e) {
+      logger.log(Level.SEVERE, " ANI-2x evaluation failed.", e);
     }
 
     return this;

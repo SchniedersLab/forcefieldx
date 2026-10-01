@@ -47,7 +47,7 @@
           <execution>
             <configuration>
               <outputDirectory>${project.basedir}/../../lib</outputDirectory>
-              <overwrite>true</overwrite>
+              <changeDetection>content</changeDetection>
               <resources>
                 <resource>
                   <directory>target</directory>
@@ -141,6 +141,11 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-1.2-api</artifactId>
       <version>${log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
     <dependency>
       <artifactId>ffx-algorithms</artifactId>

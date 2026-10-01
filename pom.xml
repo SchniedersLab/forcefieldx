@@ -74,7 +74,8 @@
                 <overWriteReleases>false</overWriteReleases>
                 <overWriteSnapshots>false</overWriteSnapshots>
                 <overWriteIfNewer>true</overWriteIfNewer>
-                <silent>true</silent>
+                <excludeTypes>pom</excludeTypes>
+                <!-- silent>true</silent -->
               </configuration>
             </execution>
           </executions>
@@ -363,7 +364,7 @@
           <!-- Less than 1G may lead to JVM out of memory exceptions. -->
           <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
           <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules
-            jdk.incubator.vector
+            jdk.incubator.vector --enable-native-access=ALL-UNNAMED
           </argLine>
           <!-- useSystemClassLoader>false</useSystemClassLoader -->
           <excludes>
@@ -710,6 +711,12 @@
       <artifactId>python-embedding</artifactId>
       <version>${graal.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <description>Polyglot Software for Molecular Biophysics</description>
   <developers>
@@ -1033,9 +1040,9 @@
     <fastutil.version>8.5.12</fastutil.version>
     <git-commit-id.version>10.0.1</git-commit-id.version>
     <gmavenplus.version>5.1.0</gmavenplus.version>
-    <graal.version>25.3.4.1</graal.version>
-    <groovy-all.version>5.1.2</groovy-all.version>
-    <guava.version>33.7.1-jre</guava.version>
+    <graal.version>25.4.4.1.1</graal.version>
+    <groovy-all.version>6.0.0</groovy-all.version>
+    <guava.version>33.7.2-jre</guava.version>
     <install.version>3.2.0</install.version>
     <jacoco.version>0.8.15</jacoco.version>
     <jacoco.skip>true</jacoco.skip>
@@ -1072,6 +1079,7 @@
     <site.version>3.22.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
+    <slf4j.version>2.0.20</slf4j.version>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.4.0</source.version>
@@ -1080,7 +1088,7 @@
     <!-- Control the target JRE version -->
     <targetVersion>25</targetVersion>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>1.1.0</tornado.version>
+    <tornado.version>7.0.1-jdk22plus</tornado.version>
     <!-- This is the javax.vecmath version used by CDK -->
     <vecmath.version>1.5.2</vecmath.version>
     <versions.version>2.22.0</versions.version>

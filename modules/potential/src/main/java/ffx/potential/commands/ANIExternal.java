@@ -63,7 +63,7 @@ import static java.lang.Double.parseDouble;
 public class ANIExternal extends PotentialCommand {
 
   private static final String PYTHON_SCRIPT = """
-      import os
+      import ctypes
       import sys
       import torch
 
@@ -104,8 +104,10 @@ public class ANIExternal extends PotentialCommand {
           handle.write("\\n")
           handle.flush()
 
-      # Torch may leave background activity that upsets GraalPy shutdown on exit.
-      os._exit(0)
+      # Bypass GraalPy's JVM shutdown, which crashes while PyTorch tears down native state.
+      libc = ctypes.CDLL(None)
+      libc._exit.argtypes = [ctypes.c_int]
+      libc._exit(0)
       """;
 
   /**

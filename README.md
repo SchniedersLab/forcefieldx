@@ -9,7 +9,7 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
-[![Force Field X Build](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk25.yml/badge.svg)](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk21.yml)
+[![Force Field X Build](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk25.yml/badge.svg)](https://github.com/SchniedersLab/forcefieldx/actions/workflows/maven-jdk25.yml)
 
 ---
 
@@ -49,7 +49,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
     ./mvnw -DskipTests=false -Dffx.ci=true
 
-Currently, JDK 21 through JDK 25 are supported. 
+Currently, JDK 25 through JDK 27 are supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---

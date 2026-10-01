@@ -93,7 +93,6 @@
             <configuration>
               <compilerArgs>
                 <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
-                <arg>-ApropertyDir=${project.parent.basedir}/src/site/asciidoc/properties</arg>
                 <arg>-proc:full</arg>
                 <arg>--add-modules</arg>
                 <arg>jdk.incubator.vector</arg>
@@ -105,6 +104,9 @@
                   <version>${project.version}</version>
                 </path>
               </annotationProcessorPaths>
+              <annotationProcessors>
+                <annotationProcessor>ffx.utilities.PropertyProcessor</annotationProcessor>
+              </annotationProcessors>
             </configuration>
           </execution>
         </executions>

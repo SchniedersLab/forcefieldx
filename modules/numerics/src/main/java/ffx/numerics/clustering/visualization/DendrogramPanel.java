@@ -320,7 +320,7 @@ public class DendrogramPanel extends JPanel {
           String distanceValueStr = String.format("%." + scaleValueDecimals + "f", distanceValue);
           Rectangle2D rect = g2.getFontMetrics().getStringBounds(distanceValueStr, g2);
           g2.drawString(distanceValueStr, (int) (xTick - (rect.getWidth() / 2)), y2 - scaleTickLabelPadding);
-          xTick -= xDisplayInterval;
+          xTick = (int) (xTick - xDisplayInterval);
           distanceValue += xModelInterval;
         }
 

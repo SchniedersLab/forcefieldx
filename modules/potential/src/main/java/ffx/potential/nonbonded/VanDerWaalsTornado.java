@@ -589,7 +589,7 @@ public class VanDerWaalsTornado extends VanDerWaals {
 
     ImmutableTaskGraph itg = graph.snapshot();
     TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
-    executionPlan.withWarmUp().withDevice(device);
+    executionPlan.withWarmUpIterations(1).withDevice(device);
     executionPlan.execute();
 
     logger.info(format(" Tornado OpenCL: %16.8f %d", energy[0], interactions[0]));

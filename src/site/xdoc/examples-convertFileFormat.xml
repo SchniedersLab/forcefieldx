@@ -44,7 +44,7 @@
                 <p>
                     ImportCIF can handle appended CIFs, however, in the case of XYZ format, the space group of the CIF will be appended to the
                     file name as appended CIFs may have different space groups, but appended XYZ (aka ARC) files must
-                    consist of a single space group specified in the Properties file (<italic>e.g.</italic> NAME_P21c.arc
+                    consist of a single space group specified in the Properties file (<i>e.g.</i> NAME_P21c.arc
                     and NAME_P21c.properties). ImportCIF can attempt to fix crystal parameters to conform to the supplied
                     lattice system, but since this alters the structure from the original CIF, the user must indicate
                     that this is desired by adding the &quot;--fixLattice&quot; or &quot;--fl&quot; flag to the command. The default values
@@ -95,9 +95,9 @@
                     model parameters. Therefore, if you wish to use parameters on a PDB file that
                     contains definitions outside the default force field of interest, Biotype records should be appended
                     to either the corresponding PATCH or KEY/PROPERTIES file. Prior to the generation of Biotype records,
-                    each atom should have a unique name (<italic>e.g.</italic> a series of carbons &quot;C&quot;
+                    each atom should have a unique name (<i>e.g.</i> a series of carbons &quot;C&quot;
                     &quot;C&quot; &quot;C&quot;... could be replaced by &quot;C1&quot; &quot;C2&quot; &quot;C3&quot;...
-                    <italic>etc.</italic>).
+                    <i>etc.</i>).
                     Biotype records can be generated with the following command:
                     <source>ffxc Biotype NAME.xyz
                     </source>

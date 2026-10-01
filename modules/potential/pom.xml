@@ -34,6 +34,7 @@
             <argument>ffx.potential.commands.Biotype</argument>
             <argument>ffx.potential.commands.Cart2Frac</argument>
             <argument>ffx.potential.commands.ChainBreaks</argument>
+            <argument>ffx.potential.commands.Chat</argument>
             <argument>ffx.potential.commands.Density</argument>
             <argument>ffx.potential.commands.ANIExternal</argument>
             <argument>ffx.potential.commands.Energy</argument>
@@ -92,6 +93,9 @@
                   <version>${project.version}</version>
                 </path>
               </annotationProcessorPaths>
+              <annotationProcessors>
+                <annotationProcessor>ffx.utilities.PropertyProcessor</annotationProcessor>
+              </annotationProcessors>
             </configuration>
           </execution>
         </executions>
@@ -153,7 +157,12 @@
       <version>${log4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>tornado</groupId>
+      <groupId>io.github.beehive-lab</groupId>
+      <artifactId>jitllm</artifactId>
+      <version>1.0.2-jdk22plus</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-api</artifactId>
       <version>${tornado.version}</version>
       <exclusions>
@@ -305,11 +314,6 @@
       <artifactId>cdk-isomorphism</artifactId>
       <groupId>org.openscience.cdk</groupId>
       <version>${cdk.version}</version>
-    </dependency>
-    <dependency>
-      <artifactId>jtorchani-fat</artifactId>
-      <groupId>edu.uiowa.jtorchani</groupId>
-      <version>1.0.0-beta</version>
     </dependency>
   </dependencies>
   <description>
