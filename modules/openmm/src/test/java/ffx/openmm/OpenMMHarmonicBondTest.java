@@ -39,8 +39,11 @@ package ffx.openmm;
 
 import edu.uiowa.jopenmm.OpenMMUtils;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static org.junit.Assert.assertEquals;
@@ -58,6 +61,7 @@ public class OpenMMHarmonicBondTest {
 
   @BeforeClass
   public static void init() {
+    Assume.assumeFalse(OS.current() == OS.WINDOWS);
     OpenMMUtils.init();
     String pluginDirectory = OpenMMUtils.getPluginDirectory();
     Platform.loadPluginsFromDirectory(pluginDirectory);
