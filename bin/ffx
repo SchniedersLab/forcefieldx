@@ -196,41 +196,18 @@ fi
 # EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=${BASEDIR}/bin/META-INF/native-image"
 
 # TornadoVM Flags
-JAVA_FLAGS=""
-if [ -n "$TORNADO_SDK" ] ; then
-  echo "TORNADO detected at: $TORNADO_SDK"
-
-  PROVIDERS=" \
-   -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
-   -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
-   -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
-   -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
-   -Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
-   -Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory \
-   -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
-   -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel"
-
-   TORNADO_FLAGS="--module-path ${TORNADO_SDK}/share/java/tornado \
-      --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common \
-      @${TORNADO_SDK}/etc/exportLists/common-exports \
-      --add-modules tornado.drivers.opencl \
-      @${TORNADO_SDK}/etc/exportLists/opencl-exports "
-#      --add-modules tornado.drivers.ptx \
-#      @${TORNADO_SDK}/etc/exportLists/ptx-exports \
-#      --add-modules tornado.drivers.spirv \
-#      @${TORNADO_SDK}/etc/exportLists/spirv-exports"
-
-   JLP="${TORNADO_SDK}/lib:$JLP"
-
-#   JAVA_FLAGS="-Dtornado.threadInfo=True -Dtornado.debug=True -Dtornado.print.kernel=True -Dtornado.print.bytecodes=True -server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
-   JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
+TORNADO_ARGFILE=""
+if [ -n "$TORNADOVM_HOME" ] ; then
+  echo " TornadoVM detected at: $TORNADOVM_HOME"
+  echo " Using argument file:   $TORNADOVM_HOME/tornado-argfile"
+  TORNADO_ARGFILE="@$TORNADOVM_HOME/tornado-argfile"
 fi
 
 # These flags can be added to the start-up command to debug jogl.
 # -Dnewt.debug=all -Dnativewindow.debug=all -Djogl.debug=all
 
 if $darwin; then
-  exec "$JAVACMD" $JAVA_OPTS $EXTRA_JVM_ARGUMENTS \
+  exec "$JAVACMD" $TORNADO_ARGFILE $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
   -splash:"$BASEDIR/bin/splash.png" \
   -Xdock:name="Force Field X" \
@@ -243,7 +220,7 @@ if $darwin; then
   ffx.Main \
   "$@"
 else
-  exec "$JAVACMD" $JAVA_OPTS $EXTRA_JVM_ARGUMENTS \
+  exec "$JAVACMD" $TORNADO_ARGFILE $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
   -splash:"$BASEDIR/bin/splash.png" \
   -Dapp.name="Force Field X" \

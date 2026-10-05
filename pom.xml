@@ -46,7 +46,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <compilerArgs>
-              <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+              <arg>-Xlint:all,-serial,-processing,-this-escape,-restricted</arg>
               <arg>-proc:none</arg>
               <arg>--add-modules</arg>
               <arg>jdk.incubator.vector</arg>
@@ -361,7 +361,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <!-- Less than 1G may lead to JVM out of memory exceptions. -->
+          <!-- Less than 1G may lead to JVM out-of-memory exceptions. -->
           <!-- Jacoco agent details are within the property "jacoco.agent.ut.arg" -->
           <argLine>@{jacoco.agent.ut.arg} -Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop --add-modules
             jdk.incubator.vector --enable-native-access=ALL-UNNAMED

@@ -930,7 +930,12 @@ public class RotamerOptimization implements Terminatable {
       x = new double[n];
     }
     potential.getCoordinates(x);
-    return ((OpenMMEnergy) potential).energyFFX(x, false);
+    if (potential instanceof OpenMMEnergy openMMEnergy) {
+      return openMMEnergy.energyFFX(x, false);
+    } else if (potential instanceof ffx.potential.ommffm.OpenMMEnergy openMMEnergy) {
+      return openMMEnergy.energyFFX(x, false);
+    }
+    return potential.energy(x, false);
   }
 
   /**
@@ -2421,9 +2426,9 @@ public class RotamerOptimization implements Terminatable {
                 }
                 case "CYD" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.CYStoCYD.pKa - 7)) -
-                          TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
+                      TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
                   biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.CYStoCYD.pKa - pH)) -
-                          TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
+                      TitrationUtils.Titration.CYStoCYD.freeEnergyDiff;
                 }
                 default -> {
                 }

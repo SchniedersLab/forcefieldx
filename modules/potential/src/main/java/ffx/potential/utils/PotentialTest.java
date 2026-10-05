@@ -74,7 +74,7 @@ public class PotentialTest extends FFXTest {
   /**
    * Get a resource file from the classpath.
    *
-   * @param filename
+   * @param filename The name of the resource file.
    * @return the resource file.
    */
   public String getResourcePath(String filename) {
@@ -92,7 +92,7 @@ public class PotentialTest extends FFXTest {
   /**
    * Get a resource file from the classpath.
    *
-   * @param filename
+   * @param filename The name of the resource file.
    * @return the resource file.
    */
   public File getResourceFile(String filename) {

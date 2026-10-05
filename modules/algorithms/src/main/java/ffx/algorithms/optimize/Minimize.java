@@ -190,7 +190,8 @@ public class Minimize implements OptimizationListener, Terminatable {
         return MinimizationEngine.FFX;
       }
     } else {
-      if (potentialEnergy instanceof OpenMMEnergy) {
+      if (potentialEnergy instanceof OpenMMEnergy
+          || potentialEnergy instanceof ffx.potential.ommffm.OpenMMEnergy) {
         return MinimizationEngine.OPENMM;
       } else {
         return MinimizationEngine.FFX;
@@ -210,7 +211,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
                                          AlgorithmListener listener, MinimizationEngine engine) {
     return switch (engine) {
-      case OPENMM -> new MinimizeOpenMM(assembly, (OpenMMEnergy) potentialEnergy, listener);
+      case OPENMM -> new MinimizeOpenMM(assembly, (ForceFieldEnergy) potentialEnergy, listener);
       default -> new Minimize(assembly, potentialEnergy, listener);
     };
   }

@@ -1,0 +1,136 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
+package ffx.potential.ommffm;
+
+import ffx.openmm.ffm.CustomBondForce;
+import ffx.openmm.ffm.DoubleArray;
+import ffx.openmm.ffm.Force;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.RestrainDistance;
+import ffx.potential.parameters.BondType;
+import ffx.potential.terms.RestrainDistancePotentialEnergy;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static ffx.openmm.ffm.OpenMMUnits.KJ_PER_KCAL;
+import static ffx.openmm.ffm.OpenMMUnits.NM_PER_ANGSTROM;
+import static java.lang.String.format;
+
+/**
+ * Restrain-Distance Force backed by FFM {@link CustomBondForce}.
+ */
+public class RestrainDistanceForce extends CustomBondForce {
+
+  private static final Logger logger = Logger.getLogger(RestrainDistanceForce.class.getName());
+
+  /**
+   * Restrain Bond Force constructor.
+   *
+   * @param bondFunction                    The bond function.
+   * @param restrainDistancePotentialEnergy RestraintDistancePotentialEnergy instance.
+   */
+  public RestrainDistanceForce(BondType.BondFunction bondFunction,
+                               RestrainDistancePotentialEnergy restrainDistancePotentialEnergy) {
+    super(bondFunction.toMathematicalForm());
+    List<RestrainDistance> restrainDistances = restrainDistancePotentialEnergy.getRestrainDistances(bondFunction);
+    if (restrainDistances == null || restrainDistances.isEmpty()) {
+      destroy();
+      return;
+    }
+
+    addPerBondParameter("k");
+    addPerBondParameter("r0");
+    if (bondFunction.hasFlatBottom()) {
+      addPerBondParameter("fb");
+    }
+
+    BondType bondType = restrainDistances.getFirst().bondType;
+    switch (bondFunction) {
+      case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
+        addGlobalParameter("cubic", bondType.cubic / NM_PER_ANGSTROM);
+        addGlobalParameter("quartic", bondType.quartic / (NM_PER_ANGSTROM * NM_PER_ANGSTROM));
+      }
+    }
+
+    // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
+    double forceConvert = 2.0 * KJ_PER_KCAL / (NM_PER_ANGSTROM * NM_PER_ANGSTROM);
+    try (DoubleArray parameters = new DoubleArray(0)) {
+      for (RestrainDistance restrainDistance : restrainDistances) {
+        bondType = restrainDistance.bondType;
+        double forceConstant = bondType.forceConstant * bondType.bondUnit * forceConvert;
+        double distance = bondType.distance * NM_PER_ANGSTROM;
+        Atom[] atoms = restrainDistance.getAtomArray();
+        int i1 = atoms[0].getXyzIndex() - 1;
+        int i2 = atoms[1].getXyzIndex() - 1;
+        parameters.append(forceConstant);
+        parameters.append(distance);
+        if (bondFunction.hasFlatBottom()) {
+          parameters.append(bondType.flatBottomRadius * NM_PER_ANGSTROM);
+        }
+        addBond(i1, i2, parameters);
+        parameters.resize(0);
+      }
+    }
+
+    int forceGroup = restrainDistancePotentialEnergy.getForceGroup();
+    setForceGroup(forceGroup);
+    logger.log(Level.INFO, format("  Restrain-Distance force \t%6d\t%d", restrainDistances.size(), forceGroup));
+  }
+
+  /**
+   * Add a Restrain-Bond force to the OpenMM System.
+   *
+   * @param bondFunction The bond function.
+   * @param openMMEnergy The OpenMM Energy.
+   * @return Force instance or null if no restrain distance potential energy exists.
+   */
+  public static Force constructForce(BondType.BondFunction bondFunction, OpenMMEnergy openMMEnergy) {
+    RestrainDistancePotentialEnergy restrainDistancePotentialEnergy =
+        openMMEnergy.getRestrainDistancePotentialEnergy();
+    if (restrainDistancePotentialEnergy == null) {
+      return null;
+    }
+    List<RestrainDistance> restrainDistances = restrainDistancePotentialEnergy.getRestrainDistances(bondFunction);
+    if (restrainDistances == null || restrainDistances.isEmpty()) {
+      return null;
+    }
+    return new RestrainDistanceForce(bondFunction, restrainDistancePotentialEnergy);
+  }
+}

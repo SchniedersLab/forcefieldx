@@ -1487,6 +1487,22 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     switch (platform) {
       case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
+        String backend = System.getProperty("ffx.openmm.backend",
+            forceField.getString("OPENMM_BACKEND", "jna")).trim().toLowerCase();
+        if ("ffm".equals(backend)) {
+          try {
+            logger.info(format(" Initializing OpenMM FFM backend for %s", platform));
+            return new ffx.potential.ommffm.OpenMMEnergy(assembly, platform, numThreads);
+          } catch (Exception ex) {
+            logger.warning(format(" Exception creating FFM OpenMMEnergy: %s", ex));
+            ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
+            if (ffxEnergy == null) {
+              ffxEnergy = new ForceFieldEnergy(assembly, numThreads);
+              assembly.setPotential(ffxEnergy);
+            }
+            return ffxEnergy;
+          }
+        }
         try {
           return new OpenMMEnergy(assembly, platform, numThreads);
         } catch (Exception ex) {

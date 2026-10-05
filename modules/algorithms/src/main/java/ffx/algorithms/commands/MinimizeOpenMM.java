@@ -155,7 +155,8 @@ public class MinimizeOpenMM extends AlgorithmsCommand {
         break;
     }
 
-    if (forceFieldEnergy instanceof OpenMMEnergy) {
+    if (forceFieldEnergy instanceof OpenMMEnergy
+        || forceFieldEnergy instanceof ffx.potential.ommffm.OpenMMEnergy) {
       ffx.algorithms.optimize.MinimizeOpenMM minimizeOpenMM = new ffx.algorithms.optimize.MinimizeOpenMM(
           activeAssembly);
       minimizeOpenMM.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations());

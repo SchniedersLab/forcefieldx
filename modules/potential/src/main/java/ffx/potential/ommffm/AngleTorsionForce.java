@@ -1,0 +1,296 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2026.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
+package ffx.potential.ommffm;
+
+import ffx.openmm.ffm.CustomCompoundBondForce;
+import ffx.openmm.ffm.DoubleArray;
+import ffx.openmm.ffm.Force;
+import ffx.openmm.ffm.IntArray;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.AngleTorsion;
+import ffx.potential.bonded.Atom;
+import ffx.potential.terms.AngleTorsionPotentialEnergy;
+
+import java.util.logging.Logger;
+
+import static ffx.openmm.ffm.OpenMMUnits.KJ_PER_KCAL;
+import static ffx.openmm.ffm.OpenMMUnits.RADIANS_PER_DEGREE;
+import static java.lang.String.format;
+
+/**
+ * OpenMM Angle-Torsion Force backed by FFM {@link CustomCompoundBondForce}.
+ */
+public class AngleTorsionForce extends CustomCompoundBondForce {
+
+  private static final Logger logger = Logger.getLogger(AngleTorsionForce.class.getName());
+
+  /**
+   * Create an OpenMM Angle-Torsion Force.
+   *
+   * @param angleTorsionPotentialEnergy The AngleTorsionPotentialEnergy instance that contains the Angle-Torsions.
+   */
+  public AngleTorsionForce(AngleTorsionPotentialEnergy angleTorsionPotentialEnergy) {
+    super(4, AngleTorsion.angleTorsionForm());
+    AngleTorsion[] angleTorsions = angleTorsionPotentialEnergy.getAngleTorsionArray();
+    addGlobalParameter("phi1", 0);
+    addGlobalParameter("phi2", Math.PI);
+    addGlobalParameter("phi3", 0);
+    for (int m = 1; m < 3; m++) {
+      for (int n = 1; n < 4; n++) {
+        addPerBondParameter(format("k%d%d", m, n));
+      }
+    }
+    for (int m = 1; m < 3; m++) {
+      addPerBondParameter(format("a%d", m));
+    }
+
+    try (IntArray particles = new IntArray(0);
+         DoubleArray parameters = new DoubleArray(0)) {
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        double[] constants = angleTorsion.getConstants();
+        for (int m = 0; m < 2; m++) {
+          for (int n = 0; n < 3; n++) {
+            int index = (3 * m) + n;
+            parameters.append(constants[index] * KJ_PER_KCAL);
+          }
+        }
+        parameters.append(angleTorsion.angleType1.angle[0] * RADIANS_PER_DEGREE);
+        parameters.append(angleTorsion.angleType2.angle[0] * RADIANS_PER_DEGREE);
+
+        Atom[] atoms = angleTorsion.getAtomArray(true);
+        for (int i = 0; i < 4; i++) {
+          particles.append(atoms[i].getArrayIndex());
+        }
+
+        addBond(particles, parameters);
+        parameters.resize(0);
+        particles.resize(0);
+      }
+    }
+
+    int forceGroup = angleTorsionPotentialEnergy.getForceGroup();
+    setForceGroup(forceGroup);
+    logger.info(format("  Angle-Torsions:                    %10d", angleTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
+   * Create a Dual Topology OpenMM Angle-Torsion Force.
+   *
+   * @param angleTorsionPotentialEnergy The AngleTorsionPotentialEnergy instance that contains the Angle-Torsions.
+   * @param topology                    The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy    The OpenMMDualTopologyEnergy instance.
+   */
+  public AngleTorsionForce(AngleTorsionPotentialEnergy angleTorsionPotentialEnergy,
+                           int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    super(4, AngleTorsion.angleTorsionForm());
+    AngleTorsion[] angleTorsions = angleTorsionPotentialEnergy.getAngleTorsionArray();
+    addGlobalParameter("phi1", 0);
+    addGlobalParameter("phi2", Math.PI);
+    addGlobalParameter("phi3", 0);
+    for (int m = 1; m < 3; m++) {
+      for (int n = 1; n < 4; n++) {
+        addPerBondParameter(format("k%d%d", m, n));
+      }
+    }
+    for (int m = 1; m < 3; m++) {
+      addPerBondParameter(format("a%d", m));
+    }
+
+    double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    try (IntArray particles = new IntArray(0);
+         DoubleArray parameters = new DoubleArray(0)) {
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        double scale = 1.0;
+        // Don't apply lambda scale to alchemical stretch-torsion
+        if (!angleTorsion.applyLambda()) {
+          scale = scaleDT;
+        }
+        double[] constants = angleTorsion.getConstants();
+        for (int m = 0; m < 2; m++) {
+          for (int n = 0; n < 3; n++) {
+            int index = (3 * m) + n;
+            parameters.append(constants[index] * KJ_PER_KCAL * scale);
+          }
+        }
+        parameters.append(angleTorsion.angleType1.angle[0] * RADIANS_PER_DEGREE);
+        parameters.append(angleTorsion.angleType2.angle[0] * RADIANS_PER_DEGREE);
+
+        Atom[] atoms = angleTorsion.getAtomArray(true);
+        for (int i = 0; i < 4; i++) {
+          int atomIndex = atoms[i].getArrayIndex();
+          atomIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, atomIndex);
+          particles.append(atomIndex);
+        }
+
+        addBond(particles, parameters);
+        parameters.resize(0);
+        particles.resize(0);
+      }
+    }
+
+    int forceGroup = angleTorsionPotentialEnergy.getForceGroup();
+    setForceGroup(forceGroup);
+    logger.info(format("  Angle-Torsions:                    %10d", angleTorsions.length));
+    logger.fine(format("   Force Group:                      %10d", forceGroup));
+  }
+
+  /**
+   * Convenience method to construct an OpenMM Angle-Torsion Force.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the angle-torsions.
+   * @return An Angle-Torsion Force, or null if there are no angle-torsions.
+   */
+  public static Force constructForce(OpenMMEnergy openMMEnergy) {
+    AngleTorsionPotentialEnergy angleTorsionPotentialEnergy =
+        openMMEnergy.getAngleTorsionPotentialEnergy();
+    if (angleTorsionPotentialEnergy == null) {
+      return null;
+    }
+    return new AngleTorsionForce(angleTorsionPotentialEnergy);
+  }
+
+  /**
+   * Convenience method to construct a Dual Topology OpenMM Angle-Torsion Force.
+   *
+   * @param topology                 The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   * @return An Angle-Torsion Force, or null if there are no angle-torsions.
+   */
+  public static Force constructForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    AngleTorsionPotentialEnergy angleTorsionPotentialEnergy = forceFieldEnergy.getAngleTorsionPotentialEnergy();
+    if (angleTorsionPotentialEnergy == null) {
+      return null;
+    }
+    return new AngleTorsionForce(angleTorsionPotentialEnergy, topology, openMMDualTopologyEnergy);
+  }
+
+  /**
+   * Update the Angle-Torsion parameters in the OpenMM Context.
+   *
+   * @param openMMEnergy The OpenMM Energy instance that contains the angle-torsions.
+   */
+  public void updateForce(OpenMMEnergy openMMEnergy) {
+    AngleTorsionPotentialEnergy angleTorsionPotentialEnergy =
+        openMMEnergy.getAngleTorsionPotentialEnergy();
+    if (angleTorsionPotentialEnergy == null) {
+      return;
+    }
+    AngleTorsion[] angleTorsions = angleTorsionPotentialEnergy.getAngleTorsionArray();
+
+    try (IntArray particles = new IntArray(0);
+         DoubleArray parameters = new DoubleArray(0)) {
+      int bondIndex = 0;
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        double[] constants = angleTorsion.getConstants();
+        for (int m = 0; m < 2; m++) {
+          for (int n = 0; n < 3; n++) {
+            int index = (3 * m) + n;
+            parameters.append(constants[index] * KJ_PER_KCAL);
+          }
+        }
+        parameters.append(angleTorsion.angleType1.angle[0] * RADIANS_PER_DEGREE);
+        parameters.append(angleTorsion.angleType2.angle[0] * RADIANS_PER_DEGREE);
+
+        Atom[] atoms = angleTorsion.getAtomArray(true);
+        for (int i = 0; i < 4; i++) {
+          particles.append(atoms[i].getArrayIndex());
+        }
+
+        setBondParameters(bondIndex++, particles, parameters);
+        parameters.resize(0);
+        particles.resize(0);
+      }
+    }
+
+    updateParametersInContext(openMMEnergy.getContext());
+  }
+
+  /**
+   * Update the Dual Topology Angle-Torsion Force.
+   *
+   * @param topology                 The topology index for the OpenMM System.
+   * @param openMMDualTopologyEnergy The OpenMMDualTopologyEnergy instance.
+   */
+  public void updateForce(int topology, OpenMMDualTopologyEnergy openMMDualTopologyEnergy) {
+    ForceFieldEnergy forceFieldEnergy = openMMDualTopologyEnergy.getForceFieldEnergy(topology);
+    AngleTorsionPotentialEnergy angleTorsionPotentialEnergy = forceFieldEnergy.getAngleTorsionPotentialEnergy();
+    if (angleTorsionPotentialEnergy == null) {
+      return;
+    }
+    AngleTorsion[] angleTorsions = angleTorsionPotentialEnergy.getAngleTorsionArray();
+
+    double scaleDT = openMMDualTopologyEnergy.getTopologyScale(topology);
+
+    try (IntArray particles = new IntArray(0);
+         DoubleArray parameters = new DoubleArray(0)) {
+      int atIndex = 0;
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        double scale = 1.0;
+        // Don't apply lambda scale to alchemical stretch-torsion
+        if (!angleTorsion.applyLambda()) {
+          scale = scaleDT;
+        }
+        double[] constants = angleTorsion.getConstants();
+        for (int m = 0; m < 2; m++) {
+          for (int n = 0; n < 3; n++) {
+            int index = (3 * m) + n;
+            parameters.append(constants[index] * KJ_PER_KCAL * scale);
+          }
+        }
+        parameters.append(angleTorsion.angleType1.angle[0] * RADIANS_PER_DEGREE);
+        parameters.append(angleTorsion.angleType2.angle[0] * RADIANS_PER_DEGREE);
+
+        Atom[] atoms = angleTorsion.getAtomArray(true);
+        for (int i = 0; i < 4; i++) {
+          int atomIndex = atoms[i].getArrayIndex();
+          atomIndex = openMMDualTopologyEnergy.mapToDualTopologyIndex(topology, atomIndex);
+          particles.append(atomIndex);
+        }
+
+        setBondParameters(atIndex++, particles, parameters);
+        parameters.resize(0);
+        particles.resize(0);
+      }
+    }
+
+    updateParametersInContext(openMMDualTopologyEnergy.getContext());
+  }
+}

@@ -134,6 +134,9 @@ public class TitrationManyBody {
     if (potentialEnergy instanceof OpenMMEnergy openMMEnergy) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
       openMMEnergy.getSystem().setUpdateBondedTerms(updateBondedTerms);
+    } else if (potentialEnergy instanceof ffx.potential.ommffm.OpenMMEnergy openMMEnergy) {
+      boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
+      openMMEnergy.getSystem().setUpdateBondedTerms(updateBondedTerms);
     }
     potentialEnergy.energy();
     return protonatedAssembly;

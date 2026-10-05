@@ -625,6 +625,18 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       Platform platform = Platform.valueOf(platformString);
       switch (platform) {
         case OMM, OMM_REF, OMM_CUDA, OMM_OPENCL:
+          String backend = System.getProperty("ffx.openmm.backend",
+              forceField.getString("OPENMM_BACKEND", "jna")).trim().toLowerCase();
+          if ("ffm".equals(backend)) {
+            try {
+              logger.info(format(" Initializing OpenMM FFM backend for %s", platform));
+              return new ffx.potential.ommffm.OpenMMDualTopologyEnergy(molecularAssembly1,
+                  molecularAssembly2, switchFunction, platform);
+            } catch (Exception ex) {
+              logger.warning(format(" Exception creating FFM OpenMMDualTopologyEnergy: %s", ex));
+              return new DualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction);
+            }
+          }
           try {
             return new OpenMMDualTopologyEnergy(molecularAssembly1, molecularAssembly2, switchFunction, platform);
           } catch (Exception ex) {

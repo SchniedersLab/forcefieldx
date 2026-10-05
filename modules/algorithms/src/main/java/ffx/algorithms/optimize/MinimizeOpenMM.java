@@ -89,21 +89,21 @@ public class MinimizeOpenMM extends Minimize {
    * MinimizeOpenMM constructor.
    *
    * @param molecularAssembly the MolecularAssembly to optimize.
-   * @param openMMEnergy      the OpenMM potential energy function.
+   * @param forceFieldEnergy  the OpenMM potential energy function.
    */
-  public MinimizeOpenMM(MolecularAssembly molecularAssembly, OpenMMEnergy openMMEnergy) {
-    super(molecularAssembly, openMMEnergy, null);
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly, ForceFieldEnergy forceFieldEnergy) {
+    super(molecularAssembly, forceFieldEnergy, null);
   }
 
   /**
    * MinimizeOpenMM constructor.
    *
    * @param molecularAssembly the MolecularAssembly to optimize.
-   * @param openMMEnergy      the OpenMM potential energy function.
+   * @param forceFieldEnergy  the OpenMM potential energy function.
    * @param algorithmListener report progress using the listener.
    */
-  public MinimizeOpenMM(MolecularAssembly molecularAssembly, OpenMMEnergy openMMEnergy, AlgorithmListener algorithmListener) {
-    super(molecularAssembly, openMMEnergy, algorithmListener);
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly, ForceFieldEnergy forceFieldEnergy, AlgorithmListener algorithmListener) {
+    super(molecularAssembly, forceFieldEnergy, algorithmListener);
   }
 
   /**
@@ -158,6 +158,65 @@ public class MinimizeOpenMM extends Minimize {
       OpenMMState openMMState = openMMContext.getOpenMMState(mask);
       energy = openMMState.potentialEnergy;
       openMMState.getActivePositions(x, atoms);
+      openMMState.getActiveGradient(grad, atoms);
+      openMMState.destroy();
+
+      // Compute the RMS gradient.
+      double grad2 = 0;
+      for (int i = 0; i < n; i++) {
+        double gi = grad[i];
+        if (isNaN(gi) || isInfinite(gi)) {
+          String message = format(" The gradient of variable %d is %8.3f.", i, gi);
+          logger.warning(message);
+        }
+        grad2 += gi * gi;
+      }
+      rmsGradient = sqrt(grad2 / n);
+
+      double[] ffxGrad = new double[n];
+      double ffxEnergy = openMMEnergy.energyAndGradientFFX(x, ffxGrad);
+      double grmsFFX = 0.0;
+      for (int i = 0; i < n; i++) {
+        double gi = ffxGrad[i];
+        if (isNaN(gi) || isInfinite(gi)) {
+          String message = format(" The gradient of variable %d is %8.3f.", i, gi);
+          logger.warning(message);
+        }
+        grmsFFX += gi * gi;
+      }
+      grmsFFX = sqrt(grmsFFX / n);
+
+      time += System.nanoTime();
+      logger.info(format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).", energy, ffxEnergy, time * 1.0e-9));
+      logger.info(format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).", rmsGradient, grmsFFX));
+    } else if (forceFieldEnergy instanceof ffx.potential.ommffm.OpenMMEnergy openMMEnergy) {
+      time = -System.nanoTime();
+
+      // Respect the use flag, and lambda state.
+      Atom[] atoms = molecularAssembly.getAtomArray();
+      openMMEnergy.updateParameters(atoms);
+
+      // Respect (in)active atoms.
+      openMMEnergy.setActiveAtoms();
+
+      // Get the coordinates to start from.
+      openMMEnergy.getCoordinates(x);
+
+      // Calculate the starting energy before optimization.
+      double e = openMMEnergy.energy(x);
+      logger.info(format("\n Initial energy:                 %12.6f (kcal/mol)", e));
+
+      // Run the minimization in the current OpenMM Context.
+      ffx.potential.ommffm.OpenMMContext openMMContext = openMMEnergy.getContext();
+      openMMContext.optimize(eps, maxIterations);
+
+      // Get the minimized coordinates, forces and potential energy back from OpenMM.
+      int mask = ffx.openmm.ffm.bindings.OpenMMNative.OpenMM_State_Positions()
+          | ffx.openmm.ffm.bindings.OpenMMNative.OpenMM_State_Energy()
+          | ffx.openmm.ffm.bindings.OpenMMNative.OpenMM_State_Forces();
+      ffx.potential.ommffm.OpenMMState openMMState = openMMContext.getOpenMMState(mask);
+      energy = openMMState.potentialEnergy;
+      openMMState.getActiveCoordinates(x, atoms);
       openMMState.getActiveGradient(grad, atoms);
       openMMState.destroy();
 
