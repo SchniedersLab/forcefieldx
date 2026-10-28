@@ -25,7 +25,7 @@ jupyterlab-server==2.28.0
 jupyterlab==4.5.11
 kotlin-jupyter-kernel==0.15.0.598
 mistune==3.3.3
-nbconvert==7.17.1
+nbconvert==7.17.2
 nbformat==5.7.3
 notebook==7.6.3
 pandocfilters==1.4.2
